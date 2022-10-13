@@ -6,12 +6,11 @@ namespace TestGame
 	{
 		static void Main()
 		{
-			Window.Create("Purity", 80, 45, "graphics.png");
-			Window.Fill(300, Color.Green);
+			var window = new Window("graphics.png");
 
-			while(Window.IsOpen)
+			while(window.IsOpen)
 			{
-				Window.Update();
+				window.Update();
 			}
 		}
 	}

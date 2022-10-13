@@ -4,14 +4,30 @@ using SFML.Window;
 
 namespace Engine
 {
-	public static class Window
+	public class Window
 	{
-		public static bool IsOpen => window != null && window.IsOpen;
-
-		public static void Create(string title, int gridWidth, int gridHeight, string graphicsPath)
+		public bool IsOpen => window != null && window.IsOpen;
+		public string Title
 		{
-			Window.gridWidth = gridWidth;
-			Window.gridHeight = gridHeight;
+			get => title;
+			set { title = value; window.SetTitle(title); }
+		}
+		public int Width
+		{
+			get => width;
+			set => width = Math.Max(value, 1);
+		}
+		public int Height
+		{
+			get => height;
+			set => height = Math.Max(value, 1);
+		}
+
+		public Window(string graphicsPath)
+		{
+			width = 80;
+			height = 45;
+			title = "Purity";
 
 			window = new(new VideoMode(1280, 720), title);
 			window.Closed += (s, e) => window.Close();
@@ -24,11 +40,14 @@ namespace Engine
 			};
 
 			graphics = new(graphicsPath);
-			vertices = new Vertex[gridWidth * gridHeight * 4];
-			cells = new Cell[gridWidth, gridHeight];
+			tileSize = (int)graphics.Size.X / 26;
+			vertices = new Vertex[width * height * 4];
+			cells = new Cell[width, height];
+
+			Fill(27, Color.White);
 		}
 
-		public static void Update()
+		public void Update()
 		{
 			window?.DispatchEvents();
 			window?.Clear();
@@ -39,34 +58,34 @@ namespace Engine
 			window?.Display();
 		}
 
-		public static void Fill(int cell, Color color)
+		public void Fill(int cell, Color color)
 		{
 			if(cells == null)
 				return;
 
-			for(int y = 0; y < gridHeight; y++)
-				for(int x = 0; x < gridWidth; x++)
+			for(int y = 0; y < height; y++)
+				for(int x = 0; x < width; x++)
 					cells[x, y] = new() { ID = cell, Color = color };
 		}
-		public static void Set(int x, int y, int cell, Color color)
+		public void Set(int x, int y, int cell, Color color)
 		{
 			if(cells == null)
 				return;
 
-			x = x.Limit(0, gridWidth - 1);
-			y = y.Limit(0, gridHeight - 1);
+			x = x.Limit(0, width - 1);
+			y = y.Limit(0, height - 1);
 
 			cells[x, y] = new() { ID = cell, Color = color };
 		}
-		public static void Set(int cellIndex, int cell, Color color)
+		public void Set(int cellIndex, int cell, Color color)
 		{
 			if(cells == null)
 				return;
 
-			var coords = cellIndex.ToCoords(gridWidth, gridHeight);
+			var coords = cellIndex.ToCoords(width, height);
 			cells[coords.X, coords.Y] = new() { ID = cell, Color = color };
 		}
-		public static void DisplayText(string text, int x, int y)
+		public void DisplayText(string text, int x, int y)
 		{
 			for(int i = 0; i < text.Length; i++)
 			{
@@ -75,15 +94,15 @@ namespace Engine
 
 
 		}
-		public static void SetSquare(int cell, int startX, int startY, int endX, int endY)
+		public void SetSquare(int cell, int startX, int startY, int endX, int endY)
 		{
 			if(cells == null)
 				return;
 
-			startX = startX.Limit(0, gridWidth - 1);
-			startY = startY.Limit(0, gridHeight - 1);
-			endX = endX.Limit(0, gridWidth - 1);
-			endY = endY.Limit(0, gridHeight - 1);
+			startX = startX.Limit(0, width - 1);
+			startY = startY.Limit(0, height - 1);
+			endX = endX.Limit(0, width - 1);
+			endY = endY.Limit(0, height - 1);
 
 			for(int y = startY; y < endY + 1; y++)
 				for(int x = startX; x < endX + 1; x++)
@@ -97,33 +116,36 @@ namespace Engine
 			public int ID { get; set; }
 		}
 
-		private static Cell[,]? cells;
-		private static Texture? graphics;
-		private static int gridWidth, gridHeight;
-		private static Vertex[]? vertices;
-		private static RenderWindow? window;
+		private readonly Vertex[]? vertices;
 
-		private static Vertex[] UpdateGridVertices()
+		private string title;
+		private int width, height, tileSize;
+
+		private readonly Cell[,] cells;
+		private readonly Texture graphics;
+		private readonly RenderWindow window;
+
+		private Vertex[] UpdateGridVertices()
 		{
 			if(cells == null || vertices == null || window == null)
 				return Array.Empty<Vertex>();
 
-			var cellWidth = (float)window.Size.X / gridWidth;
-			var cellHeight = (float)window.Size.Y / gridHeight;
+			var cellWidth = (float)window.Size.X / width;
+			var cellHeight = (float)window.Size.Y / height;
 
-			for(int y = 0; y < gridHeight; y++)
-				for(int x = 0; x < gridWidth; x++)
+			for(int y = 0; y < height; y++)
+				for(int x = 0; x < width; x++)
 				{
 					var cell = cells[x, y];
 					var color = cell.Color.ToSFML();
-					var texCoords = ((int)cell.ID).ToCoords(27, 27) * 4;
+					var texCoords = cell.ID.ToCoords(27, 27) * tileSize;
 					var tx = new Vector2f(texCoords.X, texCoords.Y);
-					var i = (y * gridWidth + x) * 4;
+					var i = (y * width + x) * 4;
 
 					vertices[i + 0] = new(new(x * cellWidth, y * cellHeight), color, tx);
-					vertices[i + 1] = new(new((x + 1) * cellWidth, y * cellHeight), color, tx + new Vector2f(4, 0));
-					vertices[i + 2] = new(new((x + 1) * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(4, 4));
-					vertices[i + 3] = new(new(x * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(0, 4));
+					vertices[i + 1] = new(new((x + 1) * cellWidth, y * cellHeight), color, tx + new Vector2f(tileSize, 0));
+					vertices[i + 2] = new(new((x + 1) * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(tileSize, tileSize));
+					vertices[i + 3] = new(new(x * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(0, tileSize));
 				}
 			return vertices;
 		}
