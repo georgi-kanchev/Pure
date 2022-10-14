@@ -14,35 +14,45 @@ namespace Engine
 		}
 		public int Width
 		{
-			get => width;
-			set => width = Math.Max(value, 1);
+			get => size.X;
+			set => size.Y = Math.Max(value, 1);
 		}
 		public int Height
 		{
-			get => height;
-			set => height = Math.Max(value, 1);
+			get => size.X;
+			set => size.Y = Math.Max(value, 1);
 		}
 
-		public Window(string graphicsPath)
+		public Window(string graphicsPath = "graphics.png", int scale = 40)
 		{
-			width = 80;
-			height = 45;
+			var desktopW = VideoMode.DesktopMode.Width;
+			var desktopH = VideoMode.DesktopMode.Height;
+			size.X = (int)desktopW / scale;
+			size.Y = (int)desktopH / scale;
 			title = "Purity";
 
-			window = new(new VideoMode(1280, 720), title);
+			prevWindowSz = new(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+			window = new(new VideoMode(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), title);
 			window.Closed += (s, e) => window.Close();
 			window.Resized += (s, e) =>
 			{
+				//var ratio = (float)desktopW / desktopH;
+				//if(prevWindowSz.Y != e.Height)
+				//	window.Size = new((uint)(e.Height * ratio), e.Height);
+				//else if(prevWindowSz.X != e.Width)
+				//	window.Size = new(e.Width, (uint)(e.Width / ratio));
+
 				var view = window.GetView();
 				view.Size = new(e.Width, e.Height);
 				view.Center = new(e.Width / 2f, e.Height / 2f);
 				window.SetView(view);
+				prevWindowSz = window.Size;
 			};
 
 			graphics = new(graphicsPath);
 			tileSize = (int)graphics.Size.X / 26;
-			vertices = new Vertex[width * height * 4];
-			cells = new Cell[width, height];
+			vertices = new Vertex[size.X * size.Y * 4];
+			cells = new Cell[size.X, size.Y];
 
 			Fill(27, Color.White);
 		}
@@ -63,8 +73,8 @@ namespace Engine
 			if(cells == null)
 				return;
 
-			for(int y = 0; y < height; y++)
-				for(int x = 0; x < width; x++)
+			for(int y = 0; y < size.Y; y++)
+				for(int x = 0; x < size.X; x++)
 					cells[x, y] = new() { ID = cell, Color = color };
 		}
 		public void Set(int x, int y, int cell, Color color)
@@ -72,8 +82,8 @@ namespace Engine
 			if(cells == null)
 				return;
 
-			x = x.Limit(0, width - 1);
-			y = y.Limit(0, height - 1);
+			x = x.Limit(0, size.X - 1);
+			y = y.Limit(0, size.Y - 1);
 
 			cells[x, y] = new() { ID = cell, Color = color };
 		}
@@ -82,7 +92,7 @@ namespace Engine
 			if(cells == null)
 				return;
 
-			var coords = cellIndex.ToCoords(width, height);
+			var coords = cellIndex.ToCoords(size.X, size.Y);
 			cells[coords.X, coords.Y] = new() { ID = cell, Color = color };
 		}
 		public void DisplayText(string text, int x, int y)
@@ -99,10 +109,10 @@ namespace Engine
 			if(cells == null)
 				return;
 
-			startX = startX.Limit(0, width - 1);
-			startY = startY.Limit(0, height - 1);
-			endX = endX.Limit(0, width - 1);
-			endY = endY.Limit(0, height - 1);
+			startX = startX.Limit(0, size.X - 1);
+			startY = startY.Limit(0, size.Y - 1);
+			endX = endX.Limit(0, size.X - 1);
+			endY = endY.Limit(0, size.Y - 1);
 
 			for(int y = startY; y < endY + 1; y++)
 				for(int x = startX; x < endX + 1; x++)
@@ -118,8 +128,11 @@ namespace Engine
 
 		private readonly Vertex[]? vertices;
 
+		private const int DEFAULT_WINDOW_WIDTH = 1280, DEFAULT_WINDOW_HEIGHT = 720;
 		private string title;
-		private int width, height, tileSize;
+		private Vector2i size;
+		private readonly int tileSize;
+		private Vector2u prevWindowSz;
 
 		private readonly Cell[,] cells;
 		private readonly Texture graphics;
@@ -130,17 +143,17 @@ namespace Engine
 			if(cells == null || vertices == null || window == null)
 				return Array.Empty<Vertex>();
 
-			var cellWidth = (float)window.Size.X / width;
-			var cellHeight = (float)window.Size.Y / height;
+			var cellWidth = (float)window.Size.X / size.X;
+			var cellHeight = (float)window.Size.Y / size.Y;
 
-			for(int y = 0; y < height; y++)
-				for(int x = 0; x < width; x++)
+			for(int y = 0; y < size.Y; y++)
+				for(int x = 0; x < size.X; x++)
 				{
 					var cell = cells[x, y];
 					var color = cell.Color.ToSFML();
 					var texCoords = cell.ID.ToCoords(27, 27) * tileSize;
 					var tx = new Vector2f(texCoords.X, texCoords.Y);
-					var i = (y * width + x) * 4;
+					var i = (y * size.X + x) * 4;
 
 					vertices[i + 0] = new(new(x * cellWidth, y * cellHeight), color, tx);
 					vertices[i + 1] = new(new((x + 1) * cellWidth, y * cellHeight), color, tx + new Vector2f(tileSize, 0));

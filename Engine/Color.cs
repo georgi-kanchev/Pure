@@ -5,21 +5,24 @@ namespace Engine
 	public struct Color
 	{
 		public static Color Black => new(0);
+		public static Color Gray => new(127, 127, 127);
 		public static Color White => new(255);
 
 		public static Color Red => new(255, 0, 0);
 		public static Color Green => new(0, 255, 0);
 		public static Color Blue => new(0, 0, 255);
 
-		public static Color Yellow => new(255, 255, 0);
-		public static Color Magenta => new(255, 0, 255);
-		public static Color Cyan => new(0, 255, 255);
-
-		public static Color Purple => new(75, 0, 130);
-		public static Color Violet => new(143, 0, 255);
 		public static Color Pink => new(255, 105, 180);
+		public static Color Magenta => new(255, 0, 255);
+		public static Color Violet => new(143, 0, 255);
+		public static Color Purple => new(75, 0, 130);
 
+		public static Color Yellow => new(255, 255, 0);
+		public static Color Orange => new(255, 165, 0);
 		public static Color Brown => new(150, 105, 25);
+
+		public static Color Cyan => new(0, 255, 255);
+		public static Color Azure => new(0, 127, 255);
 
 		public byte Value
 		{
