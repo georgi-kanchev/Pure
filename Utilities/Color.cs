@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Engine
+﻿namespace Purity.Utilities
 {
 	public struct Color
 	{
@@ -35,9 +33,9 @@ namespace Engine
 				var r = binary[0..3];
 				var g = binary[3..6];
 				var b = binary[6..8];
-				red = Convert.ToByte(r, 2);
-				green = Convert.ToByte(g, 2);
-				blue = Convert.ToByte(b, 2);
+				red = (byte)(Convert.ToByte(r, 2) * byte.MaxValue / 7);
+				green = (byte)(Convert.ToByte(g, 2) * byte.MaxValue / 7);
+				blue = (byte)(Convert.ToByte(b, 2) * byte.MaxValue / 3);
 			}
 		}
 		public byte R => red;
@@ -66,19 +64,24 @@ namespace Engine
 			Value = Convert.ToByte($"{r}{g}{b}", 2);
 		}
 
+		public static implicit operator Color(byte value)
+		{
+			return new Color(value);
+		}
+		public static implicit operator byte(Color color)
+		{
+			return color.value;
+		}
+		public static bool operator ==(Color a, byte b) => a.value == b;
+		public static bool operator !=(Color a, byte b) => a.value != b;
 		public static bool operator ==(Color a, Color b) => a.value == b.value;
 		public static bool operator !=(Color a, Color b) => a.value != b.value;
 
 		public override int GetHashCode() => base.GetHashCode();
-		public override bool Equals([NotNullWhen(true)] object? obj) => base.Equals(obj);
+		public override bool Equals(object? obj) => base.Equals(obj);
 
 		#region Backend
 		private byte value, red, green, blue;
-
-		internal SFML.Graphics.Color ToSFML()
-		{
-			return new SFML.Graphics.Color((byte)(red * 36), (byte)(green * 36), (byte)(blue * 85));
-		}
 		#endregion
 	}
 }

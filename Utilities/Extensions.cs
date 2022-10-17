@@ -3,9 +3,7 @@ using System.IO.Compression;
 using System.Numerics;
 using System.Text;
 
-using SFML.System;
-
-namespace Engine
+namespace Purity.Utilities
 {
 	/// <summary>
 	/// Various methods that extend the primitive types, structs and collections.
@@ -14,10 +12,6 @@ namespace Engine
 	public static class Extensions
 	{
 		/// <summary>
-		/// The type of limitation used by <see cref="Limit(float, float, float, Limitation)"/> and <see cref="Limit(int, int, int, Limitation)"/>.
-		/// </summary>
-		public enum Limitation { ClosestBound, Overflow }
-		/// <summary>
 		/// The type of rounding direction used by <see cref="Round"/>.
 		/// </summary>
 		public enum RoundWay { Closest, Up, Down }
@@ -25,19 +19,7 @@ namespace Engine
 		/// The prefered case when the number is in the middle (ends on '5' or on '.5') and the direction is <see cref="RoundWay.Closest"/>.
 		/// This is used by <see cref="Round"/>.
 		/// </summary>
-		public enum RoundWhenMiddle { TowardEven, AwayFromZero, TowardZero, TowardNegativeInfinity, TowardPositiveInfinity }
-		/// <summary>
-		/// The type of size convertion from one size unit to another. This is used by <see cref="ToDataSize"/>.
-		/// </summary>
-		public enum SizeConvertion
-		{
-			Bit_Byte, Bit_KB,
-			Byte_Bit, Byte_KB, Byte_MB,
-			KB_Bit, KB_Byte, KB_MB, KB_GB,
-			MB_Byte, MB_KB, MB_GB, MB_TB,
-			GB_KB, GB_MB, GB_TB,
-			TB_MB, TB_GB
-		}
+		public enum RoundMiddle { TowardEven, AwayFromZero, TowardZero, TowardNegativeInfinity, TowardPositiveInfinity }
 		/// <summary>
 		/// The type of number animations used by <see cref="AnimateUnit"/>. Also known as 'easing functions'.
 		/// </summary>
@@ -55,92 +37,6 @@ namespace Engine
 		/// The type of number animation direction used by <see cref="AnimateUnit"/>.
 		/// </summary>
 		public enum AnimationCurve { Backward, Forward, BackwardThenForward }
-
-		/// <summary>
-		/// The horizontal directions in the world.<br></br>
-		/// # # #<br></br>
-		/// 1 # 0<br></br>
-		/// # # #<br></br>
-		/// </summary>
-		public enum DirectionH { Right, Left }
-		/// <summary>
-		/// The vertical directions in the world.<br></br>
-		/// # 1 #<br></br>
-		/// # # #<br></br>
-		/// # 0 #<br></br>
-		/// </summary>
-		public enum DirectionV { Down, Up }
-		/// <summary>
-		/// The 4 directions in the world.<br></br>
-		/// # 3 #<br></br>
-		/// 2 # 0<br></br>
-		/// # 1 #<br></br>
-		/// </summary>
-		public enum Direction4 { Right, Down, Left, Up }
-		/// <summary>
-		/// The 4 directions in the world + their diagonals.<br></br>
-		/// 5 6 7<br></br>
-		/// 4 # 0<br></br>
-		/// 3 2 1<br></br>
-		/// </summary>
-		public enum Direction8 { Right, DownRight, Down, DownLeft, Left, UpLeft, Up, UpRight }
-
-		/// <summary>
-		/// Converts a <see cref="DirectionH"/> to a 360 degrees angle and returns it.
-		/// </summary>
-		public static float ToAngle(this DirectionH direction)
-		{
-			return ((int)direction) * 180f;
-		}
-		/// <summary>
-		/// Converts a <see cref="DirectionV"/> to a 360 degrees angle and returns it.
-		/// </summary>
-		public static float ToAngle(this DirectionV direction)
-		{
-			return ((int)direction) * 180f + 90f;
-		}
-		/// <summary>
-		/// Converts a <see cref="Direction4"/> to a 360 degrees angle and returns it.
-		/// </summary>
-		public static float ToAngle(this Direction4 direction)
-		{
-			return ((int)direction) * 90f;
-		}
-		/// <summary>
-		/// Converts a <see cref="Direction8"/> to a 360 degrees angle and returns it.
-		/// </summary>
-		public static float ToAngle(this Direction8 direction)
-		{
-			return ((int)direction) * 45f;
-		}
-		/// <summary>
-		/// Converts a <see cref="Direction4"/> to a directional unit (normalized) <see cref="Vector2"/> and returns it.
-		/// </summary>
-		public static Vector2 ToDirection(this Direction4 direction)
-		{
-			return ToAngle(direction).ToDirection();
-		}
-		/// <summary>
-		/// Converts a <see cref="Direction8"/> to a directional unit (normalized) <see cref="Vector2"/> and returns it.
-		/// </summary>
-		public static Vector2 ToDirection(this Direction8 direction)
-		{
-			return ToAngle(direction).ToDirection();
-		}
-		/// <summary>
-		/// Converts a <see cref="DirectionH"/> to a directional unit (normalized) <see cref="Vector2"/> and returns it.
-		/// </summary>
-		public static Vector2 ToDirection(this DirectionH direction)
-		{
-			return ToAngle(direction).ToDirection();
-		}
-		/// <summary>
-		/// Converts a <see cref="DirectionV"/> to a directional unit (normalized) <see cref="Vector2"/> and returns it.
-		/// </summary>
-		public static Vector2 ToDirection(this DirectionV direction)
-		{
-			return ToAngle(direction).ToDirection();
-		}
 
 		/// <summary>
 		/// Returns true only the first time a <paramref name="condition"/> is <see langword="true"/>.
@@ -254,7 +150,7 @@ namespace Engine
 		/// Puts <paramref name="text"/> to the right with a set amount of <paramref name="spaces"/>
 		/// if they are more than the <paramref name="text"/>'s length.<br></br>
 		/// </summary>
-		public static string Align(this string text, int spaces)
+		public static string Pad(this string text, int spaces)
 		{
 			return string.Format("{0," + spaces + "}", text);
 		}
@@ -331,13 +227,13 @@ namespace Engine
 		}
 		/// <summary>
 		/// Transforms a <paramref name="progress"/> ranged [0-1] to an animated progress acording to an <paramref name="animation"/>
-		/// and a <paramref name="curve"/>. The animation might be <paramref name="repeated"/> (if the provided progress is outside of the range [0-1].
+		/// and a <paramref name="curve"/>. The animation might be <paramref name="isRepeated"/> (if the provided progress is outside of the range [0-1].
 		/// This is also known as easing functions.
 		/// </summary>
-		public static float Animate(this float progress, Animation animation, AnimationCurve curve, bool repeated = false)
+		public static float Animate(this float progress, Animation animation, AnimationCurve curve, bool isRepeated = false)
 		{
 			var result = 0f;
-			var x = progress.Limit(0, 1, repeated ? Limitation.Overflow : Limitation.ClosestBound);
+			var x = progress.Limit(0, 1, isRepeated);
 			switch(animation)
 			{
 				case Animation.BendWeak:
@@ -411,12 +307,17 @@ namespace Engine
 		/// - Example for this: Range [0 - 10], (0 = 10). So <paramref name="number"/> = -1 would result in 9. Putting the range [0 - 11] would give the "real" inclusive
 		/// [0 - 10] range.<br></br> Therefore <paramref name="number"/> = <paramref name="rangeB"/> would result in <paramref name="rangeA"/> but not vice versa.
 		/// </summary>
-		public static float Limit(this float number, float rangeA, float rangeB, Limitation limitation = Limitation.ClosestBound)
+		public static float Limit(this float number, float rangeA, float rangeB, bool isOverflowing = false)
 		{
 			if(rangeA > rangeB)
 				Swap(ref rangeA, ref rangeB);
 
-			if(limitation == Limitation.ClosestBound)
+			if(isOverflowing)
+			{
+				var d = rangeB - rangeA;
+				return ((number - rangeA) % d + d) % d + rangeA;
+			}
+			else
 			{
 				if(number < rangeA)
 					return rangeA;
@@ -424,19 +325,13 @@ namespace Engine
 					return rangeB;
 				return number;
 			}
-			else if(limitation == Limitation.Overflow)
-			{
-				var d = rangeB - rangeA;
-				return ((number - rangeA) % d + d) % d + rangeA;
-			}
-			return float.NaN;
 		}
 		/// <summary>
-		/// Ensures a <paramref name="number"/> is <paramref name="signed"/> and returns the result.
+		/// Ensures a <paramref name="number"/> is <paramref name="isSigned"/> and returns the result.
 		/// </summary>
-		public static float Sign(this float number, bool signed)
+		public static float Sign(this float number, bool isSigned)
 		{
-			return signed ? -MathF.Abs(number) : MathF.Abs(number);
+			return isSigned ? -MathF.Abs(number) : MathF.Abs(number);
 		}
 		/// <summary>
 		/// Calculates <paramref name="number"/>'s precision (amount of digits after the decimal point) and returns it.
@@ -452,7 +347,7 @@ namespace Engine
 		/// May take into account a certain <paramref name="priority"/>.
 		/// </summary>
 		public static float Round(this float number, float precision = 0, RoundWay toward = RoundWay.Closest,
-			RoundWhenMiddle priority = RoundWhenMiddle.AwayFromZero)
+			RoundMiddle priority = RoundMiddle.AwayFromZero)
 		{
 			precision = (int)precision.Limit(0, 5);
 
@@ -465,39 +360,11 @@ namespace Engine
 					var digit = toward == RoundWay.Down ? "1" : "9";
 					numStr = numStr.Remove(numStr.Length - 1);
 					numStr = $"{numStr}{digit}";
-					number = float.Parse(numStr);
+					number = numStr.ToNumber();
 				}
 			}
 
 			return MathF.Round(number, (int)precision, (MidpointRounding)priority);
-		}
-		/// <summary>
-		/// Converts a <paramref name="number"/> from <paramref name="sizeConvertion"/> and returns it.
-		/// </summary>
-		public static float ToDataSize(this float number, SizeConvertion sizeConvertion)
-		{
-			return sizeConvertion switch
-			{
-				SizeConvertion.Bit_Byte => number / 8,
-				SizeConvertion.Bit_KB => number / 8000,
-				SizeConvertion.Byte_Bit => number * 8,
-				SizeConvertion.Byte_KB => number / 1024,
-				SizeConvertion.Byte_MB => number / 1_048_576,
-				SizeConvertion.KB_Bit => number * 8000,
-				SizeConvertion.KB_Byte => number * 1024,
-				SizeConvertion.KB_MB => number / 1024,
-				SizeConvertion.KB_GB => number / 1_048_576,
-				SizeConvertion.MB_Byte => number * 1_048_576,
-				SizeConvertion.MB_KB => number * 1024,
-				SizeConvertion.MB_GB => number / 1024,
-				SizeConvertion.MB_TB => number / 1_048_576,
-				SizeConvertion.GB_KB => number * 1_048_576,
-				SizeConvertion.GB_MB => number * 1024,
-				SizeConvertion.GB_TB => number / 1024,
-				SizeConvertion.TB_MB => number * 1_048_576,
-				SizeConvertion.TB_GB => number * 1024,
-				_ => default,
-			};
 		}
 		/// <summary>
 		/// Returns whether <paramref name="number"/> is in range [<paramref name="rangeA"/> - <paramref name="rangeB"/>].
@@ -515,21 +382,19 @@ namespace Engine
 		/// Moves a <paramref name="number"/> in the direction of <paramref name="speed"/>. May be <paramref name="fpsDependent"/>
 		/// (see <see cref="Time.Delta"/> for info). The result is then returned.
 		/// </summary>
-		public static float Move(this float number, float speed, bool fpsDependent = true)
+		public static float Move(this float number, float speed, float deltaTime = 1)
 		{
-			if(fpsDependent)
-				speed *= Time.Delta;
-			return number + speed;
+			return number + speed * deltaTime;
 		}
 		/// <summary>
 		/// Moves a <paramref name="number"/> toward a <paramref name="targetNumber"/> with <paramref name="speed"/>. May be
 		/// <paramref name="fpsDependent"/> (see <see cref="Time.Delta"/> for info).
 		/// The calculation ensures not to pass the <paramref name="targetNumber"/>. The result is then returned.
 		/// </summary>
-		public static float MoveToTarget(this float number, float targetNumber, float speed, bool fpsDependent = true)
+		public static float MoveToTarget(this float number, float targetNumber, float speed, float deltaTime = 1)
 		{
 			var goingPos = number < targetNumber;
-			var result = Move(number, goingPos ? Sign(speed, false) : Sign(speed, true), fpsDependent);
+			var result = Move(number, goingPos ? Sign(speed, false) : Sign(speed, true), deltaTime);
 
 			if(goingPos && result > targetNumber)
 				return targetNumber;
@@ -555,7 +420,7 @@ namespace Engine
 		/// taking the closest direction. May be <paramref name="fpsDependent"/> (see <see cref="Time.Delta"/> for info).
 		/// The calculation ensures not to pass the <paramref name="targetAngle"/>. The result is then returned.
 		/// </summary>
-		public static float MoveToAngle(this float angle, float targetAngle, float speed, bool fpsDependent = true)
+		public static float MoveToAngle(this float angle, float targetAngle, float speed, float deltaTime = 1)
 		{
 			angle = Wrap(angle, 360);
 			targetAngle = Wrap(targetAngle, 360);
@@ -565,12 +430,12 @@ namespace Engine
 			// stops the rotation with an else when close enough
 			// prevents the rotation from staying behind after the stop
 			var checkedSpeed = speed;
-			if(fpsDependent) checkedSpeed *= Time.Delta;
+			checkedSpeed *= deltaTime;
 			if(Math.Abs(difference) < checkedSpeed) angle = targetAngle;
-			else if(difference >= 0 && difference < 180) angle = Move(angle, -speed, fpsDependent);
-			else if(difference >= -180 && difference < 0) angle = Move(angle, speed, fpsDependent);
-			else if(difference >= -360 && difference < -180) angle = Move(angle, -speed, fpsDependent);
-			else if(difference >= 180 && difference < 360) angle = Move(angle, speed, fpsDependent);
+			else if(difference >= 0 && difference < 180) angle = Move(angle, -speed, deltaTime);
+			else if(difference >= -180 && difference < 0) angle = Move(angle, speed, deltaTime);
+			else if(difference >= -360 && difference < -180) angle = Move(angle, -speed, deltaTime);
+			else if(difference >= 180 && difference < 360) angle = Move(angle, speed, deltaTime);
 
 			// detects speed greater than possible
 			// prevents jiggle when passing 0-360 & 360-0 | simple to fix yet took me half a day
@@ -610,7 +475,7 @@ namespace Engine
 		/// <summary>
 		/// Converts a 360 degrees <paramref name="angle"/> into a normalized <see cref="Vector2"/> direction then returns the result.
 		/// </summary>
-		public static Vector2 ToDirection(this float angle)
+		public static (float, float) ToDirection(this float angle)
 		{
 			//Angle to Radians : (Math.PI / 180) * angle
 			//Radians to Vector2 : Vector2.x = cos(angle) ; Vector2.y = sin(angle)
@@ -618,7 +483,7 @@ namespace Engine
 			var rad = MathF.PI / 180 * angle;
 			var dir = new Vector2(MathF.Cos(rad), MathF.Sin(rad));
 
-			return new(dir.X, dir.Y);
+			return (dir.X, dir.Y);
 		}
 		/// <summary>
 		/// Converts <paramref name="radians"/> to a 360 degrees angle and returns the result.
@@ -633,43 +498,6 @@ namespace Engine
 		public static float ToRadians(this float degrees)
 		{
 			return (MathF.PI / 180f) * degrees;
-		}
-		/// <summary>
-		/// Converts a 360 degrees angle to a <see cref="Direction4"/> and returns it.
-		/// </summary>
-		public static Direction4 ToDirection4(this float angle)
-		{
-			var a = (int)(angle.Wrap(360) / 90f).Round();
-			if(a >= Enum.GetNames<Direction4>().Length)
-				a = 0;
-			return (Direction4)a;
-
-		}
-		/// <summary>
-		/// Converts a 360 degrees angle to a <see cref="Direction4"/> and returns it.
-		/// </summary>
-		public static Direction8 ToDirection8(this float angle)
-		{
-			var a = (int)(angle.Wrap(360) / 45f).Round();
-			if(a >= Enum.GetNames<Direction8>().Length)
-				a = 0;
-			return (Direction8)a;
-		}
-		/// <summary>
-		/// Converts a 360 degrees angle to a <see cref="DirectionH"/> and returns it.
-		/// </summary>
-		public static DirectionH ToDirectionH(this float angle)
-		{
-			var a = angle.Wrap(360);
-			return a.IsBetween(90, 270) ? DirectionH.Left : DirectionH.Right;
-		}
-		/// <summary>
-		/// Converts a 360 degrees angle to a <see cref="DirectionV"/> and returns it.
-		/// </summary>
-		public static DirectionV ToDirectionV(this float angle)
-		{
-			var a = angle.Wrap(360);
-			return a.IsBetween(0, 180) ? DirectionV.Down : DirectionV.Up;
 		}
 
 		/// <summary>
@@ -756,19 +584,20 @@ namespace Engine
 		/// Moves a <paramref name="point"/> in <paramref name="direction"/> with <paramref name="speed"/>. May be <paramref name="fpsDependent"/>
 		/// (see <see cref="Time.Delta"/> for info). The result is then returned.
 		/// </summary>
-		public static Vector2 MoveInDirection(this Vector2 point, Vector2 direction, float speed, bool fpsDependent = true)
+		public static Vector2 MoveInDirection(this Vector2 point, Vector2 direction, float speed, float deltaTime = 1)
 		{
-			point.X += direction.X * speed * (fpsDependent ? Time.Delta : 1);
-			point.Y += direction.Y * speed * (fpsDependent ? Time.Delta : 1);
+			point.X += direction.X * speed * deltaTime;
+			point.Y += direction.Y * speed * deltaTime;
 			return new(point.X, point.Y);
 		}
 		/// <summary>
 		/// Moves a <paramref name="point"/> at a 360 degrees <paramref name="angle"/> with <paramref name="speed"/>. May be
 		/// <paramref name="fpsDependent"/> (see <see cref="Time.Delta"/> for info). The result is then returned.
 		/// </summary>
-		public static Vector2 MoveAtAngle(this Vector2 point, float angle, float speed, bool fpsDependent = true)
+		public static Vector2 MoveAtAngle(this Vector2 point, float angle, float speed, float deltaTime = 1)
 		{
-			var result = MoveInDirection(point, Vector2.Normalize(angle.Wrap(360).ToDirection()), speed, fpsDependent);
+			var dir = angle.Wrap(360).ToDirection();
+			var result = MoveInDirection(point, Vector2.Normalize(new(dir.Item1, dir.Item2)), speed, deltaTime);
 			return result;
 		}
 		/// <summary>
@@ -776,11 +605,11 @@ namespace Engine
 		/// <paramref name="fpsDependent"/> (see <see cref="Time.Delta"/> for info). The calculation ensures not to pass the
 		/// <paramref name="targetPoint"/>. The result is then returned.
 		/// </summary>
-		public static Vector2 MoveToTarget(this Vector2 point, Vector2 targetPoint, float speed, bool fpsDependent = true)
+		public static Vector2 MoveToTarget(this Vector2 point, Vector2 targetPoint, float speed, float deltaTime = 1)
 		{
-			var result = point.MoveAtAngle(point.Angle(targetPoint), speed, fpsDependent);
+			var result = point.MoveAtAngle(point.Angle(targetPoint), speed, deltaTime);
 
-			speed *= fpsDependent ? Time.Delta : 1;
+			speed *= deltaTime;
 			return Vector2.Distance(result, targetPoint) < speed * 1.1f ? targetPoint : result;
 		}
 		/// <summary>
@@ -793,33 +622,10 @@ namespace Engine
 			point.Y = percent.Y.Map(0, 100, point.Y, targetPoint.Y);
 			return point;
 		}
-		/// <summary>
-		/// Converts a directional <see cref="Vector2"/> to a <see cref="Direction4"/> and returns it.
-		/// </summary>
-		public static Direction4 ToDirection4(this Vector2 direction)
+		public static (int, int) ToCoords(this int index, int width, int height)
 		{
-			return direction.ToAngle().ToDirection4();
-		}
-		/// <summary>
-		/// Converts a directional <see cref="Vector2"/> to a <see cref="Direction8"/> and returns it.
-		/// </summary>
-		public static Direction8 ToDirection8(this Vector2 direction)
-		{
-			return direction.ToAngle().ToDirection8();
-		}
-		/// <summary>
-		/// Converts a directional <see cref="Vector2"/> to a <see cref="DirectionH"/> and returns it.
-		/// </summary>
-		public static DirectionH ToDirectionH(this Vector2 direction)
-		{
-			return direction.ToAngle().ToDirectionH();
-		}
-		/// <summary>
-		/// Converts a directional <see cref="Vector2"/> to a <see cref="DirectionV"/> and returns it.
-		/// </summary>
-		public static DirectionV ToDirectionV(this Vector2 direction)
-		{
-			return direction.ToAngle().ToDirectionV();
+			index = index.Limit(0, width * height - 1);
+			return (index % width, index / width);
 		}
 
 		/// <summary>
@@ -852,9 +658,9 @@ namespace Engine
 		/// - Example for this: Range [0 - 10], (0 = 10). So <paramref name="number"/> = -1 would result in 9. Putting the range [0 - 11] would give the "real" inclusive
 		/// [0 - 10] range.<br></br> Therefore <paramref name="number"/> = <paramref name="rangeB"/> would result in <paramref name="rangeA"/> but not vice versa.
 		/// </summary>
-		public static int Limit(this int number, int rangeA, int rangeB, Limitation limitation = Limitation.ClosestBound)
+		public static int Limit(this int number, int rangeA, int rangeB, bool isOverflowing = false)
 		{
-			return (int)Limit((float)number, rangeA, rangeB, limitation);
+			return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
 		}
 		/// <summary>
 		/// Ensures a <paramref name="number"/> is <paramref name="signed"/> and returns the result.
@@ -876,14 +682,9 @@ namespace Engine
 		public static int Map(this int number, int a1, int a2, int b1, int b2) =>
 			(int)Map((float)number, a1, a2, b1, b2);
 
-		public static Vector2i ToCoords(this int index, int width, int height)
+		public static int ToIndex(this (int, int) coords, int width, int height)
 		{
-			index = index.Limit(0, width * height - 1);
-			return new(index % width, index / width);
-		}
-		public static int ToIndex(this Vector2i coords, int width, int height)
-		{
-			return coords.X.Limit(0, width - 1) * width + coords.Y.Limit(0, height - 1);
+			return coords.Item1.Limit(0, width - 1) * width + coords.Item2.Limit(0, height - 1);
 		}
 
 		#region Backend

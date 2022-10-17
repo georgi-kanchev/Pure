@@ -1,9 +1,12 @@
-﻿using SFML.Graphics;
-using SFML.System;
-using SFML.Window;
+﻿using SFML.Graphics; // textures and vertices etc.
+using SFML.System; // vectors etc.
+using SFML.Window; // window etc.
 
-namespace Engine
+namespace Purity.Engine
 {
+	/// <summary>
+	/// Uses <see cref="SFML"/> to create a window and display the provided cells on it.
+	/// </summary>
 	public class Window
 	{
 		public bool IsOpen => window != null && window.IsOpen;
@@ -31,7 +34,6 @@ namespace Engine
 			size.Y = (int)desktopH / scale;
 			title = "Purity";
 
-			prevWindowSz = new(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
 			window = new(new VideoMode(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), title);
 			window.Closed += (s, e) => window.Close();
 			window.Resized += (s, e) =>
@@ -46,7 +48,6 @@ namespace Engine
 				view.Size = new(e.Width, e.Height);
 				view.Center = new(e.Width / 2f, e.Height / 2f);
 				window.SetView(view);
-				prevWindowSz = window.Size;
 			};
 
 			graphics = new(graphicsPath);
@@ -54,7 +55,7 @@ namespace Engine
 			vertices = new Vertex[size.X * size.Y * 4];
 			cells = new Cell[size.X, size.Y];
 
-			Fill(27, Color.White);
+			Fill(27, byte.MaxValue);
 		}
 
 		public void Update()
@@ -68,7 +69,7 @@ namespace Engine
 			window?.Display();
 		}
 
-		public void Fill(int cell, Color color)
+		public void Fill(int cell, byte color)
 		{
 			if(cells == null)
 				return;
@@ -77,23 +78,23 @@ namespace Engine
 				for(int x = 0; x < size.X; x++)
 					cells[x, y] = new() { ID = cell, Color = color };
 		}
-		public void Set(int x, int y, int cell, Color color)
+		public void Set(int x, int y, int cell, byte color)
 		{
 			if(cells == null)
 				return;
 
-			x = x.Limit(0, size.X - 1);
-			y = y.Limit(0, size.Y - 1);
+			x = Limit(x, 0, size.X - 1);
+			y = Limit(y, 0, size.Y - 1);
 
 			cells[x, y] = new() { ID = cell, Color = color };
 		}
-		public void Set(int cellIndex, int cell, Color color)
+		public void SetAtIndex(int index, int cell, byte color)
 		{
 			if(cells == null)
 				return;
 
-			var coords = cellIndex.ToCoords(size.X, size.Y);
-			cells[coords.X, coords.Y] = new() { ID = cell, Color = color };
+			var coords = IndexToCoords(index, size.X, size.Y);
+			cells[coords.Item1, coords.Item2] = new() { ID = cell, Color = color };
 		}
 		public void DisplayText(string text, int x, int y)
 		{
@@ -109,10 +110,10 @@ namespace Engine
 			if(cells == null)
 				return;
 
-			startX = startX.Limit(0, size.X - 1);
-			startY = startY.Limit(0, size.Y - 1);
-			endX = endX.Limit(0, size.X - 1);
-			endY = endY.Limit(0, size.Y - 1);
+			startX = Limit(startX, 0, size.X - 1);
+			startY = Limit(startY, 0, size.Y - 1);
+			endX = Limit(endX, 0, size.X - 1);
+			endY = Limit(endY, 0, size.Y - 1);
 
 			for(int y = startY; y < endY + 1; y++)
 				for(int x = startX; x < endX + 1; x++)
@@ -122,8 +123,8 @@ namespace Engine
 		#region Backend
 		private class Cell
 		{
-			public Color Color { get; set; }
-			public int ID { get; set; }
+			public byte Color;
+			public int ID;
 		}
 
 		private readonly Vertex[]? vertices;
@@ -132,7 +133,6 @@ namespace Engine
 		private string title;
 		private Vector2i size;
 		private readonly int tileSize;
-		private Vector2u prevWindowSz;
 
 		private readonly Cell[,] cells;
 		private readonly Texture graphics;
@@ -150,9 +150,9 @@ namespace Engine
 				for(int x = 0; x < size.X; x++)
 				{
 					var cell = cells[x, y];
-					var color = cell.Color.ToSFML();
-					var texCoords = cell.ID.ToCoords(27, 27) * tileSize;
-					var tx = new Vector2f(texCoords.X, texCoords.Y);
+					var color = ByteToColor(cell.Color);
+					var texCoords = IndexToCoords(cell.ID, 27, 27);
+					var tx = new Vector2f(texCoords.Item1 * tileSize, texCoords.Item2 * tileSize);
 					var i = (y * size.X + x) * 4;
 
 					vertices[i + 0] = new(new(x * cellWidth, y * cellHeight), color, tx);
@@ -161,6 +161,33 @@ namespace Engine
 					vertices[i + 3] = new(new(x * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(0, tileSize));
 				}
 			return vertices;
+		}
+
+		private static int Limit(int number, int rangeA, int rangeB)
+		{
+			if(number < rangeA)
+				return rangeA;
+			else if(number > rangeB)
+				return rangeB;
+			return number;
+		}
+		private static (int, int) IndexToCoords(int index, int width, int height)
+		{
+			index = index < 0 ? 0 : index;
+			index = index > width * height - 1 ? width * height - 1 : index;
+
+			return (index % width, index / width);
+		}
+		private static Color ByteToColor(byte color)
+		{
+			var binary = Convert.ToString(color, 2).PadLeft(8, '0');
+			var r = binary[0..3];
+			var g = binary[3..6];
+			var b = binary[6..8];
+			var red = (byte)(Convert.ToByte(r, 2) * byte.MaxValue / 7);
+			var green = (byte)(Convert.ToByte(g, 2) * byte.MaxValue / 7);
+			var blue = (byte)(Convert.ToByte(b, 2) * byte.MaxValue / 3);
+			return new(red, green, blue);
 		}
 		#endregion
 	}
