@@ -8,8 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Engine\Engine.csproj" />
+    <ProjectReference Include="..\Engine\Graphics.csproj" />
     <ProjectReference Include="..\Utilities\Utilities.csproj" />
+    <ProjectReference Include="C:\Users\GoKsTaR\Desktop\Graphics\Graphics.csproj" />
   </ItemGroup>
 
 </Project>

@@ -107,7 +107,7 @@
 		}
 		public static implicit operator (int, int)(Point vector)
 		{
-			return ((int)vector.Value.Item1, (int)vector.Value.Item2);
+			return ((int)MathF.Round(vector.Value.Item1), (int)MathF.Round(vector.Value.Item2));
 		}
 		public static implicit operator Point((float, float) value)
 		{

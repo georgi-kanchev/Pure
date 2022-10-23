@@ -82,7 +82,7 @@
 		}
 		public static implicit operator (int, int)(Direction direction)
 		{
-			return ((int)direction.Value.Item1, (int)direction.Value.Item2);
+			return ((int)MathF.Round(direction.Value.Item1), (int)MathF.Round(direction.Value.Item2));
 		}
 		public static implicit operator Direction((float, float) value)
 		{

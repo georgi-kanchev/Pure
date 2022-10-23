@@ -67,7 +67,7 @@
 		public static implicit operator (int, int)(Angle angle)
 		{
 			var rad = MathF.PI / 180 * angle;
-			return ((int)MathF.Cos(rad), (int)MathF.Sin(rad));
+			return ((int)MathF.Round(MathF.Cos(rad)), (int)MathF.Round(MathF.Sin(rad)));
 		}
 		public static implicit operator Angle((float, float) direction)
 		{
@@ -85,7 +85,7 @@
 		}
 		public static implicit operator int(Angle angle)
 		{
-			return (int)angle.value;
+			return (int)MathF.Round(angle.value);
 		}
 		public static implicit operator Angle(float value)
 		{

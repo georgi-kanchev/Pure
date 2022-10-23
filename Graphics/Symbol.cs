@@ -1,4 +1,4 @@
-﻿namespace Engine
+﻿namespace Purity.Graphics
 {
 	public enum Symbol
 	{
