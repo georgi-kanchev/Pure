@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestGame", "C:\Users\GoKsTa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utilities", "C:\Users\GoKsTaR\Desktop\Utilities\Utilities.csproj", "{98A0B2D0-9A79-4299-9DAF-4955F4894864}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tools", "Tools\Tools.csproj", "{AFF7499F-3270-4A99-BA33-C32368CDE7F0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{98A0B2D0-9A79-4299-9DAF-4955F4894864}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{98A0B2D0-9A79-4299-9DAF-4955F4894864}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{98A0B2D0-9A79-4299-9DAF-4955F4894864}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFF7499F-3270-4A99-BA33-C32368CDE7F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFF7499F-3270-4A99-BA33-C32368CDE7F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFF7499F-3270-4A99-BA33-C32368CDE7F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFF7499F-3270-4A99-BA33-C32368CDE7F0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
