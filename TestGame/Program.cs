@@ -1,4 +1,5 @@
 ﻿using Purity.Engine;
+using Purity.Utilities;
 
 namespace TestGame
 {
@@ -7,6 +8,7 @@ namespace TestGame
 		static void Main()
 		{
 			var window = new Window(scale: 60);
+			var time = new Time();
 
 			for(int i = 0; i < window.Height * window.Width; i++)
 			{
@@ -15,6 +17,7 @@ namespace TestGame
 
 			while(window.IsOpen)
 			{
+				time.Update();
 				window.Update();
 			}
 		}
