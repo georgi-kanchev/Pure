@@ -1,4 +1,6 @@
-﻿namespace Purity.Utilities
+﻿using System.Diagnostics;
+
+namespace Purity.Utilities
 {
 	/// <summary>
 	/// A class that uses <see cref="System.DateTime"/> to track time and calculate time related values/timers.
@@ -72,12 +74,13 @@
 		/// </summary>
 		public void Update()
 		{
-			var prevClock = Clock;
+			var delta = (float)dt.Elapsed.TotalSeconds;
+			Delta = delta.Limit(0, MathF.Max(0, MaxDelta));
+			dt.Restart();
+
 			Clock = Now;
-			var delta = Clock - (prevClock == 0 ? Clock : prevClock);
-			GameClock += delta;
-			updateFPS += delta;
-			Delta = (Delta + delta).Limit(0, MathF.Max(0, MaxDelta));
+			GameClock += Delta;
+			updateFPS += Delta;
 			if(updateFPS > UPDATE_FPS_EVERY_X_SEC)
 			{
 				updateFPS = 0;
@@ -96,12 +99,12 @@
 				if(timer.IsDisposed)
 					toBeRemoved.Add(timer);
 			}
-
 			for(int i = 0; i < toBeRemoved.Count; i++)
 			{
 				var timer = toBeRemoved[i];
 				timers.Remove(timer);
 			}
+
 		}
 
 		/// <summary>
@@ -267,10 +270,10 @@
 
 		private static readonly List<Timer> timers = new();
 		private float updateFPS;
+		private readonly Stopwatch dt = new();
 		private const float UPDATE_FPS_EVERY_X_SEC = 0.1f;
 
 		private static float Now => (float)DateTime.Now.TimeOfDay.TotalSeconds;
 		#endregion
 	}
 }
-

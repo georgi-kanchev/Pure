@@ -7,8 +7,8 @@ namespace TestGame
 	{
 		static void Main()
 		{
-			var window = new Window(scale: 60);
-			var layer = new Layer(window.CellCount);
+			var window = new Window();
+			var layer = new Layer((32, 18));
 			var time = new Time();
 
 			for(uint i = 0; i < layer.CellTotalCount; i++)
@@ -16,12 +16,15 @@ namespace TestGame
 				layer.SetCell(i, i, (byte)i);
 			}
 
+			var x = 0f;
 			while(window.IsOpen)
 			{
 				time.Update();
 
 				window.DrawBegin();
-				window.Draw(layer.Cells, layer.Colors);
+				window.DrawLayer(layer.Cells, layer.Colors, (8, 8));
+				window.DrawSprite((x, 3f), 27, Color.Red);
+				x += time.Delta;
 				window.DrawEnd();
 			}
 		}

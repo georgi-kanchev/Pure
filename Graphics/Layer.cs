@@ -2,8 +2,8 @@
 {
 	public class Layer
 	{
-		public uint[] Cells { get; }
-		public byte[] Colors { get; }
+		public uint[,] Cells { get; }
+		public byte[,] Colors { get; }
 
 		public uint CellTotalCount => CellCount.Item1 * CellCount.Item2;
 		public (uint, uint) CellCount { get; }
@@ -11,8 +11,8 @@
 		public Layer((uint, uint) cellCount)
 		{
 			CellCount = cellCount;
-			Cells = new uint[CellTotalCount];
-			Colors = new byte[CellTotalCount];
+			Cells = new uint[cellCount.Item1, cellCount.Item2];
+			Colors = new byte[cellCount.Item1, cellCount.Item2];
 		}
 
 		public void Fill(uint cell, byte color)
@@ -20,26 +20,25 @@
 			for(uint y = 0; y < CellCount.Item2; y++)
 				for(uint x = 0; x < CellCount.Item1; x++)
 				{
-					var i = GetIndex(x, y);
-					Cells[i] = cell;
-					Colors[i] = color;
+					Cells[x, y] = cell;
+					Colors[x, y] = color;
 				}
 		}
 		public void SetCell(uint x, uint y, uint cell, byte color)
 		{
 			x = Math.Clamp(x, 0, CellCount.Item1 - 1);
 			y = Math.Clamp(y, 0, CellCount.Item2 - 1);
-			var i = GetIndex(x, y);
 
-			Cells[i] = cell;
-			Colors[i] = color;
+			Cells[x, y] = cell;
+			Colors[x, y] = color;
 		}
 		public void SetCell(uint index, uint cell, byte color)
 		{
 			var i = Math.Clamp(index, 0, CellTotalCount);
+			var coords = IndexToCoords(i);
 
-			Cells[i] = cell;
-			Colors[i] = color;
+			Cells[coords.Item1, coords.Item2] = cell;
+			Colors[coords.Item1, coords.Item2] = color;
 		}
 		/*
 		public void SetAtIndex(int index, int cell, byte color)

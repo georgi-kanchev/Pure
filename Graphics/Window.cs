@@ -18,34 +18,21 @@ namespace Purity.Graphics
 			set { title = value; window.SetTitle(title); }
 		}
 
-		public (uint, uint) CellCount { get; }
-		public uint TotalCellCount => CellCount.Item1 * CellCount.Item2;
-
-		public Window(string graphicsPath = "graphics.png", uint scale = 40)
+		public Window()
 		{
 			var desktopW = VideoMode.DesktopMode.Width;
 			var desktopH = VideoMode.DesktopMode.Height;
-			CellCount = (desktopW / scale, desktopH / scale);
 			title = "Purity";
 
-			window = new(new VideoMode(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT), title);
+			window = new(new VideoMode((uint)(desktopW * 0.65f), (uint)(desktopH * 0.65f)), title);
 			window.Closed += (s, e) => window.Close();
 			window.Resized += (s, e) =>
 			{
-				//var ratio = (float)desktopW / desktopH;
-				//if(prevWindowSz.Y != e.Height)
-				//	window.Size = new((uint)(e.Height * ratio), e.Height);
-				//else if(prevWindowSz.X != e.Width)
-				//	window.Size = new(e.Width, (uint)(e.Width / ratio));
-
 				var view = window.GetView();
 				view.Size = new(e.Width, e.Height);
 				view.Center = new(e.Width / 2f, e.Height / 2f);
 				window.SetView(view);
 			};
-
-			graphics = new(graphicsPath);
-			tileSize = (int)graphics.Size.X / GRAPHICS_CELL_SIZE;
 		}
 
 		public void DrawBegin()
@@ -53,13 +40,22 @@ namespace Purity.Graphics
 			window?.DispatchEvents();
 			window?.Clear();
 		}
-		public void Draw(uint[] cells, byte[] colors)
+		public void DrawLayer(uint[,] cells, byte[,] colors, (uint, uint) tileSize, string path = "graphics.png")
 		{
-			if(window == null || cells == null || colors == null || cells.Length != TotalCellCount || colors.Length != TotalCellCount)
+			if(window == null || path == null || cells == null || colors == null || cells.Length != colors.Length)
 				return;
 
-			var verts = GetGridVertices(cells, colors);
-			window?.Draw(verts, PrimitiveType.Quads, new(graphics));
+			TryLoadGraphics(path);
+			var verts = GetLayerVertices(cells, colors, tileSize, path);
+			window?.Draw(verts, PrimitiveType.Quads, new(graphics[path]));
+		}
+		public void DrawSprite((float, float) position, uint cell, byte color)
+		{
+			if(window == null || prevDrawLayerGfxPath == null)
+				return;
+
+			var verts = GetFreeCellVertices(position, cell, color);
+			window?.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawLayerGfxPath]));
 		}
 		public void DrawEnd()
 		{
@@ -67,49 +63,91 @@ namespace Purity.Graphics
 		}
 
 		#region Backend
-		private const int DEFAULT_WINDOW_WIDTH = 1280, DEFAULT_WINDOW_HEIGHT = 720;
 		private string title;
-		private readonly int tileSize;
+		private string? prevDrawLayerGfxPath;
+		private (uint, uint) prevDrawLayerTileSz;
+		private (float, float) prevDrawLayerCellSz;
+		private (uint, uint) prevDrawLayerCellCount;
 
-		private readonly Texture graphics;
+		private readonly Dictionary<string, Texture> graphics = new();
 		private readonly RenderWindow window;
 
-		private Vertex[] GetGridVertices(uint[] cells, byte[] colors)
+		private void TryLoadGraphics(string path)
+		{
+			if(graphics.ContainsKey(path))
+				return;
+
+			graphics[path] = new(path);
+		}
+		private Vertex[] GetFreeCellVertices((float, float) position, uint cell, byte color)
+		{
+			if(prevDrawLayerGfxPath == null)
+				return Array.Empty<Vertex>();
+
+			var verts = new Vertex[4];
+			var cellWidth = prevDrawLayerCellSz.Item1;
+			var cellHeight = prevDrawLayerCellSz.Item2;
+			var tileSz = prevDrawLayerTileSz;
+			var texture = graphics[prevDrawLayerGfxPath];
+			var tileCount = (texture.Size.X / tileSz.Item1, texture.Size.Y / tileSz.Item2);
+			var texCoords = IndexToCoords(cell, tileCount);
+			var tx = new Vector2f(texCoords.Item1 * tileSz.Item1, texCoords.Item2 * tileSz.Item2);
+			var cellCount = prevDrawLayerCellCount;
+			var x = Map(position.Item1, 0, cellCount.Item1, 0, window.Size.X);
+			var y = Map(position.Item2, 0, cellCount.Item2, 0, window.Size.Y);
+			var c = ByteToColor(color);
+			var tl = new Vector2f(x, y);
+			var br = new Vector2f(x + cellWidth, y + cellHeight);
+
+			verts[0] = new(new(tl.X, tl.Y), c, tx);
+			verts[1] = new(new(br.X, tl.Y), c, tx + new Vector2f(tileSz.Item1, 0));
+			verts[2] = new(new(br.X, br.Y), c, tx + new Vector2f(tileSz.Item1, tileSz.Item2));
+			verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileSz.Item2));
+			return verts;
+		}
+		private Vertex[] GetLayerVertices(uint[,] cells, byte[,] colors, (uint, uint) tileSz, string path)
 		{
 			if(cells == null || window == null)
 				return Array.Empty<Vertex>();
 
-			var cellWidth = (float)window.Size.X / CellCount.Item1;
-			var cellHeight = (float)window.Size.Y / CellCount.Item2;
+			var cellWidth = (float)window.Size.X / cells.GetLength(0);
+			var cellHeight = (float)window.Size.Y / cells.GetLength(1);
+			var texture = graphics[path];
+			var tileCount = (texture.Size.X / tileSz.Item1, texture.Size.Y / tileSz.Item2);
 			var verts = new Vertex[cells.Length * 4];
 
-			for(uint y = 0; y < CellCount.Item2; y++)
-				for(uint x = 0; x < CellCount.Item1; x++)
+			// this cache is used for a potential sprite draw
+			prevDrawLayerGfxPath = path;
+			prevDrawLayerCellSz = (cellWidth, cellHeight);
+			prevDrawLayerTileSz = tileSz;
+			prevDrawLayerCellCount = ((uint)cells.GetLength(0), (uint)cells.GetLength(1));
+
+			for(uint y = 0; y < cells.GetLength(1); y++)
+				for(uint x = 0; x < cells.GetLength(0); x++)
 				{
-					var index = GetIndex(x, y);
-					var cell = cells[index];
-					var color = ByteToColor(colors[index]);
-					var texCoords = IndexToCoords(cell, 27, 27);
-					var tx = new Vector2f(texCoords.Item1 * tileSize, texCoords.Item2 * tileSize);
-					var i = (y * CellCount.Item1 + x) * 4;
+					var cell = cells[x, y];
+					var color = ByteToColor(colors[x, y]);
+					var texCoords = IndexToCoords(cell, tileCount);
+					var tx = new Vector2f(texCoords.Item1 * tileSz.Item1, texCoords.Item2 * tileSz.Item2);
+					var i = GetIndex(x, y, (uint)cells.GetLength(0)) * 4;
 
 					verts[i + 0] = new(new(x * cellWidth, y * cellHeight), color, tx);
-					verts[i + 1] = new(new((x + 1) * cellWidth, y * cellHeight), color, tx + new Vector2f(tileSize, 0));
-					verts[i + 2] = new(new((x + 1) * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(tileSize, tileSize));
-					verts[i + 3] = new(new(x * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(0, tileSize));
+					verts[i + 1] = new(new((x + 1) * cellWidth, y * cellHeight), color, tx + new Vector2f(tileSz.Item1, 0));
+					verts[i + 2] = new(new((x + 1) * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(tileSz.Item1, tileSz.Item2));
+					verts[i + 3] = new(new(x * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(0, tileSz.Item2));
 				}
 			return verts;
 		}
-		private static (uint, uint) IndexToCoords(uint index, uint width, uint height)
+		private static (uint, uint) IndexToCoords(uint index, (uint, uint) fieldSize)
 		{
 			index = index < 0 ? 0 : index;
-			index = index > width * height - 1 ? width * height - 1 : index;
+			index = index > fieldSize.Item1 * fieldSize.Item2 - 1 ? fieldSize.Item1 * fieldSize.Item2 - 1 : index;
 
-			return (index % width, index / width);
+			return (index % fieldSize.Item1, index / fieldSize.Item1);
 		}
-		private uint GetIndex(uint x, uint y)
+		private static uint GetIndex(uint x, uint y, uint width)
 		{
-			return y * CellCount.Item1 + x;
+			return y * width + x;
 		}
 		private static Color ByteToColor(byte color)
 		{
@@ -121,6 +159,11 @@ namespace Purity.Graphics
 			var green = (byte)(Convert.ToByte(g, 2) * byte.MaxValue / 7);
 			var blue = (byte)(Convert.ToByte(b, 2) * byte.MaxValue / 3);
 			return new(red, green, blue);
+		}
+		static float Map(float number, float a1, float a2, float b1, float b2)
+		{
+			var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
+			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
 		}
 		#endregion
 	}
