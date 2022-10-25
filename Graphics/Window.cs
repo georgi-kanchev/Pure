@@ -54,7 +54,7 @@ namespace Purity.Graphics
 			if(window == null || prevDrawLayerGfxPath == null)
 				return;
 
-			var verts = GetFreeCellVertices(position, cell, color);
+			var verts = GetSpriteVertices(position, cell, color);
 			window?.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawLayerGfxPath]));
 		}
 		public void DrawEnd()
@@ -79,7 +79,7 @@ namespace Purity.Graphics
 
 			graphics[path] = new(path);
 		}
-		private Vertex[] GetFreeCellVertices((float, float) position, uint cell, byte color)
+		private Vertex[] GetSpriteVertices((float, float) position, uint cell, byte color)
 		{
 			if(prevDrawLayerGfxPath == null)
 				return Array.Empty<Vertex>();
@@ -96,8 +96,9 @@ namespace Purity.Graphics
 			var x = Map(position.Item1, 0, cellCount.Item1, 0, window.Size.X);
 			var y = Map(position.Item2, 0, cellCount.Item2, 0, window.Size.Y);
 			var c = ByteToColor(color);
-			var tl = new Vector2f(x, y);
-			var br = new Vector2f(x + cellWidth, y + cellHeight);
+			var grid = ToGrid((x, y), (cellWidth / tileSz.Item1, cellHeight / tileSz.Item2));
+			var tl = new Vector2f(grid.Item1, grid.Item2);
+			var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
 
 			verts[0] = new(new(tl.X, tl.Y), c, tx);
 			verts[1] = new(new(br.X, tl.Y), c, tx + new Vector2f(tileSz.Item1, 0));
@@ -164,6 +165,22 @@ namespace Purity.Graphics
 		{
 			var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+		}
+		private (float, float) ToGrid((float, float) pos, (float, float) gridSize)
+		{
+			if(gridSize == default)
+				return pos;
+
+			var X = pos.Item1;
+			var Y = pos.Item2;
+
+			// this prevents -0 cells
+			var x = X - (X < 0 ? gridSize.Item1 : 0);
+			var y = Y - (Y < 0 ? gridSize.Item2 : 0);
+
+			x -= X % gridSize.Item1;
+			y -= Y % gridSize.Item2;
+			return new(x, y);
 		}
 		#endregion
 	}

@@ -15,6 +15,11 @@
 			Colors = new byte[cellCount.Item1, cellCount.Item2];
 		}
 
+		public uint GetCell((uint, uint) indices)
+		{
+			return IndicesAreValid(indices) ? Cells[indices.Item1, indices.Item2] : default;
+		}
+
 		public void Fill(uint cell, byte color)
 		{
 			for(uint y = 0; y < CellCount.Item2; y++)
@@ -24,11 +29,14 @@
 					Colors[x, y] = color;
 				}
 		}
-		public void SetCell(uint x, uint y, uint cell, byte color)
-		{
-			x = Math.Clamp(x, 0, CellCount.Item1 - 1);
-			y = Math.Clamp(y, 0, CellCount.Item2 - 1);
 
+		public void SetCell((uint, uint) indices, uint cell, byte color)
+		{
+			if(IndicesAreValid(indices) == false)
+				return;
+
+			var x = indices.Item1;
+			var y = indices.Item2;
 			Cells[x, y] = cell;
 			Colors[x, y] = color;
 		}
@@ -36,19 +44,14 @@
 		{
 			var i = Math.Clamp(index, 0, CellTotalCount);
 			var coords = IndexToCoords(i);
+			if(IndicesAreValid(coords) == false)
+				return;
 
 			Cells[coords.Item1, coords.Item2] = cell;
 			Colors[coords.Item1, coords.Item2] = color;
 		}
-		/*
-		public void SetAtIndex(int index, int cell, byte color)
-		{
-			if(cells == null)
-				return;
 
-			var coords = IndexToCoords(index, size.Item1, size.Item2);
-			cells[coords.Item1, coords.Item2] = new() { ID = cell, Color = color };
-		}
+		/*
 		public void DisplayText(string text, int x, int y)
 		{
 			for(int i = 0; i < text.Length; i++)
@@ -75,14 +78,6 @@
 		*/
 
 		#region Backend
-		private static int Limit(int number, int rangeA, int rangeB)
-		{
-			if(number < rangeA)
-				return rangeA;
-			else if(number > rangeB)
-				return rangeB;
-			return number;
-		}
 		private (uint, uint) IndexToCoords(uint index)
 		{
 			var width = CellCount.Item1;
@@ -95,6 +90,10 @@
 		private uint GetIndex(uint x, uint y)
 		{
 			return y * CellCount.Item1 + x;
+		}
+		private bool IndicesAreValid((uint, uint) indices)
+		{
+			return indices.Item1 < Cells.GetLength(0) && indices.Item2 < Cells.GetLength(1);
 		}
 		#endregion
 	}
