@@ -9,8 +9,6 @@ namespace Purity.Graphics
 	/// </summary>
 	public class Window
 	{
-		public const int GRAPHICS_CELL_SIZE = 26;
-
 		public bool IsOpen => window != null && window.IsOpen;
 		public string Title
 		{
@@ -35,7 +33,7 @@ namespace Purity.Graphics
 			};
 		}
 
-		public void DrawBegin()
+		public void DrawOn()
 		{
 			window?.DispatchEvents();
 			window?.Clear();
@@ -57,9 +55,45 @@ namespace Purity.Graphics
 			var verts = GetSpriteVertices(position, cell, color);
 			window?.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawLayerGfxPath]));
 		}
-		public void DrawEnd()
+		public void DrawParticles(byte color, params (float, float)[] positions)
+		{
+			if(window == null || positions == null || positions.Length == 0)
+				return;
+
+			var verts = GetParticlesVertices(color, positions);
+			window?.Draw(verts, PrimitiveType.Quads);
+		}
+		public void DrawOff()
 		{
 			window?.Display();
+		}
+
+		public (float, float) GetMousePosition((uint, uint) layerCellCount)
+		{
+			var pos = Mouse.GetPosition(window);
+			var x = Map(pos.X, 0, window.Size.X, 0, layerCellCount.Item1);
+			var y = Map(pos.Y, 0, window.Size.Y, 0, layerCellCount.Item2);
+			return (x, y);
+		}
+		public (int, int) GetHoveredCellIndicies((uint, uint) layerCellCount)
+		{
+			var mousePos = GetMousePosition(layerCellCount);
+			var x = MathF.Floor(mousePos.Item1);
+			var y = MathF.Floor(mousePos.Item2);
+			return ((int)x, (int)y);
+		}
+		public uint GetHoveredCell(uint[,] cells)
+		{
+			var w = (uint)cells.GetLength(0);
+			var h = (uint)cells.GetLength(1);
+			var indices = GetHoveredCellIndicies((w, h));
+			var x = indices.Item1;
+			var y = indices.Item2;
+
+			if(x < 0 || y < 0 || x >= w || y >= h)
+				return default;
+
+			return cells[x, y];
 		}
 
 		#region Backend
@@ -89,6 +123,7 @@ namespace Purity.Graphics
 			var cellHeight = prevDrawLayerCellSz.Item2;
 			var tileSz = prevDrawLayerTileSz;
 			var texture = graphics[prevDrawLayerGfxPath];
+
 			var tileCount = (texture.Size.X / tileSz.Item1, texture.Size.Y / tileSz.Item2);
 			var texCoords = IndexToCoords(cell, tileCount);
 			var tx = new Vector2f(texCoords.Item1 * tileSz.Item1, texCoords.Item2 * tileSz.Item2);
@@ -139,6 +174,31 @@ namespace Purity.Graphics
 				}
 			return verts;
 		}
+		private Vertex[] GetParticlesVertices(byte color, (float, float)[] positions)
+		{
+			var verts = new Vertex[positions.Length * 4];
+			var tileSz = prevDrawLayerTileSz;
+			var cellWidth = prevDrawLayerCellSz.Item1 / tileSz.Item1;
+			var cellHeight = prevDrawLayerCellSz.Item2 / tileSz.Item2;
+			var cellCount = prevDrawLayerCellCount;
+
+			for(int i = 0; i < positions.Length; i++)
+			{
+				var x = Map(positions[i].Item1, 0, cellCount.Item1, 0, window.Size.X);
+				var y = Map(positions[i].Item2, 0, cellCount.Item2, 0, window.Size.Y);
+				var c = ByteToColor(color);
+				var grid = ToGrid((x, y), (cellWidth, cellHeight));
+				var tl = new Vector2f(grid.Item1, grid.Item2);
+				var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
+
+				var index = i * 4;
+				verts[index + 0] = new(new(tl.X, tl.Y), c);
+				verts[index + 1] = new(new(br.X, tl.Y), c);
+				verts[index + 2] = new(new(br.X, br.Y), c);
+				verts[index + 3] = new(new(tl.X, br.Y), c);
+			}
+			return verts;
+		}
 		private static (uint, uint) IndexToCoords(uint index, (uint, uint) fieldSize)
 		{
 			index = index < 0 ? 0 : index;
@@ -166,7 +226,7 @@ namespace Purity.Graphics
 			var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
 		}
-		private (float, float) ToGrid((float, float) pos, (float, float) gridSize)
+		private static (float, float) ToGrid((float, float) pos, (float, float) gridSize)
 		{
 			if(gridSize == default)
 				return pos;

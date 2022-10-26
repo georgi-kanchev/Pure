@@ -87,10 +87,6 @@
 
 			return (index % width, index / width);
 		}
-		private uint GetIndex(uint x, uint y)
-		{
-			return y * CellCount.Item1 + x;
-		}
 		private bool IndicesAreValid((uint, uint) indices)
 		{
 			return indices.Item1 < Cells.GetLength(0) && indices.Item2 < Cells.GetLength(1);

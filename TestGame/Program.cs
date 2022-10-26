@@ -16,16 +16,19 @@ namespace TestGame
 				layer.SetCell(i, i, (byte)i);
 			}
 
-			var x = 0f;
 			while(window.IsOpen)
 			{
+				var x = 3 + (MathF.Cos(time.Clock * 4f) / 2f);
+				var y = 3 + (MathF.Sin(time.Clock * 4f) / 2f);
+
+				Console.WriteLine(window.GetHoveredCell(layer.Cells));
+
 				time.Update();
 
-				window.DrawBegin();
+				window.DrawOn();
 				window.DrawLayer(layer.Cells, layer.Colors, (8, 8));
-				window.DrawSprite((x, 3f), 27, Color.Red);
-				x += time.Delta;
-				window.DrawEnd();
+				window.DrawParticles(Color.Red, (x, y), (1.3f, 1f));
+				window.DrawOff();
 			}
 		}
 	}
