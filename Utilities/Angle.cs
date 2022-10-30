@@ -98,7 +98,7 @@
 
 		public override string ToString()
 		{
-			return $"{value}";
+			return Value.ToString();
 		}
 
 		#region Backend

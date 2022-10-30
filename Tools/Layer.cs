@@ -29,7 +29,6 @@
 					Colors[x, y] = color;
 				}
 		}
-
 		public void SetCell((uint, uint) indices, uint cell, byte color)
 		{
 			if(IndicesAreValid(indices) == false)
@@ -50,32 +49,20 @@
 			Cells[coords.Item1, coords.Item2] = cell;
 			Colors[coords.Item1, coords.Item2] = color;
 		}
-
-		/*
-		public void DisplayText(string text, int x, int y)
+		public void SetSquare((uint, uint) startIndices, (uint, uint) endIndices, uint cell, byte color)
+		{
+			for(uint y = startIndices.Item2; y < endIndices.Item2 + 1; y++)
+				for(uint x = startIndices.Item1; x < endIndices.Item1 + 1; x++)
+					SetCell((x, y), cell, color);
+		}
+		public void SetText(string text, int x, int y)
 		{
 			for(int i = 0; i < text.Length; i++)
 			{
 				var symbol = text[i];
 			}
 
-
 		}
-		public void SetSquare(int cell, int startX, int startY, int endX, int endY)
-		{
-			if(cells == null)
-				return;
-
-			startX = Limit(startX, 0, size.Item1 - 1);
-			startY = Limit(startY, 0, size.Item2 - 1);
-			endX = Limit(endX, 0, size.Item1 - 1);
-			endY = Limit(endY, 0, size.Item2 - 1);
-
-			for(int y = startY; y < endY + 1; y++)
-				for(int x = startX; x < endX + 1; x++)
-					cells[x, y].ID = cell;
-		}
-		*/
 
 		#region Backend
 		private (uint, uint) IndexToCoords(uint index)
