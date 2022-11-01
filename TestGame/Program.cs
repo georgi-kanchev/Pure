@@ -1,4 +1,6 @@
-﻿using Purity.Graphics;
+﻿using Graphics;
+
+using Purity.Graphics;
 using Purity.Tools;
 using Purity.Utilities;
 
@@ -11,6 +13,13 @@ namespace TestGame
 			var window = new Window();
 			var layer = new Layer((32, 18));
 			var time = new Time();
+
+			var img = new PureImage("graphics.png");
+			var pure = img.Purify();
+
+			File.WriteAllBytes("test.pure", pure);
+
+			var newImg = new PureImage(pure);
 
 			for(uint i = 0; i < layer.CellTotalCount; i++)
 			{
