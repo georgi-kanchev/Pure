@@ -31,41 +31,45 @@ namespace Purity.Graphics
 				view.Center = new(e.Width / 2f, e.Height / 2f);
 				window.SetView(view);
 			};
+			window.DispatchEvents();
+			window.Clear();
+			window.Display();
 		}
 
 		public void DrawOn()
 		{
-			window?.DispatchEvents();
-			window?.Clear();
+			window.DispatchEvents();
+			window.Clear();
 		}
-		public void DrawLayer(uint[,] cells, byte[,] colors, (uint, uint) tileSize, string path = "graphics.png")
+		public void DrawLayer(uint[,] cells, byte[,] colors,
+			(uint, uint) tileSize, string path = "graphics.png")
 		{
-			if(window == null || path == null || cells == null || colors == null || cells.Length != colors.Length)
+			if(path == null || cells == null || colors == null || cells.Length != colors.Length)
 				return;
 
 			TryLoadGraphics(path);
 			var verts = GetLayerVertices(cells, colors, tileSize, path);
-			window?.Draw(verts, PrimitiveType.Quads, new(graphics[path]));
+			window.Draw(verts, PrimitiveType.Quads, new(graphics[path]));
 		}
 		public void DrawSprite((float, float) position, uint cell, byte color)
 		{
-			if(window == null || prevDrawLayerGfxPath == null)
+			if(prevDrawLayerGfxPath == null)
 				return;
 
 			var verts = GetSpriteVertices(position, cell, color);
-			window?.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawLayerGfxPath]));
+			window.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawLayerGfxPath]));
 		}
 		public void DrawParticles(byte color, params (float, float)[] positions)
 		{
-			if(window == null || positions == null || positions.Length == 0)
+			if(positions == null || positions.Length == 0)
 				return;
 
 			var verts = GetParticlesVertices(color, positions);
-			window?.Draw(verts, PrimitiveType.Quads);
+			window.Draw(verts, PrimitiveType.Quads);
 		}
 		public void DrawOff()
 		{
-			window?.Display();
+			window.Display();
 		}
 
 		public (float, float) GetMousePosition((uint, uint) layerCellCount)

@@ -14,12 +14,11 @@ namespace TestGame
 			var layer = new Layer((32, 18));
 			var time = new Time();
 
-			var img = new PureImage("graphics.png");
-			var pure = img.Purify();
+			var img = new Monochrome((10, 10));
 
-			File.WriteAllBytes("test.pure", pure);
-
-			var newImg = new PureImage(pure);
+			img.LoadFromImage("graphics.png");
+			img.Save("test.mono");
+			img.SaveAsImage("test.png");
 
 			for(uint i = 0; i < layer.CellTotalCount; i++)
 			{
@@ -30,8 +29,6 @@ namespace TestGame
 			{
 				var x = 3 + (MathF.Cos(time.Clock * 4f) / 2f);
 				var y = 3 + (MathF.Sin(time.Clock * 4f) / 2f);
-
-				Console.WriteLine(window.GetHoveredCell(layer.Cells));
 
 				time.Update();
 
