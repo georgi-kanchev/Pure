@@ -1,6 +1,6 @@
 ﻿using SFML.Graphics;
 
-namespace Graphics
+namespace Purity.Graphics
 {
 	public class Monochrome
 	{
@@ -8,19 +8,31 @@ namespace Graphics
 		// packed (1) | color bit | up to 64 repeats (6 bits)
 		// not packed (0) | 7 literal sequence of raw bits
 
-		public (ushort, ushort) Size => ((ushort)img.Size.X, (ushort)img.Size.Y);
-		public ulong PixelCount => (ulong)(Size.Item1 * Size.Item2);
+		public (uint, uint) Size => (img.Size.X, img.Size.Y);
+		public uint PixelCount => Size.Item1 * Size.Item2;
 
 		public Monochrome()
 		{
 			img = new(0, 0);
 		}
-		public Monochrome((ushort, ushort) size)
+		public Monochrome((uint, uint) size)
 		{
 			img = new Image(size.Item1, size.Item2);
 		}
 
-		public void ActivatePixel((ushort, ushort) indices, bool isActive)
+		public bool IsPixelActive((uint, uint) indices)
+		{
+			var color = img.GetPixel(indices.Item1, indices.Item2);
+			return color == Color.White;
+		}
+		public bool IsPixelActive(uint index)
+		{
+			var x = index % img.Size.X - 1;
+			var y = index / img.Size.X - 1;
+			return IsPixelActive((x, y));
+		}
+
+		public void ActivatePixel((uint, uint) indices, bool isActive)
 		{
 			if(indices.Item1 < 0 || indices.Item1 >= img.Size.X ||
 				indices.Item2 < 0 || indices.Item2 >= img.Size.Y)
@@ -28,11 +40,11 @@ namespace Graphics
 
 			img.SetPixel(indices.Item1, indices.Item2, isActive ? Color.White : Color.Transparent);
 		}
-		public void ActivatePixel(ulong index, bool isActive)
+		public void ActivatePixel(uint index, bool isActive)
 		{
 			var x = index % img.Size.X - 1;
 			var y = index / img.Size.X - 1;
-			ActivatePixel(((ushort)x, (ushort)y), isActive);
+			ActivatePixel((x, y), isActive);
 		}
 
 		public void Save(string monochromePath)
@@ -197,6 +209,15 @@ namespace Graphics
 		public void LoadFromImage(string imagePath)
 		{
 			img = new Image(imagePath);
+
+			for(uint y = 0; y < img.Size.Y; y++)
+				for(uint x = 0; x < img.Size.X; x++)
+				{
+					var color = img.GetPixel(x, y).A > byte.MaxValue / 2 ?
+						Color.White : Color.Transparent;
+
+					img.SetPixel(x, y, color);
+				}
 		}
 
 		#region Backend

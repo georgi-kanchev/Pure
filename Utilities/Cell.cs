@@ -1,4 +1,4 @@
-﻿namespace Purity.Graphics
+﻿namespace Purity.Utilities
 {
 	public struct Cell
 	{

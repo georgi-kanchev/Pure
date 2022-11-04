@@ -49,22 +49,53 @@
 			Cells[coords.Item1, coords.Item2] = cell;
 			Colors[coords.Item1, coords.Item2] = color;
 		}
-		public void SetSquare((uint, uint) startIndices, (uint, uint) endIndices, uint cell, byte color)
+		public void SetSquare((uint, uint) startIndices, (uint, uint) endIndices,
+			uint cell, byte color)
 		{
 			for(uint y = startIndices.Item2; y < endIndices.Item2 + 1; y++)
 				for(uint x = startIndices.Item1; x < endIndices.Item1 + 1; x++)
 					SetCell((x, y), cell, color);
 		}
-		public void SetText(string text, int x, int y)
+		public void SetTextLine((uint, uint) indices, string text, byte color)
 		{
-			for(int i = 0; i < text.Length; i++)
+			for(uint i = 0; i < text.Length; i++)
 			{
-				var symbol = text[i];
-			}
+				var symbol = text[(int)i];
+				uint index;
+				if(symbol >= 'A' && symbol <= 'Z')
+					index = (uint)(symbol - 'A' + 26);
+				else if(symbol >= 'a' && symbol <= 'z')
+					index = (uint)(symbol - 'a' + 52);
+				else if(symbol >= '0' && symbol <= '9')
+					index = (uint)(symbol - '0' + 78);
+				else if(map.ContainsKey(symbol))
+					index = map[symbol];
+				else
+					return;
 
+				SetCell((indices.Item1 + i, indices.Item2), index, color);
+			}
 		}
 
 		#region Backend
+		private readonly Dictionary<char, uint> map = new()
+		{
+			{ ' ', 0 }, { '░', 1 }, { '▒', 4 }, { '▓', 8 }, { '█', 11 },
+
+			{ '⁰', 88 }, { '¹', 89 }, { '²', 90 }, { '³', 91 }, { '⁴', 92 },
+			{ '⁵', 93 }, { '⁶', 94 }, { '⁷', 95 }, { '⁸', 96 }, { '⁹', 97 },
+
+			{ '+', 104 }, { '-', 105 }, { '*', 106 }, { '%', 108 }, { '=', 109 },
+			{ '<', 112 }, { '>', 113 }, { '(', 116 }, { ')', 117 },
+			{ '[', 118 }, { ']', 119 }, { '{', 120 }, { '}', 121 },
+
+			{ '^', 122 }, { '~', 124 }, { '#', 130 }, { '№', 131 }, { '°', 134 },
+
+			{ '!', 135 }, { '?', 136 }, { '.', 137 }, { ',', 138 }, { ':', 140 }, { ';', 141 },
+			{ '"', 142 }, { '\'', 143 }, { '`', 144 }, { '_', 145 }, { '|', 146 }, { '/', 147 },
+			{ '\\', 148 }, { '@', 149 }, { '&', 150 },
+		};
+
 		private (uint, uint) IndexToCoords(uint index)
 		{
 			var width = CellCount.Item1;

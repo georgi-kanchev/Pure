@@ -16,11 +16,11 @@ namespace Purity.Graphics
 			set { title = value; window.SetTitle(title); }
 		}
 
-		public Window()
+		public Window(string title = "Purity")
 		{
 			var desktopW = VideoMode.DesktopMode.Width;
 			var desktopH = VideoMode.DesktopMode.Height;
-			title = "Purity";
+			this.title = title;
 
 			window = new(new VideoMode((uint)(desktopW * 0.65f), (uint)(desktopH * 0.65f)), title);
 			window.Closed += (s, e) => window.Close();
@@ -79,7 +79,7 @@ namespace Purity.Graphics
 			var y = Map(pos.Y, 0, window.Size.Y, 0, layerCellCount.Item2);
 			return (x, y);
 		}
-		public (int, int) GetHoveredCellIndicies((uint, uint) layerCellCount)
+		public (int, int) GetHoveredIndicies((uint, uint) layerCellCount)
 		{
 			var mousePos = GetMousePosition(layerCellCount);
 			var x = MathF.Floor(mousePos.Item1);
@@ -90,14 +90,11 @@ namespace Purity.Graphics
 		{
 			var w = (uint)cells.GetLength(0);
 			var h = (uint)cells.GetLength(1);
-			var indices = GetHoveredCellIndicies((w, h));
+			var indices = GetHoveredIndicies((w, h));
 			var x = indices.Item1;
 			var y = indices.Item2;
 
-			if(x < 0 || y < 0 || x >= w || y >= h)
-				return default;
-
-			return cells[x, y];
+			return x < 0 || y < 0 || x >= w || y >= h ? default : cells[x, y];
 		}
 
 		#region Backend
