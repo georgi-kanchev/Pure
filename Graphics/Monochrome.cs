@@ -47,6 +47,13 @@ namespace Purity.Graphics
 			ActivatePixel((x, y), isActive);
 		}
 
+		public void ActivateAllPixels(bool areActive)
+		{
+			for(uint y = 0; y < Size.Item2; y++)
+				for(uint x = 0; x < Size.Item1; x++)
+					img.SetPixel(x, y, areActive ? Color.White : Color.Transparent);
+		}
+
 		public void Save(string monochromePath)
 		{
 			var rawBits = "";
@@ -61,6 +68,7 @@ namespace Purity.Graphics
 			var prevBit = rawBits.Length > 1 ? rawBits[0] : default;
 			var sameBitSequence = 0;
 			var readIndexCounter = 0;
+
 			var w = Convert.ToString(img.Size.X, BINARY).PadLeft(BYTE_BITS_COUNT * 2, '0');
 			var h = Convert.ToString(img.Size.Y, BINARY).PadLeft(BYTE_BITS_COUNT * 2, '0');
 			var bytes = new List<byte>

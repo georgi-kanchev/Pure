@@ -3,7 +3,7 @@
 	public struct Color
 	{
 		public static Color Black => new(0);
-		public static Color Gray => new(127, 127, 127);
+		public static Color Gray => new(0b010_010_01);
 		public static Color White => new(255);
 
 		public static Color Red => new(255, 0, 0);
