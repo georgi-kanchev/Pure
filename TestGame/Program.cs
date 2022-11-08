@@ -17,7 +17,7 @@ namespace TestGame
 				time.Update();
 
 				layer.Fill(26 * 2 + 7, Color.Gray);
-				for(uint i = 0; i < 26 * 18; i++)
+				for(uint i = 0; i < 26 * 19; i++)
 					layer.SetCell(i, i, (byte)i);
 
 				var cell = window.GetHoveredCell(layer.Cells);
