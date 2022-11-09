@@ -4,10 +4,6 @@ namespace Purity.Graphics
 {
 	public class Monochrome
 	{
-		// image format
-		// packed (1) | color bit | up to 64 repeats (6 bits)
-		// not packed (0) | 7 literal sequence of raw bits
-
 		public (uint, uint) Size => (img.Size.X, img.Size.Y);
 		public uint PixelCount => Size.Item1 * Size.Item2;
 
@@ -54,6 +50,9 @@ namespace Purity.Graphics
 					img.SetPixel(x, y, areActive ? Color.White : Color.Transparent);
 		}
 
+		// image format
+		// packed (1) | color bit | up to 64 repeats (6 bits)
+		// not packed (0) | 7 literal sequence of raw bits
 		public void Save(string monochromePath)
 		{
 			var rawBits = "";
@@ -210,6 +209,7 @@ namespace Purity.Graphics
 				img.SetPixel(x, y, color);
 			}
 		}
+
 		public void SaveAsImage(string imagePath)
 		{
 			img.SaveToFile(imagePath);

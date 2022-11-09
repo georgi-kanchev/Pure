@@ -16,7 +16,7 @@ namespace TestGame
 			{
 				time.Update();
 
-				layer.Fill(26 * 2 + 7, Color.Gray);
+				layer.Fill(26 * 2 + 7, Color.Azure);
 				for(uint i = 0; i < 26 * 19; i++)
 					layer.SetCell(i, i, (byte)i);
 

@@ -2,25 +2,25 @@
 {
 	public struct Color
 	{
-		public static Color Black => new(0);
-		public static Color Gray => new(0b010_010_01);
-		public static Color White => new(255);
+		public const byte Black = 0;
+		public const byte Gray = 0b_010_010_01; // 127 127 127
+		public const byte White = 255;
 
-		public static Color Red => new(255, 0, 0);
-		public static Color Green => new(0, 255, 0);
-		public static Color Blue => new(0, 0, 255);
+		public const byte Red = 0b_111_000_00;
+		public const byte Green = 0b_000_111_00;
+		public const byte Blue = 0b_000_000_11;
 
-		public static Color Pink => new(255, 105, 180);
-		public static Color Magenta => new(255, 0, 255);
-		public static Color Violet => new(143, 0, 255);
-		public static Color Purple => new(75, 0, 130);
+		public const byte Pink = 0b_111_011_10; // 255 105 180
+		public const byte Magenta = 0b_111_000_11; // 255 0 255
+		public const byte Violet = 0b_100_000_11; // 143 0 255;
+		public const byte Purple = 0b_011_000_10; // 75 0 130;
 
-		public static Color Yellow => new(255, 255, 0);
-		public static Color Orange => new(255, 165, 0);
-		public static Color Brown => new(150, 105, 25);
+		public const byte Yellow = 0b_111_111_00; // 255 255 0;
+		public const byte Orange = 0b_111_010_00; // 255 165 0;
+		public const byte Brown = 0b_010_001_00; // 150 105 25;
 
-		public static Color Cyan => new(0, 255, 255);
-		public static Color Azure => new(0, 127, 255);
+		public const byte Cyan = 0b_000_111_11; // 0 255 255;
+		public const byte Azure = 0b_000_011_11; // 0 127 255;
 
 		public byte Value
 		{
