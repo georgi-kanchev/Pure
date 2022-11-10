@@ -12,6 +12,9 @@ namespace TestGame
 			var layer = new Layer((48, 27));
 			var time = new Time();
 
+			var storage = new Storage();
+			storage.Load("storage.txt");
+
 			while(window.IsOpen)
 			{
 				time.Update();
