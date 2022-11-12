@@ -4,7 +4,16 @@ using Purity.Utilities;
 
 namespace TestGame
 {
-	internal class Program
+	public class Test
+	{
+		public int NumberName { get; set; }
+		public string StringName { get; set; }
+		public char CharName { get; set; }
+		public bool BoolName { get; set; }
+		public bool[] BoolArrayName { get; set; }
+	}
+
+	public class Program
 	{
 		static void Main()
 		{
@@ -12,8 +21,10 @@ namespace TestGame
 			var layer = new Layer((48, 27));
 			var time = new Time();
 
+			var test = new Test();
 			var storage = new Storage();
 			storage.Load("storage.txt");
+			storage.Populate(test, "instanceName");
 
 			while(window.IsOpen)
 			{
