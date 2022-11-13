@@ -6,11 +6,14 @@ namespace TestGame
 {
 	public class Test
 	{
+		private string instanceName;
 		public int NumberName { get; set; }
 		public string StringName { get; set; }
 		public char CharName { get; set; }
 		public bool BoolName { get; set; }
-		public bool[] BoolArrayName { get; set; }
+		private bool[] BoolArrayName;
+		private float[] NumberArrayName;
+		public string[] StringArrayName { get; set; }
 	}
 
 	public class Program
