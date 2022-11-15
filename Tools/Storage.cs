@@ -24,13 +24,20 @@ namespace Purity.Tools
 			data.Clear();
 			for(int i = 0; i < split?.Length; i++)
 			{
-				var props = split[i].Split(PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+				var props = split[i].Split(INSTANCE_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
 				var instanceName = Trim(props[0]);
-				data[instanceName] = new();
 
 				for(int j = 1; j < props?.Length; j++)
 				{
 					var prop = props[j];
+					var isStruct = prop.Contains(STRUCT);
+
+					if(isStruct)
+					{
+						ProcessStruct();
+						continue;
+					}
+
 					var values = prop.Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
 					if(values.Length < 2)
 						continue;
@@ -38,12 +45,12 @@ namespace Purity.Tools
 					var name = Trim(values[0]);
 					var valueStr = Trim(values[1]);
 
-					if(ProcessValue<float>(NUMBER)) { }
-					else if(ProcessValue<bool>(BOOL)) { }
-					else if(ProcessValue<char>(CHAR)) { }
-					else if(ProcessValue<string>(STRING)) { }
+					if(ProcessInstanceValue<float>(NUMBER)) { }
+					else if(ProcessInstanceValue<bool>(BOOL)) { }
+					else if(ProcessInstanceValue<char>(CHAR)) { }
+					else if(ProcessInstanceValue<string>(STRING)) { }
 
-					bool ProcessValue<T>(string separator)
+					bool ProcessInstanceValue<T>(string separator)
 					{
 						if(valueStr.Contains(separator) == false)
 							return false;
@@ -76,11 +83,31 @@ namespace Purity.Tools
 							catch(Exception) { continue; }
 						}
 
+						if(data.ContainsKey(instanceName) == false)
+							data[instanceName] = new();
+
 						var finalValue = finalValues.Length == 1 ? finalValues[0] : finalValues;
 						if(finalValue != null)
 							data[instanceName][name] = finalValue;
 
 						return true;
+					}
+					void ProcessStruct()
+					{
+						var struc = prop.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
+						if(struc.Length < 2)
+							return;
+
+						var structPropName = Trim(struc[0]);
+						var structValueStr = Trim(struc[1]);
+						var structProps = structValueStr
+							.Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+
+						for(int k = 0; k < structProps?.Length; k++)
+						{
+							var structProp = structProps[k].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
+						}
+
 					}
 				}
 			}
@@ -142,16 +169,10 @@ namespace Purity.Tools
 			}
 		}
 
-		private const string NUMBER = "~#";
-		private const string BOOL = "~;";
-		private const string CHAR = "~'";
-		private const string STRING = "~\"";
-		private const string PROPERTY = "~~";
-		private const string VALUE = "~|";
-		private const string INSTANCE = "~@";
-		private const string SPACE = "~_";
-		private const string TAB = "~__";
-		private const string NEW_LINE = "~/";
+		private const string NUMBER = "~#", BOOL = "~;", CHAR = "~'", STRING = "~\"",
+			INSTANCE = "~@", INSTANCE_PROPERTY = "~~", VALUE = "~|",
+			STRUCT = "~&", STRUCT_PROPERTY = "~-",
+			SPACE = "~_", TAB = "~__", NEW_LINE = "~/";
 		private readonly Dictionary<string, Dictionary<string, object>> data = new();
 	}
 }
