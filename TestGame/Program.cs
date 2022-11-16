@@ -4,6 +4,11 @@ using Purity.Utilities;
 
 namespace TestGame
 {
+	public struct Col
+	{
+		public float Red, Green, Blue, Alpha;
+		public char Test;
+	}
 	public class Test
 	{
 		private string instanceName;
@@ -14,6 +19,7 @@ namespace TestGame
 		private bool[] BoolArrayName;
 		private float[] NumberArrayName;
 		public string[] StringArrayName { get; set; }
+		public Col[] StructName;
 	}
 
 	public class Program
