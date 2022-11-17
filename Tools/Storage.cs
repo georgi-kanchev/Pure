@@ -5,59 +5,233 @@ namespace Purity.Tools
 {
 	public class Storage
 	{
-		//public bool Save(string filePath)
-		//{
-		//	return false;
-		//}
-		public bool Load(string filePath)
+		public void Save(string filePath, bool isDataFormatted = true)
+		{
+			var dir = Path.GetDirectoryName(filePath);
+			if(dir != "" && Directory.Exists(dir) == false)
+				return;
+
+			var result = isDataFormatted ? FILE_HEADER + Environment.NewLine : "";
+			var newLine = isDataFormatted ? Environment.NewLine : "";
+			var space = isDataFormatted ? " " : "";
+			var tab = isDataFormatted ? new string(' ', 4) : "";
+
+			foreach(var kvp in data)
+			{
+				result += INSTANCE + space + kvp.Key;
+
+				foreach(var kvp2 in kvp.Value)
+				{
+					var value = kvp2.Value;
+					var type = value.GetType();
+
+					result += newLine + tab + INSTANCE_PROPERTY + space +
+						kvp2.Key.PadRight(isDataFormatted ? PAD_SPACES + 8 : 0);
+
+					if(type.IsArray)
+					{
+						var array = (Array)value;
+						var elementType = type.GetElementType();
+
+						if(elementType != null && IsStructType(elementType) == false)
+							result += space + VALUE;
+
+						for(int i = 0; i < array.Length; i++)
+						{
+							var curValue = array.GetValue(i);
+
+							result += newLine + tab + tab;
+							if(curValue != null)
+								AddToString(ref result, curValue, false, true, isFormatted: isDataFormatted);
+						}
+						continue;
+					}
+
+					AddToString(ref result, value, isFormatted: isDataFormatted);
+				}
+			}
+
+			File.WriteAllText(filePath, result);
+		}
+		public void Load(string filePath)
 		{
 			if(File.Exists(filePath) == false)
-				return false;
+				return;
 
 			var file = File.ReadAllText(filePath);
 
 			if(file.Length == 0)
-				return false;
+				return;
 
-			var split = file.Split(INSTANCE, StringSplitOptions.RemoveEmptyEntries);
+			var split = Trim(file).Split(INSTANCE, StringSplitOptions.RemoveEmptyEntries);
 
 			data.Clear();
 			for(int i = 0; i < split?.Length; i++)
 			{
 				var props = split[i].Split(INSTANCE_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
-				var instanceName = Trim(props[0]);
+				var instanceName = props[0];
 
 				for(int j = 1; j < props?.Length; j++)
 					CacheProp(instanceName, props[j]);
 			}
-			return true;
 		}
 
-		public bool Populate(object instance, string instanceName)
+		public void Populate(string storageKey, object instance)
 		{
-			if(instance == null || data.ContainsKey(instanceName) == false)
-				return false;
+			if(instance == null || data.ContainsKey(storageKey) == false)
+				return;
 
 			var type = instance.GetType();
 			var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 			var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
 			for(int i = 0; i < props.Length; i++)
-				PopulateMember(props[i], instanceName, instance);
+				PopulateMember(props[i], storageKey, instance);
 			for(int i = 0; i < fields.Length; i++)
-				if(fields[i].IsSpecialName == false)
-					PopulateMember(fields[i], instanceName, instance);
+				if(fields[i].Name.Contains('<') == false)
+					PopulateMember(fields[i], storageKey, instance);
 
-			return true;
+			return;
+		}
+		public void Store(string storageKey, object instance)
+		{
+			if(instance == null)
+				return;
+
+			var type = instance.GetType();
+			var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+			var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+			if(data.ContainsKey(storageKey) == false)
+				data[storageKey] = new();
+
+			for(int i = 0; i < props.Length; i++)
+			{
+				var prop = props[i];
+
+				if(IsTypeSupported(prop.PropertyType) == false)
+					continue;
+
+				var value = prop.GetValue(instance);
+
+				if(value != null)
+					data[storageKey][prop.Name] = value;
+			}
+			for(int i = 0; i < fields.Length; i++)
+			{
+				var field = fields[i];
+				if(IsTypeSupported(field.FieldType) == false || field.Name.Contains('<'))
+					continue;
+
+				var value = field.GetValue(instance);
+
+				if(value != null)
+					data[storageKey][field.Name] = value;
+			}
+
+			return;
 		}
 
 		#region Backend
+		private const int PAD_SPACES = 16;
 		private const string NUMBER = "~#", BOOL = "~;", CHAR = "~'", STRING = "~\"",
 			INSTANCE = "~@", INSTANCE_PROPERTY = "~~", VALUE = "~|",
 			STRUCT = "~&", STRUCT_PROPERTY = "~=",
 			SPACE = "~_", TAB = "~__", NEW_LINE = "~/";
+		private const string FILE_HEADER = @"Purity - Storage file
+--------------------------
+| Map of symbols
+|
+|	~ Global separator
+|
+|	@ Instance
+|	~ Instance property name
+|
+|	& Struct
+|	- Struct property name
+|
+|	| Property value
+|
+|	; Bool
+|	# Number
+|	' Char
+|	"" String
+|
+|	/ String new line
+|	_ String space
+|	__ String tab
+--------------------------
+";
+
 		private readonly Dictionary<string, Dictionary<string, object>> data = new();
 
+		private void AddToString(ref string result, object value, bool isInStruct = false, bool isInArray = false,
+			bool isFormatted = true)
+		{
+			var type = value.GetType();
+
+			var space = isFormatted ? " " : "";
+			var newLine = isFormatted ? Environment.NewLine : "";
+			var tab = isFormatted ? new string(' ', 4) : "";
+			var valueSep = isInArray ? "" : space + VALUE + space;
+
+			if(IsStructType(type) && isInStruct == false)
+			{
+				var props = type
+					.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+				var fields = type
+					.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+				if(isInArray == false)
+					result += newLine + tab + tab;
+
+				result += STRUCT;
+
+				for(int i = 0; i < props.Length; i++)
+				{
+					var prop = props[i];
+
+					if(IsTypeSupported(prop.PropertyType) == false)
+						continue;
+
+					var propValue = prop.GetValue(value);
+
+					result += newLine + tab + tab + space + space + STRUCT_PROPERTY + space;
+
+					if(propValue != null)
+					{
+						result += prop.Name.PadRight(isFormatted ? PAD_SPACES + 2 : 0);
+						AddToString(ref result, propValue, true, false, isFormatted: isFormatted);
+					}
+				}
+				for(int i = 0; i < fields.Length; i++)
+				{
+					var field = fields[i];
+					if(IsTypeSupported(field.FieldType) == false || field.Name.Contains('<'))
+						continue;
+
+					var fieldValue = field.GetValue(value);
+
+					result += newLine + tab + tab + space + space + STRUCT_PROPERTY + space;
+
+					if(fieldValue != null)
+					{
+						result += field.Name.PadRight(isFormatted ? PAD_SPACES + 2 : 0);
+						AddToString(ref result, fieldValue, true, false, isFormatted: isFormatted);
+					}
+				}
+
+				return;
+			}
+
+			if(value is bool) result += valueSep + BOOL + space + value;
+			else if(value is char) result += valueSep + CHAR + space + value;
+			else if(IsNumericType(value)) result += valueSep + NUMBER + space + value;
+			else if(value is string) result += valueSep + STRING + space + value?.ToString()?
+				.Replace("\t", TAB)
+				.Replace(Environment.NewLine, NEW_LINE)
+				.Replace(" ", SPACE);
+		}
 		private void PopulateMember(MemberInfo memberInfo, string instanceName, object instance)
 		{
 			var prop = memberInfo is PropertyInfo p ? p : null;
@@ -154,13 +328,13 @@ namespace Purity.Tools
 			if(prop.Contains(STRUCT))
 			{
 				var struc = prop.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
-				var structPropName = Trim(struc[0]);
+				var structPropName = struc[0];
 
 				var val = "";
 				for(int i = 1; i < struc.Length; i++)
 				{
 					var sep = i < struc.Length - 1 ? STRUCT : "";
-					val += Trim(struc[i]) + sep;
+					val += struc[i] + sep;
 				}
 
 				data[instanceName][structPropName] = val;
@@ -171,8 +345,8 @@ namespace Purity.Tools
 			if(values.Length < 2)
 				return;
 
-			var name = Trim(values[0]);
-			var valueStr = Trim(values[1]);
+			var name = values[0];
+			var valueStr = values[1];
 
 			if(TryCacheInstanceValue<float>(NUMBER, instanceName, name, valueStr)) { }
 			else if(TryCacheInstanceValue<bool>(BOOL, instanceName, name, valueStr)) { }
@@ -228,9 +402,38 @@ namespace Purity.Tools
 
 			return finalValues;
 		}
+		private static bool IsTypeSupported(Type type)
+		{
+			return type.IsClass == false || type.IsArray || type == typeof(string);
+		}
 		private static string Trim(string text)
 		{
 			return text.Replace("\t", "").Replace(" ", "").Replace(Environment.NewLine, "");
+		}
+		private static bool IsNumericType(object obj)
+		{
+			switch(Type.GetTypeCode(obj.GetType()))
+			{
+				case TypeCode.Byte:
+				case TypeCode.SByte:
+				case TypeCode.UInt16:
+				case TypeCode.UInt32:
+				case TypeCode.UInt64:
+				case TypeCode.Int16:
+				case TypeCode.Int32:
+				case TypeCode.Int64:
+				case TypeCode.Decimal:
+				case TypeCode.Double:
+				case TypeCode.Single:
+					return true;
+				default:
+					return false;
+			}
+		}
+		private static bool IsStructType(Type type)
+		{
+			return type.IsValueType && type.IsEnum == false && type.IsPrimitive == false &&
+				type.IsEquivalentTo(typeof(decimal)) == false;
 		}
 		#endregion
 	}
