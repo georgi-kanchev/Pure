@@ -25,27 +25,26 @@ namespace Purity.Tools
 					var value = kvp2.Value;
 					var type = value.GetType();
 
-					result += newLine + tab + INSTANCE_PROPERTY + space +
-						kvp2.Key.PadRight(isDataFormatted ? PAD_SPACES + 8 : 0);
+					result += newLine + tab + INSTANCE_PROPERTY + space + kvp2.Key;
 
 					if(type.IsArray)
 					{
 						var array = (Array)value;
 						var elementType = type.GetElementType();
-
-						if(elementType != null && IsStructType(elementType) == false)
-							result += space + VALUE;
+						var isStruct = elementType != null && IsStructType(elementType);
 
 						for(int i = 0; i < array.Length; i++)
 						{
 							var curValue = array.GetValue(i);
 
-							result += newLine + tab + tab;
+							result += newLine + tab + tab + (isStruct ? "" : VALUE);
 							if(curValue != null)
-								AddToString(ref result, curValue, false, true, isFormatted: isDataFormatted);
+								AddToString(ref result, curValue, false, true,
+									isFormatted: isDataFormatted);
 						}
 						continue;
 					}
+					result += newLine + tab + tab;
 
 					AddToString(ref result, value, isFormatted: isDataFormatted);
 				}
@@ -90,8 +89,6 @@ namespace Purity.Tools
 			for(int i = 0; i < fields.Length; i++)
 				if(fields[i].Name.Contains('<') == false)
 					PopulateMember(fields[i], storageKey, instance);
-
-			return;
 		}
 		public void Store(string storageKey, object instance)
 		{
@@ -133,9 +130,7 @@ namespace Purity.Tools
 		}
 
 		#region Backend
-		private const int PAD_SPACES = 16;
-		private const string NUMBER = "~#", BOOL = "~;", CHAR = "~'", STRING = "~\"",
-			INSTANCE = "~@", INSTANCE_PROPERTY = "~~", VALUE = "~|",
+		private const string INSTANCE = "~@", INSTANCE_PROPERTY = "~~", VALUE = "~|",
 			STRUCT = "~&", STRUCT_PROPERTY = "~=",
 			SPACE = "~_", TAB = "~__", NEW_LINE = "~/";
 		private const string FILE_HEADER = @"Purity - Storage file
@@ -144,18 +139,11 @@ namespace Purity.Tools
 |
 |	~ Global separator
 |
-|	@ Instance
-|	~ Instance property name
-|
-|	& Struct
-|	- Struct property name
-|
-|	| Property value
-|
-|	; Bool
-|	# Number
-|	' Char
-|	"" String
+|	@ Object
+|	~ Property
+|	& Property containing sub properties
+|	- Sub property
+|	| Value
 |
 |	/ String new line
 |	_ String space
@@ -173,7 +161,7 @@ namespace Purity.Tools
 			var space = isFormatted ? " " : "";
 			var newLine = isFormatted ? Environment.NewLine : "";
 			var tab = isFormatted ? new string(' ', 4) : "";
-			var valueSep = isInArray ? "" : space + VALUE + space;
+			var valueSep = isInArray ? "" : VALUE;
 
 			if(IsStructType(type) && isInStruct == false)
 			{
@@ -181,9 +169,6 @@ namespace Purity.Tools
 					.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 				var fields = type
 					.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-				if(isInArray == false)
-					result += newLine + tab + tab;
 
 				result += STRUCT;
 
@@ -196,11 +181,11 @@ namespace Purity.Tools
 
 					var propValue = prop.GetValue(value);
 
-					result += newLine + tab + tab + space + space + STRUCT_PROPERTY + space;
+					result += newLine + tab + tab + STRUCT_PROPERTY + space + newLine;
 
 					if(propValue != null)
 					{
-						result += prop.Name.PadRight(isFormatted ? PAD_SPACES + 2 : 0);
+						result += prop.Name + space + newLine + tab + tab + tab;
 						AddToString(ref result, propValue, true, false, isFormatted: isFormatted);
 					}
 				}
@@ -212,11 +197,11 @@ namespace Purity.Tools
 
 					var fieldValue = field.GetValue(value);
 
-					result += newLine + tab + tab + space + space + STRUCT_PROPERTY + space;
+					result += newLine + tab + tab + STRUCT_PROPERTY + space;
 
 					if(fieldValue != null)
 					{
-						result += field.Name.PadRight(isFormatted ? PAD_SPACES + 2 : 0);
+						result += field.Name + space + newLine + tab + tab + tab;
 						AddToString(ref result, fieldValue, true, false, isFormatted: isFormatted);
 					}
 				}
@@ -224,10 +209,7 @@ namespace Purity.Tools
 				return;
 			}
 
-			if(value is bool) result += valueSep + BOOL + space + value;
-			else if(value is char) result += valueSep + CHAR + space + value;
-			else if(IsNumericType(value)) result += valueSep + NUMBER + space + value;
-			else if(value is string) result += valueSep + STRING + space + value?.ToString()?
+			result += valueSep + space + value?.ToString()?
 				.Replace("\t", TAB)
 				.Replace(Environment.NewLine, NEW_LINE)
 				.Replace(" ", SPACE);
@@ -283,15 +265,19 @@ namespace Purity.Tools
 				var result = Array.CreateInstance(elementType, array.Length);
 
 				for(int j = 0; j < array.Length; j++)
-					result.SetValue(Convert.ChangeType(array[j], elementType), j);
+				{
+					var arrayValue = TryParseValue(elementType, array[j]);
+					result.SetValue(arrayValue, j);
+				}
 
 				prop?.SetValue(instance, result);
 				field?.SetValue(instance, result);
 				return;
 			}
 
-			prop?.SetValue(instance, Convert.ChangeType(value, type));
-			field?.SetValue(instance, Convert.ChangeType(value, type));
+			var v = TryParseValue(type, value);
+			prop?.SetValue(instance, v);
+			field?.SetValue(instance, v);
 		}
 		private static object? ParseStruct(Type structType, string str)
 		{
@@ -304,24 +290,34 @@ namespace Purity.Tools
 				if(structValues.Length < 2)
 					continue;
 				var valStr = structValues[1];
-				var structValue = default(object);
 				var structField = structType.GetField(structValues[0]);
 				var structProp = structType.GetProperty(structValues[0]);
 
-				if(valStr.StartsWith(NUMBER)) structValue = ParseValues(valStr, NUMBER)[0];
-				else if(valStr.StartsWith(BOOL)) structValue = ParseValues(valStr, BOOL)[0];
-				else if(valStr.StartsWith(CHAR)) structValue = ParseValues(valStr, CHAR)[0];
-				else if(valStr.StartsWith(STRING)) structValue = valStr
-						.Replace(STRING, "")
-						.Replace(TAB, "\t")
-						.Replace(NEW_LINE, Environment.NewLine)
-						.Replace(SPACE, " ");
-				;
-
-				structField?.SetValue(structInstance, structValue);
-				structProp?.SetValue(structInstance, structValue);
+				if(structField != null)
+				{
+					var fieldValue = TryParseValue(structField.FieldType, valStr);
+					structField?.SetValue(structInstance, fieldValue);
+				}
+				else if(structProp != null)
+				{
+					var propValue = TryParseValue(structProp.PropertyType, valStr);
+					structProp?.SetValue(structInstance, propValue);
+				}
 			}
 			return structInstance;
+		}
+		private static object? TryParseValue(Type type, object value)
+		{
+			if(type == typeof(string))
+				return value;
+			else if(type == typeof(bool))
+				return Convert.ChangeType(Convert.ToBoolean(value, CultureInfo.CurrentCulture), type);
+			else if(type == typeof(char))
+				return Convert.ChangeType(Convert.ToChar(value, CultureInfo.CurrentCulture), type);
+			else if(IsNumericType(type))
+				return Convert.ChangeType(Convert.ToSingle(value, CultureInfo.CurrentCulture), type);
+
+			return default;
 		}
 		private void CacheProp(string instanceName, string prop)
 		{
@@ -334,7 +330,11 @@ namespace Purity.Tools
 				for(int i = 1; i < struc.Length; i++)
 				{
 					var sep = i < struc.Length - 1 ? STRUCT : "";
-					val += struc[i] + sep;
+					val += struc[i]
+						.Replace(TAB, "\t")
+						.Replace(NEW_LINE, Environment.NewLine)
+						.Replace(SPACE, " ") +
+						sep;
 				}
 
 				data[instanceName][structPropName] = val;
@@ -346,61 +346,19 @@ namespace Purity.Tools
 				return;
 
 			var name = values[0];
-			var valueStr = values[1];
-
-			if(TryCacheInstanceValue<float>(NUMBER, instanceName, name, valueStr)) { }
-			else if(TryCacheInstanceValue<bool>(BOOL, instanceName, name, valueStr)) { }
-			else if(TryCacheInstanceValue<char>(CHAR, instanceName, name, valueStr)) { }
-			else if(TryCacheInstanceValue<string>(STRING, instanceName, name, valueStr)) { }
-		}
-		private bool TryCacheInstanceValue<T>(string separator, string instanceName, string propName,
-			string valueStr)
-		{
-			if(valueStr.Contains(separator) == false)
-				return false;
-
-			var finalValues = ParseValues(valueStr, separator);
+			var finalValues = new string[values.Length - 1];
+			for(int i = 1; i < values.Length; i++)
+				finalValues[i - 1] = values[i]
+					.Replace(TAB, "\t")
+					.Replace(NEW_LINE, Environment.NewLine)
+					.Replace(SPACE, " ");
 
 			if(data.ContainsKey(instanceName) == false)
 				data[instanceName] = new();
 
-			var finalValue = finalValues.Length == 1 ? finalValues[0] : finalValues;
+			object finalValue = finalValues.Length == 1 ? finalValues[0] : finalValues;
 			if(finalValue != null)
-				data[instanceName][propName] = finalValue;
-
-			return true;
-		}
-		private static object[] ParseValues(string valueStr, string separator)
-		{
-			var isString = separator.Contains(STRING);
-			var index = isString ? 1 : 0;
-			var splitOptions = isString ?
-				StringSplitOptions.None : StringSplitOptions.RemoveEmptyEntries;
-			var allValues = valueStr.Split(separator, splitOptions);
-			var finalValues = new object[allValues.Length - index];
-
-			for(int k = index; k < allValues.Length; k++)
-			{
-				var value = allValues[k].Replace(separator, "");
-
-				try
-				{
-					if(valueStr.StartsWith(NUMBER))
-						finalValues[k - index] = float.Parse(value, CultureInfo.CurrentCulture);
-					else if(valueStr.StartsWith(BOOL))
-						finalValues[k - index] = bool.Parse(value);
-					else if(valueStr.StartsWith(CHAR))
-						finalValues[k - index] = char.Parse(value);
-					else if(valueStr.StartsWith(STRING))
-						finalValues[k - index] = value
-							.Replace(TAB, "\t")
-							.Replace(NEW_LINE, Environment.NewLine)
-							.Replace(SPACE, " ");
-				}
-				catch(Exception) { continue; }
-			}
-
-			return finalValues;
+				data[instanceName][name] = finalValue;
 		}
 		private static bool IsTypeSupported(Type type)
 		{
@@ -410,25 +368,23 @@ namespace Purity.Tools
 		{
 			return text.Replace("\t", "").Replace(" ", "").Replace(Environment.NewLine, "");
 		}
-		private static bool IsNumericType(object obj)
+		private static bool IsNumericType(Type type)
 		{
-			switch(Type.GetTypeCode(obj.GetType()))
+			return Type.GetTypeCode(type) switch
 			{
-				case TypeCode.Byte:
-				case TypeCode.SByte:
-				case TypeCode.UInt16:
-				case TypeCode.UInt32:
-				case TypeCode.UInt64:
-				case TypeCode.Int16:
-				case TypeCode.Int32:
-				case TypeCode.Int64:
-				case TypeCode.Decimal:
-				case TypeCode.Double:
-				case TypeCode.Single:
-					return true;
-				default:
-					return false;
-			}
+				TypeCode.Byte or
+				TypeCode.SByte or
+				TypeCode.UInt16 or
+				TypeCode.UInt32 or
+				TypeCode.UInt64 or
+				TypeCode.Int16 or
+				TypeCode.Int32 or
+				TypeCode.Int64 or
+				TypeCode.Decimal or
+				TypeCode.Double or
+				TypeCode.Single => true,
+				_ => false,
+			};
 		}
 		private static bool IsStructType(Type type)
 		{

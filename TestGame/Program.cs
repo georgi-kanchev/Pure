@@ -48,14 +48,6 @@ namespace TestGame
 			//storage.Store("instanceName", test);
 			//storage.Save("storage-save-test.purst");
 
-
-
-
-
-
-
-
-
 			//var window = new Window();
 			//var layer = new Layer((48, 27));
 			//var time = new Time();

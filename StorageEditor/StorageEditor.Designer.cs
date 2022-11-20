@@ -28,193 +28,325 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-			this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
-			this.button1 = new System.Windows.Forms.Button();
-			this.listBox1 = new System.Windows.Forms.ListBox();
-			this.button2 = new System.Windows.Forms.Button();
-			this.label1 = new System.Windows.Forms.Label();
-			this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
-			this.button3 = new System.Windows.Forms.Button();
-			this.listBox2 = new System.Windows.Forms.ListBox();
-			this.label2 = new System.Windows.Forms.Label();
-			this.button4 = new System.Windows.Forms.Button();
-			this.tableLayoutPanel1.SuspendLayout();
-			this.tableLayoutPanel2.SuspendLayout();
-			this.tableLayoutPanel3.SuspendLayout();
+			this.components = new System.ComponentModel.Container();
+			this.TableMain = new System.Windows.Forms.TableLayoutPanel();
+			this.MenuGlobal = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.MenuGlobalSave = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuGlobalLoad = new System.Windows.Forms.ToolStripMenuItem();
+			this.TableValues = new System.Windows.Forms.TableLayoutPanel();
+			this.LabelValues = new System.Windows.Forms.Label();
+			this.ListValues = new System.Windows.Forms.ListBox();
+			this.TableSubProperties = new System.Windows.Forms.TableLayoutPanel();
+			this.LabelSubProperties = new System.Windows.Forms.Label();
+			this.ListSubProperties = new System.Windows.Forms.ListBox();
+			this.TableProperties = new System.Windows.Forms.TableLayoutPanel();
+			this.LabelProperties = new System.Windows.Forms.Label();
+			this.ListProperties = new System.Windows.Forms.ListBox();
+			this.TableObjects = new System.Windows.Forms.TableLayoutPanel();
+			this.LabelObjects = new System.Windows.Forms.Label();
+			this.ListObjects = new System.Windows.Forms.ListBox();
+			this.MenuEdit = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.MenuEditEdit = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuEditRemove = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuEditSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+			this.MenuEditCreate = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuEditSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+			this.MenuEditSave = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuEditLoad = new System.Windows.Forms.ToolStripMenuItem();
+			this.Load = new System.Windows.Forms.OpenFileDialog();
+			this.TableMain.SuspendLayout();
+			this.MenuGlobal.SuspendLayout();
+			this.TableValues.SuspendLayout();
+			this.TableSubProperties.SuspendLayout();
+			this.TableProperties.SuspendLayout();
+			this.TableObjects.SuspendLayout();
+			this.MenuEdit.SuspendLayout();
 			this.SuspendLayout();
 			// 
-			// tableLayoutPanel1
+			// TableMain
 			// 
-			this.tableLayoutPanel1.BackColor = System.Drawing.Color.Black;
-			this.tableLayoutPanel1.CellBorderStyle = System.Windows.Forms.TableLayoutPanelCellBorderStyle.Single;
-			this.tableLayoutPanel1.ColumnCount = 4;
-			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20F));
-			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20F));
-			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20F));
-			this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 40F));
-			this.tableLayoutPanel1.Controls.Add(this.tableLayoutPanel3, 1, 0);
-			this.tableLayoutPanel1.Controls.Add(this.tableLayoutPanel2, 0, 0);
-			this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.tableLayoutPanel1.ForeColor = System.Drawing.Color.Black;
-			this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
-			this.tableLayoutPanel1.Name = "tableLayoutPanel1";
-			this.tableLayoutPanel1.RowCount = 1;
-			this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayoutPanel1.Size = new System.Drawing.Size(784, 561);
-			this.tableLayoutPanel1.TabIndex = 2;
+			this.TableMain.ColumnCount = 4;
+			this.TableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+			this.TableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+			this.TableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+			this.TableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+			this.TableMain.ContextMenuStrip = this.MenuGlobal;
+			this.TableMain.Controls.Add(this.TableValues, 3, 0);
+			this.TableMain.Controls.Add(this.TableSubProperties, 2, 0);
+			this.TableMain.Controls.Add(this.TableProperties, 1, 0);
+			this.TableMain.Controls.Add(this.TableObjects, 0, 0);
+			this.TableMain.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.TableMain.Location = new System.Drawing.Point(0, 0);
+			this.TableMain.Name = "TableMain";
+			this.TableMain.RowCount = 1;
+			this.TableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this.TableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+			this.TableMain.Size = new System.Drawing.Size(784, 561);
+			this.TableMain.TabIndex = 0;
 			// 
-			// tableLayoutPanel2
+			// MenuGlobal
 			// 
-			this.tableLayoutPanel2.CellBorderStyle = System.Windows.Forms.TableLayoutPanelCellBorderStyle.Inset;
-			this.tableLayoutPanel2.ColumnCount = 1;
-			this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayoutPanel2.Controls.Add(this.button1, 0, 2);
-			this.tableLayoutPanel2.Controls.Add(this.listBox1, 0, 1);
-			this.tableLayoutPanel2.Controls.Add(this.button2, 0, 3);
-			this.tableLayoutPanel2.Controls.Add(this.label1, 0, 0);
-			this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.tableLayoutPanel2.Location = new System.Drawing.Point(4, 4);
-			this.tableLayoutPanel2.Name = "tableLayoutPanel2";
-			this.tableLayoutPanel2.RowCount = 4;
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 4.949945F));
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 79.19914F));
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.925457F));
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.925457F));
-			this.tableLayoutPanel2.Size = new System.Drawing.Size(149, 553);
-			this.tableLayoutPanel2.TabIndex = 0;
+			this.MenuGlobal.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MenuGlobalSave,
+            this.MenuGlobalLoad});
+			this.MenuGlobal.Name = "contextMenuStrip1";
+			this.MenuGlobal.Size = new System.Drawing.Size(144, 48);
 			// 
-			// button1
+			// MenuGlobalSave
 			// 
-			this.button1.BackColor = System.Drawing.Color.Black;
-			this.button1.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button1.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.button1.ForeColor = System.Drawing.Color.White;
-			this.button1.Location = new System.Drawing.Point(5, 465);
-			this.button1.Name = "button1";
-			this.button1.Size = new System.Drawing.Size(139, 37);
-			this.button1.TabIndex = 1;
-			this.button1.Text = "Create";
-			this.button1.UseVisualStyleBackColor = false;
+			this.MenuGlobalSave.Name = "MenuGlobalSave";
+			this.MenuGlobalSave.Size = new System.Drawing.Size(143, 22);
+			this.MenuGlobalSave.Text = "Save Storage";
 			// 
-			// listBox1
+			// MenuGlobalLoad
 			// 
-			this.listBox1.BackColor = System.Drawing.Color.Black;
-			this.listBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.listBox1.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.listBox1.ForeColor = System.Drawing.Color.White;
-			this.listBox1.FormattingEnabled = true;
-			this.listBox1.ItemHeight = 25;
-			this.listBox1.Items.AddRange(new object[] {
-            "test",
-            "aaa",
-            "bbb"});
-			this.listBox1.Location = new System.Drawing.Point(5, 33);
-			this.listBox1.Name = "listBox1";
-			this.listBox1.Size = new System.Drawing.Size(139, 424);
-			this.listBox1.TabIndex = 0;
+			this.MenuGlobalLoad.Name = "MenuGlobalLoad";
+			this.MenuGlobalLoad.Size = new System.Drawing.Size(143, 22);
+			this.MenuGlobalLoad.Text = "Load Storage";
+			this.MenuGlobalLoad.Click += new System.EventHandler(this.Load_Click);
 			// 
-			// button2
+			// TableValues
 			// 
-			this.button2.BackColor = System.Drawing.Color.Black;
-			this.button2.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button2.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.button2.ForeColor = System.Drawing.Color.White;
-			this.button2.Location = new System.Drawing.Point(5, 510);
-			this.button2.Name = "button2";
-			this.button2.Size = new System.Drawing.Size(139, 38);
-			this.button2.TabIndex = 2;
-			this.button2.Text = "Delete";
-			this.button2.UseVisualStyleBackColor = false;
+			this.TableValues.ColumnCount = 1;
+			this.TableValues.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this.TableValues.Controls.Add(this.LabelValues, 0, 0);
+			this.TableValues.Controls.Add(this.ListValues, 0, 1);
+			this.TableValues.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.TableValues.Location = new System.Drawing.Point(591, 3);
+			this.TableValues.Name = "TableValues";
+			this.TableValues.RowCount = 2;
+			this.TableValues.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 5F));
+			this.TableValues.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95F));
+			this.TableValues.Size = new System.Drawing.Size(190, 555);
+			this.TableValues.TabIndex = 3;
+			this.TableValues.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
-			// label1
+			// LabelValues
 			// 
-			this.label1.AutoSize = true;
-			this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.label1.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.label1.ForeColor = System.Drawing.Color.White;
-			this.label1.Location = new System.Drawing.Point(5, 2);
-			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(139, 26);
-			this.label1.TabIndex = 3;
-			this.label1.Text = "Instances";
-			this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			this.LabelValues.AutoSize = true;
+			this.LabelValues.ContextMenuStrip = this.MenuGlobal;
+			this.LabelValues.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.LabelValues.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.LabelValues.ForeColor = System.Drawing.Color.White;
+			this.LabelValues.Location = new System.Drawing.Point(3, 0);
+			this.LabelValues.Name = "LabelValues";
+			this.LabelValues.Size = new System.Drawing.Size(184, 27);
+			this.LabelValues.TabIndex = 0;
+			this.LabelValues.Text = "Values";
+			this.LabelValues.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
 			// 
-			// tableLayoutPanel3
+			// ListValues
 			// 
-			this.tableLayoutPanel3.CellBorderStyle = System.Windows.Forms.TableLayoutPanelCellBorderStyle.Inset;
-			this.tableLayoutPanel3.ColumnCount = 1;
-			this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayoutPanel3.Controls.Add(this.button3, 0, 2);
-			this.tableLayoutPanel3.Controls.Add(this.listBox2, 0, 1);
-			this.tableLayoutPanel3.Controls.Add(this.button4, 0, 3);
-			this.tableLayoutPanel3.Controls.Add(this.label2, 0, 0);
-			this.tableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.tableLayoutPanel3.Location = new System.Drawing.Point(160, 4);
-			this.tableLayoutPanel3.Name = "tableLayoutPanel3";
-			this.tableLayoutPanel3.RowCount = 4;
-			this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 4.949945F));
-			this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 79.19914F));
-			this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.925457F));
-			this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.925457F));
-			this.tableLayoutPanel3.Size = new System.Drawing.Size(149, 553);
-			this.tableLayoutPanel3.TabIndex = 1;
+			this.ListValues.BackColor = System.Drawing.Color.Black;
+			this.ListValues.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.ListValues.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.ListValues.ForeColor = System.Drawing.Color.White;
+			this.ListValues.FormattingEnabled = true;
+			this.ListValues.ItemHeight = 21;
+			this.ListValues.Location = new System.Drawing.Point(3, 30);
+			this.ListValues.Name = "ListValues";
+			this.ListValues.Size = new System.Drawing.Size(184, 522);
+			this.ListValues.TabIndex = 1;
+			this.ListValues.Tag = "Value";
+			this.ListValues.MouseUp += new System.Windows.Forms.MouseEventHandler(this.List_Click);
 			// 
-			// button3
+			// TableSubProperties
 			// 
-			this.button3.BackColor = System.Drawing.Color.Black;
-			this.button3.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button3.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.button3.ForeColor = System.Drawing.Color.White;
-			this.button3.Location = new System.Drawing.Point(5, 465);
-			this.button3.Name = "button3";
-			this.button3.Size = new System.Drawing.Size(139, 37);
-			this.button3.TabIndex = 1;
-			this.button3.Text = "Create";
-			this.button3.UseVisualStyleBackColor = false;
+			this.TableSubProperties.ColumnCount = 1;
+			this.TableSubProperties.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this.TableSubProperties.Controls.Add(this.LabelSubProperties, 0, 0);
+			this.TableSubProperties.Controls.Add(this.ListSubProperties, 0, 1);
+			this.TableSubProperties.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.TableSubProperties.Location = new System.Drawing.Point(395, 3);
+			this.TableSubProperties.Name = "TableSubProperties";
+			this.TableSubProperties.RowCount = 2;
+			this.TableSubProperties.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 5F));
+			this.TableSubProperties.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95F));
+			this.TableSubProperties.Size = new System.Drawing.Size(190, 555);
+			this.TableSubProperties.TabIndex = 2;
+			this.TableSubProperties.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
-			// listBox2
+			// LabelSubProperties
 			// 
-			this.listBox2.BackColor = System.Drawing.Color.Black;
-			this.listBox2.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.listBox2.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.listBox2.ForeColor = System.Drawing.Color.White;
-			this.listBox2.FormattingEnabled = true;
-			this.listBox2.ItemHeight = 25;
-			this.listBox2.Items.AddRange(new object[] {
-            "test",
-            "aaa",
-            "bbb"});
-			this.listBox2.Location = new System.Drawing.Point(5, 33);
-			this.listBox2.Name = "listBox2";
-			this.listBox2.Size = new System.Drawing.Size(139, 424);
-			this.listBox2.TabIndex = 0;
+			this.LabelSubProperties.AutoSize = true;
+			this.LabelSubProperties.ContextMenuStrip = this.MenuGlobal;
+			this.LabelSubProperties.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.LabelSubProperties.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.LabelSubProperties.ForeColor = System.Drawing.Color.White;
+			this.LabelSubProperties.Location = new System.Drawing.Point(3, 0);
+			this.LabelSubProperties.Name = "LabelSubProperties";
+			this.LabelSubProperties.Size = new System.Drawing.Size(184, 27);
+			this.LabelSubProperties.TabIndex = 0;
+			this.LabelSubProperties.Text = "Sub Properties";
+			this.LabelSubProperties.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
 			// 
-			// label2
+			// ListSubProperties
 			// 
-			this.label2.AutoSize = true;
-			this.label2.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.label2.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.label2.ForeColor = System.Drawing.Color.White;
-			this.label2.Location = new System.Drawing.Point(5, 2);
-			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(139, 26);
-			this.label2.TabIndex = 3;
-			this.label2.Text = "Properties";
-			this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			this.ListSubProperties.BackColor = System.Drawing.Color.Black;
+			this.ListSubProperties.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.ListSubProperties.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.ListSubProperties.ForeColor = System.Drawing.Color.White;
+			this.ListSubProperties.FormattingEnabled = true;
+			this.ListSubProperties.ItemHeight = 21;
+			this.ListSubProperties.Location = new System.Drawing.Point(3, 30);
+			this.ListSubProperties.Name = "ListSubProperties";
+			this.ListSubProperties.Size = new System.Drawing.Size(184, 522);
+			this.ListSubProperties.TabIndex = 1;
+			this.ListSubProperties.Tag = "Sub Property";
+			this.ListSubProperties.SelectedIndexChanged += new System.EventHandler(this.ListSubProperties_SelectedIndexChanged);
+			this.ListSubProperties.MouseUp += new System.Windows.Forms.MouseEventHandler(this.List_Click);
 			// 
-			// button4
+			// TableProperties
 			// 
-			this.button4.BackColor = System.Drawing.Color.Black;
-			this.button4.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.button4.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.button4.ForeColor = System.Drawing.Color.White;
-			this.button4.Location = new System.Drawing.Point(5, 510);
-			this.button4.Name = "button4";
-			this.button4.Size = new System.Drawing.Size(139, 38);
-			this.button4.TabIndex = 2;
-			this.button4.Text = "Delete";
-			this.button4.UseVisualStyleBackColor = false;
+			this.TableProperties.ColumnCount = 1;
+			this.TableProperties.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this.TableProperties.Controls.Add(this.LabelProperties, 0, 0);
+			this.TableProperties.Controls.Add(this.ListProperties, 0, 1);
+			this.TableProperties.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.TableProperties.Location = new System.Drawing.Point(199, 3);
+			this.TableProperties.Name = "TableProperties";
+			this.TableProperties.RowCount = 2;
+			this.TableProperties.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 5F));
+			this.TableProperties.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95F));
+			this.TableProperties.Size = new System.Drawing.Size(190, 555);
+			this.TableProperties.TabIndex = 1;
+			this.TableProperties.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
+			// 
+			// LabelProperties
+			// 
+			this.LabelProperties.AutoSize = true;
+			this.LabelProperties.ContextMenuStrip = this.MenuGlobal;
+			this.LabelProperties.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.LabelProperties.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.LabelProperties.ForeColor = System.Drawing.Color.White;
+			this.LabelProperties.Location = new System.Drawing.Point(3, 0);
+			this.LabelProperties.Name = "LabelProperties";
+			this.LabelProperties.Size = new System.Drawing.Size(184, 27);
+			this.LabelProperties.TabIndex = 0;
+			this.LabelProperties.Text = "Properties";
+			this.LabelProperties.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			// 
+			// ListProperties
+			// 
+			this.ListProperties.BackColor = System.Drawing.Color.Black;
+			this.ListProperties.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.ListProperties.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.ListProperties.ForeColor = System.Drawing.Color.White;
+			this.ListProperties.FormattingEnabled = true;
+			this.ListProperties.ItemHeight = 21;
+			this.ListProperties.Location = new System.Drawing.Point(3, 30);
+			this.ListProperties.Name = "ListProperties";
+			this.ListProperties.Size = new System.Drawing.Size(184, 522);
+			this.ListProperties.TabIndex = 1;
+			this.ListProperties.Tag = "Property";
+			this.ListProperties.SelectedIndexChanged += new System.EventHandler(this.ListProperties_SelectedIndexChanged);
+			this.ListProperties.MouseUp += new System.Windows.Forms.MouseEventHandler(this.List_Click);
+			// 
+			// TableObjects
+			// 
+			this.TableObjects.ColumnCount = 1;
+			this.TableObjects.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this.TableObjects.Controls.Add(this.LabelObjects, 0, 0);
+			this.TableObjects.Controls.Add(this.ListObjects, 0, 1);
+			this.TableObjects.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.TableObjects.Location = new System.Drawing.Point(3, 3);
+			this.TableObjects.Name = "TableObjects";
+			this.TableObjects.RowCount = 2;
+			this.TableObjects.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 5F));
+			this.TableObjects.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95F));
+			this.TableObjects.Size = new System.Drawing.Size(190, 555);
+			this.TableObjects.TabIndex = 0;
+			this.TableObjects.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
+			// 
+			// LabelObjects
+			// 
+			this.LabelObjects.AutoSize = true;
+			this.LabelObjects.ContextMenuStrip = this.MenuGlobal;
+			this.LabelObjects.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.LabelObjects.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.LabelObjects.ForeColor = System.Drawing.Color.White;
+			this.LabelObjects.Location = new System.Drawing.Point(3, 0);
+			this.LabelObjects.Name = "LabelObjects";
+			this.LabelObjects.Size = new System.Drawing.Size(184, 27);
+			this.LabelObjects.TabIndex = 0;
+			this.LabelObjects.Text = "Objects";
+			this.LabelObjects.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			// 
+			// ListObjects
+			// 
+			this.ListObjects.BackColor = System.Drawing.Color.Black;
+			this.ListObjects.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.ListObjects.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.ListObjects.ForeColor = System.Drawing.Color.White;
+			this.ListObjects.FormattingEnabled = true;
+			this.ListObjects.ItemHeight = 21;
+			this.ListObjects.Location = new System.Drawing.Point(3, 30);
+			this.ListObjects.Name = "ListObjects";
+			this.ListObjects.Size = new System.Drawing.Size(184, 522);
+			this.ListObjects.TabIndex = 1;
+			this.ListObjects.Tag = "Object";
+			this.ListObjects.SelectedIndexChanged += new System.EventHandler(this.ListObjects_SelectedIndexChanged);
+			this.ListObjects.MouseUp += new System.Windows.Forms.MouseEventHandler(this.List_Click);
+			// 
+			// MenuEdit
+			// 
+			this.MenuEdit.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MenuEditEdit,
+            this.MenuEditRemove,
+            this.MenuEditSeparator1,
+            this.MenuEditCreate,
+            this.MenuEditSeparator2,
+            this.MenuEditSave,
+            this.MenuEditLoad});
+			this.MenuEdit.Name = "contextMenuStrip1";
+			this.MenuEdit.Size = new System.Drawing.Size(144, 126);
+			// 
+			// MenuEditEdit
+			// 
+			this.MenuEditEdit.Name = "MenuEditEdit";
+			this.MenuEditEdit.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditEdit.Text = "Edit";
+			// 
+			// MenuEditRemove
+			// 
+			this.MenuEditRemove.Name = "MenuEditRemove";
+			this.MenuEditRemove.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditRemove.Text = "Remove";
+			// 
+			// MenuEditSeparator1
+			// 
+			this.MenuEditSeparator1.Name = "MenuEditSeparator1";
+			this.MenuEditSeparator1.Size = new System.Drawing.Size(140, 6);
+			// 
+			// MenuEditCreate
+			// 
+			this.MenuEditCreate.Name = "MenuEditCreate";
+			this.MenuEditCreate.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditCreate.Text = "Create";
+			this.MenuEditCreate.Click += new System.EventHandler(this.MenuEditCreate_Click);
+			// 
+			// MenuEditSeparator2
+			// 
+			this.MenuEditSeparator2.Name = "MenuEditSeparator2";
+			this.MenuEditSeparator2.Size = new System.Drawing.Size(140, 6);
+			// 
+			// MenuEditSave
+			// 
+			this.MenuEditSave.Name = "MenuEditSave";
+			this.MenuEditSave.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditSave.Text = "Save Storage";
+			// 
+			// MenuEditLoad
+			// 
+			this.MenuEditLoad.Name = "MenuEditLoad";
+			this.MenuEditLoad.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditLoad.Text = "Load Storage";
+			this.MenuEditLoad.Click += new System.EventHandler(this.Load_Click);
+			// 
+			// Load
+			// 
+			this.Load.AddExtension = false;
+			this.Load.Title = "Load Purity Storage File";
 			// 
 			// Window
 			// 
@@ -222,30 +354,51 @@
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.Color.Black;
 			this.ClientSize = new System.Drawing.Size(784, 561);
-			this.Controls.Add(this.tableLayoutPanel1);
+			this.Controls.Add(this.TableMain);
 			this.Name = "Window";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Purity - Storage Editor";
-			this.tableLayoutPanel1.ResumeLayout(false);
-			this.tableLayoutPanel2.ResumeLayout(false);
-			this.tableLayoutPanel2.PerformLayout();
-			this.tableLayoutPanel3.ResumeLayout(false);
-			this.tableLayoutPanel3.PerformLayout();
+			this.TableMain.ResumeLayout(false);
+			this.MenuGlobal.ResumeLayout(false);
+			this.TableValues.ResumeLayout(false);
+			this.TableValues.PerformLayout();
+			this.TableSubProperties.ResumeLayout(false);
+			this.TableSubProperties.PerformLayout();
+			this.TableProperties.ResumeLayout(false);
+			this.TableProperties.PerformLayout();
+			this.TableObjects.ResumeLayout(false);
+			this.TableObjects.PerformLayout();
+			this.MenuEdit.ResumeLayout(false);
 			this.ResumeLayout(false);
 
 		}
 
 		#endregion
-		private TableLayoutPanel tableLayoutPanel1;
-		private TableLayoutPanel tableLayoutPanel2;
-		private Button button1;
-		private ListBox listBox1;
-		private Button button2;
-		private Label label1;
-		private TableLayoutPanel tableLayoutPanel3;
-		private Button button3;
-		private ListBox listBox2;
-		private Label label2;
-		private Button button4;
+
+		private TableLayoutPanel TableMain;
+		private TableLayoutPanel TableObjects;
+		private Label LabelObjects;
+		private ListBox ListObjects;
+		private TableLayoutPanel TableValues;
+		private Label LabelValues;
+		private ListBox ListValues;
+		private TableLayoutPanel TableSubProperties;
+		private Label LabelSubProperties;
+		private ListBox ListSubProperties;
+		private TableLayoutPanel TableProperties;
+		private Label LabelProperties;
+		private ListBox ListProperties;
+		private ContextMenuStrip MenuEdit;
+		private ToolStripMenuItem MenuEditCreate;
+		private ToolStripMenuItem MenuEditRemove;
+		private ToolStripSeparator MenuEditSeparator1;
+		private ToolStripSeparator MenuEditSeparator2;
+		private ToolStripMenuItem MenuEditSave;
+		private ToolStripMenuItem MenuEditLoad;
+		private ContextMenuStrip MenuGlobal;
+		private ToolStripMenuItem MenuGlobalSave;
+		private ToolStripMenuItem MenuGlobalLoad;
+		private ToolStripMenuItem MenuEditEdit;
+		private OpenFileDialog Load;
 	}
 }
