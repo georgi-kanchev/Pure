@@ -10,6 +10,11 @@ namespace StorageEditor
 			InitializeComponent();
 		}
 
+		private void UpdateAllLists()
+		{
+			ListObjects_SelectedIndexChanged(this, new());
+		}
+
 		private void ParseValue(string instanceName, string prop)
 		{
 			var values = prop.Split("~|", StringSplitOptions.RemoveEmptyEntries);
@@ -30,6 +35,191 @@ namespace StorageEditor
 
 			data[instanceName][structSplit[0]] = structProps;
 		}
+
+		private void TryEditLists(bool remove)
+		{
+			if(clickedList == null)
+				return;
+
+			if(clickedList == ListObjects)
+				EditObject(remove);
+			else if(clickedList == ListProperties)
+				EditProperties(remove);
+			else if(clickedList == ListSubProperties)
+				EditSubProperties(remove);
+			else if(clickedList == ListValues)
+				EditValues(remove);
+
+			UpdateAllLists();
+		}
+		private void EditObject(bool remove)
+		{
+			var objName = (string)ListObjects.SelectedItem;
+			if(remove)
+			{
+				data.Remove(objName);
+				ListObjects.Items.Remove(objName);
+
+				if(ListObjects.Items.Count == 0)
+				{
+					ListProperties.Items.Clear();
+					ListSubProperties.Items.Clear();
+					ListValues.Items.Clear();
+				}
+
+				return;
+			}
+
+			var value = data[objName];
+			var input = Trim(GetText($"Edit Object '{objName}'", objName));
+
+			if(objName != input && data.ContainsKey(input))
+			{
+				MessageBox.Show($"An Object '{input}' already exists.", $"Edit Object '{objName}'");
+				return;
+			}
+
+			data.Remove(objName);
+			data[input] = value;
+
+			ListObjects.Items.Remove(objName);
+			ListObjects.Items.Add(input);
+			ListObjects.SelectedItem = input;
+		}
+		private void EditProperties(bool remove)
+		{
+			var objName = (string)ListObjects.SelectedItem;
+			var prop = (string)ListProperties.SelectedItem;
+
+			if(remove)
+			{
+				data[objName].Remove(prop);
+				return;
+			}
+
+			var value = data[objName][prop];
+			var input = Trim(GetText($"Edit Property '{prop}'", prop));
+
+			if(input != prop && data[objName].ContainsKey(input))
+			{
+				MessageBox.Show(
+					$"The Object '{objName}' already has a Property '{input}'.",
+					$"Edit Property '{prop}'");
+				return;
+			}
+
+			data[objName].Remove(prop);
+			data[objName][input] = value;
+		}
+		private void EditSubProperties(bool remove)
+		{
+			var objName = (string)ListObjects.SelectedItem;
+			var prop = (string)ListProperties.SelectedItem;
+			var subProp = (string)ListSubProperties.SelectedItem;
+			var structs = data[objName][prop]
+				.Split("~&", StringSplitOptions.RemoveEmptyEntries);
+			var input = remove ? "" : Trim(GetText($"Edit Sub Property '{subProp}'", subProp));
+			var result = "";
+
+			for(int j = 0; j < structs.Length; j++)
+			{
+				var subProps = structs[j]
+					.Split("~=", StringSplitOptions.RemoveEmptyEntries);
+
+				result += "~&";
+
+				for(int i = 0; i < subProps.Length; i++)
+				{
+					var value = subProps[i].Split("~|", StringSplitOptions.RemoveEmptyEntries);
+					if(i == ListSubProperties.SelectedIndex)
+					{
+						if(remove)
+						{
+							if(ListSubProperties.Items.Count == 1)
+							{
+								data[objName][prop] = "~|Value";
+								return;
+							}
+							continue;
+						}
+
+						value[0] = input;
+					}
+					else if(value[0] == input)
+					{
+						MessageBox.Show(
+							$"The Property '{prop}' of the Object '{objName}' " +
+							$"already has a Sub Property '{input}'.",
+							$"Edit Sub Property '{prop}'");
+						return;
+					}
+
+					result += $"~={value[0]}~|{value[1]}";
+				}
+			}
+			data[objName][prop] = result;
+		}
+		private void EditValues(bool remove)
+		{
+			var objName = (string)ListObjects.SelectedItem;
+			var prop = (string)ListProperties.SelectedItem;
+			var value = (string)ListValues.SelectedItem;
+
+			if(ListValues.Items.Count > 1)
+			{
+				var split = value.Split("] ", StringSplitOptions.RemoveEmptyEntries);
+				value = "";
+				for(int i = 1; i < split.Length; i++)
+					value += split[i];
+			}
+
+			var rawValue = data[objName][prop];
+			var input = remove ?
+				"" : GetText($"Edit Value [{ListValues.SelectedIndex}] '{value}'", value);
+			var result = "";
+
+			if(rawValue.Contains("~&"))
+			{
+				var structs = data[objName][prop]
+					.Split("~&", StringSplitOptions.RemoveEmptyEntries);
+
+				for(int j = 0; j < structs.Length; j++)
+				{
+					var subProps = structs[j]
+						.Split("~=", StringSplitOptions.RemoveEmptyEntries);
+
+					result += "~&";
+
+					for(int i = 0; i < subProps.Length; i++)
+					{
+						var v = subProps[i].Split("~|", StringSplitOptions.RemoveEmptyEntries);
+						if(i == ListSubProperties.SelectedIndex && j == ListValues.SelectedIndex)
+						{
+							if(remove)
+								continue;
+
+							v[1] = input;
+						}
+
+						result += $"~={v[0]}~|{v[1]}";
+					}
+				}
+			}
+			else
+			{
+				var values = data[objName][prop].Split("~|", StringSplitOptions.RemoveEmptyEntries);
+				for(int i = 0; i < values.Length; i++)
+				{
+					if(i == ListValues.SelectedIndex)
+						values[i] = input;
+
+					result += $"~|{values[i]}";
+				}
+			}
+
+			data[objName][prop] = result;
+		}
+
 		private static string Trim(string text)
 		{
 			return text
@@ -93,9 +283,9 @@ namespace StorageEditor
 			clickedList = listbox;
 
 			MenuEditEdit.Text = MenuEditEdit.Enabled ?
-				$"Edit [{listbox.SelectedItem}]" : $"Edit {listbox.Tag}";
+				$"Edit '{listbox.SelectedItem}'" : $"Edit {listbox.Tag}";
 			MenuEditRemove.Text = MenuEditEdit.Enabled ?
-				$"Remove [{listbox.SelectedItem}]" : $"Remove {listbox.Tag}";
+				$"Remove '{listbox.SelectedItem}'" : $"Remove {listbox.Tag}";
 			MenuEditCreate.Text = $"Create {listbox.Tag}";
 
 			if(listbox == ListObjects)
@@ -103,12 +293,25 @@ namespace StorageEditor
 			else if(listbox == ListProperties)
 				MenuEditCreate.Enabled = ListObjects.Items.Count > 0;
 			else if(listbox == ListSubProperties)
-				MenuEditCreate.Enabled = ListObjects.Items.Count > 0 && ListProperties.Items.Count > 0;
+			{
+				var objName = (string)ListObjects.SelectedItem;
+				var propName = (string)ListProperties.SelectedItem;
+				var isArray = ListValues.Items.Count > 1 &&
+					data[objName][propName].Contains("~&") == false;
+
+				MenuEditCreate.Enabled = ListObjects.Items.Count > 0 &&
+					ListProperties.Items.Count > 0 && isArray == false;
+			}
 			else if(listbox == ListValues)
 			{
 				MenuEditCreate.Enabled = ListObjects.Items.Count > 0 &&
-					ListProperties.Items.Count > 0 && ListSubProperties.Items.Count == 0;
-				MenuEditRemove.Enabled = ListValues.Items.Count > 1;
+					ListProperties.Items.Count > 0;
+				MenuEditRemove.Enabled = ListObjects.Items.Count > 0 &&
+					ListValues.Items.Count > 1;
+
+				var valueStr = MenuEditCreate.Enabled ?
+					$" [{ListValues.Items.Count}] of '{ListProperties.SelectedItem}'" : "";
+				MenuEditCreate.Text = $"Create Value{valueStr}";
 			}
 		}
 		private void Load_Click(object sender, EventArgs e)
@@ -152,31 +355,50 @@ namespace StorageEditor
 				}
 			}
 
-			if(ListProperties.SelectedIndex != 0)
+			if(ListObjects.Items.Count > 0)
 				ListObjects.SelectedIndex = 0;
+			if(ListProperties.Items.Count > 0)
+				ListProperties.SelectedIndex = 0;
 		}
 
 		private void ListObjects_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			var instance = (string)ListObjects.SelectedItem;
+			if(instance == null)
+				return;
+
 			var props = data[instance];
+
+			var prevPropIndex = ListProperties.SelectedIndex;
+			var prevSubPropIndex = ListSubProperties.SelectedIndex;
+			var prevValueIndex = ListValues.SelectedIndex;
 
 			ListProperties.Items.Clear();
 			ListSubProperties.Items.Clear();
 			ListValues.Items.Clear();
 
 			foreach(var kvp in props)
-			{
 				ListProperties.Items.Add(kvp.Key);
 
-				if(ListProperties.SelectedIndex != 0)
-					ListProperties.SelectedIndex = 0;
-			}
+			if(prevPropIndex >= ListProperties.Items.Count)
+				prevPropIndex--;
+			ListProperties.SelectedIndex = prevPropIndex;
+
+			if(prevSubPropIndex >= ListSubProperties.Items.Count)
+				prevSubPropIndex--;
+			ListSubProperties.SelectedIndex = prevSubPropIndex;
+
+			if(prevValueIndex >= ListValues.Items.Count)
+				prevValueIndex--;
+			ListValues.SelectedIndex = prevValueIndex;
 		}
 		private void ListProperties_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			var instance = (string)ListObjects.SelectedItem;
 			var prop = (string)ListProperties.SelectedItem;
+			if(instance == null || prop == null)
+				return;
+
 			var values = data[instance][prop];
 
 			ListSubProperties.Items.Clear();
@@ -185,6 +407,8 @@ namespace StorageEditor
 			if(values.Contains("~&"))
 			{
 				var structs = values.Split("~&", StringSplitOptions.RemoveEmptyEntries);
+				if(structs.Length == 0)
+					return;
 				var structProp = structs[0].Split("~=", StringSplitOptions.RemoveEmptyEntries);
 
 				for(int j = 0; j < structProp.Length; j++)
@@ -202,7 +426,8 @@ namespace StorageEditor
 			var valuesSplit = values.Split("~|", StringSplitOptions.RemoveEmptyEntries);
 			for(int i = 0; i < valuesSplit.Length; i++)
 			{
-				ListValues.Items.Add(valuesSplit[i]);
+				var indexStr = valuesSplit.Length > 1 ? $"[{i}] " : "";
+				ListValues.Items.Add($"{indexStr}{valuesSplit[i]}");
 
 				if(ListValues.SelectedIndex != 0)
 					ListValues.SelectedIndex = 0;
@@ -212,6 +437,9 @@ namespace StorageEditor
 		{
 			var instance = (string)ListObjects.SelectedItem;
 			var prop = (string)ListProperties.SelectedItem;
+			if(instance == null || prop == null)
+				return;
+
 			var structs = data[instance][prop].Split("~&", StringSplitOptions.RemoveEmptyEntries);
 			var propIndex = ListSubProperties.SelectedIndex;
 
@@ -223,7 +451,7 @@ namespace StorageEditor
 				{
 					var props = structs[i].Split("~=", StringSplitOptions.RemoveEmptyEntries);
 					var values = props[propIndex].Split("~|", StringSplitOptions.RemoveEmptyEntries);
-					ListValues.Items.Add(DecryptText(values[1]));
+					ListValues.Items.Add($"[{i}] {DecryptText(values[1])}");
 				}
 
 				ListValues.SelectedIndex = 0;
@@ -231,10 +459,15 @@ namespace StorageEditor
 			}
 
 			var property = structs[0].Split("~=", StringSplitOptions.RemoveEmptyEntries);
+			if(ListSubProperties.SelectedIndex == -1)
+				return;
+
 			var value = property[ListSubProperties.SelectedIndex]
 				.Split("~|", StringSplitOptions.RemoveEmptyEntries);
 			ListValues.Items.Add(DecryptText(value[1]));
-			ListValues.SelectedIndex = 0;
+
+			if(ListValues.SelectedIndex == -1)
+				ListValues.SelectedIndex = 0;
 		}
 
 		private void MenuEditCreate_Click(object sender, EventArgs e)
@@ -251,9 +484,10 @@ namespace StorageEditor
 
 				var result = $"{key}{i}";
 				data[result] = new();
+
 				ListObjects.Items.Add(result);
 
-				if(ListObjects.SelectedIndex == -1)
+				if(ListObjects.Items.Count == 1)
 					ListObjects.SelectedIndex = 0;
 			}
 			else if(clickedList == ListProperties)
@@ -266,9 +500,9 @@ namespace StorageEditor
 
 				var result = $"{key}{i}";
 				data[selectedObj][result] = "Value";
-				ListProperties.Items.Add(result);
 
-				if(ListProperties.SelectedIndex == -1)
+				UpdateAllLists();
+				if(ListProperties.Items.Count == 1)
 					ListProperties.SelectedIndex = 0;
 			}
 			else if(clickedList == ListSubProperties)
@@ -308,22 +542,43 @@ namespace StorageEditor
 					result += structs[j];
 
 				data[selectedObj][selectedProp] = result;
-				ListSubProperties.Items.Add($"{key}{i}");
-
-				if(ListSubProperties.SelectedIndex == -1)
-					ListSubProperties.SelectedIndex = 0;
 			}
 			else if(clickedList == ListValues)
 			{
 				var selectedObj = (string)ListObjects.SelectedItem;
 				var selectedProp = (string)ListProperties.SelectedItem;
 
-				data[selectedObj][selectedProp] = data[selectedObj][selectedProp] + "~|Value";
-				ListValues.Items.Add("Value");
+				var raw = data[selectedObj][selectedProp];
+				if(raw.Contains("~&") == false)
+					data[selectedObj][selectedProp] += "~|Value";
+				else
+				{
+					var result = "~&";
+					var structs = raw.Split("~&", StringSplitOptions.RemoveEmptyEntries);
+					if(structs.Length == 0)
+						return;
 
-				if(ListValues.SelectedIndex == -1)
-					ListValues.SelectedItem = 0;
+					var props = structs[0].Split("~=", StringSplitOptions.RemoveEmptyEntries);
+
+					for(int i = 0; i < props.Length; i++)
+					{
+						var values = props[i].Split("~|", StringSplitOptions.RemoveEmptyEntries);
+						result += $"~={values[0]}~|Value";
+					}
+
+					data[selectedObj][selectedProp] += result;
+				}
 			}
+
+			UpdateAllLists();
+		}
+		private void MenuEditEdit_Click(object sender, EventArgs e)
+		{
+			TryEditLists(false);
+		}
+		private void MenuEditRemove_Click(object sender, EventArgs e)
+		{
+			TryEditLists(true);
 		}
 	}
 }

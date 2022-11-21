@@ -299,47 +299,49 @@
             this.MenuEditSave,
             this.MenuEditLoad});
 			this.MenuEdit.Name = "contextMenuStrip1";
-			this.MenuEdit.Size = new System.Drawing.Size(144, 126);
+			this.MenuEdit.Size = new System.Drawing.Size(181, 148);
 			// 
 			// MenuEditEdit
 			// 
 			this.MenuEditEdit.Name = "MenuEditEdit";
-			this.MenuEditEdit.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditEdit.Size = new System.Drawing.Size(180, 22);
 			this.MenuEditEdit.Text = "Edit";
+			this.MenuEditEdit.Click += new System.EventHandler(this.MenuEditEdit_Click);
 			// 
 			// MenuEditRemove
 			// 
 			this.MenuEditRemove.Name = "MenuEditRemove";
-			this.MenuEditRemove.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditRemove.Size = new System.Drawing.Size(180, 22);
 			this.MenuEditRemove.Text = "Remove";
+			this.MenuEditRemove.Click += new System.EventHandler(this.MenuEditRemove_Click);
 			// 
 			// MenuEditSeparator1
 			// 
 			this.MenuEditSeparator1.Name = "MenuEditSeparator1";
-			this.MenuEditSeparator1.Size = new System.Drawing.Size(140, 6);
+			this.MenuEditSeparator1.Size = new System.Drawing.Size(177, 6);
 			// 
 			// MenuEditCreate
 			// 
 			this.MenuEditCreate.Name = "MenuEditCreate";
-			this.MenuEditCreate.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditCreate.Size = new System.Drawing.Size(180, 22);
 			this.MenuEditCreate.Text = "Create";
 			this.MenuEditCreate.Click += new System.EventHandler(this.MenuEditCreate_Click);
 			// 
 			// MenuEditSeparator2
 			// 
 			this.MenuEditSeparator2.Name = "MenuEditSeparator2";
-			this.MenuEditSeparator2.Size = new System.Drawing.Size(140, 6);
+			this.MenuEditSeparator2.Size = new System.Drawing.Size(177, 6);
 			// 
 			// MenuEditSave
 			// 
 			this.MenuEditSave.Name = "MenuEditSave";
-			this.MenuEditSave.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditSave.Size = new System.Drawing.Size(180, 22);
 			this.MenuEditSave.Text = "Save Storage";
 			// 
 			// MenuEditLoad
 			// 
 			this.MenuEditLoad.Name = "MenuEditLoad";
-			this.MenuEditLoad.Size = new System.Drawing.Size(143, 22);
+			this.MenuEditLoad.Size = new System.Drawing.Size(180, 22);
 			this.MenuEditLoad.Text = "Load Storage";
 			this.MenuEditLoad.Click += new System.EventHandler(this.Load_Click);
 			// 
