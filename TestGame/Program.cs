@@ -36,15 +36,26 @@ namespace TestGame
 		private string instanceName;
 	}
 
+	public class Cat
+	{
+		public string Name;
+		public int Age;
+		public int BrainCells;
+		public SFML.Graphics.Color Color;
+		public string[] Breeds;
+	}
+
 	public class Program
 	{
 		static void Main()
 		{
 			var test = new Test();
+			var cat = new Cat();
 			var storage = new Storage();
 
-			storage.Load("storage-save-test.purst");
-			storage.Populate("instanceName", test);
+			storage.Load("cat.storage");
+			storage.Populate("cat", cat);
+
 			//storage.Store("instanceName", test);
 			//storage.Save("storage-save-test.purst");
 

@@ -255,8 +255,17 @@ namespace Purity.Tools
 				return;
 			}
 
-			if(valueType.IsArray)
+			if(valueType.IsArray || valueType == type.GetElementType())
 			{
+				if(valueType.IsArray == false)
+				{
+					var singleElementArray = Array.CreateInstance(valueType, 1);
+					singleElementArray.SetValue(value, 0);
+					prop?.SetValue(instance, singleElementArray);
+					field?.SetValue(instance, singleElementArray);
+					return;
+				}
+
 				var array = (object[])value;
 				var elementType = type.GetElementType();
 				if(elementType == null)
@@ -298,7 +307,7 @@ namespace Purity.Tools
 					var fieldValue = TryParseValue(structField.FieldType, valStr);
 					structField?.SetValue(structInstance, fieldValue);
 				}
-				else if(structProp != null)
+				else if(structProp != null && structProp.GetSetMethod() != null)
 				{
 					var propValue = TryParseValue(structProp.PropertyType, valStr);
 					structProp?.SetValue(structInstance, propValue);

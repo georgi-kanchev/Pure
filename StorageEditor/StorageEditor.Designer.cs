@@ -30,9 +30,6 @@
 		{
 			this.components = new System.ComponentModel.Container();
 			this.TableMain = new System.Windows.Forms.TableLayoutPanel();
-			this.MenuGlobal = new System.Windows.Forms.ContextMenuStrip(this.components);
-			this.MenuGlobalSave = new System.Windows.Forms.ToolStripMenuItem();
-			this.MenuGlobalLoad = new System.Windows.Forms.ToolStripMenuItem();
 			this.TableValues = new System.Windows.Forms.TableLayoutPanel();
 			this.LabelValues = new System.Windows.Forms.Label();
 			this.ListValues = new System.Windows.Forms.ListBox();
@@ -45,22 +42,23 @@
 			this.TableObjects = new System.Windows.Forms.TableLayoutPanel();
 			this.LabelObjects = new System.Windows.Forms.Label();
 			this.ListObjects = new System.Windows.Forms.ListBox();
-			this.MenuEdit = new System.Windows.Forms.ContextMenuStrip(this.components);
-			this.MenuEditEdit = new System.Windows.Forms.ToolStripMenuItem();
-			this.MenuEditRemove = new System.Windows.Forms.ToolStripMenuItem();
-			this.MenuEditSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-			this.MenuEditCreate = new System.Windows.Forms.ToolStripMenuItem();
-			this.MenuEditSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-			this.MenuEditSave = new System.Windows.Forms.ToolStripMenuItem();
-			this.MenuEditLoad = new System.Windows.Forms.ToolStripMenuItem();
+			this.Menu = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.MenuEdit = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuRemove = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+			this.MenuCreate = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+			this.MenuStorage = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuStorageSave = new System.Windows.Forms.ToolStripMenuItem();
+			this.MenuStorageLoad = new System.Windows.Forms.ToolStripMenuItem();
 			this.Load = new System.Windows.Forms.OpenFileDialog();
+			this.Save = new System.Windows.Forms.SaveFileDialog();
 			this.TableMain.SuspendLayout();
-			this.MenuGlobal.SuspendLayout();
 			this.TableValues.SuspendLayout();
 			this.TableSubProperties.SuspendLayout();
 			this.TableProperties.SuspendLayout();
 			this.TableObjects.SuspendLayout();
-			this.MenuEdit.SuspendLayout();
+			this.Menu.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// TableMain
@@ -70,7 +68,6 @@
 			this.TableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
 			this.TableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
 			this.TableMain.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
-			this.TableMain.ContextMenuStrip = this.MenuGlobal;
 			this.TableMain.Controls.Add(this.TableValues, 3, 0);
 			this.TableMain.Controls.Add(this.TableSubProperties, 2, 0);
 			this.TableMain.Controls.Add(this.TableProperties, 1, 0);
@@ -83,27 +80,7 @@
 			this.TableMain.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
 			this.TableMain.Size = new System.Drawing.Size(784, 561);
 			this.TableMain.TabIndex = 0;
-			// 
-			// MenuGlobal
-			// 
-			this.MenuGlobal.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.MenuGlobalSave,
-            this.MenuGlobalLoad});
-			this.MenuGlobal.Name = "contextMenuStrip1";
-			this.MenuGlobal.Size = new System.Drawing.Size(144, 48);
-			// 
-			// MenuGlobalSave
-			// 
-			this.MenuGlobalSave.Name = "MenuGlobalSave";
-			this.MenuGlobalSave.Size = new System.Drawing.Size(143, 22);
-			this.MenuGlobalSave.Text = "Save Storage";
-			// 
-			// MenuGlobalLoad
-			// 
-			this.MenuGlobalLoad.Name = "MenuGlobalLoad";
-			this.MenuGlobalLoad.Size = new System.Drawing.Size(143, 22);
-			this.MenuGlobalLoad.Text = "Load Storage";
-			this.MenuGlobalLoad.Click += new System.EventHandler(this.Load_Click);
+			this.TableMain.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// TableValues
 			// 
@@ -119,12 +96,11 @@
 			this.TableValues.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95F));
 			this.TableValues.Size = new System.Drawing.Size(190, 555);
 			this.TableValues.TabIndex = 3;
-			this.TableValues.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
+			this.TableValues.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// LabelValues
 			// 
 			this.LabelValues.AutoSize = true;
-			this.LabelValues.ContextMenuStrip = this.MenuGlobal;
 			this.LabelValues.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.LabelValues.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.LabelValues.ForeColor = System.Drawing.Color.White;
@@ -134,6 +110,7 @@
 			this.LabelValues.TabIndex = 0;
 			this.LabelValues.Text = "Values";
 			this.LabelValues.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			this.LabelValues.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// ListValues
 			// 
@@ -147,7 +124,10 @@
 			this.ListValues.Name = "ListValues";
 			this.ListValues.Size = new System.Drawing.Size(184, 522);
 			this.ListValues.TabIndex = 1;
+			this.ListValues.TabStop = false;
 			this.ListValues.Tag = "Value";
+			this.ListValues.MouseDown += new System.Windows.Forms.MouseEventHandler(this.List_MouseDown);
+			this.ListValues.MouseEnter += new System.EventHandler(this.List_MouseEnter);
 			this.ListValues.MouseUp += new System.Windows.Forms.MouseEventHandler(this.List_Click);
 			// 
 			// TableSubProperties
@@ -164,12 +144,11 @@
 			this.TableSubProperties.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95F));
 			this.TableSubProperties.Size = new System.Drawing.Size(190, 555);
 			this.TableSubProperties.TabIndex = 2;
-			this.TableSubProperties.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
+			this.TableSubProperties.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// LabelSubProperties
 			// 
 			this.LabelSubProperties.AutoSize = true;
-			this.LabelSubProperties.ContextMenuStrip = this.MenuGlobal;
 			this.LabelSubProperties.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.LabelSubProperties.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.LabelSubProperties.ForeColor = System.Drawing.Color.White;
@@ -179,6 +158,7 @@
 			this.LabelSubProperties.TabIndex = 0;
 			this.LabelSubProperties.Text = "Sub Properties";
 			this.LabelSubProperties.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			this.LabelSubProperties.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// ListSubProperties
 			// 
@@ -192,8 +172,11 @@
 			this.ListSubProperties.Name = "ListSubProperties";
 			this.ListSubProperties.Size = new System.Drawing.Size(184, 522);
 			this.ListSubProperties.TabIndex = 1;
+			this.ListSubProperties.TabStop = false;
 			this.ListSubProperties.Tag = "Sub Property";
 			this.ListSubProperties.SelectedIndexChanged += new System.EventHandler(this.ListSubProperties_SelectedIndexChanged);
+			this.ListSubProperties.MouseDown += new System.Windows.Forms.MouseEventHandler(this.List_MouseDown);
+			this.ListSubProperties.MouseEnter += new System.EventHandler(this.List_MouseEnter);
 			this.ListSubProperties.MouseUp += new System.Windows.Forms.MouseEventHandler(this.List_Click);
 			// 
 			// TableProperties
@@ -210,12 +193,11 @@
 			this.TableProperties.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95F));
 			this.TableProperties.Size = new System.Drawing.Size(190, 555);
 			this.TableProperties.TabIndex = 1;
-			this.TableProperties.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
+			this.TableProperties.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// LabelProperties
 			// 
 			this.LabelProperties.AutoSize = true;
-			this.LabelProperties.ContextMenuStrip = this.MenuGlobal;
 			this.LabelProperties.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.LabelProperties.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.LabelProperties.ForeColor = System.Drawing.Color.White;
@@ -225,6 +207,7 @@
 			this.LabelProperties.TabIndex = 0;
 			this.LabelProperties.Text = "Properties";
 			this.LabelProperties.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			this.LabelProperties.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// ListProperties
 			// 
@@ -238,8 +221,11 @@
 			this.ListProperties.Name = "ListProperties";
 			this.ListProperties.Size = new System.Drawing.Size(184, 522);
 			this.ListProperties.TabIndex = 1;
+			this.ListProperties.TabStop = false;
 			this.ListProperties.Tag = "Property";
 			this.ListProperties.SelectedIndexChanged += new System.EventHandler(this.ListProperties_SelectedIndexChanged);
+			this.ListProperties.MouseDown += new System.Windows.Forms.MouseEventHandler(this.List_MouseDown);
+			this.ListProperties.MouseEnter += new System.EventHandler(this.List_MouseEnter);
 			this.ListProperties.MouseUp += new System.Windows.Forms.MouseEventHandler(this.List_Click);
 			// 
 			// TableObjects
@@ -256,12 +242,11 @@
 			this.TableObjects.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95F));
 			this.TableObjects.Size = new System.Drawing.Size(190, 555);
 			this.TableObjects.TabIndex = 0;
-			this.TableObjects.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
+			this.TableObjects.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// LabelObjects
 			// 
 			this.LabelObjects.AutoSize = true;
-			this.LabelObjects.ContextMenuStrip = this.MenuGlobal;
 			this.LabelObjects.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.LabelObjects.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.LabelObjects.ForeColor = System.Drawing.Color.White;
@@ -271,6 +256,7 @@
 			this.LabelObjects.TabIndex = 0;
 			this.LabelObjects.Text = "Objects";
 			this.LabelObjects.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+			this.LabelObjects.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Global_Click);
 			// 
 			// ListObjects
 			// 
@@ -284,71 +270,87 @@
 			this.ListObjects.Name = "ListObjects";
 			this.ListObjects.Size = new System.Drawing.Size(184, 522);
 			this.ListObjects.TabIndex = 1;
+			this.ListObjects.TabStop = false;
 			this.ListObjects.Tag = "Object";
 			this.ListObjects.SelectedIndexChanged += new System.EventHandler(this.ListObjects_SelectedIndexChanged);
+			this.ListObjects.MouseDown += new System.Windows.Forms.MouseEventHandler(this.List_MouseDown);
+			this.ListObjects.MouseEnter += new System.EventHandler(this.List_MouseEnter);
 			this.ListObjects.MouseUp += new System.Windows.Forms.MouseEventHandler(this.List_Click);
+			// 
+			// Menu
+			// 
+			this.Menu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MenuEdit,
+            this.MenuRemove,
+            this.MenuSeparator1,
+            this.MenuCreate,
+            this.MenuSeparator2,
+            this.MenuStorage});
+			this.Menu.Name = "contextMenuStrip1";
+			this.Menu.Size = new System.Drawing.Size(181, 126);
 			// 
 			// MenuEdit
 			// 
-			this.MenuEdit.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.MenuEditEdit,
-            this.MenuEditRemove,
-            this.MenuEditSeparator1,
-            this.MenuEditCreate,
-            this.MenuEditSeparator2,
-            this.MenuEditSave,
-            this.MenuEditLoad});
-			this.MenuEdit.Name = "contextMenuStrip1";
-			this.MenuEdit.Size = new System.Drawing.Size(181, 148);
+			this.MenuEdit.Name = "MenuEdit";
+			this.MenuEdit.Size = new System.Drawing.Size(180, 22);
+			this.MenuEdit.Text = "Edit [E]";
+			this.MenuEdit.Click += new System.EventHandler(this.MenuEditEdit_Click);
 			// 
-			// MenuEditEdit
+			// MenuRemove
 			// 
-			this.MenuEditEdit.Name = "MenuEditEdit";
-			this.MenuEditEdit.Size = new System.Drawing.Size(180, 22);
-			this.MenuEditEdit.Text = "Edit";
-			this.MenuEditEdit.Click += new System.EventHandler(this.MenuEditEdit_Click);
+			this.MenuRemove.Name = "MenuRemove";
+			this.MenuRemove.Size = new System.Drawing.Size(180, 22);
+			this.MenuRemove.Text = "Remove [Delete / R]";
+			this.MenuRemove.Click += new System.EventHandler(this.MenuEditRemove_Click);
 			// 
-			// MenuEditRemove
+			// MenuSeparator1
 			// 
-			this.MenuEditRemove.Name = "MenuEditRemove";
-			this.MenuEditRemove.Size = new System.Drawing.Size(180, 22);
-			this.MenuEditRemove.Text = "Remove";
-			this.MenuEditRemove.Click += new System.EventHandler(this.MenuEditRemove_Click);
+			this.MenuSeparator1.Name = "MenuSeparator1";
+			this.MenuSeparator1.Size = new System.Drawing.Size(177, 6);
 			// 
-			// MenuEditSeparator1
+			// MenuCreate
 			// 
-			this.MenuEditSeparator1.Name = "MenuEditSeparator1";
-			this.MenuEditSeparator1.Size = new System.Drawing.Size(177, 6);
+			this.MenuCreate.Name = "MenuCreate";
+			this.MenuCreate.Size = new System.Drawing.Size(180, 22);
+			this.MenuCreate.Text = "Create [C]";
+			this.MenuCreate.Click += new System.EventHandler(this.MenuEditCreate_Click);
 			// 
-			// MenuEditCreate
+			// MenuSeparator2
 			// 
-			this.MenuEditCreate.Name = "MenuEditCreate";
-			this.MenuEditCreate.Size = new System.Drawing.Size(180, 22);
-			this.MenuEditCreate.Text = "Create";
-			this.MenuEditCreate.Click += new System.EventHandler(this.MenuEditCreate_Click);
+			this.MenuSeparator2.Name = "MenuSeparator2";
+			this.MenuSeparator2.Size = new System.Drawing.Size(177, 6);
 			// 
-			// MenuEditSeparator2
+			// MenuStorage
 			// 
-			this.MenuEditSeparator2.Name = "MenuEditSeparator2";
-			this.MenuEditSeparator2.Size = new System.Drawing.Size(177, 6);
+			this.MenuStorage.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MenuStorageSave,
+            this.MenuStorageLoad});
+			this.MenuStorage.Name = "MenuStorage";
+			this.MenuStorage.Size = new System.Drawing.Size(180, 22);
+			this.MenuStorage.Text = "Storage";
 			// 
-			// MenuEditSave
+			// MenuStorageSave
 			// 
-			this.MenuEditSave.Name = "MenuEditSave";
-			this.MenuEditSave.Size = new System.Drawing.Size(180, 22);
-			this.MenuEditSave.Text = "Save Storage";
+			this.MenuStorageSave.Name = "MenuStorageSave";
+			this.MenuStorageSave.Size = new System.Drawing.Size(180, 22);
+			this.MenuStorageSave.Text = "Save [Ctrl + S]";
+			this.MenuStorageSave.Click += new System.EventHandler(this.Save_Click);
 			// 
-			// MenuEditLoad
+			// MenuStorageLoad
 			// 
-			this.MenuEditLoad.Name = "MenuEditLoad";
-			this.MenuEditLoad.Size = new System.Drawing.Size(180, 22);
-			this.MenuEditLoad.Text = "Load Storage";
-			this.MenuEditLoad.Click += new System.EventHandler(this.Load_Click);
+			this.MenuStorageLoad.Name = "MenuStorageLoad";
+			this.MenuStorageLoad.Size = new System.Drawing.Size(180, 22);
+			this.MenuStorageLoad.Text = "Load [Ctrl + L]";
+			this.MenuStorageLoad.Click += new System.EventHandler(this.Load_Click);
 			// 
 			// Load
 			// 
 			this.Load.AddExtension = false;
 			this.Load.Title = "Load Purity Storage File";
+			// 
+			// Save
+			// 
+			this.Save.Title = "Save Purity Storage";
 			// 
 			// Window
 			// 
@@ -360,8 +362,8 @@
 			this.Name = "Window";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "Purity - Storage Editor";
+			this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Global_KeyDown);
 			this.TableMain.ResumeLayout(false);
-			this.MenuGlobal.ResumeLayout(false);
 			this.TableValues.ResumeLayout(false);
 			this.TableValues.PerformLayout();
 			this.TableSubProperties.ResumeLayout(false);
@@ -370,7 +372,7 @@
 			this.TableProperties.PerformLayout();
 			this.TableObjects.ResumeLayout(false);
 			this.TableObjects.PerformLayout();
-			this.MenuEdit.ResumeLayout(false);
+			this.Menu.ResumeLayout(false);
 			this.ResumeLayout(false);
 
 		}
@@ -390,17 +392,16 @@
 		private TableLayoutPanel TableProperties;
 		private Label LabelProperties;
 		private ListBox ListProperties;
-		private ContextMenuStrip MenuEdit;
-		private ToolStripMenuItem MenuEditCreate;
-		private ToolStripMenuItem MenuEditRemove;
-		private ToolStripSeparator MenuEditSeparator1;
-		private ToolStripSeparator MenuEditSeparator2;
-		private ToolStripMenuItem MenuEditSave;
-		private ToolStripMenuItem MenuEditLoad;
-		private ContextMenuStrip MenuGlobal;
-		private ToolStripMenuItem MenuGlobalSave;
-		private ToolStripMenuItem MenuGlobalLoad;
-		private ToolStripMenuItem MenuEditEdit;
+		private ContextMenuStrip Menu;
+		private ToolStripMenuItem MenuCreate;
+		private ToolStripMenuItem MenuRemove;
+		private ToolStripSeparator MenuSeparator1;
+		private ToolStripSeparator MenuSeparator2;
+		private ToolStripMenuItem MenuEdit;
 		private OpenFileDialog Load;
+		private ToolStripMenuItem MenuStorage;
+		private ToolStripMenuItem MenuStorageSave;
+		private ToolStripMenuItem MenuStorageLoad;
+		private SaveFileDialog Save;
 	}
 }
