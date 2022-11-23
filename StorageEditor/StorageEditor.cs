@@ -2,6 +2,7 @@ namespace StorageEditor
 {
 	public partial class Window : Form
 	{
+		#region Fields
 		private const string INSTANCE = "~@", INSTANCE_PROPERTY = "~~", VALUE = "~|",
 			STRUCT = "~&", STRUCT_PROPERTY = "~=",
 			SPACE = "~_", TAB = "~__", NEW_LINE = "~/";
@@ -23,18 +24,65 @@ namespace StorageEditor
 --------------------------
 ";
 
+		private readonly Dictionary<(bool, Keys), Action> hotkeys = new();
 		private readonly Dictionary<string, Dictionary<string, string>> data = new();
 		private ListBox? hoveredList;
+		#endregion
 
 		public Window()
 		{
 			InitializeComponent();
 			Focus();
+
+			hotkeys.Add((false, Keys.Delete), TryRemoveLists);
+			hotkeys.Add((false, Keys.R), TryRemoveLists);
+			hotkeys.Add((false, Keys.C), TryCreate);
+			hotkeys.Add((false, Keys.E), TryEditLists);
+
+			hotkeys.Add((true, Keys.C), TryCopy);
+			hotkeys.Add((true, Keys.D), TryDuplicate);
+
+			hotkeys.Add((true, Keys.S), TrySave);
+			hotkeys.Add((true, Keys.L), TryLoad);
 		}
 
+		#region System
 		private void UpdateAllLists()
 		{
-			ListObjects_SelectedIndexChanged(this, new());
+			var instance = (string)ListObjects.SelectedItem;
+			if(instance == null)
+				return;
+
+			var props = data[instance];
+			var prevPropIndex = ListProperties.SelectedIndex;
+			var prevSubPropIndex = ListSubProperties.SelectedIndex;
+			var prevValueIndex = ListValues.SelectedIndex;
+
+			ListProperties.Items.Clear();
+			ListSubProperties.Items.Clear();
+			ListValues.Items.Clear();
+
+			foreach(var kvp in props)
+				ListProperties.Items.Add(kvp.Key);
+
+			if(prevPropIndex >= ListProperties.Items.Count)
+				prevPropIndex = ListProperties.Items.Count - 1;
+			ListProperties.SelectedIndex = prevPropIndex;
+
+			if(prevSubPropIndex >= ListSubProperties.Items.Count)
+				prevSubPropIndex = ListSubProperties.Items.Count - 1;
+			ListSubProperties.SelectedIndex = prevSubPropIndex;
+
+			if(prevValueIndex >= ListValues.Items.Count)
+				prevValueIndex = ListValues.Items.Count - 1;
+			ListValues.SelectedIndex = prevValueIndex;
+
+			if(ListProperties.SelectedIndex == -1 && ListProperties.Items.Count > 0)
+				ListProperties.SelectedIndex = 0;
+			if(ListSubProperties.SelectedIndex == -1 && ListSubProperties.Items.Count > 0)
+				ListSubProperties.SelectedIndex = 0;
+			if(ListValues.SelectedIndex == -1 && ListValues.Items.Count > 0)
+				ListValues.SelectedIndex = 0;
 		}
 		private void UpdateEditMenu()
 		{
@@ -65,6 +113,9 @@ namespace StorageEditor
 				MenuRemove.Enabled = ListObjects.Items.Count > 0 &&
 					ListValues.Items.Count > 1;
 			}
+
+			MenuDuplicate.Enabled = MenuEdit.Enabled;
+			MenuCopyText.Enabled = MenuEdit.Enabled;
 		}
 
 		private void ParseValue(string instanceName, string prop)
@@ -87,10 +138,10 @@ namespace StorageEditor
 
 			data[instanceName][structSplit[0]] = structProps;
 		}
-		private string ParseSelectedIndexedValue()
+		private static string ParseSelectedIndexItem(ListBox list)
 		{
-			var value = (string)ListValues.SelectedItem;
-			if(ListValues.Items.Count > 1)
+			var value = (string)list.SelectedItem;
+			if(list.Items.Count > 1)
 			{
 				var split = value.Split("] ", StringSplitOptions.RemoveEmptyEntries);
 				value = "";
@@ -100,9 +151,53 @@ namespace StorageEditor
 			return value;
 		}
 
+		private void TryHotkeys(bool control, Keys key)
+		{
+			foreach(var kvp in hotkeys)
+			{
+				var ctrl = kvp.Key.Item1 == control;
+				var curKey = kvp.Key.Item2;
+
+				if(ctrl && key == curKey)
+					kvp.Value.Invoke();
+			}
+		}
+		private void TryDuplicate()
+		{
+			if(MenuDuplicate.Enabled == false)
+				return;
+
+			if(hoveredList == ListObjects)
+			{
+				var rawData = data[(string)ListObjects.SelectedItem];
+				var newData = new Dictionary<string, string>();
+				foreach(var kvp in rawData)
+					newData[kvp.Key] = kvp.Value;
+
+				TryCreate();
+				data[(string)ListObjects.SelectedItem] = newData;
+			}
+			else if(hoveredList == ListProperties)
+			{
+				var rawData = data[(string)ListObjects.SelectedItem]
+					[(string)ListProperties.SelectedItem];
+
+				TryCreate();
+				data[(string)ListObjects.SelectedItem][(string)ListProperties.SelectedItem] = rawData;
+			}
+
+			UpdateAllLists();
+		}
+		private void TryCopy()
+		{
+			if(MenuCopyText.Enabled == false || hoveredList == null)
+				return;
+
+			Clipboard.SetText(ParseSelectedIndexItem(hoveredList));
+		}
 		private void TrySave()
 		{
-			if(Save.ShowDialog() != DialogResult.OK)
+			if(StorageSave.ShowDialog() != DialogResult.OK)
 				return;
 
 			var isDataFormatted = true;
@@ -124,11 +219,11 @@ namespace StorageEditor
 				}
 			}
 
-			File.WriteAllText(Save.FileName, result);
+			File.WriteAllText(StorageSave.FileName, result);
 		}
 		private void TryLoad()
 		{
-			if(Load.ShowDialog() != DialogResult.OK)
+			if(StorageLoad.ShowDialog() != DialogResult.OK)
 				return;
 
 			data.Clear();
@@ -137,7 +232,7 @@ namespace StorageEditor
 			ListSubProperties.Items.Clear();
 			ListValues.Items.Clear();
 
-			var file = File.ReadAllText(Load.FileName);
+			var file = File.ReadAllText(StorageLoad.FileName);
 			var instances = file.Split(INSTANCE, StringSplitOptions.RemoveEmptyEntries);
 
 			for(int i = 0; i < instances.Length; i++)
@@ -175,7 +270,7 @@ namespace StorageEditor
 		}
 		private void TryCreate()
 		{
-			if(hoveredList == null)
+			if(hoveredList == null || MenuCreate.Enabled == false)
 				return;
 
 			if(hoveredList == ListObjects)
@@ -189,9 +284,6 @@ namespace StorageEditor
 				data[result] = new();
 
 				ListObjects.Items.Add(result);
-
-				if(ListObjects.Items.Count == 1)
-					ListObjects.SelectedIndex = 0;
 			}
 			else if(hoveredList == ListProperties)
 			{
@@ -205,20 +297,20 @@ namespace StorageEditor
 				data[selectedObj][result] = "Value";
 
 				UpdateAllLists();
-				if(ListProperties.Items.Count == 1)
-					ListProperties.SelectedIndex = 0;
 			}
 			else if(hoveredList == ListSubProperties)
 			{
 				var selectedObj = (string)ListObjects.SelectedItem;
 				var selectedProp = (string)ListProperties.SelectedItem;
 
+				if(selectedObj == null || selectedProp == null)
+					return;
+
 				if(data[selectedObj][selectedProp].Contains(STRUCT) == false)
 				{
 					var val = $"{STRUCT}SubProperty1{VALUE}{ListValues.SelectedItem}";
 					data[selectedObj][selectedProp] = val;
 					ListSubProperties.Items.Add("SubProperty1");
-					ListSubProperties.SelectedIndex = 0;
 					return;
 				}
 
@@ -275,6 +367,15 @@ namespace StorageEditor
 			}
 
 			UpdateAllLists();
+			hoveredList.SelectedIndex = hoveredList.Items.Count - 1;
+		}
+		private void TryRemoveLists()
+		{
+			TryEditLists(true);
+		}
+		private void TryEditLists()
+		{
+			TryEditLists(false);
 		}
 		private void TryEditLists(bool remove)
 		{
@@ -292,14 +393,56 @@ namespace StorageEditor
 			else if(hoveredList == ListValues)
 				EditValues(remove);
 
-			ListObjects.SelectedIndex = ListObjects.Items.Count - 1;
 			UpdateAllLists();
 		}
+		private static string TryGetEdit(string title, string text)
+		{
+			var window = new Form()
+			{
+				Width = 500,
+				Height = 150,
+				FormBorderStyle = FormBorderStyle.FixedDialog,
+				Text = title,
+				StartPosition = FormStartPosition.CenterScreen
+			};
+			var textBox = new TextBox()
+			{
+				Text = text,
+				Dock = DockStyle.Fill,
+				Multiline = true,
+				AcceptsReturn = true,
+				AcceptsTab = true,
+				BackColor = Color.Black,
+				ForeColor = Color.Wheat
+			};
+
+			window.Controls.Add(textBox);
+			window.ShowDialog();
+
+			var t = textBox.Text;
+			if(t.Contains(STRUCT) || t.Contains(STRUCT_PROPERTY) ||
+				t.Contains(INSTANCE) || t.Contains(INSTANCE_PROPERTY) ||
+				t.Contains(VALUE) || t.Contains(SPACE) || t.Contains(TAB) ||
+				t.Contains(NEW_LINE))
+			{
+				var space = "       ";
+				MessageBox.Show($"The provided edit cannot contain special separators:{Environment.NewLine}" +
+					$"{Environment.NewLine}{INSTANCE}{space}{INSTANCE_PROPERTY}{space}{STRUCT}{space}" +
+					$"{STRUCT_PROPERTY}{space}{VALUE}{space}{SPACE}{space}{TAB}{space}{NEW_LINE}",
+					"Invalid Edit");
+				return text;
+			}
+
+			return t;
+		}
+
 		private void EditObject(bool remove)
 		{
 			var objName = (string)ListObjects.SelectedItem;
 			if(objName == null)
 				return;
+
+			var prevSelectedIndex = ListObjects.SelectedIndex;
 
 			if(remove)
 			{
@@ -311,13 +454,17 @@ namespace StorageEditor
 					ListProperties.Items.Clear();
 					ListSubProperties.Items.Clear();
 					ListValues.Items.Clear();
+					return;
 				}
 
+				if(prevSelectedIndex >= ListObjects.Items.Count)
+					prevSelectedIndex = ListObjects.Items.Count - 1;
+				ListObjects.SelectedIndex = prevSelectedIndex;
 				return;
 			}
 
 			var value = data[objName];
-			var input = Trim(GetEdit($"Edit Object '{objName}'", objName));
+			var input = Trim(TryGetEdit($"Edit Object '{objName}'", objName));
 
 			if(objName != input && data.ContainsKey(input))
 			{
@@ -329,7 +476,7 @@ namespace StorageEditor
 			data[input] = value;
 
 			ListObjects.Items.Remove(objName);
-			ListObjects.Items.Add(input);
+			ListObjects.Items.Insert(prevSelectedIndex, input);
 			ListObjects.SelectedItem = input;
 		}
 		private void EditProperties(bool remove)
@@ -344,7 +491,7 @@ namespace StorageEditor
 			}
 
 			var value = data[objName][prop];
-			var input = Trim(GetEdit($"Edit Property '{prop}'", prop));
+			var input = Trim(TryGetEdit($"Edit Property '{prop}'", prop));
 
 			if(input != prop && data[objName].ContainsKey(input))
 			{
@@ -368,7 +515,7 @@ namespace StorageEditor
 
 			var structs = data[objName][prop]
 				.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
-			var input = remove ? "" : Trim(GetEdit($"Edit Sub Property '{subProp}'", subProp));
+			var input = remove ? "" : Trim(TryGetEdit($"Edit Sub Property '{subProp}'", subProp));
 			var result = "";
 
 			for(int j = 0; j < structs.Length; j++)
@@ -417,11 +564,11 @@ namespace StorageEditor
 		{
 			var objName = (string)ListObjects.SelectedItem;
 			var prop = (string)ListProperties.SelectedItem;
-			var value = ParseSelectedIndexedValue();
+			var value = ParseSelectedIndexItem(ListValues);
 
 			var rawValue = data[objName][prop];
 			var input = remove ?
-				"" : GetEdit($"Edit Value [{ListValues.SelectedIndex}] '{value}'", value);
+				"" : TryGetEdit($"Edit Value [{ListValues.SelectedIndex}] '{value}'", value);
 			var result = "";
 
 			if(rawValue.Contains(STRUCT))
@@ -439,11 +586,15 @@ namespace StorageEditor
 					for(int i = 0; i < subProps.Length; i++)
 					{
 						var v = subProps[i].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
+						if(v.Length < 2)
+							continue;
+
 						if(j == ListValues.SelectedIndex)
 						{
 							if(remove)
 							{
-								result = result[0..^2];
+								if(result.Length >= 2 && result[^2..^0] == STRUCT)
+									result = result[0..^2];
 								continue;
 							}
 
@@ -491,48 +642,9 @@ namespace StorageEditor
 				.Replace("\t", TAB)
 				.Replace(Environment.NewLine, NEW_LINE);
 		}
-		private static string GetEdit(string title, string text)
-		{
-			var window = new Form()
-			{
-				Width = 500,
-				Height = 150,
-				FormBorderStyle = FormBorderStyle.FixedDialog,
-				Text = title,
-				StartPosition = FormStartPosition.CenterScreen
-			};
-			var textBox = new TextBox()
-			{
-				Text = text,
-				Dock = DockStyle.Fill,
-				Multiline = true,
-				AcceptsReturn = true,
-				AcceptsTab = true,
-				BackColor = Color.Black,
-				ForeColor = Color.Wheat
-			};
-
-			window.Controls.Add(textBox);
-			window.ShowDialog();
-
-			var t = textBox.Text;
-			if(t.Contains(STRUCT) || t.Contains(STRUCT_PROPERTY) ||
-				t.Contains(INSTANCE) || t.Contains(INSTANCE_PROPERTY) ||
-				t.Contains(VALUE) || t.Contains(SPACE) || t.Contains(TAB) ||
-				t.Contains(NEW_LINE))
-			{
-				var space = "       ";
-				MessageBox.Show($"The provided edit cannot contain special separators:{Environment.NewLine}" +
-					$"{Environment.NewLine}{INSTANCE}{space}{INSTANCE_PROPERTY}{space}{STRUCT}{space}" +
-					$"{STRUCT_PROPERTY}{space}{VALUE}{space}{SPACE}{space}{TAB}{space}{NEW_LINE}",
-					"Invalid Edit");
-				return text;
-			}
-
-			return t;
-		}
-
-		private void Global_Click(object sender, MouseEventArgs e)
+		#endregion
+		#region Global
+		private void Global_MouseUp(object sender, MouseEventArgs e)
 		{
 			if(e.Button != MouseButtons.Right)
 				return;
@@ -542,15 +654,31 @@ namespace StorageEditor
 			MenuCreate.Enabled = false;
 			MenuRemove.Enabled = false;
 		}
-		private void Save_Click(object sender, EventArgs e)
+		private void Global_KeyDown(object sender, KeyEventArgs e)
 		{
-			TrySave();
+			UpdateEditMenu();
+			Focus();
+			TryHotkeys(e.Control, e.KeyCode);
 		}
-		private void Load_Click(object sender, EventArgs e)
+		#endregion
+		#region List
+		private void List_MouseEnter(object sender, EventArgs e)
 		{
-			TryLoad();
+			ListObjects.BackColor = Color.Black;
+			ListProperties.BackColor = Color.Black;
+			ListSubProperties.BackColor = Color.Black;
+			ListValues.BackColor = Color.Black;
+
+			hoveredList = (ListBox)sender;
+			hoveredList.BackColor = Color.FromArgb(255, 50, 50, 50);
+
+			UpdateEditMenu();
 		}
-		private void List_Click(object sender, MouseEventArgs e)
+		private void List_MouseDown(object sender, MouseEventArgs e)
+		{
+			ActiveControl = null;
+		}
+		private void List_MouseUp(object sender, MouseEventArgs e)
 		{
 			Focus();
 			UpdateEditMenu();
@@ -567,75 +695,9 @@ namespace StorageEditor
 			Menu.Show(MousePosition);
 		}
 
-		private void Global_KeyDown(object sender, KeyEventArgs e)
-		{
-			Focus();
-			var k = e.KeyCode;
-
-			if(k == Keys.Delete || k == Keys.R)
-				TryEditLists(true);
-			else if(k == Keys.E)
-				TryEditLists(false);
-			else if(e.Control == false && k == Keys.C)
-				TryCreate();
-			else if(e.Control && k == Keys.L)
-				TryLoad();
-			else if(e.Control && k == Keys.S)
-				TrySave();
-		}
-		private void List_MouseDown(object sender, MouseEventArgs e)
-		{
-			ActiveControl = null;
-		}
-		private void List_MouseEnter(object sender, EventArgs e)
-		{
-			ListObjects.BackColor = Color.Black;
-			ListProperties.BackColor = Color.Black;
-			ListSubProperties.BackColor = Color.Black;
-			ListValues.BackColor = Color.Black;
-
-			hoveredList = (ListBox)sender;
-			hoveredList.BackColor = Color.FromArgb(255, 50, 50, 50);
-
-			UpdateEditMenu();
-		}
-
 		private void ListObjects_SelectedIndexChanged(object sender, EventArgs e)
 		{
-			var instance = (string)ListObjects.SelectedItem;
-			if(instance == null)
-				return;
-
-			var props = data[instance];
-			var prevPropIndex = ListProperties.SelectedIndex;
-			var prevSubPropIndex = ListSubProperties.SelectedIndex;
-			var prevValueIndex = ListValues.SelectedIndex;
-
-			ListProperties.Items.Clear();
-			ListSubProperties.Items.Clear();
-			ListValues.Items.Clear();
-
-			foreach(var kvp in props)
-				ListProperties.Items.Add(kvp.Key);
-
-			if(prevPropIndex >= ListProperties.Items.Count)
-				prevPropIndex = ListProperties.Items.Count - 1;
-			ListProperties.SelectedIndex = prevPropIndex;
-
-			if(prevSubPropIndex >= ListSubProperties.Items.Count)
-				prevSubPropIndex = ListSubProperties.Items.Count - 1;
-			ListSubProperties.SelectedIndex = prevSubPropIndex;
-
-			if(prevValueIndex >= ListValues.Items.Count)
-				prevValueIndex = ListValues.Items.Count - 1;
-			ListValues.SelectedIndex = prevValueIndex;
-
-			if(ListProperties.SelectedIndex == -1 && ListProperties.Items.Count > 0)
-				ListProperties.SelectedIndex = 0;
-			if(ListSubProperties.SelectedIndex == -1 && ListSubProperties.Items.Count > 0)
-				ListSubProperties.SelectedIndex = 0;
-			if(ListValues.SelectedIndex == -1 && ListValues.Items.Count > 0)
-				ListValues.SelectedIndex = 0;
+			UpdateAllLists();
 		}
 		private void ListProperties_SelectedIndexChanged(object sender, EventArgs e)
 		{
@@ -682,7 +744,7 @@ namespace StorageEditor
 		{
 			var instance = (string)ListObjects.SelectedItem;
 			var prop = (string)ListProperties.SelectedItem;
-			if(instance == null || prop == null)
+			if(instance == null || prop == null || ListSubProperties.SelectedIndex == -1)
 				return;
 
 			var structs = data[instance][prop].Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
@@ -696,6 +758,9 @@ namespace StorageEditor
 				{
 					var props = structs[i].Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
 					var values = props[propIndex].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
+					if(values.Length < 2)
+						continue;
+
 					ListValues.Items.Add($"[{i}] {DecryptText(values[1])}");
 				}
 
@@ -714,18 +779,36 @@ namespace StorageEditor
 			if(ListValues.SelectedIndex == -1)
 				ListValues.SelectedIndex = 0;
 		}
-
-		private void MenuEditCreate_Click(object sender, EventArgs e)
+		#endregion
+		#region Menu
+		private void MenuCreate_Click(object sender, EventArgs e)
 		{
 			TryCreate();
 		}
-		private void MenuEditEdit_Click(object sender, EventArgs e)
+		private void MenuEdit_Click(object sender, EventArgs e)
 		{
 			TryEditLists(false);
 		}
-		private void MenuEditRemove_Click(object sender, EventArgs e)
+		private void MenuRemove_Click(object sender, EventArgs e)
 		{
 			TryEditLists(true);
 		}
+		private void MenuSave_Click(object sender, EventArgs e)
+		{
+			TrySave();
+		}
+		private void MenuLoad_Click(object sender, EventArgs e)
+		{
+			TryLoad();
+		}
+		private void MenuDuplicate_Click(object sender, EventArgs e)
+		{
+			TryDuplicate();
+		}
+		private void MenuCopyText_Click(object sender, EventArgs e)
+		{
+			TryCopy();
+		}
+		#endregion
 	}
 }
