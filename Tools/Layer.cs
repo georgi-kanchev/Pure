@@ -2,6 +2,13 @@
 {
 	public class Layer
 	{
+		public enum TextBoxAlignment
+		{
+			UpLeft, Up, UpRight,
+			Left, Center, Right,
+			DownLeft, Down, DownRight
+		};
+
 		public uint[,] Cells { get; }
 		public byte[,] Colors { get; }
 
@@ -63,24 +70,120 @@
 			Cells[coords.Item1, coords.Item2] = cell;
 			Colors[coords.Item1, coords.Item2] = color;
 		}
-		public void SetSquare((uint, uint) startIndices, (uint, uint) endIndices,
+		public void SetSquare((uint, uint) indices, (int, int) size,
 			uint cell, byte color)
 		{
-			for(uint y = startIndices.Item2; y < endIndices.Item2 + 1; y++)
-				for(uint x = startIndices.Item1; x < endIndices.Item1 + 1; x++)
+			var xStep = (uint)(size.Item1 < 0 ? -1 : 1);
+			var yStep = (uint)(size.Item2 < 0 ? -1 : 1);
+			for(uint x = indices.Item1; x != indices.Item1 + size.Item1; x += xStep)
+				for(uint y = indices.Item2; y != indices.Item2 + size.Item2; y += yStep)
 					SetCell((x, y), cell, color);
 		}
 		public void SetTextLine((uint, uint) indices, string text, byte color)
 		{
-			for(uint i = 0; i < text.Length; i++)
+			var errorOffset = (uint)0;
+			for(uint i = 0; i < text?.Length; i++)
 			{
 				var symbol = text[(int)i];
 				var index = GetCell(symbol);
 
 				if(index == default && symbol != ' ')
+				{
+					errorOffset++;
+					continue;
+				}
+
+				SetCell((indices.Item1 + i - errorOffset, indices.Item2), index, color);
+			}
+		}
+		public void SetTextBox((uint, uint) indices, (int, int) size, byte color,
+			bool wordWrap, TextBoxAlignment alignment, params string[] lines)
+		{
+			var x = indices.Item1;
+			var y = indices.Item2;
+
+			if(size.Item1 <= 0 || size.Item2 <= 0)
+				return;
+
+			for(uint i = 0; i < lines?.Length; i++)
+			{
+				var line = lines[i];
+
+				if(alignment == TextBoxAlignment.UpRight ||
+					alignment == TextBoxAlignment.Right ||
+					alignment == TextBoxAlignment.DownRight)
+					line = line.PadLeft(size.Item1);
+
+				if(y >= indices.Item2 + size.Item2)
 					return;
 
-				SetCell((indices.Item1 + i, indices.Item2), index, color);
+				for(uint j = 0; j < line?.Length; j++)
+				{
+					var symbol = line[(int)j];
+
+					if(x >= indices.Item1 + size.Item1)
+					{
+						var continueWithSymbolWrap = false;
+						var visitedWordWrap = false;
+
+						if(wordWrap && j < line.Length &&
+							symbol != ' ' && symbol != '\n' &&
+							symbol.ToString() != Environment.NewLine)
+						{
+							visitedWordWrap = true;
+
+							for(int k = (int)j; k >= 0; k--)
+							{
+								var curSymbol = line[k];
+								if(curSymbol == ' ')
+								{
+									var indexDiff = (int)j - k;
+
+									if(indexDiff >= x)
+									{
+										continueWithSymbolWrap = true;
+										break;
+									}
+
+									line = line.Insert(k, new string(' ', indexDiff));
+									SetSquare((x - (uint)indexDiff, y), (indexDiff, 1), 0, color);
+									break;
+								}
+
+								if(k == 0)
+									line = line.Insert(k, curSymbol.ToString());
+							}
+						}
+
+						if(j < line.Length &&
+							symbol != ' ')
+							NewLine();
+
+						if(visitedWordWrap && continueWithSymbolWrap == false)
+							continue;
+					}
+
+					if(symbol.ToString() == Environment.NewLine || symbol == '\n')
+						NewLine();
+
+					var index = GetCell(symbol);
+					if(index == default && symbol != ' ')
+						continue;
+
+					if(y >= indices.Item2 + size.Item2)
+						return;
+
+					SetCell((x, y), index, color);
+					x++;
+				}
+
+				NewLine();
+			}
+
+			void NewLine()
+			{
+				x = indices.Item1;
+				y++;
 			}
 		}
 
@@ -93,11 +196,11 @@
 			{ '⅓', 145 }, { '⅜', 146 }, { '⅖', 147 }, { '½', 148 }, { '⅗', 149 },
 			{ '⅝', 150 }, { '⅔', 151 }, { '¾', 152 },  { '⅘', 153 },  { '⅚', 154 },  { '⅞', 155 },
 
-			{ '⁰', 156 }, { '¹', 157 }, { '²', 158 }, { '³', 159 }, { '⁴', 160 },
-			{ '⁵', 161 }, { '⁶', 162 }, { '⁷', 163 }, { '⁸', 164 }, { '⁹', 165 },
+			{ '₀', 156 }, { '₁', 157 }, { '₂', 158 }, { '₃', 159 }, { '₄', 160 },
+			{ '₅', 161 }, { '₆', 162 }, { '₇', 163 }, { '₈', 164 }, { '₉', 165 },
 
-			{ '₀', 169 }, { '₁', 170 }, { '₂', 171 }, { '₃', 172 }, { '₄', 173 },
-			{ '₅', 174 }, { '₆', 175 }, { '₇', 176 }, { '₈', 177 }, { '₉', 178 },
+			{ '⁰', 169 }, { '¹', 170 }, { '²', 171 }, { '³', 172 }, { '⁴', 173 },
+			{ '⁵', 174 }, { '⁶', 175 }, { '⁷', 176 }, { '⁸', 177 }, { '⁹', 178 },
 
 			{ '+', 182 }, { '-', 183 }, { '×', 184 }, { '―', 185 }, { '÷', 186 }, { '%', 187 },
 			{ '=', 188 }, { '≠', 189 }, { '≈', 190 }, { '√', 191 }, { '∫', 193 }, { 'Σ', 194 },

@@ -11,41 +11,66 @@
 				return;
 
 			var result = StateButton.Default;
-			var clicked = (0, 0);
 
-			if(isPressed == false && wasPressed && pressedCell == hoveredIndices) // on click
-				clicked = hoveredIndices;
-			if(isPressed && wasPressed == false) // on press
-				pressedCell = hoveredIndices;
+			var wasPressed = ButtonWasPressed(indices, size);
+			ButtonPress(indices, size, isPressed);
 
-			var xStep = (uint)(size.Item1 < 0 ? -1 : 1);
-			var yStep = (uint)(size.Item2 < 0 ? -1 : 1);
-			for(uint x = indices.Item1; x != indices.Item1 + size.Item1; x += xStep)
-				for(uint y = indices.Item2; y != indices.Item2 + size.Item2; y += yStep)
-				{
-					var curIndices = (x, y);
-					if(clicked == curIndices)
-					{
-						method?.Invoke(StateButton.Clicked);
-						wasPressed = isPressed;
-						return;
-					}
-					if(hoveredIndices == curIndices)
-					{
-						var isValidPress = isPressed && pressedCell == curIndices;
-						method?.Invoke(isValidPress ? StateButton.Pressed : StateButton.Hovered);
-						wasPressed = isPressed;
-						return;
-					}
-				}
+			var isReleased = isPressed == false && wasPressed;
+			var key = GetKey(indices, size);
+			var hx = hoveredIndices.Item1;
+			var hy = hoveredIndices.Item2;
+			var x = indices.Item1;
+			var y = indices.Item2;
+			var w = size.Item1;
+			var h = size.Item2;
+			var isHoveredX = hx >= x && hx < x + w;
+			var isHoveredY = hy >= y && hy < y + h;
+			var isClicked = buttonsClicked.ContainsKey(key) && buttonsClicked[key];
+
+			if(w < 0)
+				isHoveredX = hx > x + w && hx <= x;
+			if(h < 0)
+				isHoveredY = hy > y + h && hy <= y;
+
+			var isHovered = isHoveredX && isHoveredY;
+
+			if(isHovered && isReleased && isClicked)
+				result = StateButton.Clicked;
+			else if(isHovered && isPressed)
+			{
+				if(isClicked)
+					result = StateButton.Pressed;
+
+				if(wasPressed == false)
+					buttonsClicked[key] = true;
+			}
+			else if(isHovered)
+				result = StateButton.Hovered;
+
+			if(isReleased)
+				buttonsClicked[key] = false;
 
 			method?.Invoke(result);
-			wasPressed = isPressed;
 		}
 
 		#region Backend
-		private static bool wasPressed;
-		private static (int, int) pressedCell = (int.MaxValue, int.MaxValue);
+		private static readonly Dictionary<string, bool> buttonsWerePressed = new();
+		private static readonly Dictionary<string, bool> buttonsClicked = new();
+
+		private static string GetKey((uint, uint) indices, (int, int) size)
+		{
+			return $"{indices.Item1} {indices.Item2} {size.Item1} {size.Item2}";
+		}
+		private static void ButtonPress((uint, uint) indices, (int, int) size, bool isPressed)
+		{
+			var key = GetKey(indices, size);
+			buttonsWerePressed[key] = isPressed;
+		}
+		private static bool ButtonWasPressed((uint, uint) indices, (int, int) size)
+		{
+			var key = GetKey(indices, size);
+			return buttonsWerePressed.ContainsKey(key) && buttonsWerePressed[key];
+		}
 		#endregion
 	}
 }
