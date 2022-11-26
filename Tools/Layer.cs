@@ -2,7 +2,7 @@
 {
 	public class Layer
 	{
-		public enum TextBoxAlignment
+		public enum Alignment
 		{
 			UpLeft, Up, UpRight,
 			Left, Center, Right,
@@ -70,14 +70,18 @@
 			Cells[coords.Item1, coords.Item2] = cell;
 			Colors[coords.Item1, coords.Item2] = color;
 		}
-		public void SetSquare((uint, uint) indices, (int, int) size,
-			uint cell, byte color)
+		public void SetSquare((uint, uint) indices, (int, int) size, uint cell, byte color)
 		{
-			var xStep = (uint)(size.Item1 < 0 ? -1 : 1);
-			var yStep = (uint)(size.Item2 < 0 ? -1 : 1);
-			for(uint x = indices.Item1; x != indices.Item1 + size.Item1; x += xStep)
-				for(uint y = indices.Item2; y != indices.Item2 + size.Item2; y += yStep)
-					SetCell((x, y), cell, color);
+			var xStep = size.Item1 < 0 ? -1 : 1;
+			var yStep = size.Item2 < 0 ? -1 : 1;
+			for(int x = (int)indices.Item1; x != indices.Item1 + size.Item1; x += xStep)
+				for(int y = (int)indices.Item2; y != indices.Item2 + size.Item2; y += yStep)
+				{
+					if(x < 0 || y < 0)
+						continue;
+
+					SetCell(((uint)x, (uint)y), cell, color);
+				}
 		}
 		public void SetTextLine((uint, uint) indices, string text, byte color)
 		{
@@ -97,86 +101,116 @@
 			}
 		}
 		public void SetTextBox((uint, uint) indices, (int, int) size, byte color,
-			bool wordWrap, TextBoxAlignment alignment, params string[] lines)
+			bool isWordWrapping, Alignment alignment, params string[] lines)
 		{
+			if(lines == null || lines.Length == 0 ||
+				size.Item1 <= 0 || size.Item2 <= 0)
+				return;
+
 			var x = indices.Item1;
 			var y = indices.Item2;
 
-			if(size.Item1 <= 0 || size.Item2 <= 0)
+
+			var lineList = new List<string>(lines);
+
+			if(lineList == null || lineList.Count == 0)
 				return;
 
-			for(uint i = 0; i < lines?.Length; i++)
+			for(int i = 0; i < lineList.Count - 1; i++)
+				lineList[i] = lineList[i].Trim() + '\n';
+
+			for(int i = 0; i < lineList.Count; i++)
 			{
-				var line = lines[i];
+				var line = lineList[i];
 
-				if(alignment == TextBoxAlignment.UpRight ||
-					alignment == TextBoxAlignment.Right ||
-					alignment == TextBoxAlignment.DownRight)
-					line = line.PadLeft(size.Item1);
-
-				if(y >= indices.Item2 + size.Item2)
-					return;
-
-				for(uint j = 0; j < line?.Length; j++)
+				for(int j = 0; j < line.Length; j++)
 				{
-					var symbol = line[(int)j];
+					var isSymbolNewLine = line[j] == '\n' && j != line.Length - 1 && j > size.Item1;
+					var isEndOfLine = j > size.Item1;
 
-					if(x >= indices.Item1 + size.Item1)
+					if(j == line.Length - 1 && line[j] == '\n')
 					{
-						var continueWithSymbolWrap = false;
-						var visitedWordWrap = false;
-
-						if(wordWrap && j < line.Length &&
-							symbol != ' ' && symbol != '\n' &&
-							symbol.ToString() != Environment.NewLine)
-						{
-							visitedWordWrap = true;
-
-							for(int k = (int)j; k >= 0; k--)
-							{
-								var curSymbol = line[k];
-								if(curSymbol == ' ')
-								{
-									var indexDiff = (int)j - k;
-
-									if(indexDiff >= x)
-									{
-										continueWithSymbolWrap = true;
-										break;
-									}
-
-									line = line.Insert(k, new string(' ', indexDiff));
-									SetSquare((x - (uint)indexDiff, y), (indexDiff, 1), 0, color);
-									break;
-								}
-
-								if(k == 0)
-									line = line.Insert(k, curSymbol.ToString());
-							}
-						}
-
-						if(j < line.Length &&
-							symbol != ' ')
-							NewLine();
-
-						if(visitedWordWrap && continueWithSymbolWrap == false)
-							continue;
+						j--;
+						line = line[0..^1];
+						lineList[i] = line;
 					}
 
-					if(symbol.ToString() == Environment.NewLine || symbol == '\n')
-						NewLine();
+					if(isEndOfLine ^ isSymbolNewLine)
+					{
+						var newLineIndex = isWordWrapping && isSymbolNewLine == false ?
+							GetSafeNewLineIndex(line, (uint)j) : j;
 
-					var index = GetCell(symbol);
-					if(index == default && symbol != ' ')
-						continue;
+						// end of line? can't word wrap, proceed to symbol wrap
+						if(newLineIndex == 0)
+						{
+							lineList[i] = line[0..size.Item1];
+							var newLineSymbol = line[size.Item1..line.Length];
+							if(i == lineList.Count - 1)
+							{
+								lineList.Add(newLineSymbol);
+								break;
+							}
+							lineList[i + 1] = $"{newLineSymbol} {lineList[i + 1]}";
+							break;
+						}
 
-					if(y >= indices.Item2 + size.Item2)
-						return;
+						lineList[i] = line[0..newLineIndex];
 
-					SetCell((x, y), index, color);
-					x++;
+						var newLine = isWordWrapping ?
+							line[(newLineIndex + 1)..^0] : line[j..^0];
+
+						if(i == lineList.Count - 1)
+						{
+							lineList.Add(newLine);
+							break;
+						}
+
+						var space = newLine.EndsWith('\n') ? "" : " ";
+						lineList[i + 1] = $"{newLine}{space}{lineList[i + 1]}";
+						break;
+					}
 				}
+				if(i > size.Item2)
+					break;
+			}
 
+			var yDiff = size.Item2 - lineList.Count;
+
+			if(yDiff > 1)
+			{
+				if(alignment == Alignment.Left ||
+					alignment == Alignment.Center ||
+					alignment == Alignment.Right)
+					for(int i = 0; i < yDiff / 2; i++)
+						lineList.Insert(0, "");
+
+				else if(alignment == Alignment.DownLeft ||
+					alignment == Alignment.Down ||
+					alignment == Alignment.DownRight)
+					for(int i = 0; i < yDiff; i++)
+						lineList.Insert(0, "");
+			}
+
+			for(int i = 0; i < lineList.Count; i++)
+			{
+				if(i >= size.Item2)
+					return;
+
+				var line = lineList[i].Replace('\n', ' ');
+
+				if(isWordWrapping == false && i > size.Item1)
+					NewLine();
+
+				if(alignment == Alignment.UpRight ||
+					alignment == Alignment.Right ||
+					alignment == Alignment.DownRight)
+					line = line.PadLeft(size.Item1);
+				else if(alignment == Alignment.Up ||
+					alignment == Alignment.Center ||
+					alignment == Alignment.Down)
+					line = PadLeftAndRight(line, size.Item1);
+
+				SetTextLine((x, y), line, color);
 				NewLine();
 			}
 
@@ -184,6 +218,14 @@
 			{
 				x = indices.Item1;
 				y++;
+			}
+			int GetSafeNewLineIndex(string line, uint endLineIndex)
+			{
+				for(int i = (int)endLineIndex; i >= 0; i--)
+					if(line[i] == ' ' && i <= size.Item1)
+						return i;
+
+				return default;
 			}
 		}
 
@@ -252,6 +294,13 @@
 		private bool IndicesAreValid((uint, uint) indices)
 		{
 			return indices.Item1 < Cells.GetLength(0) && indices.Item2 < Cells.GetLength(1);
+		}
+		private static string PadLeftAndRight(string text, int length)
+		{
+			var spaces = length - text.Length;
+			var padLeft = spaces / 2 + text.Length;
+			return text.PadLeft(padLeft).PadRight(length);
+
 		}
 		#endregion
 	}
