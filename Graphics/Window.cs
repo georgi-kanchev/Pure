@@ -9,7 +9,15 @@ namespace Purity.Graphics
 	/// </summary>
 	public class Window
 	{
-		public bool IsOpen => window != null && window.IsOpen;
+		public bool IsOpen
+		{
+			get => window != null && window.IsOpen;
+			set
+			{
+				if(value == false)
+					window.Close();
+			}
+		}
 		public string Title
 		{
 			get => title;

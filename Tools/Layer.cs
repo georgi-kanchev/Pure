@@ -22,7 +22,7 @@
 			Colors = new byte[cellCount.Item1, cellCount.Item2];
 		}
 
-		public uint GetCell((uint, uint) indices)
+		public uint GetCell((int, int) indices)
 		{
 			return IndicesAreValid(indices) ? Cells[indices.Item1, indices.Item2] : default;
 		}
@@ -50,7 +50,7 @@
 					Colors[x, y] = color;
 				}
 		}
-		public void SetCell((uint, uint) indices, uint cell, byte color)
+		public void SetCell((int, int) indices, uint cell, byte color)
 		{
 			if(IndicesAreValid(indices) == false)
 				return;
@@ -70,25 +70,25 @@
 			Cells[coords.Item1, coords.Item2] = cell;
 			Colors[coords.Item1, coords.Item2] = color;
 		}
-		public void SetSquare((uint, uint) indices, (int, int) size, uint cell, byte color)
+		public void SetSquare((int, int) indices, (int, int) size, uint cell, byte color)
 		{
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
-			for(int x = (int)indices.Item1; x != indices.Item1 + size.Item1; x += xStep)
-				for(int y = (int)indices.Item2; y != indices.Item2 + size.Item2; y += yStep)
+			for(int x = indices.Item1; x != indices.Item1 + size.Item1; x += xStep)
+				for(int y = indices.Item2; y != indices.Item2 + size.Item2; y += yStep)
 				{
 					if(x < 0 || y < 0)
 						continue;
 
-					SetCell(((uint)x, (uint)y), cell, color);
+					SetCell((x, y), cell, color);
 				}
 		}
-		public void SetTextLine((uint, uint) indices, string text, byte color)
+		public void SetTextLine((int, int) indices, string text, byte color)
 		{
-			var errorOffset = (uint)0;
-			for(uint i = 0; i < text?.Length; i++)
+			var errorOffset = 0;
+			for(int i = 0; i < text?.Length; i++)
 			{
-				var symbol = text[(int)i];
+				var symbol = text[i];
 				var index = GetCell(symbol);
 
 				if(index == default && symbol != ' ')
@@ -100,7 +100,7 @@
 				SetCell((indices.Item1 + i - errorOffset, indices.Item2), index, color);
 			}
 		}
-		public void SetTextBox((uint, uint) indices, (int, int) size, byte color,
+		public void SetTextBox((int, int) indices, (int, int) size, byte color,
 			bool isWordWrapping, Alignment alignment, params string[] lines)
 		{
 			if(lines == null || lines.Length == 0 ||
@@ -117,7 +117,7 @@
 				return;
 
 			for(int i = 0; i < lineList.Count - 1; i++)
-				lineList[i] = lineList[i].Trim() + '\n';
+				lineList[i] = lineList[i] + '\n';
 
 			for(int i = 0; i < lineList.Count; i++)
 			{
@@ -282,16 +282,17 @@
 			{ '♤', 452 }, { '♡', 453 }, { '♧', 454 }, { '♢', 455 },
 		};
 
-		private (uint, uint) IndexToCoords(uint index)
+		private (int, int) IndexToCoords(uint index)
 		{
-			var width = CellCount.Item1;
-			var height = CellCount.Item2;
-			index = index < 0 ? 0 : index;
-			index = index > width * height - 1 ? width * height - 1 : index;
+			var i = (int)index;
+			var width = (int)CellCount.Item1;
+			var height = (int)CellCount.Item2;
+			i = i < 0 ? 0 : i;
+			i = i > width * height - 1 ? width * height - 1 : i;
 
-			return (index % width, index / width);
+			return (i % width, i / width);
 		}
-		private bool IndicesAreValid((uint, uint) indices)
+		private bool IndicesAreValid((int, int) indices)
 		{
 			return indices.Item1 < Cells.GetLength(0) && indices.Item2 < Cells.GetLength(1);
 		}
