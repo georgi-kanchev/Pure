@@ -64,11 +64,7 @@
 		{
 			var i = Math.Clamp(index, 0, CellTotalCount);
 			var coords = IndexToCoords(i);
-			if(IndicesAreValid(coords) == false)
-				return;
-
-			Cells[coords.Item1, coords.Item2] = cell;
-			Colors[coords.Item1, coords.Item2] = color;
+			SetCell(coords, cell, color);
 		}
 		public void SetSquare((int, int) position, (int, int) size, uint cell, byte color)
 		{

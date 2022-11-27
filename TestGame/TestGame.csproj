@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Graphics\Graphics.csproj" />
+    <ProjectReference Include="..\Input\Input.csproj" />
     <ProjectReference Include="..\Tools\Tools.csproj" />
     <ProjectReference Include="..\UserInterface\UserInterface.csproj" />
     <ProjectReference Include="..\Utilities\Utilities.csproj" />

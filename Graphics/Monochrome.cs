@@ -144,7 +144,7 @@ namespace Purity.Graphics
 				AddByte(newByte);
 			}
 
-			File.WriteAllBytes(monochromePath, bytes.ToArray());
+			File.WriteAllBytesAsync(monochromePath, bytes.ToArray());
 
 			void AddByte(byte newByte)
 			{

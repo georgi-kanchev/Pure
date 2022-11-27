@@ -4,9 +4,6 @@ using SFML.Window; // window etc.
 
 namespace Purity.Graphics
 {
-	/// <summary>
-	/// Uses <see cref="SFML"/> to create a window and display the provided cells on it.
-	/// </summary>
 	public class Window
 	{
 		public bool IsOpen
@@ -50,13 +47,13 @@ namespace Purity.Graphics
 			window.Clear();
 		}
 		public void DrawLayer(uint[,] cells, byte[,] colors, (uint, uint) tileSize,
-			string path = "graphics.png")
+			(uint, uint) tileMargin, string path = "graphics.png")
 		{
 			if(path == null || cells == null || colors == null || cells.Length != colors.Length)
 				return;
 
 			TryLoadGraphics(path);
-			var verts = GetLayerVertices(cells, colors, tileSize, path);
+			var verts = GetLayerVertices(cells, colors, tileSize, tileMargin, path);
 			window.Draw(verts, PrimitiveType.Quads, new(graphics[path]));
 		}
 		public void DrawSprite((float, float) position, uint cell, byte color)
@@ -150,7 +147,8 @@ namespace Purity.Graphics
 			verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileSz.Item2));
 			return verts;
 		}
-		private Vertex[] GetLayerVertices(uint[,] cells, byte[,] colors, (uint, uint) tileSz, string path)
+		private Vertex[] GetLayerVertices(uint[,] cells, byte[,] colors,
+			(uint, uint) tileSz, (uint, uint) tileOff, string path)
 		{
 			if(cells == null || window == null)
 				return Array.Empty<Vertex>();
@@ -172,14 +170,26 @@ namespace Purity.Graphics
 				{
 					var cell = cells[x, y];
 					var color = ByteToColor(colors[x, y]);
-					var texCoords = IndexToCoords(cell, tileCount);
-					var tx = new Vector2f(texCoords.Item1 * tileSz.Item1, texCoords.Item2 * tileSz.Item2);
 					var i = GetIndex(x, y, (uint)cells.GetLength(0)) * 4;
+					var tl = new Vector2f(x * cellWidth, y * cellHeight);
+					var tr = new Vector2f((x + 1) * cellWidth, y * cellHeight);
+					var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
+					var bl = new Vector2f(x * cellWidth, (y + 1) * cellHeight);
 
-					verts[i + 0] = new(new(x * cellWidth, y * cellHeight), color, tx);
-					verts[i + 1] = new(new((x + 1) * cellWidth, y * cellHeight), color, tx + new Vector2f(tileSz.Item1, 0));
-					verts[i + 2] = new(new((x + 1) * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(tileSz.Item1, tileSz.Item2));
-					verts[i + 3] = new(new(x * cellWidth, (y + 1) * cellHeight), color, tx + new Vector2f(0, tileSz.Item2));
+					var w = tileSz.Item1;
+					var h = tileSz.Item2;
+					var texCoords = IndexToCoords(cell, tileCount);
+					var tx = new Vector2f(
+						texCoords.Item1 * (w + tileOff.Item1),
+						texCoords.Item2 * (h + tileOff.Item2));
+					var texTr = new Vector2f(tx.X + w, tx.Y);
+					var texBr = new Vector2f(tx.X + w, tx.Y + h);
+					var texBl = new Vector2f(tx.X, tx.Y + h);
+
+					verts[i + 0] = new(tl, color, tx);
+					verts[i + 1] = new(tr, color, texTr);
+					verts[i + 2] = new(br, color, texBr);
+					verts[i + 3] = new(bl, color, texBl);
 				}
 			return verts;
 		}
