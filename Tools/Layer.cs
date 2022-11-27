@@ -22,9 +22,9 @@
 			Colors = new byte[cellCount.Item1, cellCount.Item2];
 		}
 
-		public uint GetCell((int, int) indices)
+		public uint GetCell((int, int) position)
 		{
-			return IndicesAreValid(indices) ? Cells[indices.Item1, indices.Item2] : default;
+			return IndicesAreValid(position) ? Cells[position.Item1, position.Item2] : default;
 		}
 		public uint GetCell(char symbol)
 		{
@@ -50,13 +50,13 @@
 					Colors[x, y] = color;
 				}
 		}
-		public void SetCell((int, int) indices, uint cell, byte color)
+		public void SetCell((int, int) position, uint cell, byte color)
 		{
-			if(IndicesAreValid(indices) == false)
+			if(IndicesAreValid(position) == false)
 				return;
 
-			var x = indices.Item1;
-			var y = indices.Item2;
+			var x = position.Item1;
+			var y = position.Item2;
 			Cells[x, y] = cell;
 			Colors[x, y] = color;
 		}
@@ -70,20 +70,15 @@
 			Cells[coords.Item1, coords.Item2] = cell;
 			Colors[coords.Item1, coords.Item2] = color;
 		}
-		public void SetSquare((int, int) indices, (int, int) size, uint cell, byte color)
+		public void SetSquare((int, int) position, (int, int) size, uint cell, byte color)
 		{
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
-			for(int x = indices.Item1; x != indices.Item1 + size.Item1; x += xStep)
-				for(int y = indices.Item2; y != indices.Item2 + size.Item2; y += yStep)
-				{
-					if(x < 0 || y < 0)
-						continue;
-
+			for(int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
+				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
 					SetCell((x, y), cell, color);
-				}
 		}
-		public void SetTextLine((int, int) indices, string text, byte color)
+		public void SetTextLine((int, int) position, string text, byte color)
 		{
 			var errorOffset = 0;
 			for(int i = 0; i < text?.Length; i++)
@@ -97,18 +92,18 @@
 					continue;
 				}
 
-				SetCell((indices.Item1 + i - errorOffset, indices.Item2), index, color);
+				SetCell((position.Item1 + i - errorOffset, position.Item2), index, color);
 			}
 		}
-		public void SetTextBox((int, int) indices, (int, int) size, byte color,
+		public void SetTextBox((int, int) position, (int, int) size, byte color,
 			bool isWordWrapping, Alignment alignment, params string[] lines)
 		{
 			if(lines == null || lines.Length == 0 ||
 				size.Item1 <= 0 || size.Item2 <= 0)
 				return;
 
-			var x = indices.Item1;
-			var y = indices.Item2;
+			var x = position.Item1;
+			var y = position.Item2;
 
 
 			var lineList = new List<string>(lines);
@@ -216,7 +211,7 @@
 
 			void NewLine()
 			{
-				x = indices.Item1;
+				x = position.Item1;
 				y++;
 			}
 			int GetSafeNewLineIndex(string line, uint endLineIndex)
@@ -294,7 +289,8 @@
 		}
 		private bool IndicesAreValid((int, int) indices)
 		{
-			return indices.Item1 < Cells.GetLength(0) && indices.Item2 < Cells.GetLength(1);
+			return indices.Item1 >= 0 || indices.Item2 >= 0 &&
+				indices.Item1 < Cells.GetLength(0) && indices.Item2 < Cells.GetLength(1);
 		}
 		private static string PadLeftAndRight(string text, int length)
 		{

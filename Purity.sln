@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tools", "Tools\Tools.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestGame", "TestGame\TestGame.csproj", "{C21F1D87-F9A3-4F9E-8350-B4B8F2374A12}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StorageEditor", "StorageEditor\StorageEditor.csproj", "{3CB47728-0F57-41F5-8D27-89C420C3C83B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StorageEditor", "StorageEditor\StorageEditor.csproj", "{3CB47728-0F57-41F5-8D27-89C420C3C83B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserInterface", "UserInterface\UserInterface.csproj", "{3A2602AA-081E-47E2-89E1-610CA6C15367}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{3CB47728-0F57-41F5-8D27-89C420C3C83B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CB47728-0F57-41F5-8D27-89C420C3C83B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CB47728-0F57-41F5-8D27-89C420C3C83B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A2602AA-081E-47E2-89E1-610CA6C15367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A2602AA-081E-47E2-89E1-610CA6C15367}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A2602AA-081E-47E2-89E1-610CA6C15367}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A2602AA-081E-47E2-89E1-610CA6C15367}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

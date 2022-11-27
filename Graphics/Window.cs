@@ -49,8 +49,8 @@ namespace Purity.Graphics
 			window.DispatchEvents();
 			window.Clear();
 		}
-		public void DrawLayer(uint[,] cells, byte[,] colors,
-			(uint, uint) tileSize, string path = "graphics.png")
+		public void DrawLayer(uint[,] cells, byte[,] colors, (uint, uint) tileSize,
+			string path = "graphics.png")
 		{
 			if(path == null || cells == null || colors == null || cells.Length != colors.Length)
 				return;
