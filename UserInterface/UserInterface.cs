@@ -13,11 +13,7 @@
 		public (int, int) Position { get; set; }
 		public (int, int) Size { get; set; }
 
-		public bool IsFocused
-		{
-			get => this == UI_FocusedObject;
-			set => UI_FocusedObject = value ? this : default;
-		}
+		public bool IsFocused => UI_FocusedObject == this;
 		public bool IsHovered
 		{
 			get

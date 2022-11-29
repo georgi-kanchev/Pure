@@ -19,7 +19,7 @@
 			if(UI_HadInput == false && UI_HasInput)
 				SelectionPosition = CursorPosition;
 
-			var isJustPressed = UI_HadInput == false && UI_HasInput && IsHovered;
+			var isJustPressed = UI_HadInput == false && UI_HasInput;
 			var isTriggered = TryTrigger();
 
 			var cursorPos = UI_InputPosition.Item1 - Position.Item1;
@@ -31,8 +31,14 @@
 
 			if(isJustPressed)
 			{
-				IsFocused = true;
-				SelectionPosition = curPos;
+				if(IsFocused)
+					UI_FocusedObject = null;
+
+				if(IsHovered)
+				{
+					UI_FocusedObject = this;
+					SelectionPosition = curPos;
+				}
 			}
 
 			result?.Invoke(this);

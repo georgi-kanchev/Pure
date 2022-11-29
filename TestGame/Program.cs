@@ -20,10 +20,11 @@ namespace TestGame
 			while(window.IsOpen)
 			{
 				var h = window.GetHoveredIndicies(layer.CellCount);
-				UserInterface.Input(h, Mouse.ButtonsPressed.HasFlag(Mouse.Button.Left));
+
+				Mouse.Update();
+				UserInterface.Input(h, Mouse.ArePressed(Mouse.Button.Left));
 
 				time.Update();
-				Mouse.Update();
 
 				bg.Fill(0, 0);
 				layer.Fill(0, 0);
@@ -31,7 +32,6 @@ namespace TestGame
 
 				window.DrawOn();
 
-				layer.SetTextLine((0, 0), Mouse.ButtonsPressed.ToString(), Color.White);
 				MyCoolInputBoxUpdate(bg, layer, over, inputBox);
 				MyCoolInputBoxUpdate(bg, layer, over, inputBox2);
 
