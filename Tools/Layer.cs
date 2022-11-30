@@ -285,7 +285,7 @@
 		}
 		private bool IndicesAreValid((int, int) indices)
 		{
-			return indices.Item1 >= 0 || indices.Item2 >= 0 &&
+			return indices.Item1 >= 0 && indices.Item2 >= 0 &&
 				indices.Item1 < Cells.GetLength(0) && indices.Item2 < Cells.GetLength(1);
 		}
 		private static string PadLeftAndRight(string text, int length)
