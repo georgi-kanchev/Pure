@@ -9,6 +9,7 @@ namespace TestGame
 	{
 		static void Main()
 		{
+			var mouse = new Mouse();
 			var window = new Purity.Graphics.Window();
 			var bg = new Layer((48, 27));
 			var layer = new Layer((48, 27));
@@ -21,8 +22,9 @@ namespace TestGame
 			{
 				var h = window.GetHoveredIndicies(layer.CellCount);
 
-				Mouse.Update();
-				UserInterface.Input(h, Mouse.ArePressed(Mouse.Button.Left));
+				mouse.Update();
+
+				UserInterface.Input(h, mouse.ArePressed(Purity.Input.Button.Left));
 
 				time.Update();
 
