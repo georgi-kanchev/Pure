@@ -4,9 +4,16 @@ using SFML.Window; // window etc.
 
 namespace Purity.Graphics
 {
+	/// <summary>
+	/// Provides a simple way to create and interact with an OS window.
+	/// </summary>
 	public class Window
 	{
-		public bool IsOpen
+		/// <summary>
+		/// Whether the OS window exists. This is <see langword="true"/> even when it
+		/// is minimized or <see cref="IsHidden"/>.
+		/// </summary>
+		public bool IsExisting
 		{
 			get => window != null && window.IsOpen;
 			set
@@ -15,19 +22,54 @@ namespace Purity.Graphics
 					window.Close();
 			}
 		}
+		/// <summary>
+		/// The title on the title bar of the OS window.
+		/// </summary>
 		public string Title
 		{
 			get => title;
 			set { title = value; window.SetTitle(title); }
 		}
+		/// <summary>
+		/// The mouse cursor position relative to the OS window.
+		/// </summary>
+		public (int, int) MousePosition
+		{
+			get { var pos = Mouse.GetPosition(window); return (pos.X, pos.Y); }
+			set
+			{
+				var pos = new Vector2i(value.Item1, value.Item2);
+				Mouse.SetPosition(pos, window);
+			}
+		}
+		/// <summary>
+		/// The size of the OS window.
+		/// </summary>
+		public (uint, uint) Size
+		{
+			get => (window.Size.X, window.Size.Y);
+			set => window.Size = new(value.Item1, value.Item2);
+		}
+		/// <summary>
+		/// Whether the OS window acts as a background process.
+		/// </summary>
+		public bool IsHidden
+		{
+			get => isHidden;
+			set { isHidden = value; window.SetVisible(value == false); }
+		}
 
+		/// <summary>
+		/// Creates an OS window in the center of the screen with a size of 2/3 of
+		/// the current OS resolution.
+		/// </summary>
 		public Window(string title = "Purity")
 		{
 			var desktopW = VideoMode.DesktopMode.Width;
 			var desktopH = VideoMode.DesktopMode.Height;
 			this.title = title;
 
-			window = new(new VideoMode((uint)(desktopW * 0.65f), (uint)(desktopH * 0.65f)), title);
+			window = new(new VideoMode((uint)(desktopW * 0.66f), (uint)(desktopH * 0.66f)), title);
 			window.Closed += (s, e) => window.Close();
 			window.Resized += (s, e) =>
 			{
@@ -41,29 +83,58 @@ namespace Purity.Graphics
 			window.Display();
 		}
 
-		public void DrawOn()
+		/// <summary>
+		/// If the drawing <paramref name="isEnabled"/>:<br></br>
+		/// - The OS window setups for drawing<br></br>
+		/// Otherwise:<br></br>
+		/// - The OS window displays everything drawn<br></br><br></br>
+		/// Or in other words: drawing onto the OS window should start with enabling the draw
+		/// and end with disabling it.
+		/// </summary>
+		public void DrawEnable(bool isEnabled)
 		{
-			window.DispatchEvents();
-			window.Clear();
+			if(isEnabled)
+			{
+				window.DispatchEvents();
+				window.Clear();
+				return;
+			}
+
+			window.Display();
 		}
-		public void DrawLayer(uint[,] cells, byte[,] colors, (uint, uint) tileSize,
+		/// <summary>
+		/// Draws a layer onto the OS window. Its graphics image is loaded from a
+		/// <paramref name="path"/> using a <paramref name="tileSize"/> and a
+		/// <paramref name="tileMargin"/>, then it is cached for future draws. The layer's
+		/// contents are decided by <paramref name="tiles"/> and <paramref name="colors"/>.
+		/// </summary>
+		public void DrawLayer(int[,] tiles, byte[,] colors, (uint, uint) tileSize,
 			(uint, uint) tileMargin, string path = "graphics.png")
 		{
-			if(path == null || cells == null || colors == null || cells.Length != colors.Length)
+			if(path == null || tiles == null || colors == null || tiles.Length != colors.Length)
 				return;
 
 			TryLoadGraphics(path);
-			var verts = GetLayerVertices(cells, colors, tileSize, tileMargin, path);
+			var verts = GetLayerVertices(tiles, colors, tileSize, tileMargin, path);
 			window.Draw(verts, PrimitiveType.Quads, new(graphics[path]));
 		}
-		public void DrawSprite((float, float) position, uint cell, byte color)
+		/// <summary>
+		/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
+		/// from the last <see cref="DrawLayer"/> call and a <paramref name="color"/>. The sprite's
+		/// <paramref name="position"/> is also relative to the previously drawn layer.
+		/// </summary>
+		public void DrawSprite((float, float) position, int tile, byte color)
 		{
 			if(prevDrawLayerGfxPath == null)
 				return;
 
-			var verts = GetSpriteVertices(position, cell, color);
+			var verts = GetSpriteVertices(position, tile, color);
 			window.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawLayerGfxPath]));
 		}
+		/// <summary>
+		/// Draws <paramref name="color"/>ed single pixel particles onto the OS window.
+		/// Their <paramref name="positions"/> are relative to the previously drawn layer.
+		/// </summary>
 		public void DrawParticles(byte color, params (float, float)[] positions)
 		{
 			if(positions == null || positions.Length == 0)
@@ -72,37 +143,9 @@ namespace Purity.Graphics
 			var verts = GetParticlesVertices(color, positions);
 			window.Draw(verts, PrimitiveType.Quads);
 		}
-		public void DrawOff()
-		{
-			window.Display();
-		}
-
-		public (float, float) GetMousePosition((uint, uint) layerCellCount)
-		{
-			var pos = Mouse.GetPosition(window);
-			var x = Map(pos.X, 0, window.Size.X, 0, layerCellCount.Item1);
-			var y = Map(pos.Y, 0, window.Size.Y, 0, layerCellCount.Item2);
-			return (x, y);
-		}
-		public (int, int) GetHoveredIndicies((uint, uint) layerCellCount)
-		{
-			var mousePos = GetMousePosition(layerCellCount);
-			var x = MathF.Floor(mousePos.Item1);
-			var y = MathF.Floor(mousePos.Item2);
-			return ((int)x, (int)y);
-		}
-		public uint GetHoveredCell(uint[,] cells)
-		{
-			var w = (uint)cells.GetLength(0);
-			var h = (uint)cells.GetLength(1);
-			var indices = GetHoveredIndicies((w, h));
-			var x = indices.Item1;
-			var y = indices.Item2;
-
-			return x < 0 || y < 0 || x >= w || y >= h ? default : cells[x, y];
-		}
 
 		#region Backend
+		private bool isHidden;
 		private string title;
 		private string? prevDrawLayerGfxPath;
 		private (uint, uint) prevDrawLayerTileSz;
@@ -119,7 +162,7 @@ namespace Purity.Graphics
 
 			graphics[path] = new(path);
 		}
-		private Vertex[] GetSpriteVertices((float, float) position, uint cell, byte color)
+		private Vertex[] GetSpriteVertices((float, float) position, int cell, byte color)
 		{
 			if(prevDrawLayerGfxPath == null)
 				return Array.Empty<Vertex>();
@@ -147,30 +190,30 @@ namespace Purity.Graphics
 			verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileSz.Item2));
 			return verts;
 		}
-		private Vertex[] GetLayerVertices(uint[,] cells, byte[,] colors,
+		private Vertex[] GetLayerVertices(int[,] tiles, byte[,] colors,
 			(uint, uint) tileSz, (uint, uint) tileOff, string path)
 		{
-			if(cells == null || window == null)
+			if(tiles == null || window == null)
 				return Array.Empty<Vertex>();
 
-			var cellWidth = (float)window.Size.X / cells.GetLength(0);
-			var cellHeight = (float)window.Size.Y / cells.GetLength(1);
+			var cellWidth = (float)window.Size.X / tiles.GetLength(0);
+			var cellHeight = (float)window.Size.Y / tiles.GetLength(1);
 			var texture = graphics[path];
 			var tileCount = (texture.Size.X / tileSz.Item1, texture.Size.Y / tileSz.Item2);
-			var verts = new Vertex[cells.Length * 4];
+			var verts = new Vertex[tiles.Length * 4];
 
 			// this cache is used for a potential sprite draw
 			prevDrawLayerGfxPath = path;
 			prevDrawLayerCellSz = (cellWidth, cellHeight);
 			prevDrawLayerTileSz = tileSz;
-			prevDrawLayerCellCount = ((uint)cells.GetLength(0), (uint)cells.GetLength(1));
+			prevDrawLayerCellCount = ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
 
-			for(uint y = 0; y < cells.GetLength(1); y++)
-				for(uint x = 0; x < cells.GetLength(0); x++)
+			for(uint y = 0; y < tiles.GetLength(1); y++)
+				for(uint x = 0; x < tiles.GetLength(0); x++)
 				{
-					var cell = cells[x, y];
+					var cell = tiles[x, y];
 					var color = ByteToColor(colors[x, y]);
-					var i = GetIndex(x, y, (uint)cells.GetLength(0)) * 4;
+					var i = GetIndex(x, y, (uint)tiles.GetLength(0)) * 4;
 					var tl = new Vector2f(x * cellWidth, y * cellHeight);
 					var tr = new Vector2f((x + 1) * cellWidth, y * cellHeight);
 					var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
@@ -218,12 +261,13 @@ namespace Purity.Graphics
 			}
 			return verts;
 		}
-		private static (uint, uint) IndexToCoords(uint index, (uint, uint) fieldSize)
+		private static (int, int) IndexToCoords(int index, (uint, uint) fieldSize)
 		{
 			index = index < 0 ? 0 : index;
-			index = index > fieldSize.Item1 * fieldSize.Item2 - 1 ? fieldSize.Item1 * fieldSize.Item2 - 1 : index;
+			index = index > fieldSize.Item1 * fieldSize.Item2 - 1 ?
+				(int)(fieldSize.Item1 * fieldSize.Item2 - 1) : index;
 
-			return (index % fieldSize.Item1, index / fieldSize.Item1);
+			return (index % (int)fieldSize.Item1, index / (int)fieldSize.Item1);
 		}
 		private static uint GetIndex(uint x, uint y, uint width)
 		{
@@ -240,11 +284,6 @@ namespace Purity.Graphics
 			var blue = (byte)(Convert.ToByte(b, 2) * byte.MaxValue / 3);
 			return new(red, green, blue);
 		}
-		static float Map(float number, float a1, float a2, float b1, float b2)
-		{
-			var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
-			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-		}
 		private static (float, float) ToGrid((float, float) pos, (float, float) gridSize)
 		{
 			if(gridSize == default)
@@ -260,6 +299,11 @@ namespace Purity.Graphics
 			x -= X % gridSize.Item1;
 			y -= Y % gridSize.Item2;
 			return new(x, y);
+		}
+		private static float Map(float number, float a1, float a2, float b1, float b2)
+		{
+			var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
+			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
 		}
 		#endregion
 	}

@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Reflection;
 
-namespace Purity.Tools
+namespace Purity.Storage
 {
 	public class Storage
 	{
