@@ -35,13 +35,18 @@
 		{
 			input.PrevTypedSymbol = Input.TypedSymbol;
 			input.WasPressed = Input.IsPressed;
-			input.WasAlted = Input.IsAlted;
-			input.WasBackspaced = Input.IsBackspaced;
-			input.WasControled = Input.IsControled;
-			input.WasEntered = Input.IsEntered;
-			input.WasEscaped = Input.IsEscaped;
-			input.WasShifted = Input.IsShifted;
-			input.WasTabed = Input.IsTabed;
+			input.WasPressedAlt = Input.IsPressedAlt;
+			input.WasPressedBackspace = Input.IsPressedBackspace;
+			input.WasPressedControl = Input.IsPressedControl;
+			input.WasPressedEnter = Input.IsPressedEnter;
+			input.WasPressedEscape = Input.IsPressedEscape;
+			input.WasPressedShift = Input.IsPressedShift;
+			input.WasPressedTab = Input.IsPressedTab;
+
+			input.WasPressedLeft = Input.IsPressedLeft;
+			input.WasPressedRight = Input.IsPressedRight;
+			input.WasPressedUp = Input.IsPressedUp;
+			input.WasPressedDown = Input.IsPressedDown;
 
 			Input = input;
 		}

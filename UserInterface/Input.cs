@@ -5,26 +5,34 @@
 		public bool IsPressed { get; set; }
 		public bool IsReleased => IsPressed == false && WasPressed;
 
-		public (int, int) Position { get; set; }
+		public (float, float) Position { get; set; }
 		public string TypedSymbol { get; set; }
 
-		public bool IsShifted { get; set; }
-		public bool IsControled { get; set; }
-		public bool IsBackspaced { get; set; }
-		public bool IsEscaped { get; set; }
-		public bool IsTabed { get; set; }
-		public bool IsAlted { get; set; }
-		public bool IsEntered { get; set; }
+		public bool IsPressedShift { get; set; }
+		public bool IsPressedControl { get; set; }
+		public bool IsPressedBackspace { get; set; }
+		public bool IsPressedEscape { get; set; }
+		public bool IsPressedTab { get; set; }
+		public bool IsPressedAlt { get; set; }
+		public bool IsPressedEnter { get; set; }
+		public bool IsPressedUp { get; set; }
+		public bool IsPressedDown { get; set; }
+		public bool IsPressedRight { get; set; }
+		public bool IsPressedLeft { get; set; }
 
 		#region Backend
 		internal bool WasPressed { get; set; }
-		internal bool WasShifted { get; set; }
-		internal bool WasControled { get; set; }
-		internal bool WasBackspaced { get; set; }
-		internal bool WasEscaped { get; set; }
-		internal bool WasTabed { get; set; }
-		internal bool WasAlted { get; set; }
-		internal bool WasEntered { get; set; }
+		internal bool WasPressedShift { get; set; }
+		internal bool WasPressedControl { get; set; }
+		internal bool WasPressedBackspace { get; set; }
+		internal bool WasPressedEscape { get; set; }
+		internal bool WasPressedTab { get; set; }
+		internal bool WasPressedAlt { get; set; }
+		internal bool WasPressedEnter { get; set; }
+		internal bool WasPressedUp { get; set; }
+		internal bool WasPressedDown { get; set; }
+		internal bool WasPressedRight { get; set; }
+		internal bool WasPressedLeft { get; set; }
 
 		internal string PrevTypedSymbol { get; set; }
 		#endregion

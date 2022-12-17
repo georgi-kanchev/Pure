@@ -40,13 +40,15 @@
 				SelectionPosition = CursorPosition;
 
 			var isJustPressed = Input.WasPressed == false && Input.IsPressed;
-			var wasJustTyped = Input.TypedSymbol != "" && Input.TypedSymbol != Input.PrevTypedSymbol;
-			var wasJustBackspaced = Input.WasBackspaced == false && Input.IsBackspaced;
+			var isJustTyped = Input.TypedSymbol != "" && Input.TypedSymbol != Input.PrevTypedSymbol;
+			var isJustBackspace = Input.WasPressedBackspace == false && Input.IsPressedBackspace;
+			var isJustLeft = Input.WasPressedLeft == false && Input.IsPressedLeft;
+			var isJustRight = Input.WasPressedRight == false && Input.IsPressedRight;
 			var isTriggered = TryTrigger();
 
 			var cursorPos = Input.Position.Item1 - Position.Item1;
 			var endOfTextPos = Text.Length;
-			var curPos = cursorPos > Text.Length ? endOfTextPos : cursorPos;
+			var curPos = (int)MathF.Round(cursorPos > Text.Length ? endOfTextPos : cursorPos);
 
 			if(IsPressed)
 				CursorPosition = curPos;
@@ -67,7 +69,7 @@
 			{
 				var isSelected = SelectionPosition != CursorPosition;
 				var justDeleted = false;
-				if((wasJustTyped || wasJustBackspaced) && isSelected)
+				if((isJustTyped || isJustBackspace) && isSelected)
 				{
 					var a = SelectionPosition < CursorPosition ? SelectionPosition : CursorPosition;
 					var b = Math.Abs(SelectionPosition - CursorPosition);
@@ -78,18 +80,21 @@
 					justDeleted = true;
 				}
 
-				if(wasJustTyped && Text.Length < Size.Item1 - 1)
+				if(isJustTyped && Text.Length < Size.Item1 - 1)
 				{
 					Text = Text.Insert(CursorPosition, Input.TypedSymbol);
-					CursorPosition++;
-					SelectionPosition = CursorPosition;
+					MoveCursorRight();
 				}
-				else if(wasJustBackspaced && justDeleted == false && Text.Length > 0)
+				else if(isJustBackspace && justDeleted == false && Text.Length > 0)
 				{
 					Text = Text.Remove(CursorPosition - 1, 1);
-					CursorPosition--;
-					SelectionPosition = CursorPosition;
+					MoveCursorLeft();
 				}
+
+				if(isJustLeft && CursorPosition > 0)
+					MoveCursorLeft();
+				else if(isJustRight && CursorPosition < Text.Length)
+					MoveCursorRight();
 			}
 
 			result?.Invoke(this);
@@ -97,6 +102,17 @@
 
 		#region Backend
 		private int curPos, selPos;
+
+		private void MoveCursorLeft()
+		{
+			CursorPosition--;
+			SelectionPosition = CursorPosition;
+		}
+		private void MoveCursorRight()
+		{
+			CursorPosition++;
+			SelectionPosition = CursorPosition;
+		}
 		#endregion
 	}
 }

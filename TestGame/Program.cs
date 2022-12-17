@@ -20,35 +20,29 @@ namespace TestGame
 			var bg = new Tilemap((48, 27));
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
-			var inputBox = new InputLine((0, 0), (10, 2), "Hello");
+			var inputBox = new InputLine((0, 0), (10, 1), "Hello");
 			var inputBox2 = new InputLine((10, 15), (10, 1), "Test");
-
-			bg.CameraPosition = (-5, -5);
-			layer.CameraPosition = (-5, -5);
-			over.CameraPosition = (-5, -5);
 
 			while(window.IsExisting)
 			{
 				var mousePos = window.MousePosition;
 				var hov = layer.PixelToPosition(mousePos, window.Size);
-				var h = ((int)hov.Item1, (int)hov.Item2);
 
 				mouse.Update();
 				keyboard.Update();
+				Time.Update();
 
 				var input = new Input()
 				{
-					Position = h,
+					Position = hov,
 					IsPressed = mouse.IsPressed(Purity.Input.Button.Left),
 					TypedSymbol = keyboard.TypedSymbol,
-					IsBackspaced = keyboard.IsPressed(Key.Backspace)
+					IsPressedBackspace = keyboard.IsPressed(Key.Backspace),
+					IsPressedLeft = keyboard.IsPressed(Key.ArrowLeft),
+					IsPressedRight = keyboard.IsPressed(Key.ArrowRight),
 				};
 
 				UserInterface.UpdateInput(input);
-
-				Console.WriteLine(inputBox.TextSelected);
-
-				Time.Update();
 
 				bg.Fill(0, 0);
 				layer.Fill(0, 0);
