@@ -26,11 +26,11 @@
 	/// </summary>
 	public class Keyboard : Device<Key>
 	{
-		public string TypedSymbol { get; private set; } = "";
+		public string TypedSymbols { get; private set; } = "";
 
 		public override void Update()
 		{
-			TypedSymbol = "";
+			TypedSymbols = "";
 			base.Update();
 		}
 		protected override bool IsPressedRaw(Key input)
@@ -48,20 +48,20 @@
 			if(IsBetween(i, Key.A, Key.Z))
 			{
 				var str = input.ToString();
-				TypedSymbol = shift ? str : str.ToLower();
+				TypedSymbols += shift ? str : str.ToLower();
 			}
 			else if(IsBetween(i, Key.N0, Key.N9))
 			{
 				var n = i - (int)Key.N0;
-				TypedSymbol = shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
+				TypedSymbols += shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
 			}
 			else if(IsBetween(i, Key.Numpad0, Key.Numpad9))
 			{
 				var n = i - (int)Key.Numpad0;
-				TypedSymbol = ((char)('0' + n)).ToString();
+				TypedSymbols += ((char)('0' + n)).ToString();
 			}
 			else if(symbols.ContainsKey(input))
-				TypedSymbol = shift ? symbols[input].Item2 : symbols[input].Item1;
+				TypedSymbols += shift ? symbols[input].Item2 : symbols[input].Item1;
 
 			return true;
 		}

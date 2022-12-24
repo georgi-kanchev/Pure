@@ -40,7 +40,7 @@
 				SelectionPosition = CursorPosition;
 
 			var isJustPressed = Input.WasPressed == false && Input.IsPressed;
-			var isJustTyped = Input.TypedSymbol != "" && Input.TypedSymbol != Input.PrevTypedSymbol;
+			var isJustTyped = Input.TypedSymbols != "" && Input.TypedSymbols != Input.PrevTypedSymbols;
 			var isJustBackspace = Input.WasPressedBackspace == false && Input.IsPressedBackspace;
 			var isJustLeft = Input.WasPressedLeft == false && Input.IsPressedLeft;
 			var isJustRight = Input.WasPressedRight == false && Input.IsPressedRight;
@@ -82,7 +82,7 @@
 
 				if(isJustTyped && Text.Length < Size.Item1 - 1)
 				{
-					Text = Text.Insert(CursorPosition, Input.TypedSymbol);
+					Text = Text.Insert(CursorPosition, Input.TypedSymbols);
 					MoveCursorRight();
 				}
 				else if(isJustBackspace && justDeleted == false && Text.Length > 0)

@@ -36,7 +36,7 @@ namespace TestGame
 				{
 					Position = hov,
 					IsPressed = mouse.IsPressed(Purity.Input.Button.Left),
-					TypedSymbol = keyboard.TypedSymbol,
+					TypedSymbols = keyboard.TypedSymbols,
 					IsPressedBackspace = keyboard.IsPressed(Key.Backspace),
 					IsPressedLeft = keyboard.IsPressed(Key.ArrowLeft),
 					IsPressedRight = keyboard.IsPressed(Key.ArrowRight),

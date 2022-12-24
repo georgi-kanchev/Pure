@@ -1,8 +1,4 @@
-﻿using System.Globalization; // precision point and parse
-using System.IO.Compression; // string compression/decompression
-using System.Text; // string compression/decompression
-
-namespace Purity.Utilities
+﻿namespace Purity.Utilities
 {
 	/// <summary>
 	/// Various methods that extend the primitive types, structs and collections.
@@ -11,7 +7,7 @@ namespace Purity.Utilities
 	public static class Extensions
 	{
 		/// <summary>
-		/// The type of number animations used by <see cref="AnimateUnit"/>. Also known as 'easing functions'.
+		/// The type of number animations used by <see cref="Animate"/>. Also known as 'easing functions'.
 		/// </summary>
 		public enum Animation
 		{
@@ -25,7 +21,7 @@ namespace Purity.Utilities
 			Bounce // Bounce
 		}
 		/// <summary>
-		/// The type of number animation direction used by <see cref="AnimateUnit"/>.
+		/// The type of number animation direction used by <see cref="Animate"/>.
 		/// </summary>
 		public enum AnimationCurve { Backward, Forward, BackwardThenForward }
 

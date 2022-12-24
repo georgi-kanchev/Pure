@@ -6,7 +6,7 @@
 		public bool IsReleased => IsPressed == false && WasPressed;
 
 		public (float, float) Position { get; set; }
-		public string TypedSymbol { get; set; }
+		public string TypedSymbols { get; set; }
 
 		public bool IsPressedShift { get; set; }
 		public bool IsPressedControl { get; set; }
@@ -34,7 +34,7 @@
 		internal bool WasPressedRight { get; set; }
 		internal bool WasPressedLeft { get; set; }
 
-		internal string PrevTypedSymbol { get; set; }
+		internal string PrevTypedSymbols { get; set; }
 		#endregion
 	}
 }
