@@ -4,25 +4,24 @@
 	{
 		public int X
 		{
-			get => Value.Item1;
-			set => Value = (value, Value.Item2);
+			get => val.Item1;
+			set => val = (value, val.Item2);
 		}
 		public int Y
 		{
-			get => Value.Item2;
-			set => Value = (Value.Item1, value);
+			get => val.Item2;
+			set => val = (val.Item1, value);
 		}
-		public (int, int) Value { get; set; }
 
 		public Indices(int xy)
 		{
-			Value = (xy, xy);
+			val = (xy, xy);
 			X = xy;
 			Y = xy;
 		}
 		public Indices(int x, int y)
 		{
-			Value = (x, y);
+			val = (x, y);
 			X = x;
 			Y = y;
 		}
@@ -45,7 +44,7 @@
 		}
 		public static implicit operator (int, int)(Indices vector)
 		{
-			return (vector.Value.Item1, vector.Value.Item2);
+			return (vector.val.Item1, vector.val.Item2);
 		}
 		public static implicit operator Indices((float, float) value)
 		{
@@ -53,7 +52,7 @@
 		}
 		public static implicit operator (float, float)(Indices vector)
 		{
-			return vector.Value;
+			return vector.val;
 		}
 
 		public static Indices operator +(Indices a, Indices b) => new(a.X + b.X, a.Y + b.Y);
@@ -68,14 +67,18 @@
 		public static Indices operator -(int a, Indices b) => new(b.X - a, b.Y - a);
 		public static Indices operator *(int a, Indices b) => new(b.X * a, b.Y * a);
 		public static Indices operator /(int a, Indices b) => new(b.X / a, b.Y / a);
-		public static bool operator ==(Indices a, Indices b) => a.Value == b.Value;
-		public static bool operator !=(Indices a, Indices b) => a.Value != b.Value;
+		public static bool operator ==(Indices a, Indices b) => a.val == b.val;
+		public static bool operator !=(Indices a, Indices b) => a.val != b.val;
 
 		public override int GetHashCode() => base.GetHashCode();
 		public override bool Equals(object? obj) => base.Equals(obj);
 		public override string ToString()
 		{
-			return $"{X} {Y}";
+			return val.ToString();
 		}
+
+		#region Backend
+		private (int, int) val;
+		#endregion
 	}
 }

@@ -4,8 +4,8 @@ namespace Purity.Collision
 {
 	/// <summary>
 	/// (Inherits <see cref="Hitbox"/>)<br></br><br></br>
-	/// An additional collection of <see cref="Rectangle"/>s on top of the
-	/// <see cref="Hitbox.Rectangles"/> (see <see cref="Hitbox"/> for more info).<br></br><br></br>
+	/// An additional grid collection of <see cref="Rectangle"/>s on top of the
+	/// <see cref="Hitbox"/> one.<br></br><br></br>
 	/// 
 	/// Each <see cref="Grid"/> cell has its own <see cref="Rectangle"/> collection and the
 	/// <see cref="Grid"/> combines them. Unlike <see cref="Hitbox"/>, this collection is optimized
@@ -15,15 +15,29 @@ namespace Purity.Collision
 	public class Grid : Hitbox
 	{
 		/// <summary>
-		/// A copy of all cell <see cref="Rectangle"/> collections, combined.
+		/// The amount of <see cref="Rectangle"/>s in the <see cref="Rectangle"/> collection and
+		/// cell <see cref="Rectangle"/> collection, combined.
 		/// </summary>
-		public Rectangle[] CellRectangles => globalRectsCopy;
+		public override int RectangleCount => rectangles.Count + cellRects.Count;
+
+		/// <summary>
+		/// Get: returns the <see cref="Rectangle"/> at <paramref name="index"/>.
+		/// </summary>
+		public override Rectangle this[int index]
+		{
+			get
+			{
+				var r = rectangles;
+				return index < r.Count ? r[index] : cellRects[index - r.Count];
+			}
+		}
 
 		/// <summary>
 		/// Creates the <see cref="Grid"/> with a certain <paramref name="cellSize"/>,
 		/// <paramref name="position"/> and <paramref name="scale"/>.
 		/// </summary>
-		public Grid(int cellSize, (float, float) position) : base(position)
+		public Grid(int cellSize, (float, float) position = default, float scale = 1)
+			: base(position, scale)
 		{
 			if(cellSize < 1)
 				throw new ArgumentException("Value cannot be < 1.", nameof(cellSize));
@@ -35,7 +49,8 @@ namespace Purity.Collision
 		/// <see langword="Tiled Tileset"/> export file at <paramref name="tsxPath"/>, with a certain
 		/// <paramref name="position"/> and <paramref name="scale"/>.
 		/// </summary>
-		public Grid(string tsxPath, int[,] tiles, (float, float) position) : base(position)
+		public Grid(string tsxPath, int[,] tiles, (float, float) position = default, float scale = 1)
+			: base(position, scale)
 		{
 			if(tiles == null)
 				throw new ArgumentNullException(nameof(tiles));
@@ -99,7 +114,7 @@ namespace Purity.Collision
 					var localRect = new Rectangle((w, h), (x, y));
 					currRectList.Add(localRect);
 				}
-				rectangles[id] = currRectList.ToArray();
+				cellRectsMap[id] = currRectList;
 			}
 
 			UpdatePositions(tiles);
@@ -116,40 +131,48 @@ namespace Purity.Collision
 			if(tiles == null)
 				throw new ArgumentNullException(nameof(tiles));
 
-			if(rectangles.ContainsKey(tile))
+			if(cellRectsMap.ContainsKey(tile))
 			{
-				var array = rectangles[tile];
-				Array.Resize(ref array, array.Length + 1);
-				array[^1] = rectangle;
-				rectangles[tile] = array;
+				cellRectsMap[tile].Add(rectangle);
 				return;
 			}
 
-			rectangles[tile] = new Rectangle[] { rectangle };
+			cellRectsMap[tile] = new List<Rectangle>() { rectangle };
 			UpdatePositions(tiles);
 		}
 		/// <summary>
-		/// Retrieves the <see cref="Rectangle"/> collection at certain
-		/// <paramref name="cellIndices"/> and returns it if the provided
-		/// <paramref name="cellIndices"/> is present. Returns an empty <see cref="Array"/>
-		/// of <see cref="Rectangle"/>s otherwise. 
+		/// Retrieves the <see cref="Rectangle"/> collection at a certain <paramref name="cell"/> and
+		/// returns it if the provided <paramref name="cell"/> is present.
+		/// Returns an empty <see cref="Array"/> of <see cref="Rectangle"/>s otherwise. 
 		/// </summary>
-		public Rectangle[] GetRectanglesAt((int, int) cellIndices)
+		public Rectangle[] GetRectanglesAt((int, int) cell)
 		{
-			if(tileIndices.ContainsKey(cellIndices) == false)
+			if(tileIndices.ContainsKey(cell) == false)
 				return Array.Empty<Rectangle>();
 
-			var id = tileIndices[cellIndices];
-			var rects = rectangles[id];
+			var id = tileIndices[cell];
+			var rects = cellRectsMap[id];
 			var result = new List<Rectangle>();
-			var (x, y) = cellIndices;
+			var (x, y) = cell;
 
-			for(int r = 0; r < rects.Length; r++)
+			for(int r = 0; r < rects.Count; r++)
 				result.Add(LocalToGlobalRectangle(rects[r], (x, y)));
 
 			return result.ToArray();
 		}
 
+		/// <summary>
+		/// Checks whether a <paramref name="line"/> overlaps at least one of the
+		/// <see cref="Rectangle"/>s in the collection and returns the result.
+		/// </summary>
+		public override bool IsOverlapping(Line line)
+		{
+			return line.CrossPoints(this).Length > 0;
+		}
+		/// <summary>
+		/// Checks whether a <paramref name="rectangle"/> overlaps at least one of the
+		/// <see cref="Rectangle"/>s in the collection and returns the result.
+		/// </summary>
 		public override bool IsOverlapping(Rectangle rectangle)
 		{
 			var point = rectangle.Position;
@@ -161,22 +184,25 @@ namespace Purity.Collision
 
 			return false;
 		}
-		public override bool IsContaining((float, float) point)
+		/// <summary>
+		/// Checks whether at least one of the <see cref="Rectangle"/>s in the collection contains
+		/// a <paramref name="point"/> and returns the result.
+		/// </summary>
+		public override bool IsOverlapping((float, float) point)
 		{
 			var neighborRects = GetNeighborRects(point, 1);
 			for(int i = 0; i < neighborRects.Count; i++)
-				if(neighborRects[i].IsContaining(point))
+				if(neighborRects[i].IsOverlapping(point))
 					return true;
 
 			return false;
 		}
 
 		#region Backend
-		private readonly int cellSize;
+		internal readonly int cellSize;
 
-		private Rectangle[] globalRectsCopy = Array.Empty<Rectangle>();
-		private readonly List<Rectangle> globalRects = new();
-		private readonly Dictionary<int, Rectangle[]> rectangles = new();
+		private readonly List<Rectangle> cellRects = new();
+		private readonly Dictionary<int, List<Rectangle>> cellRectsMap = new();
 		private readonly Dictionary<(int, int), int> tileIndices = new();
 
 		private void UpdatePositions(int[,] tiles)
@@ -185,37 +211,42 @@ namespace Purity.Collision
 				for(int x = 0; x < tiles.GetLength(1); x++)
 				{
 					var tileID = tiles[x, y];
-					if(rectangles.ContainsKey(tileID))
+					if(cellRectsMap.ContainsKey(tileID))
 						tileIndices[(x, y)] = tileID;
 					else
 						tileIndices.Remove((x, y));
 				}
 
-			globalRects.Clear();
+			cellRects.Clear();
 			foreach(var kvp in tileIndices)
 			{
 				var pos = kvp.Key;
 				var id = kvp.Value;
-				var localRects = rectangles[id];
-				for(int i = 0; i < localRects.Length; i++)
-					globalRects.Add(LocalToGlobalRectangle(localRects[i], pos));
+				var localRects = cellRectsMap[id];
+				for(int i = 0; i < localRects.Count; i++)
+					cellRects.Add(LocalToGlobalRectangle(localRects[i], pos));
 			}
-			globalRectsCopy = globalRects.ToArray();
 		}
 
 		private Rectangle LocalToGlobalRectangle(Rectangle localRect, (float, float) tilePos)
 		{
+			var sc = Scale;
 			var sz = cellSize;
 			var (x, y) = tilePos;
 			var (rx, ry) = localRect.Position;
 			var (rw, rh) = localRect.Size;
 			var (offX, offY) = Position;
 
-			x *= sz;
-			y *= sz;
+			x *= sz * sc;
+			y *= sz * sc;
 
-			rx += offX;
-			ry += offY;
+			rx *= sc;
+			ry *= sc;
+			rw *= sc;
+			rh *= sc;
+
+			rx += offX * sc;
+			ry += offY * sc;
 
 			return new((rw, rh), (x + rx, y + ry));
 		}
@@ -223,11 +254,17 @@ namespace Purity.Collision
 		{
 			var (w, h) = globalRect.Size;
 			var (x, y) = globalRect.Position;
+			var sc = Scale;
 			var sz = cellSize;
 			var (offX, offY) = Position;
 
-			x -= offX;
-			y -= offY;
+			x -= offX * sc;
+			y -= offY * sc;
+
+			x /= sc;
+			y /= sc;
+			w /= sc;
+			h /= sc;
 
 			w /= sz;
 			h /= sz;
@@ -236,9 +273,9 @@ namespace Purity.Collision
 
 			return new(((int)w, (int)h), ((int)x, (int)y));
 		}
-		private List<Rectangle> GetNeighborRects((float, float) point, int chunkSize)
+		internal List<Rectangle> GetNeighborRects((float, float) point, int chunkSize)
 		{
-			var result = new List<Rectangle>(Rectangles);
+			var result = new List<Rectangle>(cellRects);
 			var localRect = GlobalToLocal(new(point, (0, 0)));
 			var (x, y) = localRect.Position;
 			var (w, h) = localRect.Size;
@@ -255,9 +292,12 @@ namespace Purity.Collision
 						continue;
 
 					var id = tileIndices[(i, j)];
-					var rects = rectangles[id];
-					for(int r = 0; r < rects.Length; r++)
-						result.Add(LocalToGlobalRectangle(rects[r], (i, j)));
+					var rects = cellRectsMap[id];
+					for(int r = 0; r < rects.Count; r++)
+					{
+						var rect = LocalToGlobalRectangle(rects[r], (i, j));
+						result.Add(rect);
+					}
 				}
 			return result;
 		}
@@ -265,7 +305,7 @@ namespace Purity.Collision
 		{
 			var (w, h) = globalRect.Size;
 			var size = w > h ? w : h;
-			size /= cellSize;
+			size /= cellSize * Scale;
 			return (int)size * 2;
 		}
 		#endregion

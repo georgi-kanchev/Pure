@@ -28,8 +28,16 @@
 		}
 
 		/// <summary>
+		/// Checks whether the <see cref="Rectangle"/> overlaps a <paramref name="hitbox"/> and
+		/// returns the result. See <see cref="Hitbox.IsOverlapping(Rectangle)"/> for more info.
+		/// </summary>
+		public bool IsOverlapping(Hitbox hitbox)
+		{
+			return hitbox.IsOverlapping(this);
+		}
+		/// <summary>
 		/// Checks whether <see langword="this"/> and another <paramref name="rectangle"/> overlaps
-		/// overlaps then returns the result.
+		/// overlaps and returns the result.
 		/// </summary>
 		public bool IsOverlapping(Rectangle rectangle)
 		{
@@ -37,24 +45,32 @@
 			var (w1, h1) = Size;
 			var (x2, y2) = rectangle.Position;
 			var (w2, h2) = rectangle.Size;
-			var tl1 = IsContaining((x2, y2));
-			var tr1 = IsContaining((x2 + w2, y2));
-			var br1 = IsContaining((x2 + w2, y2 + h2));
-			var bl1 = IsContaining((x2, y2 + h2));
-			var tl2 = rectangle.IsContaining((x1, y1));
-			var tr2 = rectangle.IsContaining((x1 + w1, y1));
-			var br2 = rectangle.IsContaining((x1 + w1, y1 + h1));
-			var bl2 = rectangle.IsContaining((x1, y1 + h1));
+			var tl1 = IsOverlapping((x2, y2));
+			var tr1 = IsOverlapping((x2 + w2, y2));
+			var br1 = IsOverlapping((x2 + w2, y2 + h2));
+			var bl1 = IsOverlapping((x2, y2 + h2));
+			var tl2 = rectangle.IsOverlapping((x1, y1));
+			var tr2 = rectangle.IsOverlapping((x1 + w1, y1));
+			var br2 = rectangle.IsOverlapping((x1 + w1, y1 + h1));
+			var bl2 = rectangle.IsOverlapping((x1, y1 + h1));
 			var overlap1 = tl1 || tr1 || br1 || bl1;
 			var overlap2 = tl2 || tr2 || br2 || bl2;
 
 			return overlap1 || overlap2;
 		}
 		/// <summary>
-		/// Checks whether <see langword="this"/> <see cref="Rectangle"/> contains a
-		/// <paramref name="point"/> then returns the result.
+		/// Checks whether the <see cref="Rectangle"/> overlaps a <paramref name="line"/> and
+		/// returns the result.
 		/// </summary>
-		public bool IsContaining((float, float) point)
+		public bool IsOverlapping(Line line)
+		{
+			return line.IsCrossing(this) || IsContaining(line);
+		}
+		/// <summary>
+		/// Checks whether the <see cref="Rectangle"/> overlaps a <paramref name="point"/>
+		/// and returns the result.
+		/// </summary>
+		public bool IsOverlapping((float, float) point)
 		{
 			var (x, y) = Position;
 			var (w, h) = Size;
@@ -66,6 +82,15 @@
 		}
 
 		/// <summary>
+		/// Checks whether the <see cref="Rectangle"/> contains a <paramref name="line"/> and
+		/// returns the result.
+		/// </summary>
+		public bool IsContaining(Line line)
+		{
+			return IsOverlapping(line.A) || IsOverlapping(line.B);
+		}
+
+		/// <summary>
 		/// Returns a text representation of this <see cref="Rectangle"/> in the format:
 		/// <see langword="Position[x y] Size[w h]"/>
 		/// </summary>
@@ -73,7 +98,7 @@
 		{
 			var (x, y) = Position;
 			var (w, h) = Size;
-			return $"Position[{x} {y}] Size[{w} {h}]";
+			return $"{nameof(Position)}[{x} {y}] {nameof(Size)}[{w} {h}]";
 		}
 	}
 }

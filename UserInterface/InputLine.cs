@@ -7,20 +7,20 @@
 		{
 			get
 			{
-				if(SelectionPosition == CursorPosition)
+				if(IndexSelection == IndexCursor)
 					return "";
 
-				var a = CursorPosition < SelectionPosition ? CursorPosition : SelectionPosition;
-				var b = CursorPosition > SelectionPosition ? CursorPosition : SelectionPosition;
+				var a = IndexCursor < IndexSelection ? IndexCursor : IndexSelection;
+				var b = IndexCursor > IndexSelection ? IndexCursor : IndexSelection;
 				return Text[a..b];
 			}
 		}
-		public int CursorPosition
+		public int IndexCursor
 		{
 			get => curPos;
 			set => curPos = Math.Clamp(value, 0, Text.Length);
 		}
-		public int SelectionPosition
+		public int IndexSelection
 		{
 			get => selPos;
 			set => selPos = Math.Clamp(value, 0, Text.Length);
@@ -37,7 +37,7 @@
 				return;
 
 			if(Input.WasPressed == false && Input.IsPressed)
-				SelectionPosition = CursorPosition;
+				IndexSelection = IndexCursor;
 
 			var isJustPressed = Input.WasPressed == false && Input.IsPressed;
 			var isJustTyped = Input.TypedSymbols != "" && Input.TypedSymbols != Input.PrevTypedSymbols;
@@ -51,7 +51,7 @@
 			var curPos = (int)MathF.Round(cursorPos > Text.Length ? endOfTextPos : cursorPos);
 
 			if(IsPressed)
-				CursorPosition = curPos;
+				IndexCursor = curPos;
 
 			if(isJustPressed)
 			{
@@ -61,39 +61,39 @@
 				if(IsHovered)
 				{
 					FocusedObject = this;
-					SelectionPosition = curPos;
+					IndexSelection = curPos;
 				}
 			}
 
 			if(IsFocused)
 			{
-				var isSelected = SelectionPosition != CursorPosition;
+				var isSelected = IndexSelection != IndexCursor;
 				var justDeleted = false;
 				if((isJustTyped || isJustBackspace) && isSelected)
 				{
-					var a = SelectionPosition < CursorPosition ? SelectionPosition : CursorPosition;
-					var b = Math.Abs(SelectionPosition - CursorPosition);
+					var a = IndexSelection < IndexCursor ? IndexSelection : IndexCursor;
+					var b = Math.Abs(IndexSelection - IndexCursor);
 
 					Text = Text.Remove(a, b);
-					CursorPosition = a;
-					SelectionPosition = a;
+					IndexCursor = a;
+					IndexSelection = a;
 					justDeleted = true;
 				}
 
 				if(isJustTyped && Text.Length < Size.Item1 - 1)
 				{
-					Text = Text.Insert(CursorPosition, Input.TypedSymbols);
+					Text = Text.Insert(IndexCursor, Input.TypedSymbols);
 					MoveCursorRight();
 				}
 				else if(isJustBackspace && justDeleted == false && Text.Length > 0)
 				{
-					Text = Text.Remove(CursorPosition - 1, 1);
+					Text = Text.Remove(IndexCursor - 1, 1);
 					MoveCursorLeft();
 				}
 
-				if(isJustLeft && CursorPosition > 0)
+				if(isJustLeft && IndexCursor > 0)
 					MoveCursorLeft();
-				else if(isJustRight && CursorPosition < Text.Length)
+				else if(isJustRight && IndexCursor < Text.Length)
 					MoveCursorRight();
 			}
 
@@ -105,13 +105,13 @@
 
 		private void MoveCursorLeft()
 		{
-			CursorPosition--;
-			SelectionPosition = CursorPosition;
+			IndexCursor--;
+			IndexSelection = IndexCursor;
 		}
 		private void MoveCursorRight()
 		{
-			CursorPosition++;
-			SelectionPosition = CursorPosition;
+			IndexCursor++;
+			IndexSelection = IndexCursor;
 		}
 		#endregion
 	}

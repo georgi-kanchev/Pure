@@ -31,18 +31,6 @@ namespace Purity.Graphics
 			set { title = value; window.SetTitle(title); }
 		}
 		/// <summary>
-		/// The mouse cursor position relative to the OS window.
-		/// </summary>
-		public (int, int) MousePosition
-		{
-			get { var pos = Mouse.GetPosition(window); return (pos.X, pos.Y); }
-			set
-			{
-				var pos = new Vector2i(value.Item1, value.Item2);
-				Mouse.SetPosition(pos, window);
-			}
-		}
-		/// <summary>
 		/// The size of the OS window.
 		/// </summary>
 		public (uint, uint) Size
@@ -58,16 +46,28 @@ namespace Purity.Graphics
 			get => isHidden;
 			set { isHidden = value; window.SetVisible(value == false); }
 		}
+		/// <summary>
+		/// The mouse cursor position relative to the OS window.
+		/// </summary>
+		public (int, int) MousePosition
+		{
+			get { var pos = Mouse.GetPosition(window); return (pos.X, pos.Y); }
+			set
+			{
+				var pos = new Vector2i(value.Item1, value.Item2);
+				Mouse.SetPosition(pos, window);
+			}
+		}
 
 		/// <summary>
 		/// Creates an OS window in the center of the screen with a size of 2/3 of
 		/// the current OS resolution.
 		/// </summary>
-		public Window(string title = "Purity")
+		public Window()
 		{
 			var desktopW = VideoMode.DesktopMode.Width;
 			var desktopH = VideoMode.DesktopMode.Height;
-			this.title = title;
+			title = "";
 
 			window = new(new VideoMode((uint)(desktopW * 0.66f), (uint)(desktopH * 0.66f)), title);
 			window.Closed += (s, e) => window.Close();
@@ -132,19 +132,40 @@ namespace Purity.Graphics
 			window.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawLayerGfxPath]));
 		}
 		/// <summary>
-		/// Draws <paramref name="color"/>ed single pixel particles onto the OS window.
+		/// Draws single pixel points with <paramref name="color"/> onto the OS window.
 		/// Their <paramref name="positions"/> are relative to the previously drawn layer.
 		/// </summary>
-		public void DrawParticles(byte color, params (float, float)[] positions)
+		public void DrawPoints(byte color, params (float, float)[] positions)
 		{
 			if(positions == null || positions.Length == 0)
 				return;
 
-			var verts = GetParticlesVertices(color, positions);
+			var verts = GetPointsVertices(color, positions);
+			window.Draw(verts, PrimitiveType.Quads);
+		}
+		/// <summary>
+		/// Draws a rectangle with <paramref name="color"/> onto the OS window.
+		/// Its <paramref name="position"/> and <paramref name="size"/> are relative
+		/// to the previously drawn layer.
+		/// </summary>
+		public void DrawRectangle((float, float) position, (float, float) size, byte color)
+		{
+			var verts = GetRectangleVertices(position, size, color);
+			window.Draw(verts, PrimitiveType.Quads);
+		}
+		/// <summary>
+		/// Draws a line between <paramref name="pointA"/> and <paramref name="pointB"/> with
+		/// <paramref name="color"/> onto the OS window.
+		/// Its points are relative to the previously drawn layer.
+		/// </summary>
+		public void DrawLine((float, float) pointA, (float, float) pointB, byte color)
+		{
+			var verts = GetLineVertices(pointA, pointB, color);
 			window.Draw(verts, PrimitiveType.Quads);
 		}
 
 		#region Backend
+		private const int MAX_ITERATIONS = 10000;
 		private bool isHidden;
 		private string title;
 		private string? prevDrawLayerGfxPath;
@@ -162,32 +183,92 @@ namespace Purity.Graphics
 
 			graphics[path] = new(path);
 		}
+		private Vertex[] GetRectangleVertices((float, float) position, (float, float) size, byte color)
+		{
+			if(prevDrawLayerGfxPath == null)
+				return Array.Empty<Vertex>();
+
+			var verts = new Vertex[4];
+			var cellCount = prevDrawLayerCellCount;
+			var (cellWidth, cellHeight) = prevDrawLayerCellSz;
+			var (tileWidth, tileHeight) = prevDrawLayerTileSz;
+
+			var (w, h) = size;
+			var x = Map(position.Item1, 0, cellCount.Item1, 0, window.Size.X);
+			var y = Map(position.Item2, 0, cellCount.Item2, 0, window.Size.Y);
+			var c = ByteToColor(color);
+			var (gridX, gridY) = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
+			var tl = new Vector2f(gridX, gridY);
+			var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
+
+			verts[0] = new(new(tl.X, tl.Y), c);
+			verts[1] = new(new(br.X, tl.Y), c);
+			verts[2] = new(new(br.X, br.Y), c);
+			verts[3] = new(new(tl.X, br.Y), c);
+			return verts;
+		}
+		private Vertex[] GetLineVertices((float, float) a, (float, float) b, byte color)
+		{
+			var (tileW, tileH) = prevDrawLayerTileSz;
+			var (x0, y0) = a;
+			var (x1, y1) = b;
+			var dx = MathF.Abs(x1 - x0);
+			var dy = -MathF.Abs(y1 - y0);
+			var (stepX, stepY) = (1f / tileW * 0.999f, 1f / tileH * 0.999f);
+			var sx = x0 < x1 ? stepX : -stepY;
+			var sy = y0 < y1 ? stepX : -stepY;
+			var err = dx + dy;
+			var points = new List<(float, float)>();
+			float e2;
+
+			for(int i = 0; i < MAX_ITERATIONS; i++)
+			{
+				points.Add((x0, y0));
+
+				if(IsWithin(x0, x1, stepX) && IsWithin(y0, y1, stepY))
+					break;
+
+				e2 = 2f * err;
+
+				if(e2 > dy)
+				{
+					err += dy;
+					x0 += sx;
+				}
+				if(e2 < dx)
+				{
+					err += dx;
+					y0 += sy;
+				}
+			}
+			Console.WriteLine(points.Count);
+			return GetPointsVertices(color, points.ToArray());
+		}
 		private Vertex[] GetSpriteVertices((float, float) position, int cell, byte color)
 		{
 			if(prevDrawLayerGfxPath == null)
 				return Array.Empty<Vertex>();
 
 			var verts = new Vertex[4];
-			var cellWidth = prevDrawLayerCellSz.Item1;
-			var cellHeight = prevDrawLayerCellSz.Item2;
-			var tileSz = prevDrawLayerTileSz;
+			var (cellWidth, cellHeight) = prevDrawLayerCellSz;
+			var cellCount = prevDrawLayerCellCount;
+			var (tileWidth, tileHeight) = prevDrawLayerTileSz;
 			var texture = graphics[prevDrawLayerGfxPath];
 
-			var tileCount = (texture.Size.X / tileSz.Item1, texture.Size.Y / tileSz.Item2);
+			var tileCount = (texture.Size.X / tileWidth, texture.Size.Y / tileHeight);
 			var texCoords = IndexToCoords(cell, tileCount);
-			var tx = new Vector2f(texCoords.Item1 * tileSz.Item1, texCoords.Item2 * tileSz.Item2);
-			var cellCount = prevDrawLayerCellCount;
+			var tx = new Vector2f(texCoords.Item1 * tileWidth, texCoords.Item2 * tileHeight);
 			var x = Map(position.Item1, 0, cellCount.Item1, 0, window.Size.X);
 			var y = Map(position.Item2, 0, cellCount.Item2, 0, window.Size.Y);
 			var c = ByteToColor(color);
-			var grid = ToGrid((x, y), (cellWidth / tileSz.Item1, cellHeight / tileSz.Item2));
+			var grid = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 			var tl = new Vector2f(grid.Item1, grid.Item2);
 			var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
 
 			verts[0] = new(new(tl.X, tl.Y), c, tx);
-			verts[1] = new(new(br.X, tl.Y), c, tx + new Vector2f(tileSz.Item1, 0));
-			verts[2] = new(new(br.X, br.Y), c, tx + new Vector2f(tileSz.Item1, tileSz.Item2));
-			verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileSz.Item2));
+			verts[1] = new(new(br.X, tl.Y), c, tx + new Vector2f(tileWidth, 0));
+			verts[2] = new(new(br.X, br.Y), c, tx + new Vector2f(tileWidth, tileHeight));
+			verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileHeight));
 			return verts;
 		}
 		private Vertex[] GetLayerVertices(int[,] tiles, byte[,] colors,
@@ -236,7 +317,7 @@ namespace Purity.Graphics
 				}
 			return verts;
 		}
-		private Vertex[] GetParticlesVertices(byte color, (float, float)[] positions)
+		private Vertex[] GetPointsVertices(byte color, (float, float)[] positions)
 		{
 			var verts = new Vertex[positions.Length * 4];
 			var tileSz = prevDrawLayerTileSz;
@@ -304,6 +385,19 @@ namespace Purity.Graphics
 		{
 			var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+		}
+		private static bool IsBetween(float number, float rangeA, float rangeB)
+		{
+			if(rangeA > rangeB)
+				(rangeA, rangeB) = (rangeB, rangeA);
+
+			var l = rangeA <= number;
+			var u = rangeB >= number;
+			return l && u;
+		}
+		private static bool IsWithin(float number, float targetNumber, float range)
+		{
+			return IsBetween(number, targetNumber - range, targetNumber + range);
 		}
 		#endregion
 	}

@@ -6,27 +6,26 @@
 
 		public float X
 		{
-			get => Value.Item1;
-			set => Value = (value, Value.Item2);
+			get => val.Item1;
+			set => val = (value, val.Item2);
 		}
 		public float Y
 		{
-			get => Value.Item2;
-			set => Value = (Value.Item1, value);
+			get => val.Item2;
+			set => val = (val.Item1, value);
 		}
-		public (float, float) Value { get; set; }
 
 		public bool IsNaN => float.IsNaN(X) || float.IsNaN(Y);
 
 		public Point(float xy)
 		{
-			Value = (xy, xy);
+			val = (xy, xy);
 			X = xy;
 			Y = xy;
 		}
 		public Point(float x, float y)
 		{
-			Value = (x, y);
+			val = (x, y);
 			X = x;
 			Y = y;
 		}
@@ -44,7 +43,7 @@
 			y -= Y % gridSize.Y;
 			return new(x, y);
 		}
-		public Point MoveInDirection((float, float) direction, float speed, float deltaTime = 1)
+		public Point MoveIn((float, float) direction, float speed, float deltaTime = 1)
 		{
 			// normalize
 			var x = direction.Item1;
@@ -57,18 +56,18 @@
 			var resultY = Y + y * speed * deltaTime;
 			return new(resultX, resultY);
 		}
-		public Point MoveAtAngle(float angle, float speed, float deltaTime = 1)
+		public Point MoveAt(float angle, float speed, float deltaTime = 1)
 		{
 			// angle to dir
 			angle = Wrap(angle, 360);
 			var rad = MathF.PI / 180 * angle;
 			var dir = (MathF.Cos(rad), MathF.Sin(rad));
 
-			return MoveInDirection(dir, speed, deltaTime);
+			return MoveIn(dir, speed, deltaTime);
 		}
-		public Point MoveToTarget(Point targetPoint, float speed, float deltaTime = 1)
+		public Point MoveTo(Point targetPoint, float speed, float deltaTime = 1)
 		{
-			var result = MoveInDirection(targetPoint - this, speed, deltaTime);
+			var result = MoveIn(targetPoint - this, speed, deltaTime);
 
 			speed *= deltaTime;
 			return result.Distance(targetPoint) < speed * 1.1f ? targetPoint : result;
@@ -107,7 +106,7 @@
 		}
 		public static implicit operator (int, int)(Point vector)
 		{
-			return ((int)MathF.Round(vector.Value.Item1), (int)MathF.Round(vector.Value.Item2));
+			return ((int)MathF.Round(vector.val.Item1), (int)MathF.Round(vector.val.Item2));
 		}
 		public static implicit operator Point((float, float) value)
 		{
@@ -115,7 +114,7 @@
 		}
 		public static implicit operator (float, float)(Point vector)
 		{
-			return vector.Value;
+			return vector.val;
 		}
 
 		public static Point operator +(Point a, Point b) => new(a.X + b.X, a.Y + b.Y);
@@ -130,17 +129,19 @@
 		public static Point operator -(float a, Point b) => new(b.X - a, b.Y - a);
 		public static Point operator *(float a, Point b) => new(b.X * a, b.Y * a);
 		public static Point operator /(float a, Point b) => new(b.X / a, b.Y / a);
-		public static bool operator ==(Point a, Point b) => a.Value == b.Value;
-		public static bool operator !=(Point a, Point b) => a.Value != b.Value;
+		public static bool operator ==(Point a, Point b) => a.val == b.val;
+		public static bool operator !=(Point a, Point b) => a.val != b.val;
 
 		public override int GetHashCode() => base.GetHashCode();
 		public override bool Equals(object? obj) => base.Equals(obj);
 		public override string ToString()
 		{
-			return $"{X} {Y}";
+			return val.ToString();
 		}
 
 		#region Backend
+		private (float, float) val;
+
 		private static float ToAngle((float, float) direction)
 		{
 			return (MathF.Atan2(direction.Item2, direction.Item1) * (180f / MathF.PI)).Wrap(360);

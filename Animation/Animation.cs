@@ -17,7 +17,15 @@
 		/// <summary>
 		/// The amount of seconds needed to iterate over the <see cref="values"/>.
 		/// </summary>
-		public float Duration { get; set; }
+		public float TotalDuration { get; set; }
+		/// <summary>
+		/// The amount of seconds the iteration stays on a particular value.
+		/// </summary>
+		public float ValueDuration
+		{
+			get => TotalDuration / values.Length;
+			set => TotalDuration = value * values.Length;
+		}
 		/// <summary>
 		/// Whether the iteration over the collection starts over when the end is reached.
 		/// </summary>
@@ -39,16 +47,31 @@
 
 		/// <summary>
 		/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>
-		/// with <paramref name="duration"/> in seconds while it <paramref name="isRepeating"/>.
+		/// with <paramref name="totalDuration"/> in seconds while it <paramref name="isRepeating"/>.
 		/// </summary>
-		public Animation(float duration, bool isRepeating, params T[] values)
+		public Animation(float totalDuration, bool isRepeating, params T[] values)
 		{
 			this.values = values ?? throw new ArgumentNullException(nameof(values));
 			if(values.Length < 1)
 				throw new ArgumentException("Total values cannot be < 1.", nameof(values));
 
 			rawIndex = 0;
-			Duration = duration;
+			TotalDuration = totalDuration;
+			IsRepeating = isRepeating;
+			RawIndex = LOWER_BOUND;
+		}
+		/// <summary>
+		/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>
+		/// with <paramref name="valueDuration"/> in values per second while it <paramref name="isRepeating"/>.
+		/// </summary>
+		public Animation(bool isRepeating, float valueDuration, params T[] values)
+		{
+			this.values = values ?? throw new ArgumentNullException(nameof(values));
+			if(values.Length < 1)
+				throw new ArgumentException("Total values cannot be < 1.", nameof(values));
+
+			rawIndex = 0;
+			ValueDuration = valueDuration;
 			IsRepeating = isRepeating;
 			RawIndex = LOWER_BOUND;
 		}
@@ -66,7 +89,7 @@
 			if(values == default || IsPaused)
 				return;
 
-			RawIndex += deltaTime / (Duration / values.Length);
+			RawIndex += deltaTime / ValueDuration;
 			if((int)MathF.Round(RawIndex) >= values.Length)
 				RawIndex = IsRepeating ? LOWER_BOUND : values.Length - 1;
 		}

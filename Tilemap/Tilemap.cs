@@ -15,7 +15,7 @@ namespace Purity.Tilemap
 		public uint TileTotalCount => TileCount.Item1 * TileCount.Item2;
 		public (uint, uint) TileCount => ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
 
-		public (int[,], byte[,]) Camera { get; private set; }
+		public Tilemap Camera { get; private set; }
 		public (int, int) CameraPosition { get; set; }
 		public (int, int) CameraSize { get; set; }
 
@@ -25,29 +25,34 @@ namespace Purity.Tilemap
 			tiles = new int[w, h];
 			colors = new byte[w, h];
 			CameraSize = ((int)w, (int)h);
+			Camera = this;
 		}
 		public Tilemap(int[,] tiles)
 		{
 			this.tiles = tiles;
 			colors = new byte[tiles.GetLength(0), tiles.GetLength(1)];
 			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
+			Camera = this;
 		}
 		public Tilemap(byte[,] colors)
 		{
 			tiles = new int[colors.GetLength(0), colors.GetLength(1)];
 			this.colors = colors;
 			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
+			Camera = this;
 		}
 		public Tilemap(int[,] tiles, byte[,] colors)
 		{
 			this.tiles = tiles;
 			this.colors = colors;
 			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
+			Camera = this;
 		}
 		public Tilemap(string tmxPath, string layerName)
 		{
-			this.tiles = new int[0, 0];
+			tiles = new int[0, 0];
 			colors = new byte[0, 0];
+			Camera = this;
 
 			if(tmxPath == null)
 				throw new ArgumentNullException(nameof(tmxPath));
@@ -98,6 +103,7 @@ namespace Purity.Tilemap
 			tiles = new int[mapWidth, mapHeight];
 			colors = new byte[tiles.GetLength(0), tiles.GetLength(1)];
 			CameraSize = (mapWidth, mapHeight);
+			Camera = this;
 
 			if(encoding == "csv")
 				LoadFromCSV(dataStr);
@@ -139,20 +145,20 @@ namespace Purity.Tilemap
 				var j = 0;
 				for(int y = cy; y != cy + h; y += yStep)
 				{
-					tiles[i, j] = GetTile((x, y));
-					colors[i, j] = GetColor((x, y));
+					tiles[i, j] = TileAt((x, y));
+					colors[i, j] = ColorAt((x, y));
 					j++;
 				}
 				i++;
 			}
-			Camera = (tiles, colors);
+			Camera = new(tiles, colors);
 		}
 
-		public int GetTile((int, int) position)
+		public int TileAt((int, int) position)
 		{
 			return IndicesAreValid(position) ? tiles[position.Item1, position.Item2] : default;
 		}
-		public byte GetColor((int, int) position)
+		public byte ColorAt((int, int) position)
 		{
 			return IndicesAreValid(position) ? colors[position.Item1, position.Item2] : default;
 		}
@@ -190,7 +196,7 @@ namespace Purity.Tilemap
 			for(int i = 0; i < text?.Length; i++)
 			{
 				var symbol = text[i];
-				var index = SymbolToTile(symbol);
+				var index = TileFrom(symbol);
 
 				if(index == default && symbol != ' ')
 				{
@@ -330,11 +336,11 @@ namespace Purity.Tilemap
 			}
 		}
 
-		public (float, float) PixelToPosition((int, int) pixel, (uint, uint) windowSize,
+		public (float, float) PositionFrom((int, int) screenPixel, (uint, uint) windowSize,
 			bool isAccountingForCamera = true)
 		{
-			var x = Map(pixel.Item1, 0, windowSize.Item1, 0, TileCount.Item1);
-			var y = Map(pixel.Item2, 0, windowSize.Item2, 0, TileCount.Item2);
+			var x = Map(screenPixel.Item1, 0, windowSize.Item1, 0, TileCount.Item1);
+			var y = Map(screenPixel.Item2, 0, windowSize.Item2, 0, TileCount.Item2);
 
 			if(isAccountingForCamera)
 			{
@@ -345,7 +351,7 @@ namespace Purity.Tilemap
 			return (x, y);
 		}
 
-		public static int SymbolToTile(char symbol)
+		public static int TileFrom(char symbol)
 		{
 			var index = default(int);
 			if(symbol >= 'A' && symbol <= 'Z')

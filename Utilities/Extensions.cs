@@ -1,4 +1,8 @@
-﻿namespace Purity.Utilities
+﻿using System.Globalization;
+using System.IO.Compression;
+using System.Text;
+
+namespace Purity.Utilities
 {
 	/// <summary>
 	/// Various methods that extend the primitive types, structs and collections.
@@ -26,10 +30,12 @@
 		public enum AnimationCurve { Backward, Forward, BackwardThenForward }
 
 		/// <summary>
-		/// Returns true only the first time a <paramref name="condition"/> is <see langword="true"/>.
+		/// Returns <see langword="true"/> only the first time a <paramref name="condition"/> is <see langword="true"/>.
 		/// This is reset whenever the <paramref name="condition"/> becomes <see langword="false"/>.
-		/// This process can be repeated <paramref name="max"/> amount of times, always returns <see langword="false"/> after that.<br></br>
+		/// This process can be repeated <paramref name="max"/> amount of times, always returns <see langword="false"/> after that.
 		/// A <paramref name="uniqueID"/> needs to be provided that describes each type of condition in order to separate/identify them.
+		/// <br></br><br></br>
+		/// # Useful for triggering continuous checks only once, rather than every <see cref="Time.Update"/>.
 		/// </summary>
 		public static bool Once(this bool condition, string uniqueID, uint max = uint.MaxValue)
 		{
@@ -71,14 +77,15 @@
 			}
 		}
 		/// <summary>
-		/// Picks randomly a single <typeparamref name="T"/> value out of a <paramref name="list"/> and returns it.
+		/// Picks randomly a single <typeparamref name="T"/> value out of <paramref name="list"/> and returns it.
 		/// </summary>
 		public static T ChooseOne<T>(this IList<T> list)
 		{
 			return list[Random(0, list.Count - 1)];
 		}
 		/// <summary>
-		/// Picks randomly a single <typeparamref name="T"/> value out of some <paramref name="choices"/> and returns it.
+		/// Picks randomly a single <typeparamref name="T"/> value out of <paramref name="choice"/> and
+		/// <paramref name="choices"/> and returns it.
 		/// </summary>
 		public static T ChooseOneFrom<T>(this T choice, params T[] choices)
 		{
@@ -87,7 +94,7 @@
 			return ChooseOne(list);
 		}
 		/// <summary>
-		/// Calculates the average <see cref="float"/> out of a <paramref name="list"/> of <see cref="float"/>s and returns it.
+		/// Calculates the average number out of a <paramref name="list"/> of numbers and returns it.
 		/// </summary>
 		public static float Average(this IList<float> list)
 		{
@@ -97,7 +104,7 @@
 			return sum / list.Count;
 		}
 		/// <summary>
-		/// Calculates the average <see cref="float"/> out of a <paramref name="list"/> of <see cref="float"/>s and returns it.
+		/// Calculates the average number out of <paramref name="numbers"/> and returns it.
 		/// </summary>
 		public static float AverageFrom(this float number, params float[] numbers)
 		{
@@ -107,7 +114,7 @@
 		}
 
 		/// <summary>
-		/// Returns whether <paramref name="text"/> can be cast to a <see cref="float"/>.
+		/// Returns whether <paramref name="text"/> represents a valid number.
 		/// </summary>
 		public static bool IsNumber(this string text)
 		{
@@ -127,15 +134,8 @@
 			return true;
 		}
 		/// <summary>
-		/// Puts <paramref name="text"/> to the right with a set amount of <paramref name="spaces"/>
-		/// if they are more than the <paramref name="text"/>'s length.<br></br>
-		/// </summary>
-		public static string Pad(this string text, int spaces)
-		{
-			return string.Format("{0," + spaces + "}", text);
-		}
-		/// <summary>
-		/// Adds <paramref name="text"/> to itself a certain amount of <paramref name="times"/> and returns it.
+		/// Adds <paramref name="text"/> to <paramref name="text"/> a certain amount of
+		/// <paramref name="times"/> and returns it.
 		/// </summary>
 		public static string Repeat(this string text, int times)
 		{
@@ -186,8 +186,8 @@
 			return Encoding.UTF8.GetString(decompressedBytes);
 		}
 		/// <summary>
-		/// Tries to convert <paramref name="text"/> to a <see cref="float"/> and returns the result (<see cref="float.NaN"/> if unsuccessful).
-		/// This also takes into account the system's default decimal symbol.
+		/// Tries to convert <paramref name="text"/> to a number and returns the result (<see cref="float.NaN"/> if unsuccessful).
+		/// This takes into account the system's default decimal symbol.
 		/// </summary>
 		public static float ToNumber(this string text)
 		{
@@ -198,27 +198,42 @@
 			return parsed ? result : float.NaN;
 		}
 
-		public static float Snap(this float number, float intervalSize)
+		/// <summary>
+		/// Snaps a <paramref name="number"/> to an <paramref name="interval"/> and returns it.
+		/// </summary>
+		public static float Snap(this float number, float interval)
 		{
-			if(intervalSize == default)
+			if(interval == default)
 				return number;
 
 			// this prevents -0
-			var value = number - (number < 0 ? intervalSize : 0);
-			value -= number % intervalSize;
+			var value = number - (number < 0 ? interval : 0);
+			value -= number % interval;
 			return value;
 		}
 		/// <summary>
-		/// Wraps a <paramref name="number"/> around 0 to <paramref name="range"/> and returns it.
+		/// Wraps a <paramref name="number"/> around the range[0 to <paramref name="targetNumber"/>]
+		/// and returns it.<br></br><br></br>
+		/// # Useful for keeping an angle in the range[0 to 360] degrees.
 		/// </summary>
-		public static float Wrap(this float number, float range)
+		public static float Wrap(this float number, float targetNumber)
 		{
-			return ((number % range) + range) % range;
+			return ((number % targetNumber) + targetNumber) % targetNumber;
 		}
 		/// <summary>
-		/// Transforms a <paramref name="unit"/> ranged [0-1] to an animated progress acording to an <paramref name="animation"/>
-		/// and a <paramref name="curve"/>. The animation <paramref name="isRepeated"/> optionally
-		/// (if the provided progress is outside of the range [0-1]). These are also known as easing and interpolating functions.
+		/// Wraps a <paramref name="number"/> around the range[0 to <paramref name="targetNumber"/>]
+		/// and returns it.<br></br><br></br>
+		/// # Useful for keeping an angle in the range[0 to 360] degrees.
+		/// </summary>
+		public static int Wrap(this int number, int targetNumber)
+		{
+			return ((number % targetNumber) + targetNumber) % targetNumber;
+		}
+		/// <summary>
+		/// Transforms a <paramref name="unit"/>[0 to 1] to an animated progress acording to <paramref name="animation"/>
+		/// and <paramref name="curve"/>. The animation <paramref name="isRepeated"/> optionally
+		/// if the provided progress <paramref name="unit"/> is outside of its range[0 to 1].<br></br><br></br>
+		/// # Also known as easing and interpolating functions.
 		/// </summary>
 		public static float Animate(this float unit, Animation animation, AnimationCurve curve, bool isRepeated = false)
 		{
@@ -288,12 +303,12 @@
 			}
 		}
 		/// <summary>
-		/// Restricts a <paramref name="number"/> in the inclusive range [<paramref name="rangeA"/> - <paramref name="rangeB"/>] with a certain type of
-		/// <paramref name="limitation"/> and returns it. Also known as Clamping.<br></br><br></br>
-		/// - Note when using <see cref="Limitation.Overflow"/>: <paramref name="rangeB"/> is not inclusive since <paramref name="rangeA"/> = <paramref name="rangeB"/>.
-		/// <br></br>
-		/// - Example for this: Range [0 - 10], (0 = 10). So <paramref name="number"/> = -1 would result in 9. Putting the range [0 - 11] would give the "real" inclusive
-		/// [0 - 10] range.<br></br> Therefore <paramref name="number"/> = <paramref name="rangeB"/> would result in <paramref name="rangeA"/> but not vice versa.
+		/// Restricts a <paramref name="number"/> in the inclusive range[<paramref name="rangeA"/> to
+		/// <paramref name="rangeB"/>] with a certain type of
+		/// <paramref name="limitation"/>. When the limit <paramref name="isOverflowing"/> <paramref name="rangeB"/>
+		/// is not inclusive since <paramref name="rangeA"/> = <paramref name="rangeB"/>.
+		/// Example for this is the range[0 to 10], which means (0 = 10), Therefore the range [0 - 11] should be provided.<br></br><br></br>
+		/// # Also known as Clamp.
 		/// </summary>
 		public static float Limit(this float number, float rangeA, float rangeB, bool isOverflowing = false)
 		{
@@ -315,6 +330,18 @@
 			}
 		}
 		/// <summary>
+		/// Restricts a <paramref name="number"/> in the inclusive range[<paramref name="rangeA"/> to
+		/// <paramref name="rangeB"/>] with a certain type of
+		/// <paramref name="limitation"/>. When the limit <paramref name="isOverflowing"/> <paramref name="rangeB"/>
+		/// is not inclusive since <paramref name="rangeA"/> = <paramref name="rangeB"/>.
+		/// Example for this is the range[0 to 10], which means (0 = 10), Therefore the range [0 - 11] should be provided.<br></br><br></br>
+		/// # Also known as Clamp.
+		/// </summary>
+		public static int Limit(this int number, int rangeA, int rangeB, bool isOverflowing = false)
+		{
+			return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
+		}
+		/// <summary>
 		/// Ensures a <paramref name="number"/> is <paramref name="isSigned"/> and returns the result.
 		/// </summary>
 		public static float Sign(this float number, bool isSigned)
@@ -322,7 +349,12 @@
 			return isSigned ? -MathF.Abs(number) : MathF.Abs(number);
 		}
 		/// <summary>
-		/// Calculates <paramref name="number"/>'s precision (amount of digits after the decimal point) and returns it.
+		/// Ensures a <paramref name="number"/> is <paramref name="signed"/> and returns the result.
+		/// </summary>
+		public static int Sign(this int number, bool signed)
+			=> (int)Sign((float)number, signed);
+		/// <summary>
+		/// Calculates the precision of a <paramref name="number"/> (amount of digits after the decimal symbol) and returns it.
 		/// </summary>
 		public static int Precision(this float number)
 		{
@@ -331,8 +363,8 @@
 			return split.Length > 1 ? split[1].Length : 0;
 		}
 		/// <summary>
-		/// Returns whether <paramref name="number"/> is in range [<paramref name="rangeA"/> - <paramref name="rangeB"/>].
-		/// The ranges may be <paramref name="inclusiveA"/> or <paramref name="inclusiveB"/>.
+		/// Returns whether <paramref name="number"/> is in range[<paramref name="rangeA"/> to <paramref name="rangeB"/>].
+		/// The range boundaries may be <paramref name="inclusiveA"/> or <paramref name="inclusiveB"/>.
 		/// </summary>
 		public static bool IsBetween(this float number, float rangeA, float rangeB, bool inclusiveA = false, bool inclusiveB = false)
 		{
@@ -344,17 +376,41 @@
 			return l && u;
 		}
 		/// <summary>
-		/// Moves a <paramref name="number"/> with <paramref name="speed"/>. The result is then returned.
+		/// Returns whether <paramref name="number"/> is in range[<paramref name="rangeA"/> to <paramref name="rangeB"/>].
+		/// The range boundaries may be <paramref name="inclusiveA"/> or <paramref name="inclusiveB"/>.
+		/// </summary>
+		public static bool IsBetween(this int number, int rangeA, int rangeB, bool inclusiveA = false, bool inclusiveB = false)
+			=> IsBetween((float)number, rangeA, rangeB, inclusiveA, inclusiveB);
+		/// <summary>
+		/// Returns whether <paramref name="number"/> is within <paramref name="range"/> of <paramref name="targetNumber"/>.
+		/// </summary>
+		public static bool IsWithin(this float number, float targetNumber, float range)
+		{
+			return IsBetween(number, targetNumber - range, targetNumber + range, true, true);
+		}
+		/// <summary>
+		/// Returns whether <paramref name="number"/> is within <paramref name="range"/> of <paramref name="targetNumber"/>.
+		/// </summary>
+		public static bool IsWithin(this int number, int targetNumber, int range)
+		{
+			return IsBetween(number, targetNumber - range, targetNumber + range, true, true);
+		}
+		/// <summary>
+		/// Moves a <paramref name="number"/> with <paramref name="speed"/> according to
+		/// <paramref name="deltaTime"/>. The result is then returned.<br></br><br></br>
+		/// # See <see cref="Time.Delta"/> for more info.
 		/// </summary>
 		public static float Move(this float number, float speed, float deltaTime = 1)
 		{
 			return number + speed * deltaTime;
 		}
 		/// <summary>
-		/// Moves a <paramref name="number"/> toward a <paramref name="targetNumber"/> with <paramref name="speed"/>.
-		/// The calculation ensures to stop exactly at the <paramref name="targetNumber"/>. The result is then returned.
+		/// Moves a <paramref name="number"/> towards a <paramref name="targetNumber"/> with <paramref name="speed"/>
+		/// according to <paramref name="deltaTime"/>. The calculation ensures to stop exactly at the
+		/// <paramref name="targetNumber"/>. The result is then returned.<br></br><br></br>
+		/// # See <see cref="Time.Delta"/> for more info.
 		/// </summary>
-		public static float MoveToTarget(this float number, float targetNumber, float speed, float deltaTime = 1)
+		public static float MoveTo(this float number, float targetNumber, float speed, float deltaTime = 1)
 		{
 			var goingPos = number < targetNumber;
 			var result = Move(number, goingPos ? Sign(speed, false) : Sign(speed, true), deltaTime);
@@ -365,17 +421,22 @@
 				return targetNumber;
 			return result;
 		}
+		/// <summary>
+		/// Projects a <paramref name="number"/> in the range[<paramref name="number"/>(0) to
+		/// <paramref name="targetNumber"/>(1)] according to <paramref name="unit"/>[0 to 1]
+		/// and returns the result.<br></br><br></br>
+		/// # Also known as Linear Interpolation - Lerp.<br></br>
+		/// # Similar to <see cref="Map"/>
+		/// </summary>
 		public static float ToTarget(this float number, float targetNumber, float unit)
 		{
 			return unit.Map(0, 1, number, targetNumber);
 		}
 		/// <summary>
-		/// Maps a <paramref name="number"/> from one range to another ([<paramref name="a1"/> - <paramref name="a2"/>] to
-		/// [<paramref name="b1"/> - <paramref name="b2"/>]) and returns it.<br></br>
+		/// Maps a <paramref name="number"/> from one range[<paramref name="a1"/> to <paramref name="a2"/>]
+		/// to another [<paramref name="b1"/> to <paramref name="b2"/>] and returns it.<br></br>
 		/// The <paramref name="b1"/> value is returned if the result is <see cref="float.NaN"/>,
-		/// <see cref="float.NegativeInfinity"/> or <see cref="float.PositiveInfinity"/>.<br></br>
-		/// - Example: 50 mapped from [0 - 100] and [0 - 1] results to 0.5<br></br>
-		/// - Example: 25 mapped from [30 - 20] and [1 - 5] results to 3
+		/// <see cref="float.NegativeInfinity"/> or <see cref="float.PositiveInfinity"/>.
 		/// </summary>
 		public static float Map(this float number, float a1, float a2, float b1, float b2)
 		{
@@ -383,7 +444,15 @@
 			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
 		}
 		/// <summary>
-		/// Generates a random <see cref="float"/> number in the inclusive range [<paramref name="rangeA"/> - <paramref name="rangeB"/>] with
+		/// Maps a <paramref name="number"/> from one range[<paramref name="a1"/> to <paramref name="a2"/>]
+		/// to another [<paramref name="b1"/> to <paramref name="b2"/>] and returns it.<br></br>
+		/// The <paramref name="b1"/> value is returned if the result is <see cref="float.NaN"/>,
+		/// <see cref="float.NegativeInfinity"/> or <see cref="float.PositiveInfinity"/>.
+		/// </summary>
+		public static int Map(this int number, int a1, int a2, int b1, int b2) =>
+			(int)Map((float)number, a1, a2, b1, b2);
+		/// <summary>
+		/// Generates a random number in the inclusive range[<paramref name="rangeA"/> to <paramref name="rangeB"/>] with
 		/// <paramref name="precision"/> and an optional <paramref name="seed"/>. Then returns the result.
 		/// </summary>
 		public static float Random(this float rangeA, float rangeB, float precision = 0, float seed = float.NaN)
@@ -403,7 +472,15 @@
 			return randInt / (precision);
 		}
 		/// <summary>
-		/// Returns true only <paramref name="percent"/>% / returns false (100 - <paramref name="percent"/>)% of the times.
+		/// Generates a random number in the inclusive range[<paramref name="rangeA"/> to <paramref name="rangeB"/>] with
+		/// <paramref name="precision"/> and an optional <paramref name="seed"/>. Then returns the result.
+		/// </summary>
+		public static int Random(this int rangeA, int rangeB, float seed = float.NaN)
+		{
+			return (int)Random(rangeA, rangeB, 0, seed);
+		}
+		/// <summary>
+		/// Returns <see langword="true"/> only a certain <paramref name="percent"/> of the calls, <see langword="false"/> otherwise.
 		/// </summary>
 		public static bool HasChance(this float percent)
 		{
@@ -411,60 +488,14 @@
 			var n = Random(1f, 100f); // should not roll 0 so it doesn't return true with 0% (outside of roll)
 			return n <= percent;
 		}
-
 		/// <summary>
-		/// Wraps a <paramref name="number"/> around 0 to <paramref name="range"/> and returns it.
-		/// </summary>
-		public static int Wrap(this int number, int range)
-		{
-			return ((number % range) + range) % range;
-		}
-		/// <summary>
-		/// Generates a random <see cref="int"/> number in the inclusive range [<paramref name="rangeA"/> - <paramref name="rangeB"/>] with an
-		/// optional <paramref name="seed"/>. Then returns the result.
-		/// </summary>
-		public static int Random(this int rangeA, int rangeB, float seed = float.NaN)
-		{
-			return (int)Random(rangeA, rangeB, 0, seed);
-		}
-		/// <summary>
-		/// Returns true only <paramref name="percent"/>% / returns false (100 - <paramref name="percent"/>)% of the times.
+		/// Returns <see langword="true"/> only a certain <paramref name="percent"/> of the calls, <see langword="false"/> otherwise.
 		/// </summary>
 		public static bool HasChance(this int percent)
 		{
 			return HasChance((float)percent);
 		}
-		/// <summary>
-		/// Restricts a <paramref name="number"/> in the inclusive range [<paramref name="rangeA"/> - <paramref name="rangeB"/>] with a certain type of
-		/// <paramref name="limitation"/> and returns it. Also known as Clamping.<br></br><br></br>
-		/// - Note when using <see cref="Limitation.Overflow"/>: <paramref name="rangeB"/> is not inclusive since <paramref name="rangeA"/> = <paramref name="rangeB"/>.
-		/// <br></br>
-		/// - Example for this: Range [0 - 10], (0 = 10). So <paramref name="number"/> = -1 would result in 9. Putting the range [0 - 11] would give the "real" inclusive
-		/// [0 - 10] range.<br></br> Therefore <paramref name="number"/> = <paramref name="rangeB"/> would result in <paramref name="rangeA"/> but not vice versa.
-		/// </summary>
-		public static int Limit(this int number, int rangeA, int rangeB, bool isOverflowing = false)
-		{
-			return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
-		}
-		/// <summary>
-		/// Ensures a <paramref name="number"/> is <paramref name="signed"/> and returns the result.
-		/// </summary>
-		public static int Sign(this int number, bool signed)
-			=> (int)Sign((float)number, signed);
-		/// <summary>
-		/// Returns whether <paramref name="number"/> is in range [<paramref name="rangeA"/> - <paramref name="rangeB"/>].
-		/// The ranges may be <paramref name="inclusiveA"/> or <paramref name="inclusiveB"/>.
-		/// </summary>
-		public static bool IsBetween(this int number, int rangeA, int rangeB, bool inclusiveA = false, bool inclusiveB = false)
-			=> IsBetween((float)number, rangeA, rangeB, inclusiveA, inclusiveB);
-		/// <summary>
-		/// Maps a <paramref name="number"/> from [<paramref name="A1"/> - <paramref name="B1"/>] to
-		/// [<paramref name="B1"/> - <paramref name="B2"/>] and returns it. Similar to Lerping (linear interpolation).<br></br>
-		/// - Example: 50 mapped from [0 - 100] and [0 - 1] results to 0.5<br></br>
-		/// - Example: 25 mapped from [30 - 20] and [1 - 5] results to 3
-		/// </summary>
-		public static int Map(this int number, int a1, int a2, int b1, int b2) =>
-			(int)Map((float)number, a1, a2, b1, b2);
+
 		#region Backend
 		private static readonly Dictionary<string, int> gateEntries = new();
 		private static readonly Dictionary<string, bool> gates = new();

@@ -15,13 +15,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserInterface", "UserInterf
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Input", "Input\Input.csproj", "{EC446D27-4D48-476B-BFA0-E4FA04CCF374}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Collision", "Collision\Collision.csproj", "{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Collision", "Collision\Collision.csproj", "{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Animation", "Animation\Animation.csproj", "{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Animation", "Animation\Animation.csproj", "{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tilemap", "Tilemap\Tilemap.csproj", "{E10DCE19-23F2-4CB0-89E5-1254144DE690}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tilemap", "Tilemap\Tilemap.csproj", "{E10DCE19-23F2-4CB0-89E5-1254144DE690}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Storage", "Storage\Storage.csproj", "{91635CA2-C003-4DB0-8143-B0BF0924DDAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Storage", "Storage\Storage.csproj", "{91635CA2-C003-4DB0-8143-B0BF0924DDAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Audio", "Audio\Audio.csproj", "{09AA518A-1AA0-4198-9478-893E3DF05855}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +71,10 @@ Global
 		{91635CA2-C003-4DB0-8143-B0BF0924DDAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91635CA2-C003-4DB0-8143-B0BF0924DDAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91635CA2-C003-4DB0-8143-B0BF0924DDAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09AA518A-1AA0-4198-9478-893E3DF05855}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09AA518A-1AA0-4198-9478-893E3DF05855}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09AA518A-1AA0-4198-9478-893E3DF05855}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09AA518A-1AA0-4198-9478-893E3DF05855}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

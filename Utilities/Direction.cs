@@ -14,11 +14,6 @@
 			get => y;
 			set { y = value; Normalize(); }
 		}
-		public (float, float) Value
-		{
-			get => (x, y);
-			set { x = value.Item1; y = value.Item2; Normalize(); }
-		}
 
 		public bool IsNaN => float.IsNaN(X) || float.IsNaN(Y);
 
@@ -112,11 +107,17 @@
 		public override bool Equals(object? obj) => base.Equals(obj);
 		public override string ToString()
 		{
-			return $"{X} {Y}";
+			return Value.ToString();
 		}
 
 		#region Backend
 		private float x, y;
+		private (float, float) Value
+		{
+			get => (x, y);
+			set { x = value.Item1; y = value.Item2; Normalize(); }
+		}
+
 		private void Normalize()
 		{
 			var m = MathF.Sqrt(x * x + y * y);

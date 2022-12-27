@@ -3,7 +3,7 @@
 namespace Purity.Utilities
 {
 	/// <summary>
-	/// Uses <see cref="System.DateTime"/> to track time and calculate time related values/timers.
+	/// Uses <see cref="DateTime"/> to track time and calculate time related values/timers.
 	/// </summary>
 	public static class Time
 	{
@@ -13,12 +13,14 @@ namespace Purity.Utilities
 		/// </summary>
 		public enum Convertion
 		{
+#pragma warning disable CS1591
 			MillisecondsToSeconds, MillisecondsToMinutes,
 			SecondsToMilliseconds, SecondsToMinutes, SecondsToHours,
 			MinutesToMilliseconds, MinutesToSeconds, MinutesToHours, MinutesToDays,
 			HoursToSeconds, HoursToMinutes, HoursToDays, HoursToWeeks,
 			DaysToMinutes, DaysToHours, DaysToWeeks,
 			WeeksToHours, WeeksToDays
+#pragma warning restore CS1591
 		}
 		/// <summary>
 		/// A unit, used to measure a time period. Used by <see cref="ConvertToClock"/>.
@@ -26,6 +28,7 @@ namespace Purity.Utilities
 		[Flags]
 		public enum Unit
 		{
+#pragma warning disable CS1591
 			Day = 1,
 			Hour = 2,
 			Minute = 4,
@@ -33,6 +36,7 @@ namespace Purity.Utilities
 			Millisecond = 16,
 			AM_PM = 32,
 			DisplayAM_PM = 64,
+#pragma warning restore CS1591
 		}
 
 		/// <summary>
@@ -47,11 +51,16 @@ namespace Purity.Utilities
 		/// </summary>
 		public static float MaxDelta { get; set; } = 0.1f;
 		/// <summary>
-		/// The time in seconds since the last <see cref="Update"/> call. This is useful for
-		/// multiplying it with a step value in continuous calculations so that the step value
-		/// is consistent on all systems.
+		/// The time in seconds since the last <see cref="Update"/> call, limited by
+		/// <see cref="MaxDelta"/>. This is useful for multiplying it with a step value in
+		/// continuous calculations so that the step value is consistent on all systems.
 		/// </summary>
 		public static float Delta { get; private set; }
+		/// <summary>
+		/// The unlimited time in seconds since the last <see cref="Update"/> call. Same as
+		/// <see cref="Delta"/> but not limited by <see cref="MaxDelta"/>. Useful making for timers.
+		/// </summary>
+		public static float RawDelta { get; private set; }
 		/// <summary>
 		/// The amount of <see cref="Update"/> calls per second.
 		/// </summary>
@@ -75,18 +84,14 @@ namespace Purity.Utilities
 		public static void Update()
 		{
 			var delta = (float)dt.Elapsed.TotalSeconds;
+			RawDelta = delta;
 			Delta = Math.Clamp(delta, 0, MathF.Max(0, MaxDelta));
 			dt.Restart();
 
 			Clock = Now;
 			RuntimeClock += Delta;
-			updateFPS += Delta;
-			if(updateFPS > UPDATE_FPS_EVERY_X_SEC)
-			{
-				updateFPS = 0;
-				UpdatesPerSecond = 1f / Delta;
-				UpdatesPerSecondAverage = UpdateCount / RuntimeClock;
-			}
+			UpdatesPerSecond = 1f / Delta;
+			UpdatesPerSecondAverage = UpdateCount / RuntimeClock;
 			UpdateCount++;
 
 			var toBeRemoved = new List<Timer>();
@@ -108,11 +113,11 @@ namespace Purity.Utilities
 		}
 
 		/// <summary>
-		/// Uses <see cref="System.TimeSpan"/> to convert a certain amount of <paramref name="seconds"/>
+		/// Uses <see cref="System.TimeSpan"/> to convert <paramref name="seconds"/>
 		/// into a clock/timer <see cref="string"/> with an optional <paramref name="separator"/>
 		/// including multiple <paramref name="units"/>. Returns the result afterwards.
 		/// </summary>
-		public static string ConvertToClock(float seconds, string separator = ":",
+		public static string ClockFrom(this float seconds, string separator = ":",
 			Unit units = Unit.Hour | Unit.Minute | Unit.Second)
 		{
 			var ts = TimeSpan.FromSeconds(seconds);
@@ -129,7 +134,7 @@ namespace Purity.Utilities
 			{
 				var sep = counter > 0 ? separator : "";
 				var val = counter == 0 ? (int)ts.TotalHours :
-					(units.HasFlag(Unit.AM_PM) ? Wrap(ts.Hours, 12) : ts.Hours);
+					(units.HasFlag(Unit.AM_PM) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
 				val = val == 0 ? 12 : val;
 				result += $"{sep}{val:D2}";
 				counter++;
@@ -170,10 +175,10 @@ namespace Purity.Utilities
 			}
 		}
 		/// <summary>
-		/// Converts a <paramref name="time"/> from one time unit to another
+		/// Converts <paramref name="time"/> from one unit to another
 		/// (chosen by <paramref name="convertType"/>) and returns the result.
 		/// </summary>
-		public static float ConvertToTime(float time, Convertion convertType)
+		public static float TimeFrom(this float time, Convertion convertType)
 		{
 			return convertType switch
 			{
@@ -202,14 +207,14 @@ namespace Purity.Utilities
 		/// <summary>
 		/// Schedules a call to a provided <paramref name="method"/> after a certain amount of <paramref name="seconds"/>.
 		/// May also call it continuously every few <paramref name="seconds"/> if it <paramref name="isRepeating"/>. In other words:
-		/// subscribe a <paramref name="method"/> to a timer.
+		/// subscribes a <paramref name="method"/> to a timer.
 		/// </summary>
 		public static void CallAfter(float seconds, Action method, bool isRepeating = false)
 		{
 			timers.Add(new Timer(seconds, isRepeating, method));
 		}
 		/// <summary>
-		/// Cancel any scheduled calls to a certain <paramref name="method"/>. In other words: unsubscribe a method from a timer.
+		/// Cancel any scheduled calls to a certain <paramref name="method"/>. In other words: unsubscribes a method from a timer.
 		/// </summary>
 		public static void CancelCall(Action method)
 		{
@@ -222,13 +227,13 @@ namespace Purity.Utilities
 				timers.Remove(timersToRemove[i]);
 		}
 		/// <summary>
-		/// Offset the call time of a scheduled <paramref name="method"/> by a certain <paramref name="secondsOffset"/>.
+		/// Offsets the call time of a scheduled <paramref name="method"/> by <paramref name="seconds"/>.
 		/// </summary>
-		public static void OffsetCall(float secondsOffset, Action method)
+		public static void OffsetCall(float seconds, Action method)
 		{
 			for(int i = 0; i < timers.Count; i++)
 				if(timers[i].method == method)
-					timers[i].delay += secondsOffset;
+					timers[i].delay += seconds;
 		}
 
 		#region Backend
@@ -278,9 +283,7 @@ namespace Purity.Utilities
 		}
 
 		private static readonly List<Timer> timers = new();
-		private static float updateFPS;
 		private static readonly Stopwatch dt = new();
-		private const float UPDATE_FPS_EVERY_X_SEC = 0.1f;
 
 		private static float Now => (float)DateTime.Now.TimeOfDay.TotalSeconds;
 		#endregion

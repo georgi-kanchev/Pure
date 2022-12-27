@@ -5,35 +5,35 @@
 		public static Angle NaN => float.NaN;
 		public bool IsNaN => float.IsNaN(Value);
 
-		public float Value
-		{
-			get => value;
-			set { this.value = value; Wrap(); }
-		}
 		public float Radians => MathF.PI / 180f * Value;
 
+		public Angle(float degrees)
+		{
+			value = degrees;
+		}
+
 		/// <summary>
-		/// Rotates this <see cref="Angle"/> with <paramref name="speed"/>. The result is then returned.
+		/// Rotates the <see cref="Angle"/> with <paramref name="speed"/>. The result is then returned.
 		/// </summary>
 		public Angle Rotate(float speed, float deltaTime = 1)
 		{
 			return this + speed * deltaTime;
 		}
 		/// <summary>
-		/// Rotates this <see cref="Angle"/> toward a <paramref name="targetAngle"/> with <paramref name="speed"/>
-		/// taking the fastest route. The calculation ensures to stop exactly at the <paramref name="targetAngle"/>. The result is then returned.
+		/// Rotates the <see cref="Angle"/> toward a <paramref name="targetDegrees"/> with <paramref name="speed"/>
+		/// taking the fastest route. The calculation ensures to stop exactly at the <paramref name="targetDegrees"/>. The result is then returned.
 		/// </summary>
-		public Angle RotateTo(Angle targetAngle, float speed, float deltaTime = 1)
+		public Angle RotateTo(Angle targetDegrees, float speed, float deltaTime = 1)
 		{
 			speed = Math.Abs(speed);
 			var angle = this;
-			var difference = angle - targetAngle;
+			var difference = angle - targetDegrees;
 
 			// stops the rotation with an else when close enough
 			// prevents the rotation from staying behind after the stop
 			var checkedSpeed = speed;
 			checkedSpeed *= deltaTime;
-			if(Math.Abs(difference) < checkedSpeed) angle = targetAngle;
+			if(Math.Abs(difference) < checkedSpeed) angle = targetDegrees;
 			else if(difference >= 0 && difference < 180) angle = angle.Rotate(-speed, deltaTime);
 			else if(difference >= -180 && difference < 0) angle = angle.Rotate(speed, deltaTime);
 			else if(difference >= -360 && difference < -180) angle = angle.Rotate(-speed, deltaTime);
@@ -42,7 +42,7 @@
 			// detects speed greater than possible
 			// prevents jiggle when passing 0-360 & 360-0 | simple to fix yet took me half a day
 			if(Math.Abs(difference) > 360 - checkedSpeed)
-				angle = targetAngle;
+				angle = targetDegrees;
 
 			return angle;
 		}
@@ -79,17 +79,17 @@
 			var rad = MathF.PI / 180 * angle;
 			return (MathF.Cos(rad), MathF.Sin(rad));
 		}
-		public static implicit operator Angle(int value)
+		public static implicit operator Angle(int degrees)
 		{
-			return new() { Value = value };
+			return new() { Value = degrees };
 		}
 		public static implicit operator int(Angle angle)
 		{
 			return (int)MathF.Round(angle.value);
 		}
-		public static implicit operator Angle(float value)
+		public static implicit operator Angle(float degrees)
 		{
-			return new() { Value = value };
+			return new() { Value = degrees };
 		}
 		public static implicit operator float(Angle angle)
 		{
@@ -98,10 +98,15 @@
 
 		public override string ToString()
 		{
-			return Value.ToString();
+			return Value.ToString() + "°";
 		}
 
 		#region Backend
+		private float Value
+		{
+			get => value;
+			set { this.value = value; Wrap(); }
+		}
 		private float value;
 
 		private void Wrap()

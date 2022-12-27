@@ -1,30 +1,12 @@
 ﻿namespace Purity.Input
 {
-	/// <summary>
-	/// A template for a physical input device. All the available inputs are represented by the
-	/// <see cref="Enum"/> <typeparamref name="T"/>. Checks may be performed for whether those
-	/// inputs are pressed.
-	/// </summary>
-	public abstract class Device<T> where T : Enum
+	internal abstract class Device<T> where T : Enum
 	{
-		/// <summary>
-		/// A collection of each currently pressed <typeparamref name="T"/>.
-		/// </summary>
 		public T[] Pressed { get; private set; } = Array.Empty<T>();
-		/// <summary>
-		/// A collection of each newly pressed <typeparamref name="T"/>.
-		/// </summary>
 		public T[] JustPressed { get; private set; } = Array.Empty<T>();
-		/// <summary>
-		/// A collection of each newly no longer pressed <typeparamref name="T"/>.
-		/// </summary>
 		public T[] JustReleased { get; private set; } = Array.Empty<T>();
 
-		/// <summary>
-		/// Triggers events and provides each <typeparamref name="T"/> to the collections
-		/// accordingly.
-		/// </summary>
-		public virtual void Update()
+		public void Update()
 		{
 			var prevPressed = new List<T>(pressed);
 			pressed.Clear();
@@ -39,12 +21,21 @@
 				var wasPr = prevPressed.Contains(cur);
 
 				if(wasPr && isPr == false)
+				{
 					justReleased.Add(cur);
+					Trigger(cur, releasedEvents);
+				}
 				else if(wasPr == false && isPr)
+				{
 					justPressed.Add(cur);
+					Trigger(cur, pressedEvents);
+				}
 
 				if(isPr)
+				{
 					pressed.Add(cur);
+					Trigger(cur, whilePressedEvents);
+				}
 			}
 
 			Pressed = pressed.ToArray();
@@ -52,40 +43,58 @@
 			JustReleased = justReleased.ToArray();
 		}
 
-		/// <summary>
-		/// Checks whether an <paramref name="input"/> is pressed and returns a result.
-		/// </summary>
 		public bool IsPressed(T input)
 		{
 			return pressed.Contains(input);
 		}
-		/// <summary>
-		/// Checks whether this is the very moment an <paramref name="input"/> is pressed
-		/// and returns a result.
-		/// </summary>
 		public bool IsJustPressed(T input)
 		{
 			return justPressed.Contains(input);
 		}
-		/// <summary>
-		/// Checks whether this is the very moment an <paramref name="input"/> is no
-		/// longer pressed and returns a result.
-		/// </summary>
 		public bool IsJustReleased(T input)
 		{
 			return justReleased.Contains(input);
 		}
 
-		/// <summary>
-		/// The raw logic that handles whether a physical <paramref name="input"/> is pressed.
-		/// </summary>
+		public void OnPressed(T input, Action method)
+		{
+			Subscribe(input, pressedEvents, method);
+		}
+		public void OnReleased(T input, Action method)
+		{
+			Subscribe(input, releasedEvents, method);
+		}
+		public void WhilePressed(T input, Action method)
+		{
+			Subscribe(input, whilePressedEvents, method);
+		}
+
 		protected abstract bool IsPressedRaw(T input);
 
 		#region Backend
-		private static readonly List<T>
+		private readonly List<T>
 			pressed = new(),
 			justPressed = new(),
 			justReleased = new();
+
+		private readonly Dictionary<T, List<Action>> pressedEvents = new(), releasedEvents = new(),
+			whilePressedEvents = new();
+
+		private static void Subscribe(T input, Dictionary<T, List<Action>> events, Action method)
+		{
+			if(events.ContainsKey(input) == false)
+				events[input] = new();
+
+			events[input].Add(method);
+		}
+		private static void Trigger(T input, Dictionary<T, List<Action>> events)
+		{
+			if(events.ContainsKey(input) == false)
+				return;
+
+			for(int i = 0; i < events[input].Count; i++)
+				events[input][i].Invoke();
+		}
 		#endregion
 	}
 }

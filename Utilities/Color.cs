@@ -22,11 +22,6 @@
 		public const byte Cyan = 0b_000_111_11; // 0 255 255;
 		public const byte Azure = 0b_000_011_11; // 0 127 255;
 
-		public byte Value
-		{
-			get => value;
-			set { this.value = value; UpdateRGB(); }
-		}
 		public byte R
 		{
 			get => red;
@@ -92,6 +87,11 @@
 		}
 
 		#region Backend
+		private byte Value
+		{
+			get => value;
+			set { this.value = value; UpdateRGB(); }
+		}
 		private byte value, red, green, blue;
 
 		private void UpdateRGB()

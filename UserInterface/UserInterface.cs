@@ -5,7 +5,11 @@
 		public (int, int) Position { get; set; }
 		public (int, int) Size { get; set; }
 
-		public bool IsFocused => FocusedObject == this;
+		public bool IsFocused
+		{
+			get => FocusedObject == this;
+			set => FocusedObject = this;
+		}
 		public bool IsHovered
 		{
 			get
@@ -33,7 +37,7 @@
 
 		public static void UpdateInput(Input input)
 		{
-			input.PrevTypedSymbol = Input.TypedSymbol;
+			input.PrevTypedSymbols = Input.TypedSymbols;
 			input.WasPressed = Input.IsPressed;
 			input.WasPressedAlt = Input.IsPressedAlt;
 			input.WasPressedBackspace = Input.IsPressedBackspace;
