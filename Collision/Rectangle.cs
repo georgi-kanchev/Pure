@@ -1,4 +1,4 @@
-﻿namespace Purity.Collision
+﻿namespace Pure.Collision
 {
 	/// <summary>
 	/// A simple representation of an <see langword="Axis Aligned Bounding Box (AABB)"/>.

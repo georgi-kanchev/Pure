@@ -1,4 +1,4 @@
-﻿namespace Purity.Animation
+﻿namespace Pure.Animation
 {
 	/// <summary>
 	/// A collection of <typeparamref name="T"/>.
@@ -17,14 +17,14 @@
 		/// <summary>
 		/// The amount of seconds needed to iterate over the <see cref="values"/>.
 		/// </summary>
-		public float TotalDuration { get; set; }
+		public float Duration { get; set; }
 		/// <summary>
 		/// The amount of seconds the iteration stays on a particular value.
 		/// </summary>
-		public float ValueDuration
+		public float Speed
 		{
-			get => TotalDuration / values.Length;
-			set => TotalDuration = value * values.Length;
+			get => Duration / values.Length;
+			set => Duration = value * values.Length;
 		}
 		/// <summary>
 		/// Whether the iteration over the collection starts over when the end is reached.
@@ -47,31 +47,31 @@
 
 		/// <summary>
 		/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>
-		/// with <paramref name="totalDuration"/> in seconds while it <paramref name="isRepeating"/>.
+		/// with <paramref name="duration"/> in seconds while it <paramref name="isRepeating"/>.
 		/// </summary>
-		public Animation(float totalDuration, bool isRepeating, params T[] values)
+		public Animation(float duration, bool isRepeating, params T[] values)
 		{
 			this.values = values ?? throw new ArgumentNullException(nameof(values));
 			if(values.Length < 1)
 				throw new ArgumentException("Total values cannot be < 1.", nameof(values));
 
 			rawIndex = 0;
-			TotalDuration = totalDuration;
+			Duration = duration;
 			IsRepeating = isRepeating;
 			RawIndex = LOWER_BOUND;
 		}
 		/// <summary>
 		/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>
-		/// with <paramref name="valueDuration"/> in values per second while it <paramref name="isRepeating"/>.
+		/// with <paramref name="speed"/> in values per second while it <paramref name="isRepeating"/>.
 		/// </summary>
-		public Animation(bool isRepeating, float valueDuration, params T[] values)
+		public Animation(bool isRepeating, float speed, params T[] values)
 		{
 			this.values = values ?? throw new ArgumentNullException(nameof(values));
 			if(values.Length < 1)
 				throw new ArgumentException("Total values cannot be < 1.", nameof(values));
 
 			rawIndex = 0;
-			ValueDuration = valueDuration;
+			Speed = speed;
 			IsRepeating = isRepeating;
 			RawIndex = LOWER_BOUND;
 		}
@@ -89,7 +89,7 @@
 			if(values == default || IsPaused)
 				return;
 
-			RawIndex += deltaTime / ValueDuration;
+			RawIndex += deltaTime / Speed;
 			if((int)MathF.Round(RawIndex) >= values.Length)
 				RawIndex = IsRepeating ? LOWER_BOUND : values.Length - 1;
 		}

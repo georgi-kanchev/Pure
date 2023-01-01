@@ -1,4 +1,4 @@
-﻿namespace Purity.Animation
+﻿namespace Pure.Animation
 {
 	/// <summary>
 	/// A collection of <see cref="Animation{T}"/>.

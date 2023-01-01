@@ -1,4 +1,4 @@
-﻿namespace Purity.Input
+﻿namespace Pure.Input
 {
 	internal class HotkeyManagerInstance<T> : Device<T> where T : Enum
 	{

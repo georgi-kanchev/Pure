@@ -1,4 +1,4 @@
-﻿namespace Purity.Utilities
+﻿namespace Pure.Utilities
 {
 	public struct Angle
 	{

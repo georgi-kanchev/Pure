@@ -2,7 +2,7 @@
 using SFML.System; // vectors etc.
 using SFML.Window; // window etc.
 
-namespace Purity.Graphics
+namespace Pure.Graphics
 {
 	/// <summary>
 	/// Provides a simple way to create and interact with an OS window.
@@ -69,14 +69,19 @@ namespace Purity.Graphics
 			var desktopH = VideoMode.DesktopMode.Height;
 			title = "";
 
-			window = new(new VideoMode((uint)(desktopW * 0.66f), (uint)(desktopH * 0.66f)), title);
+			var width = (uint)RoundToMultipleOfTwo((int)(desktopW * 0.66f));
+			var height = (uint)RoundToMultipleOfTwo((int)(desktopH * 0.66f));
+
+			window = new(new VideoMode(width, height), title);
 			window.Closed += (s, e) => window.Close();
 			window.Resized += (s, e) =>
 			{
 				var view = window.GetView();
-				view.Size = new(e.Width, e.Height);
+				var (w, h) = (RoundToMultipleOfTwo((int)e.Width), RoundToMultipleOfTwo((int)e.Height));
+				view.Size = new(w, h);
 				view.Center = new(e.Width / 2f, e.Height / 2f);
 				window.SetView(view);
+				window.Size = new((uint)w, (uint)h);
 			};
 			window.DispatchEvents();
 			window.Clear();
@@ -109,7 +114,7 @@ namespace Purity.Graphics
 		/// contents are decided by <paramref name="tiles"/> and <paramref name="colors"/>.
 		/// </summary>
 		public void DrawLayer(int[,] tiles, byte[,] colors, (uint, uint) tileSize,
-			(uint, uint) tileMargin, string path = "graphics.png")
+			(uint, uint) tileMargin = default, string path = "graphics.png")
 		{
 			if(path == null || tiles == null || colors == null || tiles.Length != colors.Length)
 				return;
@@ -241,7 +246,6 @@ namespace Purity.Graphics
 					y0 += sy;
 				}
 			}
-			Console.WriteLine(points.Count);
 			return GetPointsVertices(color, points.ToArray());
 		}
 		private Vertex[] GetSpriteVertices((float, float) position, int cell, byte color)
@@ -398,6 +402,14 @@ namespace Purity.Graphics
 		private static bool IsWithin(float number, float targetNumber, float range)
 		{
 			return IsBetween(number, targetNumber - range, targetNumber + range);
+		}
+		private static int RoundToMultipleOfTwo(int n)
+		{
+			var rem = n % 2;
+			var result = n - rem;
+			if(rem >= 1)
+				result += 2;
+			return result;
 		}
 		#endregion
 	}

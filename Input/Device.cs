@@ -1,4 +1,4 @@
-﻿namespace Purity.Input
+﻿namespace Pure.Input
 {
 	internal abstract class Device<T> where T : Enum
 	{

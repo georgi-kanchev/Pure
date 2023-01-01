@@ -9,9 +9,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Animation\Animation.csproj" />
+    <ProjectReference Include="..\Audio\Audio.csproj" />
     <ProjectReference Include="..\Collision\Collision.csproj" />
     <ProjectReference Include="..\Graphics\Graphics.csproj" />
     <ProjectReference Include="..\Input\Input.csproj" />
+    <ProjectReference Include="..\Storage\Storage.csproj" />
     <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
     <ProjectReference Include="..\UserInterface\UserInterface.csproj" />
     <ProjectReference Include="..\Utilities\Utilities.csproj" />

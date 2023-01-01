@@ -6,7 +6,7 @@ namespace StorageEditor
 		private const string INSTANCE = "~@", INSTANCE_PROPERTY = "~~", VALUE = "~|",
 			STRUCT = "~&", STRUCT_PROPERTY = "~=",
 			SPACE = "~_", TAB = "~__", NEW_LINE = "~/";
-		private const string FILE_HEADER = @"Purity - Storage file
+		private const string FILE_HEADER = @"Pure - Storage file
 --------------------------
 | Map of symbols
 |

@@ -1,4 +1,4 @@
-﻿namespace Purity.Input
+﻿namespace Pure.Input
 {
 	/// <summary>
 	/// The physical keys on a keyboard.

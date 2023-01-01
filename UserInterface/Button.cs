@@ -1,4 +1,4 @@
-﻿namespace Purity.UserInterface
+﻿namespace Pure.UserInterface
 {
 	public class Button : UserInterface
 	{

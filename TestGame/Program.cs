@@ -1,20 +1,34 @@
-﻿using Purity.Input;
-using Purity.Tilemap;
-using Purity.UserInterface;
-using Purity.Utilities;
+﻿using Pure.Audio;
+
+using Pure.Input;
+using Pure.Tilemap;
+using Pure.UserInterface;
+using Pure.Utilities;
 
 namespace TestGame
 {
 	public class Program
 	{
+		public enum Song
+		{
+			CoolVibe
+		}
+
 		static void Main()
 		{
-			var window = new Purity.Graphics.Window();
+			var window = new Pure.Graphics.Window();
 			var bg = new Tilemap((48, 27));
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
 			var inputBox = new InputLine((0, 0), (10, 1), "Hello");
 			var inputBox2 = new InputLine((10, 15), (10, 1), "Test");
+
+			Audio<Song>.Load("test.ogg", Song.CoolVibe);
+			Notes<Song>.Generate(Song.CoolVibe,
+				"G3 G3 G2 G2 G3 G3 G2 G3 " +
+				"G3 G3 G2 G2 G3 G3 G2 G3 " +
+				"G3 G#3 G2 G2 G3 G#3 G2 G3 " +
+				"G3 G#3 G2 G#2 A2 G#3 G#2 G3 ", 300, Wave.Square);
 
 			while(window.IsExisting)
 			{
@@ -28,7 +42,7 @@ namespace TestGame
 				var input = new Input()
 				{
 					Position = hov,
-					IsPressed = Mouse.IsPressed(Purity.Input.Button.Left),
+					IsPressed = Mouse.IsPressed(Pure.Input.Button.Left),
 					TypedSymbols = Keyboard.TypedSymbols,
 					IsPressedBackspace = Keyboard.IsPressed(Key.Backspace),
 					IsPressedLeft = Keyboard.IsPressed(Key.ArrowLeft),
@@ -54,7 +68,13 @@ namespace TestGame
 				window.DrawLayer(layer.Camera, layer.Camera, (8, 8), (0, 0));
 				window.DrawLayer(over.Camera, over.Camera, (8, 8), (0, 0));
 
-				window.DrawLine((1, 1), hov, Color.Blue);
+				window.DrawLine((1, 1), hov, Color.Gray);
+
+				if(Keyboard.IsJustPressed(Key.Enter))
+				{
+					Notes<Song>.Play(Song.CoolVibe);
+					Audio<Song>.Play(Song.CoolVibe);
+				}
 
 				window.DrawEnable(false);
 			}

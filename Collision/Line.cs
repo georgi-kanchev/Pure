@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Purity.Collision
+namespace Pure.Collision
 {
 	/// <summary>
 	/// Useful for collision detection, debugging, raycasting and much more.

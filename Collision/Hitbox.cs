@@ -1,4 +1,4 @@
-﻿namespace Purity.Collision
+﻿namespace Pure.Collision
 {
 	/// <summary>
 	/// A collection of <see cref="Rectangle"/>s which can be positioned and scaled, affecting all

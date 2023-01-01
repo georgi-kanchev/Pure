@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Purity.Utilities
+namespace Pure.Utilities
 {
 	/// <summary>
 	/// Uses <see cref="DateTime"/> to track time and calculate time related values/timers.

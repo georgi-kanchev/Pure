@@ -364,11 +364,11 @@
 			// StorageLoad
 			// 
 			this.StorageLoad.AddExtension = false;
-			this.StorageLoad.Title = "Load Purity Storage File";
+			this.StorageLoad.Title = "Load Pure Storage File";
 			// 
 			// StorageSave
 			// 
-			this.StorageSave.Title = "Save Purity Storage";
+			this.StorageSave.Title = "Save Pure Storage";
 			// 
 			// Window
 			// 
@@ -379,7 +379,7 @@
 			this.Controls.Add(this.TableMain);
 			this.Name = "Window";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-			this.Text = "Purity - Storage Editor";
+			this.Text = "Pure - Storage Editor";
 			this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Global_KeyDown);
 			this.TableMain.ResumeLayout(false);
 			this.TableValues.ResumeLayout(false);

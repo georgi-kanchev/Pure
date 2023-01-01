@@ -23,7 +23,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tilemap", "Tilemap\Tilemap.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Storage", "Storage\Storage.csproj", "{91635CA2-C003-4DB0-8143-B0BF0924DDAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Audio", "Audio\Audio.csproj", "{09AA518A-1AA0-4198-9478-893E3DF05855}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Audio", "Audio\Audio.csproj", "{09AA518A-1AA0-4198-9478-893E3DF05855}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AudioEditor", "AudioEditor\AudioEditor.csproj", "{526D2E84-AFC2-4FF7-9A7F-A7315373FF24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +77,10 @@ Global
 		{09AA518A-1AA0-4198-9478-893E3DF05855}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09AA518A-1AA0-4198-9478-893E3DF05855}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09AA518A-1AA0-4198-9478-893E3DF05855}.Release|Any CPU.Build.0 = Release|Any CPU
+		{526D2E84-AFC2-4FF7-9A7F-A7315373FF24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{526D2E84-AFC2-4FF7-9A7F-A7315373FF24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{526D2E84-AFC2-4FF7-9A7F-A7315373FF24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{526D2E84-AFC2-4FF7-9A7F-A7315373FF24}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,7 +2,7 @@
 using System.IO.Compression;
 using System.Text;
 
-namespace Purity.Utilities
+namespace Pure.Utilities
 {
 	/// <summary>
 	/// Various methods that extend the primitive types, structs and collections.

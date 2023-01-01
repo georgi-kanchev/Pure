@@ -1,7 +1,7 @@
 ﻿using System.IO.Compression;
 using System.Xml;
 
-namespace Purity.Tilemap
+namespace Pure.Tilemap
 {
 	public class Tilemap
 	{

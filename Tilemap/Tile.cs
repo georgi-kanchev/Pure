@@ -1,4 +1,4 @@
-﻿namespace Purity.Tilemap
+﻿namespace Pure.Tilemap
 {
 	public static class Tile
 	{

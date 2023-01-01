@@ -1,6 +1,6 @@
 ﻿using SFML.Graphics;
 
-namespace Purity.Graphics
+namespace Pure.Graphics
 {
 	public class Monochrome
 	{

@@ -1,6 +1,6 @@
 ﻿using System.Xml;
 
-namespace Purity.Collision
+namespace Pure.Collision
 {
 	/// <summary>
 	/// (Inherits <see cref="Hitbox"/>)<br></br><br></br>
@@ -33,11 +33,9 @@ namespace Purity.Collision
 		}
 
 		/// <summary>
-		/// Creates the <see cref="Grid"/> with a certain <paramref name="cellSize"/>,
-		/// <paramref name="position"/> and <paramref name="scale"/>.
+		/// Creates the <see cref="Grid"/> with <paramref name="cellSize"/>.
 		/// </summary>
-		public Grid(int cellSize, (float, float) position = default, float scale = 1)
-			: base(position, scale)
+		public Grid(int cellSize) : base((0, 0), 1)
 		{
 			if(cellSize < 1)
 				throw new ArgumentException("Value cannot be < 1.", nameof(cellSize));
@@ -46,11 +44,9 @@ namespace Purity.Collision
 		}
 		/// <summary>
 		/// Creates the <see cref="Grid"/> from <paramref name="tiles"/> and a
-		/// <see langword="Tiled Tileset"/> export file at <paramref name="tsxPath"/>, with a certain
-		/// <paramref name="position"/> and <paramref name="scale"/>.
+		/// <see langword="Tiled Tileset"/> export file at <paramref name="tsxPath"/>.
 		/// </summary>
-		public Grid(string tsxPath, int[,] tiles, (float, float) position = default, float scale = 1)
-			: base(position, scale)
+		public Grid(string tsxPath, int[,] tiles) : base((0, 0), 1)
 		{
 			if(tiles == null)
 				throw new ArgumentNullException(nameof(tiles));
@@ -143,7 +139,7 @@ namespace Purity.Collision
 		/// <summary>
 		/// Retrieves the <see cref="Rectangle"/> collection at a certain <paramref name="cell"/> and
 		/// returns it if the provided <paramref name="cell"/> is present.
-		/// Returns an empty <see cref="Array"/> of <see cref="Rectangle"/>s otherwise. 
+		/// Returns an empty <see cref="Rectangle"/> <see cref="Array"/> otherwise. 
 		/// </summary>
 		public Rectangle[] GetRectanglesAt((int, int) cell)
 		{
