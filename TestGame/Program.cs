@@ -25,10 +25,12 @@ namespace TestGame
 
 			Audio<Song>.Load("test.ogg", Song.CoolVibe);
 			Notes<Song>.Generate(Song.CoolVibe,
-				"G3 G3 G2 G2 G3 G3 G2 G3 " +
-				"G3 G3 G2 G2 G3 G3 G2 G3 " +
-				"G3 G#3 G2 G2 G3 G#3 G2 G3 " +
+				"G3 . G2 . G3~2 G2 G3 " +
+				"G3~2 G2 .3 G3~2 G2 G3 " +
+				"G3 G#3 G2~2 .5 G3 G#3 G2 G3 " +
 				"G3 G#3 G2 G#2 A2 G#3 G#2 G3 ", 300, Wave.Square);
+			//Notes<Song>.Generate(Song.CoolVibe,
+			//	"G3~~~~~~", 120, Wave.Square);
 
 			while(window.IsExisting)
 			{
@@ -73,7 +75,6 @@ namespace TestGame
 				if(Keyboard.IsJustPressed(Key.Enter))
 				{
 					Notes<Song>.Play(Song.CoolVibe);
-					Audio<Song>.Play(Song.CoolVibe);
 				}
 
 				window.DrawEnable(false);

@@ -5,9 +5,9 @@ namespace Pure.Storage
 {
 	public class Storage
 	{
-		public void Save(string filePath, bool isDataFormatted = true)
+		public void Save(string path, bool isDataFormatted = true)
 		{
-			var dir = Path.GetDirectoryName(filePath);
+			var dir = Path.GetDirectoryName(path);
 			if(dir != "" && Directory.Exists(dir) == false)
 				return;
 
@@ -50,14 +50,14 @@ namespace Pure.Storage
 				}
 			}
 
-			File.WriteAllText(filePath, result);
+			File.WriteAllText(path, result);
 		}
-		public void Load(string filePath)
+		public void Load(string path)
 		{
-			if(File.Exists(filePath) == false)
+			if(File.Exists(path) == false)
 				return;
 
-			var file = File.ReadAllText(filePath);
+			var file = File.ReadAllText(path);
 
 			if(file.Length == 0)
 				return;

@@ -38,7 +38,7 @@ namespace Pure.Audio
 			i.cachedSounds[id] = new(new SoundBuffer(path));
 		}
 
-		public static void Play(T id, float volume = 1f, bool isLooping = false)
+		public static void Play(T id, float volume, bool isLooping)
 		{
 			i.TryError(nameof(Audio<T>), id);
 
@@ -52,10 +52,24 @@ namespace Pure.Audio
 			}
 			else if(i.cachedSounds.ContainsKey(id))
 			{
-				var sound = i.cachedSounds[id];
-				sound.Loop = isLooping;
-				sound.Volume = volume * 100f;
-				sound.Play();
+				i.Play(id, volume, isLooping);
+				return;
+			}
+			else
+				i.ThrowMissingID(nameof(Audio<T>));
+		}
+		public static void Play(T id)
+		{
+			i.TryError(nameof(Audio<T>), id);
+
+			if(cachedMusic.ContainsKey(id))
+			{
+				cachedMusic[id].Play();
+				return;
+			}
+			else if(i.cachedSounds.ContainsKey(id))
+			{
+				i.Play(id);
 				return;
 			}
 			else

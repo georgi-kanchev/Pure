@@ -1,4 +1,6 @@
-﻿using SFML.Audio;
+﻿using Pure.Audio;
+
+using SFML.Audio;
 
 namespace Audio
 {
@@ -21,6 +23,20 @@ namespace Audio
 				ThrowMissingID(className);
 		}
 
+		public void Play(T id, float volume, bool isLooping)
+		{
+			TryError(nameof(Notes<T>), id);
+
+			var sound = cachedSounds[id];
+			sound.Loop = isLooping;
+			sound.Volume = Volume * volume * 100f;
+			sound.Play();
+		}
+		public void Play(T id)
+		{
+			TryError(nameof(Notes<T>), id);
+			cachedSounds[id].Play();
+		}
 		public void Pause(T id) => cachedSounds[id]?.Pause();
 		public void Stop(T id) => cachedSounds[id]?.Stop();
 

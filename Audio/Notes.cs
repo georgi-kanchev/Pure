@@ -39,15 +39,8 @@ namespace Pure.Audio
 				throw new ArgumentException($"Cannot save {nameof(Notes<T>)} to the provided {nameof(path)}.");
 		}
 
-		public static void Play(T id, float volume = 1f, bool isLooping = false)
-		{
-			i.TryError(nameof(Notes<T>), id);
-
-			var sound = i.cachedSounds[id];
-			sound.Loop = isLooping;
-			sound.Volume = Volume * volume * 100f;
-			sound.Play();
-		}
+		public static void Play(T id, float volume, bool isLooping) => i.Play(id, volume, isLooping);
+		public static void Play(T id) => i.Play(id);
 		public static void Pause(T id) => i.Pause(id);
 		public static void Stop(T id) => i.Stop(id);
 
@@ -67,9 +60,13 @@ namespace Pure.Audio
 
 		private const uint SAMPLE_RATE = 11025;
 		private const float AMPLITUDE = 1f * short.MaxValue;
+		private const char SEPARATOR = ' ', PAUSE = '.', REPEAT = '~';
 
 		private static float GetFrequency(string chord)
 		{
+			if(chord.Length > 0 && chord[0] == '.')
+				return 0; // pause
+
 			var notes = new List<string> { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" };
 
 			var hasOctave = int.TryParse((chord.Length == 3 ? chord[2] : chord[1]).ToString(), out var octave);
@@ -108,17 +105,34 @@ namespace Pure.Audio
 		}
 		private static List<string> GetValidNotes(string notes)
 		{
-			var chordsSplit = notes.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+			var chordsSplit = notes.Split(SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
 			var validChords = new List<string>();
 
 			for(int i = 0; i < chordsSplit?.Length; i++)
 			{
-				var frequency = GetFrequency(chordsSplit[i]);
+				var note = chordsSplit[i];
+				var prolongs = note.Split(REPEAT);
+				var prolongCount = 1;
+
+				if(prolongs.Length == 2)
+					_ = int.TryParse(prolongs[1], out prolongCount);
+
+				note = prolongs[0];
+
+				var frequency = GetFrequency(note);
 
 				if(float.IsNaN(frequency))
 					continue;
+				else if(frequency == 0) // pause
+				{
+					var pauses = note.Split(PAUSE);
+					if(note != PAUSE.ToString() && pauses.Length == 2)
+						_ = int.TryParse(pauses[1], out prolongCount);
+					note = PAUSE.ToString();
+				}
 
-				validChords.Add(chordsSplit[i].Trim());
+				for(int j = 0; j < prolongCount; j++)
+					validChords.Add(note);
 			}
 			return validChords;
 		}
