@@ -1,6 +1,4 @@
-﻿using Pure.Audio;
-
-using SFML.Audio;
+﻿using SFML.Audio;
 
 namespace Audio
 {
@@ -14,18 +12,18 @@ namespace Audio
 			set => volume = Math.Clamp(volume, 0f, 1f);
 		}
 
-		public void TryError(string className, T id)
+		public void TryError(T id)
 		{
 			if(id == null)
 				throw new ArgumentNullException(nameof(id));
 
 			if(cachedSounds.ContainsKey(id) == false)
-				ThrowMissingID(className);
+				ThrowMissingID();
 		}
 
 		public void Play(T id, float volume, bool isLooping)
 		{
-			TryError(nameof(Notes<T>), id);
+			TryError(id);
 
 			var sound = cachedSounds[id];
 			sound.Loop = isLooping;
@@ -34,15 +32,28 @@ namespace Audio
 		}
 		public void Play(T id)
 		{
-			TryError(nameof(Notes<T>), id);
+			TryError(id);
 			cachedSounds[id].Play();
 		}
-		public void Pause(T id) => cachedSounds[id]?.Pause();
-		public void Stop(T id) => cachedSounds[id]?.Stop();
-
-		public void ThrowMissingID(string className)
+		public void Pause(T id)
 		{
-			throw new ArgumentException($"No {className} exists with the provided id.");
+			TryError(id);
+			cachedSounds[id]?.Pause();
+		}
+		public void Stop(T id)
+		{
+			TryError(id);
+			cachedSounds[id]?.Stop();
+		}
+		public void StopAll()
+		{
+			foreach(var kvp in cachedSounds)
+				kvp.Value.Stop();
+		}
+
+		public void ThrowMissingID()
+		{
+			throw new ArgumentException($"The provided id does not exist.");
 		}
 
 		#region Backend

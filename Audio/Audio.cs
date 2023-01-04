@@ -38,9 +38,14 @@ namespace Pure.Audio
 			i.cachedSounds[id] = new(new SoundBuffer(path));
 		}
 
+		public static bool HasID(T id)
+		{
+			return i.cachedSounds.ContainsKey(id) || cachedMusic.ContainsKey(id);
+		}
+
 		public static void Play(T id, float volume, bool isLooping)
 		{
-			i.TryError(nameof(Audio<T>), id);
+			i.TryError(id);
 
 			if(cachedMusic.ContainsKey(id))
 			{
@@ -56,11 +61,11 @@ namespace Pure.Audio
 				return;
 			}
 			else
-				i.ThrowMissingID(nameof(Audio<T>));
+				i.ThrowMissingID();
 		}
 		public static void Play(T id)
 		{
-			i.TryError(nameof(Audio<T>), id);
+			i.TryError(id);
 
 			if(cachedMusic.ContainsKey(id))
 			{
@@ -73,7 +78,7 @@ namespace Pure.Audio
 				return;
 			}
 			else
-				i.ThrowMissingID(nameof(Audio<T>));
+				i.ThrowMissingID();
 		}
 		public static void Pause(T id)
 		{
@@ -84,6 +89,12 @@ namespace Pure.Audio
 		{
 			i.Stop(id);
 			cachedMusic[id]?.Stop();
+		}
+		public static void Stop()
+		{
+			i.StopAll();
+			foreach(var kvp in cachedMusic)
+				kvp.Value.Stop();
 		}
 
 		#region Backend

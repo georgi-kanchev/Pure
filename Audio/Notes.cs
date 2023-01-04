@@ -16,9 +16,20 @@ namespace Pure.Audio
 			set => i.Volume = value;
 		}
 
+		public static bool HasID(T id)
+		{
+			return i.cachedSounds.ContainsKey(id);
+		}
+
 		public static void Generate(T id, string notes, int tempoBPM = 120, Wave wave = Wave.Square)
 		{
+			if(id == null)
+				throw new ArgumentNullException(nameof(id));
+
 			var validChords = GetValidNotes(notes);
+			if(validChords.Count == 0)
+				return;
+
 			var samples = GetSamplesFromNotes(validChords, tempoBPM, wave);
 
 			if(i.cachedSounds.ContainsKey(id))
@@ -30,7 +41,7 @@ namespace Pure.Audio
 		}
 		public static void Save(T id, string path)
 		{
-			i.TryError(nameof(Notes<T>), id);
+			i.TryError(id);
 
 			var sound = i.cachedSounds[id];
 			var success = sound.SoundBuffer.SaveToFile(path);
@@ -38,11 +49,25 @@ namespace Pure.Audio
 			if(success == false)
 				throw new ArgumentException($"Cannot save {nameof(Notes<T>)} to the provided {nameof(path)}.");
 		}
+		public static void Load(string notesPath, T id, int tempoBPM = 120, Wave wave = Wave.Square)
+		{
+			if(id == null)
+				throw new ArgumentNullException(nameof(id));
+
+			if(notesPath == null)
+				throw new ArgumentNullException(nameof(notesPath));
+
+			if(File.Exists(notesPath) == false)
+				throw new ArgumentException($"No file exists at the provided {nameof(notesPath)}.");
+
+			Generate(id, File.ReadAllText(notesPath), tempoBPM, wave);
+		}
 
 		public static void Play(T id, float volume, bool isLooping) => i.Play(id, volume, isLooping);
 		public static void Play(T id) => i.Play(id);
 		public static void Pause(T id) => i.Pause(id);
 		public static void Stop(T id) => i.Stop(id);
+		public static void Stop() => i.StopAll();
 
 		#region Backend
 		private static readonly AudioInstance<T> i = new();
@@ -64,10 +89,16 @@ namespace Pure.Audio
 
 		private static float GetFrequency(string chord)
 		{
-			if(chord.Length > 0 && chord[0] == '.')
+			chord = chord.Trim();
+
+			if((chord.Length > 0 && chord[0] == '.') || // pause
+				(chord.Length != 2 && chord.Length != 3)) // invalid
 				return 0; // pause
 
 			var notes = new List<string> { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" };
+
+			chord = chord == "E#" ? "F" : chord;
+			chord = chord == "B#" ? "C" : chord;
 
 			var hasOctave = int.TryParse((chord.Length == 3 ? chord[2] : chord[1]).ToString(), out var octave);
 			var keyNumber = notes.IndexOf(chord[0..^1]);
