@@ -7,13 +7,13 @@ namespace Pure.Graphics
 	/// <summary>
 	/// Provides a simple way to create and interact with an OS window.
 	/// </summary>
-	public class Window
+	public static class Window
 	{
 		/// <summary>
 		/// Whether the OS window exists. This is <see langword="true"/> even when it
 		/// is minimized or <see cref="IsHidden"/>.
 		/// </summary>
-		public bool IsExisting
+		public static bool IsExisting
 		{
 			get => window != null && window.IsOpen;
 			set
@@ -25,7 +25,7 @@ namespace Pure.Graphics
 		/// <summary>
 		/// The title on the title bar of the OS window.
 		/// </summary>
-		public string Title
+		public static string Title
 		{
 			get => title;
 			set { title = value; window.SetTitle(title); }
@@ -33,7 +33,7 @@ namespace Pure.Graphics
 		/// <summary>
 		/// The size of the OS window.
 		/// </summary>
-		public (uint, uint) Size
+		public static (uint, uint) Size
 		{
 			get => (window.Size.X, window.Size.Y);
 			set => window.Size = new(value.Item1, value.Item2);
@@ -41,7 +41,7 @@ namespace Pure.Graphics
 		/// <summary>
 		/// Whether the OS window acts as a background process.
 		/// </summary>
-		public bool IsHidden
+		public static bool IsHidden
 		{
 			get => isHidden;
 			set { isHidden = value; window.SetVisible(value == false); }
@@ -49,7 +49,7 @@ namespace Pure.Graphics
 		/// <summary>
 		/// The mouse cursor position relative to the OS window.
 		/// </summary>
-		public (int, int) MousePosition
+		public static (int, int) MousePosition
 		{
 			get { var pos = Mouse.GetPosition(window); return (pos.X, pos.Y); }
 			set
@@ -59,11 +59,7 @@ namespace Pure.Graphics
 			}
 		}
 
-		/// <summary>
-		/// Creates an OS window in the center of the screen with a size of 2/3 of
-		/// the current OS resolution.
-		/// </summary>
-		public Window()
+		static Window()
 		{
 			var desktopW = VideoMode.DesktopMode.Width;
 			var desktopH = VideoMode.DesktopMode.Height;
@@ -96,7 +92,7 @@ namespace Pure.Graphics
 		/// Or in other words: drawing onto the OS window should start with enabling the draw
 		/// and end with disabling it.
 		/// </summary>
-		public void DrawEnable(bool isEnabled)
+		public static void DrawEnable(bool isEnabled)
 		{
 			if(isEnabled)
 			{
@@ -113,7 +109,7 @@ namespace Pure.Graphics
 		/// <paramref name="tileMargin"/>, then it is cached for future draws. The layer's
 		/// contents are decided by <paramref name="tiles"/> and <paramref name="colors"/>.
 		/// </summary>
-		public void DrawLayer(int[,] tiles, byte[,] colors, (uint, uint) tileSize,
+		public static void DrawLayer(int[,] tiles, byte[,] colors, (uint, uint) tileSize,
 			(uint, uint) tileMargin = default, string path = "graphics.png")
 		{
 			if(path == null || tiles == null || colors == null || tiles.Length != colors.Length)
@@ -128,7 +124,7 @@ namespace Pure.Graphics
 		/// from the last <see cref="DrawLayer"/> call and a <paramref name="color"/>. The sprite's
 		/// <paramref name="position"/> is also relative to the previously drawn layer.
 		/// </summary>
-		public void DrawSprite((float, float) position, int tile, byte color)
+		public static void DrawSprite((float, float) position, int tile, byte color)
 		{
 			if(prevDrawLayerGfxPath == null)
 				return;
@@ -140,7 +136,7 @@ namespace Pure.Graphics
 		/// Draws single pixel points with <paramref name="color"/> onto the OS window.
 		/// Their <paramref name="positions"/> are relative to the previously drawn layer.
 		/// </summary>
-		public void DrawPoints(byte color, params (float, float)[] positions)
+		public static void DrawPoints(byte color, params (float, float)[] positions)
 		{
 			if(positions == null || positions.Length == 0)
 				return;
@@ -153,7 +149,7 @@ namespace Pure.Graphics
 		/// Its <paramref name="position"/> and <paramref name="size"/> are relative
 		/// to the previously drawn layer.
 		/// </summary>
-		public void DrawRectangle((float, float) position, (float, float) size, byte color)
+		public static void DrawRectangle((float, float) position, (float, float) size, byte color)
 		{
 			var verts = GetRectangleVertices(position, size, color);
 			window.Draw(verts, PrimitiveType.Quads);
@@ -163,7 +159,7 @@ namespace Pure.Graphics
 		/// <paramref name="color"/> onto the OS window.
 		/// Its points are relative to the previously drawn layer.
 		/// </summary>
-		public void DrawLine((float, float) pointA, (float, float) pointB, byte color)
+		public static void DrawLine((float, float) pointA, (float, float) pointB, byte color)
 		{
 			var verts = GetLineVertices(pointA, pointB, color);
 			window.Draw(verts, PrimitiveType.Quads);
@@ -171,24 +167,24 @@ namespace Pure.Graphics
 
 		#region Backend
 		private const int MAX_ITERATIONS = 10000;
-		private bool isHidden;
-		private string title;
-		private string? prevDrawLayerGfxPath;
-		private (uint, uint) prevDrawLayerTileSz;
-		private (float, float) prevDrawLayerCellSz;
-		private (uint, uint) prevDrawLayerCellCount;
+		private static bool isHidden;
+		private static string title;
+		private static string? prevDrawLayerGfxPath;
+		private static (uint, uint) prevDrawLayerTileSz;
+		private static (float, float) prevDrawLayerCellSz;
+		private static (uint, uint) prevDrawLayerCellCount;
 
-		private readonly Dictionary<string, Texture> graphics = new();
-		private readonly RenderWindow window;
+		private static readonly Dictionary<string, Texture> graphics = new();
+		private static readonly RenderWindow window;
 
-		private void TryLoadGraphics(string path)
+		private static void TryLoadGraphics(string path)
 		{
 			if(graphics.ContainsKey(path))
 				return;
 
 			graphics[path] = new(path);
 		}
-		private Vertex[] GetRectangleVertices((float, float) position, (float, float) size, byte color)
+		private static Vertex[] GetRectangleVertices((float, float) position, (float, float) size, byte color)
 		{
 			if(prevDrawLayerGfxPath == null)
 				return Array.Empty<Vertex>();
@@ -212,7 +208,7 @@ namespace Pure.Graphics
 			verts[3] = new(new(tl.X, br.Y), c);
 			return verts;
 		}
-		private Vertex[] GetLineVertices((float, float) a, (float, float) b, byte color)
+		private static Vertex[] GetLineVertices((float, float) a, (float, float) b, byte color)
 		{
 			var (tileW, tileH) = prevDrawLayerTileSz;
 			var (x0, y0) = a;
@@ -248,7 +244,7 @@ namespace Pure.Graphics
 			}
 			return GetPointsVertices(color, points.ToArray());
 		}
-		private Vertex[] GetSpriteVertices((float, float) position, int cell, byte color)
+		private static Vertex[] GetSpriteVertices((float, float) position, int cell, byte color)
 		{
 			if(prevDrawLayerGfxPath == null)
 				return Array.Empty<Vertex>();
@@ -275,7 +271,7 @@ namespace Pure.Graphics
 			verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileHeight));
 			return verts;
 		}
-		private Vertex[] GetLayerVertices(int[,] tiles, byte[,] colors,
+		private static Vertex[] GetLayerVertices(int[,] tiles, byte[,] colors,
 			(uint, uint) tileSz, (uint, uint) tileOff, string path)
 		{
 			if(tiles == null || window == null)
@@ -321,7 +317,7 @@ namespace Pure.Graphics
 				}
 			return verts;
 		}
-		private Vertex[] GetPointsVertices(byte color, (float, float)[] positions)
+		private static Vertex[] GetPointsVertices(byte color, (float, float)[] positions)
 		{
 			var verts = new Vertex[positions.Length * 4];
 			var tileSz = prevDrawLayerTileSz;

@@ -1,6 +1,6 @@
-﻿using Pure.Audio;
-
+﻿using Pure.Graphics;
 using Pure.Input;
+using Pure.Modding;
 using Pure.Tilemap;
 using Pure.UserInterface;
 using Pure.Utilities;
@@ -16,26 +16,19 @@ namespace TestGame
 
 		static void Main()
 		{
-			var window = new Pure.Graphics.Window();
 			var bg = new Tilemap((48, 27));
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
 			var inputBox = new InputLine((0, 0), (10, 1), "Hello");
 			var inputBox2 = new InputLine((10, 15), (10, 1), "Test");
 
-			Audio<Song>.Load("test.ogg", Song.CoolVibe);
-			Notes<Song>.Generate(Song.CoolVibe,
-				"G3 . G2 . G3~2 G2 G3 " +
-				"G3~2 G2 .3 G3~2 G2 G3 " +
-				"G3 G#3 G2~2 .5 G3 G#3 G2 G3 " +
-				"G3 G#3 G2 G#2 A2 G#3 G#2 G3 ", 300, Wave.Square);
-			//Notes<Song>.Generate(Song.CoolVibe,
-			//	"G3~~~~~~", 120, Wave.Square);
+			var script = new Script("function main() end");
+			var value = script.Call("main");
 
-			while(window.IsExisting)
+			while(Window.IsExisting)
 			{
-				var mousePos = window.MousePosition;
-				var hov = layer.PositionFrom(mousePos, window.Size);
+				var mousePos = Window.MousePosition;
+				var hov = layer.PositionFrom(mousePos, Window.Size);
 
 				Mouse.Update();
 				Keyboard.Update();
@@ -57,7 +50,7 @@ namespace TestGame
 				layer.Fill(0, 0);
 				over.Fill(0, 0);
 
-				window.DrawEnable(true);
+				Window.DrawEnable(true);
 
 				MyCoolInputBoxUpdate(bg, layer, over, inputBox);
 				MyCoolInputBoxUpdate(bg, layer, over, inputBox2);
@@ -66,18 +59,13 @@ namespace TestGame
 				layer.UpdateCamera();
 				over.UpdateCamera();
 
-				window.DrawLayer(bg.Camera, bg.Camera, (8, 8), (0, 0));
-				window.DrawLayer(layer.Camera, layer.Camera, (8, 8), (0, 0));
-				window.DrawLayer(over.Camera, over.Camera, (8, 8), (0, 0));
+				Window.DrawLayer(bg.Camera, bg.Camera, (8, 8), (0, 0));
+				Window.DrawLayer(layer.Camera, layer.Camera, (8, 8), (0, 0));
+				Window.DrawLayer(over.Camera, over.Camera, (8, 8), (0, 0));
 
-				window.DrawLine((1, 1), hov, Color.Gray);
+				Window.DrawLine((1, 1), hov, Color.Gray);
 
-				if(Keyboard.IsJustPressed(Key.Enter))
-				{
-					Notes<Song>.Play(Song.CoolVibe);
-				}
-
-				window.DrawEnable(false);
+				Window.DrawEnable(false);
 			}
 		}
 		static void MyCoolInputBoxUpdate(Tilemap bg, Tilemap layer, Tilemap over, InputLine inputBox)
