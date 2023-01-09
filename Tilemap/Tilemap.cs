@@ -1,5 +1,4 @@
 ﻿using System.IO.Compression;
-using System.Xml;
 
 namespace Pure.Tilemap
 {
@@ -12,8 +11,7 @@ namespace Pure.Tilemap
 			DownLeft, Down, DownRight
 		};
 
-		public uint TileTotalCount => TileCount.Item1 * TileCount.Item2;
-		public (uint, uint) TileCount => ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
+		public (int, int) Size => (tiles.GetLength(0), tiles.GetLength(1));
 
 		public Tilemap Camera { get; private set; }
 		public (int, int) CameraPosition { get; set; }
@@ -48,88 +46,6 @@ namespace Pure.Tilemap
 			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
 			Camera = this;
 		}
-		public Tilemap(string tmxPath, string layerName)
-		{
-			tiles = new int[0, 0];
-			colors = new byte[0, 0];
-			Camera = this;
-
-			if(tmxPath == null)
-				throw new ArgumentNullException(nameof(tmxPath));
-
-			if(File.Exists(tmxPath) == false)
-				throw new ArgumentException($"No tmx file was found at '{tmxPath}'.");
-
-			var xml = new XmlDocument();
-			xml.Load(tmxPath);
-
-			var layers = xml.GetElementsByTagName("layer");
-			var layer = default(XmlElement);
-			var data = default(XmlNode);
-			var layerFound = false;
-
-			foreach(var element in layers)
-			{
-				layer = (XmlElement)element;
-				data = layer.FirstChild;
-
-				if(data == null || data.Attributes == null)
-					continue;
-
-				var name = layer.Attributes["name"]?.Value;
-				if(name == layerName)
-				{
-					layerFound = true;
-					break;
-				}
-			}
-
-			if(layerFound == false)
-				throw new Exception($"File at '{tmxPath}' does not contain the layer '{layerName}'.");
-
-			if(layer == null || data == null)
-			{
-				Error();
-				return;
-			}
-
-			var dataStr = data.InnerText.Trim();
-			var attributes = data.Attributes;
-			var encoding = attributes?["encoding"]?.Value;
-			var compression = attributes?["compression"]?.Value;
-			_ = int.TryParse(layer?.Attributes?["width"]?.InnerText, out var mapWidth);
-			_ = int.TryParse(layer?.Attributes?["height"]?.InnerText, out var mapHeight);
-
-			tiles = new int[mapWidth, mapHeight];
-			colors = new byte[tiles.GetLength(0), tiles.GetLength(1)];
-			CameraSize = (mapWidth, mapHeight);
-			Camera = this;
-
-			if(encoding == "csv")
-				LoadFromCSV(dataStr);
-			else if(encoding == "base64")
-			{
-				if(compression == null)
-					LoadFromBase64Uncompressed(dataStr);
-				else if(compression == "gzip")
-					LoadFromBase64<GZipStream>(dataStr);
-				else if(compression == "zlib")
-					LoadFromBase64<ZLibStream>(dataStr);
-				else
-					throw new Exception($"Tile Layer Format encoding 'Base64' " +
-						$"with compression '{compression}' is not supported.");
-			}
-			else
-				throw new Exception($"Tile Layer Format encoding" +
-					$"'{encoding}' is not supported.");
-
-			for(int i = 0; i < colors.GetLength(0); i++)
-				for(int j = 0; j < colors.GetLength(1); j++)
-					colors[i, j] = 255;
-
-			void Error() => throw new Exception(
-				$"Could not parse file at '{tmxPath}', layer '{layerName}'.");
-		}
 
 		public void UpdateCamera()
 		{
@@ -163,23 +79,23 @@ namespace Pure.Tilemap
 			return IndicesAreValid(position) ? colors[position.Item1, position.Item2] : default;
 		}
 
-		public void Fill(int tile, byte color)
+		public void Fill(int tile = 0, byte color = 0)
 		{
-			for(uint y = 0; y < TileCount.Item2; y++)
-				for(uint x = 0; x < TileCount.Item1; x++)
+			for(uint y = 0; y < Size.Item2; y++)
+				for(uint x = 0; x < Size.Item1; x++)
 				{
 					tiles[x, y] = tile;
 					colors[x, y] = color;
 				}
 		}
-		public void SetTile((int, int) position, int title, byte color)
+		public void SetTile((int, int) position, int tile, byte color)
 		{
 			if(IndicesAreValid(position) == false)
 				return;
 
 			var x = position.Item1;
 			var y = position.Item2;
-			tiles[x, y] = title;
+			tiles[x, y] = tile;
 			colors[x, y] = color;
 		}
 		public void SetSquare((int, int) position, (int, int) size, int tile, byte color)
@@ -335,12 +251,49 @@ namespace Pure.Tilemap
 				return default;
 			}
 		}
+		public void SetNinePatch((int, int) position, (int, int) size,
+			int tile, byte color)
+		{
+			var (x, y) = position;
+			var (w, h) = size;
+
+			SetTile(position, tile, color);
+			SetSquare((x + 1, y), (w - 2, 1), tile + 1, color);
+			SetTile((x + w - 1, y), tile + 2, color);
+			SetSquare((x, y + 1), (1, h - 2), tile + 3, color);
+			SetSquare((x + w - 1, y + 1), (1, h - 2), tile + 3, color);
+			SetTile((x, y + h - 1), tile + 4, color);
+			SetSquare((x + 1, y + h - 1), (w - 2, 1), tile + 1, color);
+			SetTile((x + w - 1, y + h - 1), tile + 5, color);
+		}
+
+		public void SetInputLineCursor((int, int) position, bool isFocused, int cursorIndex,
+			byte cursorColor)
+		{
+			if(isFocused == false)
+				return;
+
+			var cursorPos = (position.Item1 + cursorIndex, position.Item2);
+			SetTile((cursorPos.Item1, cursorPos.Item2), Tile.SHAPE_LINE_LEFT, cursorColor);
+		}
+		public void SetInputLineSelection((int, int) position, int cursorIndex,
+			int selectionIndex, byte selectionColor)
+		{
+			var cursorPos = (position.Item1 + cursorIndex, position.Item2);
+			var selectedPos = (position.Item1 + selectionIndex, position.Item2);
+			var size = cursorPos.Item1 - selectedPos.Item1;
+
+			if(size < 0)
+				selectedPos.Item1--;
+
+			SetSquare(selectedPos, (size, 1), Tile.SHADE_OPAQUE, selectionColor);
+		}
 
 		public (float, float) PositionFrom((int, int) screenPixel, (uint, uint) windowSize,
 			bool isAccountingForCamera = true)
 		{
-			var x = Map(screenPixel.Item1, 0, windowSize.Item1, 0, TileCount.Item1);
-			var y = Map(screenPixel.Item2, 0, windowSize.Item2, 0, TileCount.Item2);
+			var x = Map(screenPixel.Item1, 0, windowSize.Item1, 0, Size.Item1);
+			var y = Map(screenPixel.Item2, 0, windowSize.Item2, 0, Size.Item2);
 
 			if(isAccountingForCamera)
 			{

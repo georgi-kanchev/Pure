@@ -1,9 +1,24 @@
 ﻿namespace Pure.UserInterface
 {
+	/// <summary>
+	/// The OS and tile mouse cursors that result from interacting with the <see cref="UserInterface"/>.
+	/// </summary>
+	public enum CursorResult
+	{
+		TileArrow, TileArrowNoTail, TileHand, TileText, TileCrosshair, TileNo, TileResizeHorizontal, TileResizeVertical,
+		TileResizeDiagonal1, TileResizeDiagonal2, TileMove, TileWait1, TileWait2, TileWait3,
+
+		SystemArrow, SystemArrowWait, SystemWait, SystemText, SystemHand, SystemResizeHorinzontal, SystemResizeVertical,
+		SystemResizeDiagonal2, SystemResizeDiagonal1, SystemMove, SystemCrosshair, SystemHelp, SystemNo,
+
+		None
+	}
+
 	public abstract class UserInterface
 	{
 		public (int, int) Position { get; set; }
 		public (int, int) Size { get; set; }
+		public string Text { get; set; } = "";
 
 		public bool IsFocused
 		{
@@ -28,6 +43,8 @@
 			}
 		}
 		public bool IsPressed => IsHovered && Input.IsPressed && IsClicked;
+		public static CursorResult MouseCursorTile { get; internal set; }
+		public static CursorResult MouseCursorSystem { get; internal set; }
 
 		public UserInterface((int, int) position, (int, int) size)
 		{
@@ -37,7 +54,9 @@
 
 		public static void UpdateInput(Input input)
 		{
-			input.PrevTypedSymbols = Input.TypedSymbols;
+			MouseCursorTile = CursorResult.TileArrow;
+			MouseCursorSystem = CursorResult.SystemArrow;
+
 			input.WasPressed = Input.IsPressed;
 			input.WasPressedAlt = Input.IsPressedAlt;
 			input.WasPressedBackspace = Input.IsPressedBackspace;
@@ -51,6 +70,9 @@
 			input.WasPressedRight = Input.IsPressedRight;
 			input.WasPressedUp = Input.IsPressedUp;
 			input.WasPressedDown = Input.IsPressedDown;
+
+			input.PrevTypedSymbols = Input.TypedSymbols;
+			input.PrevPosition = Input.Position;
 
 			Input = input;
 		}
@@ -76,6 +98,11 @@
 				IsClicked = false;
 
 			return false;
+		}
+		protected void SetTileAndSystemCursor(CursorResult tileCursor)
+		{
+			MouseCursorTile = tileCursor;
+			MouseCursorSystem = (CursorResult)((int)tileCursor + (int)CursorResult.SystemArrow);
 		}
 		#endregion
 	}

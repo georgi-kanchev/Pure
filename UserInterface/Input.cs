@@ -34,6 +34,7 @@
 		internal bool WasPressedRight { get; set; }
 		internal bool WasPressedLeft { get; set; }
 
+		internal (float, float) PrevPosition { get; set; }
 		internal string PrevTypedSymbols { get; set; }
 		#endregion
 	}

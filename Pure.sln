@@ -5,8 +5,6 @@ VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utilities", "Utilities\Utilities.csproj", "{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Graphics", "Graphics\Graphics.csproj", "{468D8440-D9E0-4C20-9CF9-D832153ABE31}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestGame", "TestGame\TestGame.csproj", "{C21F1D87-F9A3-4F9E-8350-B4B8F2374A12}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StorageEditor", "StorageEditor\StorageEditor.csproj", "{3CB47728-0F57-41F5-8D27-89C420C3C83B}"
@@ -27,7 +25,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Audio", "Audio\Audio.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NoteEditor", "AudioEditor\NoteEditor.csproj", "{526D2E84-AFC2-4FF7-9A7F-A7315373FF24}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modding", "Modding\Modding.csproj", "{02081415-8AC9-4B56-9C8B-B8A9F3479E6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Modding", "Modding\Modding.csproj", "{02081415-8AC9-4B56-9C8B-B8A9F3479E6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image", "Image\Image.csproj", "{69B8CFFE-13EB-4B2D-A743-699F3329C572}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Window", "Window\Window.csproj", "{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,10 +41,6 @@ Global
 		{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{468D8440-D9E0-4C20-9CF9-D832153ABE31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{468D8440-D9E0-4C20-9CF9-D832153ABE31}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{468D8440-D9E0-4C20-9CF9-D832153ABE31}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{468D8440-D9E0-4C20-9CF9-D832153ABE31}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C21F1D87-F9A3-4F9E-8350-B4B8F2374A12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C21F1D87-F9A3-4F9E-8350-B4B8F2374A12}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C21F1D87-F9A3-4F9E-8350-B4B8F2374A12}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -87,6 +85,14 @@ Global
 		{02081415-8AC9-4B56-9C8B-B8A9F3479E6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02081415-8AC9-4B56-9C8B-B8A9F3479E6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02081415-8AC9-4B56-9C8B-B8A9F3479E6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69B8CFFE-13EB-4B2D-A743-699F3329C572}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69B8CFFE-13EB-4B2D-A743-699F3329C572}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69B8CFFE-13EB-4B2D-A743-699F3329C572}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69B8CFFE-13EB-4B2D-A743-699F3329C572}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

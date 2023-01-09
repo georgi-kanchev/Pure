@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace Pure.Collision
+﻿namespace Pure.Collision
 {
 	/// <summary>
 	/// (Inherits <see cref="Hitbox"/>)<br></br><br></br>
@@ -41,81 +39,6 @@ namespace Pure.Collision
 				throw new ArgumentException("Value cannot be < 1.", nameof(cellSize));
 
 			this.cellSize = cellSize;
-		}
-		/// <summary>
-		/// Creates the <see cref="Grid"/> from <paramref name="tiles"/> and a
-		/// <see langword="Tiled Tileset"/> export file at <paramref name="tsxPath"/>.
-		/// </summary>
-		public Grid(string tsxPath, int[,] tiles) : base((0, 0), 1)
-		{
-			if(tiles == null)
-				throw new ArgumentNullException(nameof(tiles));
-
-			if(tsxPath == null)
-				throw new ArgumentNullException(nameof(tsxPath));
-
-			if(File.Exists(tsxPath) == false)
-				throw new ArgumentException($"No tsx file was found at '{tsxPath}'.");
-
-			var xml = new XmlDocument();
-			xml.Load(tsxPath);
-
-			var tilesets = xml.GetElementsByTagName("tileset");
-			if(tilesets == null || tilesets.Count == 0)
-			{
-				Error();
-				return;
-			}
-
-			var tileset = tilesets[0];
-			var attributes = tileset?.Attributes;
-
-			if(tileset == null || attributes == null)
-			{
-				Error();
-				return;
-			}
-
-			_ = int.TryParse(attributes["tilewidth"]?.InnerText, out var tileWidth);
-			//_ = int.TryParse(attributes["tileheight"]?.InnerText, out var h);
-
-			cellSize = tileWidth;
-
-			foreach(XmlNode child in tileset)
-			{
-				var rects = child.ChildNodes?[0]?.ChildNodes;
-
-				if(child.Name != "tile" || rects == null || rects.Count == 0)
-					continue;
-
-				_ = int.TryParse(child.Attributes?["id"]?.InnerText, out var id);
-
-				var currRectList = new List<Rectangle>();
-				foreach(XmlNode rect in rects)
-				{
-					var att = rect.Attributes;
-					var nodeX = att?["x"];
-					var nodeY = att?["y"];
-					var nodeW = att?["width"];
-					var nodeH = att?["height"];
-
-					if(nodeX == null || nodeY == null || nodeW == null || nodeH == null)
-						continue;
-
-					_ = int.TryParse(nodeX?.InnerText, out var x);
-					_ = int.TryParse(nodeY?.InnerText, out var y);
-					_ = int.TryParse(nodeW?.InnerText, out var w);
-					_ = int.TryParse(nodeH?.InnerText, out var h);
-
-					var localRect = new Rectangle((w, h), (x, y));
-					currRectList.Add(localRect);
-				}
-				cellRectsMap[id] = currRectList;
-			}
-
-			UpdatePositions(tiles);
-
-			void Error() => throw new Exception($"Could not parse file at '{tsxPath}'.");
 		}
 
 		/// <summary>

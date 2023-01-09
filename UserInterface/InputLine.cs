@@ -2,7 +2,6 @@
 {
 	public class InputLine : UserInterface
 	{
-		public string Text { get; set; } = "";
 		public string TextSelected
 		{
 			get
@@ -31,7 +30,7 @@
 			Text = text;
 		}
 
-		public void Update(Action<InputLine>? result)
+		public void Update(Action<InputLine>? custom)
 		{
 			if(Size.Item1 == 0 || Size.Item2 == 0)
 				return;
@@ -49,6 +48,9 @@
 			var cursorPos = Input.Position.Item1 - Position.Item1;
 			var endOfTextPos = Text.Length;
 			var curPos = (int)MathF.Round(cursorPos > Text.Length ? endOfTextPos : cursorPos);
+
+			if(IsHovered)
+				SetTileAndSystemCursor(CursorResult.TileText);
 
 			if(IsPressed)
 				IndexCursor = curPos;
@@ -97,7 +99,7 @@
 					MoveCursorRight();
 			}
 
-			result?.Invoke(this);
+			custom?.Invoke(this);
 		}
 
 		#region Backend

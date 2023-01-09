@@ -281,52 +281,52 @@
 		public const int ARROW_BOLT_UP = 363;
 		#endregion
 		#region Border
-		public const int BORDER_VERTICAL = 260;
+		public const int BORDER_TOP_LEFT = 260;
 		public const int BORDER_HORIZONTAL = 261;
-		public const int BORDER_TOP_LEFT = 262;
-		public const int BORDER_TOP_RIGHT = 263;
-		public const int BORDER_DOWN_RIGHT = 264;
-		public const int BORDER_DOWN_LEFT = 265;
-		public const int BORDER_VERTICAL_RIGHT = 266;
-		public const int BORDER_VERTICAL_LEFT = 267;
-		public const int BORDER_HORIZONTAL_UP = 268;
-		public const int BORDER_HORIZONTAL_DOWN = 269;
+		public const int BORDER_TOP_RIGHT = 262;
+		public const int BORDER_VERTICAL = 263;
+		public const int BORDER_DOWN_LEFT = 264;
+		public const int BORDER_DOWN_RIGHT = 265;
+		public const int BORDER_HORIZONTAL_DOWN = 266;
+		public const int BORDER_VERTICAL_RIGHT = 267;
+		public const int BORDER_VERTICAL_LEFT = 268;
+		public const int BORDER_HORIZONTAL_UP = 269;
 		public const int BORDER_CROSS = 270;
 
-		public const int BORDER_GRID_VERTICAL = 271;
+		public const int BORDER_GRID_TOP_LEFT = 271;
 		public const int BORDER_GRID_HORIZONTAL = 272;
-		public const int BORDER_GRID_TOP_LEFT = 273;
-		public const int BORDER_GRID_TOP_RIGHT = 274;
-		public const int BORDER_GRID_DOWN_RIGHT = 275;
-		public const int BORDER_GRID_DOWN_LEFT = 276;
-		public const int BORDER_GRID_VERTICAL_RIGHT = 277;
-		public const int BORDER_GRID_VERTICAL_LEFT = 278;
-		public const int BORDER_GRID_HORIZONTAL_UP = 279;
-		public const int BORDER_GRID_HORIZONTAL_DOWN = 280;
+		public const int BORDER_GRID_TOP_RIGHT = 273;
+		public const int BORDER_GRID_VERTICAL = 274;
+		public const int BORDER_GRID_DOWN_LEFT = 275;
+		public const int BORDER_GRID_DOWN_RIGHT = 276;
+		public const int BORDER_GRID_HORIZONTAL_DOWN = 277;
+		public const int BORDER_GRID_VERTICAL_RIGHT = 278;
+		public const int BORDER_GRID_VERTICAL_LEFT = 279;
+		public const int BORDER_GRID_HORIZONTAL_UP = 280;
 		public const int BORDER_GRID_CROSS = 281;
 
-		public const int BORDER_HOLLOW_VERTICAL = 286;
+		public const int BORDER_HOLLOW_TOP_LEFT = 286;
 		public const int BORDER_HOLLOW_HORIZONTAL = 287;
-		public const int BORDER_HOLLOW_TOP_LEFT = 288;
-		public const int BORDER_HOLLOW_TOP_RIGHT = 289;
-		public const int BORDER_HOLLOW_DOWN_RIGHT = 290;
-		public const int BORDER_HOLLOW_DOWN_LEFT = 291;
-		public const int BORDER_HOLLOW_VERTICAL_RIGHT = 292;
-		public const int BORDER_HOLLOW_VERTICAL_LEFT = 293;
-		public const int BORDER_HOLLOW_HORIZONTAL_UP = 294;
-		public const int BORDER_HOLLOW_HORIZONTAL_DOWN = 295;
+		public const int BORDER_HOLLOW_TOP_RIGHT = 288;
+		public const int BORDER_HOLLOW_VERTICAL = 289;
+		public const int BORDER_HOLLOW_DOWN_LEFT = 290;
+		public const int BORDER_HOLLOW_DOWN_RIGHT = 291;
+		public const int BORDER_HOLLOW_HORIZONTAL_DOWN = 292;
+		public const int BORDER_HOLLOW_VERTICAL_RIGHT = 293;
+		public const int BORDER_HOLLOW_VERTICAL_LEFT = 294;
+		public const int BORDER_HOLLOW_HORIZONTAL_UP = 295;
 		public const int BORDER_HOLLOW_CROSS = 296;
 
-		public const int BORDER_PIPE_VERTICAL = 297;
+		public const int BORDER_PIPE_TOP_LEFT = 297;
 		public const int BORDER_PIPE_HORIZONTAL = 298;
-		public const int BORDER_PIPE_TOP_LEFT = 299;
-		public const int BORDER_PIPE_TOP_RIGHT = 300;
-		public const int BORDER_PIPE_DOWN_RIGHT = 301;
-		public const int BORDER_PIPE_DOWN_LEFT = 302;
-		public const int BORDER_PIPE_VERTICAL_RIGHT = 303;
-		public const int BORDER_PIPE_VERTICAL_LEFT = 304;
-		public const int BORDER_PIPE_HORIZONTAL_UP = 305;
-		public const int BORDER_PIPE_HORIZONTAL_DOWN = 306;
+		public const int BORDER_PIPE_TOP_RIGHT = 299;
+		public const int BORDER_PIPE_VERTICAL = 300;
+		public const int BORDER_PIPE_DOWN_LEFT = 301;
+		public const int BORDER_PIPE_DOWN_RIGHT = 302;
+		public const int BORDER_PIPE_HORIZONTAL_DOWN = 303;
+		public const int BORDER_PIPE_VERTICAL_RIGHT = 304;
+		public const int BORDER_PIPE_VERTICAL_LEFT = 305;
+		public const int BORDER_PIPE_HORIZONTAL_UP = 306;
 		public const int BORDER_PIPE_CROSS = 307;
 		#endregion
 		#region Horizontal Bar
@@ -512,6 +512,27 @@
 		public const int SHAPE_TRIANGLE_BIG = 481;
 		public const int SHAPE_TRIANGLE_HOLLOW = 482;
 		public const int SHAPE_TRIANGLE_BIG_HOLLOW = 483;
+
+		public const int SHAPE_LINE_RIGHT = 484;
+		public const int SHAPE_LINE_DOWN = 485;
+		public const int SHAPE_LINE_LEFT = 486;
+		public const int SHAPE_LINE_UP = 487;
+		#endregion
+		#region Cursor
+		public const int CURSOR_ARROW = 494;
+		public const int CURSOR_ARROW_NO_TAIL = 495;
+		public const int CURSOR_HAND = 496;
+		public const int CURSOR_TEXT = 497;
+		public const int CURSOR_CROSSHAIR = 498;
+		public const int CURSOR_NO = 499;
+		public const int CURSOR_SIZE_HORIZONTAL = 500;
+		public const int CURSOR_SIZE_VERTICAL = 501;
+		public const int CURSOR_SIZE_DIAGONAL_1 = 502;
+		public const int CURSOR_SIZE_DIAGONAL_2 = 503;
+		public const int CURSOR_MOVE = 504;
+		public const int CURSOR_WAIT_1 = 505;
+		public const int CURSOR_WAIT_2 = 506;
+		public const int CURSOR_WAIT_3 = 507;
 		#endregion
 	}
 }

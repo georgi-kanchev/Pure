@@ -5,6 +5,82 @@ namespace Pure.Storage
 {
 	public class Storage
 	{
+		public object this[string id]
+		{
+			set
+			{
+				if(id == null)
+					throw new ArgumentNullException(nameof(id));
+
+				if(value == null)
+				{
+					if(data.ContainsKey(id)) // delete
+						data.Remove(id);
+
+					return;
+				}
+
+				var type = value.GetType();
+				var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+				var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+				if(data.ContainsKey(id) == false)
+					data[id] = new();
+
+				for(int i = 0; i < props.Length; i++)
+				{
+					var prop = props[i];
+
+					if(IsTypeSupported(prop.PropertyType) == false)
+						continue;
+
+					var val = prop.GetValue(value);
+
+					if(val != null)
+						data[id][prop.Name] = val;
+				}
+				for(int i = 0; i < fields.Length; i++)
+				{
+					var field = fields[i];
+					if(IsTypeSupported(field.FieldType) == false || field.Name.Contains('<'))
+						continue;
+
+					var val = field.GetValue(value);
+
+					if(val != null)
+						data[id][field.Name] = val;
+				}
+			}
+		}
+
+		public Storage() { }
+		public Storage(string path)
+		{
+			if(File.Exists(path) == false)
+				return;
+
+			var file = File.ReadAllText(path);
+
+			if(file.Length == 0)
+				return;
+
+			var split = Trim(file).Split(OBJ, StringSplitOptions.RemoveEmptyEntries);
+
+			data.Clear();
+			for(int i = 0; i < split?.Length; i++)
+			{
+				var props = split[i].Split(OBJ_PROP, StringSplitOptions.RemoveEmptyEntries);
+				var instanceName = props[0];
+
+				for(int j = 1; j < props?.Length; j++)
+					CacheProp(instanceName, props[j]);
+			}
+		}
+
+		public bool HasID(string id)
+		{
+			return id != null && data.ContainsKey(id);
+		}
 		public void Save(string path, bool isDataFormatted = true)
 		{
 			var dir = Path.GetDirectoryName(path);
@@ -18,14 +94,14 @@ namespace Pure.Storage
 
 			foreach(var kvp in data)
 			{
-				result += INSTANCE + space + kvp.Key;
+				result += OBJ + space + kvp.Key;
 
 				foreach(var kvp2 in kvp.Value)
 				{
 					var value = kvp2.Value;
 					var type = value.GetType();
 
-					result += newLine + tab + INSTANCE_PROPERTY + space + kvp2.Key;
+					result += newLine + tab + OBJ_PROP + space + kvp2.Key;
 
 					if(type.IsArray)
 					{
@@ -52,32 +128,9 @@ namespace Pure.Storage
 
 			File.WriteAllText(path, result);
 		}
-		public void Load(string path)
+		public void Populate(object instance, string id)
 		{
-			if(File.Exists(path) == false)
-				return;
-
-			var file = File.ReadAllText(path);
-
-			if(file.Length == 0)
-				return;
-
-			var split = Trim(file).Split(INSTANCE, StringSplitOptions.RemoveEmptyEntries);
-
-			data.Clear();
-			for(int i = 0; i < split?.Length; i++)
-			{
-				var props = split[i].Split(INSTANCE_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
-				var instanceName = props[0];
-
-				for(int j = 1; j < props?.Length; j++)
-					CacheProp(instanceName, props[j]);
-			}
-		}
-
-		public void Populate(string storageKey, object instance)
-		{
-			if(instance == null || data.ContainsKey(storageKey) == false)
+			if(instance == null || data.ContainsKey(id) == false)
 				return;
 
 			var type = instance.GetType();
@@ -85,70 +138,31 @@ namespace Pure.Storage
 			var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
 			for(int i = 0; i < props.Length; i++)
-				PopulateMember(props[i], storageKey, instance);
+				PopulateMember(props[i], id, instance);
 			for(int i = 0; i < fields.Length; i++)
 				if(fields[i].Name.Contains('<') == false)
-					PopulateMember(fields[i], storageKey, instance);
-		}
-		public void Store(string storageKey, object instance)
-		{
-			if(instance == null)
-				return;
-
-			var type = instance.GetType();
-			var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-			var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-			if(data.ContainsKey(storageKey) == false)
-				data[storageKey] = new();
-
-			for(int i = 0; i < props.Length; i++)
-			{
-				var prop = props[i];
-
-				if(IsTypeSupported(prop.PropertyType) == false)
-					continue;
-
-				var value = prop.GetValue(instance);
-
-				if(value != null)
-					data[storageKey][prop.Name] = value;
-			}
-			for(int i = 0; i < fields.Length; i++)
-			{
-				var field = fields[i];
-				if(IsTypeSupported(field.FieldType) == false || field.Name.Contains('<'))
-					continue;
-
-				var value = field.GetValue(instance);
-
-				if(value != null)
-					data[storageKey][field.Name] = value;
-			}
-
-			return;
+					PopulateMember(fields[i], id, instance);
 		}
 
 		#region Backend
-		private const string INSTANCE = "~@", INSTANCE_PROPERTY = "~~", VALUE = "~|",
-			STRUCT = "~&", STRUCT_PROPERTY = "~=",
-			SPACE = "~_", TAB = "~__", NEW_LINE = "~/";
-		private const string FILE_HEADER = @"Pure - Storage file
---------------------------
+		private const string SEP = "~", OBJ = SEP + "@", OBJ_PROP = SEP + "~", VALUE = SEP + "|",
+			STRUCT = SEP + "&", STRUCT_PROP = SEP + "=", SPACE = SEP + "_", TAB = SEP + "__", NEW_LINE = SEP + "/";
+		private const string FILE_HEADER = @$"Pure - Storage file
+| - - - - - - - - - - - - -
 | Map of symbols
+| - - - - - - - - - - - - -
+|	{SEP} Global separator
 |
-|	~ Global separator
+|	{OBJ} Object
+|	{OBJ_PROP} Property
+|	{STRUCT} Property containing sub properties (struct)
+|	{STRUCT_PROP} Sub property
+|	{VALUE} Value
 |
-|	@ Object
-|	~ Property
-|	& Property containing sub properties
-|	- Sub property
-|	| Value
-|
-|	/ String new line
-|	_ String space
-|	__ String tab
---------------------------
+|	{NEW_LINE} String new line
+|	{SPACE} String space
+|	{TAB} String tab
+| - - - - - - - - - - - - -
 ";
 
 		private readonly Dictionary<string, Dictionary<string, object>> data = new();
@@ -181,7 +195,7 @@ namespace Pure.Storage
 
 					var propValue = prop.GetValue(value);
 
-					result += newLine + tab + tab + STRUCT_PROPERTY + space + newLine;
+					result += newLine + tab + tab + STRUCT_PROP + space + newLine;
 
 					if(propValue != null)
 					{
@@ -197,7 +211,7 @@ namespace Pure.Storage
 
 					var fieldValue = field.GetValue(value);
 
-					result += newLine + tab + tab + STRUCT_PROPERTY + space;
+					result += newLine + tab + tab + STRUCT_PROP + space;
 
 					if(fieldValue != null)
 					{
@@ -227,7 +241,7 @@ namespace Pure.Storage
 			var value = data[instanceName][name];
 			var valueType = value.GetType();
 
-			if(value is string str && str.Contains(STRUCT_PROPERTY))
+			if(value is string str && str.Contains(STRUCT_PROP))
 			{
 				if(str.Contains(STRUCT))
 				{
@@ -291,7 +305,7 @@ namespace Pure.Storage
 		private static object? ParseStruct(Type structType, string str)
 		{
 			var structInstance = Activator.CreateInstance(structType);
-			var structProps = str.Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+			var structProps = str.Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
 			for(int i = 0; i < structProps.Length; i++)
 			{

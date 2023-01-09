@@ -1,9 +1,8 @@
-﻿using Pure.Graphics;
-using Pure.Input;
-using Pure.Modding;
+﻿using Pure.Input;
 using Pure.Tilemap;
 using Pure.UserInterface;
 using Pure.Utilities;
+using Pure.Window;
 
 namespace TestGame
 {
@@ -19,11 +18,8 @@ namespace TestGame
 			var bg = new Tilemap((48, 27));
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
-			var inputBox = new InputLine((0, 0), (10, 1), "Hello");
-			var inputBox2 = new InputLine((10, 15), (10, 1), "Test");
-
-			var script = new Script("function main() end");
-			var value = script.Call("main");
+			var inputBox = new InputLine((10, 15), (10, 1), "Test");
+			var container = new Container((10, 2), (13, 5)) { Text = "Title" };
 
 			while(Window.IsExisting)
 			{
@@ -53,18 +49,17 @@ namespace TestGame
 				Window.DrawEnable(true);
 
 				MyCoolInputBoxUpdate(bg, layer, over, inputBox);
-				MyCoolInputBoxUpdate(bg, layer, over, inputBox2);
+				MyCoolContainer(bg, layer, container);
 
 				bg.UpdateCamera();
 				layer.UpdateCamera();
 				over.UpdateCamera();
 
-				Window.DrawLayer(bg.Camera, bg.Camera, (8, 8), (0, 0));
-				Window.DrawLayer(layer.Camera, layer.Camera, (8, 8), (0, 0));
-				Window.DrawLayer(over.Camera, over.Camera, (8, 8), (0, 0));
+				Window.DrawTilemap(bg.Camera, bg.Camera, (8, 8), (0, 0));
+				Window.DrawTilemap(layer.Camera, layer.Camera, (8, 8), (0, 0));
+				Window.DrawTilemap(over.Camera, over.Camera, (8, 8), (0, 0));
 
-				Window.DrawLine((1, 1), hov, Color.Gray);
-
+				Window.MouseCursor = (Cursor)UserInterface.MouseCursorTile;
 				Window.DrawEnable(false);
 			}
 		}
@@ -72,20 +67,19 @@ namespace TestGame
 		{
 			inputBox.Update((b) =>
 			{
-				var pos = inputBox.Position;
-				var cursorPos = (pos.Item1 + inputBox.IndexCursor, pos.Item2);
-				var selectedPos = (pos.Item1 + inputBox.IndexSelection, pos.Item2);
-				var size = cursorPos.Item1 - selectedPos.Item1;
-
-				if(size < 0)
-					selectedPos.Item1--;
-
-				bg.SetSquare(inputBox.Position, inputBox.Size, 10, Color.Gray);
-				bg.SetSquare(selectedPos, (size, 1), Tile.SHADE_OPAQUE, Color.Blue);
-				layer.SetTextLine(inputBox.Position, inputBox.Text, Color.Red);
-
-				if(inputBox.IsFocused)
-					over.SetTile(cursorPos, Tile.SHAPE_TRIANGLE_BIG_HOLLOW + 3, Color.White);
+				bg.SetSquare(b.Position, b.Size, 10, Color.Gray);
+				bg.SetInputLineSelection(b.Position, b.IndexCursor, b.IndexSelection, Color.Blue);
+				layer.SetTextLine(b.Position, b.Text, Color.Red);
+				over.SetInputLineCursor(b.Position, b.IsFocused, b.IndexCursor, Color.White);
+			});
+		}
+		static void MyCoolContainer(Tilemap bg, Tilemap layer, Container container)
+		{
+			container.Update((c) =>
+			{
+				bg.SetSquare(c.Position, c.Size, Tile.PATTERN_24, Color.Gray);
+				layer.SetNinePatch(c.Position, c.Size, Tile.BORDER_GRID_TOP_LEFT, Color.White);
+				layer.SetTextLine((c.Position.Item1 + 1, c.Position.Item2), c.Text, Color.White);
 			});
 		}
 	}

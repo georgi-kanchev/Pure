@@ -2,8 +2,22 @@
 using SFML.System; // vectors etc.
 using SFML.Window; // window etc.
 
-namespace Pure.Graphics
+namespace Pure.Window
 {
+	/// <summary>
+	/// The OS and tile mouse cursors.
+	/// </summary>
+	public enum Cursor
+	{
+		TileArrow, TileArrowNoTail, TileHand, TileText, TileCrosshair, TileNo, TileResizeHorizontal, TileResizeVertical,
+		TileResizeDiagonal1, TileResizeDiagonal2, TileMove, TileWait1, TileWait2, TileWait3,
+
+		SystemArrow, SystemArrowWait, SystemWait, SystemText, SystemHand, SystemResizeHorinzontal, SystemResizeVertical,
+		SystemResizeDiagonal2, SystemResizeDiagonal1, SystemMove, SystemCrosshair, SystemHelp, SystemNo,
+
+		None
+	}
+
 	/// <summary>
 	/// Provides a simple way to create and interact with an OS window.
 	/// </summary>
@@ -46,6 +60,7 @@ namespace Pure.Graphics
 			get => isHidden;
 			set { isHidden = value; window.SetVisible(value == false); }
 		}
+
 		/// <summary>
 		/// The mouse cursor position relative to the OS window.
 		/// </summary>
@@ -58,30 +73,60 @@ namespace Pure.Graphics
 				Mouse.SetPosition(pos, window);
 			}
 		}
+		/// <summary>
+		/// The mouse cursor type used by the OS window and <see cref="TryDrawMouseCursor"/>.
+		/// </summary>
+		public static Cursor MouseCursor
+		{
+			get => cursor;
+			set
+			{
+				cursor = value;
+
+				if(value != Cursor.None && (int)value > (int)Cursor.TileWait3)
+				{
+					var sfmlEnum = (SFML.Window.Cursor.CursorType)((int)value - (int)Cursor.SystemArrow);
+					sysCursor.Dispose();
+					sysCursor = new(sfmlEnum);
+
+					window.SetMouseCursor(sysCursor);
+				}
+			}
+		}
+		/// <summary>
+		/// The mouse cursor color used by <see cref="TryDrawMouseCursor"/>.
+		/// </summary>
+		public static byte MouseColor { get; set; } = 255;
+		/// <summary>
+		/// Whether the mouse cursor is restricted of leaving the OS window.
+		/// </summary>
+		public static bool MouseIsRestriced
+		{
+			get => mouseIsGrabbed;
+			set { mouseIsGrabbed = value; window.SetMouseCursorGrabbed(value); }
+		}
 
 		static Window()
 		{
+			//var str = DefaultGraphics.PNGToBase64String("graphics.png");
+
+			sysCursor = new SFML.Window.Cursor(SFML.Window.Cursor.CursorType.Arrow);
+			graphics["default"] = DefaultGraphics.CreateTexture();
+
 			var desktopW = VideoMode.DesktopMode.Width;
 			var desktopH = VideoMode.DesktopMode.Height;
 			title = "";
 
-			var width = (uint)RoundToMultipleOfTwo((int)(desktopW * 0.66f));
-			var height = (uint)RoundToMultipleOfTwo((int)(desktopH * 0.66f));
+			var width = (uint)RoundToMultipleOfTwo((int)(desktopW * 0.6f));
+			var height = (uint)RoundToMultipleOfTwo((int)(desktopH * 0.6f));
 
 			window = new(new VideoMode(width, height), title);
 			window.Closed += (s, e) => window.Close();
-			window.Resized += (s, e) =>
-			{
-				var view = window.GetView();
-				var (w, h) = (RoundToMultipleOfTwo((int)e.Width), RoundToMultipleOfTwo((int)e.Height));
-				view.Size = new(w, h);
-				view.Center = new(e.Width / 2f, e.Height / 2f);
-				window.SetView(view);
-				window.Size = new((uint)w, (uint)h);
-			};
+			window.Resized += (s, e) => UpdateWindowAndView();
 			window.DispatchEvents();
 			window.Clear();
 			window.Display();
+			UpdateWindowAndView();
 		}
 
 		/// <summary>
@@ -101,40 +146,43 @@ namespace Pure.Graphics
 				return;
 			}
 
+			TryDrawMouseCursor();
 			window.Display();
 		}
 		/// <summary>
-		/// Draws a layer onto the OS window. Its graphics image is loaded from a
-		/// <paramref name="path"/> using a <paramref name="tileSize"/> and a
-		/// <paramref name="tileMargin"/>, then it is cached for future draws. The layer's
+		/// Draws a tilemap onto the OS window. Its graphics image is loaded from a
+		/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a <paramref name="tileSize"/> and a
+		/// <paramref name="tileMargin"/>, then it is cached for future draws. The tilemap's
 		/// contents are decided by <paramref name="tiles"/> and <paramref name="colors"/>.
 		/// </summary>
-		public static void DrawLayer(int[,] tiles, byte[,] colors, (uint, uint) tileSize,
-			(uint, uint) tileMargin = default, string path = "graphics.png")
+		public static void DrawTilemap(int[,] tiles, byte[,] colors, (uint, uint) tileSize,
+			(uint, uint) tileMargin = default, string? path = default)
 		{
-			if(path == null || tiles == null || colors == null || tiles.Length != colors.Length)
+			if(tiles == null || colors == null || tiles.Length != colors.Length)
 				return;
 
+			path ??= "default";
+
 			TryLoadGraphics(path);
-			var verts = GetLayerVertices(tiles, colors, tileSize, tileMargin, path);
+			var verts = GetTilemapVertices(tiles, colors, tileSize, tileMargin, path);
 			window.Draw(verts, PrimitiveType.Quads, new(graphics[path]));
 		}
 		/// <summary>
 		/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
-		/// from the last <see cref="DrawLayer"/> call and a <paramref name="color"/>. The sprite's
-		/// <paramref name="position"/> is also relative to the previously drawn layer.
+		/// from the last <see cref="DrawTilemap"/> call and a <paramref name="color"/>. The sprite's
+		/// <paramref name="position"/> is also relative to the previously drawn tilemap.
 		/// </summary>
 		public static void DrawSprite((float, float) position, int tile, byte color)
 		{
-			if(prevDrawLayerGfxPath == null)
+			if(prevDrawTilemapGfxPath == null)
 				return;
 
 			var verts = GetSpriteVertices(position, tile, color);
-			window.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawLayerGfxPath]));
+			window.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawTilemapGfxPath]));
 		}
 		/// <summary>
 		/// Draws single pixel points with <paramref name="color"/> onto the OS window.
-		/// Their <paramref name="positions"/> are relative to the previously drawn layer.
+		/// Their <paramref name="positions"/> are relative to the previously drawn tilemap.
 		/// </summary>
 		public static void DrawPoints(byte color, params (float, float)[] positions)
 		{
@@ -147,7 +195,7 @@ namespace Pure.Graphics
 		/// <summary>
 		/// Draws a rectangle with <paramref name="color"/> onto the OS window.
 		/// Its <paramref name="position"/> and <paramref name="size"/> are relative
-		/// to the previously drawn layer.
+		/// to the previously drawn tilemap.
 		/// </summary>
 		public static void DrawRectangle((float, float) position, (float, float) size, byte color)
 		{
@@ -157,7 +205,7 @@ namespace Pure.Graphics
 		/// <summary>
 		/// Draws a line between <paramref name="pointA"/> and <paramref name="pointB"/> with
 		/// <paramref name="color"/> onto the OS window.
-		/// Its points are relative to the previously drawn layer.
+		/// Its points are relative to the previously drawn tilemap.
 		/// </summary>
 		public static void DrawLine((float, float) pointA, (float, float) pointB, byte color)
 		{
@@ -166,14 +214,26 @@ namespace Pure.Graphics
 		}
 
 		#region Backend
-		private const int MAX_ITERATIONS = 10000;
-		private static bool isHidden;
-		private static string title;
-		private static string? prevDrawLayerGfxPath;
-		private static (uint, uint) prevDrawLayerTileSz;
-		private static (float, float) prevDrawLayerCellSz;
-		private static (uint, uint) prevDrawLayerCellCount;
+		private const int LINE_MAX_ITERATIONS = 10000;
 
+		private static Cursor cursor;
+		private static SFML.Window.Cursor sysCursor;
+		private static bool isHidden, mouseIsGrabbed;
+		private static string title;
+		private static string? prevDrawTilemapGfxPath;
+		private static (uint, uint) prevDrawTilemapTileSz;
+		private static (float, float) prevDrawTilemapCellSz;
+		private static (uint, uint) prevDrawTilemapCellCount;
+
+		private static readonly Dictionary<Cursor, (float, float)> cursorOffsets = new()
+		{
+			{ Cursor.TileArrow, (0, 0) }, { Cursor.TileArrowNoTail, (0, 0) }, { Cursor.TileHand, (0.2f, 0f) },
+			{ Cursor.TileText, (0.3f, 0.4f) }, { Cursor.TileCrosshair, (0.3f, 0.3f) }, { Cursor.TileNo, (0.4f, 0.4f) },
+			{ Cursor.TileResizeHorizontal, (0.4f, 0.3f) }, { Cursor.TileResizeVertical, (0.3f, 0.4f) },
+			{ Cursor.TileResizeDiagonal1, (0.4f, 0.4f) }, { Cursor.TileResizeDiagonal2, (0.4f, 0.4f) },
+			{ Cursor.TileMove, (0.4f, 0.4f) }, { Cursor.TileWait1, (0.4f, 0.4f) }, { Cursor.TileWait2, (0.4f, 0.4f) },
+			{ Cursor.TileWait3, (0.4f, 0.4f) },
+		};
 		private static readonly Dictionary<string, Texture> graphics = new();
 		private static readonly RenderWindow window;
 
@@ -184,15 +244,38 @@ namespace Pure.Graphics
 
 			graphics[path] = new(path);
 		}
+		private static void TryDrawMouseCursor()
+		{
+			var cursor = (int)MouseCursor;
+
+			window.SetMouseCursorVisible(IsHovering() == false);
+
+			if(cursor > (int)Cursor.TileWait3)
+				return;
+
+			var (x, y) = PositionFrom(MousePosition);
+			var (offX, offY) = cursorOffsets[MouseCursor];
+			DrawSprite((x - offX, y - offY), 494 + cursor, MouseColor);
+		}
+		private static void UpdateWindowAndView()
+		{
+			var view = window.GetView();
+			var (w, h) = (RoundToMultipleOfTwo((int)Size.Item1), RoundToMultipleOfTwo((int)Size.Item2));
+			view.Size = new(w, h);
+			view.Center = new(RoundToMultipleOfTwo((int)(Size.Item1 / 2f)), RoundToMultipleOfTwo((int)(Size.Item2 / 2f)));
+			window.SetView(view);
+			window.Size = new((uint)w, (uint)h);
+		}
+
 		private static Vertex[] GetRectangleVertices((float, float) position, (float, float) size, byte color)
 		{
-			if(prevDrawLayerGfxPath == null)
+			if(prevDrawTilemapGfxPath == null)
 				return Array.Empty<Vertex>();
 
 			var verts = new Vertex[4];
-			var cellCount = prevDrawLayerCellCount;
-			var (cellWidth, cellHeight) = prevDrawLayerCellSz;
-			var (tileWidth, tileHeight) = prevDrawLayerTileSz;
+			var cellCount = prevDrawTilemapCellCount;
+			var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
+			var (tileWidth, tileHeight) = prevDrawTilemapTileSz;
 
 			var (w, h) = size;
 			var x = Map(position.Item1, 0, cellCount.Item1, 0, window.Size.X);
@@ -210,7 +293,7 @@ namespace Pure.Graphics
 		}
 		private static Vertex[] GetLineVertices((float, float) a, (float, float) b, byte color)
 		{
-			var (tileW, tileH) = prevDrawLayerTileSz;
+			var (tileW, tileH) = prevDrawTilemapTileSz;
 			var (x0, y0) = a;
 			var (x1, y1) = b;
 			var dx = MathF.Abs(x1 - x0);
@@ -222,7 +305,7 @@ namespace Pure.Graphics
 			var points = new List<(float, float)>();
 			float e2;
 
-			for(int i = 0; i < MAX_ITERATIONS; i++)
+			for(int i = 0; i < LINE_MAX_ITERATIONS; i++)
 			{
 				points.Add((x0, y0));
 
@@ -246,14 +329,14 @@ namespace Pure.Graphics
 		}
 		private static Vertex[] GetSpriteVertices((float, float) position, int cell, byte color)
 		{
-			if(prevDrawLayerGfxPath == null)
+			if(prevDrawTilemapGfxPath == null)
 				return Array.Empty<Vertex>();
 
 			var verts = new Vertex[4];
-			var (cellWidth, cellHeight) = prevDrawLayerCellSz;
-			var cellCount = prevDrawLayerCellCount;
-			var (tileWidth, tileHeight) = prevDrawLayerTileSz;
-			var texture = graphics[prevDrawLayerGfxPath];
+			var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
+			var cellCount = prevDrawTilemapCellCount;
+			var (tileWidth, tileHeight) = prevDrawTilemapTileSz;
+			var texture = graphics[prevDrawTilemapGfxPath];
 
 			var tileCount = (texture.Size.X / tileWidth, texture.Size.Y / tileHeight);
 			var texCoords = IndexToCoords(cell, tileCount);
@@ -271,7 +354,7 @@ namespace Pure.Graphics
 			verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileHeight));
 			return verts;
 		}
-		private static Vertex[] GetLayerVertices(int[,] tiles, byte[,] colors,
+		private static Vertex[] GetTilemapVertices(int[,] tiles, byte[,] colors,
 			(uint, uint) tileSz, (uint, uint) tileOff, string path)
 		{
 			if(tiles == null || window == null)
@@ -284,10 +367,10 @@ namespace Pure.Graphics
 			var verts = new Vertex[tiles.Length * 4];
 
 			// this cache is used for a potential sprite draw
-			prevDrawLayerGfxPath = path;
-			prevDrawLayerCellSz = (cellWidth, cellHeight);
-			prevDrawLayerTileSz = tileSz;
-			prevDrawLayerCellCount = ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
+			prevDrawTilemapGfxPath = path;
+			prevDrawTilemapCellSz = (cellWidth, cellHeight);
+			prevDrawTilemapTileSz = tileSz;
+			prevDrawTilemapCellCount = ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
 
 			for(uint y = 0; y < tiles.GetLength(1); y++)
 				for(uint x = 0; x < tiles.GetLength(0); x++)
@@ -320,10 +403,10 @@ namespace Pure.Graphics
 		private static Vertex[] GetPointsVertices(byte color, (float, float)[] positions)
 		{
 			var verts = new Vertex[positions.Length * 4];
-			var tileSz = prevDrawLayerTileSz;
-			var cellWidth = prevDrawLayerCellSz.Item1 / tileSz.Item1;
-			var cellHeight = prevDrawLayerCellSz.Item2 / tileSz.Item2;
-			var cellCount = prevDrawLayerCellCount;
+			var tileSz = prevDrawTilemapTileSz;
+			var cellWidth = prevDrawTilemapCellSz.Item1 / tileSz.Item1;
+			var cellHeight = prevDrawTilemapCellSz.Item2 / tileSz.Item2;
+			var cellCount = prevDrawTilemapCellCount;
 
 			for(int i = 0; i < positions.Length; i++)
 			{
@@ -342,6 +425,7 @@ namespace Pure.Graphics
 			}
 			return verts;
 		}
+
 		private static (int, int) IndexToCoords(int index, (uint, uint) fieldSize)
 		{
 			index = index < 0 ? 0 : index;
@@ -406,6 +490,18 @@ namespace Pure.Graphics
 			if(rem >= 1)
 				result += 2;
 			return result;
+		}
+		private static (float, float) PositionFrom((int, int) screenPixel)
+		{
+			var x = Map(screenPixel.Item1, 0, Size.Item1, 0, prevDrawTilemapCellCount.Item1);
+			var y = Map(screenPixel.Item2, 0, Size.Item2, 0, prevDrawTilemapCellCount.Item2);
+
+			return (x, y);
+		}
+		private static bool IsHovering()
+		{
+			var pos = Mouse.GetPosition(window);
+			return pos.X > 0 && pos.X < window.Size.X && pos.Y > 0 && pos.Y < window.Size.Y;
 		}
 		#endregion
 	}
