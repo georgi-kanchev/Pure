@@ -8,18 +8,15 @@ namespace TestGame
 {
 	public class Program
 	{
-		public enum Song
-		{
-			CoolVibe
-		}
-
 		static void Main()
 		{
 			var bg = new Tilemap((48, 27));
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
-			var inputBox = new InputLine((10, 15), (10, 1), "Test");
+			var inputBox = new InputLine((10, 15), 6, "Test");
 			var container = new Container((10, 2), (13, 5)) { Text = "Title" };
+			var container2 = new Container((15, 10), (10, 5)) { Text = "Title2" };
+			container.AdditionalMaxSize = (5, 1);
 
 			while(Window.IsExisting)
 			{
@@ -30,6 +27,10 @@ namespace TestGame
 				Keyboard.Update();
 				Time.Update();
 
+				bg.Fill(0, 0);
+				layer.Fill(0, 0);
+				over.Fill(0, 0);
+
 				var input = new Input()
 				{
 					Position = hov,
@@ -39,48 +40,45 @@ namespace TestGame
 					IsPressedLeft = Keyboard.IsPressed(Key.ArrowLeft),
 					IsPressedRight = Keyboard.IsPressed(Key.ArrowRight),
 				};
-
-				UserInterface.UpdateInput(input);
-
-				bg.Fill(0, 0);
-				layer.Fill(0, 0);
-				over.Fill(0, 0);
-
 				Window.DrawEnable(true);
 
-				MyCoolInputBoxUpdate(bg, layer, over, inputBox);
+				UserInterface.ApplyInput(input, layer.Size);
 				MyCoolContainer(bg, layer, container);
+				var (cx, cy) = container.Position;
+				inputBox.Position = (cx + 1, cy + 1);
+				MyCoolInputBoxUpdate(bg, layer, over, inputBox);
 
-				bg.UpdateCamera();
-				layer.UpdateCamera();
-				over.UpdateCamera();
+				MyCoolContainer(bg, layer, container2);
 
-				Window.DrawTilemap(bg.Camera, bg.Camera, (8, 8), (0, 0));
-				Window.DrawTilemap(layer.Camera, layer.Camera, (8, 8), (0, 0));
-				Window.DrawTilemap(over.Camera, over.Camera, (8, 8), (0, 0));
+				var camBg = bg.UpdateCamera();
+				var camLayer = layer.UpdateCamera();
+				var camOver = over.UpdateCamera();
+
+				Window.DrawTilemap(camBg, camBg, (8, 8), (0, 0));
+				Window.DrawTilemap(camLayer, camLayer, (8, 8), (0, 0));
+				Window.DrawTilemap(camOver, camOver, (8, 8), (0, 0));
 
 				Window.MouseCursor = (Cursor)UserInterface.MouseCursorTile;
+
 				Window.DrawEnable(false);
 			}
 		}
 		static void MyCoolInputBoxUpdate(Tilemap bg, Tilemap layer, Tilemap over, InputLine inputBox)
 		{
-			inputBox.Update((b) =>
-			{
-				bg.SetSquare(b.Position, b.Size, 10, Color.Gray);
-				bg.SetInputLineSelection(b.Position, b.IndexCursor, b.IndexSelection, Color.Blue);
-				layer.SetTextLine(b.Position, b.Text, Color.Red);
-				over.SetInputLineCursor(b.Position, b.IsFocused, b.IndexCursor, Color.White);
-			});
+			var b = inputBox;
+			bg.SetSquare(b.Position, b.Size, 10, Color.Gray);
+			bg.SetInputLineSelection(b.Position, b.IndexCursor, b.IndexSelection, Color.Blue);
+			layer.SetTextLine(b.Position, b.Text, Color.Red);
+			over.SetInputLineCursor(b.Position, b.IsFocused, b.IndexCursor, Color.White);
+			b.Update();
 		}
 		static void MyCoolContainer(Tilemap bg, Tilemap layer, Container container)
 		{
-			container.Update((c) =>
-			{
-				bg.SetSquare(c.Position, c.Size, Tile.PATTERN_24, Color.Gray);
-				layer.SetNinePatch(c.Position, c.Size, Tile.BORDER_GRID_TOP_LEFT, Color.White);
-				layer.SetTextLine((c.Position.Item1 + 1, c.Position.Item2), c.Text, Color.White);
-			});
+			var c = container;
+			bg.SetSquare(c.Position, c.Size, Tile.PATTERN_24, Color.Gray);
+			layer.SetNinePatch(c.Position, c.Size, Tile.BORDER_GRID_TOP_LEFT, Color.Blue);
+			layer.SetTextLine((c.Position.Item1 + 1, c.Position.Item2), c.Text, Color.White);
+			c.Update();
 		}
 	}
 }

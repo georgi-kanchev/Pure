@@ -4,16 +4,15 @@
 	{
 		public bool IsResizable { get; set; } = true;
 		public bool IsMovable { get; set; } = true;
+		public (int, int) AdditionalMaxSize { get; set; }
 
 		public Container((int, int) position, (int, int) size) : base(position, size) { }
 
-		public void Update(Action<Container>? custom)
+		#region Backend
+		private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
+
+		protected override void OnUpdate()
 		{
-			TryTrigger();
-
-			if(IsClicked)
-				IsFocused = true;
-
 			if(IsResizable == false && IsMovable == false)
 				return;
 
@@ -34,6 +33,9 @@
 			var isHoveringLeft = ix == x && IsBetween(iy, y, y + h - 1);
 			var isHoveringRight = ix == x + w - 1 && IsBetween(iy, y, y + h - 1);
 			var isHoveringBottom = IsBetween(ix, x, x + w - 1) && iy == y + h - 1;
+
+			if(IsHovered)
+				SetTileAndSystemCursor(CursorResult.TileArrow);
 
 			if(wasClicked)
 			{
@@ -63,37 +65,45 @@
 					SetTileAndSystemCursor(CursorResult.TileResizeDiagonal2);
 			}
 
-			if(Input.IsPressed && Input.Position != Input.PrevPosition)
+			if(IsFocused && Input.IsPressed && Input.Position != Input.PrevPosition)
 			{
 				var (dx, dy) = ((int)ix - (int)px, (int)iy - (int)py);
 				var (newX, newY) = (x, y);
 				var (newW, newH) = (w, h);
+				var isPositionalResizing = isResizingU || isResizingL;
+				var (maxX, maxY) = AdditionalMaxSize;
 
-				if(isDragging)
+				if(isDragging && IsBetween(ix, x + 1 + dx, x + w - 2 + dx) && iy == y + dy)
 				{
 					newX += dx;
 					newY += dy;
 				}
-				if(isResizingL)
+				if(isResizingL && ix == x + dx)
 				{
 					newX += dx;
 					newW -= dx;
 				}
-				if(isResizingR)
+				if(isResizingR && ix == x + w - 1 + dx)
 					newW += dx;
-				if(isResizingD)
+				if(isResizingD && iy == y + h - 1 + dy)
 					newH += dy;
-				if(isResizingU)
+				if(isResizingU && iy == y + dy)
 				{
 					newY += dy;
 					newH -= dy;
 				}
 
-				Position = (newX, newY);
-				Size = (newW, newH);
-			}
+				if(newW < Text.Length + 2 + Math.Abs(maxX) ||
+					newH < 2 + Math.Abs(maxY) ||
+					newX < 0 ||
+					newY < 0 ||
+					newX + newW > TilemapSize.Item1 ||
+					newY + newH > TilemapSize.Item2)
+					return;
 
-			custom?.Invoke(this);
+				Size = (newW, newH);
+				Position = (newX, newY);
+			}
 
 			void Process(ref bool condition, CursorResult cursor)
 			{
@@ -103,9 +113,6 @@
 				SetTileAndSystemCursor(cursor);
 			}
 		}
-
-		#region Backend
-		private static bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
 
 		private static bool IsBetween(float number, float rangeA, float rangeB)
 		{

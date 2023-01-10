@@ -51,10 +51,12 @@
 		/// </summary>
 		public Animation(float duration, bool isRepeating, params T[] values)
 		{
-			this.values = values ?? throw new ArgumentNullException(nameof(values));
+			if(values == null)
+				throw new ArgumentNullException(nameof(values));
 			if(values.Length < 1)
 				throw new ArgumentException("Total values cannot be < 1.", nameof(values));
 
+			this.values = Copy(values);
 			rawIndex = 0;
 			Duration = duration;
 			IsRepeating = isRepeating;
@@ -64,16 +66,9 @@
 		/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>
 		/// with <paramref name="speed"/> in values per second while it <paramref name="isRepeating"/>.
 		/// </summary>
-		public Animation(bool isRepeating, float speed, params T[] values)
+		public Animation(bool isRepeating, float speed, params T[] values) : this(0f, isRepeating, values)
 		{
-			this.values = values ?? throw new ArgumentNullException(nameof(values));
-			if(values.Length < 1)
-				throw new ArgumentException("Total values cannot be < 1.", nameof(values));
-
-			rawIndex = 0;
 			Speed = speed;
-			IsRepeating = isRepeating;
-			RawIndex = LOWER_BOUND;
 		}
 		/// <summary>
 		/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>.
@@ -100,9 +95,9 @@
 		/// </summary>
 		public static implicit operator Animation<T>(T[] values) => new(values);
 		/// <summary>
-		/// Returns the values of a <paramref name="animation"/> - <see cref="values"/>.
+		/// Returns a copy of the values of an <paramref name="animation"/>.
 		/// </summary>
-		public static implicit operator T[](Animation<T> animation) => animation.values;
+		public static implicit operator T[](Animation<T> animation) => Copy(animation.values);
 
 		#region Backend
 		private readonly T[] values;
@@ -114,6 +109,13 @@
 		{
 			get => rawIndex;
 			set => rawIndex = Math.Clamp(value, LOWER_BOUND, values.Length);
+		}
+
+		private static T[] Copy(T[] array)
+		{
+			var copy = new T[array.Length];
+			Array.Copy(array, copy, array.Length);
+			return copy;
 		}
 		#endregion
 	}

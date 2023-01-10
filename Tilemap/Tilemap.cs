@@ -1,6 +1,4 @@
-﻿using System.IO.Compression;
-
-namespace Pure.Tilemap
+﻿namespace Pure.Tilemap
 {
 	public class Tilemap
 	{
@@ -13,7 +11,6 @@ namespace Pure.Tilemap
 
 		public (int, int) Size => (tiles.GetLength(0), tiles.GetLength(1));
 
-		public Tilemap Camera { get; private set; }
 		public (int, int) CameraPosition { get; set; }
 		public (int, int) CameraSize { get; set; }
 
@@ -23,31 +20,23 @@ namespace Pure.Tilemap
 			tiles = new int[w, h];
 			colors = new byte[w, h];
 			CameraSize = ((int)w, (int)h);
-			Camera = this;
-		}
-		public Tilemap(int[,] tiles)
-		{
-			this.tiles = tiles;
-			colors = new byte[tiles.GetLength(0), tiles.GetLength(1)];
-			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
-			Camera = this;
-		}
-		public Tilemap(byte[,] colors)
-		{
-			tiles = new int[colors.GetLength(0), colors.GetLength(1)];
-			this.colors = colors;
-			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
-			Camera = this;
 		}
 		public Tilemap(int[,] tiles, byte[,] colors)
 		{
-			this.tiles = tiles;
-			this.colors = colors;
+			if(tiles == null)
+				throw new ArgumentNullException(nameof(tiles));
+			if(colors == null)
+				throw new ArgumentNullException(nameof(colors));
+
+			if(tiles.Length != colors.Length)
+				throw new ArgumentException($"The sizes of the {nameof(tiles)} and {nameof(colors)} cannot be different.");
+
+			this.tiles = Copy(tiles);
+			this.colors = Copy(colors);
 			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
-			Camera = this;
 		}
 
-		public void UpdateCamera()
+		public Tilemap UpdateCamera()
 		{
 			var (w, h) = CameraSize;
 			var (cx, cy) = CameraPosition;
@@ -67,7 +56,7 @@ namespace Pure.Tilemap
 				}
 				i++;
 			}
-			Camera = new(tiles, colors);
+			return new(tiles, colors);
 		}
 
 		public int TileAt((int, int) position)
@@ -260,8 +249,11 @@ namespace Pure.Tilemap
 			SetTile(position, tile, color);
 			SetSquare((x + 1, y), (w - 2, 1), tile + 1, color);
 			SetTile((x + w - 1, y), tile + 2, color);
+
 			SetSquare((x, y + 1), (1, h - 2), tile + 3, color);
+			SetSquare((x + 1, y + 1), (w - 2, h - 2), 0, 0);
 			SetSquare((x + w - 1, y + 1), (1, h - 2), tile + 3, color);
+
 			SetTile((x, y + h - 1), tile + 4, color);
 			SetSquare((x + 1, y + h - 1), (w - 2, 1), tile + 1, color);
 			SetTile((x + w - 1, y + h - 1), tile + 5, color);
@@ -319,10 +311,10 @@ namespace Pure.Tilemap
 			return index;
 		}
 
-		public static implicit operator Tilemap(int[,] tiles) => new(tiles);
-		public static implicit operator int[,](Tilemap tilemap) => tilemap.tiles;
-		public static implicit operator Tilemap(byte[,] colors) => new(colors);
-		public static implicit operator byte[,](Tilemap tilemap) => tilemap.colors;
+		public static implicit operator Tilemap(int[,] tiles) => new(tiles, new byte[tiles.GetLength(0), tiles.GetLength(1)]);
+		public static implicit operator int[,](Tilemap tilemap) => Copy(tilemap.tiles);
+		public static implicit operator Tilemap(byte[,] colors) => new(new int[colors.GetLength(0), colors.GetLength(1)], colors);
+		public static implicit operator byte[,](Tilemap tilemap) => Copy(tilemap.colors);
 
 		#region Backend
 		private static readonly Dictionary<char, int> map = new()
@@ -396,65 +388,11 @@ namespace Pure.Tilemap
 			var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
 		}
-		private (int, int) IndexToCoords(int index)
+		private static T[,] Copy<T>(T[,] array)
 		{
-			var w = tiles.GetLength(0);
-			var h = tiles.GetLength(1);
-			index = index < 0 ? 0 : index;
-			index = index > w * h - 1 ? w * h - 1 : index;
-
-			return (index % w, index / w);
-		}
-
-		private void LoadFromCSV(string dataStr)
-		{
-			var values = dataStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
-			for(int i = 0; i < values.Length; i++)
-			{
-				var value = int.Parse(values[i].Trim());
-				var (x, y) = IndexToCoords(i);
-				tiles[x, y] = value - 1;
-			}
-		}
-		private void LoadFromBase64Uncompressed(string dataStr)
-		{
-			var bytes = Convert.FromBase64String(dataStr);
-			LoadFromByteArray(bytes);
-		}
-		private void LoadFromBase64<T>(string dataStr) where T : Stream
-		{
-			var buffer = Convert.FromBase64String(dataStr);
-			using var msi = new MemoryStream(buffer);
-			using var mso = new MemoryStream();
-
-			using var compStream = Activator.CreateInstance(
-				typeof(T), msi, CompressionMode.Decompress) as T;
-
-			if(compStream == null)
-				return;
-
-			CopyTo(compStream, mso);
-			var bytes = mso.ToArray();
-			LoadFromByteArray(bytes);
-		}
-		private void LoadFromByteArray(byte[] bytes)
-		{
-			var size = bytes.Length / sizeof(int);
-			for(var i = 0; i < size; i++)
-			{
-				var (x, y) = IndexToCoords(i);
-				var value = BitConverter.ToInt32(bytes, i * sizeof(int));
-				tiles[x, y] = value - 1;
-			}
-		}
-
-		private static void CopyTo(Stream src, Stream dest)
-		{
-			var bytes = new byte[4096];
-
-			var i = 0;
-			while((i = src.Read(bytes, 0, bytes.Length)) != 0)
-				dest.Write(bytes, 0, i);
+			var copy = new T[array.GetLength(0), array.GetLength(1)];
+			Array.Copy(array, copy, array.Length);
+			return copy;
 		}
 		#endregion
 	}

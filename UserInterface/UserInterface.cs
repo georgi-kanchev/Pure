@@ -17,13 +17,21 @@
 	public abstract class UserInterface
 	{
 		public (int, int) Position { get; set; }
-		public (int, int) Size { get; set; }
+		public (int, int) Size
+		{
+			get => size;
+			set
+			{
+				var (x, y) = value;
+				size = (Math.Max(x, 1), Math.Max(y, 1));
+			}
+		}
 		public string Text { get; set; } = "";
 
 		public bool IsFocused
 		{
-			get => FocusedObject == this;
-			set => FocusedObject = this;
+			get => focusedObject == this;
+			private set => focusedObject = value ? this : null;
 		}
 		public bool IsHovered
 		{
@@ -52,10 +60,22 @@
 			Size = size;
 		}
 
-		public static void UpdateInput(Input input)
+		public void Update()
 		{
+			if(Input.WasPressed == false && Input.IsPressed && IsHovered)
+				IsFocused = true;
+
+			TryTrigger();
+			OnUpdate();
+		}
+
+		public static void ApplyInput(Input input, (int, int) tilemapSize)
+		{
+			IsInputCanceled = false;
+
 			MouseCursorTile = CursorResult.TileArrow;
 			MouseCursorSystem = CursorResult.SystemArrow;
+			TilemapSize = (Math.Abs(tilemapSize.Item1), Math.Abs(tilemapSize.Item2));
 
 			input.WasPressed = Input.IsPressed;
 			input.WasPressedAlt = Input.IsPressedAlt;
@@ -75,20 +95,37 @@
 			input.PrevPosition = Input.Position;
 
 			Input = input;
+
+			if(Input.WasPressed == false && Input.IsPressed)
+				focusedObject = null;
 		}
 
 		#region Backend
-		protected bool IsClicked { get; set; }
+		private (int, int) size;
+
+		protected bool IsClicked { get; private set; }
+		protected bool IsTriggered { get; private set; }
+		protected static bool IsInputCanceled { get; private set; }
+		protected static (int, int) TilemapSize { get; private set; }
 
 		protected static Input Input { get; set; }
-		protected static UserInterface? FocusedObject { get; set; }
+		private static UserInterface? focusedObject;
 
-		protected bool TryTrigger()
+		protected abstract void OnUpdate();
+		protected void TryTrigger()
 		{
+			IsTriggered = false;
+
+			if(IsFocused == false)
+			{
+				IsClicked = false;
+				return;
+			}
+
 			if(IsHovered && Input.IsReleased && IsClicked)
 			{
 				IsClicked = false;
-				return true;
+				IsTriggered = true;
 			}
 
 			if(IsHovered && Input.IsPressed && Input.WasPressed == false)
@@ -96,10 +133,9 @@
 
 			if(Input.IsReleased)
 				IsClicked = false;
-
-			return false;
 		}
-		protected void SetTileAndSystemCursor(CursorResult tileCursor)
+
+		protected static void SetTileAndSystemCursor(CursorResult tileCursor)
 		{
 			MouseCursorTile = tileCursor;
 			MouseCursorSystem = (CursorResult)((int)tileCursor + (int)CursorResult.SystemArrow);

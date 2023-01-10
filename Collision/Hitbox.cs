@@ -119,7 +119,7 @@
 		/// </summary>
 		public static implicit operator Hitbox(Rectangle[] rectangles) => new(rectangles);
 		/// <summary>
-		/// Returns all the values of a <paramref name="hitbox"/> collection.
+		/// Returns a copy of all the values of a <paramref name="hitbox"/> collection.
 		/// </summary>
 		public static implicit operator Rectangle[](Hitbox hitbox) => hitbox.rectangles.ToArray();
 

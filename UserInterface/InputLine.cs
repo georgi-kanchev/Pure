@@ -25,81 +25,68 @@
 			set => selPos = Math.Clamp(value, 0, Text.Length);
 		}
 
-		public InputLine((int, int) position, (int, int) size, string text = "") : base(position, size)
+		public InputLine((int, int) position, int width, string text = "") : base(position, (width, 1))
 		{
 			Text = text;
 		}
 
-		public void Update(Action<InputLine>? custom)
+		protected override void OnUpdate()
 		{
-			if(Size.Item1 == 0 || Size.Item2 == 0)
-				return;
+			Size = (Size.Item1, 1);
 
 			if(Input.WasPressed == false && Input.IsPressed)
 				IndexSelection = IndexCursor;
+
+			if(IsHovered)
+				SetTileAndSystemCursor(CursorResult.TileText);
+
+			if(IsFocused == false)
+				return;
 
 			var isJustPressed = Input.WasPressed == false && Input.IsPressed;
 			var isJustTyped = Input.TypedSymbols != "" && Input.TypedSymbols != Input.PrevTypedSymbols;
 			var isJustBackspace = Input.WasPressedBackspace == false && Input.IsPressedBackspace;
 			var isJustLeft = Input.WasPressedLeft == false && Input.IsPressedLeft;
 			var isJustRight = Input.WasPressedRight == false && Input.IsPressedRight;
-			var isTriggered = TryTrigger();
 
 			var cursorPos = Input.Position.Item1 - Position.Item1;
 			var endOfTextPos = Text.Length;
 			var curPos = (int)MathF.Round(cursorPos > Text.Length ? endOfTextPos : cursorPos);
 
-			if(IsHovered)
-				SetTileAndSystemCursor(CursorResult.TileText);
-
 			if(IsPressed)
 				IndexCursor = curPos;
 
-			if(isJustPressed)
-			{
-				if(IsFocused)
-					FocusedObject = null;
+			if(isJustPressed && IsHovered)
+				IndexSelection = curPos;
 
-				if(IsHovered)
-				{
-					FocusedObject = this;
-					IndexSelection = curPos;
-				}
+			var isSelected = IndexSelection != IndexCursor;
+			var justDeleted = false;
+			if((isJustTyped || isJustBackspace) && isSelected)
+			{
+				var a = IndexSelection < IndexCursor ? IndexSelection : IndexCursor;
+				var b = Math.Abs(IndexSelection - IndexCursor);
+
+				Text = Text.Remove(a, b);
+				IndexCursor = a;
+				IndexSelection = a;
+				justDeleted = true;
 			}
 
-			if(IsFocused)
+			if(isJustTyped && Text.Length < Size.Item1)
 			{
-				var isSelected = IndexSelection != IndexCursor;
-				var justDeleted = false;
-				if((isJustTyped || isJustBackspace) && isSelected)
-				{
-					var a = IndexSelection < IndexCursor ? IndexSelection : IndexCursor;
-					var b = Math.Abs(IndexSelection - IndexCursor);
-
-					Text = Text.Remove(a, b);
-					IndexCursor = a;
-					IndexSelection = a;
-					justDeleted = true;
-				}
-
-				if(isJustTyped && Text.Length < Size.Item1 - 1)
-				{
-					Text = Text.Insert(IndexCursor, Input.TypedSymbols);
-					MoveCursorRight();
-				}
-				else if(isJustBackspace && justDeleted == false && Text.Length > 0)
-				{
-					Text = Text.Remove(IndexCursor - 1, 1);
-					MoveCursorLeft();
-				}
-
-				if(isJustLeft && IndexCursor > 0)
-					MoveCursorLeft();
-				else if(isJustRight && IndexCursor < Text.Length)
-					MoveCursorRight();
+				Text = Text.Insert(IndexCursor, Input.TypedSymbols);
+				MoveCursorRight();
+			}
+			else if(isJustBackspace && justDeleted == false && Text.Length > 0)
+			{
+				Text = Text.Remove(IndexCursor - 1, 1);
+				MoveCursorLeft();
 			}
 
-			custom?.Invoke(this);
+			if(isJustLeft && IndexCursor > 0)
+				MoveCursorLeft();
+			else if(isJustRight && IndexCursor < Text.Length)
+				MoveCursorRight();
 		}
 
 		#region Backend
