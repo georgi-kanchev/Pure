@@ -368,6 +368,7 @@
 			{ '♠', 448 }, { '♥', 449 }, { '♣', 450 }, { '♦', 451 },
 			{ '♤', 452 }, { '♡', 453 }, { '♧', 454 }, { '♢', 455 },
 		};
+
 		private readonly int[,] tiles;
 		private readonly byte[,] colors;
 

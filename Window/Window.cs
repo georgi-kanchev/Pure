@@ -102,8 +102,8 @@ namespace Pure.Window
 		/// </summary>
 		public static bool MouseIsRestriced
 		{
-			get => mouseIsGrabbed;
-			set { mouseIsGrabbed = value; window.SetMouseCursorGrabbed(value); }
+			get => isMouseGrabbed;
+			set { isMouseGrabbed = value; window.SetMouseCursorGrabbed(value); }
 		}
 
 		static Window()
@@ -149,6 +149,7 @@ namespace Pure.Window
 			TryDrawMouseCursor();
 			window.Display();
 		}
+
 		/// <summary>
 		/// Draws a tilemap onto the OS window. Its graphics image is loaded from a
 		/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a <paramref name="tileSize"/> and a
@@ -218,7 +219,7 @@ namespace Pure.Window
 
 		private static Cursor cursor;
 		private static SFML.Window.Cursor sysCursor;
-		private static bool isHidden, mouseIsGrabbed;
+		private static bool isHidden, isMouseGrabbed;
 		private static string title;
 		private static string? prevDrawTilemapGfxPath;
 		private static (uint, uint) prevDrawTilemapTileSz;

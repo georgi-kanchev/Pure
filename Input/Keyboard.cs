@@ -45,11 +45,7 @@
 		/// Triggers events and provides each <see cref="Key"/> to the collections
 		/// accordingly.
 		/// </summary>
-		public static void Update()
-		{
-			TypedSymbols = "";
-			i.Update();
-		}
+		public static void Update() => i.Update();
 
 		/// <summary>
 		/// Checks whether an <paramref name="input"/> is pressed and returns a result.
@@ -90,34 +86,18 @@
 		protected override bool IsPressedRaw(Key input)
 		{
 			var key = (SFML.Window.Keyboard.Key)input;
-			var pressed = SFML.Window.Keyboard.IsKeyPressed(key);
-			var i = (int)input;
-			var shift =
-				SFML.Window.Keyboard.IsKeyPressed(SFML.Window.Keyboard.Key.LShift) ||
-				SFML.Window.Keyboard.IsKeyPressed(SFML.Window.Keyboard.Key.RShift);
+			return SFML.Window.Keyboard.IsKeyPressed(key);
+		}
+		protected override void OnPressed(Key input)
+		{
+			Keyboard.TypedSymbols += GetSymbol(input);
+		}
+		protected override void OnReleased(Key input)
+		{
+			if(Keyboard.TypedSymbols.Length == 0)
+				return;
 
-			if(pressed == false)
-				return false;
-
-			if(IsBetween(i, Key.A, Key.Z))
-			{
-				var str = input.ToString();
-				Keyboard.TypedSymbols += shift ? str : str.ToLower();
-			}
-			else if(IsBetween(i, Key.N0, Key.N9))
-			{
-				var n = i - (int)Key.N0;
-				Keyboard.TypedSymbols += shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
-			}
-			else if(IsBetween(i, Key.Numpad0, Key.Numpad9))
-			{
-				var n = i - (int)Key.Numpad0;
-				Keyboard.TypedSymbols += ((char)('0' + n)).ToString();
-			}
-			else if(symbols.ContainsKey(input))
-				Keyboard.TypedSymbols += shift ? symbols[input].Item2 : symbols[input].Item1;
-
-			return true;
+			Keyboard.TypedSymbols = Keyboard.TypedSymbols.Replace(GetSymbol(input), "");
 		}
 
 		private static readonly Dictionary<Key, (string, string)> symbols = new()
@@ -126,7 +106,7 @@
 			{ Key.Semicolon, (";", ":") }, { Key.Comma, (",", "<") }, { Key.Dot, (".", ">") },
 			{ Key.Quote, ("'", "\"") }, { Key.Slash, ("/", "?") }, { Key.Backslash, ("\\", "|") },
 			{ Key.Tilde, ("`", "~") }, { Key.Equal, ("=", "+") }, { Key.Hyphen, ("-", "_") },
-			{ Key.Space, (" ", " ") }, { Key.Enter, (Environment.NewLine, Environment.NewLine) },
+			{ Key.Space, (" ", " ") }, { Key.Enter, ("\n", "\n") },
 			{ Key.Tab, ("\t", "") }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
 			{ Key.Asterisk, ("*", "*") }, { Key.Divide, ("/", "/") }
 		};
@@ -138,6 +118,33 @@
 		private static bool IsBetween(int number, Key a, Key b)
 		{
 			return (int)a <= number && number <= (int)b;
+		}
+		private static string GetSymbol(Key input)
+		{
+			var i = (int)input;
+			var shift =
+				SFML.Window.Keyboard.IsKeyPressed(SFML.Window.Keyboard.Key.LShift) ||
+				SFML.Window.Keyboard.IsKeyPressed(SFML.Window.Keyboard.Key.RShift);
+
+			if(IsBetween(i, Key.A, Key.Z))
+			{
+				var str = input.ToString();
+				return shift ? str : str.ToLower();
+			}
+			else if(IsBetween(i, Key.N0, Key.N9))
+			{
+				var n = i - (int)Key.N0;
+				return shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
+			}
+			else if(IsBetween(i, Key.Numpad0, Key.Numpad9))
+			{
+				var n = i - (int)Key.Numpad0;
+				return ((char)('0' + n)).ToString();
+			}
+			else if(symbols.ContainsKey(input))
+				return shift ? symbols[input].Item2 : symbols[input].Item1;
+
+			return "";
 		}
 	}
 	#endregion

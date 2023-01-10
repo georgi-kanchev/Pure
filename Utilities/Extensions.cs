@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 
@@ -29,37 +30,68 @@ namespace Pure.Utilities
 		/// </summary>
 		public enum AnimationCurve { Backward, Forward, BackwardThenForward }
 
+		static Extensions()
+		{
+			holdFrequency.Start();
+			holdDelay.Start();
+		}
+
 		/// <summary>
 		/// Returns <see langword="true"/> only the first time a <paramref name="condition"/> is <see langword="true"/>.
 		/// This is reset whenever the <paramref name="condition"/> becomes <see langword="false"/>.
 		/// This process can be repeated <paramref name="max"/> amount of times, always returns <see langword="false"/> after that.
 		/// A <paramref name="uniqueID"/> needs to be provided that describes each type of condition in order to separate/identify them.
 		/// <br></br><br></br>
-		/// # Useful for triggering continuous checks only once, rather than every <see cref="Time.Update"/>.
+		/// # Useful for triggering continuous checks only once, rather than every update.
 		/// </summary>
 		public static bool Once(this bool condition, string uniqueID, uint max = uint.MaxValue)
 		{
 			if(gates.ContainsKey(uniqueID) == false && condition == false)
 				return false;
-			else if(gates.ContainsKey(uniqueID) == false && condition == true)
+			else if(gates.ContainsKey(uniqueID) == false && condition)
 			{
-				gates[uniqueID] = true;
-				gateEntries[uniqueID] = 1;
+				gates[uniqueID] = new Gate() { value = true, entries = 1 };
 				return true;
 			}
 			else
 			{
-				if(gates[uniqueID] == true && condition == true)
+				if(gates[uniqueID].value && condition)
 					return false;
-				else if(gates[uniqueID] == false && condition == true)
+				else if(gates[uniqueID].value == false && condition)
 				{
-					gates[uniqueID] = true;
-					gateEntries[uniqueID]++;
+					gates[uniqueID].value = true;
+					gates[uniqueID].entries++;
 					return true;
 				}
-				else if(gateEntries[uniqueID] < max)
-					gates[uniqueID] = false;
+				else if(gates[uniqueID].entries < max)
+					gates[uniqueID].value = false;
 			}
+			return false;
+		}
+		/// <summary>
+		/// Returns <see langword="true"/> the first time a <paramref name="condition"/> is <see langword="true"/>.
+		/// Also returns <see langword="true"/> after a <paramref name="delay"/> in seconds every <paramref name="frequency"/> seconds.
+		/// Returns <see langword="false"/> otherwise.
+		/// A <paramref name="uniqueID"/> needs to be provided that describes each type of condition in order to separate/identify them.
+		/// <br></br><br></br>
+		/// # Useful for turning a continuous input condition into the familiar "press and hold" key trigger.
+		/// </summary>
+		public static bool PressAndHold(this bool condition, string uniqueID, float delay = 0.5f, float frequency = 0.06f)
+		{
+			if(condition.Once(uniqueID))
+			{
+				holdDelay.Restart();
+				return true;
+			}
+
+			if(condition &&
+				holdDelay.Elapsed.TotalSeconds > delay &&
+				holdFrequency.Elapsed.TotalSeconds > frequency)
+			{
+				holdFrequency.Restart();
+				return true;
+			}
+
 			return false;
 		}
 
@@ -497,8 +529,14 @@ namespace Pure.Utilities
 		}
 
 		#region Backend
-		private static readonly Dictionary<string, int> gateEntries = new();
-		private static readonly Dictionary<string, bool> gates = new();
+		private class Gate
+		{
+			public int entries;
+			public bool value;
+		}
+		private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
+
+		private static readonly Dictionary<string, Gate> gates = new();
 		#endregion
 	}
 }

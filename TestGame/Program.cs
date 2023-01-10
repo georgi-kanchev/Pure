@@ -13,7 +13,7 @@ namespace TestGame
 			var bg = new Tilemap((48, 27));
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
-			var inputBox = new InputLine((10, 15), 6, "Test");
+			var inputBox = new InputLine((10, 15), 16, "Test");
 			var container = new Container((10, 2), (13, 5)) { Text = "Title" };
 			var container2 = new Container((15, 10), (10, 5)) { Text = "Title2" };
 			container.AdditionalMaxSize = (5, 1);
@@ -39,6 +39,7 @@ namespace TestGame
 					IsPressedBackspace = Keyboard.IsPressed(Key.Backspace),
 					IsPressedLeft = Keyboard.IsPressed(Key.ArrowLeft),
 					IsPressedRight = Keyboard.IsPressed(Key.ArrowRight),
+					IsPressedControl = Keyboard.IsPressed(Key.ControlLeft),
 				};
 				Window.DrawEnable(true);
 

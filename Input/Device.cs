@@ -24,17 +24,20 @@
 				{
 					justReleased.Add(cur);
 					Trigger(cur, releasedEvents);
+					OnReleased(cur);
 				}
 				else if(wasPr == false && isPr)
 				{
 					justPressed.Add(cur);
 					Trigger(cur, pressedEvents);
+					OnPressed(cur);
 				}
 
 				if(isPr)
 				{
 					pressed.Add(cur);
 					Trigger(cur, whilePressedEvents);
+					WhilePressed(cur);
 				}
 			}
 
@@ -79,6 +82,10 @@
 
 		private readonly Dictionary<T, List<Action>> pressedEvents = new(), releasedEvents = new(),
 			whilePressedEvents = new();
+
+		protected virtual void OnPressed(T input) { }
+		protected virtual void OnReleased(T input) { }
+		protected virtual void WhilePressed(T input) { }
 
 		private static void Subscribe(T input, Dictionary<T, List<Action>> events, Action method)
 		{

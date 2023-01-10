@@ -1,4 +1,6 @@
-﻿namespace Pure.UserInterface
+﻿using System.Diagnostics;
+
+namespace Pure.UserInterface
 {
 	public class InputLine : UserInterface
 	{
@@ -30,6 +32,12 @@
 			Text = text;
 		}
 
+		static InputLine()
+		{
+			holdDelay.Start();
+			hold.Start();
+		}
+
 		protected override void OnUpdate()
 		{
 			Size = (Size.Item1, 1);
@@ -44,10 +52,39 @@
 				return;
 
 			var isJustPressed = Input.WasPressed == false && Input.IsPressed;
-			var isJustTyped = Input.TypedSymbols != "" && Input.TypedSymbols != Input.PrevTypedSymbols;
+			var isJustTyped = IsJustTyped();
 			var isJustBackspace = Input.WasPressedBackspace == false && Input.IsPressedBackspace;
 			var isJustLeft = Input.WasPressedLeft == false && Input.IsPressedLeft;
 			var isJustRight = Input.WasPressedRight == false && Input.IsPressedRight;
+
+			if(Input.IsPressedControl && Input.TypedSymbols == "a")
+			{
+				IndexSelection = 0;
+				IndexCursor = Text.Length;
+				return;
+			}
+
+			var isHolding = false;
+
+			if(isJustTyped || isJustBackspace || isJustLeft || isJustRight)
+				holdDelay.Restart();
+
+			if(holdDelay.Elapsed.TotalSeconds > HOLD_DELAY &&
+				hold.Elapsed.TotalSeconds > HOLD)
+			{
+				hold.Restart();
+				isHolding = true;
+			}
+
+			var isHoldingType = isHolding && Input.TypedSymbols != "";
+			var isHoldingBackspace = isHolding && Input.IsPressedBackspace;
+			var isHoldingLeft = isHolding && Input.IsPressedLeft;
+			var isHoldingRight = isHolding && Input.IsPressedRight;
+
+			var isAllowedBackspace = isJustBackspace || isHoldingBackspace;
+			var isAllowedType = isJustTyped || isHoldingType;
+			var isAllowedLeft = isJustLeft || isHoldingLeft;
+			var isAllowedRight = isJustRight || isHoldingRight;
 
 			var cursorPos = Input.Position.Item1 - Position.Item1;
 			var endOfTextPos = Text.Length;
@@ -61,7 +98,7 @@
 
 			var isSelected = IndexSelection != IndexCursor;
 			var justDeleted = false;
-			if((isJustTyped || isJustBackspace) && isSelected)
+			if((isAllowedType || isAllowedBackspace) && isSelected)
 			{
 				var a = IndexSelection < IndexCursor ? IndexSelection : IndexCursor;
 				var b = Math.Abs(IndexSelection - IndexCursor);
@@ -72,35 +109,44 @@
 				justDeleted = true;
 			}
 
-			if(isJustTyped && Text.Length < Size.Item1)
+			if(isAllowedType && Text.Length < Size.Item1)
 			{
-				Text = Text.Insert(IndexCursor, Input.TypedSymbols);
-				MoveCursorRight();
+				var symbols = Input.TypedSymbols;
+				Console.WriteLine(symbols);
+				Text = Text.Insert(IndexCursor, symbols.Length > 1 ? symbols[^1].ToString() : symbols);
+				MoveCursor(1);
 			}
-			else if(isJustBackspace && justDeleted == false && Text.Length > 0)
+			else if(isAllowedBackspace && justDeleted == false && Text.Length > 0 && IndexCursor > 0)
 			{
 				Text = Text.Remove(IndexCursor - 1, 1);
-				MoveCursorLeft();
+				MoveCursor(-1);
 			}
 
-			if(isJustLeft && IndexCursor > 0)
-				MoveCursorLeft();
-			else if(isJustRight && IndexCursor < Text.Length)
-				MoveCursorRight();
+			if(isAllowedLeft && IndexCursor > 0)
+				MoveCursor(-1);
+			else if(isAllowedRight && IndexCursor < Text.Length)
+				MoveCursor(1);
 		}
 
 		#region Backend
+		private const float HOLD = 0.06f, HOLD_DELAY = 0.5f;
+		private static readonly Stopwatch holdDelay = new(), hold = new();
+
 		private int curPos, selPos;
 
-		private void MoveCursorLeft()
+		private void MoveCursor(int offset)
 		{
-			IndexCursor--;
+			IndexCursor += offset;
 			IndexSelection = IndexCursor;
 		}
-		private void MoveCursorRight()
+		private bool IsJustTyped()
 		{
-			IndexCursor++;
-			IndexSelection = IndexCursor;
+			for(int i = 0; i < Input.TypedSymbols.Length; i++)
+			{
+				if(Input.PrevTypedSymbols.Contains(Input.TypedSymbols[i]) == false)
+					return true;
+			}
+			return false;
 		}
 		#endregion
 	}
