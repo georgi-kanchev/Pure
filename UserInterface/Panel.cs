@@ -1,12 +1,12 @@
 ﻿namespace Pure.UserInterface
 {
-	public class Container : UserInterface
+	public class Panel : UserInterface
 	{
 		public bool IsResizable { get; set; } = true;
 		public bool IsMovable { get; set; } = true;
 		public (int, int) AdditionalMaxSize { get; set; }
 
-		public Container((int, int) position, (int, int) size) : base(position, size) { }
+		public Panel((int, int) position, (int, int) size) : base(position, size) { }
 
 		#region Backend
 		private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;

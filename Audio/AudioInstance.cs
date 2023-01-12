@@ -51,13 +51,13 @@ namespace Audio
 				kvp.Value.Stop();
 		}
 
-		public void ThrowMissingID()
+		#region Backend
+		private float volume = 0.5f;
+
+		internal void ThrowMissingID()
 		{
 			throw new ArgumentException($"The provided id does not exist.");
 		}
-
-		#region Backend
-		private float volume = 0.5f;
 		#endregion
 	}
 }

@@ -146,6 +146,7 @@ namespace Pure.Window
 			{
 				window.DispatchEvents();
 				window.Clear();
+				window.SetActive();
 				return;
 			}
 

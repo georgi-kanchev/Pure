@@ -77,7 +77,7 @@
 					colors[x, y] = color;
 				}
 		}
-		public void SetTile((int, int) position, int tile, byte color)
+		public void SetTile((int, int) position, int tile, byte color = 255)
 		{
 			if(IndicesAreValid(position) == false)
 				return;
@@ -87,7 +87,7 @@
 			tiles[x, y] = tile;
 			colors[x, y] = color;
 		}
-		public void SetSquare((int, int) position, (int, int) size, int tile, byte color)
+		public void SetSquare((int, int) position, (int, int) size, int tile, byte color = 255)
 		{
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
@@ -95,7 +95,7 @@
 				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
 					SetTile((x, y), tile, color);
 		}
-		public void SetTextLine((int, int) position, string text, byte color)
+		public void SetTextLine((int, int) position, string text, byte color = 255)
 		{
 			var errorOffset = 0;
 			for(int i = 0; i < text?.Length; i++)
@@ -240,8 +240,7 @@
 				return default;
 			}
 		}
-		public void SetNinePatch((int, int) position, (int, int) size,
-			int tile, byte color)
+		public void SetNinePatch((int, int) position, (int, int) size, int tile, byte color = 255)
 		{
 			var (x, y) = position;
 			var (w, h) = size;
@@ -257,6 +256,21 @@
 			SetTile((x, y + h - 1), tile + 4, color);
 			SetSquare((x + 1, y + h - 1), (w - 2, 1), tile + 1, color);
 			SetTile((x + w - 1, y + h - 1), tile + 5, color);
+		}
+		public void SetBar((int, int) position, int tile, byte color = 255, int size = 5,
+			bool isVertical = false)
+		{
+			var (x, y) = position;
+			SetTile(position, tile, color);
+			if(isVertical)
+			{
+				SetSquare((x, y + 1), (1, size - 2), tile + 1, color);
+				SetTile((x, y + size - 1), tile + 2, color);
+				return;
+			}
+
+			SetSquare((x + 1, y), (size - 2, 1), tile + 1, color);
+			SetTile((x + size - 1, y), tile + 2, color);
 		}
 
 		public void SetInputLineCursor((int, int) position, bool isFocused, int cursorIndex,

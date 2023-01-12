@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="SFML.Window" Version="2.5.0" />
+    <PackageReference Include="SharpHook" Version="4.0.0" />
   </ItemGroup>
 
 </Project>

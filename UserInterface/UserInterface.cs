@@ -19,24 +19,15 @@
 			get => focusedObject == this;
 			private set => focusedObject = value ? this : null;
 		}
-		public bool IsHovered
-		{
-			get
-			{
-				var (ix, iy) = Input.Position;
-				var (x, y) = Position;
-				var (w, h) = Size;
-				var isHoveredX = ix >= x && ix < x + w;
-				var isHoveredY = iy >= y && iy < y + h;
-				if(w < 0)
-					isHoveredX = ix > x + w && ix <= x;
-				if(h < 0)
-					isHoveredY = iy > y + h && iy <= y;
+		public bool IsHovered { get; private set; }
+		public bool IsPressed => IsHovered && Input.IsPressed;
+		public bool IsClicked { get; private set; }
 
-				return isHoveredX && isHoveredY;
-			}
-		}
-		public bool IsPressed => IsHovered && Input.IsPressed && IsClicked;
+		public bool IsJustHovered => IsHovered && wasHovered == false;
+		public bool IsJustUnovered => IsHovered == false && wasHovered;
+		public bool IsJustTriggered { get; private set; }
+		public bool IsJustPressed => IsPressed && Input.wasPressed == false;
+		public bool IsJustReleased => IsPressed == false && Input.wasPressed;
 
 		public static string? CopiedText { get; set; } = "";
 		public static int MouseCursorTile { get; internal set; }
@@ -50,6 +41,11 @@
 
 		public void Update()
 		{
+			wasFocused = IsFocused;
+			wasHovered = IsHovered;
+
+			UpdateHovered();
+
 			if(Input.wasPressed == false && Input.IsPressed && IsHovered)
 				IsFocused = true;
 
@@ -58,6 +54,7 @@
 
 			TryTrigger();
 			OnUpdate();
+
 		}
 
 		public static void ApplyInput(Input input, (int, int) tilemapSize)
@@ -107,8 +104,8 @@
 		private (int, int) size;
 		private static UserInterface? focusedObject;
 
-		protected bool IsClicked { get; private set; }
-		protected bool IsTriggered { get; private set; }
+		private bool wasFocused, wasHovered;
+
 		protected static bool IsInputCanceled { get; private set; }
 		protected static (int, int) TilemapSize { get; private set; }
 
@@ -117,7 +114,7 @@
 		protected abstract void OnUpdate();
 		protected void TryTrigger()
 		{
-			IsTriggered = false;
+			IsJustTriggered = false;
 
 			if(IsFocused == false)
 			{
@@ -128,7 +125,7 @@
 			if(IsHovered && Input.IsReleased && IsClicked)
 			{
 				IsClicked = false;
-				IsTriggered = true;
+				IsJustTriggered = true;
 			}
 
 			if(IsHovered && Input.IsPressed && Input.wasPressed == false)
@@ -136,6 +133,21 @@
 
 			if(Input.IsReleased)
 				IsClicked = false;
+		}
+
+		private void UpdateHovered()
+		{
+			var (ix, iy) = Input.Position;
+			var (x, y) = Position;
+			var (w, h) = Size;
+			var isHoveredX = ix >= x && ix < x + w;
+			var isHoveredY = iy >= y && iy < y + h;
+			if(w < 0)
+				isHoveredX = ix > x + w && ix <= x;
+			if(h < 0)
+				isHoveredY = iy > y + h && iy <= y;
+
+			IsHovered = isHoveredX && isHoveredY;
 		}
 
 		protected static void SetTileAndSystemCursor(int tileCursor)

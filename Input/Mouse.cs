@@ -37,12 +37,6 @@
 		public static int[] JustReleased => i.JustReleased;
 
 		/// <summary>
-		/// Triggers events and provides each <see cref="Button"/> to the collections
-		/// accordingly.
-		/// </summary>
-		public static void Update() => i.Update();
-
-		/// <summary>
 		/// Checks whether a <paramref name="button"/> is pressed and returns a result.
 		/// </summary>
 		public static bool IsPressed(int button) => i.IsPressed(button);

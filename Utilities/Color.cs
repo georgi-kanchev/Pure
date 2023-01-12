@@ -2,9 +2,9 @@
 {
 	public struct Color
 	{
-		public const byte Black = 0;
+		public const byte Black = 0b_000_000_00;
 		public const byte Gray = 0b_010_010_01; // 127 127 127
-		public const byte White = 255;
+		public const byte White = 0b_111_111_11;
 
 		public const byte Red = 0b_111_000_00;
 		public const byte Green = 0b_000_111_00;

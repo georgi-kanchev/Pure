@@ -5,6 +5,181 @@
 	/// </summary>
 	public static class Key
 	{
+		public const int VcUndefined = 0,
+			VcEscape = 1,
+			Vc1 = 2,
+			Vc2 = 3,
+			Vc3 = 4,
+			Vc4 = 5,
+			Vc5 = 6,
+			Vc6 = 7,
+			Vc7 = 8,
+			Vc8 = 9,
+			Vc9 = 10,
+			Vc0 = 11,
+			VcMinus = 12,
+			VcEquals = 13,
+			VcBackspace = 14,
+			VcTab = 15,
+			VcQ = 16,
+			VcW = 17,
+			VcE = 18,
+			VcR = 19,
+			VcT = 20,
+			VcY = 21,
+			VcU = 22,
+			VcI = 23,
+			VcO = 24,
+			VcP = 25,
+			VcOpenBracket = 26,
+			VcCloseBracket = 27,
+			VcEnter = 28,
+			VcLeftControl = 29,
+			VcA = 30,
+			VcS = 31,
+			VcD = 32,
+			VcF = 33,
+			VcG = 34,
+			VcH = 35,
+			VcJ = 36,
+			VcK = 37,
+			VcL = 38,
+			VcSemicolon = 39,
+			VcQuote = 40,
+			VcBackquote = 41,
+			VcLeftShift = 42,
+			VcBackSlash = 43,
+			VcZ = 44,
+			VcX = 45,
+			VcC = 46,
+			VcV = 47,
+			VcB = 48,
+			VcN = 49,
+			VcM = 50,
+			VcComma = 51,
+			VcPeriod = 52,
+			VcSlash = 53,
+			VcRightShift = 54,
+			VcNumPadMultiply = 55,
+			VcLeftAlt = 56,
+			VcSpace = 57,
+			VcCapsLock = 58,
+			VcF1 = 59,
+			VcF2 = 60,
+			VcF3 = 61,
+			VcF4 = 62,
+			VcF5 = 63,
+			VcF6 = 64,
+			VcF7 = 65,
+			VcF8 = 66,
+			VcF9 = 67,
+			VcF10 = 68,
+			VcNumLock = 69,
+			VcScrollLock = 70,
+			VcNumPad7 = 71,
+			VcNumPad8 = 72,
+			VcNumPad9 = 73,
+			VcNumPadSubtract = 74,
+			VcNumPad4 = 75,
+			VcNumPad5 = 76,
+			VcNumPad6 = 77,
+			VcNumPadAdd = 78,
+			VcNumPad1 = 79,
+			VcNumPad2 = 80,
+			VcNumPad3 = 81,
+			VcNumPad0 = 82,
+			VcNumPadSeparator = 83,
+			VcF11 = 87,
+			VcF12 = 88,
+			VcF13 = 91,
+			VcF14 = 92,
+			VcF15 = 93,
+			VcF16 = 99,
+			VcF17 = 100,
+			VcF18 = 101,
+			VcF19 = 102,
+			VcF20 = 103,
+			VcF21 = 104,
+			VcF22 = 105,
+			VcF23 = 106,
+			VcF24 = 107,
+			VcKatakana = 112,
+			VcUnderscore = 115,
+			VcFurigana = 119,
+			VcKanji = 121,
+			VcHiragana = 123,
+			VcYen = 125,
+			VcNumPadComma = 126,
+			VcNumPadEquals = 3597,
+			VcNumPadEnter = 3612,
+			VcRightControl = 3613,
+			VcNumPadDivide = 3637,
+			VcPrintScreen = 3639,
+			VcRightAlt = 3640,
+			VcPause = 3653,
+			VcLesserGreater = 3654,
+			VcHome = 3655,
+			VcPageUp = 3657,
+			VcEnd = 3663,
+			VcPageDown = 3665,
+			VcInsert = 3666,
+			VcDelete = 3667,
+			VcLeftMeta = 3675,
+			VcRightMeta = 3676,
+			VcContextMenu = 3677,
+			VcMediaPrevious = 57360,
+			VcMediaNext = 57369,
+			VcVolumeMute = 57376,
+			VcAppCalculator = 57377,
+			VcMediaPlay = 57378,
+			VcMediaStop = 57380,
+			VcMediaEject = 57388,
+			VcVolumeDown = 57390,
+			VcVolumeUp = 57392,
+			VcBrowserHome = 57394,
+			VcAppMusic = 57404,
+			VcUp = 57416,
+			VcLeft = 57419,
+			VcClear = 57420,
+			VcRight = 57421,
+			VcDown = 57424,
+			VcPower = 57438,
+			VcSleep = 57439,
+			VcWake = 57443,
+			VcAppPictures = 57444,
+			VcBrowserSearch = 57445,
+			VcBrowserFavorites = 57446,
+			VcBrowserRefresh = 57447,
+			VcBrowserStop = 57448,
+			VcBrowserForward = 57449,
+			VcBrowserBack = 57450,
+			VcAppMail = 57452,
+			VcMediaSelect = 57453,
+			VcNumPadHome = 60999,
+			VcNumPadUp = 61000,
+			VcNumPadPageUp = 61001,
+			VcNumPadLeft = 61003,
+			VcNumPadClear = 61004,
+			VcNumPadRight = 61005,
+			VcNumPadEnd = 61007,
+			VcNumPadDown = 61008,
+			VcNumPadPageDown = 61009,
+			VcNumPadInsert = 61010,
+			VcNumPadDelete = 61011,
+			VcSunOpen = 65396,
+			VcSunHelp = 65397,
+			VcSunProps = 65398,
+			VcSunFront = 65399,
+			VcSunStop = 65400,
+			VcSunAgain = 65401,
+			VcSunUndo = 65402,
+			VcSunCut = 65403,
+			VcSunCopy = 65404,
+			VcSunInsert = 65405,
+			VcSunFind = 65406,
+			CharUndefined = 65535;
+
+
 		public const int UNKNOWN = -1, A = 0, B = 1, C = 2, D = 3, E = 4, F = 5, G = 6, H = 7, I = 8, J = 9, K = 10, L = 11,
 			M = 12, N = 13, O = 14, P = 15, Q = 16, R = 17, S = 18, T = 19, U = 20, V = 21, W = 22, X = 23, Y = 24, Z = 25,
 			N0 = 26, N1 = 27, N2 = 28,
@@ -39,6 +214,9 @@
 	/// </summary>
 	public static class Keyboard
 	{
+		/// <summary>
+		/// The result of each currently held <see cref="Key"/> as text.
+		/// </summary>
 		public static string TypedSymbols { get; internal set; } = "";
 
 		/// <summary>
@@ -54,11 +232,30 @@
 		/// </summary>
 		public static int[] JustReleased => i.JustReleased;
 
-		/// <summary>
-		/// Triggers events and provides each <see cref="Key"/> to the collections
-		/// accordingly.
-		/// </summary>
-		public static void Update() => i.Update();
+		static Keyboard()
+		{
+			Device.input.KeyPressed += (s, e) =>
+			{
+				TypedSymbols += ((char)e.Data.KeyChar).ToString();
+				i.justPressed.Add(e.Data.RawCode);
+				Device.Trigger(e.Data.RawCode, i.pressedEvents);
+			};
+			Device.input.KeyReleased += (s, e) =>
+			{
+				if(TypedSymbols.Length == 0)
+					return;
+
+				var symbol = ((char)e.Data.KeyChar).ToString();
+				if(symbol == "")
+					return;
+
+				TypedSymbols = TypedSymbols.Replace(symbol.ToLower(), "");
+				TypedSymbols = TypedSymbols.Replace(symbol.ToUpper(), "");
+
+				i.justReleased.Add(e.Data.RawCode);
+				Device.Trigger(e.Data.RawCode, i.releasedEvents);
+			};
+		}
 
 		/// <summary>
 		/// Checks whether a <paramref name="key"/> is pressed and returns a result.

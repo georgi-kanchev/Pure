@@ -1,4 +1,6 @@
-﻿namespace Pure.Input
+﻿using SharpHook;
+
+namespace Pure.Input
 {
 	internal abstract class Device
 	{
@@ -6,43 +8,10 @@
 		public int[] JustPressed { get; private set; } = Array.Empty<int>();
 		public int[] JustReleased { get; private set; } = Array.Empty<int>();
 
-		public void Update()
+		static Device()
 		{
-			var prevPressed = new List<int>(pressed);
-			pressed.Clear();
-			justPressed.Clear();
-			justReleased.Clear();
-
-			var count = GetInputCount();
-			for(int i = 0; i < count; i++)
-			{
-				var isPr = IsPressedRaw(i);
-				var wasPr = prevPressed.Contains(i);
-
-				if(wasPr && isPr == false)
-				{
-					justReleased.Add(i);
-					Trigger(i, releasedEvents);
-					OnReleased(i);
-				}
-				else if(wasPr == false && isPr)
-				{
-					justPressed.Add(i);
-					Trigger(i, pressedEvents);
-					OnPressed(i);
-				}
-
-				if(isPr)
-				{
-					pressed.Add(i);
-					Trigger(i, whilePressedEvents);
-					WhilePressed(i);
-				}
-			}
-
-			Pressed = pressed.ToArray();
-			JustPressed = justPressed.ToArray();
-			JustReleased = justReleased.ToArray();
+			thread = new(() => input.Run());
+			thread.Start();
 		}
 
 		public bool IsPressed(int input)
@@ -75,12 +44,14 @@
 		protected abstract int GetInputCount();
 
 		#region Backend
-		private readonly List<int>
+		internal readonly List<int>
 			pressed = new(),
 			justPressed = new(),
 			justReleased = new();
 
-		private readonly Dictionary<int, List<Action>> pressedEvents = new(), releasedEvents = new(),
+		private static readonly Thread thread;
+		internal static readonly SimpleGlobalHook input = new();
+		internal readonly Dictionary<int, List<Action>> pressedEvents = new(), releasedEvents = new(),
 			whilePressedEvents = new();
 
 		protected virtual void OnPressed(int input) { }
@@ -94,7 +65,7 @@
 
 			events[input].Add(method);
 		}
-		private static void Trigger(int input, Dictionary<int, List<Action>> events)
+		internal static void Trigger(int input, Dictionary<int, List<Action>> events)
 		{
 			if(events.ContainsKey(input) == false)
 				return;

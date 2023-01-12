@@ -13,23 +13,14 @@ namespace TestGame
 			var bg = new Tilemap((48, 27));
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
-			var inputBox = new InputLine((10, 15), 16, "Test");
-			var container = new Container((10, 2), (13, 5)) { Text = "Title" };
-			var container2 = new Container((15, 10), (10, 5)) { Text = "Title2" };
-			container.AdditionalMaxSize = (5, 1);
+			var btn = new Slider((5, 5), 5, true);
 
 			while(Window.IsExisting)
 			{
 				var mousePos = Window.MousePosition;
 				var hov = layer.PositionFrom(mousePos, Window.Size);
 
-				Mouse.Update();
-				Keyboard.Update();
 				Time.Update();
-				bg.Fill(0, 0);
-				layer.Fill(0, 0);
-				over.Fill(0, 0);
-
 				var input = new Input()
 				{
 					Position = hov,
@@ -37,45 +28,37 @@ namespace TestGame
 					TypedSymbols = Keyboard.TypedSymbols,
 					PressedKeys = Keyboard.Pressed,
 				};
+				UserInterface.ApplyInput(input, layer.Size);
+
+				bg.Fill(0, 0);
+				layer.Fill(0, 0);
+				over.Fill(0, 0);
+
 				Window.DrawEnable(true);
 
-				UserInterface.ApplyInput(input, layer.Size);
-				MyCoolContainer(bg, layer, container);
-				var (cx, cy) = container.Position;
-				inputBox.Position = (cx + 1, cy + 1);
-				MyCoolInputBoxUpdate(bg, layer, over, inputBox);
+				layer.SetBar((5, 10), Tile.BAR_BIG_VERTICAL_HOLLOW, size: 8, isVertical: true);
+				MyCoolButton(bg, layer, btn);
 
-				MyCoolContainer(bg, layer, container2);
-
-				var camBg = bg.UpdateCamera();
-				var camLayer = layer.UpdateCamera();
-				var camOver = over.UpdateCamera();
-
-				Window.DrawTilemap(camBg, camBg, (8, 8), (0, 0));
-				Window.DrawTilemap(camLayer, camLayer, (8, 8), (0, 0));
-				Window.DrawTilemap(camOver, camOver, (8, 8), (0, 0));
+				Window.DrawTilemap(bg, bg, (8, 8), (0, 0));
+				Window.DrawTilemap(layer, layer, (8, 8), (0, 0));
+				Window.DrawTilemap(over, over, (8, 8), (0, 0));
 
 				Window.MouseCursor = UserInterface.MouseCursorTile;
 
 				Window.DrawEnable(false);
 			}
 		}
-		static void MyCoolInputBoxUpdate(Tilemap bg, Tilemap layer, Tilemap over, InputLine inputBox)
+		static void MyCoolButton(Tilemap bg, Tilemap layer, Slider btn)
 		{
-			var b = inputBox;
-			bg.SetSquare(b.Position, b.Size, 10, Color.Gray);
-			bg.SetInputLineSelection(b.Position, b.IndexCursor, b.IndexSelection, Color.Blue);
-			layer.SetTextLine(b.Position, b.Text, Color.Red);
-			over.SetInputLineCursor(b.Position, b.IsFocused, b.IndexCursor, Color.White);
-			b.Update();
-		}
-		static void MyCoolContainer(Tilemap bg, Tilemap layer, Container container)
-		{
-			var c = container;
-			bg.SetSquare(c.Position, c.Size, Tile.PATTERN_24, Color.Gray);
-			layer.SetNinePatch(c.Position, c.Size, Tile.BORDER_GRID_TOP_LEFT, Color.Blue);
-			layer.SetTextLine((c.Position.Item1 + 1, c.Position.Item2), c.Text, Color.White);
-			c.Update();
+			var color = Color.Orange;
+			var v = btn.IsVertical;
+
+			if(btn.IsHovered) color = Color.White;
+			if(btn.IsClicked) color = Color.Brown;
+
+			layer.SetBar(btn.Position, Tile.BAR_BIG_VERTICAL_HOLLOW, color, v ? btn.Size.Item2 : btn.Size.Item1, v);
+			layer.SetSquare(btn.Handle.Position, btn.Handle.Size, Tile.PATTERN_33);
+			btn.Update();
 		}
 	}
 }
