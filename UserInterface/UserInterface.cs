@@ -1,19 +1,5 @@
 ﻿namespace Pure.UserInterface
 {
-	/// <summary>
-	/// The OS and tile mouse cursors that result from interacting with the <see cref="UserInterface"/>.
-	/// </summary>
-	public enum CursorResult
-	{
-		TileArrow, TileArrowNoTail, TileHand, TileText, TileCrosshair, TileNo, TileResizeHorizontal, TileResizeVertical,
-		TileResizeDiagonal1, TileResizeDiagonal2, TileMove, TileWait1, TileWait2, TileWait3,
-
-		SystemArrow, SystemArrowWait, SystemWait, SystemText, SystemHand, SystemResizeHorinzontal, SystemResizeVertical,
-		SystemResizeDiagonal2, SystemResizeDiagonal1, SystemMove, SystemCrosshair, SystemHelp, SystemNo,
-
-		None
-	}
-
 	public abstract class UserInterface
 	{
 		public (int, int) Position { get; set; }
@@ -51,8 +37,10 @@
 			}
 		}
 		public bool IsPressed => IsHovered && Input.IsPressed && IsClicked;
-		public static CursorResult MouseCursorTile { get; internal set; }
-		public static CursorResult MouseCursorSystem { get; internal set; }
+
+		public static string? CopiedText { get; set; } = "";
+		public static int MouseCursorTile { get; internal set; }
+		public static int MouseCursorSystem { get; internal set; }
 
 		public UserInterface((int, int) position, (int, int) size)
 		{
@@ -62,8 +50,11 @@
 
 		public void Update()
 		{
-			if(Input.WasPressed == false && Input.IsPressed && IsHovered)
+			if(Input.wasPressed == false && Input.IsPressed && IsHovered)
 				IsFocused = true;
+
+			if(Input.IsKeyJustPressed(ESCAPE))
+				IsFocused = false;
 
 			TryTrigger();
 			OnUpdate();
@@ -73,43 +64,55 @@
 		{
 			IsInputCanceled = false;
 
-			MouseCursorTile = CursorResult.TileArrow;
-			MouseCursorSystem = CursorResult.SystemArrow;
+			MouseCursorTile = 0;
+			MouseCursorSystem = 0;
 			TilemapSize = (Math.Abs(tilemapSize.Item1), Math.Abs(tilemapSize.Item2));
 
-			input.WasPressed = Input.IsPressed;
-			input.WasPressedAlt = Input.IsPressedAlt;
-			input.WasPressedBackspace = Input.IsPressedBackspace;
-			input.WasPressedControl = Input.IsPressedControl;
-			input.WasPressedEnter = Input.IsPressedEnter;
-			input.WasPressedEscape = Input.IsPressedEscape;
-			input.WasPressedShift = Input.IsPressedShift;
-			input.WasPressedTab = Input.IsPressedTab;
+			Input.wasPressed = Input.IsPressed;
+			Input.prevTypedSymbols = Input.TypedSymbols;
+			Input.prevPosition = Input.Position;
+			Input.prevPressedKeys.Clear();
+			Input.prevPressedKeys.AddRange(Input.pressedKeys);
 
-			input.WasPressedLeft = Input.IsPressedLeft;
-			input.WasPressedRight = Input.IsPressedRight;
-			input.WasPressedUp = Input.IsPressedUp;
-			input.WasPressedDown = Input.IsPressedDown;
+			Input.IsPressed = input.IsPressed;
+			Input.Position = input.Position;
+			Input.PressedKeys = input.PressedKeys;
+			Input.TypedSymbols = input.TypedSymbols;
 
-			input.PrevTypedSymbols = Input.TypedSymbols;
-			input.PrevPosition = Input.Position;
-
-			Input = input;
-
-			if(Input.WasPressed == false && Input.IsPressed)
+			if(Input.wasPressed == false && Input.IsPressed)
 				focusedObject = null;
 		}
 
 		#region Backend
+		protected const int ESCAPE = 36, CONTROL_LEFT = 37, SHIFT_LEFT = 38, ALT_LEFT = 39,
+			CONTROL_RIGHT = 41, SHIFT_RIGHT = 42, ALT_RIGHT = 43, ENTER = 58, RETURN = 58,
+			BACKSPACE = 59, TAB = 60, PAGE_UP = 61, PAGE_DOWN = 62,
+			END = 63, HOME = 64, INSERT = 65, DELETE = 66,
+			ARROW_LEFT = 71,
+			ARROW_RIGHT = 72,
+			ARROW_UP = 73,
+			ARROW_DOWN = 74;
+
+		protected const int TILE_ARROW = 0, TILE_ARROW_NO_TAIL = 1, TILE_HAND = 2, TILE_TEXT = 3, TILE_CROSSHAIR = 4,
+			TILE_NO = 5, TILE_RESIZE_HORIZONTAL = 6, TILE_RESIZE_VERTICAL = 7, TILE_RESIZE_DIAGONAL_1 = 8,
+			TILE_RESIZE_DIAGONAL_2 = 9, TILE_MOVE = 10, TILE_WAIT_1 = 11, TILE_WAIT_2 = 12, TILE_WAIT_3 = 13,
+
+			SYSTEM_ARROW = 14, SYSTEM_ARROW_WAIT = 15, SYSTEM_WAIT = 16, SYSTEM_TEXT = 17, SYSTEM_HAND = 18,
+			SYSTEM_RESIZE_HORINZONTAL = 19, SYSTEM_RESIZE_VERTICAL = 20, SYSTEM_RESIZE_DIAGONAL_2 = 21,
+			SYSTEM_RESIZE_DIAGONAL_1 = 22, SYSTEM_MOVE = 23, SYSTEM_CROSSHAIR = 24, SYSTEM_HELP = 25,
+			SYSTEM_NO = 26,
+
+			NONE = 27;
+
 		private (int, int) size;
+		private static UserInterface? focusedObject;
 
 		protected bool IsClicked { get; private set; }
 		protected bool IsTriggered { get; private set; }
 		protected static bool IsInputCanceled { get; private set; }
 		protected static (int, int) TilemapSize { get; private set; }
 
-		protected static Input Input { get; set; }
-		private static UserInterface? focusedObject;
+		protected static Input Input { get; } = new();
 
 		protected abstract void OnUpdate();
 		protected void TryTrigger()
@@ -128,17 +131,17 @@
 				IsTriggered = true;
 			}
 
-			if(IsHovered && Input.IsPressed && Input.WasPressed == false)
+			if(IsHovered && Input.IsPressed && Input.wasPressed == false)
 				IsClicked = true;
 
 			if(Input.IsReleased)
 				IsClicked = false;
 		}
 
-		protected static void SetTileAndSystemCursor(CursorResult tileCursor)
+		protected static void SetTileAndSystemCursor(int tileCursor)
 		{
 			MouseCursorTile = tileCursor;
-			MouseCursorSystem = (CursorResult)((int)tileCursor + (int)CursorResult.SystemArrow);
+			MouseCursorSystem = tileCursor + SYSTEM_ARROW;
 		}
 		#endregion
 	}

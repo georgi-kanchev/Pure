@@ -7,15 +7,18 @@ namespace Pure.Window
 	/// <summary>
 	/// The OS and tile mouse cursors.
 	/// </summary>
-	public enum Cursor
+	public static class Cursor
 	{
-		TileArrow, TileArrowNoTail, TileHand, TileText, TileCrosshair, TileNo, TileResizeHorizontal, TileResizeVertical,
-		TileResizeDiagonal1, TileResizeDiagonal2, TileMove, TileWait1, TileWait2, TileWait3,
+		public const int TILE_ARROW = 0, TILE_ARROW_NO_TAIL = 1, TILE_HAND = 2, TILE_TEXT = 3, TILE_CROSSHAIR = 4,
+			TILE_NO = 5, TILE_RESIZE_HORIZONTAL = 6, TILE_RESIZE_VERTICAL = 7, TILE_RESIZE_DIAGONAL_1 = 8,
+			TILE_RESIZE_DIAGONAL_2 = 9, TILE_MOVE = 10, TILE_WAIT_1 = 11, TILE_WAIT_2 = 12, TILE_WAIT_3 = 13,
 
-		SystemArrow, SystemArrowWait, SystemWait, SystemText, SystemHand, SystemResizeHorinzontal, SystemResizeVertical,
-		SystemResizeDiagonal2, SystemResizeDiagonal1, SystemMove, SystemCrosshair, SystemHelp, SystemNo,
+			SYSTEM_ARROW = 14, SYSTEM_ARROW_WAIT = 15, SYSTEM_WAIT = 16, SYSTEM_TEXT = 17, SYSTEM_HAND = 18,
+			SYSTEM_RESIZE_HORINZONTAL = 19, SYSTEM_RESIZE_VERTICAL = 20, SYSTEM_RESIZE_DIAGONAL_2 = 21,
+			SYSTEM_RESIZE_DIAGONAL_1 = 22, SYSTEM_MOVE = 23, SYSTEM_CROSSHAIR = 24, SYSTEM_HELP = 25,
+			SYSTEM_NO = 26,
 
-		None
+			NONE = 27;
 	}
 
 	/// <summary>
@@ -76,16 +79,16 @@ namespace Pure.Window
 		/// <summary>
 		/// The mouse cursor type used by the OS window and <see cref="TryDrawMouseCursor"/>.
 		/// </summary>
-		public static Cursor MouseCursor
+		public static int MouseCursor
 		{
 			get => cursor;
 			set
 			{
 				cursor = value;
 
-				if(value != Cursor.None && (int)value > (int)Cursor.TileWait3)
+				if(value != Cursor.NONE && value > Cursor.TILE_WAIT_3)
 				{
-					var sfmlEnum = (SFML.Window.Cursor.CursorType)((int)value - (int)Cursor.SystemArrow);
+					var sfmlEnum = (SFML.Window.Cursor.CursorType)(value - Cursor.SYSTEM_ARROW);
 					sysCursor.Dispose();
 					sysCursor = new(sfmlEnum);
 
@@ -217,7 +220,7 @@ namespace Pure.Window
 		#region Backend
 		private const int LINE_MAX_ITERATIONS = 10000;
 
-		private static Cursor cursor;
+		private static int cursor;
 		private static SFML.Window.Cursor sysCursor;
 		private static bool isHidden, isMouseGrabbed;
 		private static string title;
@@ -226,14 +229,14 @@ namespace Pure.Window
 		private static (float, float) prevDrawTilemapCellSz;
 		private static (uint, uint) prevDrawTilemapCellCount;
 
-		private static readonly Dictionary<Cursor, (float, float)> cursorOffsets = new()
+		private static readonly Dictionary<int, (float, float)> cursorOffsets = new()
 		{
-			{ Cursor.TileArrow, (0, 0) }, { Cursor.TileArrowNoTail, (0, 0) }, { Cursor.TileHand, (0.2f, 0f) },
-			{ Cursor.TileText, (0.3f, 0.4f) }, { Cursor.TileCrosshair, (0.3f, 0.3f) }, { Cursor.TileNo, (0.4f, 0.4f) },
-			{ Cursor.TileResizeHorizontal, (0.4f, 0.3f) }, { Cursor.TileResizeVertical, (0.3f, 0.4f) },
-			{ Cursor.TileResizeDiagonal1, (0.4f, 0.4f) }, { Cursor.TileResizeDiagonal2, (0.4f, 0.4f) },
-			{ Cursor.TileMove, (0.4f, 0.4f) }, { Cursor.TileWait1, (0.4f, 0.4f) }, { Cursor.TileWait2, (0.4f, 0.4f) },
-			{ Cursor.TileWait3, (0.4f, 0.4f) },
+			{ Cursor.TILE_ARROW, (0, 0) }, { Cursor.TILE_ARROW_NO_TAIL, (0, 0) }, { Cursor.TILE_HAND, (0.2f, 0f) },
+			{ Cursor.TILE_TEXT, (0.3f, 0.4f) }, { Cursor.TILE_CROSSHAIR, (0.3f, 0.3f) }, { Cursor.TILE_NO, (0.4f, 0.4f) },
+			{ Cursor.TILE_RESIZE_HORIZONTAL, (0.4f, 0.3f) }, { Cursor.TILE_RESIZE_VERTICAL, (0.3f, 0.4f) },
+			{ Cursor.TILE_RESIZE_DIAGONAL_1, (0.4f, 0.4f) }, { Cursor.TILE_RESIZE_DIAGONAL_2, (0.4f, 0.4f) },
+			{ Cursor.TILE_MOVE, (0.4f, 0.4f) }, { Cursor.TILE_WAIT_1, (0.4f, 0.4f) }, { Cursor.TILE_WAIT_2, (0.4f, 0.4f) },
+			{ Cursor.TILE_WAIT_3, (0.4f, 0.4f) },
 		};
 		private static readonly Dictionary<string, Texture> graphics = new();
 		private static readonly RenderWindow window;
@@ -247,16 +250,14 @@ namespace Pure.Window
 		}
 		private static void TryDrawMouseCursor()
 		{
-			var cursor = (int)MouseCursor;
-
 			window.SetMouseCursorVisible(IsHovering() == false);
 
-			if(cursor > (int)Cursor.TileWait3)
+			if(cursor > Cursor.TILE_WAIT_3)
 				return;
 
 			var (x, y) = PositionFrom(MousePosition);
 			var (offX, offY) = cursorOffsets[MouseCursor];
-			DrawSprite((x - offX, y - offY), 494 + cursor, MouseColor);
+			DrawSprite((x - offX, y - offY), 494 + MouseCursor, MouseColor);
 		}
 		private static void UpdateWindowAndView()
 		{

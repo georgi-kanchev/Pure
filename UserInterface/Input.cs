@@ -1,41 +1,46 @@
 ﻿namespace Pure.UserInterface
 {
-	public struct Input
+	public class Input
 	{
 		public bool IsPressed { get; set; }
-		public bool IsReleased => IsPressed == false && WasPressed;
+		public bool IsReleased => IsPressed == false && wasPressed;
+		public bool IsJustPressed => wasPressed == false && IsPressed;
+		public bool IsJustReleased => wasPressed && IsPressed == false;
 
 		public (float, float) Position { get; set; }
-		public string TypedSymbols { get; set; }
+		public string? TypedSymbols { get; set; }
 
-		public bool IsPressedShift { get; set; }
-		public bool IsPressedControl { get; set; }
-		public bool IsPressedBackspace { get; set; }
-		public bool IsPressedEscape { get; set; }
-		public bool IsPressedTab { get; set; }
-		public bool IsPressedAlt { get; set; }
-		public bool IsPressedEnter { get; set; }
-		public bool IsPressedUp { get; set; }
-		public bool IsPressedDown { get; set; }
-		public bool IsPressedRight { get; set; }
-		public bool IsPressedLeft { get; set; }
+		public int[]? PressedKeys
+		{
+			get => pressedKeys.ToArray();
+			set
+			{
+				pressedKeys.Clear();
+
+				if(value != null && value.Length != 0)
+					pressedKeys.AddRange(value);
+			}
+		}
+
+		public bool IsKeyPressed(int key)
+		{
+			return pressedKeys.Contains(key);
+		}
+		public bool IsKeyJustPressed(int key)
+		{
+			return IsKeyPressed(key) && prevPressedKeys.Contains(key) == false;
+		}
+		public bool IsKeyJustReleased(int key)
+		{
+			return IsKeyPressed(key) == false && prevPressedKeys.Contains(key);
+		}
 
 		#region Backend
-		internal bool WasPressed { get; set; }
-		internal bool WasPressedShift { get; set; }
-		internal bool WasPressedControl { get; set; }
-		internal bool WasPressedBackspace { get; set; }
-		internal bool WasPressedEscape { get; set; }
-		internal bool WasPressedTab { get; set; }
-		internal bool WasPressedAlt { get; set; }
-		internal bool WasPressedEnter { get; set; }
-		internal bool WasPressedUp { get; set; }
-		internal bool WasPressedDown { get; set; }
-		internal bool WasPressedRight { get; set; }
-		internal bool WasPressedLeft { get; set; }
+		internal readonly List<int> pressedKeys = new(), prevPressedKeys = new();
+		internal bool wasPressed;
 
-		internal (float, float) PrevPosition { get; set; }
-		internal string PrevTypedSymbols { get; set; }
+		internal (float, float) prevPosition;
+		internal string? prevTypedSymbols;
 		#endregion
 	}
 }

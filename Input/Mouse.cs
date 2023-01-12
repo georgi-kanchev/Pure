@@ -3,9 +3,11 @@
 	/// <summary>
 	/// The physical buttons on a mouse.
 	/// </summary>
-#pragma warning disable CS1591
-	public enum Button { Left, Right, Middle, Extra1, Extra2 }
-#pragma warning restore CS1591
+	public static class Button
+	{
+		public const int LEFT = 0, RIGHT = 1, MIDDLE = 2, EXTRA_1 = 3, EXTRA_2 = 4;
+		internal const int COUNT = 5;
+	}
 
 	/// <summary>
 	/// Handles input from a physical mouse.
@@ -24,15 +26,15 @@
 		/// <summary>
 		/// A collection of each currently pressed <see cref="Button"/>.
 		/// </summary>
-		public static Button[] Pressed => i.Pressed;
+		public static int[] Pressed => i.Pressed;
 		/// <summary>
 		/// A collection of each newly pressed <see cref="Button"/>.
 		/// </summary>
-		public static Button[] JustPressed => i.JustPressed;
+		public static int[] JustPressed => i.JustPressed;
 		/// <summary>
 		/// A collection of each newly no longer pressed <see cref="Button"/>.
 		/// </summary>
-		public static Button[] JustReleased => i.JustReleased;
+		public static int[] JustReleased => i.JustReleased;
 
 		/// <summary>
 		/// Triggers events and provides each <see cref="Button"/> to the collections
@@ -41,32 +43,32 @@
 		public static void Update() => i.Update();
 
 		/// <summary>
-		/// Checks whether an <paramref name="input"/> is pressed and returns a result.
+		/// Checks whether a <paramref name="button"/> is pressed and returns a result.
 		/// </summary>
-		public static bool IsPressed(Button input) => i.IsPressed(input);
+		public static bool IsPressed(int button) => i.IsPressed(button);
 		/// <summary>
-		/// Checks whether this is the very moment an <paramref name="input"/> is pressed
+		/// Checks whether this is the very moment a <paramref name="button"/> is pressed
 		/// and returns a result.
 		/// </summary>
-		public static bool IsJustPressed(Button input) => i.IsJustPressed(input);
+		public static bool IsJustPressed(int button) => i.IsJustPressed(button);
 		/// <summary>
-		/// Checks whether this is the very moment an <paramref name="input"/> is no
+		/// Checks whether this is the very moment a <paramref name="button"/> is no
 		/// longer pressed and returns a result.
 		/// </summary>
-		public static bool IsJustReleased(Button input) => i.IsJustReleased(input);
+		public static bool IsJustReleased(int button) => i.IsJustReleased(button);
 
 		/// <summary>
-		/// Subscribes a <paramref name="method"/> to an <paramref name="input"/> press.
+		/// Subscribes a <paramref name="method"/> to a <paramref name="button"/> press.
 		/// </summary>
-		public static void OnPressed(Button input, Action method) => i.OnPressed(input, method);
+		public static void OnPressed(int button, Action method) => i.OnPressed(button, method);
 		/// <summary>
-		/// Subscribes a <paramref name="method"/> to an <paramref name="input"/> release.
+		/// Subscribes a <paramref name="method"/> to a <paramref name="button"/> release.
 		/// </summary>
-		public static void OnReleased(Button input, Action method) => i.OnReleased(input, method);
+		public static void OnReleased(int button, Action method) => i.OnReleased(button, method);
 		/// <summary>
-		/// Subscribes a <paramref name="method"/> to an <paramref name="input"/> hold.
+		/// Subscribes a <paramref name="method"/> to a <paramref name="button"/> hold.
 		/// </summary>
-		public static void WhilePressed(Button input, Action method) => i.WhilePressed(input, method);
+		public static void WhilePressed(int button, Action method) => i.WhilePressed(button, method);
 
 		#region Backend
 		private static readonly MouseInstance i = new();
@@ -74,13 +76,14 @@
 	}
 
 	#region Backend
-	internal class MouseInstance : Device<Button>
+	internal class MouseInstance : Device
 	{
-		protected override bool IsPressedRaw(Button input)
+		protected override bool IsPressedRaw(int input)
 		{
 			var btn = (SFML.Window.Mouse.Button)input;
 			return SFML.Window.Mouse.IsButtonPressed(btn);
 		}
+		protected override int GetInputCount() => Button.COUNT;
 	}
 	#endregion
 }

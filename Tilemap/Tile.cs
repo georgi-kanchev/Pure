@@ -3,536 +3,448 @@
 	public static class Tile
 	{
 		#region Shade
-		public const int SHADE_TRANSPARENT = 0;
-		public const int SHADE_1 = 1;
-		public const int SHADE_2 = 2;
-		public const int SHADE_3 = 3;
-		public const int SHADE_4 = 4;
-		public const int SHADE_5 = 5;
-		public const int SHADE_6 = 6;
-		public const int SHADE_7 = 7;
-		public const int SHADE_8 = 8;
-		public const int SHADE_9 = 9;
-		public const int SHADE_OPAQUE = 10;
+		public const int SHADE_TRANSPARENT = 0,
+			SHADE_1 = 1, SHADE_2 = 2, SHADE_3 = 3, SHADE_4 = 4, SHADE_5 = 5,
+			SHADE_6 = 6, SHADE_7 = 7, SHADE_8 = 8, SHADE_9 = 9, SHADE_OPAQUE = 10,
 		#endregion
 		#region Pattern
-		public const int PATTERN_1 = 11; public const int PATTERN_2 = 12;
-		public const int PATTERN_3 = 13; public const int PATTERN_4 = 14;
-		public const int PATTERN_5 = 15; public const int PATTERN_6 = 16;
-		public const int PATTERN_7 = 17; public const int PATTERN_8 = 18;
-		public const int PATTERN_9 = 19; public const int PATTERN_10 = 20;
-		public const int PATTERN_11 = 21; public const int PATTERN_12 = 22;
-		public const int PATTERN_13 = 23; public const int PATTERN_14 = 24;
-		public const int PATTERN_15 = 25; public const int PATTERN_16 = 26;
-		public const int PATTERN_17 = 27; public const int PATTERN_18 = 28;
-		public const int PATTERN_19 = 29; public const int PATTERN_20 = 30;
-		public const int PATTERN_21 = 31; public const int PATTERN_22 = 32;
-		public const int PATTERN_23 = 33; public const int PATTERN_24 = 34;
-		public const int PATTERN_25 = 35; public const int PATTERN_26 = 36;
-		public const int PATTERN_27 = 37; public const int PATTERN_28 = 38;
-		public const int PATTERN_29 = 39; public const int PATTERN_30 = 40;
-		public const int PATTERN_31 = 41; public const int PATTERN_32 = 42;
-		public const int PATTERN_33 = 43; public const int PATTERN_34 = 44;
-		public const int PATTERN_35 = 45; public const int PATTERN_36 = 46;
-		public const int PATTERN_37 = 47; public const int PATTERN_38 = 48;
-		public const int PATTERN_39 = 49; public const int PATTERN_40 = 50;
-		public const int PATTERN_41 = 51; public const int PATTERN_42 = 52;
-		public const int PATTERN_43 = 53; public const int PATTERN_44 = 54;
-		public const int PATTERN_45 = 55; public const int PATTERN_46 = 56;
-		public const int PATTERN_47 = 57; public const int PATTERN_48 = 58;
-		public const int PATTERN_49 = 59; public const int PATTERN_50 = 60;
-		public const int PATTERN_51 = 61; public const int PATTERN_52 = 62;
-		public const int PATTERN_53 = 63; public const int PATTERN_54 = 64;
-		public const int PATTERN_55 = 65; public const int PATTERN_56 = 66;
-		public const int PATTERN_57 = 67; public const int PATTERN_58 = 68;
-		public const int PATTERN_59 = 69; public const int PATTERN_60 = 70;
-		public const int PATTERN_61 = 71; public const int PATTERN_62 = 72;
-		public const int PATTERN_63 = 73; public const int PATTERN_64 = 74;
-		public const int PATTERN_65 = 75; public const int PATTERN_66 = 76;
-		public const int PATTERN_67 = 77;
+			PATTERN_1 = 11, PATTERN_2 = 12, PATTERN_3 = 13, PATTERN_4 = 14, PATTERN_5 = 15,
+			PATTERN_6 = 16, PATTERN_7 = 17, PATTERN_8 = 18, PATTERN_9 = 19, PATTERN_10 = 20,
+			PATTERN_11 = 21, PATTERN_12 = 22, PATTERN_13 = 23, PATTERN_14 = 24, PATTERN_15 = 25, PATTERN_16 = 26,
+			PATTERN_17 = 27, PATTERN_18 = 28, PATTERN_19 = 29, PATTERN_20 = 30, PATTERN_21 = 31, PATTERN_22 = 32,
+			PATTERN_23 = 33, PATTERN_24 = 34, PATTERN_25 = 35, PATTERN_26 = 36, PATTERN_27 = 37, PATTERN_28 = 38,
+			PATTERN_29 = 39, PATTERN_30 = 40, PATTERN_31 = 41, PATTERN_32 = 42, PATTERN_33 = 43, PATTERN_34 = 44,
+			PATTERN_35 = 45, PATTERN_36 = 46, PATTERN_37 = 47, PATTERN_38 = 48, PATTERN_39 = 49, PATTERN_40 = 50,
+			PATTERN_41 = 51, PATTERN_42 = 52, PATTERN_43 = 53, PATTERN_44 = 54, PATTERN_45 = 55, PATTERN_46 = 56,
+			PATTERN_47 = 57, PATTERN_48 = 58, PATTERN_49 = 59, PATTERN_50 = 60, PATTERN_51 = 61, PATTERN_52 = 62,
+			PATTERN_53 = 63, PATTERN_54 = 64, PATTERN_55 = 65, PATTERN_56 = 66, PATTERN_57 = 67, PATTERN_58 = 68,
+			PATTERN_59 = 69, PATTERN_60 = 70, PATTERN_61 = 71, PATTERN_62 = 72, PATTERN_63 = 73, PATTERN_64 = 74,
+			PATTERN_65 = 75, PATTERN_66 = 76, PATTERN_67 = 77,
 		#endregion
 		#region Capital
-		public const int CAPITAL_A = 78;
-		public const int CAPITAL_B = 79;
-		public const int CAPITAL_C = 80;
-		public const int CAPITAL_D = 81;
-		public const int CAPITAL_E = 82;
-		public const int CAPITAL_F = 83;
-		public const int CAPITAL_G = 84;
-		public const int CAPITAL_H = 85;
-		public const int CAPITAL_I = 86;
-		public const int CAPITAL_J = 87;
-		public const int CAPITAL_K = 88;
-		public const int CAPITAL_L = 89;
-		public const int CAPITAL_M = 80;
-		public const int CAPITAL_N = 91;
-		public const int CAPITAL_O = 92;
-		public const int CAPITAL_P = 93;
-		public const int CAPITAL_Q = 94;
-		public const int CAPITAL_R = 95;
-		public const int CAPITAL_S = 96;
-		public const int CAPITAL_T = 97;
-		public const int CAPITAL_U = 98;
-		public const int CAPITAL_V = 99;
-		public const int CAPITAL_W = 100;
-		public const int CAPITAL_X = 101;
-		public const int CAPITAL_Y = 102;
-		public const int CAPITAL_Z = 103;
+			CAPITAL_A = 78, CAPITAL_B = 79, CAPITAL_C = 80, CAPITAL_D = 81, CAPITAL_E = 82, CAPITAL_F = 83, CAPITAL_G = 84,
+			CAPITAL_H = 85, CAPITAL_I = 86, CAPITAL_J = 87, CAPITAL_K = 88, CAPITAL_L = 89, CAPITAL_M = 80, CAPITAL_N = 91,
+			CAPITAL_O = 92, CAPITAL_P = 93, CAPITAL_Q = 94, CAPITAL_R = 95, CAPITAL_S = 96, CAPITAL_T = 97, CAPITAL_U = 98,
+			CAPITAL_V = 99,
+			CAPITAL_W = 100, CAPITAL_X = 101,
+			CAPITAL_Y = 102, CAPITAL_Z = 103,
 		#endregion
 		#region Lowercase
-		public const int LOWERCASE_A = 104;
-		public const int LOWERCASE_B = 105;
-		public const int LOWERCASE_C = 106;
-		public const int LOWERCASE_D = 107;
-		public const int LOWERCASE_E = 108;
-		public const int LOWERCASE_F = 109;
-		public const int LOWERCASE_G = 110;
-		public const int LOWERCASE_H = 111;
-		public const int LOWERCASE_I = 112;
-		public const int LOWERCASE_J = 113;
-		public const int LOWERCASE_K = 114;
-		public const int LOWERCASE_L = 115;
-		public const int LOWERCASE_M = 116;
-		public const int LOWERCASE_N = 117;
-		public const int LOWERCASE_O = 118;
-		public const int LOWERCASE_P = 119;
-		public const int LOWERCASE_Q = 120;
-		public const int LOWERCASE_R = 121;
-		public const int LOWERCASE_S = 122;
-		public const int LOWERCASE_T = 123;
-		public const int LOWERCASE_U = 124;
-		public const int LOWERCASE_V = 125;
-		public const int LOWERCASE_W = 126;
-		public const int LOWERCASE_X = 127;
-		public const int LOWERCASE_Y = 128;
-		public const int LOWERCASE_Z = 129;
+			LOWERCASE_A = 104,
+			LOWERCASE_B = 105, LOWERCASE_C = 106, LOWERCASE_D = 107, LOWERCASE_E = 108, LOWERCASE_F = 109,
+			LOWERCASE_G = 110, LOWERCASE_H = 111, LOWERCASE_I = 112, LOWERCASE_J = 113, LOWERCASE_K = 114,
+			LOWERCASE_L = 115, LOWERCASE_M = 116, LOWERCASE_N = 117, LOWERCASE_O = 118, LOWERCASE_P = 119,
+			LOWERCASE_Q = 120, LOWERCASE_R = 121, LOWERCASE_S = 122, LOWERCASE_T = 123, LOWERCASE_U = 124,
+			LOWERCASE_V = 125, LOWERCASE_W = 126, LOWERCASE_X = 127, LOWERCASE_Y = 128, LOWERCASE_Z = 129,
 		#endregion
 		#region Number
-		public const int NUMBER_0 = 130;
-		public const int NUMBER_1 = 131;
-		public const int NUMBER_2 = 132;
-		public const int NUMBER_3 = 133;
-		public const int NUMBER_4 = 134;
-		public const int NUMBER_5 = 135;
-		public const int NUMBER_6 = 136;
-		public const int NUMBER_7 = 137;
-		public const int NUMBER_8 = 138;
-		public const int NUMBER_9 = 139;
+			NUMBER_0 = 130,
+			NUMBER_1 = 131, NUMBER_2 = 132, NUMBER_3 = 133,
+			NUMBER_4 = 134, NUMBER_5 = 135, NUMBER_6 = 136,
+			NUMBER_7 = 137, NUMBER_8 = 138, NUMBER_9 = 139,
 		#endregion
 		#region Fragments
-		public const int FRACTION_ONE_EIGHT = 140;
-		public const int FRACTION_ONE_SEVENTH = 141;
-		public const int FRACTION_ONE_SIXTH = 142;
-		public const int FRACTION_ONE_FIFTH = 143;
-		public const int FRACTION_ONE_FOURTH = 144;
-		public const int FRACTION_ONE_THIRD = 145;
-		public const int FRACTION_THREE_EIGHTS = 146;
-		public const int FRACTION_TWO_FIFTHS = 147;
-		public const int FRACTION_ONE_HALF = 148;
-		public const int FRACTION_THREE_FIFTHS = 149;
-		public const int FRACTION_FIVE_EIGHTS = 150;
-		public const int FRACTION_TWO_THIRDS = 151;
-		public const int FRACTION_THREE_FOURTHS = 152;
-		public const int FRACTION_FOUR_FIFTHS = 153;
-		public const int FRACTION_FIVE_SIXTHS = 154;
-		public const int FRACTION_SEVEN_EIGHTS = 155;
+			FRACTION_ONE_EIGHT = 140,
+			FRACTION_ONE_SEVENTH = 141,
+			FRACTION_ONE_SIXTH = 142,
+			FRACTION_ONE_FIFTH = 143,
+			FRACTION_ONE_FOURTH = 144,
+			FRACTION_ONE_THIRD = 145,
+			FRACTION_THREE_EIGHTS = 146,
+			FRACTION_TWO_FIFTHS = 147,
+			FRACTION_ONE_HALF = 148,
+			FRACTION_THREE_FIFTHS = 149,
+			FRACTION_FIVE_EIGHTS = 150,
+			FRACTION_TWO_THIRDS = 151,
+			FRACTION_THREE_FOURTHS = 152,
+			FRACTION_FOUR_FIFTHS = 153,
+			FRACTION_FIVE_SIXTHS = 154,
+			FRACTION_SEVEN_EIGHTS = 155,
 		#endregion
 		#region Subscript
-		public const int SUBSCRIPT_0 = 156;
-		public const int SUBSCRIPT_1st = 157;
-		public const int SUBSCRIPT_2nd = 158;
-		public const int SUBSCRIPT_3rd = 159;
-		public const int SUBSCRIPT_4th = 160;
-		public const int SUBSCRIPT_5th = 161;
-		public const int SUBSCRIPT_6th = 162;
-		public const int SUBSCRIPT_7th = 163;
-		public const int SUBSCRIPT_8th = 164;
-		public const int SUBSCRIPT_9th = 165;
-		public const int SUBSCRIPT_10th = 166;
-		public const int SUBSCRIPT_11th = 167;
-		public const int SUBSCRIPT_12th = 168;
+			SUBSCRIPT_0 = 156,
+			SUBSCRIPT_1st = 157, SUBSCRIPT_2nd = 158, SUBSCRIPT_3rd = 159,
+			SUBSCRIPT_4th = 160, SUBSCRIPT_5th = 161, SUBSCRIPT_6th = 162,
+			SUBSCRIPT_7th = 163, SUBSCRIPT_8th = 164, SUBSCRIPT_9th = 165,
+			SUBSCRIPT_10th = 166,
+			SUBSCRIPT_11th = 167,
+			SUBSCRIPT_12th = 168,
 		#endregion
 		#region Superscript
-		public const int SUPERSCRIPT_0 = 169;
-		public const int SUPERSCRIPT_1st = 170;
-		public const int SUPERSCRIPT_2nd = 171;
-		public const int SUPERSCRIPT_3rd = 172;
-		public const int SUPERSCRIPT_4th = 173;
-		public const int SUPERSCRIPT_5th = 174;
-		public const int SUPERSCRIPT_6th = 175;
-		public const int SUPERSCRIPT_7th = 176;
-		public const int SUPERSCRIPT_8th = 177;
-		public const int SUPERSCRIPT_9th = 178;
-		public const int SUPERSCRIPT_10th = 179;
-		public const int SUPERSCRIPT_11th = 180;
-		public const int SUPERSCRIPT_12th = 181;
+			SUPERSCRIPT_0 = 169,
+			SUPERSCRIPT_1st = 170, SUPERSCRIPT_2nd = 171, SUPERSCRIPT_3rd = 172,
+			SUPERSCRIPT_4th = 173, SUPERSCRIPT_5th = 174, SUPERSCRIPT_6th = 175,
+			SUPERSCRIPT_7th = 176, SUPERSCRIPT_8th = 177, SUPERSCRIPT_9th = 178,
+			SUPERSCRIPT_10th = 179,
+			SUPERSCRIPT_11th = 180,
+			SUPERSCRIPT_12th = 181,
 		#endregion
 		#region Math
-		public const int MATH_PLUS = 182;
-		public const int MATH_MINUS = 183;
-		public const int MATH_MULTIPLICATION = 184;
-		public const int MATH_OVER = 185;
-		public const int MATH_DIVISION = 186;
-		public const int MATH_PERCENT = 187;
-		public const int MATH_EQUAL = 188;
-		public const int MATH_NOT_EQUAL = 189;
-		public const int MATH_APPROXIMATE = 190;
-		public const int MATH_SQUARE_ROOT = 191;
-		public const int MATH_FUNCTION = 192;
-		public const int MATH_INTEGRAL = 193;
-		public const int MATH_SUMMATION = 194;
-		public const int MATH_EPSILON = 195;
-		public const int MATH_EULER = 196;
-		public const int MATH_GOLDEN_RATIO = 197;
-		public const int MATH_PI = 198;
-		public const int MATH_SILVER_RATIO = 199;
-		public const int MATH_INFINITY = 200;
-		public const int MATH_MUCH_LESS = 204;
-		public const int MATH_MUCH_GREATER = 205;
-		public const int MATH_LESS_EQUAL = 206;
-		public const int MATH_GREATER_EQUAL = 207;
-		public const int MATH_LESS = 208;
-		public const int MATH_GREATER = 209;
+			MATH_PLUS = 182,
+			MATH_MINUS = 183,
+			MATH_MULTIPLICATION = 184,
+			MATH_OVER = 185,
+			MATH_DIVISION = 186,
+			MATH_PERCENT = 187,
+			MATH_EQUAL = 188,
+			MATH_NOT_EQUAL = 189,
+			MATH_APPROXIMATE = 190,
+			MATH_SQUARE_ROOT = 191,
+			MATH_FUNCTION = 192,
+			MATH_INTEGRAL = 193,
+			MATH_SUMMATION = 194,
+			MATH_EPSILON = 195,
+			MATH_EULER = 196,
+			MATH_GOLDEN_RATIO = 197,
+			MATH_PI = 198,
+			MATH_SILVER_RATIO = 199,
+			MATH_INFINITY = 200,
+			MATH_MUCH_LESS = 204,
+			MATH_MUCH_GREATER = 205,
+			MATH_LESS_EQUAL = 206,
+			MATH_GREATER_EQUAL = 207,
+			MATH_LESS = 208,
+			MATH_GREATER = 209,
 		#endregion
 		#region Brackets
-		public const int BRACKET_ROUND_LEFT = 210;
-		public const int BRACKET_ROUND_RIGHT = 211;
-		public const int BRACKET_SQUARE_LEFT = 212;
-		public const int BRACKET_SQUARE_RIGHT = 213;
-		public const int BRACKET_CURLY_LEFT = 214;
-		public const int BRACKET_CURLY_RIGHT = 215;
-		public const int BRACKET_ANGLE_LEFT = 208;
-		public const int BRACKET_ANGLE_RIGHT = 209;
+			BRACKET_ROUND_LEFT = 210,
+			BRACKET_ROUND_RIGHT = 211,
+			BRACKET_SQUARE_LEFT = 212,
+			BRACKET_SQUARE_RIGHT = 213,
+			BRACKET_CURLY_LEFT = 214,
+			BRACKET_CURLY_RIGHT = 215,
+			BRACKET_ANGLE_LEFT = 208,
+			BRACKET_ANGLE_RIGHT = 209,
 		#endregion
 		#region Geometry
-		public const int GEOMETRY_PERPENDICULAR = 216;
-		public const int GEOMETRY_PARALLEL = 217;
-		public const int GEOMETRY_ANGLE = 218;
-		public const int GEOMETRY_ANGLE_RIGHT = 219;
-		public const int GEOMETRY_SIMILAR = 220;
-		public const int GEOMETRY_DEGREE = 221;
+			GEOMETRY_PERPENDICULAR = 216,
+			GEOMETRY_PARALLEL = 217,
+			GEOMETRY_ANGLE = 218,
+			GEOMETRY_ANGLE_RIGHT = 219,
+			GEOMETRY_SIMILAR = 220,
+			GEOMETRY_DEGREE = 221,
 		#endregion
 		#region TextSymbols
-		public const int SYMBOL_CELCIUS = 222;
-		public const int SYMBOL_FAHRENHEIT = 223;
-		public const int SYMBOL_ASTERISK = 224;
-		public const int SYMBOL_CARAT = 225;
-		public const int SYMBOL_HASH = 226;
-		public const int SYMBOL_NUMBER = 227;
-		public const int SYMBOL_DOLLAR = 228;
-		public const int SYMBOL_EURO = 229;
-		public const int SYMBOL_POUND = 230;
-		public const int SYMBOL_YEN = 231;
-		public const int SYMBOL_CENT = 232;
-		public const int SYMBOL_CURRENCY = 233;
-		public const int SYMBOL_REGISTERED = 251;
-		public const int SYMBOL_COPYRIGHT_AUDIO = 252;
-		public const int SYMBOL_COPYRIGHT = 253;
-		public const int SYMBOL_TRADE_MARK = 254;
+			SYMBOL_CELCIUS = 222,
+			SYMBOL_FAHRENHEIT = 223,
+			SYMBOL_ASTERISK = 224,
+			SYMBOL_CARAT = 225,
+			SYMBOL_HASH = 226,
+			SYMBOL_NUMBER = 227,
+			SYMBOL_DOLLAR = 228,
+			SYMBOL_EURO = 229,
+			SYMBOL_POUND = 230,
+			SYMBOL_YEN = 231,
+			SYMBOL_CENT = 232,
+			SYMBOL_CURRENCY = 233,
+			SYMBOL_REGISTERED = 251,
+			SYMBOL_COPYRIGHT_AUDIO = 252,
+			SYMBOL_COPYRIGHT = 253,
+			SYMBOL_TRADE_MARK = 254,
 		#endregion
 		#region Punctuation
-		public const int PUNCTUATION_EXCLAMATION_MARK = 234;
-		public const int PUNCTUATION_QUESTION_MARK = 235;
-		public const int PUNCTUATION_DOT = 236;
-		public const int PUNCTUATION_COMMA = 237;
-		public const int PUNCTUATION_ELLIPSIS = 238;
-		public const int PUNCTUATION_COLON = 239;
-		public const int PUNCTUATION_SEMICOLON = 240;
-		public const int PUNCTUATION_QUOTATION_MARK = 241;
-		public const int PUNCTUATION_APOSTROPHE = 242;
-		public const int PUNCTUATION_BACKTICK = 243;
-		public const int PUNCTUATION_DASH = 244;
-		public const int PUNCTUATION_UNDERSCORE = 245;
-		public const int PUNCTUATION_PIPE = 246;
-		public const int PUNCTUATION_SLASH = 247;
-		public const int PUNCTUATION_BACKSLASH = 248;
-		public const int PUNCTUATION_AT = 249;
-		public const int PUNCTUATION_AMPERSAND = 250;
+			PUNCTUATION_EXCLAMATION_MARK = 234,
+			PUNCTUATION_QUESTION_MARK = 235,
+			PUNCTUATION_DOT = 236,
+			PUNCTUATION_COMMA = 237,
+			PUNCTUATION_ELLIPSIS = 238,
+			PUNCTUATION_COLON = 239,
+			PUNCTUATION_SEMICOLON = 240,
+			PUNCTUATION_QUOTATION_MARK = 241,
+			PUNCTUATION_APOSTROPHE = 242,
+			PUNCTUATION_BACKTICK = 243,
+			PUNCTUATION_DASH = 244,
+			PUNCTUATION_UNDERSCORE = 245,
+			PUNCTUATION_PIPE = 246,
+			PUNCTUATION_SLASH = 247,
+			PUNCTUATION_BACKSLASH = 248,
+			PUNCTUATION_AT = 249,
+			PUNCTUATION_AMPERSAND = 250,
 		#endregion
 		#region Arrows
-		public const int ARROW_RIGHT = 282;
-		public const int ARROW_DOWN = 283;
-		public const int ARROW_LEFT = 284;
-		public const int ARROW_UP = 285;
-		public const int ARROW_UP_LEFT = 308;
-		public const int ARROW_UP_RIGHT = 309;
-		public const int ARROW_DOWN_RIGHT = 310;
-		public const int ARROW_DOWN_LEFT = 311;
+			ARROW_RIGHT = 282,
+			ARROW_DOWN = 283,
+			ARROW_LEFT = 284,
+			ARROW_UP = 285,
+			ARROW_UP_LEFT = 308,
+			ARROW_UP_RIGHT = 309,
+			ARROW_DOWN_RIGHT = 310,
+			ARROW_DOWN_LEFT = 311,
 
-		public const int ARROW_MEDIUM_RIGHT = 256;
-		public const int ARROW_MEDIUM_DOWN = 257;
-		public const int ARROW_MEDIUM_LEFT = 258;
-		public const int ARROW_MEDIUM_UP = 259;
-		public const int ARROW_BIG_RIGHT = 334;
-		public const int ARROW_BIG_DOWN = 335;
-		public const int ARROW_BIG_LEFT = 336;
-		public const int ARROW_BIG_UP = 337;
-		public const int ARROW_HOLLOW_RIGHT = 330;
-		public const int ARROW_HOLLOW_DOWN = 331;
-		public const int ARROW_HOLLOW_LEFT = 332;
-		public const int ARROW_HOLLOW_UP = 333;
-		public const int ARROW_GRID_RIGHT = 356;
-		public const int ARROW_GRID_DOWN = 357;
-		public const int ARROW_GRID_LEFT = 358;
-		public const int ARROW_GRID_UP = 359;
-		public const int ARROW_BOLT_RIGHT = 360;
-		public const int ARROW_BOLT_DOWN = 361;
-		public const int ARROW_BOLT_LEFT = 362;
-		public const int ARROW_BOLT_UP = 363;
+			ARROW_MEDIUM_RIGHT = 256,
+			ARROW_MEDIUM_DOWN = 257,
+			ARROW_MEDIUM_LEFT = 258,
+			ARROW_MEDIUM_UP = 259,
+			ARROW_BIG_RIGHT = 334,
+			ARROW_BIG_DOWN = 335,
+			ARROW_BIG_LEFT = 336,
+			ARROW_BIG_UP = 337,
+			ARROW_HOLLOW_RIGHT = 330,
+			ARROW_HOLLOW_DOWN = 331,
+			ARROW_HOLLOW_LEFT = 332,
+			ARROW_HOLLOW_UP = 333,
+			ARROW_GRID_RIGHT = 356,
+			ARROW_GRID_DOWN = 357,
+			ARROW_GRID_LEFT = 358,
+			ARROW_GRID_UP = 359,
+			ARROW_BOLT_RIGHT = 360,
+			ARROW_BOLT_DOWN = 361,
+			ARROW_BOLT_LEFT = 362,
+			ARROW_BOLT_UP = 363,
 		#endregion
 		#region Border
-		public const int BORDER_TOP_LEFT = 260;
-		public const int BORDER_HORIZONTAL = 261;
-		public const int BORDER_TOP_RIGHT = 262;
-		public const int BORDER_VERTICAL = 263;
-		public const int BORDER_DOWN_LEFT = 264;
-		public const int BORDER_DOWN_RIGHT = 265;
-		public const int BORDER_HORIZONTAL_DOWN = 266;
-		public const int BORDER_VERTICAL_RIGHT = 267;
-		public const int BORDER_VERTICAL_LEFT = 268;
-		public const int BORDER_HORIZONTAL_UP = 269;
-		public const int BORDER_CROSS = 270;
+			BORDER_TOP_LEFT = 260,
+			BORDER_HORIZONTAL = 261,
+			BORDER_TOP_RIGHT = 262,
+			BORDER_VERTICAL = 263,
+			BORDER_DOWN_LEFT = 264,
+			BORDER_DOWN_RIGHT = 265,
+			BORDER_HORIZONTAL_DOWN = 266,
+			BORDER_VERTICAL_RIGHT = 267,
+			BORDER_VERTICAL_LEFT = 268,
+			BORDER_HORIZONTAL_UP = 269,
+			BORDER_CROSS = 270,
 
-		public const int BORDER_GRID_TOP_LEFT = 271;
-		public const int BORDER_GRID_HORIZONTAL = 272;
-		public const int BORDER_GRID_TOP_RIGHT = 273;
-		public const int BORDER_GRID_VERTICAL = 274;
-		public const int BORDER_GRID_DOWN_LEFT = 275;
-		public const int BORDER_GRID_DOWN_RIGHT = 276;
-		public const int BORDER_GRID_HORIZONTAL_DOWN = 277;
-		public const int BORDER_GRID_VERTICAL_RIGHT = 278;
-		public const int BORDER_GRID_VERTICAL_LEFT = 279;
-		public const int BORDER_GRID_HORIZONTAL_UP = 280;
-		public const int BORDER_GRID_CROSS = 281;
+			BORDER_GRID_TOP_LEFT = 271,
+			BORDER_GRID_HORIZONTAL = 272,
+			BORDER_GRID_TOP_RIGHT = 273,
+			BORDER_GRID_VERTICAL = 274,
+			BORDER_GRID_DOWN_LEFT = 275,
+			BORDER_GRID_DOWN_RIGHT = 276,
+			BORDER_GRID_HORIZONTAL_DOWN = 277,
+			BORDER_GRID_VERTICAL_RIGHT = 278,
+			BORDER_GRID_VERTICAL_LEFT = 279,
+			BORDER_GRID_HORIZONTAL_UP = 280,
+			BORDER_GRID_CROSS = 281,
 
-		public const int BORDER_HOLLOW_TOP_LEFT = 286;
-		public const int BORDER_HOLLOW_HORIZONTAL = 287;
-		public const int BORDER_HOLLOW_TOP_RIGHT = 288;
-		public const int BORDER_HOLLOW_VERTICAL = 289;
-		public const int BORDER_HOLLOW_DOWN_LEFT = 290;
-		public const int BORDER_HOLLOW_DOWN_RIGHT = 291;
-		public const int BORDER_HOLLOW_HORIZONTAL_DOWN = 292;
-		public const int BORDER_HOLLOW_VERTICAL_RIGHT = 293;
-		public const int BORDER_HOLLOW_VERTICAL_LEFT = 294;
-		public const int BORDER_HOLLOW_HORIZONTAL_UP = 295;
-		public const int BORDER_HOLLOW_CROSS = 296;
+			BORDER_HOLLOW_TOP_LEFT = 286,
+			BORDER_HOLLOW_HORIZONTAL = 287,
+			BORDER_HOLLOW_TOP_RIGHT = 288,
+			BORDER_HOLLOW_VERTICAL = 289,
+			BORDER_HOLLOW_DOWN_LEFT = 290,
+			BORDER_HOLLOW_DOWN_RIGHT = 291,
+			BORDER_HOLLOW_HORIZONTAL_DOWN = 292,
+			BORDER_HOLLOW_VERTICAL_RIGHT = 293,
+			BORDER_HOLLOW_VERTICAL_LEFT = 294,
+			BORDER_HOLLOW_HORIZONTAL_UP = 295,
+			BORDER_HOLLOW_CROSS = 296,
 
-		public const int BORDER_PIPE_TOP_LEFT = 297;
-		public const int BORDER_PIPE_HORIZONTAL = 298;
-		public const int BORDER_PIPE_TOP_RIGHT = 299;
-		public const int BORDER_PIPE_VERTICAL = 300;
-		public const int BORDER_PIPE_DOWN_LEFT = 301;
-		public const int BORDER_PIPE_DOWN_RIGHT = 302;
-		public const int BORDER_PIPE_HORIZONTAL_DOWN = 303;
-		public const int BORDER_PIPE_VERTICAL_RIGHT = 304;
-		public const int BORDER_PIPE_VERTICAL_LEFT = 305;
-		public const int BORDER_PIPE_HORIZONTAL_UP = 306;
-		public const int BORDER_PIPE_CROSS = 307;
+			BORDER_PIPE_TOP_LEFT = 297,
+			BORDER_PIPE_HORIZONTAL = 298,
+			BORDER_PIPE_TOP_RIGHT = 299,
+			BORDER_PIPE_VERTICAL = 300,
+			BORDER_PIPE_DOWN_LEFT = 301,
+			BORDER_PIPE_DOWN_RIGHT = 302,
+			BORDER_PIPE_HORIZONTAL_DOWN = 303,
+			BORDER_PIPE_VERTICAL_RIGHT = 304,
+			BORDER_PIPE_VERTICAL_LEFT = 305,
+			BORDER_PIPE_HORIZONTAL_UP = 306,
+			BORDER_PIPE_CROSS = 307,
 		#endregion
 		#region Horizontal Bar
-		public const int BAR_HORIZONTAL_LEFT = 312;
-		public const int BAR_HORIZONTAL_MIDDLE = 313;
-		public const int BAR_HORIZONTAL_RIGHT = 314;
+			BAR_HORIZONTAL_LEFT = 312,
+			BAR_HORIZONTAL_MIDDLE = 313,
+			BAR_HORIZONTAL_RIGHT = 314,
 
-		public const int BAR_HORIZONTAL_HOLLOW_LEFT = 315;
-		public const int BAR_HORIZONTAL_HOLLOW_MIDDLE = 316;
-		public const int BAR_HORIZONTAL_HOLLOW_RIGHT = 317;
+			BAR_HORIZONTAL_HOLLOW_LEFT = 315,
+			BAR_HORIZONTAL_HOLLOW_MIDDLE = 316,
+			BAR_HORIZONTAL_HOLLOW_RIGHT = 317,
 
-		public const int BAR_HORIZONTAL_GRID_LEFT = 318;
-		public const int BAR_HORIZONTAL_GRID_MIDDLE = 319;
-		public const int BAR_HORIZONTAL_GRID_RIGHT = 320;
+			BAR_HORIZONTAL_GRID_LEFT = 318,
+			BAR_HORIZONTAL_GRID_MIDDLE = 319,
+			BAR_HORIZONTAL_GRID_RIGHT = 320,
 
-		public const int BAR_BIG_HORIZONTAL_LEFT = 321;
-		public const int BAR_BIG_HORIZONTAL_MIDDLE = 322;
-		public const int BAR_BIG_HORIZONTAL_RIGHT = 323;
+			BAR_BIG_HORIZONTAL_LEFT = 321,
+			BAR_BIG_HORIZONTAL_MIDDLE = 322,
+			BAR_BIG_HORIZONTAL_RIGHT = 323,
 
-		public const int BAR_BIG_HORIZONTAL_HOLLOW_LEFT = 324;
-		public const int BAR_BIG_HORIZONTAL_HOLLOW_MIDDLE = 325;
-		public const int BAR_BIG_HORIZONTAL_HOLLOW_RIGHT = 326;
+			BAR_BIG_HORIZONTAL_HOLLOW_LEFT = 324,
+			BAR_BIG_HORIZONTAL_HOLLOW_MIDDLE = 325,
+			BAR_BIG_HORIZONTAL_HOLLOW_RIGHT = 326,
 
-		public const int BAR_BIG_HORIZONTAL_GRID_LEFT = 327;
-		public const int BAR_BIG_HORIZONTAL_GRID_MIDDLE = 328;
-		public const int BAR_BIG_HORIZONTAL_GRID_RIGHT = 329;
+			BAR_BIG_HORIZONTAL_GRID_LEFT = 327,
+			BAR_BIG_HORIZONTAL_GRID_MIDDLE = 328,
+			BAR_BIG_HORIZONTAL_GRID_RIGHT = 329,
 		#endregion
 		#region Vertical Bar
-		public const int BAR_VERTICAL_LEFT = 338;
-		public const int BAR_VERTICAL_MIDDLE = 339;
-		public const int BAR_VERTICAL_RIGHT = 340;
+			BAR_VERTICAL_LEFT = 338,
+			BAR_VERTICAL_MIDDLE = 339,
+			BAR_VERTICAL_RIGHT = 340,
 
-		public const int BAR_VERTICAL_HOLLOW_LEFT = 341;
-		public const int BAR_VERTICAL_HOLLOW_MIDDLE = 342;
-		public const int BAR_VERTICAL_HOLLOW_RIGHT = 343;
+			BAR_VERTICAL_HOLLOW_LEFT = 341,
+			BAR_VERTICAL_HOLLOW_MIDDLE = 342,
+			BAR_VERTICAL_HOLLOW_RIGHT = 343,
 
-		public const int BAR_VERTICAL_GRID_LEFT = 344;
-		public const int BAR_VERTICAL_GRID_MIDDLE = 345;
-		public const int BAR_VERTICAL_GRID_RIGHT = 346;
+			BAR_VERTICAL_GRID_LEFT = 344,
+			BAR_VERTICAL_GRID_MIDDLE = 345,
+			BAR_VERTICAL_GRID_RIGHT = 346,
 
-		public const int BAR_BIG_VERTICAL_LEFT = 347;
-		public const int BAR_BIG_VERTICAL_MIDDLE = 348;
-		public const int BAR_BIG_VERTICAL_RIGHT = 349;
+			BAR_BIG_VERTICAL_LEFT = 347,
+			BAR_BIG_VERTICAL_MIDDLE = 348,
+			BAR_BIG_VERTICAL_RIGHT = 349,
 
-		public const int BAR_BIG_VERTICAL_HOLLOW_LEFT = 350;
-		public const int BAR_BIG_VERTICAL_HOLLOW_MIDDLE = 351;
-		public const int BAR_BIG_VERTICAL_HOLLOW_RIGHT = 352;
+			BAR_BIG_VERTICAL_HOLLOW_LEFT = 350,
+			BAR_BIG_VERTICAL_HOLLOW_MIDDLE = 351,
+			BAR_BIG_VERTICAL_HOLLOW_RIGHT = 352,
 
-		public const int BAR_BIG_VERTICAL_GRID_LEFT = 353;
-		public const int BAR_BIG_VERTICAL_GRID_MIDDLE = 354;
-		public const int BAR_BIG_VERTICAL_GRID_RIGHT = 355;
+			BAR_BIG_VERTICAL_GRID_LEFT = 353,
+			BAR_BIG_VERTICAL_GRID_MIDDLE = 354,
+			BAR_BIG_VERTICAL_GRID_RIGHT = 355,
 		#endregion
 		#region Icon
-		public const int ICON_HOME = 364;
-		public const int ICON_SETTINGS = 365;
-		public const int ICON_SAVE_LOAD = 366;
-		public const int ICON_INFO = 367;
-		public const int ICON_WAIT = 368;
-		public const int ICON_FILE = 369;
-		public const int ICON_DELETE = 370;
-		public const int ICON_LOCK = 371;
-		public const int ICON_KEY = 372;
-		public const int ICON_PIN = 373;
-		public const int ICON_MARK = 374;
-		public const int ICON_GLOBE = 375;
-		public const int ICON_TALK = 376;
-		public const int ICON_LETTER = 377;
-		public const int ICON_BELL = 378;
-		public const int ICON_CALENDAR = 379;
-		public const int ICON_CONNECTION_BAD = 380;
-		public const int ICON_CONNECTION_GOOD = 381;
-		public const int ICON_PERSON = 382;
-		public const int ICON_PEOPLE = 383;
-		public const int ICON_TROPHY = 384;
-		public const int ICON_STAR = 385;
-		public const int ICON_STAR_HOLLOW = 386;
-		public const int ICON_INPUT_MOUSE = 387;
-		public const int ICON_INPUT_KEYBOARD = 388;
-		public const int ICON_INPUT_CONTROLLER = 389;
-		public const int ICON_TICK = 390;
-		public const int ICON_BACK = 391;
-		public const int ICON_LOOP = 392;
-		public const int ICON_SKIP = 393;
-		public const int ICON_SIZE_REDUCE = 394;
-		public const int ICON_SIZE_INCREASE = 395;
-		public const int ICON_SORT_LIST = 396;
-		public const int ICON_SORT_GRID = 397;
-		public const int ICON_BOLT = 398;
-		public const int ICON_MINUS = 399;
-		public const int ICON_MINUS_HOLLOW = 400;
-		public const int ICON_PLUS = 401;
-		public const int ICON_PLUS_HOLLOW = 402;
-		public const int ICON_FLOW_PAUSE = 403;
-		public const int ICON_FLOW_PLAY = 404;
-		public const int ICON_FLOW_SKIP = 405;
-		public const int ICON_AUDIO_VOLUME_MUTE = 406;
-		public const int ICON_AUDIO_VOLUME_LOW = 407;
-		public const int ICON_AUDIO_VOLUME_HIGH = 408;
-		public const int ICON_MUSIC_NOTE_QUARTER = 409;
-		public const int ICON_MUSIC_NOTE_SEIGHT = 410;
-		public const int ICON_MUSIC_NOTES_BEAMED_EIGHT = 411;
-		public const int ICON_MUSIC_NOTES_BEAMED_SIXTEENTH = 412;
-		public const int ICON_MUSIC_SIGN_FLAT = 413;
-		public const int ICON_MUSIC_SIGN_NATURAL = 414;
-		public const int ICON_MUSIC_SIGN_SHARP = 415;
+			ICON_HOME = 364,
+			ICON_SETTINGS = 365,
+			ICON_SAVE_LOAD = 366,
+			ICON_INFO = 367,
+			ICON_WAIT = 368,
+			ICON_FILE = 369,
+			ICON_DELETE = 370,
+			ICON_LOCK = 371,
+			ICON_KEY = 372,
+			ICON_PIN = 373,
+			ICON_MARK = 374,
+			ICON_GLOBE = 375,
+			ICON_TALK = 376,
+			ICON_LETTER = 377,
+			ICON_BELL = 378,
+			ICON_CALENDAR = 379,
+			ICON_CONNECTION_BAD = 380,
+			ICON_CONNECTION_GOOD = 381,
+			ICON_PERSON = 382,
+			ICON_PEOPLE = 383,
+			ICON_TROPHY = 384,
+			ICON_STAR = 385,
+			ICON_STAR_HOLLOW = 386,
+			ICON_INPUT_MOUSE = 387,
+			ICON_INPUT_KEYBOARD = 388,
+			ICON_INPUT_CONTROLLER = 389,
+			ICON_TICK = 390,
+			ICON_BACK = 391,
+			ICON_LOOP = 392,
+			ICON_SKIP = 393,
+			ICON_SIZE_REDUCE = 394,
+			ICON_SIZE_INCREASE = 395,
+			ICON_SORT_LIST = 396,
+			ICON_SORT_GRID = 397,
+			ICON_BOLT = 398,
+			ICON_MINUS = 399,
+			ICON_MINUS_HOLLOW = 400,
+			ICON_PLUS = 401,
+			ICON_PLUS_HOLLOW = 402,
+			ICON_FLOW_PAUSE = 403,
+			ICON_FLOW_PLAY = 404,
+			ICON_FLOW_SKIP = 405,
+			ICON_AUDIO_VOLUME_MUTE = 406,
+			ICON_AUDIO_VOLUME_LOW = 407,
+			ICON_AUDIO_VOLUME_HIGH = 408,
+			ICON_MUSIC_NOTE_QUARTER = 409,
+			ICON_MUSIC_NOTE_SEIGHT = 410,
+			ICON_MUSIC_NOTES_BEAMED_EIGHT = 411,
+			ICON_MUSIC_NOTES_BEAMED_SIXTEENTH = 412,
+			ICON_MUSIC_SIGN_FLAT = 413,
+			ICON_MUSIC_SIGN_NATURAL = 414,
+			ICON_MUSIC_SIGN_SHARP = 415,
 		#endregion
 		#region Face
-		public const int FACE_SMILING = 416;
-		public const int FACE_LAUGHING = 417;
-		public const int FACE_SAD = 418;
-		public const int FACE_TERRIFIED = 419;
-		public const int FACE_ANGRY = 420;
-		public const int FACE_EMOTIONLESS = 421;
-		public const int FACE_SIGHING = 422;
-		public const int FACE_BORED = 422;
-		public const int FACE_HAPPY = 423;
-		public const int FACE_INLOVE = 424;
-		public const int FACE_RELIEVED = 425;
-		public const int FACE_DISSATISFIED = 426;
-		public const int FACE_EGOISTIC = 427;
-		public const int FACE_ANNOYED = 428;
-		public const int FACE_SURPRISED = 429;
-		public const int FACE_SLEEPING = 430;
-		public const int FACE_KISSING = 431;
-		public const int FACE_AWW = 432;
-		public const int FACE_WHOLESOME = 433;
-		public const int FACE_CRYING = 434;
-		public const int FACE_TANTRUMING = 435;
-		public const int FACE_INTERESTED = 436;
-		public const int FACE_EVIL = 437;
-		public const int FACE_WINKING = 438;
-		public const int FACE_CONFIDENT = 439;
-		public const int FACE_SUSPICIOUS = 440;
-		public const int FACE_DISGUISED = 441;
+			FACE_SMILING = 416,
+			FACE_LAUGHING = 417,
+			FACE_SAD = 418,
+			FACE_TERRIFIED = 419,
+			FACE_ANGRY = 420,
+			FACE_EMOTIONLESS = 421,
+			FACE_SIGHING = 422,
+			FACE_BORED = 422,
+			FACE_HAPPY = 423,
+			FACE_INLOVE = 424,
+			FACE_RELIEVED = 425,
+			FACE_DISSATISFIED = 426,
+			FACE_EGOISTIC = 427,
+			FACE_ANNOYED = 428,
+			FACE_SURPRISED = 429,
+			FACE_SLEEPING = 430,
+			FACE_KISSING = 431,
+			FACE_AWW = 432,
+			FACE_WHOLESOME = 433,
+			FACE_CRYING = 434,
+			FACE_TANTRUMING = 435,
+			FACE_INTERESTED = 436,
+			FACE_EVIL = 437,
+			FACE_WINKING = 438,
+			FACE_CONFIDENT = 439,
+			FACE_SUSPICIOUS = 440,
+			FACE_DISGUISED = 441,
 		#endregion
 		#region Game
-		public const int GAME_DICE_1 = 442;
-		public const int GAME_DICE_2 = 443;
-		public const int GAME_DICE_3 = 444;
-		public const int GAME_DICE_4 = 445;
-		public const int GAME_DICE_5 = 446;
-		public const int GAME_DICE_6 = 447;
+			GAME_DICE_1 = 442,
+			GAME_DICE_2 = 443,
+			GAME_DICE_3 = 444,
+			GAME_DICE_4 = 445,
+			GAME_DICE_5 = 446,
+			GAME_DICE_6 = 447,
 
-		public const int GAME_CARD_SPADE = 448;
-		public const int GAME_CARD_HEART = 449;
-		public const int GAME_CARD_CLUB = 450;
-		public const int GAME_CARD_DIAMOND = 451;
+			GAME_CARD_SPADE = 448,
+			GAME_CARD_HEART = 449,
+			GAME_CARD_CLUB = 450,
+			GAME_CARD_DIAMOND = 451,
 
-		public const int GAME_CARD_SPADE_HOLLOW = 452;
-		public const int GAME_CARD_HEART_HOLLOW = 453;
-		public const int GAME_CARD_CLUB_HOLLOW = 454;
-		public const int GAME_CARD_DIAMOND_HOLLOW = 455;
+			GAME_CARD_SPADE_HOLLOW = 452,
+			GAME_CARD_HEART_HOLLOW = 453,
+			GAME_CARD_CLUB_HOLLOW = 454,
+			GAME_CARD_DIAMOND_HOLLOW = 455,
 
-		public const int GAME_CHESS_PAWN = 456;
-		public const int GAME_CHESS_ROOK = 457;
-		public const int GAME_CHESS_KNIGHT = 458;
-		public const int GAME_CHESS_BISHOP = 459;
-		public const int GAME_CHESS_QUEEN = 460;
-		public const int GAME_CHESS_KING = 461;
-		public const int GAME_CHESS_PAWN_HOLLOW = 462;
-		public const int GAME_CHESS_ROOK_HOLLOW = 463;
-		public const int GAME_CHESS_KNIGHT_HOLLOW = 464;
-		public const int GAME_CHESS_BISHOP_HOLLOW = 465;
-		public const int GAME_CHESS_QUEEN_HOLLOW = 466;
-		public const int GAME_CHESS_KING_HOLLOW = 467;
+			GAME_CHESS_PAWN = 456,
+			GAME_CHESS_ROOK = 457,
+			GAME_CHESS_KNIGHT = 458,
+			GAME_CHESS_BISHOP = 459,
+			GAME_CHESS_QUEEN = 460,
+			GAME_CHESS_KING = 461,
+			GAME_CHESS_PAWN_HOLLOW = 462,
+			GAME_CHESS_ROOK_HOLLOW = 463,
+			GAME_CHESS_KNIGHT_HOLLOW = 464,
+			GAME_CHESS_BISHOP_HOLLOW = 465,
+			GAME_CHESS_QUEEN_HOLLOW = 466,
+			GAME_CHESS_KING_HOLLOW = 467,
 		#endregion
 		#region Shape
-		public const int SHAPE_SQUARE_SMALL = 468;
-		public const int SHAPE_SQUARE = 469;
-		public const int SHAPE_SQUARE_BIG = 470;
-		public const int SHAPE_SQUARE_SMALL_HOLLOW = 471;
-		public const int SHAPE_SQUARE_HOLLOW = 472;
-		public const int SHAPE_SQUARE_BIG_HOLLOW = 473;
+			SHAPE_SQUARE_SMALL = 468,
+			SHAPE_SQUARE = 469,
+			SHAPE_SQUARE_BIG = 470,
+			SHAPE_SQUARE_SMALL_HOLLOW = 471,
+			SHAPE_SQUARE_HOLLOW = 472,
+			SHAPE_SQUARE_BIG_HOLLOW = 473,
 
-		public const int SHAPE_CIRCLE_SMALL = 474;
-		public const int SHAPE_CIRCLE = 475;
-		public const int SHAPE_CIRCLE_BIG = 476;
-		public const int SHAPE_CIRCLE_SMALL_HOLLOW = 477;
-		public const int SHAPE_CIRCLE_HOLLOW = 478;
-		public const int SHAPE_CIRCLE_BIG_HOLLOW = 479;
+			SHAPE_CIRCLE_SMALL = 474,
+			SHAPE_CIRCLE = 475,
+			SHAPE_CIRCLE_BIG = 476,
+			SHAPE_CIRCLE_SMALL_HOLLOW = 477,
+			SHAPE_CIRCLE_HOLLOW = 478,
+			SHAPE_CIRCLE_BIG_HOLLOW = 479,
 
-		public const int SHAPE_TRIANGLE = 480;
-		public const int SHAPE_TRIANGLE_BIG = 481;
-		public const int SHAPE_TRIANGLE_HOLLOW = 482;
-		public const int SHAPE_TRIANGLE_BIG_HOLLOW = 483;
+			SHAPE_TRIANGLE = 480,
+			SHAPE_TRIANGLE_BIG = 481,
+			SHAPE_TRIANGLE_HOLLOW = 482,
+			SHAPE_TRIANGLE_BIG_HOLLOW = 483,
 
-		public const int SHAPE_LINE_RIGHT = 484;
-		public const int SHAPE_LINE_DOWN = 485;
-		public const int SHAPE_LINE_LEFT = 486;
-		public const int SHAPE_LINE_UP = 487;
+			SHAPE_LINE_RIGHT = 484,
+			SHAPE_LINE_DOWN = 485,
+			SHAPE_LINE_LEFT = 486,
+			SHAPE_LINE_UP = 487,
 		#endregion
 		#region Cursor
-		public const int CURSOR_ARROW = 494;
-		public const int CURSOR_ARROW_NO_TAIL = 495;
-		public const int CURSOR_HAND = 496;
-		public const int CURSOR_TEXT = 497;
-		public const int CURSOR_CROSSHAIR = 498;
-		public const int CURSOR_NO = 499;
-		public const int CURSOR_SIZE_HORIZONTAL = 500;
-		public const int CURSOR_SIZE_VERTICAL = 501;
-		public const int CURSOR_SIZE_DIAGONAL_1 = 502;
-		public const int CURSOR_SIZE_DIAGONAL_2 = 503;
-		public const int CURSOR_MOVE = 504;
-		public const int CURSOR_WAIT_1 = 505;
-		public const int CURSOR_WAIT_2 = 506;
-		public const int CURSOR_WAIT_3 = 507;
+			CURSOR_ARROW = 494,
+			CURSOR_ARROW_NO_TAIL = 495,
+			CURSOR_HAND = 496,
+			CURSOR_TEXT = 497,
+			CURSOR_CROSSHAIR = 498,
+			CURSOR_NO = 499,
+			CURSOR_SIZE_HORIZONTAL = 500,
+			CURSOR_SIZE_VERTICAL = 501,
+			CURSOR_SIZE_DIAGONAL_1 = 502,
+			CURSOR_SIZE_DIAGONAL_2 = 503,
+			CURSOR_MOVE = 504,
+			CURSOR_WAIT_1 = 505,
+			CURSOR_WAIT_2 = 506,
+			CURSOR_WAIT_3 = 507;
 		#endregion
 	}
 }

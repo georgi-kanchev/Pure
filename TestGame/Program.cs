@@ -26,7 +26,6 @@ namespace TestGame
 				Mouse.Update();
 				Keyboard.Update();
 				Time.Update();
-
 				bg.Fill(0, 0);
 				layer.Fill(0, 0);
 				over.Fill(0, 0);
@@ -34,12 +33,9 @@ namespace TestGame
 				var input = new Input()
 				{
 					Position = hov,
-					IsPressed = Mouse.IsPressed(Pure.Input.Button.Left),
+					IsPressed = Mouse.IsPressed(Pure.Input.Button.LEFT),
 					TypedSymbols = Keyboard.TypedSymbols,
-					IsPressedBackspace = Keyboard.IsPressed(Key.Backspace),
-					IsPressedLeft = Keyboard.IsPressed(Key.ArrowLeft),
-					IsPressedRight = Keyboard.IsPressed(Key.ArrowRight),
-					IsPressedControl = Keyboard.IsPressed(Key.ControlLeft),
+					PressedKeys = Keyboard.Pressed,
 				};
 				Window.DrawEnable(true);
 
@@ -59,7 +55,7 @@ namespace TestGame
 				Window.DrawTilemap(camLayer, camLayer, (8, 8), (0, 0));
 				Window.DrawTilemap(camOver, camOver, (8, 8), (0, 0));
 
-				Window.MouseCursor = (Cursor)UserInterface.MouseCursorTile;
+				Window.MouseCursor = UserInterface.MouseCursorTile;
 
 				Window.DrawEnable(false);
 			}

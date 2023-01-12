@@ -1,43 +1,42 @@
 ﻿namespace Pure.Input
 {
-	internal abstract class Device<T> where T : Enum
+	internal abstract class Device
 	{
-		public T[] Pressed { get; private set; } = Array.Empty<T>();
-		public T[] JustPressed { get; private set; } = Array.Empty<T>();
-		public T[] JustReleased { get; private set; } = Array.Empty<T>();
+		public int[] Pressed { get; private set; } = Array.Empty<int>();
+		public int[] JustPressed { get; private set; } = Array.Empty<int>();
+		public int[] JustReleased { get; private set; } = Array.Empty<int>();
 
 		public void Update()
 		{
-			var prevPressed = new List<T>(pressed);
+			var prevPressed = new List<int>(pressed);
 			pressed.Clear();
 			justPressed.Clear();
 			justReleased.Clear();
 
-			var count = Enum.GetNames(typeof(T)).Length;
+			var count = GetInputCount();
 			for(int i = 0; i < count; i++)
 			{
-				var cur = (T)(object)i;
-				var isPr = IsPressedRaw(cur);
-				var wasPr = prevPressed.Contains(cur);
+				var isPr = IsPressedRaw(i);
+				var wasPr = prevPressed.Contains(i);
 
 				if(wasPr && isPr == false)
 				{
-					justReleased.Add(cur);
-					Trigger(cur, releasedEvents);
-					OnReleased(cur);
+					justReleased.Add(i);
+					Trigger(i, releasedEvents);
+					OnReleased(i);
 				}
 				else if(wasPr == false && isPr)
 				{
-					justPressed.Add(cur);
-					Trigger(cur, pressedEvents);
-					OnPressed(cur);
+					justPressed.Add(i);
+					Trigger(i, pressedEvents);
+					OnPressed(i);
 				}
 
 				if(isPr)
 				{
-					pressed.Add(cur);
-					Trigger(cur, whilePressedEvents);
-					WhilePressed(cur);
+					pressed.Add(i);
+					Trigger(i, whilePressedEvents);
+					WhilePressed(i);
 				}
 			}
 
@@ -46,55 +45,56 @@
 			JustReleased = justReleased.ToArray();
 		}
 
-		public bool IsPressed(T input)
+		public bool IsPressed(int input)
 		{
 			return pressed.Contains(input);
 		}
-		public bool IsJustPressed(T input)
+		public bool IsJustPressed(int input)
 		{
 			return justPressed.Contains(input);
 		}
-		public bool IsJustReleased(T input)
+		public bool IsJustReleased(int input)
 		{
 			return justReleased.Contains(input);
 		}
 
-		public void OnPressed(T input, Action method)
+		public void OnPressed(int input, Action method)
 		{
 			Subscribe(input, pressedEvents, method);
 		}
-		public void OnReleased(T input, Action method)
+		public void OnReleased(int input, Action method)
 		{
 			Subscribe(input, releasedEvents, method);
 		}
-		public void WhilePressed(T input, Action method)
+		public void WhilePressed(int input, Action method)
 		{
 			Subscribe(input, whilePressedEvents, method);
 		}
 
-		protected abstract bool IsPressedRaw(T input);
+		protected abstract bool IsPressedRaw(int input);
+		protected abstract int GetInputCount();
 
 		#region Backend
-		private readonly List<T>
+		private readonly List<int>
 			pressed = new(),
 			justPressed = new(),
 			justReleased = new();
 
-		private readonly Dictionary<T, List<Action>> pressedEvents = new(), releasedEvents = new(),
+		private readonly Dictionary<int, List<Action>> pressedEvents = new(), releasedEvents = new(),
 			whilePressedEvents = new();
 
-		protected virtual void OnPressed(T input) { }
-		protected virtual void OnReleased(T input) { }
-		protected virtual void WhilePressed(T input) { }
+		protected virtual void OnPressed(int input) { }
+		protected virtual void OnReleased(int input) { }
+		protected virtual void WhilePressed(int input) { }
 
-		private static void Subscribe(T input, Dictionary<T, List<Action>> events, Action method)
+		private static void Subscribe(int input, Dictionary<int, List<Action>> events, Action method)
 		{
 			if(events.ContainsKey(input) == false)
 				events[input] = new();
 
 			events[input].Add(method);
 		}
-		private static void Trigger(T input, Dictionary<T, List<Action>> events)
+		private static void Trigger(int input, Dictionary<int, List<Action>> events)
 		{
 			if(events.ContainsKey(input) == false)
 				return;

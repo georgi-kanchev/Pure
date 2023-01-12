@@ -8,7 +8,7 @@
 		protected override void OnUpdate()
 		{
 			if(IsHovered)
-				SetTileAndSystemCursor(CursorResult.TileHand);
+				SetTileAndSystemCursor(TILE_HAND);
 		}
 		#endregion
 	}

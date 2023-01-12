@@ -19,9 +19,9 @@
 			var (x, y) = Position;
 			var (w, h) = Size;
 			var (ix, iy) = Input.Position;
-			var (px, py) = Input.PrevPosition;
-			var isClicked = Input.IsPressed && Input.WasPressed == false;
-			var wasClicked = Input.IsPressed == false && Input.WasPressed;
+			var (px, py) = Input.prevPosition;
+			var isClicked = Input.IsPressed && Input.wasPressed == false;
+			var wasClicked = Input.IsPressed == false && Input.wasPressed;
 
 			ix = MathF.Floor(ix);
 			iy = MathF.Floor(iy);
@@ -35,7 +35,7 @@
 			var isHoveringBottom = IsBetween(ix, x, x + w - 1) && iy == y + h - 1;
 
 			if(IsHovered)
-				SetTileAndSystemCursor(CursorResult.TileArrow);
+				SetTileAndSystemCursor(TILE_ARROW);
 
 			if(wasClicked)
 			{
@@ -47,25 +47,25 @@
 			}
 
 			if(IsMovable && isHoveringTop)
-				Process(ref isDragging, CursorResult.TileMove);
+				Process(ref isDragging, TILE_MOVE);
 			else if(IsResizable)
 			{
 				if(isHoveringLeft)
-					Process(ref isResizingL, CursorResult.TileResizeHorizontal);
+					Process(ref isResizingL, TILE_RESIZE_HORIZONTAL);
 				if(isHoveringRight)
-					Process(ref isResizingR, CursorResult.TileResizeHorizontal);
+					Process(ref isResizingR, TILE_RESIZE_HORIZONTAL);
 				if(isHoveringBottom)
-					Process(ref isResizingD, CursorResult.TileResizeVertical);
+					Process(ref isResizingD, TILE_RESIZE_VERTICAL);
 				if(isHoveringTopCorners)
-					Process(ref isResizingU, CursorResult.TileResizeVertical);
+					Process(ref isResizingU, TILE_RESIZE_VERTICAL);
 
 				if((isHoveringRight && isHoveringTopCorners) || (isHoveringBottom && isHoveringLeft))
-					SetTileAndSystemCursor(CursorResult.TileResizeDiagonal1);
+					SetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_1);
 				if((isHoveringLeft && isHoveringTopCorners) || (isHoveringBottom && isHoveringRight))
-					SetTileAndSystemCursor(CursorResult.TileResizeDiagonal2);
+					SetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_2);
 			}
 
-			if(IsFocused && Input.IsPressed && Input.Position != Input.PrevPosition)
+			if(IsFocused && Input.IsPressed && Input.Position != Input.prevPosition)
 			{
 				var (dx, dy) = ((int)ix - (int)px, (int)iy - (int)py);
 				var (newX, newY) = (x, y);
@@ -105,7 +105,7 @@
 				Position = (newX, newY);
 			}
 
-			void Process(ref bool condition, CursorResult cursor)
+			void Process(ref bool condition, int cursor)
 			{
 				if(isClicked)
 					condition = true;

@@ -40,92 +40,177 @@ namespace Pure.UserInterface
 
 		protected override void OnUpdate()
 		{
+			var isControlPressed = Pressed(CONTROL_LEFT) || Pressed(CONTROL_RIGHT);
+
 			Size = (Size.Item1, 1);
 
-			if(Input.WasPressed == false && Input.IsPressed)
-				IndexSelection = IndexCursor;
+			TryRemoveSelection();
+			TrySetMouseCursor();
 
-			if(IsHovered)
-				SetTileAndSystemCursor(CursorResult.TileText);
-
-			if(IsFocused == false)
+			if(IsFocused == false || TrySelectAll() || JustPressed(TAB))
 				return;
 
-			var isJustPressed = Input.WasPressed == false && Input.IsPressed;
-			var isJustTyped = IsJustTyped();
-			var isJustBackspace = Input.WasPressedBackspace == false && Input.IsPressedBackspace;
-			var isJustLeft = Input.WasPressedLeft == false && Input.IsPressedLeft;
-			var isJustRight = Input.WasPressedRight == false && Input.IsPressedRight;
-
-			if(Input.IsPressedControl && Input.TypedSymbols == "a")
-			{
-				IndexSelection = 0;
-				IndexCursor = Text.Length;
-				return;
-			}
-
+			var isPasting = false;
 			var isHolding = false;
+			var justDeletedSelection = false;
+			var isJustTyped = IsJustTyped();
 
-			if(isJustTyped || isJustBackspace || isJustLeft || isJustRight)
-				holdDelay.Restart();
+			if(TryCopyOrPaste())
+				return;
 
-			if(holdDelay.Elapsed.TotalSeconds > HOLD_DELAY &&
-				hold.Elapsed.TotalSeconds > HOLD)
+			TryResetHoldTimers();
+			var isAllowedType = isJustTyped || (isHolding && Input.TypedSymbols != "");
+
+			TrySelect();
+			TryDeleteSelected();
+			TryTypeOrDelete();
+			TryMoveCursor();
+
+			bool TryCopyOrPaste()
 			{
-				hold.Restart();
-				isHolding = true;
+				if(isControlPressed && Input.TypedSymbols == "c")
+				{
+					CopiedText = TextSelected;
+					return true;
+				}
+				else if(isControlPressed && Input.TypedSymbols == "v")
+					isPasting = true;
+
+				return false;
+			}
+			void TryRemoveSelection()
+			{
+				if(JustPressed(ESCAPE) || (Input.wasPressed == false && Input.IsPressed))
+					IndexSelection = IndexCursor;
+			}
+			void TrySetMouseCursor()
+			{
+				if(IsHovered)
+					SetTileAndSystemCursor(TILE_TEXT);
+
+			}
+			void TryDeleteSelected()
+			{
+				var isSelected = IndexSelection != IndexCursor;
+				if((isAllowedType || Allowed(BACKSPACE) || Allowed(DELETE)) && isSelected)
+				{
+					var a = IndexSelection < IndexCursor ? IndexSelection : IndexCursor;
+					var b = Math.Abs(IndexSelection - IndexCursor);
+
+					Text = Text.Remove(a, b);
+					IndexCursor = a;
+					IndexSelection = a;
+					justDeletedSelection = true;
+				}
+			}
+			void TryTypeOrDelete()
+			{
+				if(isAllowedType && Text.Length < Size.Item1)
+				{
+					var symbols = Input.TypedSymbols ?? "";
+
+					if(isPasting && string.IsNullOrWhiteSpace(CopiedText) == false)
+					{
+						symbols = CopiedText;
+						if(IndexCursor + symbols.Length > Size.Item1)
+						{
+							var newSize = Size.Item1 - IndexCursor;
+							symbols = symbols[0..(newSize)];
+						}
+
+						Text = Text.Insert(IndexCursor, symbols);
+						MoveCursor(symbols.Length);
+						return;
+					}
+
+					Text = Text.Insert(IndexCursor, symbols.Length > 1 ? symbols[^1].ToString() : symbols);
+					MoveCursor(1);
+				}
+				else if(Allowed(BACKSPACE) && justDeletedSelection == false &&
+					Text.Length > 0 && IndexCursor > 0)
+				{
+					Text = Text.Remove(IndexCursor - 1, 1);
+					MoveCursor(-1);
+				}
+				else if(Allowed(DELETE) && justDeletedSelection == false &&
+					Text.Length > 0 && IndexCursor < Text.Length)
+					Text = Text.Remove(IndexCursor, 1);
+			}
+			void TryMoveCursor()
+			{
+				var ctrl = Pressed(CONTROL_LEFT) || Pressed(CONTROL_RIGHT);
+
+				if(Allowed(ARROW_LEFT) && IndexCursor > 0)
+					MoveCursor(ctrl ? GetWordEndOffset(-1) : -1, true);
+				else if(Allowed(ARROW_RIGHT) && IndexCursor < Text.Length)
+					MoveCursor(ctrl ? GetWordEndOffset(1) : 1, true);
+
+				if(JustPressed(ARROW_UP) || JustPressed(END))
+					MoveCursor(Text.Length - IndexCursor, true);
+				else if(JustPressed(ARROW_DOWN) || JustPressed(HOME))
+					MoveCursor(-IndexCursor, true);
+			}
+			void TryResetHoldTimers()
+			{
+				var isAnyJustPressed = JustPressed(BACKSPACE) || JustPressed(DELETE) ||
+					JustPressed(ARROW_LEFT) || JustPressed(ARROW_RIGHT) || isJustTyped;
+
+				if(isAnyJustPressed)
+					holdDelay.Restart();
+
+				if(holdDelay.Elapsed.TotalSeconds > HOLD_DELAY &&
+					hold.Elapsed.TotalSeconds > HOLD)
+				{
+					hold.Restart();
+					isHolding = true;
+				}
+			}
+			bool TrySelectAll()
+			{
+				if(isControlPressed && Input.TypedSymbols == "a")
+				{
+					IndexSelection = 0;
+					IndexCursor = Text.Length;
+					return true;
+				}
+				return false;
+			}
+			void TrySelect()
+			{
+				var cursorPos = Input.Position.Item1 - Position.Item1;
+				var newCurPos = (int)MathF.Round(cursorPos > Text.Length ? Text.Length : cursorPos);
+
+				if(Input.IsPressed)
+					IndexCursor = newCurPos;
+
+				if(Input.IsJustPressed)
+					IndexSelection = newCurPos;
 			}
 
-			var isHoldingType = isHolding && Input.TypedSymbols != "";
-			var isHoldingBackspace = isHolding && Input.IsPressedBackspace;
-			var isHoldingLeft = isHolding && Input.IsPressedLeft;
-			var isHoldingRight = isHolding && Input.IsPressedRight;
-
-			var isAllowedBackspace = isJustBackspace || isHoldingBackspace;
-			var isAllowedType = isJustTyped || isHoldingType;
-			var isAllowedLeft = isJustLeft || isHoldingLeft;
-			var isAllowedRight = isJustRight || isHoldingRight;
-
-			var cursorPos = Input.Position.Item1 - Position.Item1;
-			var endOfTextPos = Text.Length;
-			var curPos = (int)MathF.Round(cursorPos > Text.Length ? endOfTextPos : cursorPos);
-
-			if(IsPressed)
-				IndexCursor = curPos;
-
-			if(isJustPressed && IsHovered)
-				IndexSelection = curPos;
-
-			var isSelected = IndexSelection != IndexCursor;
-			var justDeleted = false;
-			if((isAllowedType || isAllowedBackspace) && isSelected)
+			int GetWordEndOffset(int step)
 			{
-				var a = IndexSelection < IndexCursor ? IndexSelection : IndexCursor;
-				var b = Math.Abs(IndexSelection - IndexCursor);
+				var end = step < 0 ? 0 : Text.Length - 1;
+				var index = 0 + (step < 0 ? -1 : 0);
+				var targetIsWord = GetSymbol(IndexCursor + (step < 0 ? -1 : 0)) == ' ';
+				for(int i = 0; i < Text.Length; i++)
+				{
+					var j = IndexCursor + index;
+					if((j == 0 && step < 0) || (j == Text.Length && step > 0))
+						return index;
 
-				Text = Text.Remove(a, b);
-				IndexCursor = a;
-				IndexSelection = a;
-				justDeleted = true;
-			}
+					if(GetSymbol(j) == ' ' ^ targetIsWord)
+						return index + (step < 0 ? 1 : 0);
 
-			if(isAllowedType && Text.Length < Size.Item1)
-			{
-				var symbols = Input.TypedSymbols;
-				Console.WriteLine(symbols);
-				Text = Text.Insert(IndexCursor, symbols.Length > 1 ? symbols[^1].ToString() : symbols);
-				MoveCursor(1);
-			}
-			else if(isAllowedBackspace && justDeleted == false && Text.Length > 0 && IndexCursor > 0)
-			{
-				Text = Text.Remove(IndexCursor - 1, 1);
-				MoveCursor(-1);
-			}
+					index += step;
+				}
 
-			if(isAllowedLeft && IndexCursor > 0)
-				MoveCursor(-1);
-			else if(isAllowedRight && IndexCursor < Text.Length)
-				MoveCursor(1);
+				return Text.Length * step;
+			}
+			char GetSymbol(int index) => Text[Math.Min(index, Text.Length - 1)];
+
+			bool Pressed(int key) => Input.IsKeyPressed(key);
+			bool JustPressed(int key) => Input.IsKeyJustPressed(key);
+			bool Allowed(int key) => JustPressed(key) || (Pressed(key) && isHolding);
 		}
 
 		#region Backend
@@ -134,16 +219,21 @@ namespace Pure.UserInterface
 
 		private int curPos, selPos;
 
-		private void MoveCursor(int offset)
+		private void MoveCursor(int offset, bool allowSelection = false)
 		{
+			var shift = Input.IsKeyPressed(SHIFT_LEFT) || Input.IsKeyPressed(SHIFT_RIGHT);
+
 			IndexCursor += offset;
-			IndexSelection = IndexCursor;
+			IndexSelection = shift && allowSelection ? IndexSelection : IndexCursor;
 		}
-		private bool IsJustTyped()
+		private static bool IsJustTyped()
 		{
-			for(int i = 0; i < Input.TypedSymbols.Length; i++)
+			var typed = Input.TypedSymbols ?? "";
+			var prev = Input.prevTypedSymbols ?? "";
+
+			for(int i = 0; i < typed.Length; i++)
 			{
-				if(Input.PrevTypedSymbols.Contains(Input.TypedSymbols[i]) == false)
+				if(prev.Contains(typed[i]) == false)
 					return true;
 			}
 			return false;
