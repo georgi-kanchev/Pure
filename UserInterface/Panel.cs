@@ -18,10 +18,10 @@
 
 			var (x, y) = Position;
 			var (w, h) = Size;
-			var (ix, iy) = Input.Position;
-			var (px, py) = Input.prevPosition;
-			var isClicked = Input.IsPressed && Input.wasPressed == false;
-			var wasClicked = Input.IsPressed == false && Input.wasPressed;
+			var (ix, iy) = CurrentInput.Position;
+			var (px, py) = CurrentInput.PositionPrevious;
+			var isClicked = CurrentInput.IsPressed && CurrentInput.wasPressed == false;
+			var wasClicked = CurrentInput.IsPressed == false && CurrentInput.wasPressed;
 
 			ix = MathF.Floor(ix);
 			iy = MathF.Floor(iy);
@@ -65,7 +65,8 @@
 					SetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_2);
 			}
 
-			if(IsFocused && Input.IsPressed && Input.Position != Input.prevPosition)
+			if(IsFocused && CurrentInput.IsPressed &&
+				CurrentInput.Position != CurrentInput.PositionPrevious)
 			{
 				var (dx, dy) = ((int)ix - (int)px, (int)iy - (int)py);
 				var (newX, newY) = (x, y);

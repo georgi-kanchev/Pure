@@ -14,19 +14,50 @@
 			Handle = new(position, (1, 1));
 		}
 
+		public void Scroll(int delta)
+		{
+			var size = IsVertical ? Size.Item2 : Size.Item1;
+			var index = (int)Math.Clamp(MathF.Round(size * Progress), 0, size - 1);
+			index += delta * (IsVertical ? -1 : 1);
+			index = Math.Clamp(index, 0, size - 1);
+
+			Progress = index / (float)size;
+			UpdateHandle();
+		}
+		public void ScrollTo((int, int) position)
+		{
+			var size = IsVertical ? Size.Item2 : Size.Item1;
+			var (x, y) = Position;
+			var (px, py) = position;
+
+			Progress = IsVertical ?
+				(Math.Clamp(py, y, y + size - 1) - y) / (float)size :
+				(Math.Clamp(px, x, x + size - 1) - x) / (float)size;
+			UpdateHandle();
+		}
+
 		#region Backend
 		protected override void OnUpdate()
 		{
 			if(IsHovered)
+			{
 				SetTileAndSystemCursor(TILE_HAND);
+				Scroll(CurrentInput.ScrollDelta);
+			}
 
-			var size = IsVertical ? Size.Item2 : Size.Item1;
-			var index = (int)Math.Clamp(MathF.Round(size * Progress), 0, size - 1);
+			if(IsClicked)
+			{
+				var p = CurrentInput.Position;
+				ScrollTo(((int)p.Item1, (int)p.Item2));
+			}
+		}
+
+		private void UpdateHandle()
+		{
 			var (x, y) = Position;
 			var (w, h) = Size;
-			var hasJustMoved = Input.Position != Input.prevPosition;
-			var (px, py) = ((int)Input.Position.Item1, (int)Input.Position.Item2);
-
+			var size = IsVertical ? Size.Item2 : Size.Item1;
+			var index = (int)Math.Clamp(MathF.Round(size * Progress), 0, size - 1);
 			if(IsVertical)
 			{
 				Handle.Position = (x, y + index);
@@ -36,22 +67,6 @@
 			{
 				Handle.Position = (x + index, y);
 				Handle.Size = (1, h);
-			}
-
-			if(IsClicked)
-			{
-				if(IsVertical)
-				{
-					var newY = Math.Clamp(py, y, y + size - 1);
-					Handle.Position = (Handle.Position.Item1, newY);
-					Progress = (newY - y) / (float)size;
-				}
-				else
-				{
-					var newX = Math.Clamp(px, x, x + size - 1);
-					Handle.Position = (newX, Handle.Position.Item2);
-					Progress = (newX - x) / (float)size;
-				}
 			}
 		}
 		#endregion

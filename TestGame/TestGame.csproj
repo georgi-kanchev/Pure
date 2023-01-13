@@ -12,7 +12,6 @@
     <ProjectReference Include="..\Audio\Audio.csproj" />
     <ProjectReference Include="..\Collision\Collision.csproj" />
     <ProjectReference Include="..\Image\Image.csproj" />
-    <ProjectReference Include="..\Input\Input.csproj" />
     <ProjectReference Include="..\Modding\Modding.csproj" />
     <ProjectReference Include="..\Storage\Storage.csproj" />
     <ProjectReference Include="..\Tilemap\Tilemap.csproj" />

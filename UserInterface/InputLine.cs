@@ -59,7 +59,7 @@ namespace Pure.UserInterface
 				return;
 
 			TryResetHoldTimers();
-			var isAllowedType = isJustTyped || (isHolding && Input.TypedSymbols != "");
+			var isAllowedType = isJustTyped || (isHolding && CurrentInput.Typed != "");
 
 			TrySelect();
 			TryDeleteSelected();
@@ -68,19 +68,19 @@ namespace Pure.UserInterface
 
 			bool TryCopyOrPaste()
 			{
-				if(isControlPressed && Input.TypedSymbols == "c")
+				if(isControlPressed && CurrentInput.Typed == "c")
 				{
 					CopiedText = TextSelected;
 					return true;
 				}
-				else if(isControlPressed && Input.TypedSymbols == "v")
+				else if(isControlPressed && CurrentInput.Typed == "v")
 					isPasting = true;
 
 				return false;
 			}
 			void TryRemoveSelection()
 			{
-				if(JustPressed(ESCAPE) || (Input.wasPressed == false && Input.IsPressed))
+				if(JustPressed(ESCAPE) || (CurrentInput.wasPressed == false && CurrentInput.IsPressed))
 					IndexSelection = IndexCursor;
 			}
 			void TrySetMouseCursor()
@@ -107,7 +107,7 @@ namespace Pure.UserInterface
 			{
 				if(isAllowedType && Text.Length < Size.Item1)
 				{
-					var symbols = Input.TypedSymbols ?? "";
+					var symbols = CurrentInput.Typed ?? "";
 
 					if(isPasting && string.IsNullOrWhiteSpace(CopiedText) == false)
 					{
@@ -167,7 +167,7 @@ namespace Pure.UserInterface
 			}
 			bool TrySelectAll()
 			{
-				if(isControlPressed && Input.TypedSymbols == "a")
+				if(isControlPressed && CurrentInput.Typed == "a")
 				{
 					IndexSelection = 0;
 					IndexCursor = Text.Length;
@@ -177,19 +177,18 @@ namespace Pure.UserInterface
 			}
 			void TrySelect()
 			{
-				var cursorPos = Input.Position.Item1 - Position.Item1;
+				var cursorPos = CurrentInput.Position.Item1 - Position.Item1;
 				var newCurPos = (int)MathF.Round(cursorPos > Text.Length ? Text.Length : cursorPos);
 
-				if(Input.IsPressed)
+				if(CurrentInput.IsPressed)
 					IndexCursor = newCurPos;
 
-				if(Input.IsJustPressed)
+				if(CurrentInput.IsJustPressed)
 					IndexSelection = newCurPos;
 			}
 
 			int GetWordEndOffset(int step)
 			{
-				var end = step < 0 ? 0 : Text.Length - 1;
 				var index = 0 + (step < 0 ? -1 : 0);
 				var targetIsWord = GetSymbol(IndexCursor + (step < 0 ? -1 : 0)) == ' ';
 				for(int i = 0; i < Text.Length; i++)
@@ -208,8 +207,8 @@ namespace Pure.UserInterface
 			}
 			char GetSymbol(int index) => Text[Math.Min(index, Text.Length - 1)];
 
-			bool Pressed(int key) => Input.IsKeyPressed(key);
-			bool JustPressed(int key) => Input.IsKeyJustPressed(key);
+			bool Pressed(int key) => CurrentInput.IsKeyPressed(key);
+			bool JustPressed(int key) => CurrentInput.IsKeyJustPressed(key);
 			bool Allowed(int key) => JustPressed(key) || (Pressed(key) && isHolding);
 		}
 
@@ -221,15 +220,15 @@ namespace Pure.UserInterface
 
 		private void MoveCursor(int offset, bool allowSelection = false)
 		{
-			var shift = Input.IsKeyPressed(SHIFT_LEFT) || Input.IsKeyPressed(SHIFT_RIGHT);
+			var shift = CurrentInput.IsKeyPressed(SHIFT_LEFT) || CurrentInput.IsKeyPressed(SHIFT_RIGHT);
 
 			IndexCursor += offset;
 			IndexSelection = shift && allowSelection ? IndexSelection : IndexCursor;
 		}
 		private static bool IsJustTyped()
 		{
-			var typed = Input.TypedSymbols ?? "";
-			var prev = Input.prevTypedSymbols ?? "";
+			var typed = CurrentInput.Typed ?? "";
+			var prev = CurrentInput.TypedPrevious ?? "";
 
 			for(int i = 0; i < typed.Length; i++)
 			{

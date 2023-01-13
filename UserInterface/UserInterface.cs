@@ -2,6 +2,50 @@
 {
 	public abstract class UserInterface
 	{
+		protected class Input
+		{
+			public bool IsPressed { get; internal set; }
+			public bool IsReleased => IsPressed == false && wasPressed;
+			public bool IsJustPressed => wasPressed == false && IsPressed;
+			public bool IsJustReleased => wasPressed && IsPressed == false;
+
+			public (float, float) Position { get; internal set; }
+			public (float, float) PositionPrevious { get; internal set; }
+			public string? Typed { get; internal set; }
+			public string? TypedPrevious { get; internal set; }
+			public int ScrollDelta { get; internal set; }
+
+			public int[]? PressedKeys
+			{
+				get => pressedKeys.ToArray();
+				internal set
+				{
+					pressedKeys.Clear();
+
+					if(value != null && value.Length != 0)
+						pressedKeys.AddRange(value);
+				}
+			}
+
+			public bool IsKeyPressed(int key)
+			{
+				return pressedKeys.Contains(key);
+			}
+			public bool IsKeyJustPressed(int key)
+			{
+				return IsKeyPressed(key) && prevPressedKeys.Contains(key) == false;
+			}
+			public bool IsKeyJustReleased(int key)
+			{
+				return IsKeyPressed(key) == false && prevPressedKeys.Contains(key);
+			}
+
+			#region Backend
+			internal readonly List<int> pressedKeys = new(), prevPressedKeys = new();
+			internal bool wasPressed;
+			#endregion
+		}
+
 		public (int, int) Position { get; set; }
 		public (int, int) Size
 		{
@@ -20,14 +64,16 @@
 			private set => focusedObject = value ? this : null;
 		}
 		public bool IsHovered { get; private set; }
-		public bool IsPressed => IsHovered && Input.IsPressed;
+		public bool IsPressed => IsHovered && CurrentInput.IsPressed;
 		public bool IsClicked { get; private set; }
 
+		public bool IsJustFocused => IsFocused && wasFocused == false;
+		public bool IsJustUnfocused => IsFocused == false && wasFocused;
 		public bool IsJustHovered => IsHovered && wasHovered == false;
 		public bool IsJustUnovered => IsHovered == false && wasHovered;
 		public bool IsJustTriggered { get; private set; }
-		public bool IsJustPressed => IsPressed && Input.wasPressed == false;
-		public bool IsJustReleased => IsPressed == false && Input.wasPressed;
+		public bool IsJustPressed => IsPressed && CurrentInput.wasPressed == false;
+		public bool IsJustReleased => IsPressed == false && CurrentInput.wasPressed;
 
 		public static string? CopiedText { get; set; } = "";
 		public static int MouseCursorTile { get; internal set; }
@@ -46,10 +92,10 @@
 
 			UpdateHovered();
 
-			if(Input.wasPressed == false && Input.IsPressed && IsHovered)
+			if(CurrentInput.wasPressed == false && CurrentInput.IsPressed && IsHovered)
 				IsFocused = true;
 
-			if(Input.IsKeyJustPressed(ESCAPE))
+			if(CurrentInput.IsKeyJustPressed(ESCAPE))
 				IsFocused = false;
 
 			TryTrigger();
@@ -57,7 +103,8 @@
 
 		}
 
-		public static void ApplyInput(Input input, (int, int) tilemapSize)
+		public static void ApplyInput(bool isPressed, (float, float) position, int scrollDelta,
+			int[] keysPressed, string keysTyped, (int, int) tilemapSize)
 		{
 			IsInputCanceled = false;
 
@@ -65,18 +112,19 @@
 			MouseCursorSystem = 0;
 			TilemapSize = (Math.Abs(tilemapSize.Item1), Math.Abs(tilemapSize.Item2));
 
-			Input.wasPressed = Input.IsPressed;
-			Input.prevTypedSymbols = Input.TypedSymbols;
-			Input.prevPosition = Input.Position;
-			Input.prevPressedKeys.Clear();
-			Input.prevPressedKeys.AddRange(Input.pressedKeys);
+			CurrentInput.wasPressed = CurrentInput.IsPressed;
+			CurrentInput.TypedPrevious = CurrentInput.Typed;
+			CurrentInput.PositionPrevious = CurrentInput.Position;
+			CurrentInput.prevPressedKeys.Clear();
+			CurrentInput.prevPressedKeys.AddRange(CurrentInput.pressedKeys);
 
-			Input.IsPressed = input.IsPressed;
-			Input.Position = input.Position;
-			Input.PressedKeys = input.PressedKeys;
-			Input.TypedSymbols = input.TypedSymbols;
+			CurrentInput.IsPressed = isPressed;
+			CurrentInput.Position = position;
+			CurrentInput.PressedKeys = keysPressed;
+			CurrentInput.Typed = keysTyped;
+			CurrentInput.ScrollDelta = scrollDelta;
 
-			if(Input.wasPressed == false && Input.IsPressed)
+			if(CurrentInput.wasPressed == false && CurrentInput.IsPressed)
 				focusedObject = null;
 		}
 
@@ -109,7 +157,7 @@
 		protected static bool IsInputCanceled { get; private set; }
 		protected static (int, int) TilemapSize { get; private set; }
 
-		protected static Input Input { get; } = new();
+		protected static Input CurrentInput { get; } = new();
 
 		protected abstract void OnUpdate();
 		protected void TryTrigger()
@@ -122,22 +170,22 @@
 				return;
 			}
 
-			if(IsHovered && Input.IsReleased && IsClicked)
+			if(IsHovered && CurrentInput.IsReleased && IsClicked)
 			{
 				IsClicked = false;
 				IsJustTriggered = true;
 			}
 
-			if(IsHovered && Input.IsPressed && Input.wasPressed == false)
+			if(IsHovered && CurrentInput.IsPressed && CurrentInput.wasPressed == false)
 				IsClicked = true;
 
-			if(Input.IsReleased)
+			if(CurrentInput.IsReleased)
 				IsClicked = false;
 		}
 
 		private void UpdateHovered()
 		{
-			var (ix, iy) = Input.Position;
+			var (ix, iy) = CurrentInput.Position;
 			var (x, y) = Position;
 			var (w, h) = Size;
 			var isHoveredX = ix >= x && ix < x + w;

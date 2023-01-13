@@ -1,26 +1,9 @@
-﻿using SFML.Graphics; // textures and vertices etc.
-using SFML.System; // vectors etc.
-using SFML.Window; // window etc.
+﻿using SFML.Graphics;
+using SFML.System;
+using SFML.Window;
 
 namespace Pure.Window
 {
-	/// <summary>
-	/// The OS and tile mouse cursors.
-	/// </summary>
-	public static class Cursor
-	{
-		public const int TILE_ARROW = 0, TILE_ARROW_NO_TAIL = 1, TILE_HAND = 2, TILE_TEXT = 3, TILE_CROSSHAIR = 4,
-			TILE_NO = 5, TILE_RESIZE_HORIZONTAL = 6, TILE_RESIZE_VERTICAL = 7, TILE_RESIZE_DIAGONAL_1 = 8,
-			TILE_RESIZE_DIAGONAL_2 = 9, TILE_MOVE = 10, TILE_WAIT_1 = 11, TILE_WAIT_2 = 12, TILE_WAIT_3 = 13,
-
-			SYSTEM_ARROW = 14, SYSTEM_ARROW_WAIT = 15, SYSTEM_WAIT = 16, SYSTEM_TEXT = 17, SYSTEM_HAND = 18,
-			SYSTEM_RESIZE_HORINZONTAL = 19, SYSTEM_RESIZE_VERTICAL = 20, SYSTEM_RESIZE_DIAGONAL_2 = 21,
-			SYSTEM_RESIZE_DIAGONAL_1 = 22, SYSTEM_MOVE = 23, SYSTEM_CROSSHAIR = 24, SYSTEM_HELP = 25,
-			SYSTEM_NO = 26,
-
-			NONE = 27;
-	}
-
 	/// <summary>
 	/// Provides a simple way to create and interact with an OS window.
 	/// </summary>
@@ -63,86 +46,19 @@ namespace Pure.Window
 			get => isHidden;
 			set { isHidden = value; window.SetVisible(value == false); }
 		}
+		/// <summary>
+		/// Returns whether the OS window is currently focused.
+		/// </summary>
+		public static bool IsFocused => window.HasFocus();
 
 		/// <summary>
-		/// The mouse cursor position relative to the OS window.
+		/// Determines whether the <see cref="Window"/> <paramref name="isActive"/>.
+		/// An application loop should ideally activate it at the very start and
+		/// deactivate it at the very end.
 		/// </summary>
-		public static (int, int) MousePosition
+		public static void Activate(bool isActive)
 		{
-			get { var pos = Mouse.GetPosition(window); return (pos.X, pos.Y); }
-			set
-			{
-				var pos = new Vector2i(value.Item1, value.Item2);
-				Mouse.SetPosition(pos, window);
-			}
-		}
-		/// <summary>
-		/// The mouse cursor type used by the OS window and <see cref="TryDrawMouseCursor"/>.
-		/// </summary>
-		public static int MouseCursor
-		{
-			get => cursor;
-			set
-			{
-				cursor = value;
-
-				if(value != Cursor.NONE && value > Cursor.TILE_WAIT_3)
-				{
-					var sfmlEnum = (SFML.Window.Cursor.CursorType)(value - Cursor.SYSTEM_ARROW);
-					sysCursor.Dispose();
-					sysCursor = new(sfmlEnum);
-
-					window.SetMouseCursor(sysCursor);
-				}
-			}
-		}
-		/// <summary>
-		/// The mouse cursor color used by <see cref="TryDrawMouseCursor"/>.
-		/// </summary>
-		public static byte MouseColor { get; set; } = 255;
-		/// <summary>
-		/// Whether the mouse cursor is restricted of leaving the OS window.
-		/// </summary>
-		public static bool MouseIsRestriced
-		{
-			get => isMouseGrabbed;
-			set { isMouseGrabbed = value; window.SetMouseCursorGrabbed(value); }
-		}
-
-		static Window()
-		{
-			//var str = DefaultGraphics.PNGToBase64String("graphics.png");
-
-			sysCursor = new SFML.Window.Cursor(SFML.Window.Cursor.CursorType.Arrow);
-			graphics["default"] = DefaultGraphics.CreateTexture();
-
-			var desktopW = VideoMode.DesktopMode.Width;
-			var desktopH = VideoMode.DesktopMode.Height;
-			title = "";
-
-			var width = (uint)RoundToMultipleOfTwo((int)(desktopW * 0.6f));
-			var height = (uint)RoundToMultipleOfTwo((int)(desktopH * 0.6f));
-
-			window = new(new VideoMode(width, height), title);
-			window.Closed += (s, e) => window.Close();
-			window.Resized += (s, e) => UpdateWindowAndView();
-			window.DispatchEvents();
-			window.Clear();
-			window.Display();
-			UpdateWindowAndView();
-		}
-
-		/// <summary>
-		/// If the drawing <paramref name="isEnabled"/>:<br></br>
-		/// - The OS window setups for drawing<br></br>
-		/// Otherwise:<br></br>
-		/// - The OS window displays everything drawn<br></br><br></br>
-		/// Or in other words: drawing onto the OS window should start with enabling the draw
-		/// and end with disabling it.
-		/// </summary>
-		public static void DrawEnable(bool isEnabled)
-		{
-			if(isEnabled)
+			if(isActive)
 			{
 				window.DispatchEvents();
 				window.Clear();
@@ -150,15 +66,17 @@ namespace Pure.Window
 				return;
 			}
 
-			TryDrawMouseCursor();
+			MouseButton.Update();
+			MouseCursor.TryDrawCursor();
 			window.Display();
 		}
 
 		/// <summary>
 		/// Draws a tilemap onto the OS window. Its graphics image is loaded from a
-		/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a <paramref name="tileSize"/> and a
-		/// <paramref name="tileMargin"/>, then it is cached for future draws. The tilemap's
-		/// contents are decided by <paramref name="tiles"/> and <paramref name="colors"/>.
+		/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a
+		/// <paramref name="tileSize"/> and a <paramref name="tileMargin"/>, then it is cached
+		/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>
+		/// and <paramref name="colors"/>.
 		/// </summary>
 		public static void DrawTilemap(int[,] tiles, byte[,] colors, (uint, uint) tileSize,
 			(uint, uint) tileMargin = default, string? path = default)
@@ -221,26 +139,86 @@ namespace Pure.Window
 		#region Backend
 		private const int LINE_MAX_ITERATIONS = 10000;
 
-		private static int cursor;
-		private static SFML.Window.Cursor sysCursor;
-		private static bool isHidden, isMouseGrabbed;
+		private static bool isHidden;
 		private static string title;
 		private static string? prevDrawTilemapGfxPath;
 		private static (uint, uint) prevDrawTilemapTileSz;
 		private static (float, float) prevDrawTilemapCellSz;
 		private static (uint, uint) prevDrawTilemapCellCount;
 
-		private static readonly Dictionary<int, (float, float)> cursorOffsets = new()
+		private static readonly List<(byte, byte, byte)> colorLookup = new()
 		{
-			{ Cursor.TILE_ARROW, (0, 0) }, { Cursor.TILE_ARROW_NO_TAIL, (0, 0) }, { Cursor.TILE_HAND, (0.2f, 0f) },
-			{ Cursor.TILE_TEXT, (0.3f, 0.4f) }, { Cursor.TILE_CROSSHAIR, (0.3f, 0.3f) }, { Cursor.TILE_NO, (0.4f, 0.4f) },
-			{ Cursor.TILE_RESIZE_HORIZONTAL, (0.4f, 0.3f) }, { Cursor.TILE_RESIZE_VERTICAL, (0.3f, 0.4f) },
-			{ Cursor.TILE_RESIZE_DIAGONAL_1, (0.4f, 0.4f) }, { Cursor.TILE_RESIZE_DIAGONAL_2, (0.4f, 0.4f) },
-			{ Cursor.TILE_MOVE, (0.4f, 0.4f) }, { Cursor.TILE_WAIT_1, (0.4f, 0.4f) }, { Cursor.TILE_WAIT_2, (0.4f, 0.4f) },
-			{ Cursor.TILE_WAIT_3, (0.4f, 0.4f) },
+			(0,0,0),(0,0,85),(0,0,170),(0,0,255),(0,36,0),(0,36,85),(0,36,170),(0,36,255),
+			(0,72,0),(0,72,85),(0,72,170),(0,72,255),(0,109,0),(0,109,85),(0,109,170),
+			(0,109,255),(0,145,0),(0,145,85),(0,145,170),(0,145,255),(0,182,0),(0,182,85),
+			(0,182,170),(0,182,255),(0,218,0),(0,218,85),(0,218,170),(0,218,255),(0,255,0),
+			(0,255,85),(0,255,170),(0,255,255),(36,0,0),(36,0,85),(36,0,170),(36,0,255),
+			(36,36,0),(36,36,85),(36,36,170),(36,36,255),(36,72,0),(36,72,85),(36,72,170),
+			(36,72,255),(36,109,0),(36,109,85),(36,109,170),(36,109,255),(36,145,0),(36,145,85),
+			(36,145,170),(36,145,255),(36,182,0),(36,182,85),(36,182,170),(36,182,255),
+			(36,218,0),(36,218,85),(36,218,170),(36,218,255),(36,255,0),(36,255,85),(36,255,170),
+			(36,255,255),(72,0,0),(72,0,85),(72,0,170),(72,0,255),(72,36,0),(72,36,85),
+			(72,36,170),(72,36,255),(72,72,0),(72,72,85),(72,72,170),(72,72,255),(72,109,0),
+			(72,109,85),(72,109,170),(72,109,255),(72,145,0),(72,145,85),(72,145,170),
+			(72,145,255),(72,182,0),(72,182,85),(72,182,170),(72,182,255),(72,218,0),(72,218,85),
+			(72,218,170),(72,218,255),(72,255,0),(72,255,85),(72,255,170),(72,255,255),(109,0,0),
+			(109,0,85),(109,0,170),(109,0,255),(109,36,0),(109,36,85),(109,36,170),(109,36,255),
+			(109,72,0),(109,72,85),(109,72,170),(109,72,255),(109,109,0),(109,109,85),
+			(109,109,170),(109,109,255),(109,145,0),(109,145,85),(109,145,170),(109,145,255),
+			(109,182,0),(109,182,85),(109,182,170),(109,182,255),(109,218,0),(109,218,85),
+			(109,218,170),(109,218,255),(109,255,0),(109,255,85),(109,255,170),(109,255,255),
+			(145,0,0),(145,0,85),(145,0,170),(145,0,255),(145,36,0),(145,36,85),(145,36,170),
+			(145,36,255),(145,72,0),(145,72,85),(145,72,170),(145,72,255),(145,109,0),
+			(145,109,85),(145,109,170),(145,109,255),(145,145,0),(145,145,85),(145,145,170),
+			(145,145,255),(145,182,0),(145,182,85),(145,182,170),(145,182,255),(145,218,0),
+			(145,218,85),(145,218,170),(145,218,255),(145,255,0),(145,255,85),(145,255,170),
+			(145,255,255),(182,0,0),(182,0,85),(182,0,170),(182,0,255),(182,36,0),(182,36,85),
+			(182,36,170),(182,36,255),(182,72,0),(182,72,85),(182,72,170),(182,72,255),
+			(182,109,0),(182,109,85),(182,109,170),(182,109,255),(182,145,0),(182,145,85),
+			(182,145,170),(182,145,255),(182,182,0),(182,182,85),(182,182,170),(182,182,255),
+			(182,218,0),(182,218,85),(182,218,170),(182,218,255),(182,255,0),(182,255,85),
+			(182,255,170),(182,255,255),(218,0,0),(218,0,85),(218,0,170),(218,0,255),(218,36,0),
+			(218,36,85),(218,36,170),(218,36,255),(218,72,0),(218,72,85),(218,72,170),
+			(218,72,255),(218,109,0),(218,109,85),(218,109,170),(218,109,255),(218,145,0),
+			(218,145,85),(218,145,170),(218,145,255),(218,182,0),(218,182,85),(218,182,170),
+			(218,182,255),(218,218,0),(218,218,85),(218,218,170),(218,218,255),(218,255,0),
+			(218,255,85),(218,255,170),(218,255,255),(255,0,0),(255,0,85),(255,0,170),
+			(255,0,255),(255,36,0),(255,36,85),(255,36,170),(255,36,255),(255,72,0),(255,72,85),
+			(255,72,170),(255,72,255),(255,109,0),(255,109,85),(255,109,170),(255,109,255),
+			(255,145,0),(255,145,85),(255,145,170),(255,145,255),(255,182,0),(255,182,85),
+			(255,182,170),(255,182,255),(255,218,0),(255,218,85),(255,218,170),(255,218,255),
+			(255,255,0),(255,255,85),(255,255,170),(255,255,255),
 		};
-		private static readonly Dictionary<string, Texture> graphics = new();
-		private static readonly RenderWindow window;
+		internal static readonly Dictionary<string, Texture> graphics = new();
+		internal static readonly RenderWindow window;
+
+		static Window()
+		{
+			//var str = DefaultGraphics.PNGToBase64String("graphics.png");
+
+			graphics["default"] = DefaultGraphics.CreateTexture();
+
+			var desktopW = VideoMode.DesktopMode.Width;
+			var desktopH = VideoMode.DesktopMode.Height;
+			title = "";
+
+			var width = (uint)RoundToMultipleOfTwo((int)(desktopW * 0.6f));
+			var height = (uint)RoundToMultipleOfTwo((int)(desktopH * 0.6f));
+
+			window = new(new VideoMode(width, height), title);
+			window.Closed += (s, e) => window.Close();
+			window.Resized += (s, e) => UpdateWindowAndView();
+			window.LostFocus += (s, e) =>
+			{
+				MouseButton.CancelInput();
+				KeyboardKey.CancelInput();
+			};
+
+			window.DispatchEvents();
+			window.Clear();
+			window.Display();
+			UpdateWindowAndView();
+		}
 
 		private static void TryLoadGraphics(string path)
 		{
@@ -248,17 +226,6 @@ namespace Pure.Window
 				return;
 
 			graphics[path] = new(path);
-		}
-		private static void TryDrawMouseCursor()
-		{
-			window.SetMouseCursorVisible(IsHovering() == false);
-
-			if(cursor > Cursor.TILE_WAIT_3)
-				return;
-
-			var (x, y) = PositionFrom(MousePosition);
-			var (offX, offY) = cursorOffsets[MouseCursor];
-			DrawSprite((x - offX, y - offY), 494 + MouseCursor, MouseColor);
 		}
 		private static void UpdateWindowAndView()
 		{
@@ -443,14 +410,8 @@ namespace Pure.Window
 		}
 		private static Color ByteToColor(byte color)
 		{
-			var binary = Convert.ToString(color, 2).PadLeft(8, '0');
-			var r = binary[0..3];
-			var g = binary[3..6];
-			var b = binary[6..8];
-			var red = (byte)(Convert.ToByte(r, 2) * byte.MaxValue / 7);
-			var green = (byte)(Convert.ToByte(g, 2) * byte.MaxValue / 7);
-			var blue = (byte)(Convert.ToByte(b, 2) * byte.MaxValue / 3);
-			return new(red, green, blue);
+			var (r, g, b) = colorLookup[color];
+			return new(r, g, b);
 		}
 		private static (float, float) ToGrid((float, float) pos, (float, float) gridSize)
 		{
@@ -494,17 +455,12 @@ namespace Pure.Window
 				result += 2;
 			return result;
 		}
-		private static (float, float) PositionFrom((int, int) screenPixel)
+		internal static (float, float) PositionFrom((int, int) screenPixel)
 		{
 			var x = Map(screenPixel.Item1, 0, Size.Item1, 0, prevDrawTilemapCellCount.Item1);
 			var y = Map(screenPixel.Item2, 0, Size.Item2, 0, prevDrawTilemapCellCount.Item2);
 
 			return (x, y);
-		}
-		private static bool IsHovering()
-		{
-			var pos = Mouse.GetPosition(window);
-			return pos.X > 0 && pos.X < window.Size.X && pos.Y > 0 && pos.Y < window.Size.Y;
 		}
 		#endregion
 	}

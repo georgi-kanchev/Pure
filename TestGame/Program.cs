@@ -1,5 +1,4 @@
-﻿using Pure.Input;
-using Pure.Tilemap;
+﻿using Pure.Tilemap;
 using Pure.UserInterface;
 using Pure.Utilities;
 using Pure.Window;
@@ -17,38 +16,41 @@ namespace TestGame
 
 			while(Window.IsExisting)
 			{
-				var mousePos = Window.MousePosition;
-				var hov = layer.PositionFrom(mousePos, Window.Size);
+				Start();
 
-				Time.Update();
-				var input = new Input()
+				MyCoolButton(layer, btn);
+
+				End();
+
+				void Start()
 				{
-					Position = hov,
-					IsPressed = Mouse.IsPressed(Pure.Input.Button.LEFT),
-					TypedSymbols = Keyboard.TypedSymbols,
-					PressedKeys = Keyboard.Pressed,
-				};
-				UserInterface.ApplyInput(input, layer.Size);
+					Window.Activate(true);
+					Time.Update();
 
-				bg.Fill(0, 0);
-				layer.Fill(0, 0);
-				over.Fill(0, 0);
+					UserInterface.ApplyInput(
+						MouseButton.IsPressed(MouseButton.LEFT),
+						layer.PositionFrom(MouseCursor.Position, Window.Size),
+						MouseButton.ScrollDelta,
+						KeyboardKey.Pressed,
+						KeyboardKey.Typed,
+						layer.Size);
 
-				Window.DrawEnable(true);
+					bg.Fill(0, 0);
+					layer.Fill(0, 0);
+					over.Fill(0, 0);
+				}
+				void End()
+				{
+					Window.DrawTilemap(bg, bg, (8, 8), (0, 0));
+					Window.DrawTilemap(layer, layer, (8, 8), (0, 0));
+					Window.DrawTilemap(over, over, (8, 8), (0, 0));
 
-				layer.SetBar((5, 10), Tile.BAR_BIG_VERTICAL_HOLLOW, size: 8, isVertical: true);
-				MyCoolButton(bg, layer, btn);
-
-				Window.DrawTilemap(bg, bg, (8, 8), (0, 0));
-				Window.DrawTilemap(layer, layer, (8, 8), (0, 0));
-				Window.DrawTilemap(over, over, (8, 8), (0, 0));
-
-				Window.MouseCursor = UserInterface.MouseCursorTile;
-
-				Window.DrawEnable(false);
+					MouseCursor.Type = UserInterface.MouseCursorTile;
+					Window.Activate(false);
+				}
 			}
 		}
-		static void MyCoolButton(Tilemap bg, Tilemap layer, Slider btn)
+		static void MyCoolButton(Tilemap layer, Slider btn)
 		{
 			var color = Color.Orange;
 			var v = btn.IsVertical;
