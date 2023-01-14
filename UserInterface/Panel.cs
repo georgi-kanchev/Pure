@@ -4,7 +4,7 @@
 	{
 		public bool IsResizable { get; set; } = true;
 		public bool IsMovable { get; set; } = true;
-		public (int, int) AdditionalMaxSize { get; set; }
+		public (int, int) AdditionalMinSize { get; set; }
 
 		public Panel((int, int) position, (int, int) size) : base(position, size) { }
 
@@ -71,8 +71,7 @@
 				var (dx, dy) = ((int)ix - (int)px, (int)iy - (int)py);
 				var (newX, newY) = (x, y);
 				var (newW, newH) = (w, h);
-				var isPositionalResizing = isResizingU || isResizingL;
-				var (maxX, maxY) = AdditionalMaxSize;
+				var (maxX, maxY) = AdditionalMinSize;
 
 				if(isDragging && IsBetween(ix, x + 1 + dx, x + w - 2 + dx) && iy == y + dy)
 				{
@@ -94,7 +93,7 @@
 					newH -= dy;
 				}
 
-				if(newW < Text.Length + 2 + Math.Abs(maxX) ||
+				if(newW < 2 + Math.Abs(maxX) ||
 					newH < 2 + Math.Abs(maxY) ||
 					newX < 0 ||
 					newY < 0 ||

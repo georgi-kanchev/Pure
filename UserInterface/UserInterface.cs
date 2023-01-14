@@ -2,6 +2,11 @@
 {
 	public abstract class UserInterface
 	{
+		public enum When
+		{
+			Trigger, Focus, Unfocus, Hover, Unhover, Press, Release, Drag
+		}
+
 		protected class Input
 		{
 			public bool IsPressed { get; internal set; }
@@ -67,14 +72,6 @@
 		public bool IsPressed => IsHovered && CurrentInput.IsPressed;
 		public bool IsClicked { get; private set; }
 
-		public bool IsJustFocused => IsFocused && wasFocused == false;
-		public bool IsJustUnfocused => IsFocused == false && wasFocused;
-		public bool IsJustHovered => IsHovered && wasHovered == false;
-		public bool IsJustUnovered => IsHovered == false && wasHovered;
-		public bool IsJustTriggered { get; private set; }
-		public bool IsJustPressed => IsPressed && CurrentInput.wasPressed == false;
-		public bool IsJustReleased => IsPressed == false && CurrentInput.wasPressed;
-
 		public static string? CopiedText { get; set; } = "";
 		public static int MouseCursorTile { get; internal set; }
 		public static int MouseCursorSystem { get; internal set; }
@@ -83,6 +80,14 @@
 		{
 			Position = position;
 			Size = size;
+		}
+
+		public void InCaseOf(When when, Action callMethod)
+		{
+			if(events.ContainsKey(when) == false)
+				events[when] = new();
+
+			events[when].Add(callMethod);
 		}
 
 		public void Update()
@@ -99,8 +104,26 @@
 				IsFocused = false;
 
 			TryTrigger();
+
+			if(IsFocused && wasFocused == false)
+				TriggerEvent(When.Focus);
+			if(IsFocused == false && wasFocused)
+				TriggerEvent(When.Unfocus);
+			if(IsHovered && wasHovered == false)
+				TriggerEvent(When.Hover);
+			if(IsHovered == false && wasHovered)
+				TriggerEvent(When.Unhover);
+			if(IsPressed && CurrentInput.wasPressed == false)
+				TriggerEvent(When.Press);
+			if(IsPressed == false && CurrentInput.wasPressed)
+				TriggerEvent(When.Release);
+
 			OnUpdate();
 
+		}
+		public void Trigger()
+		{
+			TriggerEvent(When.Trigger);
 		}
 
 		public static void ApplyInput(bool isPressed, (float, float) position, int scrollDelta,
@@ -121,7 +144,10 @@
 			CurrentInput.IsPressed = isPressed;
 			CurrentInput.Position = position;
 			CurrentInput.PressedKeys = keysPressed;
-			CurrentInput.Typed = keysTyped;
+			CurrentInput.Typed = keysTyped
+				.Replace("\n", "")
+				.Replace("\t", "")
+				.Replace("\r", "");
 			CurrentInput.ScrollDelta = scrollDelta;
 
 			if(CurrentInput.wasPressed == false && CurrentInput.IsPressed)
@@ -154,16 +180,14 @@
 
 		private bool wasFocused, wasHovered;
 
+		private readonly Dictionary<When, List<Action>> events = new();
 		protected static bool IsInputCanceled { get; private set; }
 		protected static (int, int) TilemapSize { get; private set; }
 
 		protected static Input CurrentInput { get; } = new();
 
-		protected abstract void OnUpdate();
 		protected void TryTrigger()
 		{
-			IsJustTriggered = false;
-
 			if(IsFocused == false)
 			{
 				IsClicked = false;
@@ -173,7 +197,7 @@
 			if(IsHovered && CurrentInput.IsReleased && IsClicked)
 			{
 				IsClicked = false;
-				IsJustTriggered = true;
+				TriggerEvent(When.Trigger);
 			}
 
 			if(IsHovered && CurrentInput.IsPressed && CurrentInput.wasPressed == false)
@@ -182,7 +206,6 @@
 			if(CurrentInput.IsReleased)
 				IsClicked = false;
 		}
-
 		private void UpdateHovered()
 		{
 			var (ix, iy) = CurrentInput.Position;
@@ -197,6 +220,20 @@
 
 			IsHovered = isHoveredX && isHoveredY;
 		}
+
+		protected void TriggerEvent(When when)
+		{
+			OnEvent(when);
+
+			if(events.ContainsKey(when) == false)
+				return;
+
+			for(int i = 0; i < events[when].Count; i++)
+				events[when][i].Invoke();
+		}
+		protected virtual void OnEvent(When when) { }
+
+		protected abstract void OnUpdate();
 
 		protected static void SetTileAndSystemCursor(int tileCursor)
 		{

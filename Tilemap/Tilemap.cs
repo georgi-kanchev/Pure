@@ -4,9 +4,9 @@
 	{
 		public enum Alignment
 		{
-			UpLeft, Up, UpRight,
+			TopLeft, TopUp, TopRight,
 			Left, Center, Right,
-			DownLeft, Down, DownRight
+			BottomLeft, Bottom, BottomRight
 		};
 
 		public (int, int) Size => (tiles.GetLength(0), tiles.GetLength(1));
@@ -109,117 +109,96 @@
 					continue;
 				}
 
+				if(symbol == ' ')
+					continue;
+
 				SetTile((position.Item1 + i - errorOffset, position.Item2), index, color);
 			}
 		}
-		public void SetTextBox((int, int) position, (int, int) size, byte color,
-			bool isWordWrapping, Alignment alignment, params string[] lines)
+		public void SetTextBox((int, int) position, (int, int) size, string text, byte color = 255,
+			bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
 		{
-			if(lines == null || lines.Length == 0 ||
+			if(text == null || text.Length == 0 ||
 				size.Item1 <= 0 || size.Item2 <= 0)
 				return;
 
 			var x = position.Item1;
 			var y = position.Item2;
-
-
-			var lineList = new List<string>(lines);
+			var lineList = text.Split("\n", StringSplitOptions.RemoveEmptyEntries).ToList();
 
 			if(lineList == null || lineList.Count == 0)
 				return;
-
-			for(int i = 0; i < lineList.Count - 1; i++)
-				lineList[i] = lineList[i] + '\n';
 
 			for(int i = 0; i < lineList.Count; i++)
 			{
 				var line = lineList[i];
 
-				for(int j = 0; j < line.Length; j++)
+				if(line.Length <= size.Item1) // line is valid length
+					continue;
+
+				var lastLineIndex = size.Item1 - 1;
+				var newLineIndex = isWordWrapping ?
+					GetSafeNewLineIndex(line, (uint)lastLineIndex) : lastLineIndex;
+
+				// end of line? can't word wrap, proceed to symbol wrap
+				if(newLineIndex == 0)
 				{
-					var isSymbolNewLine = line[j] == '\n' && j != line.Length - 1 && j > size.Item1;
-					var isEndOfLine = j > size.Item1;
-
-					if(j == line.Length - 1 && line[j] == '\n')
-					{
-						j--;
-						line = line[0..^1];
-						lineList[i] = line;
-					}
-
-					if(isEndOfLine ^ isSymbolNewLine)
-					{
-						var newLineIndex = isWordWrapping && isSymbolNewLine == false ?
-							GetSafeNewLineIndex(line, (uint)j) : j;
-
-						// end of line? can't word wrap, proceed to symbol wrap
-						if(newLineIndex == 0)
-						{
-							lineList[i] = line[0..size.Item1];
-							var newLineSymbol = line[size.Item1..line.Length];
-							if(i == lineList.Count - 1)
-							{
-								lineList.Add(newLineSymbol);
-								break;
-							}
-							lineList[i + 1] = $"{newLineSymbol} {lineList[i + 1]}";
-							break;
-						}
-
-						lineList[i] = line[0..newLineIndex];
-
-						var newLine = isWordWrapping ?
-							line[(newLineIndex + 1)..^0] : line[j..^0];
-
-						if(i == lineList.Count - 1)
-						{
-							lineList.Add(newLine);
-							break;
-						}
-
-						var space = newLine.EndsWith('\n') ? "" : " ";
-						lineList[i + 1] = $"{newLine}{space}{lineList[i + 1]}";
-						break;
-					}
+					lineList[i] = line[0..size.Item1];
+					lineList.Insert(i + 1, line[size.Item1..line.Length]);
+					continue;
 				}
-				if(i > size.Item2)
-					break;
-			}
 
+				// otherwise wordwrap
+				lineList[i] = line[0..newLineIndex];
+				lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
+			}
 			var yDiff = size.Item2 - lineList.Count;
 
-			if(yDiff > 1)
+			if(alignment == Alignment.Left ||
+				alignment == Alignment.Center ||
+				alignment == Alignment.Right)
 			{
-				if(alignment == Alignment.Left ||
-					alignment == Alignment.Center ||
-					alignment == Alignment.Right)
-					for(int i = 0; i < yDiff / 2; i++)
-						lineList.Insert(0, "");
+				for(int i = 0; i < yDiff / 2; i++)
+					lineList.Insert(0, "");
+			}
+			else if(alignment == Alignment.BottomLeft ||
+				alignment == Alignment.Bottom ||
+				alignment == Alignment.BottomRight)
+			{
+				for(int i = 0; i < yDiff; i++)
+					lineList.Insert(0, "");
+			}
+			// new lineList.Count
+			yDiff = size.Item2 - lineList.Count;
 
-				else if(alignment == Alignment.DownLeft ||
-					alignment == Alignment.Down ||
-					alignment == Alignment.DownRight)
-					for(int i = 0; i < yDiff; i++)
-						lineList.Insert(0, "");
+			var startIndex = 0;
+			var end = startIndex + size.Item2;
+			var scrollValue = (int)Math.Round(scrollProgress * (lineList.Count - size.Item2));
+
+			if(yDiff < 0)
+			{
+				startIndex += scrollValue;
+				end += scrollValue;
 			}
 
-			for(int i = 0; i < lineList.Count; i++)
-			{
-				if(i >= size.Item2)
-					return;
+			var e = lineList.Count - size.Item2;
+			startIndex = Math.Clamp(startIndex, 0, Math.Max(e, 0));
+			end = Math.Clamp(end, 0, lineList.Count);
 
+			for(int i = startIndex; i < end; i++)
+			{
 				var line = lineList[i].Replace('\n', ' ');
 
 				if(isWordWrapping == false && i > size.Item1)
 					NewLine();
 
-				if(alignment == Alignment.UpRight ||
+				if(alignment == Alignment.TopRight ||
 					alignment == Alignment.Right ||
-					alignment == Alignment.DownRight)
+					alignment == Alignment.BottomRight)
 					line = line.PadLeft(size.Item1);
-				else if(alignment == Alignment.Up ||
+				else if(alignment == Alignment.TopUp ||
 					alignment == Alignment.Center ||
-					alignment == Alignment.Down)
+					alignment == Alignment.Bottom)
 					line = PadLeftAndRight(line, size.Item1);
 
 				SetTextLine((x, y), line, color);
@@ -240,7 +219,7 @@
 				return default;
 			}
 		}
-		public void SetNinePatch((int, int) position, (int, int) size, int tile, byte color = 255)
+		public void SetBorder((int, int) position, (int, int) size, int tile, byte color = 255)
 		{
 			var (x, y) = position;
 			var (w, h) = size;
@@ -325,10 +304,14 @@
 			return index;
 		}
 
-		public static implicit operator Tilemap(int[,] tiles) => new(tiles, new byte[tiles.GetLength(0), tiles.GetLength(1)]);
-		public static implicit operator int[,](Tilemap tilemap) => Copy(tilemap.tiles);
-		public static implicit operator Tilemap(byte[,] colors) => new(new int[colors.GetLength(0), colors.GetLength(1)], colors);
-		public static implicit operator byte[,](Tilemap tilemap) => Copy(tilemap.colors);
+		public static implicit operator Tilemap(int[,] tiles)
+			=> new(tiles, new byte[tiles.GetLength(0), tiles.GetLength(1)]);
+		public static implicit operator int[,](Tilemap tilemap)
+			=> Copy(tilemap.tiles);
+		public static implicit operator Tilemap(byte[,] colors)
+			=> new(new int[colors.GetLength(0), colors.GetLength(1)], colors);
+		public static implicit operator byte[,](Tilemap tilemap)
+			=> Copy(tilemap.colors);
 
 		#region Backend
 		private static readonly Dictionary<char, int> map = new()

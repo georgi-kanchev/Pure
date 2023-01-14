@@ -41,8 +41,12 @@ namespace Pure.UserInterface
 		protected override void OnUpdate()
 		{
 			var isControlPressed = Pressed(CONTROL_LEFT) || Pressed(CONTROL_RIGHT);
+			var end = Math.Min(Text.Length, Size.Item1);
 
+			Text = Text[0..end];
 			Size = (Size.Item1, 1);
+			IndexCursor = Math.Clamp(IndexCursor, 0, Text.Length);
+			IndexSelection = Math.Clamp(IndexSelection, 0, Text.Length);
 
 			TryRemoveSelection();
 			TrySetMouseCursor();

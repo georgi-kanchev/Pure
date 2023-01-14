@@ -16,7 +16,7 @@
 		public const byte Purple = 0b_011_000_10; // 75 0 130;
 
 		public const byte Yellow = 0b_111_111_00; // 255 255 0;
-		public const byte Orange = 0b_111_010_00; // 255 165 0;
+		public const byte Orange = 0b_111_011_00; // 255 165 0;
 		public const byte Brown = 0b_010_001_00; // 150 105 25;
 
 		public const byte Cyan = 0b_000_111_11; // 0 255 255;

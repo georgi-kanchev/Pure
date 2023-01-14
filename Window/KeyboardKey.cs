@@ -61,16 +61,103 @@
 
 		#region Backend
 		private static readonly List<int> pressed = new();
+		private static readonly Dictionary<int, (string, string)> symbols = new()
+		{
+			{ BRACKET_LEFT, ("[", "{") }, { BRACKET_RIGHT, ("]", "}") },
+			{ SEMICOLON, (";", ":") }, { COMMA, (",", "<") }, { DOT, (".", ">") },
+			{ QUOTE, ("'", "\"") }, { SLASH, ("/", "?") }, { BACKSLASH, ("\\", "|") },
+			{ TILDE, ("`", "~") }, { EQUAL, ("=", "+") }, { HYPHEN, ("-", "_") },
+			{ SPACE, (" ", " ") }, { ENTER, ("\n", "\n") },
+			{ TAB, ("\t", "") }, { ADD, ("+", "+") }, { MINUS, ("-", "-") },
+			{ ASTERISK, ("*", "*") }, { DIVIDE, ("/", "/") }
+		};
+		private static readonly string[] shiftNumbers = new string[10]
+		{
+			")", "!", "@", "#", "$", "%", "^", "&", "*", "("
+		};
 
 		static KeyboardKey()
 		{
-			Window.window.KeyPressed += (s, e) => pressed.Add((int)e.Code);
-			Window.window.KeyReleased += (s, e) => pressed.Remove((int)e.Code);
+			Window.window.KeyPressed += (s, e) =>
+			{
+				var key = (int)e.Code;
+				if(pressed.Contains(key) == false)
+					pressed.Add(key);
+
+				var symb = GetSymbol(key, IsPressed(SHIFT_LEFT) || IsPressed(SHIFT_RIGHT));
+				if(Typed.Contains(symb) == false)
+					Typed += symb;
+			};
+			Window.window.KeyReleased += (s, e) =>
+			{
+				var key = (int)e.Code;
+				pressed.Remove(key);
+
+				if(pressed.Count == 0)
+				{
+					Typed = "";
+					return;
+				}
+
+				// shift released while holding special symbol, just like removing
+				// lowercase and uppercase, shift + 1 = !, so releasing shift would
+				// never removes the !
+				if((key == SHIFT_LEFT || key == SHIFT_RIGHT) && Typed != "")
+				{
+					for(int i = 0; i < pressed.Count; i++)
+					{
+						// get symbol as if shift was pressed
+						var symb = GetSymbol(pressed[i], true);
+						Typed = Typed.Replace(symb, "");
+					}
+				}
+
+				if(Typed.Length == 0)
+					return;
+
+				var symbol = GetSymbol(key, IsPressed(SHIFT_LEFT) || IsPressed(SHIFT_RIGHT));
+				if(symbol == "")
+					return;
+
+				Typed = Typed.Replace(symbol.ToLower(), "");
+				Typed = Typed.Replace(symbol.ToUpper(), "");
+
+			};
 		}
 
 		internal static void CancelInput()
 		{
 			pressed.Clear();
+			Typed = "";
+		}
+
+		private static bool IsBetween(int number, int a, int b)
+		{
+			return (int)a <= number && number <= (int)b;
+		}
+		private static string GetSymbol(int input, bool shift)
+		{
+			var i = input;
+
+			if(IsBetween(i, A, Z))
+			{
+				var str = ((char)('A' + i)).ToString();
+				return shift ? str : str.ToLower();
+			}
+			else if(IsBetween(i, NUMBER_0, NUMBER_9))
+			{
+				var n = i - NUMBER_0;
+				return shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
+			}
+			else if(IsBetween(i, NUMPAD_0, NUMPAD_9))
+			{
+				var n = i - NUMPAD_0;
+				return ((char)('0' + n)).ToString();
+			}
+			else if(symbols.ContainsKey(input))
+				return shift ? symbols[input].Item2 : symbols[input].Item1;
+
+			return "";
 		}
 		#endregion
 	}

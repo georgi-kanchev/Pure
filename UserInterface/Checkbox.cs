@@ -11,8 +11,11 @@
 		{
 			if(IsHovered)
 				SetTileAndSystemCursor(TILE_HAND);
+		}
 
-			if(IsJustTriggered)
+		protected override void OnEvent(When when)
+		{
+			if(when == When.Trigger)
 				IsChecked = IsChecked == false;
 		}
 		#endregion
