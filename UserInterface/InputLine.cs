@@ -59,19 +59,21 @@ namespace Pure.UserInterface
 			var justDeletedSelection = false;
 			var isJustTyped = IsJustTyped();
 
-			if(TryCopyOrPaste())
-				return;
-
 			TryResetHoldTimers();
 			var isAllowedType = isJustTyped || (isHolding && CurrentInput.Typed != "");
+			var shouldDelete = isAllowedType || Allowed(BACKSPACE) || Allowed(DELETE);
+
+			if(TryCopyPasteOrCut())
+				return;
 
 			TrySelect();
 			TryDeleteSelected();
 			TryTypeOrDelete();
 			TryMoveCursor();
 
-			bool TryCopyOrPaste()
+			bool TryCopyPasteOrCut()
 			{
+				var hasSelection = IndexCursor != IndexSelection;
 				if(isControlPressed && CurrentInput.Typed == "c")
 				{
 					CopiedText = TextSelected;
@@ -79,7 +81,13 @@ namespace Pure.UserInterface
 				}
 				else if(isControlPressed && CurrentInput.Typed == "v")
 					isPasting = true;
-
+				else if(hasSelection && isControlPressed && CurrentInput.Typed == "x")
+				{
+					CopiedText = TextSelected;
+					shouldDelete = true;
+					TryDeleteSelected();
+					return true;
+				}
 				return false;
 			}
 			void TryRemoveSelection()
@@ -90,13 +98,13 @@ namespace Pure.UserInterface
 			void TrySetMouseCursor()
 			{
 				if(IsHovered)
-					SetTileAndSystemCursor(TILE_TEXT);
+					TrySetTileAndSystemCursor(TILE_TEXT);
 
 			}
 			void TryDeleteSelected()
 			{
 				var isSelected = IndexSelection != IndexCursor;
-				if((isAllowedType || Allowed(BACKSPACE) || Allowed(DELETE)) && isSelected)
+				if(shouldDelete && isSelected)
 				{
 					var a = IndexSelection < IndexCursor ? IndexSelection : IndexCursor;
 					var b = Math.Abs(IndexSelection - IndexCursor);

@@ -35,7 +35,7 @@
 			var isHoveringBottom = IsBetween(ix, x, x + w - 1) && iy == y + h - 1;
 
 			if(IsHovered)
-				SetTileAndSystemCursor(TILE_ARROW);
+				TrySetTileAndSystemCursor(TILE_ARROW);
 
 			if(wasClicked)
 			{
@@ -60,9 +60,9 @@
 					Process(ref isResizingU, TILE_RESIZE_VERTICAL);
 
 				if((isHoveringRight && isHoveringTopCorners) || (isHoveringBottom && isHoveringLeft))
-					SetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_1);
+					TrySetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_1);
 				if((isHoveringLeft && isHoveringTopCorners) || (isHoveringBottom && isHoveringRight))
-					SetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_2);
+					TrySetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_2);
 			}
 
 			if(IsFocused && CurrentInput.IsPressed &&
@@ -110,7 +110,7 @@
 				if(isClicked)
 					condition = true;
 
-				SetTileAndSystemCursor(cursor);
+				TrySetTileAndSystemCursor(cursor);
 			}
 		}
 

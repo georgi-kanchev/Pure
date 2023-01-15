@@ -145,8 +145,9 @@ namespace Pure.Storage
 		}
 
 		#region Backend
-		private const string SEP = "~", OBJ = SEP + "@", OBJ_PROP = SEP + "~", VALUE = SEP + "|",
-			STRUCT = SEP + "&", STRUCT_PROP = SEP + "=", SPACE = SEP + "_", TAB = SEP + "__", NEW_LINE = SEP + "/";
+		private const string SEP = "`", OBJ = SEP + "@", OBJ_PROP = SEP + "~", VALUE = SEP + "|",
+			STRUCT = SEP + "&", STRUCT_PROP = SEP + "=", SPACE = SEP + "_", TAB = SEP + "__",
+			NEW_LINE = SEP + "/";
 		private const string FILE_HEADER = @$"Pure - Storage file
 | - - - - - - - - - - - - -
 | Map of symbols

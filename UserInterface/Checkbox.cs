@@ -10,7 +10,7 @@
 		protected override void OnUpdate()
 		{
 			if(IsHovered)
-				SetTileAndSystemCursor(TILE_HAND);
+				TrySetTileAndSystemCursor(TILE_HAND);
 		}
 
 		protected override void OnEvent(When when)

@@ -53,7 +53,7 @@
 
 			if(IsHovered)
 			{
-				SetTileAndSystemCursor(TILE_HAND);
+				TrySetTileAndSystemCursor(TILE_HAND);
 
 				if(CurrentInput.ScrollDelta != 0)
 					Move(CurrentInput.ScrollDelta);
@@ -85,6 +85,7 @@
 				Handle.Position = (x + index, y);
 				Handle.Size = (1, h);
 			}
+
 		}
 		private static float Map(float number, float a1, float a2, float b1, float b2)
 		{

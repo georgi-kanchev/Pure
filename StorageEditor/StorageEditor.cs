@@ -3,25 +3,25 @@ namespace StorageEditor
 	public partial class Window : Form
 	{
 		#region Fields
-		private const string INSTANCE = "~@", INSTANCE_PROPERTY = "~~", VALUE = "~|",
-			STRUCT = "~&", STRUCT_PROPERTY = "~=",
-			SPACE = "~_", TAB = "~__", NEW_LINE = "~/";
-		private const string FILE_HEADER = @"Pure - Storage file
---------------------------
+		private const string SEP = "`", OBJ = SEP + "@", OBJ_PROP = SEP + "~", VALUE = SEP + "|",
+			STRUCT = SEP + "&", STRUCT_PROP = SEP + "=", SPACE = SEP + "_", TAB = SEP + "__",
+			NEW_LINE = SEP + "/";
+		private const string FILE_HEADER = @$"Pure - Storage file
+| - - - - - - - - - - - - -
 | Map of symbols
+| - - - - - - - - - - - - -
+|	{SEP} Global separator
 |
-|	~ Global separator
+|	{OBJ} Object
+|	{OBJ_PROP} Property
+|	{STRUCT} Property containing sub properties (struct)
+|	{STRUCT_PROP} Sub property
+|	{VALUE} Value
 |
-|	@ Object
-|	~ Property
-|	& Property containing sub properties
-|	- Sub property
-|	| Value
-|
-|	/ String new line
-|	_ String space
-|	__ String tab
---------------------------
+|	{NEW_LINE} String new line
+|	{SPACE} String space
+|	{TAB} String tab
+| - - - - - - - - - - - - -
 ";
 
 		private readonly Dictionary<(bool, Keys), Action> hotkeys = new();
@@ -208,13 +208,13 @@ namespace StorageEditor
 
 			foreach(var kvp in data)
 			{
-				result += INSTANCE + space + kvp.Key;
+				result += OBJ + space + kvp.Key;
 
 				foreach(var kvp2 in kvp.Value)
 				{
 					var value = kvp2.Value;
 
-					result += $"{newLine}{tab}{INSTANCE_PROPERTY}{space}{kvp2.Key}" +
+					result += $"{newLine}{tab}{OBJ_PROP}{space}{kvp2.Key}" +
 						$"{space}{EncryptText(kvp2.Value)}";
 				}
 			}
@@ -233,15 +233,15 @@ namespace StorageEditor
 			ListValues.Items.Clear();
 
 			var file = File.ReadAllText(StorageLoad.FileName);
-			var instances = file.Split(INSTANCE, StringSplitOptions.RemoveEmptyEntries);
+			var instances = file.Split(OBJ, StringSplitOptions.RemoveEmptyEntries);
 
 			for(int i = 0; i < instances.Length; i++)
 			{
 				var instance = Trim(instances[i]);
-				if(instance.Contains(INSTANCE_PROPERTY) == false)
+				if(instance.Contains(OBJ_PROP) == false)
 					continue;
 
-				var props = instance.Split(INSTANCE_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+				var props = instance.Split(OBJ_PROP, StringSplitOptions.RemoveEmptyEntries);
 				var instanceName = props[0];
 
 				if(data.ContainsKey(instanceName) == false)
@@ -318,7 +318,7 @@ namespace StorageEditor
 				var key = "SubProperty";
 				var structs = data[selectedObj][selectedProp]
 					.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
-				var props = structs[0].Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+				var props = structs[0].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 				var subPropNames = new List<string>();
 
 				for(int j = 0; j < props.Length; j++)
@@ -331,7 +331,7 @@ namespace StorageEditor
 					i++;
 
 				for(int j = 0; j < structs.Length; j++)
-					structs[j] = $"{STRUCT}{structs[j]}{STRUCT_PROPERTY}{key}{i}{VALUE}Value";
+					structs[j] = $"{STRUCT}{structs[j]}{STRUCT_PROP}{key}{i}{VALUE}Value";
 
 				var result = "";
 				for(int j = 0; j < structs.Length; j++)
@@ -354,12 +354,12 @@ namespace StorageEditor
 					if(structs.Length == 0)
 						return;
 
-					var props = structs[0].Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+					var props = structs[0].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
 					for(int i = 0; i < props.Length; i++)
 					{
 						var values = props[i].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-						result += $"{STRUCT_PROPERTY}{values[0]}{VALUE}Value";
+						result += $"{STRUCT_PROP}{values[0]}{VALUE}Value";
 					}
 
 					data[selectedObj][selectedProp] += result;
@@ -420,15 +420,15 @@ namespace StorageEditor
 			window.ShowDialog();
 
 			var t = textBox.Text;
-			if(t.Contains(STRUCT) || t.Contains(STRUCT_PROPERTY) ||
-				t.Contains(INSTANCE) || t.Contains(INSTANCE_PROPERTY) ||
+			if(t.Contains(STRUCT) || t.Contains(STRUCT_PROP) ||
+				t.Contains(OBJ) || t.Contains(OBJ_PROP) ||
 				t.Contains(VALUE) || t.Contains(SPACE) || t.Contains(TAB) ||
 				t.Contains(NEW_LINE))
 			{
 				var space = "       ";
 				MessageBox.Show($"The provided edit cannot contain special separators:{Environment.NewLine}" +
-					$"{Environment.NewLine}{INSTANCE}{space}{INSTANCE_PROPERTY}{space}{STRUCT}{space}" +
-					$"{STRUCT_PROPERTY}{space}{VALUE}{space}{SPACE}{space}{TAB}{space}{NEW_LINE}",
+					$"{Environment.NewLine}{OBJ}{space}{OBJ_PROP}{space}{STRUCT}{space}" +
+					$"{STRUCT_PROP}{space}{VALUE}{space}{SPACE}{space}{TAB}{space}{NEW_LINE}",
 					"Invalid Edit");
 				return text;
 			}
@@ -521,7 +521,7 @@ namespace StorageEditor
 			for(int j = 0; j < structs.Length; j++)
 			{
 				var subProps = structs[j]
-					.Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+					.Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
 				result += STRUCT;
 
@@ -536,7 +536,7 @@ namespace StorageEditor
 							{
 								var valueIndex = ListValues.SelectedIndex;
 								var remainingValue = structs[valueIndex]
-									.Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries)[0]
+									.Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries)[0]
 									.Split(VALUE, StringSplitOptions.RemoveEmptyEntries)[1];
 								data[objName][prop] = $"{VALUE}{remainingValue}";
 								return;
@@ -555,7 +555,7 @@ namespace StorageEditor
 						return;
 					}
 
-					result += $"{STRUCT_PROPERTY}{value[0]}{VALUE}{value[1]}";
+					result += $"{STRUCT_PROP}{value[0]}{VALUE}{value[1]}";
 				}
 			}
 			data[objName][prop] = result;
@@ -579,7 +579,7 @@ namespace StorageEditor
 				for(int j = 0; j < structs.Length; j++)
 				{
 					var subProps = structs[j]
-						.Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+						.Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
 					result += STRUCT;
 
@@ -602,7 +602,7 @@ namespace StorageEditor
 								v[1] = input;
 						}
 
-						result += $"{STRUCT_PROPERTY}{v[0]}{VALUE}{v[1]}";
+						result += $"{STRUCT_PROP}{v[0]}{VALUE}{v[1]}";
 					}
 				}
 			}
@@ -716,7 +716,7 @@ namespace StorageEditor
 				var structs = values.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
 				if(structs.Length == 0)
 					return;
-				var structProp = structs[0].Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+				var structProp = structs[0].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
 				for(int j = 0; j < structProp.Length; j++)
 				{
@@ -756,7 +756,7 @@ namespace StorageEditor
 			{
 				for(int i = 0; i < structs.Length; i++)
 				{
-					var props = structs[i].Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+					var props = structs[i].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 					var values = props[propIndex].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
 					if(values.Length < 2)
 						continue;
@@ -768,7 +768,7 @@ namespace StorageEditor
 				return;
 			}
 
-			var property = structs[0].Split(STRUCT_PROPERTY, StringSplitOptions.RemoveEmptyEntries);
+			var property = structs[0].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 			if(ListSubProperties.SelectedIndex == -1)
 				return;
 

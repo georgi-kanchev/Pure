@@ -7,6 +7,8 @@ namespace TestGame
 {
 	public class Program
 	{
+		const string TITLE = "VERY COOL CHAT";
+
 		static void Main()
 		{
 			var bg = new Tilemap((48, 27));
@@ -14,9 +16,9 @@ namespace TestGame
 			var over = new Tilemap((48, 27));
 			var scroll = new Scroll((0, 0), 6, true);
 			var inputLine = new InputLine((0, 0), 11);
-			var panel = new Panel((4, 4), (15, 7))
+			var panel = new Panel((4, 4), (TITLE.Length + 2, 7))
 			{
-				AdditionalMinSize = ("Cool Chat".Length, 4)
+				AdditionalMinSize = (TITLE.Length, 4)
 			};
 			var clear = new Button((0, 0), (1, 1));
 			var chat = "";
@@ -75,7 +77,7 @@ namespace TestGame
 		static void MyCoolClearButton(Tilemap layer, Panel panel, Button button)
 		{
 			var (px, py) = panel.Position;
-			var (pw, ph) = panel.Size;
+			var ph = panel.Size.Item2;
 			var color = Color.Red;
 
 			if(button.IsHovered) color = Color.Orange;
@@ -89,10 +91,12 @@ namespace TestGame
 		{
 			var (px, py) = panel.Position;
 			var (pw, ph) = panel.Size;
+			var pos = (px + 2, py + 1);
+			var sz = (pw - 3, ph - 3);
 
-			layer.SetTextBox(
-				position: (px + 2, py + 1),
-				size: (pw - 3, ph - 3),
+			layer.SetTextSquare(
+				position: pos,
+				size: sz,
 				text: chat,
 				alignment: Tilemap.Alignment.BottomRight,
 				scrollProgress: scroll.Progress);
@@ -102,15 +106,20 @@ namespace TestGame
 			var (x, y) = panel.Position;
 			bg.SetSquare(panel.Position, panel.Size, Tile.PATTERN_3, Color.Gray);
 			bg.SetSquare(panel.Position, (panel.Size.Item1, 1), Tile.SHADE_OPAQUE, Color.Brown);
-			layer.SetBorder(panel.Position, panel.Size, Tile.BORDER, Color.Orange);
-			layer.SetTextBox((x, y), (panel.Size.Item1, 1), "Cool Chat", Color.White,
-				alignment: Tilemap.Alignment.Center);
+			layer.SetBorder(panel.Position, panel.Size, Tile.BORDER_DEFAULT, Color.Orange);
+
+			layer.SetTextLine((x, y), TITLE, Color.White);
+			layer.SetTextSquareColor((x, y), (panel.Size.Item1, 1), Color.Red, "COOL");
+			layer.SetTextSquareColor((x, y), (panel.Size.Item1, 1), Color.Blue, "CHAT");
+
+			layer.SetSquareColor(panel.Position, panel.Size, Color.Blue, Tile.BORDER_DEFAULT_VERTICAL);
+
 			panel.Update();
 		}
 		static void MyCoolSlider(Tilemap bg, Tilemap layer, Scroll scroll, Panel panel)
 		{
 			var (px, py) = panel.Position;
-			var (pw, ph) = panel.Size;
+			var ph = panel.Size.Item2;
 
 			scroll.Position = (px + 1, py + 1);
 			scroll.Size = (1, ph - 3);

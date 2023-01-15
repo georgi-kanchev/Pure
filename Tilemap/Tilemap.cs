@@ -77,6 +77,7 @@
 					colors[x, y] = color;
 				}
 		}
+
 		public void SetTile((int, int) position, int tile, byte color = 255)
 		{
 			if(IndicesAreValid(position) == false)
@@ -84,6 +85,7 @@
 
 			var x = position.Item1;
 			var y = position.Item2;
+
 			tiles[x, y] = tile;
 			colors[x, y] = color;
 		}
@@ -95,6 +97,25 @@
 				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
 					SetTile((x, y), tile, color);
 		}
+		public void SetSquareColor((int, int) position, (int, int) size, byte color,
+			params int[] tiles)
+		{
+			if(tiles == null || tiles.Length == 0)
+				return;
+
+			var xStep = size.Item1 < 0 ? -1 : 1;
+			var yStep = size.Item2 < 0 ? -1 : 1;
+			var tileList = tiles.ToList();
+
+			for(int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
+				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
+				{
+					var tile = TileAt((x, y));
+					var col = tileList.Contains(tile) ? color : ColorAt((x, y));
+					SetTile((x, y), tile, col);
+				}
+		}
+
 		public void SetTextLine((int, int) position, string text, byte color = 255)
 		{
 			var errorOffset = 0;
@@ -115,8 +136,9 @@
 				SetTile((position.Item1 + i - errorOffset, position.Item2), index, color);
 			}
 		}
-		public void SetTextBox((int, int) position, (int, int) size, string text, byte color = 255,
-			bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
+		public void SetTextSquare((int, int) position, (int, int) size, string text, byte color = 255,
+			bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft,
+			float scrollProgress = 0)
 		{
 			if(text == null || text.Length == 0 ||
 				size.Item1 <= 0 || size.Item2 <= 0)
@@ -219,6 +241,69 @@
 				return default;
 			}
 		}
+		public void SetTextSquareColor((int, int) position, (int, int) size, byte color, string text,
+			bool isMatchingWord = false)
+		{
+			if(string.IsNullOrWhiteSpace(text))
+				return;
+
+			var xStep = size.Item1 < 0 ? -1 : 1;
+			var yStep = size.Item2 < 0 ? -1 : 1;
+			var tileList = TilesFrom(text).ToList();
+
+			for(int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
+				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
+				{
+					if(tileList[0] != TileAt((x, y)))
+						continue;
+
+					var correctSymbCount = 0;
+					var curX = x;
+					var curY = y;
+					var startPos = (x - 1, y);
+
+					for(int i = 0; i < text.Length; i++)
+					{
+						if(tileList[i] != TileAt((curX, curY)))
+							break;
+
+						correctSymbCount++;
+						curX++;
+
+						if(curX > x + size.Item1) // try new line
+						{
+							curX = position.Item1;
+							curY++;
+						}
+					}
+
+					var endPos = (curX, curY);
+					var left = TileAt(startPos) == 0 || curX == position.Item1;
+					var right = TileAt(endPos) == 0 || curX == position.Item1 + size.Item1;
+					var isWord = left && right;
+
+					if(isWord ^ isMatchingWord)
+						continue;
+
+					if(text.Length != correctSymbCount)
+						continue;
+
+					curX = x;
+					curY = y;
+					for(int i = 0; i < text.Length; i++)
+					{
+						if(curX > x + size.Item1) // try new line
+						{
+							curX = position.Item1;
+							curY++;
+						}
+
+						SetTile((curX, curY), TileAt((curX, curY)), color);
+						curX++;
+					}
+				}
+		}
+
 		public void SetBorder((int, int) position, (int, int) size, int tile, byte color = 255)
 		{
 			var (x, y) = position;
@@ -302,6 +387,17 @@
 				index = map[symbol];
 
 			return index;
+		}
+		public static int[] TilesFrom(string text)
+		{
+			if(text == null || text.Length == 0)
+				return Array.Empty<int>();
+
+			var result = new int[text.Length];
+			for(int i = 0; i < text.Length; i++)
+				result[i] = TileFrom(text[i]);
+
+			return result;
 		}
 
 		public static implicit operator Tilemap(int[,] tiles)
