@@ -8,9 +8,6 @@
 
 		public Panel((int, int) position, (int, int) size) : base(position, size) { }
 
-		#region Backend
-		private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
-
 		protected override void OnUpdate()
 		{
 			if(IsResizable == false && IsMovable == false)
@@ -113,6 +110,9 @@
 				TrySetTileAndSystemCursor(cursor);
 			}
 		}
+
+		#region Backend
+		private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
 
 		private static bool IsBetween(float number, float rangeA, float rangeB)
 		{

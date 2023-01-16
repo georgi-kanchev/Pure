@@ -86,11 +86,12 @@ namespace Pure.UserInterface
 		}
 		public string Text { get; set; } = "";
 
+		public bool IsVisible { get; set; }
 		public bool IsDisabled { get; set; }
 		public bool IsFocused
 		{
-			get => focusedObject == this;
-			private set => focusedObject = value ? this : null;
+			get => Focused == this;
+			protected set => Focused = value ? this : null;
 		}
 		public bool IsHovered { get; private set; }
 		public bool IsPressed => IsHovered && CurrentInput.IsPressed;
@@ -100,6 +101,7 @@ namespace Pure.UserInterface
 		public static int MouseCursorTile { get; internal set; }
 		public static int MouseCursorSystem { get; internal set; }
 
+		protected static UserInterface? Focused { get; private set; }
 		protected static bool IsInputCanceled { get; private set; }
 		protected static Input CurrentInput { get; } = new();
 		protected static (int, int) TilemapSize { get; private set; }
@@ -158,7 +160,6 @@ namespace Pure.UserInterface
 				TriggerEvent(When.Hold);
 
 			OnUpdate();
-
 		}
 		protected abstract void OnUpdate();
 
@@ -180,7 +181,7 @@ namespace Pure.UserInterface
 				TriggerEvent(When.Trigger);
 			}
 
-			if(IsHovered && CurrentInput.IsPressed && CurrentInput.wasPressed == false)
+			if(IsHovered && CurrentInput.IsJustPressed)
 				IsClicked = true;
 
 			if(CurrentInput.IsReleased)
@@ -242,12 +243,11 @@ namespace Pure.UserInterface
 			}
 
 			if(CurrentInput.wasPressed == false && CurrentInput.IsPressed)
-				focusedObject = null;
+				Focused = null;
 		}
 
 		#region Backend
 		private (int, int) size;
-		private static UserInterface? focusedObject;
 		private static readonly Stopwatch hold = new(), holdTrigger = new();
 
 		private bool wasFocused, wasHovered;

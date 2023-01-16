@@ -43,10 +43,6 @@
 			UpdateHandle();
 		}
 
-		#region Backend
-		private float progress;
-		private int index;
-
 		protected override void OnUpdate()
 		{
 			UpdateHandle();
@@ -67,6 +63,10 @@
 			}
 		}
 
+		#region Backend
+		private float progress;
+		private int index;
+
 		private void UpdateHandle()
 		{
 			var (x, y) = Position;
@@ -85,7 +85,6 @@
 				Handle.Position = (x + index, y);
 				Handle.Size = (1, h);
 			}
-
 		}
 		private static float Map(float number, float a1, float a2, float b1, float b2)
 		{
