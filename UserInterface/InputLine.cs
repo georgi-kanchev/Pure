@@ -51,7 +51,7 @@ namespace Pure.UserInterface
 			TryRemoveSelection();
 			TrySetMouseCursor();
 
-			if(IsFocused == false || TrySelectAll() || JustPressed(TAB))
+			if(IsDisabled || IsFocused == false || TrySelectAll() || JustPressed(TAB))
 				return;
 
 			var isPasting = false;

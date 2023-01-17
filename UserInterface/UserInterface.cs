@@ -2,12 +2,13 @@
 
 namespace Pure.UserInterface
 {
+	public enum Event
+	{
+		Trigger, Focus, Unfocus, Hover, Unhover, Press, Release, Drag, Hold, Scroll
+	}
+
 	public abstract class UserInterface
 	{
-		public enum When
-		{
-			Trigger, Focus, Unfocus, Hover, Unhover, Press, Release, Drag, Hold
-		}
 		protected const int ESCAPE = 36, CONTROL_LEFT = 37, SHIFT_LEFT = 38, ALT_LEFT = 39,
 			CONTROL_RIGHT = 41, SHIFT_RIGHT = 42, ALT_RIGHT = 43, ENTER = 58, RETURN = 58,
 			BACKSPACE = 59, TAB = 60, PAGE_UP = 61, PAGE_DOWN = 62,
@@ -86,7 +87,7 @@ namespace Pure.UserInterface
 		}
 		public string Text { get; set; } = "";
 
-		public bool IsVisible { get; set; }
+		public bool IsHidden { get; set; }
 		public bool IsDisabled { get; set; }
 		public bool IsFocused
 		{
@@ -115,12 +116,19 @@ namespace Pure.UserInterface
 			holdTrigger.Start();
 		}
 
-		public void InCaseOf(When when, Action callMethod)
+		public void Subscribe(Event when, Action method)
 		{
 			if(events.ContainsKey(when) == false)
 				events[when] = new();
 
-			events[when].Add(callMethod);
+			events[when].Add(method);
+		}
+		public void Unsubscribe(Event when, Action method)
+		{
+			if(events.ContainsKey(when) == false)
+				return;
+
+			events[when].Remove(method);
 		}
 
 		public void Update()
@@ -128,13 +136,15 @@ namespace Pure.UserInterface
 			wasFocused = IsFocused;
 			wasHovered = IsHovered;
 
+			UpdateHovered();
+
 			if(IsDisabled)
 			{
+				TrySetTileAndSystemCursor(TILE_NO);
+
 				OnUpdate();
 				return;
 			}
-
-			UpdateHovered();
 
 			if(CurrentInput.wasPressed == false && CurrentInput.IsPressed && IsHovered)
 				IsFocused = true;
@@ -145,19 +155,21 @@ namespace Pure.UserInterface
 			TryTrigger();
 
 			if(IsFocused && wasFocused == false)
-				TriggerEvent(When.Focus);
+				TriggerEvent(Event.Focus);
 			if(IsFocused == false && wasFocused)
-				TriggerEvent(When.Unfocus);
+				TriggerEvent(Event.Unfocus);
 			if(IsHovered && wasHovered == false)
-				TriggerEvent(When.Hover);
+				TriggerEvent(Event.Hover);
 			if(IsHovered == false && wasHovered)
-				TriggerEvent(When.Unhover);
+				TriggerEvent(Event.Unhover);
 			if(IsPressed && CurrentInput.wasPressed == false)
-				TriggerEvent(When.Press);
+				TriggerEvent(Event.Press);
 			if(IsPressed == false && CurrentInput.wasPressed)
-				TriggerEvent(When.Release);
+				TriggerEvent(Event.Release);
 			if(IsPressed && CurrentInput.IsJustHeld)
-				TriggerEvent(When.Hold);
+				TriggerEvent(Event.Hold);
+			if(CurrentInput.ScrollDelta != 0)
+				TriggerEvent(Event.Scroll);
 
 			OnUpdate();
 		}
@@ -165,7 +177,7 @@ namespace Pure.UserInterface
 
 		public void Trigger()
 		{
-			TriggerEvent(When.Trigger);
+			TriggerEvent(Event.Trigger);
 		}
 		protected void TryTrigger()
 		{
@@ -178,7 +190,7 @@ namespace Pure.UserInterface
 			if(IsHovered && CurrentInput.IsReleased && IsClicked)
 			{
 				IsClicked = false;
-				TriggerEvent(When.Trigger);
+				TriggerEvent(Event.Trigger);
 			}
 
 			if(IsHovered && CurrentInput.IsJustPressed)
@@ -190,13 +202,19 @@ namespace Pure.UserInterface
 		protected void TrySetTileAndSystemCursor(int tileCursor)
 		{
 			if(IsDisabled)
-				return;
+			{
+				if(IsHovered)
+					tileCursor = TILE_NO;
+				else
+					return;
+			}
+
 
 			MouseCursorTile = tileCursor;
 			MouseCursorSystem = tileCursor + SYSTEM_ARROW;
 		}
 
-		protected void TriggerEvent(When when)
+		protected void TriggerEvent(Event when)
 		{
 			OnEvent(when);
 
@@ -206,7 +224,7 @@ namespace Pure.UserInterface
 			for(int i = 0; i < events[when].Count; i++)
 				events[when][i].Invoke();
 		}
-		protected virtual void OnEvent(When when) { }
+		protected virtual void OnEvent(Event when) { }
 
 		public static void ApplyInput(bool isPressed, (float, float) position, int scrollDelta,
 			int[] keysPressed, string keysTyped, (int, int) tilemapSize)
@@ -252,7 +270,7 @@ namespace Pure.UserInterface
 
 		private bool wasFocused, wasHovered;
 
-		private readonly Dictionary<When, List<Action>> events = new();
+		private readonly Dictionary<Event, List<Action>> events = new();
 
 		private void UpdateHovered()
 		{

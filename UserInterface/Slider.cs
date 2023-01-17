@@ -47,6 +47,9 @@
 		{
 			UpdateHandle();
 
+			if(IsDisabled)
+				return;
+
 			if(IsHovered)
 			{
 				TrySetTileAndSystemCursor(TILE_HAND);
@@ -59,7 +62,7 @@
 			{
 				var p = CurrentInput.Position;
 				MoveTo(((int)p.Item1, (int)p.Item2));
-				TriggerEvent(When.Drag);
+				TriggerEvent(Event.Drag);
 			}
 		}
 

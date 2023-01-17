@@ -10,7 +10,7 @@
 
 		protected override void OnUpdate()
 		{
-			if(IsResizable == false && IsMovable == false)
+			if(IsDisabled || IsResizable == false && IsMovable == false)
 				return;
 
 			var (x, y) = Position;

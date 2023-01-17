@@ -13,18 +13,39 @@ namespace TestGame
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
 
-			var list = new List((5, 5), (10, 5));
+			var list = new List((5, 5), (10, 10), 15) { IsSingleSelecting = true };
+			list[5]?.Subscribe(Event.Trigger, () => list.Remove(5));
+
+			for(int i = 0; i < list.Count; i++)
+			{
+				var item = list[i];
+				if(item == null)
+					continue;
+
+				item.Text = $"Item[{i}]";
+			}
 
 			while(Window.IsExisting)
 			{
 				Start();
 
-				bg.SetSquare(list.Position, list.Size, Tile.PATTERN_22, Color.Gray);
-				layer.SetBar(list.Scroll.Position, Tile.BAR_BIG_VERTICAL, Color.White,
+				bg.SetSquare(list.Position, list.Size, Tile.PATTERN_22, Color.Brown);
+				layer.SetBar(list.Scroll.Position, Tile.BAR_BIG_VERTICAL, Color.Gray,
 					list.Scroll.Size.Item2, true);
 				over.SetTile(list.Scroll.Handle.Position, Tile.SHAPE_CIRCLE_HOLLOW, Color.Red);
+				layer.SetTile(list.ScrollUp.Position, Tile.ARROW_BIG_UP, Color.White);
+				layer.SetTile(list.ScrollDown.Position, Tile.ARROW_BIG_DOWN, Color.White);
+
 				list.Update();
-				list.Scroll.Update();
+
+				for(int i = 0; i < list.Count; i++)
+				{
+					var item = list[i];
+					if(item == null || item.IsHidden)
+						continue;
+
+					layer.SetTextLine(item.Position, item.Text, item.IsChecked ? Color.Green : Color.Red);
+				}
 
 				End();
 

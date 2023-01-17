@@ -6,9 +6,9 @@
 
 		public Checkbox((int, int) position) : base(position, (1, 1)) { }
 
-		protected override void OnEvent(When when)
+		protected override void OnEvent(Event when)
 		{
-			if(when == When.Trigger)
+			if(when == Event.Trigger)
 				IsChecked = IsChecked == false;
 		}
 	}
