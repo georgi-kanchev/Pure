@@ -272,6 +272,10 @@ namespace Pure.UserInterface
 
 		private readonly Dictionary<Event, List<Action>> events = new();
 
+		public override string ToString()
+		{
+			return $"{GetType().Name} \"{Text}\"";
+		}
 		private void UpdateHovered()
 		{
 			var (ix, iy) = CurrentInput.Position;

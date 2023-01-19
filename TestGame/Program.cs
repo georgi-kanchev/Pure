@@ -13,8 +13,9 @@ namespace TestGame
 			var layer = new Tilemap((48, 27));
 			var over = new Tilemap((48, 27));
 
-			var list = new List((5, 5), (10, 10), 15) { IsSingleSelecting = true };
-			list[5]?.Subscribe(Event.Trigger, () => list.Remove(5));
+			var list = new List((5, 5), (10, 10), 15) { IsSingleSelecting = false };
+
+			KeyboardKey.OnPressed(KeyboardKey.A, () => list.Remove(5));
 
 			for(int i = 0; i < list.Count; i++)
 			{

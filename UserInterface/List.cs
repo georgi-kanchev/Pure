@@ -13,7 +13,7 @@
 			set { isSingleSelecting = value; TrySingleSelectOneItem(); }
 		}
 
-		public Checkbox? this[int index] => index < 0 || index >= items.Count ? default : items[index];
+		public Checkbox? this[int index] => HasIndex(index) ? items[index] : default;
 
 		public List((int, int) position, (int, int) size, int count)
 			: base(position, size)
@@ -25,8 +25,7 @@
 			ScrollUp = new((x + w, y), (1, 1));
 			ScrollDown = new((x + w, y + w), (1, 1));
 
-			for(int i = 0; i < count; i++)
-				items.Add(new(Position) { Size = (w - 1, 1) });
+			Add(count);
 
 			ScrollUp.Subscribe(Event.Press, () => Scroll.Move(1));
 			ScrollUp.Subscribe(Event.Hold, () => Scroll.Move(1));
@@ -37,19 +36,34 @@
 			UpdateItems();
 		}
 
-		public void Add()
+		public void Add(int count = 1)
 		{
-			items.Add(new(Position) { Size = (Size.Item1, 1) });
+			for(int i = 0; i < count; i++)
+				items.Add(new(Position) { Size = (Size.Item1, 1) });
+
 			TrySingleSelectOneItem();
 		}
 		public void Remove(int index)
 		{
-			if(index < 0 && index >= items.Count)
+			if(HasIndex(index) == false)
 				return;
 
 			items.RemoveAt(index);
+
+			if(index == singleSelectedIndex && index != items.Count)
+				return;
+			else if(index <= singleSelectedIndex)
+				singleSelectedIndex--;
+
 			TrySingleSelectOneItem();
 		}
+		public void Clear()
+		{
+			items.Clear();
+			singleSelectedIndex = -1;
+			TrySingleSelectOneItem();
+		}
+
 		public bool Contains(Checkbox item)
 		{
 			return item != null && items.Contains(item);
@@ -67,7 +81,7 @@
 			if(IsHovered && CurrentInput.ScrollDelta != 0)
 				Scroll.Move(CurrentInput.ScrollDelta);
 
-			TryClickOnItem();
+			TrySingleSelect();
 
 			UpdateParts();
 			UpdateItems();
@@ -75,7 +89,7 @@
 
 		public static implicit operator List(Checkbox[] items)
 		{
-			var result = new List((0, 0), (5, 5), 0);
+			var result = new List((0, 0), (10, Math.Max(items.Length, 5)), 0);
 			for(int i = 0; i < items?.Length; i++)
 				result.items[i] = items[i];
 
@@ -84,30 +98,42 @@
 		public static implicit operator Checkbox[](List list) => list.items.ToArray();
 
 		#region Backend
+		private int singleSelectedIndex = -1;
 		private readonly List<Checkbox> items = new();
 		private bool isSingleSelecting;
 
 		private void TrySingleSelectOneItem()
 		{
 			if(IsSingleSelecting == false || items.Count == 0)
+			{
+				singleSelectedIndex = -1;
+				return;
+			}
+
+			var isOneSelected = HasIndex(singleSelectedIndex);
+
+			if(isOneSelected)
 				return;
 
-			var isOneSelected = false;
-			for(int i = 0; i < items.Count; i++)
-				isOneSelected |= items[i].IsChecked;
-
-			items[0].IsChecked = isOneSelected == false;
+			singleSelectedIndex = 0;
+			items[singleSelectedIndex].IsChecked = true;
 		}
-		private void TryClickOnItem()
+		private void TrySingleSelect()
 		{
 			var isHoveringItems = IsHovered && Scroll.IsHovered == false &&
 				ScrollUp.IsHovered == false && ScrollDown.IsHovered == false;
+
+			if(CurrentInput.IsJustReleased == false ||
+				IsSingleSelecting == false || isHoveringItems == false)
+				return;
+
 			var hoveredIndex = (int)CurrentInput.Position.Item2 - Position.Item2 + GetScrollIndex();
 
-			if(CurrentInput.IsJustReleased && isHoveringItems && IsSingleSelecting)
-				for(int i = 0; i < items.Count; i++)
-					if(i != hoveredIndex)
-						items[i].IsChecked = false;
+			if(hoveredIndex == singleSelectedIndex || HasIndex(hoveredIndex) == false)
+				return;
+
+			if(items[hoveredIndex].IsClicked)
+				singleSelectedIndex = hoveredIndex;
 		}
 
 		private void UpdateParts()
@@ -132,27 +158,28 @@
 		private void UpdateItems()
 		{
 			var (x, y) = Position;
-			var index = GetScrollIndex();
-			var max = Math.Min(items.Count, index + Size.Item2);
+			var top = GetScrollIndex();
+			var bottom = Math.Min(items.Count, top + Size.Item2);
 			for(int i = 0; i < items.Count; i++)
 			{
 				var item = items[i];
 
-				if(i < index || i >= max)
+				if(i < top || i >= bottom)
 				{
 					item.Position = (int.MaxValue, int.MaxValue);
 					continue;
 				}
 
-				item.Position = (x, y + (i - index));
+				item.Position = (x, y + (i - top));
 				item.Size = (Size.Item1 - 1, 1);
-
-				var wasChecked = item.IsChecked;
 				item.Update();
 
-				if(wasChecked && item.IsChecked == false && IsSingleSelecting)
-					item.IsChecked = true;
+				if(IsSingleSelecting)
+					item.IsChecked = false;
 			}
+
+			if(IsSingleSelecting && HasIndex(singleSelectedIndex))
+				items[singleSelectedIndex].IsChecked = true;
 		}
 
 		private int GetScrollIndex()
@@ -160,6 +187,10 @@
 			var end = Math.Max(0, items.Count - Scroll.Size.Item2 - 2);
 			var index = (int)MathF.Round(Map(Scroll.Progress, 0, 1, 0, end));
 			return index;
+		}
+		private bool HasIndex(int index)
+		{
+			return index >= 0 && index < items.Count;
 		}
 
 		private static float Map(float number, float a1, float a2, float b1, float b2)
