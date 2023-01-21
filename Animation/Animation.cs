@@ -53,8 +53,6 @@
 		{
 			if(values == null)
 				throw new ArgumentNullException(nameof(values));
-			if(values.Length < 1)
-				throw new ArgumentException("Total values cannot be < 1.", nameof(values));
 
 			this.values = Copy(values);
 			rawIndex = 0;
@@ -66,7 +64,8 @@
 		/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>
 		/// with <paramref name="speed"/> in values per second while it <paramref name="isRepeating"/>.
 		/// </summary>
-		public Animation(bool isRepeating, float speed, params T[] values) : this(0f, isRepeating, values)
+		public Animation(bool isRepeating, float speed, params T[] values)
+			: this(0f, isRepeating, values)
 		{
 			Speed = speed;
 		}

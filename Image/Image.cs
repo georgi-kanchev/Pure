@@ -32,14 +32,17 @@ namespace Pure.Image
 		{
 			img = new SFML.Graphics.Image(size.Item1, size.Item2);
 		}
-		public Image(string path)
+		public Image(string path, bool isMonochrome = false)
 		{
 			img = new SFML.Graphics.Image(path);
 
 			for(uint y = 0; y < img.Size.Y; y++)
 				for(uint x = 0; x < img.Size.X; x++)
 				{
-					var color = ByteFromColor(img.GetPixel(x, y));
+					var color = byte.MaxValue;
+					if(isMonochrome == false)
+						color = ByteFromColor(img.GetPixel(x, y));
+
 					img.SetPixel(x, y, ByteToColor(color));
 				}
 		}
@@ -50,7 +53,7 @@ namespace Pure.Image
 		}
 
 		#region Backend
-		private SFML.Graphics.Image img;
+		private readonly SFML.Graphics.Image img;
 
 		private static Color ByteToColor(byte value)
 		{

@@ -76,63 +76,65 @@ namespace Pure.Window
 		/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a
 		/// <paramref name="tileSize"/> and a <paramref name="tileMargin"/>, then it is cached
 		/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>
-		/// and <paramref name="colors"/>.
+		/// and <paramref name="tints"/>.
 		/// </summary>
-		public static void DrawTilemap(int[,] tiles, byte[,] colors, (uint, uint) tileSize,
+		public static void DrawTilemap(int[,] tiles, byte[,] tints, (uint, uint) tileSize,
 			(uint, uint) tileMargin = default, string? path = default)
 		{
-			if(tiles == null || colors == null || tiles.Length != colors.Length)
+			if(tiles == null || tints == null || tiles.Length != tints.Length)
 				return;
 
 			path ??= "default";
 
 			TryLoadGraphics(path);
-			var verts = GetTilemapVertices(tiles, colors, tileSize, tileMargin, path);
+			var verts = GetTilemapVertices(tiles, tints, tileSize, tileMargin, path);
 			window.Draw(verts, PrimitiveType.Quads, new(graphics[path]));
 		}
 		/// <summary>
 		/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
-		/// from the last <see cref="DrawTilemap"/> call and a <paramref name="color"/>. The sprite's
+		/// from the last <see cref="DrawTilemap"/> call and a <paramref name="tint"/>. The sprite's
 		/// <paramref name="position"/> is also relative to the previously drawn tilemap.
 		/// </summary>
-		public static void DrawSprite((float, float) position, int tile, byte color)
+		public static void DrawSprite((float, float) position, int tile, byte tint = byte.MaxValue)
 		{
 			if(prevDrawTilemapGfxPath == null)
 				return;
 
-			var verts = GetSpriteVertices(position, tile, color);
+			var verts = GetSpriteVertices(position, tile, tint);
 			window.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawTilemapGfxPath]));
 		}
 		/// <summary>
-		/// Draws single pixel points with <paramref name="color"/> onto the OS window.
+		/// Draws single pixel points with <paramref name="tint"/> onto the OS window.
 		/// Their <paramref name="positions"/> are relative to the previously drawn tilemap.
 		/// </summary>
-		public static void DrawPoints(byte color, params (float, float)[] positions)
+		public static void DrawPoints(byte tint, params (float, float)[] positions)
 		{
 			if(positions == null || positions.Length == 0)
 				return;
 
-			var verts = GetPointsVertices(color, positions);
+			var verts = GetPointsVertices(tint, positions);
 			window.Draw(verts, PrimitiveType.Quads);
 		}
 		/// <summary>
-		/// Draws a rectangle with <paramref name="color"/> onto the OS window.
+		/// Draws a rectangle with <paramref name="tint"/> onto the OS window.
 		/// Its <paramref name="position"/> and <paramref name="size"/> are relative
 		/// to the previously drawn tilemap.
 		/// </summary>
-		public static void DrawRectangle((float, float) position, (float, float) size, byte color)
+		public static void DrawRectangle((float, float) position, (float, float) size,
+			byte tint = byte.MaxValue)
 		{
-			var verts = GetRectangleVertices(position, size, color);
+			var verts = GetRectangleVertices(position, size, tint);
 			window.Draw(verts, PrimitiveType.Quads);
 		}
 		/// <summary>
 		/// Draws a line between <paramref name="pointA"/> and <paramref name="pointB"/> with
-		/// <paramref name="color"/> onto the OS window.
+		/// <paramref name="tint"/> onto the OS window.
 		/// Its points are relative to the previously drawn tilemap.
 		/// </summary>
-		public static void DrawLine((float, float) pointA, (float, float) pointB, byte color)
+		public static void DrawLine((float, float) pointA, (float, float) pointB,
+			byte tint = byte.MaxValue)
 		{
-			var verts = GetLineVertices(pointA, pointB, color);
+			var verts = GetLineVertices(pointA, pointB, tint);
 			window.Draw(verts, PrimitiveType.Quads);
 		}
 
@@ -146,49 +148,6 @@ namespace Pure.Window
 		private static (float, float) prevDrawTilemapCellSz;
 		private static (uint, uint) prevDrawTilemapCellCount;
 
-		private static readonly List<(byte, byte, byte)> colorLookup = new()
-		{
-			(0,0,0),(0,0,85),(0,0,170),(0,0,255),(0,36,0),(0,36,85),(0,36,170),(0,36,255),
-			(0,72,0),(0,72,85),(0,72,170),(0,72,255),(0,109,0),(0,109,85),(0,109,170),
-			(0,109,255),(0,145,0),(0,145,85),(0,145,170),(0,145,255),(0,182,0),(0,182,85),
-			(0,182,170),(0,182,255),(0,218,0),(0,218,85),(0,218,170),(0,218,255),(0,255,0),
-			(0,255,85),(0,255,170),(0,255,255),(36,0,0),(36,0,85),(36,0,170),(36,0,255),
-			(36,36,0),(36,36,85),(36,36,170),(36,36,255),(36,72,0),(36,72,85),(36,72,170),
-			(36,72,255),(36,109,0),(36,109,85),(36,109,170),(36,109,255),(36,145,0),(36,145,85),
-			(36,145,170),(36,145,255),(36,182,0),(36,182,85),(36,182,170),(36,182,255),
-			(36,218,0),(36,218,85),(36,218,170),(36,218,255),(36,255,0),(36,255,85),(36,255,170),
-			(36,255,255),(72,0,0),(72,0,85),(72,0,170),(72,0,255),(72,36,0),(72,36,85),
-			(72,36,170),(72,36,255),(72,72,0),(72,72,85),(72,72,170),(72,72,255),(72,109,0),
-			(72,109,85),(72,109,170),(72,109,255),(72,145,0),(72,145,85),(72,145,170),
-			(72,145,255),(72,182,0),(72,182,85),(72,182,170),(72,182,255),(72,218,0),(72,218,85),
-			(72,218,170),(72,218,255),(72,255,0),(72,255,85),(72,255,170),(72,255,255),(109,0,0),
-			(109,0,85),(109,0,170),(109,0,255),(109,36,0),(109,36,85),(109,36,170),(109,36,255),
-			(109,72,0),(109,72,85),(109,72,170),(109,72,255),(109,109,0),(109,109,85),
-			(109,109,170),(109,109,255),(109,145,0),(109,145,85),(109,145,170),(109,145,255),
-			(109,182,0),(109,182,85),(109,182,170),(109,182,255),(109,218,0),(109,218,85),
-			(109,218,170),(109,218,255),(109,255,0),(109,255,85),(109,255,170),(109,255,255),
-			(145,0,0),(145,0,85),(145,0,170),(145,0,255),(145,36,0),(145,36,85),(145,36,170),
-			(145,36,255),(145,72,0),(145,72,85),(145,72,170),(145,72,255),(145,109,0),
-			(145,109,85),(145,109,170),(145,109,255),(145,145,0),(145,145,85),(145,145,170),
-			(145,145,255),(145,182,0),(145,182,85),(145,182,170),(145,182,255),(145,218,0),
-			(145,218,85),(145,218,170),(145,218,255),(145,255,0),(145,255,85),(145,255,170),
-			(145,255,255),(182,0,0),(182,0,85),(182,0,170),(182,0,255),(182,36,0),(182,36,85),
-			(182,36,170),(182,36,255),(182,72,0),(182,72,85),(182,72,170),(182,72,255),
-			(182,109,0),(182,109,85),(182,109,170),(182,109,255),(182,145,0),(182,145,85),
-			(182,145,170),(182,145,255),(182,182,0),(182,182,85),(182,182,170),(182,182,255),
-			(182,218,0),(182,218,85),(182,218,170),(182,218,255),(182,255,0),(182,255,85),
-			(182,255,170),(182,255,255),(218,0,0),(218,0,85),(218,0,170),(218,0,255),(218,36,0),
-			(218,36,85),(218,36,170),(218,36,255),(218,72,0),(218,72,85),(218,72,170),
-			(218,72,255),(218,109,0),(218,109,85),(218,109,170),(218,109,255),(218,145,0),
-			(218,145,85),(218,145,170),(218,145,255),(218,182,0),(218,182,85),(218,182,170),
-			(218,182,255),(218,218,0),(218,218,85),(218,218,170),(218,218,255),(218,255,0),
-			(218,255,85),(218,255,170),(218,255,255),(255,0,0),(255,0,85),(255,0,170),
-			(255,0,255),(255,36,0),(255,36,85),(255,36,170),(255,36,255),(255,72,0),(255,72,85),
-			(255,72,170),(255,72,255),(255,109,0),(255,109,85),(255,109,170),(255,109,255),
-			(255,145,0),(255,145,85),(255,145,170),(255,145,255),(255,182,0),(255,182,85),
-			(255,182,170),(255,182,255),(255,218,0),(255,218,85),(255,218,170),(255,218,255),
-			(255,255,0),(255,255,85),(255,255,170),(255,255,255),
-		};
 		internal static readonly Dictionary<string, Texture> graphics = new();
 		internal static readonly RenderWindow window;
 
@@ -410,7 +369,9 @@ namespace Pure.Window
 		}
 		private static Color ByteToColor(byte color)
 		{
-			var (r, g, b) = colorLookup[color];
+			var r = (byte)((color >> 5) * 255 / 7);
+			var g = (byte)(((color >> 2) & 0x07) * 255 / 7);
+			var b = (byte)((color & 0x03) * 255 / 3);
 			return new(r, g, b);
 		}
 		private static (float, float) ToGrid((float, float) pos, (float, float) gridSize)

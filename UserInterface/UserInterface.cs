@@ -2,7 +2,7 @@
 
 namespace Pure.UserInterface
 {
-	public enum Event
+	public enum UserAction
 	{
 		Trigger, Focus, Unfocus, Hover, Unhover, Press, Release, Drag, Hold, Scroll
 	}
@@ -116,19 +116,12 @@ namespace Pure.UserInterface
 			holdTrigger.Start();
 		}
 
-		public void Subscribe(Event when, Action method)
+		public void On(UserAction userAction, Action method)
 		{
-			if(events.ContainsKey(when) == false)
-				events[when] = new();
+			if(events.ContainsKey(userAction) == false)
+				events[userAction] = new();
 
-			events[when].Add(method);
-		}
-		public void Unsubscribe(Event when, Action method)
-		{
-			if(events.ContainsKey(when) == false)
-				return;
-
-			events[when].Remove(method);
+			events[userAction].Add(method);
 		}
 
 		public void Update()
@@ -155,21 +148,21 @@ namespace Pure.UserInterface
 			TryTrigger();
 
 			if(IsFocused && wasFocused == false)
-				TriggerEvent(Event.Focus);
+				TriggerEvent(UserAction.Focus);
 			if(IsFocused == false && wasFocused)
-				TriggerEvent(Event.Unfocus);
+				TriggerEvent(UserAction.Unfocus);
 			if(IsHovered && wasHovered == false)
-				TriggerEvent(Event.Hover);
+				TriggerEvent(UserAction.Hover);
 			if(IsHovered == false && wasHovered)
-				TriggerEvent(Event.Unhover);
+				TriggerEvent(UserAction.Unhover);
 			if(IsPressed && CurrentInput.wasPressed == false)
-				TriggerEvent(Event.Press);
+				TriggerEvent(UserAction.Press);
 			if(IsPressed == false && CurrentInput.wasPressed)
-				TriggerEvent(Event.Release);
+				TriggerEvent(UserAction.Release);
 			if(IsPressed && CurrentInput.IsJustHeld)
-				TriggerEvent(Event.Hold);
+				TriggerEvent(UserAction.Hold);
 			if(CurrentInput.ScrollDelta != 0)
-				TriggerEvent(Event.Scroll);
+				TriggerEvent(UserAction.Scroll);
 
 			OnUpdate();
 		}
@@ -177,7 +170,7 @@ namespace Pure.UserInterface
 
 		public void Trigger()
 		{
-			TriggerEvent(Event.Trigger);
+			TriggerEvent(UserAction.Trigger);
 		}
 		protected void TryTrigger()
 		{
@@ -190,7 +183,7 @@ namespace Pure.UserInterface
 			if(IsHovered && CurrentInput.IsReleased && IsClicked)
 			{
 				IsClicked = false;
-				TriggerEvent(Event.Trigger);
+				TriggerEvent(UserAction.Trigger);
 			}
 
 			if(IsHovered && CurrentInput.IsJustPressed)
@@ -214,7 +207,7 @@ namespace Pure.UserInterface
 			MouseCursorSystem = tileCursor + SYSTEM_ARROW;
 		}
 
-		protected void TriggerEvent(Event when)
+		protected void TriggerEvent(UserAction when)
 		{
 			OnEvent(when);
 
@@ -224,7 +217,7 @@ namespace Pure.UserInterface
 			for(int i = 0; i < events[when].Count; i++)
 				events[when][i].Invoke();
 		}
-		protected virtual void OnEvent(Event when) { }
+		protected virtual void OnEvent(UserAction when) { }
 
 		public static void ApplyInput(bool isPressed, (float, float) position, int scrollDelta,
 			int[] keysPressed, string keysTyped, (int, int) tilemapSize)
@@ -270,7 +263,7 @@ namespace Pure.UserInterface
 
 		private bool wasFocused, wasHovered;
 
-		private readonly Dictionary<Event, List<Action>> events = new();
+		private readonly Dictionary<UserAction, List<Action>> events = new();
 
 		public override string ToString()
 		{

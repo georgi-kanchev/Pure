@@ -62,7 +62,7 @@
 			{
 				var p = CurrentInput.Position;
 				MoveTo(((int)p.Item1, (int)p.Item2));
-				TriggerEvent(Event.Drag);
+				TriggerEvent(UserAction.Drag);
 			}
 		}
 

@@ -29,6 +29,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Image", "Image\Image.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Window", "Window\Window.csproj", "{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Particles", "Particles\Particles.csproj", "{4D12C66C-1D47-4EDE-A380-75326E12FEBB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageEditor", "ImageEditor\ImageEditor.csproj", "{6F864583-1CDB-423C-82B9-0460B26207D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +91,14 @@ Global
 		{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D12C66C-1D47-4EDE-A380-75326E12FEBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D12C66C-1D47-4EDE-A380-75326E12FEBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D12C66C-1D47-4EDE-A380-75326E12FEBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D12C66C-1D47-4EDE-A380-75326E12FEBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F864583-1CDB-423C-82B9-0460B26207D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F864583-1CDB-423C-82B9-0460B26207D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F864583-1CDB-423C-82B9-0460B26207D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F864583-1CDB-423C-82B9-0460B26207D1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -30,12 +30,6 @@ namespace Pure.Utilities
 		/// </summary>
 		public enum AnimationCurve { Backward, Forward, BackwardThenForward }
 
-		static Extensions()
-		{
-			holdFrequency.Start();
-			holdDelay.Start();
-		}
-
 		/// <summary>
 		/// Returns <see langword="true"/> only the first time a <paramref name="condition"/> is <see langword="true"/>.
 		/// This is reset whenever the <paramref name="condition"/> becomes <see langword="false"/>.
@@ -223,9 +217,9 @@ namespace Pure.Utilities
 		/// </summary>
 		public static float ToNumber(this string text)
 		{
-			var result = 0.0f;
 			text = text.Replace(',', '.');
-			var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
+			var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture,
+				out var result);
 
 			return parsed ? result : float.NaN;
 		}
@@ -537,6 +531,12 @@ namespace Pure.Utilities
 		private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
 
 		private static readonly Dictionary<string, Gate> gates = new();
+
+		static Extensions()
+		{
+			holdFrequency.Start();
+			holdDelay.Start();
+		}
 		#endregion
 	}
 }

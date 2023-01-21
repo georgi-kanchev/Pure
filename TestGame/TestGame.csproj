@@ -13,6 +13,7 @@
     <ProjectReference Include="..\Collision\Collision.csproj" />
     <ProjectReference Include="..\Image\Image.csproj" />
     <ProjectReference Include="..\Modding\Modding.csproj" />
+    <ProjectReference Include="..\Particles\Particles.csproj" />
     <ProjectReference Include="..\Storage\Storage.csproj" />
     <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
     <ProjectReference Include="..\UserInterface\UserInterface.csproj" />

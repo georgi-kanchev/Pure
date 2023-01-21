@@ -1,4 +1,6 @@
-﻿namespace Pure.Window
+﻿using SFML.Window;
+
+namespace Pure.Window
 {
 	/// <summary>
 	/// Handles the physical keys on a keyboard.
@@ -44,11 +46,13 @@
 
 		public static void OnPressed(int key, Action method)
 		{
+			Window.window.KeyPressed -= OnPress;
 			Window.window.KeyPressed += (s, e) =>
 			{
-				if(key == (int)e.Code)
+				if(pressed.Contains(key) == false && key == (int)e.Code)
 					method?.Invoke();
 			};
+			Window.window.KeyPressed += OnPress;
 		}
 		public static void OnReleased(int key, Action method)
 		{
@@ -78,16 +82,7 @@
 
 		static KeyboardKey()
 		{
-			Window.window.KeyPressed += (s, e) =>
-			{
-				var key = (int)e.Code;
-				if(pressed.Contains(key) == false)
-					pressed.Add(key);
-
-				var symb = GetSymbol(key, IsPressed(SHIFT_LEFT) || IsPressed(SHIFT_RIGHT));
-				if(Typed.Contains(symb) == false)
-					Typed += symb;
-			};
+			Window.window.KeyPressed += OnPress;
 			Window.window.KeyReleased += (s, e) =>
 			{
 				var key = (int)e.Code;
@@ -123,6 +118,16 @@
 				Typed = Typed.Replace(symbol.ToUpper(), "");
 
 			};
+		}
+		internal static void OnPress(object? obj, KeyEventArgs e)
+		{
+			var key = (int)e.Code;
+			if(pressed.Contains(key) == false)
+				pressed.Add(key);
+
+			var symb = GetSymbol(key, IsPressed(SHIFT_LEFT) || IsPressed(SHIFT_RIGHT));
+			if(Typed.Contains(symb) == false)
+				Typed += symb;
 		}
 
 		internal static void CancelInput()

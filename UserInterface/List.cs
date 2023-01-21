@@ -27,10 +27,10 @@
 
 			Add(count);
 
-			ScrollUp.Subscribe(Event.Press, () => Scroll.Move(1));
-			ScrollUp.Subscribe(Event.Hold, () => Scroll.Move(1));
-			ScrollDown.Subscribe(Event.Press, () => Scroll.Move(-1));
-			ScrollDown.Subscribe(Event.Hold, () => Scroll.Move(-1));
+			ScrollUp.On(UserAction.Press, () => Scroll.Move(1));
+			ScrollUp.On(UserAction.Hold, () => Scroll.Move(1));
+			ScrollDown.On(UserAction.Press, () => Scroll.Move(-1));
+			ScrollDown.On(UserAction.Hold, () => Scroll.Move(-1));
 
 			UpdateParts();
 			UpdateItems();
