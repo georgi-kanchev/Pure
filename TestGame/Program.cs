@@ -5,6 +5,8 @@ namespace TestGame
 {
 	public class Program
 	{
+		// https://gigi.nullneuron.net/gigilabs/a-pathfinding-example-in-c/
+
 		static void Main()
 		{
 			var layer = new Tilemap((48, 27));
