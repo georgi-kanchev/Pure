@@ -16,8 +16,11 @@ namespace ImageEditor
 		private readonly Timer loop;
 		private float mapZoom = 1f, setZoom = 1f;
 		private Vector2 prevFormsMousePosMap, prevFormsMousePosSet;
-		private VertexBuffer? vertsTileset, vertsMap;
-		private Vector2 selectedTile, selectedTileSquare;
+		private VertexBuffer? vertsTileset;
+		private Vector2 selectedTile, selectedTileSquare, previewTile, previewTileSquare;
+		private readonly Vertex[] versSelection = new Vertex[4];
+		private readonly VertexArray vertsPreview = new(PrimitiveType.Quads);
+		private bool isSquaring;
 
 		public Window()
 		{
@@ -45,11 +48,14 @@ namespace ImageEditor
 			TileOffsetWidth.ValueChanged += (s, e) => RecreateTilesetVerts();
 			TileOffsetHeight.ValueChanged += (s, e) => RecreateTilesetVerts();
 
-			ResizeEnd += (s, e) =>
+			map.Resized += (s, e) => UpdateZoom();
+			set.Resized += (s, e) => UpdateZoom();
+
+			void UpdateZoom()
 			{
 				SetViewZoom(map, ref mapZoom, mapZoom);
 				SetViewZoom(set, ref setZoom, setZoom);
-			};
+			}
 		}
 
 		#region Actions
@@ -115,7 +121,9 @@ namespace ImageEditor
 			scale = Math.Clamp(scale, 0.1f, 3f);
 			zoom = scale;
 			var view = window.GetView();
-			view.Size = new(window.Size.X * scale, window.Size.Y * scale);
+			var w = RoundToMultipleOfTwo((int)(window.Size.X * scale));
+			var h = RoundToMultipleOfTwo((int)(window.Size.Y * scale));
+			view.Size = new(w, h);
 			window.SetView(view);
 		}
 		private static Vector2 Drag(RenderWindow window, Vector2 mousePos, Vector2 prevMousePos)
@@ -140,21 +148,21 @@ namespace ImageEditor
 			var br = new Vector2f(sq.X * tileSz.X + tileSz.X, sq.Y * tileSz.Y + tileSz.Y);
 			var tr = new Vector2f(br.X, tl.Y);
 			var bl = new Vector2f(tl.X, br.Y);
-			var c = SFML.Graphics.Color.White;
+			var c = ToSFMLColor(ColorSelection.BackColor);
+			c.A = 150;
 
-			var verts = new Vertex[4]
-			{
-				new(tl, c),
-				new(tr, c),
-				new(br, c),
-				new(bl, c),
-			};
-			set.Draw(verts, PrimitiveType.Quads);
+			versSelection[0] = new(tl, c);
+			versSelection[1] = new(tr, c);
+			versSelection[2] = new(br, c);
+			versSelection[3] = new(bl, c);
+
+			set.Draw(versSelection, PrimitiveType.Quads);
 		}
 		private void DrawGrid(RenderWindow window, int width, int height)
 		{
 			var cellVerts = new VertexArray(PrimitiveType.Lines);
-			var gridColor = ToSFMLColor(GridColor.BackColor);
+			var grid1Color = ToSFMLColor(ColorGrid1.BackColor);
+			var grid5Color = ToSFMLColor(ColorGrid5.BackColor);
 			var tileSize = new Vector2i((int)TileWidth.Value, (int)TileHeight.Value);
 			var view = window.GetView();
 			var viewTopLeft = view.Center - view.Size / 2f;
@@ -189,8 +197,60 @@ namespace ImageEditor
 
 			SFML.Graphics.Color GetColor(float coordinate)
 			{
-				return coordinate % 10 == 0 ? SFML.Graphics.Color.White : gridColor;
+				return coordinate % 5 == 0 ? grid5Color : grid1Color;
 			}
+		}
+		private void DrawPreview()
+		{
+			vertsPreview.Clear();
+			var selectedSz = selectedTileSquare - selectedTile;
+			var sz = selectedSz;
+
+			if(isSquaring)
+				sz = previewTileSquare - previewTile;
+
+			var p = previewTile;
+			var tileSz = new Vector2((float)TileWidth.Value, (float)TileHeight.Value);
+			var tileOff = new Vector2((float)TileOffsetWidth.Value, (float)TileOffsetHeight.Value);
+			var stepX = sz.X < 0 ? -1 : 1;
+			var stepY = sz.Y < 0 ? -1 : 1;
+			var c = ToSFMLColor(ColorBrush.BackColor);
+			var mapCount = new Vector2i((int)MapWidth.Value, (int)MapHeight.Value);
+			var random = new Random((int)(p.X * p.Y * MathF.PI));
+			var isSingleTile = selectedSz.X + 1 == 1 && selectedSz.Y + 1 == 1;
+
+			sz += new Vector2(stepX, stepY);
+			c.A = 150;
+
+
+			for(float x = p.X; x != p.X + sz.X; x += stepX)
+				for(float y = p.Y; y != p.Y + sz.Y; y += stepY)
+				{
+					if(x < 0 || x >= mapCount.X ||
+						y < 0 || y >= mapCount.Y)
+						continue;
+
+					var offX = isSingleTile ? 0 :
+						isSquaring ? random.Next(0, (int)MathF.Abs(selectedSz.X) + 1) : x - p.X;
+					var offY = isSingleTile ? 0 :
+						isSquaring ? random.Next(0, (int)MathF.Abs(selectedSz.Y) + 1) : y - p.Y;
+					var tex = (selectedTile + new Vector2(offX, offY)) * (tileSz + tileOff);
+					var texTl = new Vector2f(tex.X, tex.Y);
+					var texBr = new Vector2f(texTl.X + tileSz.X, texTl.Y + tileSz.Y);
+					var texTr = new Vector2f(texBr.X, texTl.Y);
+					var texBl = new Vector2f(texTl.X, texBr.Y);
+
+					var tl = new Vector2f(x * tileSz.X, y * tileSz.Y);
+					var br = new Vector2f(tl.X + tileSz.X, tl.Y + tileSz.Y);
+					var tr = new Vector2f(br.X, tl.Y);
+					var bl = new Vector2f(tl.X, br.Y);
+
+					vertsPreview.Append(new(tl, c, texTl));
+					vertsPreview.Append(new(tr, c, texTr));
+					vertsPreview.Append(new(br, c, texBr));
+					vertsPreview.Append(new(bl, c, texBl));
+				}
+			map.Draw(vertsPreview, new(tileset));
 		}
 
 		private void RecreateTilesetVerts()
@@ -211,7 +271,7 @@ namespace ImageEditor
 			for(int j = 0; j < count.Y; j++)
 				for(int i = 0; i < count.X; i++)
 				{
-					var texTl = new Vector2f(i * tileSz.X + tileOff.X, j * tileSz.Y + tileOff.Y);
+					var texTl = new Vector2f(i * (tileSz.X + tileOff.X), j * (tileSz.Y + tileOff.Y));
 					var texBr = new Vector2f(texTl.X + tileSz.X, texTl.Y + tileSz.Y);
 					var texTr = new Vector2f(texBr.X, texTl.Y);
 					var texBl = new Vector2f(texTl.X, texBr.Y);
@@ -313,49 +373,29 @@ namespace ImageEditor
 		{
 			return x * width + y;
 		}
+		private static int RoundToMultipleOfTwo(int n)
+		{
+			var rem = n % 2;
+			var result = n - rem;
+			if(rem >= 1)
+				result += 2;
+			return result;
+		}
 		#endregion
 		#region Events
-		private void OnMouseMoveMap(object sender, MouseEventArgs e)
-		{
-			if(e.Button == MouseButtons.Middle)
-				TryMoveView(map, GetMapSize(), prevFormsMousePosMap);
-
-			prevFormsMousePosMap = GetFormsMousePos(map);
-
-		}
-		private void OnMouseMoveSet(object sender, MouseEventArgs e)
-		{
-			if(tileset == null)
-				return;
-
-			if(e.Button == MouseButtons.Left && IsHoveringSet())
-				selectedTileSquare = GetHoveredCoordsRounded(set);
-			else if(e.Button == MouseButtons.Middle)
-				TryMoveView(set, GetTilesetSize(), prevFormsMousePosSet);
-
-			prevFormsMousePosSet = GetFormsMousePos(set);
-		}
-
-		private void OnMapScroll(object? sender, MouseEventArgs e)
-		{
-			TryScrollView(map, ref mapZoom, e.Delta, GetMapSize());
-		}
-		private void OnSetScroll(object? sender, MouseEventArgs e)
-		{
-			TryScrollView(set, ref setZoom, e.Delta, GetTilesetSize());
-		}
-
 		private void OnUpdate(object? sender, EventArgs e)
 		{
 			map.Size = new((uint)Map.Width, (uint)Map.Height);
 			map.DispatchEvents();
-			map.Clear(ToSFMLColor(MapBgColor.BackColor));
+			map.Clear(ToSFMLColor(ColorBackground.BackColor));
 			DrawGrid(map, (int)MapWidth.Value, (int)MapHeight.Value);
+			if(tileset != null && (IsHoveringMap() || isSquaring))
+				DrawPreview();
 			map.Display();
 
 			set.Size = new((uint)Set.Width, (uint)Set.Height);
 			set.DispatchEvents();
-			set.Clear(ToSFMLColor(SetBgColor.BackColor));
+			set.Clear(ToSFMLColor(ColorBackground.BackColor));
 
 			if(tileset != null)
 			{
@@ -369,33 +409,63 @@ namespace ImageEditor
 			set.Display();
 		}
 
-		private void OnBrushColorClick(object sender, EventArgs e)
+		private void OnNumericValueChange(object sender, EventArgs e)
 		{
-			Colors.Color = BrushColor.BackColor;
-			if(Colors.ShowDialog() == DialogResult.OK)
-				BrushColor.BackColor = Colors.Color;
-		}
-		private void OnGridColorClick(object sender, EventArgs e)
-		{
-			Colors.Color = GridColor.BackColor;
-			if(Colors.ShowDialog() == DialogResult.OK)
-				GridColor.BackColor = Colors.Color;
-		}
-		private void OnSetBackgroundColorClick(object sender, EventArgs e)
-		{
-			Colors.Color = SetBgColor.BackColor;
-			if(Colors.ShowDialog() == DialogResult.OK)
-				SetBgColor.BackColor = Colors.Color;
+			LimitView(map, GetMapSize());
+			LimitView(set, GetTilesetSize());
 		}
 
-		private void OnMapBackgroundColorClick(object sender, EventArgs e)
+		private void OnMapMouseMove(object sender, MouseEventArgs e)
 		{
-			Colors.Color = MapBgColor.BackColor;
-			if(Colors.ShowDialog() == DialogResult.OK)
-				MapBgColor.BackColor = Colors.Color;
+			if(e.Button == MouseButtons.Middle)
+				TryMoveView(map, GetMapSize(), prevFormsMousePosMap);
+
+			prevFormsMousePosMap = GetFormsMousePos(map);
+
+			if(e.Button == MouseButtons.Right)
+				previewTileSquare = GetHoveredCoordsRounded(map);
+			else
+				previewTile = GetHoveredCoordsRounded(map);
+		}
+		private void OnMapScroll(object? sender, MouseEventArgs e)
+		{
+			TryScrollView(map, ref mapZoom, e.Delta, GetMapSize());
+		}
+		private void OnMapPress(object sender, MouseEventArgs e)
+		{
+			if(e.Button == MouseButtons.Right)
+			{
+				previewTileSquare = previewTile;
+				isSquaring = true;
+			}
+			else if(e.Button == MouseButtons.Left)
+			{
+
+			}
+		}
+		private void OnMapRelease(object sender, MouseEventArgs e)
+		{
+			if(e.Button == MouseButtons.Right)
+				isSquaring = false;
 		}
 
-		private void OnTilesetLoadClick(object sender, EventArgs e)
+		private void OnSetMouseMove(object sender, MouseEventArgs e)
+		{
+			if(tileset == null)
+				return;
+
+			if(e.Button == MouseButtons.Left && IsHoveringSet())
+				selectedTileSquare = GetHoveredCoordsRounded(set);
+			else if(e.Button == MouseButtons.Middle)
+				TryMoveView(set, GetTilesetSize(), prevFormsMousePosSet);
+
+			prevFormsMousePosSet = GetFormsMousePos(set);
+		}
+		private void OnSetScroll(object? sender, MouseEventArgs e)
+		{
+			TryScrollView(set, ref setZoom, e.Delta, GetTilesetSize());
+		}
+		private void OnSetLoadClick(object sender, EventArgs e)
 		{
 			if(LoadTileset.ShowDialog() != DialogResult.OK)
 				return;
@@ -417,20 +487,55 @@ namespace ImageEditor
 			SetViewPosition(set, sz, new(sz.X / 2, sz.Y / 2));
 			RecreateTilesetVerts();
 		}
-
-		private void OnNumericValueChange(object sender, EventArgs e)
-		{
-			LimitView(map, GetMapSize());
-			LimitView(set, GetTilesetSize());
-		}
-
 		private void OnSetPress(object sender, MouseEventArgs e)
 		{
-			if(e.Button != MouseButtons.Left || IsHoveringSet() == false)
-				return;
+			if(e.Button == MouseButtons.Left && IsHoveringSet())
+			{
+				selectedTile = GetHoveredCoordsRounded(set);
+				selectedTileSquare = selectedTile;
+			}
+			else if(e.Button == MouseButtons.Right)
+			{
+				var sz = selectedTileSquare - selectedTile;
+				var tileSz = new Vector2((float)TileWidth.Value, (float)TileHeight.Value);
+				sz += new Vector2(1, 1);
+				var center = (selectedTile + sz / 2) * tileSz;
+				var sc = new Vector2(MathF.Abs(sz.X - 1), MathF.Abs(sz.Y - 1)) / tileSz;
 
-			selectedTile = GetHoveredCoordsRounded(set);
-			selectedTileSquare = selectedTile;
+				SetViewPosition(set, GetTilesetSize(), center);
+				SetViewZoom(set, ref setZoom, sc.X > sc.Y ? sc.X : sc.Y);
+			}
+		}
+
+		private void OnColorBrushClick(object sender, EventArgs e)
+		{
+			Colors.Color = ColorBrush.BackColor;
+			if(Colors.ShowDialog() == DialogResult.OK)
+				ColorBrush.BackColor = Colors.Color;
+		}
+		private void OnColorSelectionClick(object sender, EventArgs e)
+		{
+			Colors.Color = ColorSelection.BackColor;
+			if(Colors.ShowDialog() == DialogResult.OK)
+				ColorSelection.BackColor = Colors.Color;
+		}
+		private void OnColorGrid1Click(object sender, EventArgs e)
+		{
+			Colors.Color = ColorGrid1.BackColor;
+			if(Colors.ShowDialog() == DialogResult.OK)
+				ColorGrid1.BackColor = Colors.Color;
+		}
+		private void OnColorGrid5Click(object sender, EventArgs e)
+		{
+			Colors.Color = ColorGrid5.BackColor;
+			if(Colors.ShowDialog() == DialogResult.OK)
+				ColorGrid5.BackColor = Colors.Color;
+		}
+		private void OnColorBackgroundClick(object sender, EventArgs e)
+		{
+			Colors.Color = ColorBackground.BackColor;
+			if(Colors.ShowDialog() == DialogResult.OK)
+				ColorBackground.BackColor = Colors.Color;
 		}
 		#endregion
 	}
