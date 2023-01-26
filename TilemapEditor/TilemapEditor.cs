@@ -4,28 +4,35 @@ using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 
+using Color = System.Drawing.Color;
 using Cursor = System.Windows.Forms.Cursor;
+using TextBox = System.Windows.Forms.TextBox;
 using Timer = System.Windows.Forms.Timer;
 
 namespace ImageEditor
 {
 	public partial class Window : Form
 	{
-		private Texture? tileset;
+		private const string DEFAULT_LAYER_NAME = "Tilemap";
+
 		private readonly RenderWindow map, set;
 		private readonly Timer loop;
+		private readonly VertexArray vertsPreview = new(PrimitiveType.Quads);
+		private readonly Vertex[] versSelection = new Vertex[4];
+		private VertexBuffer? vertsTileset;
+		private Texture? tileset;
+
 		private float mapZoom = 1f, setZoom = 1f;
 		private Vector2 prevFormsMousePosMap, prevFormsMousePosSet;
-		private VertexBuffer? vertsTileset;
 		private Vector2 selectedTile, selectedTileSquare, previewTile, previewTileSquare;
-		private readonly Vertex[] versSelection = new Vertex[4];
-		private readonly VertexArray vertsPreview = new(PrimitiveType.Quads);
-		private bool isSquaring;
+		private bool isSquaring, isCreatingLayer;
 
 		public Window()
 		{
 			InitializeComponent();
 			CenterToScreen();
+
+			Layers.KeyDown += OnKeyPress; ;
 
 			map = new RenderWindow(Map.Handle);
 			set = new RenderWindow(Set.Handle);
@@ -51,6 +58,8 @@ namespace ImageEditor
 			map.Resized += (s, e) => UpdateZoom();
 			set.Resized += (s, e) => UpdateZoom();
 
+			OnLayerAdd(this, new());
+
 			void UpdateZoom()
 			{
 				SetViewZoom(map, ref mapZoom, mapZoom);
@@ -59,6 +68,16 @@ namespace ImageEditor
 		}
 
 		#region Actions
+		private void MoveLayerToIndex(int index)
+		{
+			var item = Layers.SelectedItem;
+			var isChecked = Layers.GetItemChecked(Layers.SelectedIndex);
+			Layers.Items.RemoveAt(Layers.SelectedIndex);
+			Layers.Items.Insert(index, item);
+			Layers.SetItemChecked(index, isChecked);
+			Layers.SelectedIndex = index;
+		}
+
 		private Vector2 GetHoveredCoords(RenderWindow window)
 		{
 			var pos = GetMousePosition(window);
@@ -385,6 +404,8 @@ namespace ImageEditor
 		#region Events
 		private void OnUpdate(object? sender, EventArgs e)
 		{
+			Layers.Focus();
+
 			map.Size = new((uint)Map.Width, (uint)Map.Height);
 			map.DispatchEvents();
 			map.Clear(ToSFMLColor(ColorBackground.BackColor));
@@ -407,6 +428,11 @@ namespace ImageEditor
 			UpdateHoveredTile();
 
 			set.Display();
+		}
+		private void OnKeyPress(object? sender, System.Windows.Forms.KeyEventArgs e)
+		{
+			if(e.KeyCode == Keys.Delete)
+				OnLayerRemove(this, new());
 		}
 
 		private void OnNumericValueChange(object sender, EventArgs e)
@@ -505,6 +531,115 @@ namespace ImageEditor
 				SetViewPosition(set, GetTilesetSize(), center);
 				SetViewZoom(set, ref setZoom, sc.X > sc.Y ? sc.X : sc.Y);
 			}
+		}
+
+		private void OnLayerPress(object sender, MouseEventArgs e)
+		{
+			var clickedIndex = Layers.IndexFromPoint(e.Location);
+			if(clickedIndex != ListBox.NoMatches)
+				Layers.SelectedIndex = clickedIndex;
+
+			var move = (ToolStripMenuItem)LayerMenu.Items[3];
+			var isFirst = Layers.SelectedIndex == 0;
+			var isLast = Layers.SelectedIndex == Layers.Items.Count - 1;
+
+			move.Enabled = Layers.Items.Count > 1;
+			LayerMenu.Items[4].Enabled = Layers.Items.Count > 1;
+			move.DropDownItems[0].Enabled = isFirst == false;
+			move.DropDownItems[1].Enabled = isFirst == false;
+			move.DropDownItems[2].Enabled = isLast == false;
+			move.DropDownItems[3].Enabled = isLast == false;
+		}
+		private void OnLayerAdd(object sender, EventArgs e)
+		{
+			var isFirst = Layers.Items.Count == 0;
+
+			Layers.Items.Add(DEFAULT_LAYER_NAME);
+			Layers.SelectedIndex = Layers.Items.Count - 1;
+			Layers.SetItemChecked(Layers.Items.Count - 1, true);
+
+			if(isFirst == false)
+			{
+				isCreatingLayer = true;
+				OnLayerRename(this, new());
+			}
+		}
+		private void OnLayerRename(object sender, EventArgs e)
+		{
+			var selected = (string)Layers.SelectedItem;
+			var rect = Layers.GetItemRectangle(Layers.SelectedIndex);
+			var rSz = rect.Size;
+			var rPos = rect.Location;
+			var input = new TextBox()
+			{
+				Width = Layers.Width - 4,
+				Text = selected,
+				Multiline = false,
+				AcceptsReturn = false,
+				AcceptsTab = false,
+				BackColor = Color.Black,
+				ForeColor = Color.Wheat
+			};
+			var form = new Form()
+			{
+				ShowInTaskbar = false,
+				AutoScaleMode = AutoScaleMode.None,
+				FormBorderStyle = FormBorderStyle.None,
+				StartPosition = FormStartPosition.Manual,
+				Location = Layers.PointToScreen(new(rPos.X + rSz.Width - input.Width, rPos.Y))
+			};
+			form.Load += (s, e) => form.ClientSize = new(input.Width, input.Height);
+
+			input.KeyDown += (s, e) =>
+			{
+				if(e.KeyCode == Keys.Escape)
+				{
+					form.Close();
+
+					if(isCreatingLayer)
+						OnLayerRemove(this, new());
+
+					isCreatingLayer = false;
+					return;
+				}
+
+				var value = input.Text.Trim();
+
+				if(e.KeyCode == Keys.Return && string.IsNullOrWhiteSpace(value) == false)
+				{
+					Layers.Items[Layers.SelectedIndex] = value;
+					form.Close();
+					isCreatingLayer = false;
+				}
+			};
+
+			form.Controls.Add(input);
+			form.ShowDialog();
+		}
+		private void OnLayerRemove(object sender, EventArgs e)
+		{
+			if(Layers.Items.Count == 1)
+				return;
+
+			var prev = Layers.SelectedIndex;
+			Layers.Items.Remove(Layers.SelectedItem);
+			Layers.SelectedIndex = prev >= Layers.Items.Count ? Layers.Items.Count - 1 : prev;
+		}
+		private void OnLayerMoveTop(object sender, EventArgs e)
+		{
+			MoveLayerToIndex(0);
+		}
+		private void OnLayerMoveBottom(object sender, EventArgs e)
+		{
+			MoveLayerToIndex(Layers.Items.Count - 1);
+		}
+		private void OnLayerMoveUp(object sender, EventArgs e)
+		{
+			MoveLayerToIndex(Layers.SelectedIndex - 1);
+		}
+		private void OnLayerMoveDown(object sender, EventArgs e)
+		{
+			MoveLayerToIndex(Layers.SelectedIndex + 1);
 		}
 
 		private void OnColorBrushClick(object sender, EventArgs e)
