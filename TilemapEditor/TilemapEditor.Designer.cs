@@ -1,4 +1,4 @@
-﻿namespace ImageEditor
+﻿namespace TilemapEditor
 {
 	partial class Window
 	{
@@ -551,28 +551,28 @@
 			// topToolStripMenuItem
 			// 
 			this.topToolStripMenuItem.Name = "topToolStripMenuItem";
-			this.topToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.topToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
 			this.topToolStripMenuItem.Text = "Top";
 			this.topToolStripMenuItem.Click += new System.EventHandler(this.OnLayerMoveTop);
 			// 
 			// upToolStripMenuItem
 			// 
 			this.upToolStripMenuItem.Name = "upToolStripMenuItem";
-			this.upToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.upToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
 			this.upToolStripMenuItem.Text = "Up";
 			this.upToolStripMenuItem.Click += new System.EventHandler(this.OnLayerMoveUp);
 			// 
 			// downToolStripMenuItem
 			// 
 			this.downToolStripMenuItem.Name = "downToolStripMenuItem";
-			this.downToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.downToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
 			this.downToolStripMenuItem.Text = "Down";
 			this.downToolStripMenuItem.Click += new System.EventHandler(this.OnLayerMoveDown);
 			// 
 			// bottomToolStripMenuItem
 			// 
 			this.bottomToolStripMenuItem.Name = "bottomToolStripMenuItem";
-			this.bottomToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.bottomToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
 			this.bottomToolStripMenuItem.Text = "Bottom";
 			this.bottomToolStripMenuItem.Click += new System.EventHandler(this.OnLayerMoveBottom);
 			// 
@@ -618,7 +618,7 @@
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
+			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 449F));
 			this.tableLayoutPanel8.Controls.Add(this.label8, 0, 0);
 			this.tableLayoutPanel8.Controls.Add(this.MapHeight, 2, 0);
 			this.tableLayoutPanel8.Controls.Add(this.MapWidth, 1, 0);
@@ -704,9 +704,9 @@
 			this.TileHovered.AutoSize = true;
 			this.TileHovered.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.TileHovered.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.TileHovered.Location = new System.Drawing.Point(615, 0);
+			this.TileHovered.Location = new System.Drawing.Point(466, 0);
 			this.TileHovered.Name = "TileHovered";
-			this.TileHovered.Size = new System.Drawing.Size(294, 33);
+			this.TileHovered.Size = new System.Drawing.Size(443, 33);
 			this.TileHovered.TabIndex = 5;
 			this.TileHovered.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 			// 

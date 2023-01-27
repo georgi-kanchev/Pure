@@ -93,9 +93,16 @@
 		{
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
+			var i = 0;
 			for(int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
 				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
+				{
+					if(i > Math.Abs(size.Item1 * size.Item2))
+						return;
+
 					SetTile((x, y), tile, color);
+					i++;
+				}
 		}
 		public void SetSquareColor((int, int) position, (int, int) size, byte color,
 			params int[] tiles)

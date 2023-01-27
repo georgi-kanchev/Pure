@@ -100,10 +100,6 @@
 			red = (byte)((value >> 5) * 255 / 7);
 			green = (byte)(((value >> 2) & 0x07) * 255 / 7);
 			blue = (byte)((value & 0x03) * 255 / 3);
-			//var (r, g, b) = lookup[Value];
-			//red = r;
-			//green = g;
-			//blue = b;
 		}
 		private void UpdateValue()
 		{

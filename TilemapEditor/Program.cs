@@ -1,4 +1,4 @@
-namespace ImageEditor
+namespace TilemapEditor
 {
 	internal static class Program
 	{

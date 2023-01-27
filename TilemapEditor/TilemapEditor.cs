@@ -9,12 +9,10 @@ using Cursor = System.Windows.Forms.Cursor;
 using TextBox = System.Windows.Forms.TextBox;
 using Timer = System.Windows.Forms.Timer;
 
-namespace ImageEditor
+namespace TilemapEditor
 {
 	public partial class Window : Form
 	{
-		private const string DEFAULT_LAYER_NAME = "Tilemap";
-
 		private readonly RenderWindow map, set;
 		private readonly Timer loop;
 		private readonly VertexArray vertsPreview = new(PrimitiveType.Quads);
@@ -22,10 +20,13 @@ namespace ImageEditor
 		private VertexBuffer? vertsTileset;
 		private Texture? tileset;
 
+		private int updateCount;
 		private float mapZoom = 1f, setZoom = 1f;
 		private Vector2 prevFormsMousePosMap, prevFormsMousePosSet;
 		private Vector2 selectedTile, selectedTileSquare, previewTile, previewTileSquare;
 		private bool isSquaring, isCreatingLayer;
+		private readonly Clock delta = new();
+		private float fps;
 
 		public Window()
 		{
@@ -58,8 +59,6 @@ namespace ImageEditor
 			map.Resized += (s, e) => UpdateZoom();
 			set.Resized += (s, e) => UpdateZoom();
 
-			OnLayerAdd(this, new());
-
 			void UpdateZoom()
 			{
 				SetViewZoom(map, ref mapZoom, mapZoom);
@@ -68,6 +67,55 @@ namespace ImageEditor
 		}
 
 		#region Actions
+		private void PaintTiles()
+		{
+			if(Layers.Items.Count == 0)
+				return;
+
+			var layer = (Layer)Layers.SelectedItem;
+			var p = previewTile;
+			var col = ToSFMLColor(ColorBrush.BackColor);
+			var selectedSz = selectedTileSquare - selectedTile;
+			var sz = selectedSz;
+			if(isSquaring)
+				sz = previewTileSquare - previewTile;
+			var stepX = sz.X < 0 ? -1 : 1;
+			var stepY = sz.Y < 0 ? -1 : 1;
+			var random = new Random((int)(p.X * p.Y * MathF.PI));
+			var isSingleTile = selectedSz.X + 1 == 1 && selectedSz.Y + 1 == 1;
+			var tileCount = GetTilesetTileCount();
+			var (mapW, mapH) = ((int)MapWidth.Value, (int)MapHeight.Value);
+
+
+			sz += new Vector2(stepX, stepY);
+
+			var i = 0;
+			for(float x = p.X; x != p.X + sz.X; x += stepX)
+				for(float y = p.Y; y != p.Y + sz.Y; y += stepY)
+				{
+					if(i > Math.Abs(mapW * mapH))
+						return;
+
+					var offX = isSingleTile ? 0 :
+						isSquaring ? random.Next(0, (int)MathF.Abs(selectedSz.X) + 1) : x - p.X;
+					var offY = isSingleTile ? 0 :
+						isSquaring ? random.Next(0, (int)MathF.Abs(selectedSz.Y) + 1) : y - p.Y;
+					var tex = selectedTile + new Vector2(offX, offY);
+					var tile = tex.X * tileCount.X + tex.Y;
+
+					layer.SetTile(new((int)x, (int)y), (int)tile, col);
+					i++;
+				}
+		}
+		private void EnableTilesetOptions(bool enabled)
+		{
+			MapWidth.Enabled = enabled;
+			MapHeight.Enabled = enabled;
+			TileWidth.Enabled = enabled;
+			TileHeight.Enabled = enabled;
+			TileOffsetWidth.Enabled = enabled;
+			TileOffsetHeight.Enabled = enabled;
+		}
 		private void MoveLayerToIndex(int index)
 		{
 			var item = Layers.SelectedItem;
@@ -241,7 +289,6 @@ namespace ImageEditor
 			sz += new Vector2(stepX, stepY);
 			c.A = 150;
 
-
 			for(float x = p.X; x != p.X + sz.X; x += stepX)
 				for(float y = p.Y; y != p.Y + sz.Y; y += stepY)
 				{
@@ -309,28 +356,32 @@ namespace ImageEditor
 				}
 			vertsTileset.Update(verts);
 		}
-		private void UpdateHoveredTile()
+		private void UpdateStats()
 		{
-			var hoveredTilePos = new Vector2(float.NaN, float.NaN);
+			var h = new Vector2(float.NaN, float.NaN);
 			var hoveredTile = "";
+			var hoveredPos = "";
 			var tileCount = GetTilesetTileCount();
 
 			if(IsHoveringMap())
-				hoveredTilePos = GetHoveredCoords(map);
+			{
+				h = GetHoveredCoords(map);
+
+				if(float.IsNaN(h.X) == false && float.IsNaN(h.Y) == false)
+					hoveredPos = $"X[{h.X:F1}] Y[{h.Y:F1}] ";
+			}
 			else if(IsHoveringSet() && tileset != null)
 			{
-				hoveredTilePos = GetHoveredCoords(set);
-				var h = hoveredTilePos;
-				hoveredTile = $"Tile[{CoordsToIndex((int)h.Y, (int)h.X, tileCount.X)}] ";
+				h = GetHoveredCoords(set);
+
+				if(float.IsNaN(h.X) == false && float.IsNaN(h.Y) == false)
+					hoveredTile = $"Tile[{CoordsToIndex((int)h.Y, (int)h.X, tileCount.X)}] ";
 			}
 
-			if(float.IsNaN(hoveredTilePos.X) || float.IsNaN(hoveredTilePos.Y))
-			{
-				TileHovered.Text = "";
-				return;
-			}
-
-			TileHovered.Text = $"{hoveredTile}X[{hoveredTilePos.X:F1}] Y[{hoveredTilePos.Y:F1}]";
+			TileHovered.Text =
+				$"{hoveredTile}" +
+				$"{hoveredPos}" +
+				$"FPS[{fps:F1}]";
 		}
 		private static Vector2f GetMousePosition(RenderWindow window)
 		{
@@ -404,14 +455,23 @@ namespace ImageEditor
 		#region Events
 		private void OnUpdate(object? sender, EventArgs e)
 		{
-			Layers.Focus();
-
 			map.Size = new((uint)Map.Width, (uint)Map.Height);
 			map.DispatchEvents();
 			map.Clear(ToSFMLColor(ColorBackground.BackColor));
+
+			if(tileset != null)
+				for(int i = 0; i < Layers.Items.Count; i++)
+				{
+					var item = (Layer)Layers.Items[i];
+					if(Layers.GetItemChecked(i) == false)
+						continue;
+
+					item.Draw(map, tileset);
+				}
 			DrawGrid(map, (int)MapWidth.Value, (int)MapHeight.Value);
 			if(tileset != null && (IsHoveringMap() || isSquaring))
 				DrawPreview();
+
 			map.Display();
 
 			set.Size = new((uint)Set.Width, (uint)Set.Height);
@@ -425,9 +485,16 @@ namespace ImageEditor
 				DrawGrid(set, sz.X, sz.Y);
 				DrawSelectedTile();
 			}
-			UpdateHoveredTile();
 
 			set.Display();
+
+			if(updateCount % 10 == 0)
+				fps = delta.ElapsedTime.AsSeconds() * 60f * 60f;
+
+			UpdateStats();
+
+			delta.Restart();
+			updateCount++;
 		}
 		private void OnKeyPress(object? sender, System.Windows.Forms.KeyEventArgs e)
 		{
@@ -452,6 +519,9 @@ namespace ImageEditor
 				previewTileSquare = GetHoveredCoordsRounded(map);
 			else
 				previewTile = GetHoveredCoordsRounded(map);
+
+			if(e.Button == MouseButtons.Left)
+				PaintTiles();
 		}
 		private void OnMapScroll(object? sender, MouseEventArgs e)
 		{
@@ -459,20 +529,24 @@ namespace ImageEditor
 		}
 		private void OnMapPress(object sender, MouseEventArgs e)
 		{
+			if(Layers.Items.Count == 0)
+				return;
+
 			if(e.Button == MouseButtons.Right)
 			{
 				previewTileSquare = previewTile;
 				isSquaring = true;
 			}
 			else if(e.Button == MouseButtons.Left)
-			{
-
-			}
+				PaintTiles();
 		}
 		private void OnMapRelease(object sender, MouseEventArgs e)
 		{
 			if(e.Button == MouseButtons.Right)
+			{
+				PaintTiles();
 				isSquaring = false;
+			}
 		}
 
 		private void OnSetMouseMove(object sender, MouseEventArgs e)
@@ -493,10 +567,28 @@ namespace ImageEditor
 		}
 		private void OnSetLoadClick(object sender, EventArgs e)
 		{
+			if(tileset != null)
+			{
+				var msg = MessageBox.Show(
+					"Do you want to unload the tileset and choose another one?\n" +
+					"Keep in mind this would unload all tilemaps as well.\n" +
+					"Any unsaved changes will be lost.",
+					"Unload Tilemap",
+					MessageBoxButtons.YesNo);
+
+				if(msg == DialogResult.No)
+					return;
+
+				Layers.Items.Clear();
+				tileset.Dispose();
+				tileset = null;
+
+				EnableTilesetOptions(true);
+				return;
+			}
+
 			if(LoadTileset.ShowDialog() != DialogResult.OK)
 				return;
-
-			tileset?.Dispose();
 
 			try { tileset = new(LoadTileset.FileName); }
 			catch(Exception)
@@ -510,6 +602,9 @@ namespace ImageEditor
 			}
 
 			var sz = GetTilesetSize();
+
+			OnLayerAdd(this, new());
+			EnableTilesetOptions(false);
 			SetViewPosition(set, sz, new(sz.X / 2, sz.Y / 2));
 			RecreateTilesetVerts();
 		}
@@ -553,8 +648,11 @@ namespace ImageEditor
 		private void OnLayerAdd(object sender, EventArgs e)
 		{
 			var isFirst = Layers.Items.Count == 0;
+			var tileSz = new Vector2i((int)TileWidth.Value, (int)TileHeight.Value);
+			var tileOff = new Vector2i((int)TileOffsetWidth.Value, (int)TileOffsetHeight.Value);
+			var sz = new Vector2i((int)MapWidth.Value, (int)MapHeight.Value);
 
-			Layers.Items.Add(DEFAULT_LAYER_NAME);
+			Layers.Items.Add(new Layer(sz, GetTilesetTileCount(), tileSz, tileOff));
 			Layers.SelectedIndex = Layers.Items.Count - 1;
 			Layers.SetItemChecked(Layers.Items.Count - 1, true);
 
@@ -566,14 +664,14 @@ namespace ImageEditor
 		}
 		private void OnLayerRename(object sender, EventArgs e)
 		{
-			var selected = (string)Layers.SelectedItem;
+			var selected = (Layer)Layers.SelectedItem;
 			var rect = Layers.GetItemRectangle(Layers.SelectedIndex);
 			var rSz = rect.Size;
 			var rPos = rect.Location;
 			var input = new TextBox()
 			{
 				Width = Layers.Width - 4,
-				Text = selected,
+				Text = selected.ToString(),
 				Multiline = false,
 				AcceptsReturn = false,
 				AcceptsTab = false,
@@ -607,9 +705,15 @@ namespace ImageEditor
 
 				if(e.KeyCode == Keys.Return && string.IsNullOrWhiteSpace(value) == false)
 				{
-					Layers.Items[Layers.SelectedIndex] = value;
+					selected.name = value;
 					form.Close();
 					isCreatingLayer = false;
+
+					// update
+					var check = Layers.GetItemChecked(0);
+					Layers.SetItemChecked(0, true);
+					Layers.SetItemChecked(0, false);
+					Layers.SetItemChecked(0, check);
 				}
 			};
 
