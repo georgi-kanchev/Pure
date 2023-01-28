@@ -13,6 +13,9 @@ namespace TilemapEditor
 {
 	public partial class Window : Form
 	{
+		// rename doesn't update layers
+
+		private readonly Dictionary<Keys, (Action<object, EventArgs>, string)> hotkeys = new();
 		private readonly RenderWindow map, set;
 		private readonly Timer loop;
 		private readonly VertexArray vertsPreview = new(PrimitiveType.Quads);
@@ -24,16 +27,18 @@ namespace TilemapEditor
 		private float mapZoom = 1f, setZoom = 1f;
 		private Vector2 prevFormsMousePosMap, prevFormsMousePosSet;
 		private Vector2 selectedTile, selectedTileSquare, previewTile, previewTileSquare;
-		private bool isSquaring, isCreatingLayer;
+		private bool isSquaring, isCreatingLayer, isSquaringCanceled;
 		private readonly Clock delta = new();
 		private float fps;
+		private string hotkeyDescriptions = "";
 
 		public Window()
 		{
 			InitializeComponent();
 			CenterToScreen();
+			InitializeHotkeys();
 
-			Layers.KeyDown += OnKeyPress; ;
+			KeyDown += OnKeyPress;
 
 			map = new RenderWindow(Map.Handle);
 			set = new RenderWindow(Set.Handle);
@@ -66,6 +71,15 @@ namespace TilemapEditor
 			}
 		}
 
+		private void InitializeHotkeys()
+		{
+			hotkeys.Add(Keys.Delete, (OnLayerRemove, "Removes the selected tilemap"));
+			hotkeys.Add(Keys.L, (OnSetLoadClick, "Loads a tileset"));
+
+			foreach(var kvp in hotkeys)
+				hotkeyDescriptions += $"[{kvp.Key}]\t{kvp.Value.Item2}\n";
+		}
+
 		#region Actions
 		private void PaintTiles()
 		{
@@ -86,7 +100,6 @@ namespace TilemapEditor
 			var tileCount = GetTilesetTileCount();
 			var (mapW, mapH) = ((int)MapWidth.Value, (int)MapHeight.Value);
 
-
 			sz += new Vector2(stepX, stepY);
 
 			var i = 0;
@@ -101,7 +114,7 @@ namespace TilemapEditor
 					var offY = isSingleTile ? 0 :
 						isSquaring ? random.Next(0, (int)MathF.Abs(selectedSz.Y) + 1) : y - p.Y;
 					var tex = selectedTile + new Vector2(offX, offY);
-					var tile = tex.X * tileCount.X + tex.Y;
+					var tile = tex.Y * tileCount.X + tex.X;
 
 					layer.SetTile(new((int)x, (int)y), (int)tile, col);
 					i++;
@@ -148,6 +161,11 @@ namespace TilemapEditor
 			var pos = GetMousePosition(map);
 			return IsHoveringArea(new(pos.X, pos.Y), GetMapSize());
 		}
+		private static bool IsHovering(Control control)
+		{
+			return control != null &&
+				control.ClientRectangle.Contains(control.PointToClient(Cursor.Position));
+		}
 		private static bool IsHoveringArea(Vector2 pos, Vector2 size)
 		{
 			return pos.X > 0 && pos.X < size.X &&
@@ -157,16 +175,11 @@ namespace TilemapEditor
 		private static void TryScrollView(RenderWindow window, ref float zoom, float delta,
 			Vector2 limit)
 		{
-			delta = delta > 0 ? -0.05f : 0.05f;
+			delta = delta > 0 ? 0.95f : 1.05f;
 			var pos = ToSystemVector(window.GetView().Center);
 			var mousePos = ToSystemVector(GetMousePosition(window));
 
-			if(delta < 0)
-			{
-				pos = Vector2.Lerp(pos, mousePos, 0.05f);
-				SetViewPosition(window, limit, pos);
-			}
-			SetViewZoom(window, ref zoom, zoom + delta);
+			SetViewZoom(window, ref zoom, zoom * delta);
 		}
 		private static void TryMoveView(RenderWindow window, Vector2 limit, Vector2 prevMousePos)
 		{
@@ -185,7 +198,7 @@ namespace TilemapEditor
 		}
 		private static void SetViewZoom(RenderWindow window, ref float zoom, float scale = 1f)
 		{
-			scale = Math.Clamp(scale, 0.1f, 3f);
+			scale = MathF.Max(scale, 0.1f);
 			zoom = scale;
 			var view = window.GetView();
 			var w = RoundToMultipleOfTwo((int)(window.Size.X * scale));
@@ -358,30 +371,34 @@ namespace TilemapEditor
 		}
 		private void UpdateStats()
 		{
-			var h = new Vector2(float.NaN, float.NaN);
-			var hoveredTile = "";
-			var hoveredPos = "";
 			var tileCount = GetTilesetTileCount();
+			var isHoveringSet = IsHoveringSet() && IsHovering(Set);
+			var isHoveringMap = IsHoveringMap() && IsHovering(Map);
 
-			if(IsHoveringMap())
+			if(tileset == null)
 			{
-				h = GetHoveredCoords(map);
-
-				if(float.IsNaN(h.X) == false && float.IsNaN(h.Y) == false)
-					hoveredPos = $"X[{h.X:F1}] Y[{h.Y:F1}] ";
-			}
-			else if(IsHoveringSet() && tileset != null)
-			{
-				h = GetHoveredCoords(set);
-
-				if(float.IsNaN(h.X) == false && float.IsNaN(h.Y) == false)
-					hoveredTile = $"Tile[{CoordsToIndex((int)h.Y, (int)h.X, tileCount.X)}] ";
+				Stats.Text = "Adjust the parameters and load a tileset.";
+				return;
 			}
 
-			TileHovered.Text =
-				$"{hoveredTile}" +
-				$"{hoveredPos}" +
-				$"FPS[{fps:F1}]";
+			// assume user is hovering map
+			var layer = (Layer)Layers.SelectedItem;
+			var pos = GetHoveredCoords(map);
+			var tile = layer?.GetTile(new((int)pos.X, (int)pos.Y));
+
+			// unless
+			if(isHoveringSet)
+			{
+				pos = GetHoveredCoords(set);
+				tile = CoordsToIndex((int)pos.Y, (int)pos.X, tileCount.X);
+			}
+			var stats = $"Tile[{tile}] X[{pos.X:F1}] Y[{pos.Y:F1}] ";
+
+			// not hovering any
+			if(isHoveringSet == false && isHoveringMap == false)
+				stats = "";
+
+			Stats.Text = $"{stats}FPS[{fps:F1}]";
 		}
 		private static Vector2f GetMousePosition(RenderWindow window)
 		{
@@ -468,7 +485,8 @@ namespace TilemapEditor
 
 					item.Draw(map, tileset);
 				}
-			DrawGrid(map, (int)MapWidth.Value, (int)MapHeight.Value);
+			if(mapZoom < 5)
+				DrawGrid(map, (int)MapWidth.Value, (int)MapHeight.Value);
 			if(tileset != null && (IsHoveringMap() || isSquaring))
 				DrawPreview();
 
@@ -482,7 +500,8 @@ namespace TilemapEditor
 			{
 				var sz = GetTilesetTileCount();
 				set.Draw(vertsTileset, new(tileset));
-				DrawGrid(set, sz.X, sz.Y);
+				if(setZoom < 5)
+					DrawGrid(set, sz.X, sz.Y);
 				DrawSelectedTile();
 			}
 
@@ -498,14 +517,23 @@ namespace TilemapEditor
 		}
 		private void OnKeyPress(object? sender, System.Windows.Forms.KeyEventArgs e)
 		{
-			if(e.KeyCode == Keys.Delete)
-				OnLayerRemove(this, new());
+			foreach(var kvp in hotkeys)
+				if(e.KeyCode == kvp.Key)
+					kvp.Value.Item1.Invoke(this, new());
 		}
 
 		private void OnNumericValueChange(object sender, EventArgs e)
 		{
 			LimitView(map, GetMapSize());
 			LimitView(set, GetTilesetSize());
+		}
+		private void OnHotkeysClick(object sender, EventArgs e)
+		{
+			MessageBox.Show(
+				hotkeyDescriptions,
+				"Hotkeys",
+				MessageBoxButtons.OK,
+				MessageBoxIcon.Information);
 		}
 
 		private void OnMapMouseMove(object sender, MouseEventArgs e)
@@ -515,9 +543,11 @@ namespace TilemapEditor
 
 			prevFormsMousePosMap = GetFormsMousePos(map);
 
-			if(e.Button == MouseButtons.Right)
+			var right = e.Button == MouseButtons.Right;
+			if(right)
 				previewTileSquare = GetHoveredCoordsRounded(map);
-			else
+
+			if(right == false || isSquaringCanceled)
 				previewTile = GetHoveredCoordsRounded(map);
 
 			if(e.Button == MouseButtons.Left)
@@ -538,12 +568,29 @@ namespace TilemapEditor
 				isSquaring = true;
 			}
 			else if(e.Button == MouseButtons.Left)
+			{
+				// user is dragging a square with RMB and pressed LMB so cancel drag
+				if(isSquaring)
+				{
+					isSquaringCanceled = true;
+					isSquaring = false;
+					return;
+				}
+
 				PaintTiles();
+			}
 		}
 		private void OnMapRelease(object sender, MouseEventArgs e)
 		{
 			if(e.Button == MouseButtons.Right)
 			{
+				// user pressed LMB while dragging - skip draw
+				if(isSquaringCanceled)
+				{
+					isSquaringCanceled = false;
+					return;
+				}
+
 				PaintTiles();
 				isSquaring = false;
 			}
@@ -584,6 +631,7 @@ namespace TilemapEditor
 				tileset = null;
 
 				EnableTilesetOptions(true);
+
 				return;
 			}
 
@@ -598,6 +646,7 @@ namespace TilemapEditor
 					caption: "Load Tileset",
 					buttons: MessageBoxButtons.OK,
 					icon: MessageBoxIcon.Error);
+
 				return;
 			}
 
@@ -606,10 +655,13 @@ namespace TilemapEditor
 			OnLayerAdd(this, new());
 			EnableTilesetOptions(false);
 			SetViewPosition(set, sz, new(sz.X / 2, sz.Y / 2));
+			SetViewZoom(set, ref setZoom);
 			RecreateTilesetVerts();
 		}
 		private void OnSetPress(object sender, MouseEventArgs e)
 		{
+			Focus();
+
 			if(e.Button == MouseButtons.Left && IsHoveringSet())
 			{
 				selectedTile = GetHoveredCoordsRounded(set);
@@ -634,16 +686,63 @@ namespace TilemapEditor
 			if(clickedIndex != ListBox.NoMatches)
 				Layers.SelectedIndex = clickedIndex;
 
-			var move = (ToolStripMenuItem)LayerMenu.Items[3];
-			var isFirst = Layers.SelectedIndex == 0;
-			var isLast = Layers.SelectedIndex == Layers.Items.Count - 1;
+			var isNotFirst = Layers.SelectedIndex > 0;
+			var isNotLast = Layers.SelectedIndex < Layers.Items.Count - 1;
+			var hasTileset = tileset != null;
+			var hasAnyLayers = Layers.Items.Count > 0;
 
-			move.Enabled = Layers.Items.Count > 1;
-			LayerMenu.Items[4].Enabled = Layers.Items.Count > 1;
-			move.DropDownItems[0].Enabled = isFirst == false;
-			move.DropDownItems[1].Enabled = isFirst == false;
-			move.DropDownItems[2].Enabled = isLast == false;
-			move.DropDownItems[3].Enabled = isLast == false;
+			LayerMenuAdd.Enabled = hasTileset;
+			LayerMenuLoad.Enabled = hasTileset;
+
+			LayerMenuRename.Enabled = hasAnyLayers;
+			LayerMenuSave.Enabled = hasAnyLayers;
+			LayerMenuRemove.Enabled = hasAnyLayers;
+			LayerMenuMove.Enabled = hasAnyLayers;
+			LayerMenuMoveTop.Enabled = isNotFirst;
+			LayerMenuMoveUp.Enabled = isNotFirst;
+			LayerMenuMoveDown.Enabled = isNotLast;
+			LayerMenuMoveBottom.Enabled = isNotLast;
+		}
+		private void OnLayerRelease(object sender, MouseEventArgs e)
+		{
+			if(tileset == null)
+				LayerMenu.Hide();
+		}
+		private void OnLayerSave(object sender, EventArgs e)
+		{
+			var layer = (Layer)Layers.SelectedItem;
+			if(layer == null)
+				return;
+
+			if(SaveTilemap.ShowDialog() != DialogResult.OK)
+				return;
+
+			layer.Save(SaveTilemap.FileName);
+		}
+		private void OnLayerLoad(object sender, EventArgs e)
+		{
+			if(LoadTilemap.ShowDialog() != DialogResult.OK)
+				return;
+
+			try
+			{
+				var tileSz = new Vector2i((int)TileWidth.Value, (int)TileHeight.Value);
+				var tileOff = new Vector2i((int)TileOffsetWidth.Value, (int)TileOffsetHeight.Value);
+				var layer = new Layer(LoadTilemap.FileName, GetTilesetTileCount(), tileSz, tileOff)
+				{ name = Path.GetFileNameWithoutExtension(LoadTilemap.FileName) };
+
+				Layers.Items.Add(layer);
+				Layers.SelectedIndex = Layers.Items.Count - 1;
+				Layers.SetItemChecked(Layers.Items.Count - 1, true);
+			}
+			catch(Exception)
+			{
+				MessageBox.Show(
+					"Could not load tilemap.",
+					"Load Tilemap",
+					MessageBoxButtons.OK,
+					MessageBoxIcon.Error);
+			}
 		}
 		private void OnLayerAdd(object sender, EventArgs e)
 		{
@@ -709,11 +808,7 @@ namespace TilemapEditor
 					form.Close();
 					isCreatingLayer = false;
 
-					// update
-					var check = Layers.GetItemChecked(0);
-					Layers.SetItemChecked(0, true);
-					Layers.SetItemChecked(0, false);
-					Layers.SetItemChecked(0, check);
+					Layers.Refresh();
 				}
 			};
 
@@ -722,8 +817,7 @@ namespace TilemapEditor
 		}
 		private void OnLayerRemove(object sender, EventArgs e)
 		{
-			if(Layers.Items.Count == 1)
-				return;
+			Layers.Focus();
 
 			var prev = Layers.SelectedIndex;
 			Layers.Items.Remove(Layers.SelectedItem);

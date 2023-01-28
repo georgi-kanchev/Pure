@@ -55,27 +55,32 @@
 			this.label1 = new System.Windows.Forms.Label();
 			this.Layers = new System.Windows.Forms.CheckedListBox();
 			this.LayerMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
-			this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuAdd = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuLoad = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-			this.renameRToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.moveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.topToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.upToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.downToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.bottomToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.removeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuRename = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuMove = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuMoveTop = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuMoveUp = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuMoveDown = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuMoveBottom = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuSave = new System.Windows.Forms.ToolStripMenuItem();
+			this.LayerMenuRemove = new System.Windows.Forms.ToolStripMenuItem();
 			this.tableLayoutPanel7 = new System.Windows.Forms.TableLayoutPanel();
 			this.Map = new System.Windows.Forms.PictureBox();
 			this.tableLayoutPanel8 = new System.Windows.Forms.TableLayoutPanel();
+			this.Hotkeys = new System.Windows.Forms.Button();
 			this.label8 = new System.Windows.Forms.Label();
 			this.MapHeight = new System.Windows.Forms.NumericUpDown();
 			this.MapWidth = new System.Windows.Forms.NumericUpDown();
-			this.TileHovered = new System.Windows.Forms.Label();
+			this.Stats = new System.Windows.Forms.Label();
 			this.Colors = new System.Windows.Forms.ColorDialog();
 			this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
 			this.button1 = new System.Windows.Forms.Button();
 			this.button4 = new System.Windows.Forms.Button();
 			this.LoadTileset = new System.Windows.Forms.OpenFileDialog();
+			this.LoadTilemap = new System.Windows.Forms.OpenFileDialog();
+			this.SaveTilemap = new System.Windows.Forms.SaveFileDialog();
 			this.TableMain.SuspendLayout();
 			this.TableEdit.SuspendLayout();
 			this.tableLayoutPanel1.SuspendLayout();
@@ -229,6 +234,7 @@
 			this.TileOffsetHeight.TabIndex = 3;
 			this.TileOffsetHeight.TabStop = false;
 			this.TileOffsetHeight.ValueChanged += new System.EventHandler(this.OnNumericValueChange);
+			this.TileOffsetHeight.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
 			// TileOffsetWidth
 			// 
@@ -247,6 +253,7 @@
 			this.TileOffsetWidth.TabIndex = 2;
 			this.TileOffsetWidth.TabStop = false;
 			this.TileOffsetWidth.ValueChanged += new System.EventHandler(this.OnNumericValueChange);
+			this.TileOffsetWidth.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
 			// TileHeight
 			// 
@@ -280,6 +287,7 @@
             0,
             0});
 			this.TileHeight.ValueChanged += new System.EventHandler(this.OnNumericValueChange);
+			this.TileHeight.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
 			// TileWidth
 			// 
@@ -313,6 +321,7 @@
             0,
             0});
 			this.TileWidth.ValueChanged += new System.EventHandler(this.OnNumericValueChange);
+			this.TileWidth.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
 			// button3
 			// 
@@ -328,6 +337,7 @@
 			this.button3.Text = "Tileset";
 			this.button3.UseVisualStyleBackColor = false;
 			this.button3.Click += new System.EventHandler(this.OnSetLoadClick);
+			this.button3.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
 			// Set
 			// 
@@ -505,83 +515,101 @@
 			this.Layers.Name = "Layers";
 			this.Layers.Size = new System.Drawing.Size(314, 180);
 			this.Layers.TabIndex = 9;
+			this.Layers.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			this.Layers.MouseDown += new System.Windows.Forms.MouseEventHandler(this.OnLayerPress);
+			this.Layers.MouseUp += new System.Windows.Forms.MouseEventHandler(this.OnLayerRelease);
 			// 
 			// LayerMenu
 			// 
 			this.LayerMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripMenuItem1,
+            this.LayerMenuAdd,
+            this.LayerMenuLoad,
             this.toolStripSeparator1,
-            this.renameRToolStripMenuItem,
-            this.moveToolStripMenuItem,
-            this.removeToolStripMenuItem});
+            this.LayerMenuRename,
+            this.LayerMenuMove,
+            this.LayerMenuSave,
+            this.LayerMenuRemove});
 			this.LayerMenu.Name = "LayersMenu";
-			this.LayerMenu.Size = new System.Drawing.Size(162, 98);
+			this.LayerMenu.Size = new System.Drawing.Size(118, 142);
 			// 
-			// toolStripMenuItem1
+			// LayerMenuAdd
 			// 
-			this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-			this.toolStripMenuItem1.Size = new System.Drawing.Size(161, 22);
-			this.toolStripMenuItem1.Text = "Add";
-			this.toolStripMenuItem1.Click += new System.EventHandler(this.OnLayerAdd);
+			this.LayerMenuAdd.Name = "LayerMenuAdd";
+			this.LayerMenuAdd.Size = new System.Drawing.Size(117, 22);
+			this.LayerMenuAdd.Text = "Add";
+			this.LayerMenuAdd.Click += new System.EventHandler(this.OnLayerAdd);
+			// 
+			// LayerMenuLoad
+			// 
+			this.LayerMenuLoad.Name = "LayerMenuLoad";
+			this.LayerMenuLoad.Size = new System.Drawing.Size(117, 22);
+			this.LayerMenuLoad.Text = "Load";
+			this.LayerMenuLoad.Click += new System.EventHandler(this.OnLayerLoad);
 			// 
 			// toolStripSeparator1
 			// 
 			this.toolStripSeparator1.Name = "toolStripSeparator1";
-			this.toolStripSeparator1.Size = new System.Drawing.Size(158, 6);
+			this.toolStripSeparator1.Size = new System.Drawing.Size(114, 6);
 			// 
-			// renameRToolStripMenuItem
+			// LayerMenuRename
 			// 
-			this.renameRToolStripMenuItem.Name = "renameRToolStripMenuItem";
-			this.renameRToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
-			this.renameRToolStripMenuItem.Text = "Rename";
-			this.renameRToolStripMenuItem.Click += new System.EventHandler(this.OnLayerRename);
+			this.LayerMenuRename.Name = "LayerMenuRename";
+			this.LayerMenuRename.Size = new System.Drawing.Size(117, 22);
+			this.LayerMenuRename.Text = "Rename";
+			this.LayerMenuRename.Click += new System.EventHandler(this.OnLayerRename);
 			// 
-			// moveToolStripMenuItem
+			// LayerMenuMove
 			// 
-			this.moveToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.topToolStripMenuItem,
-            this.upToolStripMenuItem,
-            this.downToolStripMenuItem,
-            this.bottomToolStripMenuItem});
-			this.moveToolStripMenuItem.Name = "moveToolStripMenuItem";
-			this.moveToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
-			this.moveToolStripMenuItem.Text = "Move";
+			this.LayerMenuMove.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.LayerMenuMoveTop,
+            this.LayerMenuMoveUp,
+            this.LayerMenuMoveDown,
+            this.LayerMenuMoveBottom});
+			this.LayerMenuMove.Name = "LayerMenuMove";
+			this.LayerMenuMove.Size = new System.Drawing.Size(117, 22);
+			this.LayerMenuMove.Text = "Move";
 			// 
-			// topToolStripMenuItem
+			// LayerMenuMoveTop
 			// 
-			this.topToolStripMenuItem.Name = "topToolStripMenuItem";
-			this.topToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
-			this.topToolStripMenuItem.Text = "Top";
-			this.topToolStripMenuItem.Click += new System.EventHandler(this.OnLayerMoveTop);
+			this.LayerMenuMoveTop.Name = "LayerMenuMoveTop";
+			this.LayerMenuMoveTop.Size = new System.Drawing.Size(114, 22);
+			this.LayerMenuMoveTop.Text = "Top";
+			this.LayerMenuMoveTop.Click += new System.EventHandler(this.OnLayerMoveTop);
 			// 
-			// upToolStripMenuItem
+			// LayerMenuMoveUp
 			// 
-			this.upToolStripMenuItem.Name = "upToolStripMenuItem";
-			this.upToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
-			this.upToolStripMenuItem.Text = "Up";
-			this.upToolStripMenuItem.Click += new System.EventHandler(this.OnLayerMoveUp);
+			this.LayerMenuMoveUp.Name = "LayerMenuMoveUp";
+			this.LayerMenuMoveUp.Size = new System.Drawing.Size(114, 22);
+			this.LayerMenuMoveUp.Text = "Up";
+			this.LayerMenuMoveUp.Click += new System.EventHandler(this.OnLayerMoveUp);
 			// 
-			// downToolStripMenuItem
+			// LayerMenuMoveDown
 			// 
-			this.downToolStripMenuItem.Name = "downToolStripMenuItem";
-			this.downToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
-			this.downToolStripMenuItem.Text = "Down";
-			this.downToolStripMenuItem.Click += new System.EventHandler(this.OnLayerMoveDown);
+			this.LayerMenuMoveDown.Name = "LayerMenuMoveDown";
+			this.LayerMenuMoveDown.Size = new System.Drawing.Size(114, 22);
+			this.LayerMenuMoveDown.Text = "Down";
+			this.LayerMenuMoveDown.Click += new System.EventHandler(this.OnLayerMoveDown);
 			// 
-			// bottomToolStripMenuItem
+			// LayerMenuMoveBottom
 			// 
-			this.bottomToolStripMenuItem.Name = "bottomToolStripMenuItem";
-			this.bottomToolStripMenuItem.Size = new System.Drawing.Size(114, 22);
-			this.bottomToolStripMenuItem.Text = "Bottom";
-			this.bottomToolStripMenuItem.Click += new System.EventHandler(this.OnLayerMoveBottom);
+			this.LayerMenuMoveBottom.Name = "LayerMenuMoveBottom";
+			this.LayerMenuMoveBottom.Size = new System.Drawing.Size(114, 22);
+			this.LayerMenuMoveBottom.Text = "Bottom";
+			this.LayerMenuMoveBottom.Click += new System.EventHandler(this.OnLayerMoveBottom);
 			// 
-			// removeToolStripMenuItem
+			// LayerMenuSave
 			// 
-			this.removeToolStripMenuItem.Name = "removeToolStripMenuItem";
-			this.removeToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
-			this.removeToolStripMenuItem.Text = "Remove [Delete]";
-			this.removeToolStripMenuItem.Click += new System.EventHandler(this.OnLayerRemove);
+			this.LayerMenuSave.Name = "LayerMenuSave";
+			this.LayerMenuSave.Size = new System.Drawing.Size(117, 22);
+			this.LayerMenuSave.Text = "Save";
+			this.LayerMenuSave.Click += new System.EventHandler(this.OnLayerSave);
+			// 
+			// LayerMenuRemove
+			// 
+			this.LayerMenuRemove.Name = "LayerMenuRemove";
+			this.LayerMenuRemove.Size = new System.Drawing.Size(117, 22);
+			this.LayerMenuRemove.Text = "Remove";
+			this.LayerMenuRemove.Click += new System.EventHandler(this.OnLayerRemove);
 			// 
 			// tableLayoutPanel7
 			// 
@@ -596,6 +624,7 @@
 			this.tableLayoutPanel7.RowCount = 2;
 			this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
 			this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 39F));
+			this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
 			this.tableLayoutPanel7.Size = new System.Drawing.Size(922, 671);
 			this.tableLayoutPanel7.TabIndex = 2;
 			// 
@@ -618,11 +647,12 @@
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 449F));
+			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 583F));
+			this.tableLayoutPanel8.Controls.Add(this.Hotkeys, 3, 0);
 			this.tableLayoutPanel8.Controls.Add(this.label8, 0, 0);
 			this.tableLayoutPanel8.Controls.Add(this.MapHeight, 2, 0);
 			this.tableLayoutPanel8.Controls.Add(this.MapWidth, 1, 0);
-			this.tableLayoutPanel8.Controls.Add(this.TileHovered, 4, 0);
+			this.tableLayoutPanel8.Controls.Add(this.Stats, 4, 0);
 			this.tableLayoutPanel8.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tableLayoutPanel8.Location = new System.Drawing.Point(5, 633);
 			this.tableLayoutPanel8.Name = "tableLayoutPanel8";
@@ -630,6 +660,22 @@
 			this.tableLayoutPanel8.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
 			this.tableLayoutPanel8.Size = new System.Drawing.Size(912, 33);
 			this.tableLayoutPanel8.TabIndex = 4;
+			// 
+			// Hotkeys
+			// 
+			this.Hotkeys.BackColor = System.Drawing.Color.Black;
+			this.Hotkeys.Dock = System.Windows.Forms.DockStyle.Left;
+			this.Hotkeys.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.Hotkeys.ForeColor = System.Drawing.Color.White;
+			this.Hotkeys.Location = new System.Drawing.Point(173, 3);
+			this.Hotkeys.Name = "Hotkeys";
+			this.Hotkeys.Size = new System.Drawing.Size(86, 27);
+			this.Hotkeys.TabIndex = 9;
+			this.Hotkeys.TabStop = false;
+			this.Hotkeys.Text = "Hotkeys";
+			this.Hotkeys.UseVisualStyleBackColor = false;
+			this.Hotkeys.Click += new System.EventHandler(this.OnHotkeysClick);
+			this.Hotkeys.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
 			// label8
 			// 
@@ -670,6 +716,7 @@
             0,
             0});
 			this.MapHeight.ValueChanged += new System.EventHandler(this.OnNumericValueChange);
+			this.MapHeight.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
 			// MapWidth
 			// 
@@ -698,17 +745,18 @@
             0,
             0});
 			this.MapWidth.ValueChanged += new System.EventHandler(this.OnNumericValueChange);
+			this.MapWidth.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
-			// TileHovered
+			// Stats
 			// 
-			this.TileHovered.AutoSize = true;
-			this.TileHovered.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.TileHovered.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.TileHovered.Location = new System.Drawing.Point(466, 0);
-			this.TileHovered.Name = "TileHovered";
-			this.TileHovered.Size = new System.Drawing.Size(443, 33);
-			this.TileHovered.TabIndex = 5;
-			this.TileHovered.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+			this.Stats.AutoSize = true;
+			this.Stats.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.Stats.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.Stats.Location = new System.Drawing.Point(332, 0);
+			this.Stats.Name = "Stats";
+			this.Stats.Size = new System.Drawing.Size(577, 33);
+			this.Stats.TabIndex = 5;
+			this.Stats.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 			// 
 			// Colors
 			// 
@@ -762,6 +810,15 @@
 			this.LoadTileset.Filter = "Image|*.png|Image|*.jpg|Image|*.bmp";
 			this.LoadTileset.Title = "Load Tileset";
 			// 
+			// LoadTilemap
+			// 
+			this.LoadTilemap.FileName = "tilemap";
+			this.LoadTilemap.Title = "Load Tilemap";
+			// 
+			// SaveTilemap
+			// 
+			this.SaveTilemap.Title = "Save Tilemap";
+			// 
 			// Window
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -770,7 +827,7 @@
 			this.ClientSize = new System.Drawing.Size(1264, 681);
 			this.Controls.Add(this.TableMain);
 			this.ForeColor = System.Drawing.Color.White;
-			this.MinimumSize = new System.Drawing.Size(800, 600);
+			this.MinimumSize = new System.Drawing.Size(1000, 600);
 			this.Name = "Window";
 			this.Text = "Pure - Tilemap Editor";
 			this.TableMain.ResumeLayout(false);
@@ -832,7 +889,7 @@
 		private TableLayoutPanel tableLayoutPanel7;
 		private PictureBox Map;
 		private TableLayoutPanel tableLayoutPanel8;
-		private Label TileHovered;
+		private Label Stats;
 		private NumericUpDown MapHeight;
 		private NumericUpDown MapWidth;
 		private Label label8;
@@ -842,15 +899,20 @@
 		private Label label9;
 		private Label label7;
 		private ContextMenuStrip LayerMenu;
-		private ToolStripMenuItem removeToolStripMenuItem;
-		private ToolStripMenuItem moveToolStripMenuItem;
-		private ToolStripMenuItem upToolStripMenuItem;
-		private ToolStripMenuItem downToolStripMenuItem;
-		private ToolStripMenuItem topToolStripMenuItem;
-		private ToolStripMenuItem bottomToolStripMenuItem;
-		private ToolStripMenuItem toolStripMenuItem1;
+		private ToolStripMenuItem LayerMenuRemove;
+		private ToolStripMenuItem LayerMenuMove;
+		private ToolStripMenuItem LayerMenuMoveUp;
+		private ToolStripMenuItem LayerMenuMoveDown;
+		private ToolStripMenuItem LayerMenuMoveTop;
+		private ToolStripMenuItem LayerMenuMoveBottom;
+		private ToolStripMenuItem LayerMenuAdd;
 		private ToolStripSeparator toolStripSeparator1;
-		private ToolStripMenuItem renameRToolStripMenuItem;
+		private ToolStripMenuItem LayerMenuRename;
 		private CheckedListBox Layers;
+		private ToolStripMenuItem LayerMenuLoad;
+		private ToolStripMenuItem LayerMenuSave;
+		private Button Hotkeys;
+		private OpenFileDialog LoadTilemap;
+		private SaveFileDialog SaveTilemap;
 	}
 }

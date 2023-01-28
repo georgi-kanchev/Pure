@@ -1,4 +1,5 @@
 ﻿using Pure.Tilemap;
+using Pure.Utilities;
 using Pure.Window;
 
 namespace TestGame
@@ -10,6 +11,9 @@ namespace TestGame
 		static void Main()
 		{
 			var layer = new Tilemap((48, 27));
+
+			var c = new Color(0b_111_011_00);
+			layer.SetTile((0, 0), 45, c);
 
 			while(Window.IsExisting)
 			{

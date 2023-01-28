@@ -1,4 +1,7 @@
-﻿namespace Pure.Tilemap
+﻿using System.IO.Compression;
+using System.Runtime.InteropServices;
+
+namespace Pure.Tilemap
 {
 	public class Tilemap
 	{
@@ -14,6 +17,30 @@
 		public (int, int) CameraPosition { get; set; }
 		public (int, int) CameraSize { get; set; }
 
+		public Tilemap(string path)
+		{
+			var bytes = Decompress(File.ReadAllBytes(path));
+			var bWidth = new byte[4];
+			var bHeight = new byte[4];
+
+			Array.Copy(bytes, 0, bWidth, 0, bWidth.Length);
+			Array.Copy(bytes, bWidth.Length, bHeight, 0, bHeight.Length);
+			var w = BitConverter.ToInt32(bWidth);
+			var h = BitConverter.ToInt32(bHeight);
+
+			tiles = new int[w, h];
+			colors = new byte[w, h];
+			var bTilesSize = tiles.GetLength(0) * tiles.GetLength(1) * Marshal.SizeOf(typeof(int));
+			var bColorsSize = colors.GetLength(0) * colors.GetLength(1) * Marshal.SizeOf(typeof(byte));
+			var bTiles = new byte[bTilesSize];
+			var bColors = new byte[bColorsSize];
+
+			Array.Copy(bytes, bWidth.Length + bHeight.Length, bTiles, 0, bTiles.Length);
+			Array.Copy(bytes, bWidth.Length + bHeight.Length + bTilesSize, bColors, 0, bColors.Length);
+
+			FromBytes(tiles, bTiles);
+			FromBytes(colors, bColors);
+		}
 		public Tilemap((uint, uint) tileCount)
 		{
 			var (w, h) = tileCount;
@@ -28,12 +55,35 @@
 			if(colors == null)
 				throw new ArgumentNullException(nameof(colors));
 
-			if(tiles.Length != colors.Length)
-				throw new ArgumentException($"The sizes of the {nameof(tiles)} and {nameof(colors)} cannot be different.");
+			if(tiles.GetLength(0) != colors.GetLength(0) ||
+				tiles.GetLength(1) != colors.GetLength(1))
+				throw new ArgumentException($"The sizes of the {nameof(tiles)} and " +
+					$"{nameof(colors)} must be the same size.");
 
 			this.tiles = Copy(tiles);
 			this.colors = Copy(colors);
 			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
+		}
+
+		public void Save(string path)
+		{
+			var (w, h) = Size;
+			var bWidth = BitConverter.GetBytes(w);
+			var bHeight = BitConverter.GetBytes(h);
+			var bTiles = ToBytes(tiles);
+			var bColors = ToBytes(colors);
+			var result = new byte[bWidth.Length + bHeight.Length + bTiles.Length + bColors.Length];
+
+			Array.Copy(bWidth, 0, result, 0,
+				bWidth.Length);
+			Array.Copy(bHeight, 0, result,
+				bWidth.Length, bHeight.Length);
+			Array.Copy(bTiles, 0, result,
+				bWidth.Length + bHeight.Length, bTiles.Length);
+			Array.Copy(bColors, 0, result,
+				bWidth.Length + bHeight.Length + bTiles.Length, bColors.Length);
+
+			File.WriteAllBytes(path, Compress(result));
 		}
 
 		public Tilemap UpdateCamera()
@@ -417,6 +467,14 @@
 			=> Copy(tilemap.colors);
 
 		#region Backend
+		// save format
+		// [amount of bytes]		- data
+		// --------------------------------
+		// [4]						- width
+		// [4]						- height
+		// [width * height * 4]		- tiles
+		// [width * height]			- colors
+
 		private static readonly Dictionary<char, int> map = new()
 		{
 			{ '░', 1 }, { '▒', 4 }, { '▓', 8 }, { '█', 11 },
@@ -494,6 +552,38 @@
 			var copy = new T[array.GetLength(0), array.GetLength(1)];
 			Array.Copy(array, copy, array.Length);
 			return copy;
+		}
+
+		private static byte[] ToBytes<T>(T[,] array) where T : struct
+		{
+			var size = array.GetLength(0) * array.GetLength(1) * Marshal.SizeOf(typeof(T));
+			var buffer = new byte[size];
+			Buffer.BlockCopy(array, 0, buffer, 0, buffer.Length);
+			return buffer;
+		}
+		private static void FromBytes<T>(T[,] array, byte[] buffer) where T : struct
+		{
+			var size = array.GetLength(0) * array.GetLength(1);
+			var len = Math.Min(size * Marshal.SizeOf(typeof(T)), buffer.Length);
+			Buffer.BlockCopy(buffer, 0, array, 0, len);
+		}
+
+		private static byte[] Compress(byte[] data)
+		{
+			var output = new MemoryStream();
+			using(var stream = new DeflateStream(output, CompressionLevel.Optimal))
+				stream.Write(data, 0, data.Length);
+
+			return output.ToArray();
+		}
+		private static byte[] Decompress(byte[] data)
+		{
+			var input = new MemoryStream(data);
+			var output = new MemoryStream();
+			using(var stream = new DeflateStream(input, CompressionMode.Decompress))
+				stream.CopyTo(output);
+
+			return output.ToArray();
 		}
 		#endregion
 	}

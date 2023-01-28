@@ -40,23 +40,21 @@
 
 		public Color(byte value)
 		{
-			this.value = 0;
+			this.value = value;
 			red = 0;
 			green = 0;
 			blue = 0;
 
-			Value = value;
+			UpdateRGB();
 		}
 		public Color(byte red, byte green, byte blue)
 		{
 			value = 0;
-			this.red = 0;
-			this.green = 0;
-			this.blue = 0;
+			this.red = red;
+			this.green = green;
+			this.blue = blue;
 
-			R = red;
-			G = green;
-			B = blue;
+			UpdateValue();
 		}
 
 		public static implicit operator Color((byte, byte, byte) rgb)
@@ -87,12 +85,6 @@
 		}
 
 		#region Backend
-
-		private byte Value
-		{
-			get => value;
-			set { this.value = value; UpdateRGB(); }
-		}
 		private byte value, red, green, blue;
 
 		private void UpdateRGB()
@@ -103,7 +95,7 @@
 		}
 		private void UpdateValue()
 		{
-			Value = (byte)((R * 7 / 255) << 5 + (G * 7 / 255) << 2 + (B * 3 / 255));
+			value = (byte)(((R * 7 / 255) << 5) + ((G * 7 / 255) << 2) + (B * 3 / 255));
 		}
 		#endregion
 	}

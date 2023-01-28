@@ -12,4 +12,8 @@
     <PackageReference Include="SFML.Graphics" Version="2.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
+  </ItemGroup>
+
 </Project>
