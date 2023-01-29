@@ -64,16 +64,20 @@
 			this.LayerMenuMoveUp = new System.Windows.Forms.ToolStripMenuItem();
 			this.LayerMenuMoveDown = new System.Windows.Forms.ToolStripMenuItem();
 			this.LayerMenuMoveBottom = new System.Windows.Forms.ToolStripMenuItem();
+			this.collisionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.pToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.loadCollisionsCtrlKToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.LayerMenuSave = new System.Windows.Forms.ToolStripMenuItem();
 			this.LayerMenuRemove = new System.Windows.Forms.ToolStripMenuItem();
 			this.tableLayoutPanel7 = new System.Windows.Forms.TableLayoutPanel();
 			this.Map = new System.Windows.Forms.PictureBox();
 			this.tableLayoutPanel8 = new System.Windows.Forms.TableLayoutPanel();
-			this.Hotkeys = new System.Windows.Forms.Button();
 			this.label8 = new System.Windows.Forms.Label();
 			this.MapHeight = new System.Windows.Forms.NumericUpDown();
 			this.MapWidth = new System.Windows.Forms.NumericUpDown();
 			this.Stats = new System.Windows.Forms.Label();
+			this.Collision = new System.Windows.Forms.CheckBox();
+			this.Hotkeys = new System.Windows.Forms.Button();
 			this.Colors = new System.Windows.Forms.ColorDialog();
 			this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
 			this.button1 = new System.Windows.Forms.Button();
@@ -326,6 +330,7 @@
 			// button3
 			// 
 			this.button3.BackColor = System.Drawing.Color.Black;
+			this.button3.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.button3.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.button3.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.button3.ForeColor = System.Drawing.Color.White;
@@ -382,6 +387,7 @@
 			// 
 			this.ColorBackground.BackColor = System.Drawing.Color.Black;
 			this.ColorBackground.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.ColorBackground.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.ColorBackground.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.ColorBackground.Location = new System.Drawing.Point(241, 95);
 			this.ColorBackground.Name = "ColorBackground";
@@ -394,6 +400,7 @@
 			// 
 			this.ColorGrid5.BackColor = System.Drawing.Color.Brown;
 			this.ColorGrid5.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.ColorGrid5.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.ColorGrid5.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.ColorGrid5.Location = new System.Drawing.Point(241, 72);
 			this.ColorGrid5.Name = "ColorGrid5";
@@ -405,6 +412,7 @@
 			// label9
 			// 
 			this.label9.AutoSize = true;
+			this.label9.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.label9.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.label9.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.label9.Location = new System.Drawing.Point(3, 92);
@@ -418,6 +426,7 @@
 			// label7
 			// 
 			this.label7.AutoSize = true;
+			this.label7.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.label7.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.label7.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.label7.Location = new System.Drawing.Point(3, 69);
@@ -432,6 +441,7 @@
 			// 
 			this.ColorGrid1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
 			this.ColorGrid1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.ColorGrid1.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.ColorGrid1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.ColorGrid1.Location = new System.Drawing.Point(241, 49);
 			this.ColorGrid1.Name = "ColorGrid1";
@@ -443,6 +453,7 @@
 			// label6
 			// 
 			this.label6.AutoSize = true;
+			this.label6.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.label6.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.label6.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.label6.Location = new System.Drawing.Point(3, 46);
@@ -457,6 +468,7 @@
 			// 
 			this.ColorSelection.BackColor = System.Drawing.Color.LightSkyBlue;
 			this.ColorSelection.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.ColorSelection.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.ColorSelection.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.ColorSelection.Location = new System.Drawing.Point(241, 26);
 			this.ColorSelection.Name = "ColorSelection";
@@ -468,6 +480,7 @@
 			// label2
 			// 
 			this.label2.AutoSize = true;
+			this.label2.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.label2.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.label2.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.label2.Location = new System.Drawing.Point(3, 23);
@@ -482,6 +495,7 @@
 			// 
 			this.ColorBrush.BackColor = System.Drawing.Color.White;
 			this.ColorBrush.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+			this.ColorBrush.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.ColorBrush.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.ColorBrush.Location = new System.Drawing.Point(241, 3);
 			this.ColorBrush.Name = "ColorBrush";
@@ -493,6 +507,7 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
+			this.label1.Cursor = System.Windows.Forms.Cursors.Hand;
 			this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.label1.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.label1.Location = new System.Drawing.Point(3, 0);
@@ -527,35 +542,36 @@
             this.toolStripSeparator1,
             this.LayerMenuRename,
             this.LayerMenuMove,
+            this.collisionsToolStripMenuItem,
             this.LayerMenuSave,
             this.LayerMenuRemove});
 			this.LayerMenu.Name = "LayersMenu";
-			this.LayerMenu.Size = new System.Drawing.Size(118, 142);
+			this.LayerMenu.Size = new System.Drawing.Size(162, 164);
 			// 
 			// LayerMenuAdd
 			// 
 			this.LayerMenuAdd.Name = "LayerMenuAdd";
-			this.LayerMenuAdd.Size = new System.Drawing.Size(117, 22);
-			this.LayerMenuAdd.Text = "Add";
+			this.LayerMenuAdd.Size = new System.Drawing.Size(161, 22);
+			this.LayerMenuAdd.Text = "Add [A]";
 			this.LayerMenuAdd.Click += new System.EventHandler(this.OnLayerAdd);
 			// 
 			// LayerMenuLoad
 			// 
 			this.LayerMenuLoad.Name = "LayerMenuLoad";
-			this.LayerMenuLoad.Size = new System.Drawing.Size(117, 22);
-			this.LayerMenuLoad.Text = "Load";
+			this.LayerMenuLoad.Size = new System.Drawing.Size(161, 22);
+			this.LayerMenuLoad.Text = "Load [Ctrl + L]";
 			this.LayerMenuLoad.Click += new System.EventHandler(this.OnLayerLoad);
 			// 
 			// toolStripSeparator1
 			// 
 			this.toolStripSeparator1.Name = "toolStripSeparator1";
-			this.toolStripSeparator1.Size = new System.Drawing.Size(114, 6);
+			this.toolStripSeparator1.Size = new System.Drawing.Size(158, 6);
 			// 
 			// LayerMenuRename
 			// 
 			this.LayerMenuRename.Name = "LayerMenuRename";
-			this.LayerMenuRename.Size = new System.Drawing.Size(117, 22);
-			this.LayerMenuRename.Text = "Rename";
+			this.LayerMenuRename.Size = new System.Drawing.Size(161, 22);
+			this.LayerMenuRename.Text = "Rename [R]";
 			this.LayerMenuRename.Click += new System.EventHandler(this.OnLayerRename);
 			// 
 			// LayerMenuMove
@@ -566,49 +582,72 @@
             this.LayerMenuMoveDown,
             this.LayerMenuMoveBottom});
 			this.LayerMenuMove.Name = "LayerMenuMove";
-			this.LayerMenuMove.Size = new System.Drawing.Size(117, 22);
+			this.LayerMenuMove.Size = new System.Drawing.Size(161, 22);
 			this.LayerMenuMove.Text = "Move";
 			// 
 			// LayerMenuMoveTop
 			// 
 			this.LayerMenuMoveTop.Name = "LayerMenuMoveTop";
-			this.LayerMenuMoveTop.Size = new System.Drawing.Size(114, 22);
-			this.LayerMenuMoveTop.Text = "Top";
+			this.LayerMenuMoveTop.Size = new System.Drawing.Size(131, 22);
+			this.LayerMenuMoveTop.Text = "Top [Q]";
 			this.LayerMenuMoveTop.Click += new System.EventHandler(this.OnLayerMoveTop);
 			// 
 			// LayerMenuMoveUp
 			// 
 			this.LayerMenuMoveUp.Name = "LayerMenuMoveUp";
-			this.LayerMenuMoveUp.Size = new System.Drawing.Size(114, 22);
-			this.LayerMenuMoveUp.Text = "Up";
+			this.LayerMenuMoveUp.Size = new System.Drawing.Size(131, 22);
+			this.LayerMenuMoveUp.Text = "Up [W]";
 			this.LayerMenuMoveUp.Click += new System.EventHandler(this.OnLayerMoveUp);
 			// 
 			// LayerMenuMoveDown
 			// 
 			this.LayerMenuMoveDown.Name = "LayerMenuMoveDown";
-			this.LayerMenuMoveDown.Size = new System.Drawing.Size(114, 22);
-			this.LayerMenuMoveDown.Text = "Down";
+			this.LayerMenuMoveDown.Size = new System.Drawing.Size(131, 22);
+			this.LayerMenuMoveDown.Text = "Down [S]";
 			this.LayerMenuMoveDown.Click += new System.EventHandler(this.OnLayerMoveDown);
 			// 
 			// LayerMenuMoveBottom
 			// 
 			this.LayerMenuMoveBottom.Name = "LayerMenuMoveBottom";
-			this.LayerMenuMoveBottom.Size = new System.Drawing.Size(114, 22);
-			this.LayerMenuMoveBottom.Text = "Bottom";
+			this.LayerMenuMoveBottom.Size = new System.Drawing.Size(131, 22);
+			this.LayerMenuMoveBottom.Text = "Bottom [E]";
 			this.LayerMenuMoveBottom.Click += new System.EventHandler(this.OnLayerMoveBottom);
+			// 
+			// collisionsToolStripMenuItem
+			// 
+			this.collisionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.pToolStripMenuItem,
+            this.loadCollisionsCtrlKToolStripMenuItem});
+			this.collisionsToolStripMenuItem.Name = "collisionsToolStripMenuItem";
+			this.collisionsToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+			this.collisionsToolStripMenuItem.Text = "Collisions";
+			// 
+			// pToolStripMenuItem
+			// 
+			this.pToolStripMenuItem.Name = "pToolStripMenuItem";
+			this.pToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+			this.pToolStripMenuItem.Text = "Save Collisions [Ctrl + D]";
+			this.pToolStripMenuItem.Click += new System.EventHandler(this.OnLayerCollisionsSave);
+			// 
+			// loadCollisionsCtrlKToolStripMenuItem
+			// 
+			this.loadCollisionsCtrlKToolStripMenuItem.Name = "loadCollisionsCtrlKToolStripMenuItem";
+			this.loadCollisionsCtrlKToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+			this.loadCollisionsCtrlKToolStripMenuItem.Text = "Load Collisions [Ctrl + K]";
+			this.loadCollisionsCtrlKToolStripMenuItem.Click += new System.EventHandler(this.OnLayerCollisionsLoad);
 			// 
 			// LayerMenuSave
 			// 
 			this.LayerMenuSave.Name = "LayerMenuSave";
-			this.LayerMenuSave.Size = new System.Drawing.Size(117, 22);
-			this.LayerMenuSave.Text = "Save";
+			this.LayerMenuSave.Size = new System.Drawing.Size(161, 22);
+			this.LayerMenuSave.Text = "Save [Ctrl + S]";
 			this.LayerMenuSave.Click += new System.EventHandler(this.OnLayerSave);
 			// 
 			// LayerMenuRemove
 			// 
 			this.LayerMenuRemove.Name = "LayerMenuRemove";
-			this.LayerMenuRemove.Size = new System.Drawing.Size(117, 22);
-			this.LayerMenuRemove.Text = "Remove";
+			this.LayerMenuRemove.Size = new System.Drawing.Size(161, 22);
+			this.LayerMenuRemove.Text = "Remove [Delete]";
 			this.LayerMenuRemove.Click += new System.EventHandler(this.OnLayerRemove);
 			// 
 			// tableLayoutPanel7
@@ -642,17 +681,20 @@
 			// 
 			// tableLayoutPanel8
 			// 
-			this.tableLayoutPanel8.ColumnCount = 5;
-			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 50F));
+			this.tableLayoutPanel8.ColumnCount = 7;
+			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 96F));
+			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 45F));
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 60F));
+			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 55F));
 			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 583F));
-			this.tableLayoutPanel8.Controls.Add(this.Hotkeys, 3, 0);
-			this.tableLayoutPanel8.Controls.Add(this.label8, 0, 0);
-			this.tableLayoutPanel8.Controls.Add(this.MapHeight, 2, 0);
-			this.tableLayoutPanel8.Controls.Add(this.MapWidth, 1, 0);
-			this.tableLayoutPanel8.Controls.Add(this.Stats, 4, 0);
+			this.tableLayoutPanel8.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 560F));
+			this.tableLayoutPanel8.Controls.Add(this.label8, 1, 0);
+			this.tableLayoutPanel8.Controls.Add(this.MapHeight, 3, 0);
+			this.tableLayoutPanel8.Controls.Add(this.MapWidth, 2, 0);
+			this.tableLayoutPanel8.Controls.Add(this.Stats, 6, 0);
+			this.tableLayoutPanel8.Controls.Add(this.Collision, 0, 0);
+			this.tableLayoutPanel8.Controls.Add(this.Hotkeys, 4, 0);
 			this.tableLayoutPanel8.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.tableLayoutPanel8.Location = new System.Drawing.Point(5, 633);
 			this.tableLayoutPanel8.Name = "tableLayoutPanel8";
@@ -661,30 +703,14 @@
 			this.tableLayoutPanel8.Size = new System.Drawing.Size(912, 33);
 			this.tableLayoutPanel8.TabIndex = 4;
 			// 
-			// Hotkeys
-			// 
-			this.Hotkeys.BackColor = System.Drawing.Color.Black;
-			this.Hotkeys.Dock = System.Windows.Forms.DockStyle.Left;
-			this.Hotkeys.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.Hotkeys.ForeColor = System.Drawing.Color.White;
-			this.Hotkeys.Location = new System.Drawing.Point(173, 3);
-			this.Hotkeys.Name = "Hotkeys";
-			this.Hotkeys.Size = new System.Drawing.Size(86, 27);
-			this.Hotkeys.TabIndex = 9;
-			this.Hotkeys.TabStop = false;
-			this.Hotkeys.Text = "Hotkeys";
-			this.Hotkeys.UseVisualStyleBackColor = false;
-			this.Hotkeys.Click += new System.EventHandler(this.OnHotkeysClick);
-			this.Hotkeys.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
-			// 
 			// label8
 			// 
 			this.label8.AutoSize = true;
 			this.label8.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.label8.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.label8.Location = new System.Drawing.Point(3, 0);
+			this.label8.Location = new System.Drawing.Point(99, 0);
 			this.label8.Name = "label8";
-			this.label8.Size = new System.Drawing.Size(44, 33);
+			this.label8.Size = new System.Drawing.Size(39, 33);
 			this.label8.TabIndex = 8;
 			this.label8.Text = "Size";
 			this.label8.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -695,7 +721,7 @@
 			this.MapHeight.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.MapHeight.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.MapHeight.ForeColor = System.Drawing.Color.White;
-			this.MapHeight.Location = new System.Drawing.Point(113, 3);
+			this.MapHeight.Location = new System.Drawing.Point(204, 3);
 			this.MapHeight.Maximum = new decimal(new int[] {
             99999999,
             0,
@@ -724,7 +750,7 @@
 			this.MapWidth.Dock = System.Windows.Forms.DockStyle.Fill;
 			this.MapWidth.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
 			this.MapWidth.ForeColor = System.Drawing.Color.White;
-			this.MapWidth.Location = new System.Drawing.Point(53, 3);
+			this.MapWidth.Location = new System.Drawing.Point(144, 3);
 			this.MapWidth.Maximum = new decimal(new int[] {
             99999999,
             0,
@@ -750,13 +776,42 @@
 			// Stats
 			// 
 			this.Stats.AutoSize = true;
-			this.Stats.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.Stats.Dock = System.Windows.Forms.DockStyle.Right;
 			this.Stats.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.Stats.Location = new System.Drawing.Point(332, 0);
+			this.Stats.Location = new System.Drawing.Point(909, 0);
 			this.Stats.Name = "Stats";
-			this.Stats.Size = new System.Drawing.Size(577, 33);
+			this.Stats.Size = new System.Drawing.Size(0, 33);
 			this.Stats.TabIndex = 5;
 			this.Stats.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+			// 
+			// Collision
+			// 
+			this.Collision.AutoSize = true;
+			this.Collision.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.Collision.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.Collision.Location = new System.Drawing.Point(3, 3);
+			this.Collision.Name = "Collision";
+			this.Collision.Size = new System.Drawing.Size(90, 27);
+			this.Collision.TabIndex = 10;
+			this.Collision.Text = "Collision";
+			this.Collision.UseVisualStyleBackColor = true;
+			// 
+			// Hotkeys
+			// 
+			this.Hotkeys.BackColor = System.Drawing.Color.Black;
+			this.Hotkeys.Cursor = System.Windows.Forms.Cursors.Hand;
+			this.Hotkeys.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.Hotkeys.Font = new System.Drawing.Font("Segoe UI", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+			this.Hotkeys.ForeColor = System.Drawing.Color.White;
+			this.Hotkeys.Location = new System.Drawing.Point(264, 3);
+			this.Hotkeys.Name = "Hotkeys";
+			this.Hotkeys.Size = new System.Drawing.Size(49, 27);
+			this.Hotkeys.TabIndex = 9;
+			this.Hotkeys.TabStop = false;
+			this.Hotkeys.Text = "Info";
+			this.Hotkeys.UseVisualStyleBackColor = false;
+			this.Hotkeys.Click += new System.EventHandler(this.OnHotkeysClick);
+			this.Hotkeys.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OnKeyPress);
 			// 
 			// Colors
 			// 
@@ -914,5 +969,9 @@
 		private Button Hotkeys;
 		private OpenFileDialog LoadTilemap;
 		private SaveFileDialog SaveTilemap;
+		private ToolStripMenuItem collisionsToolStripMenuItem;
+		private ToolStripMenuItem pToolStripMenuItem;
+		private ToolStripMenuItem loadCollisionsCtrlKToolStripMenuItem;
+		private CheckBox Collision;
 	}
 }

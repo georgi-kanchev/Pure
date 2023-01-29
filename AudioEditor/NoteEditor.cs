@@ -70,17 +70,17 @@ namespace AudioEditor
 
 		private void OnSave(object sender, EventArgs e)
 		{
-			if(Save.ShowDialog() != DialogResult.OK)
+			if(SaveNotes.ShowDialog() != DialogResult.OK)
 				return;
 
-			File.WriteAllText(Save.FileName, Notes.Text);
+			File.WriteAllText(SaveNotes.FileName, Notes.Text);
 		}
 		private void OnLoad(object sender, EventArgs e)
 		{
-			if(Load.ShowDialog() != DialogResult.OK)
+			if(LoadNotes.ShowDialog() != DialogResult.OK)
 				return;
 
-			Notes.Text = File.ReadAllText(Load.FileName);
+			Notes.Text = File.ReadAllText(LoadNotes.FileName);
 		}
 	}
 }

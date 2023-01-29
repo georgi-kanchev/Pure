@@ -364,11 +364,11 @@
 			// StorageLoad
 			// 
 			this.StorageLoad.AddExtension = false;
-			this.StorageLoad.Title = "Load Pure Storage File";
+			this.StorageLoad.Title = "Load Storage";
 			// 
 			// StorageSave
 			// 
-			this.StorageSave.Title = "Save Pure Storage";
+			this.StorageSave.Title = "Save Storage";
 			// 
 			// Window
 			// 

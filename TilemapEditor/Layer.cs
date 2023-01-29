@@ -7,7 +7,7 @@ using Color = SFML.Graphics.Color;
 
 namespace TilemapEditor
 {
-	public class Layer
+	internal class Layer
 	{
 		private readonly Vertex[] vertsTile = new Vertex[4];
 		private readonly int[,] tiles;
@@ -113,6 +113,20 @@ namespace TilemapEditor
 			var isOutside = x < 0 || x >= w || y < 0 || y >= h;
 
 			return isOutside ? -1 : tiles[x, y];
+		}
+		public Color GetColor(Vector2i pos)
+		{
+			var w = colors.GetLength(0);
+			var h = colors.GetLength(1);
+			var x = pos.X;
+			var y = pos.Y;
+			var isOutside = x < 0 || x >= w || y < 0 || y >= h;
+			var value = isOutside ? default : colors[x, y];
+			var r = (byte)((value >> 5) * 255 / 7);
+			var g = (byte)(((value >> 2) & 0x07) * 255 / 7);
+			var b = (byte)((value & 0x03) * 255 / 3);
+
+			return new(r, g, b);
 		}
 		public void Save(string path)
 		{
