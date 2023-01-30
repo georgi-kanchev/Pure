@@ -379,6 +379,9 @@ namespace TilemapEditor
 		}
 		private void DrawPreview()
 		{
+			if(IsHovering(Map) == false)
+				return;
+
 			vertsPreview.Clear();
 			var selectedSz = selectedTileSquare - selectedTile;
 			var sz = selectedSz;

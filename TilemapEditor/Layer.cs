@@ -77,13 +77,14 @@ namespace TilemapEditor
 
 			var w = tiles.GetLength(0);
 			var h = tiles.GetLength(1);
+			var c = color;
+			var byteCol = (byte)(((c.R * 7 / 255) << 5) + ((c.G * 7 / 255) << 2) + (c.B * 3 / 255));
 
 			if(pos.X < 0 || pos.X >= w ||
 				pos.Y < 0 || pos.Y >= h ||
-				tiles[pos.X, pos.Y] == tile)
+				(tiles[pos.X, pos.Y] == tile && colors[pos.X, pos.Y] == byteCol))
 				return;
 
-			var c = color;
 			var count = tilesetCount;
 			var tilePos = new Vector2f(
 				count.X == 0 ? 0 : tile % count.X,
@@ -92,7 +93,6 @@ namespace TilemapEditor
 			var off = tileOffset;
 			var tx = new Vector2f(tilePos.X * (sz.X + off.X), tilePos.Y * (sz.Y + off.Y));
 			var index = pos.X * h + pos.Y;
-			var byteCol = (byte)(((c.R * 7 / 255) << 5) + ((c.G * 7 / 255) << 2) + (c.B * 3 / 255));
 			var p = new Vector2f(pos.X * sz.X, pos.Y * sz.Y);
 
 			vertsTile[0] = new(new(p.X, p.Y), c, new(tx.X, tx.Y));

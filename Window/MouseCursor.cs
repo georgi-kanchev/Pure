@@ -73,7 +73,7 @@ namespace Pure.Window
 		};
 
 		private static int cursor;
-		private static SFML.Window.Cursor sysCursor;
+		private static Cursor sysCursor;
 		private static bool isMouseGrabbed;
 
 		static MouseCursor()
@@ -90,6 +90,9 @@ namespace Pure.Window
 
 			var (x, y) = Window.PositionFrom(Position);
 			var (offX, offY) = cursorOffsets[Type];
+
+			Window.prevDrawTilemapGfxPath = "default";
+			Window.prevDrawTilemapTileSz = (8, 8);
 			Window.DrawSprite((x - offX, y - offY), 494 + Type, Color);
 		}
 

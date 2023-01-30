@@ -143,10 +143,10 @@ namespace Pure.Window
 
 		private static bool isHidden;
 		private static string title;
-		private static string? prevDrawTilemapGfxPath;
-		private static (uint, uint) prevDrawTilemapTileSz;
-		private static (float, float) prevDrawTilemapCellSz;
-		private static (uint, uint) prevDrawTilemapCellCount;
+		internal static string? prevDrawTilemapGfxPath;
+		internal static (uint, uint) prevDrawTilemapTileSz;
+		internal static (float, float) prevDrawTilemapCellSz;
+		internal static (uint, uint) prevDrawTilemapCellCount;
 
 		internal static readonly Dictionary<string, Texture> graphics = new();
 		internal static readonly RenderWindow window;
@@ -292,7 +292,10 @@ namespace Pure.Window
 			var cellWidth = (float)window.Size.X / tiles.GetLength(0);
 			var cellHeight = (float)window.Size.Y / tiles.GetLength(1);
 			var texture = graphics[path];
-			var tileCount = (texture.Size.X / tileSz.Item1, texture.Size.Y / tileSz.Item2);
+			var (tileOffW, tileOffH) = tileOff;
+			var (tileW, tileH) = tileSz;
+			var texSz = texture.Size;
+			var tileCount = (texSz.X / (tileW + tileOffW), texSz.Y / (tileH + tileOffH));
 			var verts = new Vertex[tiles.Length * 4];
 
 			// this cache is used for a potential sprite draw
@@ -312,15 +315,13 @@ namespace Pure.Window
 					var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
 					var bl = new Vector2f(x * cellWidth, (y + 1) * cellHeight);
 
-					var w = tileSz.Item1;
-					var h = tileSz.Item2;
 					var texCoords = IndexToCoords(cell, tileCount);
 					var tx = new Vector2f(
-						texCoords.Item1 * (w + tileOff.Item1),
-						texCoords.Item2 * (h + tileOff.Item2));
-					var texTr = new Vector2f(tx.X + w, tx.Y);
-					var texBr = new Vector2f(tx.X + w, tx.Y + h);
-					var texBl = new Vector2f(tx.X, tx.Y + h);
+						texCoords.Item1 * (tileW + tileOffW),
+						texCoords.Item2 * (tileH + tileOffH));
+					var texTr = new Vector2f(tx.X + tileW, tx.Y);
+					var texBr = new Vector2f(tx.X + tileW, tx.Y + tileH);
+					var texBl = new Vector2f(tx.X, tx.Y + tileH);
 
 					verts[i + 0] = new(tl, color, tx);
 					verts[i + 1] = new(tr, color, texTr);
