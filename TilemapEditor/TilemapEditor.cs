@@ -4,6 +4,8 @@ using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 
+using static System.Drawing.Color;
+
 using Color = System.Drawing.Color;
 using Cursor = System.Windows.Forms.Cursor;
 using TextBox = System.Windows.Forms.TextBox;
@@ -26,7 +28,7 @@ namespace TilemapEditor
 		private float mapZoom = 1f, setZoom = 1f;
 		private Vector2 prevFormsMousePosMap, prevFormsMousePosSet,
 			selectedTile, selectedTileSquare, previewTile, previewTileSquare;
-		private bool isSquaring, isCreatingLayer, isSquaringCanceled;
+		private bool isSquaring, isCreatingLayer, isSquaringCanceled, isMapClicked;
 		private readonly Clock delta = new();
 		private float fps;
 		private string hotkeyDescriptions = "";
@@ -591,6 +593,11 @@ namespace TilemapEditor
 				result += 2;
 			return result;
 		}
+		private static float M(float number, float a1, float a2, float b1, float b2)
+		{
+			var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
+			return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+		}
 		#endregion
 		#region Events
 		private void OnUpdate(object? sender, EventArgs e)
@@ -679,7 +686,7 @@ namespace TilemapEditor
 			if(right == false || isSquaringCanceled)
 				previewTile = GetHoveredCoordsRounded(map);
 
-			if(e.Button == MouseButtons.Left && IsHoveringMap())
+			if(isMapClicked && e.Button == MouseButtons.Left && IsHoveringMap())
 				PaintTiles();
 		}
 		private void OnMapScroll(object? sender, MouseEventArgs e)
@@ -703,6 +710,7 @@ namespace TilemapEditor
 			}
 			else if(e.Button == MouseButtons.Left)
 			{
+				isMapClicked = true;
 				previewTile = GetHoveredCoordsRounded(map);
 
 				// user is dragging a square with RMB and pressed LMB so cancel drag
@@ -731,6 +739,8 @@ namespace TilemapEditor
 				PaintTiles();
 				isSquaring = false;
 			}
+			else if(e.Button == MouseButtons.Left)
+				isMapClicked = false;
 		}
 
 		private void OnSetMouseMove(object sender, MouseEventArgs e)
@@ -934,7 +944,7 @@ namespace TilemapEditor
 				AcceptsReturn = false,
 				AcceptsTab = false,
 				BackColor = Color.Black,
-				ForeColor = Color.Wheat
+				ForeColor = Color.White
 			};
 			var form = new Form()
 			{
@@ -982,11 +992,11 @@ namespace TilemapEditor
 			Layers.Items.Remove(Layers.SelectedItem);
 			Layers.SelectedIndex = prev >= Layers.Items.Count ? Layers.Items.Count - 1 : prev;
 		}
+
 		private void OnLayerMoveTop(object sender, EventArgs e)
 		{
 			MoveLayerToIndex(0);
 		}
-
 		private void OnLayerMoveBottom(object sender, EventArgs e)
 		{
 			MoveLayerToIndex(Layers.Items.Count - 1);
@@ -1002,9 +1012,112 @@ namespace TilemapEditor
 
 		private void OnColorBrushClick(object sender, EventArgs e)
 		{
-			Colors.Color = ColorBrush.BackColor;
-			if(Colors.ShowDialog() == DialogResult.OK)
-				ColorBrush.BackColor = Colors.Color;
+			const int WIDTH = 400, HEIGHT = 400, MARGIN = 1, SIZE = 16,
+				BOX_WIDTH = WIDTH / SIZE, BOX_HEIGHT = HEIGHT / SIZE;
+
+			var form = new Form()
+			{
+				BackColor = Color.Black,
+				ShowInTaskbar = false,
+				AutoScaleMode = AutoScaleMode.None,
+				FormBorderStyle = FormBorderStyle.None,
+				StartPosition = FormStartPosition.Manual,
+				Location = ColorBrush.PointToScreen(new(-910, 0))
+			};
+			var result = ColorBrush.BackColor;
+
+			form.Width = 899;
+			form.Height = 194;
+			form.Location = ColorBrush.PointToScreen(new(-form.Width, 0));
+
+			var middleColors = new List<Color>()
+			{
+				FromArgb(255, 000, 000), FromArgb(255, 036, 000), FromArgb(255, 072, 000),
+				FromArgb(255, 109, 000), FromArgb(255, 145, 000), FromArgb(255, 182, 000),
+				FromArgb(255, 218, 000), FromArgb(255, 255, 000), FromArgb(218, 255, 000),
+				FromArgb(182, 255, 000), FromArgb(145, 255, 000), FromArgb(109, 255, 000),
+				FromArgb(072, 255, 000), FromArgb(036, 255, 000), FromArgb(000, 255, 000),
+				FromArgb(000, 255, 085), FromArgb(000, 255, 170), FromArgb(000, 255, 255),
+				FromArgb(000, 218, 255), FromArgb(000, 182, 255), FromArgb(000, 145, 255),
+				FromArgb(000, 109, 255), FromArgb(000, 072, 255), FromArgb(000, 036, 255),
+				FromArgb(000, 000, 255), FromArgb(036, 000, 255), FromArgb(072, 000, 255),
+				FromArgb(109, 000, 255), FromArgb(145, 000, 255), FromArgb(182, 000, 255),
+				FromArgb(218, 000, 255), FromArgb(255, 000, 255), FromArgb(255, 000, 170),
+				FromArgb(255, 000, 085),
+			};
+
+			for(int i = 0; i < middleColors.Count; i++)
+			{
+				var c = middleColors[i];
+				var box = new PictureBox()
+				{
+					Width = BOX_WIDTH,
+					Height = BOX_HEIGHT,
+					BackColor = c
+				};
+				box.MouseDown += (s, e) =>
+				{
+					result = box.BackColor;
+					form.Close();
+				};
+
+				var x = i * (BOX_WIDTH + MARGIN);
+				var y = 3 * (BOX_HEIGHT + MARGIN);
+				box.Location = new(x, y);
+				form.Controls.Add(box);
+
+				for(int j = 0; j < 3; j++)
+				{
+					var r = (byte)M(j, 0, 3, c.R, 255);
+					var g = (byte)M(j, 0, 3, c.G, 255);
+					var b = (byte)M(j, 0, 3, c.B, 255);
+					var col = (byte)(((r * 7 / 255) << 5) + ((g * 7 / 255) << 2) + (b * 3 / 255));
+					r = (byte)((col >> 5) * 255 / 7);
+					g = (byte)(((col >> 2) & 0x07) * 255 / 7);
+					b = (byte)((col & 0x03) * 255 / 3);
+
+					var subBox = new PictureBox()
+					{
+						Width = BOX_WIDTH,
+						Height = BOX_HEIGHT,
+						BackColor = Color.FromArgb(r, g, b)
+					};
+					subBox.MouseDown += (s, e) =>
+					{
+						result = subBox.BackColor;
+						form.Close();
+					};
+					subBox.Location = new(x, (3 - j) * (BOX_HEIGHT + MARGIN));
+					form.Controls.Add(subBox);
+				}
+				for(int j = 0; j < 3; j++)
+				{
+					var r = (int)M(j, 0, 3, c.R, 0);
+					var g = (int)M(j, 0, 3, c.G, 0);
+					var b = (int)M(j, 0, 3, c.B, 0);
+					var col = (byte)(((r * 7 / 255) << 5) + ((g * 7 / 255) << 2) + (b * 3 / 255));
+					r = (byte)((col >> 5) * 255 / 7);
+					g = (byte)(((col >> 2) & 0x07) * 255 / 7);
+					b = (byte)((col & 0x03) * 255 / 3);
+
+					var subBox = new PictureBox()
+					{
+						Width = BOX_WIDTH,
+						Height = BOX_HEIGHT,
+						BackColor = Color.FromArgb(r, g, b)
+					};
+					subBox.MouseDown += (s, e) =>
+					{
+						result = subBox.BackColor;
+						form.Close();
+					};
+					subBox.Location = new(x, (3 + j) * (BOX_HEIGHT + MARGIN));
+					form.Controls.Add(subBox);
+				}
+			}
+
+			form.ShowDialog();
+			ColorBrush.BackColor = result;
 		}
 		private void OnColorSelectionClick(object sender, EventArgs e)
 		{
