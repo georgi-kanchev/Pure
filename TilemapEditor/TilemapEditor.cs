@@ -1024,103 +1024,58 @@ namespace TilemapEditor
 			};
 			var result = ColorBrush.BackColor;
 
-			var reds = new SortedDictionary<float, SortedDictionary<float, List<Color>>>();
-			var greens = new SortedDictionary<float, SortedDictionary<float, List<Color>>>();
-			var blues = new SortedDictionary<float, SortedDictionary<float, List<Color>>>();
+			var bytes = new List<byte>();
+			for(int i = 0; i < 256; i++)
+				bytes.Add((byte)i);
 
-			for(int i = 0; i < byte.MaxValue; i++)
+			for(int i = 0; i < 8; i++)
 			{
-				var c = From8bit((byte)i);
-
-				Add(c.B, c.G, reds);
-				Add(c.B, c.R, greens);
-				Add(c.R, c.G, blues);
-
-				void Add(byte a, byte b,
-					SortedDictionary<float, SortedDictionary<float, List<Color>>> dict)
-				{
-					if(dict.ContainsKey(a) == false)
-						dict[a] = new();
-					if(dict[a].ContainsKey(b) == false)
-						dict[a][b] = new();
-
-					dict[a][b].Add(c);
-				}
+				var r = (byte)M(i, 0, 7, 255, 0);
+				var g = (byte)M(i, 0, 7, 255, 0);
+				var b = (byte)M(i, 0, 7, 255, 0);
+				Create(7, i, r, g, b);
 			}
-			//for(int i = 0; i < 8; i++)
-			//	middleColors.Add(middleColors[i]);
+			for(int i = 0; i < 8; i++)
+			{
+				CreateRow(0, Color.Red);
+				CreateRow(1, Color.Orange);
+				CreateRow(2, Color.Yellow);
+				CreateRow(3, Color.YellowGreen);
+				CreateRow(4, Color.FromArgb(0, 255, 0));
+				CreateRow(5, Color.Cyan);
+				CreateRow(6, Color.Blue);
+				CreateRow(7, Color.Magenta);
+			}
 
-			//CreateShade(0, 0, false, false, reds);
-			//CreateShade(8, 0, true, false, greens);
-			//CreateShade(0, 4, false, true, blues);
-
-			var w = 16;
-			//var index = 0;
-			//foreach(var kvp in colors)
-			//{
-			//	var x = MARGIN + index * (BOX_WIDTH + MARGIN);
-			//	var r = (byte)M(index, 0, w, 255, 0);
-			//	var g = (byte)M(index, 0, w, 255, 0);
-			//	var b = (byte)M(index, 0, w, 255, 0);
-			//	Create(x, 0, kvp.Value);
-			//	index++;
-			//}
-
-			form.Width = MARGIN + w * (BOX_WIDTH + MARGIN);
-			form.Height = MARGIN + 24 * (BOX_HEIGHT + MARGIN);
+			form.Width = MARGIN + 8 * (BOX_WIDTH + MARGIN);
+			form.Height = MARGIN + 8 * (BOX_HEIGHT + MARGIN);
 			form.Location = ColorBrush.PointToScreen(new(-form.Width - 10, 0));
-
-			//for(int i = 0; i < w; i++)
-			//{
-			//	var x = MARGIN + i * (BOX_WIDTH + MARGIN);
-			//	var r = (byte)M(i, 0, w, 255, 0);
-			//	var g = (byte)M(i, 0, w, 255, 0);
-			//	var b = (byte)M(i, 0, w, 255, 0);
-			//	Create(x, 0, Cast(r, g, b));
-			//}
-			//for(int i = 0; i < w; i++)
-			//{
-			//	var c = middleColors[i];
-			//	var x = MARGIN + i * (BOX_WIDTH + MARGIN);
-			//
-			//	for(int j = 0; j < SHADES; j++)
-			//		Create(x, SHADES - j, GetShade(j, true, c));
-			//	for(int j = 1; j < SHADES; j++)
-			//		Create(x, SHADES + j, GetShade(j, false, c));
-			//}
 
 			form.ShowDialog();
 			ColorBrush.BackColor = result;
 
-			Color From8bit(byte color)
+			void CreateRow(int y, Color color)
 			{
-				var r = (byte)((color >> 5) * 255 / 7);
-				var g = (byte)(((color >> 2) & 0x07) * 255 / 7);
-				var b = (byte)((color & 0x03) * 255 / 3);
-				return FromArgb(r, g, b);
+				for(int i = 1; i < 8; i++)
+				{
+					var r = (byte)M(i, 0, 7, 0, color.R);
+					var g = (byte)M(i, 0, 7, 0, color.G);
+					var b = (byte)M(i, 0, 7, 0, color.B);
+					Create(i - 1, y, r, g, b);
+				}
 			}
-			byte To8bit(byte r, byte g, byte b)
+			PictureBox Create(int x, int y, byte r, byte g, byte b)
 			{
-				return (byte)(((r * 7 / 255) << 5) + ((g * 7 / 255) << 2) + (b * 3 / 255));
-			}
-			//Color GetShade(int j, bool toLight, Color middleColor)
-			//{
-			//	var r = (byte)M(j, 0, SHADES, middleColor.R, toLight ? 255 : 0);
-			//	var g = (byte)M(j, 0, SHADES, middleColor.G, toLight ? 255 : 0);
-			//	var b = (byte)M(j, 0, SHADES, middleColor.B, toLight ? 255 : 0);
-			//	return Cast(r, g, b);
-			//}
-			Color Cast(byte r, byte g, byte b)
-			{
-				return From8bit(To8bit(r, g, b));
-			}
-			PictureBox Create(int x, int y, Color color)
-			{
+				var c = (byte)(((r * 7 / 255) << 5) + ((g * 7 / 255) << 2) + (b * 3 / 255));
+				r = (byte)((c >> 5) * 255 / 7);
+				g = (byte)(((c >> 2) & 0x07) * 255 / 7);
+				b = (byte)((c & 0x03) * 255 / 3);
+
 				var box = new PictureBox()
 				{
 					Width = BOX_WIDTH,
 					Height = BOX_HEIGHT,
-					BackColor = color
+					BackColor = FromArgb(r, g, b)
 				};
 				box.MouseDown += (s, e) =>
 				{
@@ -1132,24 +1087,6 @@ namespace TilemapEditor
 					MARGIN + y * (BOX_HEIGHT + MARGIN));
 				form.Controls.Add(box);
 				return box;
-			}
-			void CreateShade(int offX, int offY, bool reverseX, bool reverseY,
-				SortedDictionary<float, SortedDictionary<float, List<Color>>> shade)
-			{
-				var y = offY;
-				var ey = reverseY ? shade.Reverse() : shade;
-				foreach(var kvp in ey)
-				{
-					var x = offX;
-					var ex = reverseX ? kvp.Value.Reverse() : kvp.Value;
-					foreach(var kvp2 in ex)
-						for(int i = 0; i < kvp2.Value.Count; i++)
-						{
-							Create(x, y, kvp2.Value[i]);
-							x++;
-						}
-					y++;
-				}
 			}
 		}
 		private void OnColorSelectionClick(object sender, EventArgs e)
