@@ -11,11 +11,13 @@ namespace TilemapEditor
 	{
 		private readonly Vertex[] vertsTile = new Vertex[4];
 		private readonly int[,] tiles;
-		private readonly byte[,] colors;
+		private readonly uint[,] colors;
 		private readonly VertexBuffer verts;
 		private Vector2i tilesetCount, tileSize, tileOffset;
 
 		public string name = "Tilemap";
+
+		public Vector2i Size => new(tiles.GetLength(0), tiles.GetLength(1));
 
 		public Layer(Vector2i size, Vector2i tilesetCount, Vector2i tileSize, Vector2i tileOffset)
 		{
@@ -24,7 +26,7 @@ namespace TilemapEditor
 			this.tileOffset = tileOffset;
 
 			tiles = new int[size.X, size.Y];
-			colors = new byte[size.X, size.Y];
+			colors = new uint[size.X, size.Y];
 			verts = new(
 				(uint)(size.X * size.Y * 4),
 				PrimitiveType.Quads,
@@ -58,33 +60,22 @@ namespace TilemapEditor
 				for(int x = 0; x < w; x++)
 				{
 					var p = new Vector2i(x, y);
-					var value = colors[x, y];
-					var r = (byte)((value >> 5) * 255 / 7);
-					var g = (byte)(((value >> 2) & 0x07) * 255 / 7);
-					var b = (byte)((value & 0x03) * 255 / 3);
+					var c = colors[x, y];
 					var tile = GetTile(p);
 					SetTile(p, tile + 1, Color.White);
 					SetTile(p, tile - 1, Color.White);
-					SetTile(p, tile, new(r, g, b));
+					SetTile(p, tile, new(c));
 				}
 		}
 		~Layer() => verts?.Dispose();
 
 		public void SetTile(Vector2i pos, int tile, Color color)
 		{
-			if(tiles == null || colors == null)
+			if(CanSetTile(pos, tile, color) == false)
 				return;
 
-			var w = tiles.GetLength(0);
 			var h = tiles.GetLength(1);
-			var c = color;
-			var byteCol = (byte)(((c.R * 7 / 255) << 5) + ((c.G * 7 / 255) << 2) + (c.B * 3 / 255));
-
-			if(pos.X < 0 || pos.X >= w ||
-				pos.Y < 0 || pos.Y >= h ||
-				(tiles[pos.X, pos.Y] == tile && colors[pos.X, pos.Y] == byteCol))
-				return;
-
+			var c = color.ToInteger();
 			var count = tilesetCount;
 			var tilePos = new Vector2f(
 				count.X == 0 ? 0 : tile % count.X,
@@ -95,14 +86,28 @@ namespace TilemapEditor
 			var index = pos.X * h + pos.Y;
 			var p = new Vector2f(pos.X * sz.X, pos.Y * sz.Y);
 
-			vertsTile[0] = new(new(p.X, p.Y), c, new(tx.X, tx.Y));
-			vertsTile[1] = new(new(p.X + sz.X, p.Y), c, new(tx.X + sz.X, tx.Y));
-			vertsTile[2] = new(new(p.X + sz.X, p.Y + sz.Y), c, new(tx.X + sz.X, tx.Y + sz.Y));
-			vertsTile[3] = new(new(p.X, p.Y + sz.Y), c, new(tx.X, tx.Y + sz.Y));
+			vertsTile[0] = new(new(p.X, p.Y), color, new(tx.X, tx.Y));
+			vertsTile[1] = new(new(p.X + sz.X, p.Y), color, new(tx.X + sz.X, tx.Y));
+			vertsTile[2] = new(new(p.X + sz.X, p.Y + sz.Y), color, new(tx.X + sz.X, tx.Y + sz.Y));
+			vertsTile[3] = new(new(p.X, p.Y + sz.Y), color, new(tx.X, tx.Y + sz.Y));
 
 			tiles[pos.X, pos.Y] = tile;
-			colors[pos.X, pos.Y] = byteCol;
+			colors[pos.X, pos.Y] = c;
 			verts.Update(vertsTile, (uint)(index * 4));
+		}
+
+		public bool CanSetTile(Vector2i pos, int tile, Color color)
+		{
+			if(tiles == null || colors == null)
+				return false;
+
+			var w = tiles.GetLength(0);
+			var h = tiles.GetLength(1);
+			var c = color.ToInteger();
+
+			return pos.X >= 0 && pos.X < w &&
+				pos.Y >= 0 && pos.Y < h &&
+				(tiles[pos.X, pos.Y] != tile || colors[pos.X, pos.Y] != c);
 		}
 		public int GetTile(Vector2i pos)
 		{
@@ -121,18 +126,15 @@ namespace TilemapEditor
 			var x = pos.X;
 			var y = pos.Y;
 			var isOutside = x < 0 || x >= w || y < 0 || y >= h;
-			var value = isOutside ? default : colors[x, y];
-			var r = (byte)((value >> 5) * 255 / 7);
-			var g = (byte)(((value >> 2) & 0x07) * 255 / 7);
-			var b = (byte)((value & 0x03) * 255 / 3);
-
-			return new(r, g, b);
+			return isOutside ? default : new(colors[x, y]);
 		}
+
 		public void Save(string path)
 		{
 			var tilemap = new Tilemap(tiles, colors);
 			tilemap.Save(path);
 		}
+
 		public void Draw(RenderWindow map, Texture texture)
 		{
 			if(verts == null)

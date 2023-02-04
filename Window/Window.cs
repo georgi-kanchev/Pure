@@ -78,8 +78,7 @@ namespace Pure.Window
 		/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>
 		/// and <paramref name="tints"/>.
 		/// </summary>
-		public static void DrawTilemap(int[,] tiles, byte[,] tints, (uint, uint) tileSize,
-			(uint, uint) tileMargin = default, string? path = default)
+		public static void DrawTilemap(int[,] tiles, uint[,] tints, (uint, uint) tileSize, (uint, uint) tileMargin = default, string? path = default)
 		{
 			if(tiles == null || tints == null || tiles.Length != tints.Length)
 				return;
@@ -95,7 +94,7 @@ namespace Pure.Window
 		/// from the last <see cref="DrawTilemap"/> call and a <paramref name="tint"/>. The sprite's
 		/// <paramref name="position"/> is also relative to the previously drawn tilemap.
 		/// </summary>
-		public static void DrawSprite((float, float) position, int tile, byte tint = byte.MaxValue)
+		public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue)
 		{
 			if(prevDrawTilemapGfxPath == null)
 				return;
@@ -107,7 +106,7 @@ namespace Pure.Window
 		/// Draws single pixel points with <paramref name="tint"/> onto the OS window.
 		/// Their <paramref name="positions"/> are relative to the previously drawn tilemap.
 		/// </summary>
-		public static void DrawPoints(byte tint, params (float, float)[] positions)
+		public static void DrawPoints(uint tint, params (float, float)[] positions)
 		{
 			if(positions == null || positions.Length == 0)
 				return;
@@ -120,8 +119,7 @@ namespace Pure.Window
 		/// Its <paramref name="position"/> and <paramref name="size"/> are relative
 		/// to the previously drawn tilemap.
 		/// </summary>
-		public static void DrawRectangle((float, float) position, (float, float) size,
-			byte tint = byte.MaxValue)
+		public static void DrawRectangle((float, float) position, (float, float) size, uint tint = uint.MaxValue)
 		{
 			var verts = GetRectangleVertices(position, size, tint);
 			window.Draw(verts, PrimitiveType.Quads);
@@ -131,8 +129,7 @@ namespace Pure.Window
 		/// <paramref name="tint"/> onto the OS window.
 		/// Its points are relative to the previously drawn tilemap.
 		/// </summary>
-		public static void DrawLine((float, float) pointA, (float, float) pointB,
-			byte tint = byte.MaxValue)
+		public static void DrawLine((float, float) pointA, (float, float) pointB, uint tint = uint.MaxValue)
 		{
 			var verts = GetLineVertices(pointA, pointB, tint);
 			window.Draw(verts, PrimitiveType.Quads);
@@ -196,7 +193,7 @@ namespace Pure.Window
 			window.Size = new((uint)w, (uint)h);
 		}
 
-		private static Vertex[] GetRectangleVertices((float, float) position, (float, float) size, byte color)
+		private static Vertex[] GetRectangleVertices((float, float) position, (float, float) size, uint tint)
 		{
 			if(prevDrawTilemapGfxPath == null)
 				return Array.Empty<Vertex>();
@@ -209,7 +206,7 @@ namespace Pure.Window
 			var (w, h) = size;
 			var x = Map(position.Item1, 0, cellCount.Item1, 0, window.Size.X);
 			var y = Map(position.Item2, 0, cellCount.Item2, 0, window.Size.Y);
-			var c = ByteToColor(color);
+			var c = new Color(tint);
 			var (gridX, gridY) = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 			var tl = new Vector2f(gridX, gridY);
 			var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
@@ -220,7 +217,7 @@ namespace Pure.Window
 			verts[3] = new(new(tl.X, br.Y), c);
 			return verts;
 		}
-		private static Vertex[] GetLineVertices((float, float) a, (float, float) b, byte color)
+		private static Vertex[] GetLineVertices((float, float) a, (float, float) b, uint tint)
 		{
 			var (tileW, tileH) = prevDrawTilemapTileSz;
 			var (x0, y0) = a;
@@ -254,9 +251,9 @@ namespace Pure.Window
 					y0 += sy;
 				}
 			}
-			return GetPointsVertices(color, points.ToArray());
+			return GetPointsVertices(tint, points.ToArray());
 		}
-		private static Vertex[] GetSpriteVertices((float, float) position, int cell, byte color)
+		private static Vertex[] GetSpriteVertices((float, float) position, int cell, uint tint)
 		{
 			if(prevDrawTilemapGfxPath == null)
 				return Array.Empty<Vertex>();
@@ -272,7 +269,7 @@ namespace Pure.Window
 			var tx = new Vector2f(texCoords.Item1 * tileWidth, texCoords.Item2 * tileHeight);
 			var x = Map(position.Item1, 0, cellCount.Item1, 0, window.Size.X);
 			var y = Map(position.Item2, 0, cellCount.Item2, 0, window.Size.Y);
-			var c = ByteToColor(color);
+			var c = new Color(tint);
 			var grid = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 			var tl = new Vector2f(grid.Item1, grid.Item2);
 			var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
@@ -283,8 +280,7 @@ namespace Pure.Window
 			verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileHeight));
 			return verts;
 		}
-		private static Vertex[] GetTilemapVertices(int[,] tiles, byte[,] colors,
-			(uint, uint) tileSz, (uint, uint) tileOff, string path)
+		private static Vertex[] GetTilemapVertices(int[,] tiles, uint[,] tints, (uint, uint) tileSz, (uint, uint) tileOff, string path)
 		{
 			if(tiles == null || window == null)
 				return Array.Empty<Vertex>();
@@ -308,29 +304,29 @@ namespace Pure.Window
 				for(uint x = 0; x < tiles.GetLength(0); x++)
 				{
 					var cell = tiles[x, y];
-					var color = ByteToColor(colors[x, y]);
+					var tint = new Color(tints[x, y]);
 					var i = GetIndex(x, y, (uint)tiles.GetLength(0)) * 4;
-					var tl = new Vector2f(x * cellWidth, y * cellHeight);
-					var tr = new Vector2f((x + 1) * cellWidth, y * cellHeight);
-					var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
-					var bl = new Vector2f(x * cellWidth, (y + 1) * cellHeight);
+					var tl = new Vector2f(x * (int)cellWidth, y * (int)cellHeight);
+					var tr = new Vector2f((x + 1) * (int)cellWidth, y * (int)cellHeight);
+					var br = new Vector2f((x + 1) * (int)cellWidth, (y + 1) * (int)cellHeight);
+					var bl = new Vector2f(x * (int)cellWidth, (y + 1) * (int)cellHeight);
 
 					var texCoords = IndexToCoords(cell, tileCount);
 					var tx = new Vector2f(
 						texCoords.Item1 * (tileW + tileOffW),
 						texCoords.Item2 * (tileH + tileOffH));
-					var texTr = new Vector2f(tx.X + tileW, tx.Y);
-					var texBr = new Vector2f(tx.X + tileW, tx.Y + tileH);
-					var texBl = new Vector2f(tx.X, tx.Y + tileH);
+					var texTr = new Vector2f((int)tx.X + tileW, (int)tx.Y);
+					var texBr = new Vector2f((int)tx.X + tileW, (int)tx.Y + tileH);
+					var texBl = new Vector2f((int)tx.X, (int)tx.Y + tileH);
 
-					verts[i + 0] = new(tl, color, tx);
-					verts[i + 1] = new(tr, color, texTr);
-					verts[i + 2] = new(br, color, texBr);
-					verts[i + 3] = new(bl, color, texBl);
+					verts[i + 0] = new(tl, tint, tx);
+					verts[i + 1] = new(tr, tint, texTr);
+					verts[i + 2] = new(br, tint, texBr);
+					verts[i + 3] = new(bl, tint, texBl);
 				}
 			return verts;
 		}
-		private static Vertex[] GetPointsVertices(byte color, (float, float)[] positions)
+		private static Vertex[] GetPointsVertices(uint tint, (float, float)[] positions)
 		{
 			var verts = new Vertex[positions.Length * 4];
 			var tileSz = prevDrawTilemapTileSz;
@@ -342,7 +338,7 @@ namespace Pure.Window
 			{
 				var x = Map(positions[i].Item1, 0, cellCount.Item1, 0, window.Size.X);
 				var y = Map(positions[i].Item2, 0, cellCount.Item2, 0, window.Size.Y);
-				var c = ByteToColor(color);
+				var c = new Color(tint);
 				var grid = ToGrid((x, y), (cellWidth, cellHeight));
 				var tl = new Vector2f(grid.Item1, grid.Item2);
 				var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
@@ -367,13 +363,6 @@ namespace Pure.Window
 		private static uint GetIndex(uint x, uint y, uint width)
 		{
 			return y * width + x;
-		}
-		private static Color ByteToColor(byte color)
-		{
-			var r = (byte)((color >> 5) * 255 / 7);
-			var g = (byte)(((color >> 2) & 0x07) * 255 / 7);
-			var b = (byte)((color & 0x03) * 255 / 3);
-			return new(r, g, b);
 		}
 		private static (float, float) ToGrid((float, float) pos, (float, float) gridSize)
 		{

@@ -54,7 +54,7 @@ namespace Pure.Window
 		/// <summary>
 		/// The mouse cursor color used by <see cref="TryDrawCursor"/>.
 		/// </summary>
-		public static byte Color { get; set; } = 255;
+		public static uint Color { get; set; } = 4294967295;
 		/// <summary>
 		/// Whether the mouse cursor is restricted of leaving the OS window.
 		/// </summary>

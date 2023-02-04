@@ -19,50 +19,57 @@ namespace Pure.Tilemap
 
 		public Tilemap(string path)
 		{
-			var bytes = Decompress(File.ReadAllBytes(path));
-			var bWidth = new byte[4];
-			var bHeight = new byte[4];
+			try
+			{
+				var bytes = Decompress(File.ReadAllBytes(path));
+				var bWidth = new byte[4];
+				var bHeight = new byte[4];
 
-			Array.Copy(bytes, 0, bWidth, 0, bWidth.Length);
-			Array.Copy(bytes, bWidth.Length, bHeight, 0, bHeight.Length);
-			var w = BitConverter.ToInt32(bWidth);
-			var h = BitConverter.ToInt32(bHeight);
+				Array.Copy(bytes, 0, bWidth, 0, bWidth.Length);
+				Array.Copy(bytes, bWidth.Length, bHeight, 0, bHeight.Length);
+				var w = BitConverter.ToInt32(bWidth);
+				var h = BitConverter.ToInt32(bHeight);
 
-			tiles = new int[w, h];
-			colors = new byte[w, h];
-			var bTilesSize = tiles.GetLength(0) * tiles.GetLength(1) * Marshal.SizeOf(typeof(int));
-			var bColorsSize = colors.GetLength(0) * colors.GetLength(1) * Marshal.SizeOf(typeof(byte));
-			var bTiles = new byte[bTilesSize];
-			var bColors = new byte[bColorsSize];
+				tiles = new int[w, h];
+				tints = new uint[w, h];
+				var bTilesSize = tiles.GetLength(0) * tiles.GetLength(1) * Marshal.SizeOf(typeof(int));
+				var bColorsSize = tints.GetLength(0) * tints.GetLength(1) * Marshal.SizeOf(typeof(uint));
+				var bTiles = new byte[bTilesSize];
+				var bColors = new byte[bColorsSize];
 
-			Array.Copy(bytes, bWidth.Length + bHeight.Length, bTiles, 0, bTiles.Length);
-			Array.Copy(bytes, bWidth.Length + bHeight.Length + bTilesSize, bColors, 0, bColors.Length);
+				Array.Copy(bytes, bWidth.Length + bHeight.Length, bTiles, 0, bTiles.Length);
+				Array.Copy(bytes, bWidth.Length + bHeight.Length + bTilesSize, bColors, 0, bColors.Length);
 
-			FromBytes(tiles, bTiles);
-			FromBytes(colors, bColors);
+				FromBytes(tiles, bTiles);
+				FromBytes(tints, bColors);
+			}
+			catch(Exception)
+			{
+				throw new Exception($"Could not load {nameof(Tilemap)} from '{path}'.");
+			}
 		}
-		public Tilemap((uint, uint) tileCount)
+		public Tilemap((int, int) tileCount)
 		{
 			var (w, h) = tileCount;
 			tiles = new int[w, h];
-			colors = new byte[w, h];
-			CameraSize = ((int)w, (int)h);
+			tints = new uint[w, h];
+			CameraSize = tileCount;
 		}
-		public Tilemap(int[,] tiles, byte[,] colors)
+		public Tilemap(int[,] tiles, uint[,] tints)
 		{
 			if(tiles == null)
 				throw new ArgumentNullException(nameof(tiles));
-			if(colors == null)
-				throw new ArgumentNullException(nameof(colors));
+			if(tints == null)
+				throw new ArgumentNullException(nameof(tints));
 
-			if(tiles.GetLength(0) != colors.GetLength(0) ||
-				tiles.GetLength(1) != colors.GetLength(1))
+			if(tiles.GetLength(0) != tints.GetLength(0) ||
+				tiles.GetLength(1) != tints.GetLength(1))
 				throw new ArgumentException($"The sizes of the {nameof(tiles)} and " +
-					$"{nameof(colors)} must be the same size.");
+					$"{nameof(tints)} must be the same size.");
 
 			this.tiles = Copy(tiles);
-			this.colors = Copy(colors);
-			CameraSize = (tiles.GetLength(0), tiles.GetLength(1));
+			this.tints = Copy(tints);
+			CameraSize = Size;
 		}
 
 		public void Save(string path)
@@ -71,7 +78,7 @@ namespace Pure.Tilemap
 			var bWidth = BitConverter.GetBytes(w);
 			var bHeight = BitConverter.GetBytes(h);
 			var bTiles = ToBytes(tiles);
-			var bColors = ToBytes(colors);
+			var bColors = ToBytes(tints);
 			var result = new byte[bWidth.Length + bHeight.Length + bTiles.Length + bColors.Length];
 
 			Array.Copy(bWidth, 0, result, 0,
@@ -86,12 +93,12 @@ namespace Pure.Tilemap
 			File.WriteAllBytes(path, Compress(result));
 		}
 
-		public Tilemap UpdateCamera()
+		public Tilemap CameraUpdate()
 		{
 			var (w, h) = CameraSize;
 			var (cx, cy) = CameraPosition;
 			var tiles = new int[Math.Abs(w), Math.Abs(h)];
-			var colors = new byte[Math.Abs(w), Math.Abs(h)];
+			var tints = new uint[Math.Abs(w), Math.Abs(h)];
 			var xStep = w < 0 ? -1 : 1;
 			var yStep = h < 0 ? -1 : 1;
 			var i = 0;
@@ -101,34 +108,34 @@ namespace Pure.Tilemap
 				for(int y = cy; y != cy + h; y += yStep)
 				{
 					tiles[i, j] = TileAt((x, y));
-					colors[i, j] = ColorAt((x, y));
+					tints[i, j] = TintAt((x, y));
 					j++;
 				}
 				i++;
 			}
-			return new(tiles, colors);
+			return new(tiles, tints);
 		}
 
 		public int TileAt((int, int) position)
 		{
 			return IndicesAreValid(position) ? tiles[position.Item1, position.Item2] : default;
 		}
-		public byte ColorAt((int, int) position)
+		public uint TintAt((int, int) position)
 		{
-			return IndicesAreValid(position) ? colors[position.Item1, position.Item2] : default;
+			return IndicesAreValid(position) ? tints[position.Item1, position.Item2] : default;
 		}
 
-		public void Fill(int tile = 0, byte color = 0)
+		public void Fill(int tile = 0, uint tint = 0)
 		{
 			for(uint y = 0; y < Size.Item2; y++)
 				for(uint x = 0; x < Size.Item1; x++)
 				{
 					tiles[x, y] = tile;
-					colors[x, y] = color;
+					tints[x, y] = tint;
 				}
 		}
 
-		public void SetTile((int, int) position, int tile, byte color = 255)
+		public void SetTile((int, int) position, int tile, uint tint = uint.MaxValue)
 		{
 			if(IndicesAreValid(position) == false)
 				return;
@@ -137,9 +144,9 @@ namespace Pure.Tilemap
 			var y = position.Item2;
 
 			tiles[x, y] = tile;
-			colors[x, y] = color;
+			tints[x, y] = tint;
 		}
-		public void SetSquare((int, int) position, (int, int) size, int tile, byte color = 255)
+		public void SetSquare((int, int) position, (int, int) size, int tile, uint tint = uint.MaxValue)
 		{
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
@@ -150,12 +157,11 @@ namespace Pure.Tilemap
 					if(i > Math.Abs(size.Item1 * size.Item2))
 						return;
 
-					SetTile((x, y), tile, color);
+					SetTile((x, y), tile, tint);
 					i++;
 				}
 		}
-		public void SetSquareColor((int, int) position, (int, int) size, byte color,
-			params int[] tiles)
+		public void SetSquareTint((int, int) position, (int, int) size, uint tint, params int[] tiles)
 		{
 			if(tiles == null || tiles.Length == 0)
 				return;
@@ -168,12 +174,12 @@ namespace Pure.Tilemap
 				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
 				{
 					var tile = TileAt((x, y));
-					var col = tileList.Contains(tile) ? color : ColorAt((x, y));
+					var col = tileList.Contains(tile) ? tint : TintAt((x, y));
 					SetTile((x, y), tile, col);
 				}
 		}
 
-		public void SetTextLine((int, int) position, string text, byte color = 255)
+		public void SetTextLine((int, int) position, string text, uint tint = uint.MaxValue)
 		{
 			var errorOffset = 0;
 			for(int i = 0; i < text?.Length; i++)
@@ -190,12 +196,10 @@ namespace Pure.Tilemap
 				if(symbol == ' ')
 					continue;
 
-				SetTile((position.Item1 + i - errorOffset, position.Item2), index, color);
+				SetTile((position.Item1 + i - errorOffset, position.Item2), index, tint);
 			}
 		}
-		public void SetTextSquare((int, int) position, (int, int) size, string text, byte color = 255,
-			bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft,
-			float scrollProgress = 0)
+		public void SetTextSquare((int, int) position, (int, int) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
 		{
 			if(text == null || text.Length == 0 ||
 				size.Item1 <= 0 || size.Item2 <= 0)
@@ -280,7 +284,7 @@ namespace Pure.Tilemap
 					alignment == Alignment.Bottom)
 					line = PadLeftAndRight(line, size.Item1);
 
-				SetTextLine((x, y), line, color);
+				SetTextLine((x, y), line, tint);
 				NewLine();
 			}
 
@@ -298,8 +302,7 @@ namespace Pure.Tilemap
 				return default;
 			}
 		}
-		public void SetTextSquareColor((int, int) position, (int, int) size, byte color, string text,
-			bool isMatchingWord = false)
+		public void SetTextSquareTint((int, int) position, (int, int) size, string text, uint tint = uint.MaxValue, bool isMatchingWord = false)
 		{
 			if(string.IsNullOrWhiteSpace(text))
 				return;
@@ -355,47 +358,45 @@ namespace Pure.Tilemap
 							curY++;
 						}
 
-						SetTile((curX, curY), TileAt((curX, curY)), color);
+						SetTile((curX, curY), TileAt((curX, curY)), tint);
 						curX++;
 					}
 				}
 		}
 
-		public void SetBorder((int, int) position, (int, int) size, int tile, byte color = 255)
+		public void SetBorder((int, int) position, (int, int) size, int tile, uint tint = uint.MaxValue)
 		{
 			var (x, y) = position;
 			var (w, h) = size;
 
-			SetTile(position, tile, color);
-			SetSquare((x + 1, y), (w - 2, 1), tile + 1, color);
-			SetTile((x + w - 1, y), tile + 2, color);
+			SetTile(position, tile, tint);
+			SetSquare((x + 1, y), (w - 2, 1), tile + 1, tint);
+			SetTile((x + w - 1, y), tile + 2, tint);
 
-			SetSquare((x, y + 1), (1, h - 2), tile + 3, color);
+			SetSquare((x, y + 1), (1, h - 2), tile + 3, tint);
 			SetSquare((x + 1, y + 1), (w - 2, h - 2), 0, 0);
-			SetSquare((x + w - 1, y + 1), (1, h - 2), tile + 3, color);
+			SetSquare((x + w - 1, y + 1), (1, h - 2), tile + 3, tint);
 
-			SetTile((x, y + h - 1), tile + 4, color);
-			SetSquare((x + 1, y + h - 1), (w - 2, 1), tile + 1, color);
-			SetTile((x + w - 1, y + h - 1), tile + 5, color);
+			SetTile((x, y + h - 1), tile + 4, tint);
+			SetSquare((x + 1, y + h - 1), (w - 2, 1), tile + 1, tint);
+			SetTile((x + w - 1, y + h - 1), tile + 5, tint);
 		}
-		public void SetBar((int, int) position, int tile, byte color = 255, int size = 5,
-			bool isVertical = false)
+		public void SetBar((int, int) position, int tile, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
 		{
 			var (x, y) = position;
-			SetTile(position, tile, color);
+			SetTile(position, tile, tint);
 			if(isVertical)
 			{
-				SetSquare((x, y + 1), (1, size - 2), tile + 1, color);
-				SetTile((x, y + size - 1), tile + 2, color);
+				SetSquare((x, y + 1), (1, size - 2), tile + 1, tint);
+				SetTile((x, y + size - 1), tile + 2, tint);
 				return;
 			}
 
-			SetSquare((x + 1, y), (size - 2, 1), tile + 1, color);
-			SetTile((x + size - 1, y), tile + 2, color);
+			SetSquare((x + 1, y), (size - 2, 1), tile + 1, tint);
+			SetTile((x + size - 1, y), tile + 2, tint);
 		}
 
-		public void SetInputLineCursor((int, int) position, bool isFocused, int cursorIndex,
-			byte cursorColor)
+		public void SetInputLineCursor((int, int) position, bool isFocused, int cursorIndex, byte cursorColor)
 		{
 			if(isFocused == false)
 				return;
@@ -403,8 +404,7 @@ namespace Pure.Tilemap
 			var cursorPos = (position.Item1 + cursorIndex, position.Item2);
 			SetTile((cursorPos.Item1, cursorPos.Item2), Tile.SHAPE_LINE_LEFT, cursorColor);
 		}
-		public void SetInputLineSelection((int, int) position, int cursorIndex,
-			int selectionIndex, byte selectionColor)
+		public void SetInputLineSelection((int, int) position, int cursorIndex, int selectionIndex, byte selectionColor)
 		{
 			var cursorPos = (position.Item1 + cursorIndex, position.Item2);
 			var selectedPos = (position.Item1 + selectionIndex, position.Item2);
@@ -416,8 +416,7 @@ namespace Pure.Tilemap
 			SetSquare(selectedPos, (size, 1), Tile.SHADE_OPAQUE, selectionColor);
 		}
 
-		public (float, float) PositionFrom((int, int) screenPixel, (uint, uint) windowSize,
-			bool isAccountingForCamera = true)
+		public (float, float) PositionFrom((int, int) screenPixel, (uint, uint) windowSize, bool isAccountingForCamera = true)
 		{
 			var x = Map(screenPixel.Item1, 0, windowSize.Item1, 0, Size.Item1);
 			var y = Map(screenPixel.Item2, 0, windowSize.Item2, 0, Size.Item2);
@@ -458,13 +457,13 @@ namespace Pure.Tilemap
 		}
 
 		public static implicit operator Tilemap(int[,] tiles)
-			=> new(tiles, new byte[tiles.GetLength(0), tiles.GetLength(1)]);
+			=> new(tiles, new uint[tiles.GetLength(0), tiles.GetLength(1)]);
 		public static implicit operator int[,](Tilemap tilemap)
 			=> Copy(tilemap.tiles);
-		public static implicit operator Tilemap(byte[,] colors)
-			=> new(new int[colors.GetLength(0), colors.GetLength(1)], colors);
-		public static implicit operator byte[,](Tilemap tilemap)
-			=> Copy(tilemap.colors);
+		public static implicit operator Tilemap(uint[,] tints)
+			=> new(new int[tints.GetLength(0), tints.GetLength(1)], tints);
+		public static implicit operator uint[,](Tilemap tilemap)
+			=> Copy(tilemap.tints);
 
 		#region Backend
 		// save format
@@ -473,7 +472,7 @@ namespace Pure.Tilemap
 		// [4]						- width
 		// [4]						- height
 		// [width * height * 4]		- tiles
-		// [width * height]			- colors
+		// [width * height * 4]		- tints
 
 		private static readonly Dictionary<char, int> map = new()
 		{
@@ -528,7 +527,7 @@ namespace Pure.Tilemap
 		};
 
 		private readonly int[,] tiles;
-		private readonly byte[,] colors;
+		private readonly uint[,] tints;
 
 		private bool IndicesAreValid((int, int) indices)
 		{
