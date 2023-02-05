@@ -27,9 +27,10 @@ namespace TilemapEditor
 
 		private int updateCount, undoIndex = -1;
 		private float mapZoom = 1f, setZoom = 1f;
-		private Vector2 prevFormsMousePosMap, prevFormsMousePosSet,
-			selectedTile, selectedTileSquare, previewTile, previewTileSquare;
-		private bool isSquaring, isCreatingLayer, isSquaringCanceled, isMapClicked;
+		private Vector2 prevFormsMousePosMap, prevFormsMousePosSet, selectedTile, selectedTileSquare,
+			previewTile, previewTileSquare, collStart, collEnd;
+		private bool isSquaring, isCreatingLayer, isSquaringCanceled, isMapClicked, isCollSquaring,
+			isCollDeleting;
 		private readonly Clock delta = new();
 		private float fps;
 		private string hotkeyDescriptions = "";
@@ -40,7 +41,8 @@ namespace TilemapEditor
 			CenterToScreen();
 			InitializeHotkeys();
 
-			KeyDown += OnKeyPress;
+			loop = new() { Interval = 1 };
+			loop.Start();
 
 			map = new RenderWindow(Map.Handle);
 			set = new RenderWindow(Set.Handle);
@@ -48,29 +50,10 @@ namespace TilemapEditor
 			map.SetVerticalSyncEnabled(true);
 			set.SetVerticalSyncEnabled(true);
 
-			Map.MouseWheel += OnMapScroll;
-			Set.MouseWheel += OnSetScroll;
-
-			loop = new() { Interval = 1 };
-			loop.Tick += OnUpdate;
-			loop.Start();
-
 			var sz = GetMapSize();
 			SetViewPosition(map, sz, new(sz.X / 2, sz.Y / 2));
 
-			TileWidth.ValueChanged += (s, e) => RecreateTilesetVerts();
-			TileHeight.ValueChanged += (s, e) => RecreateTilesetVerts();
-			TileOffsetWidth.ValueChanged += (s, e) => RecreateTilesetVerts();
-			TileOffsetHeight.ValueChanged += (s, e) => RecreateTilesetVerts();
-
-			map.Resized += (s, e) => UpdateZoom();
-			set.Resized += (s, e) => UpdateZoom();
-
-			void UpdateZoom()
-			{
-				SetViewZoom(map, ref mapZoom, mapZoom);
-				SetViewZoom(set, ref setZoom, setZoom);
-			}
+			SubscribeEvents();
 		}
 
 		private void InitializeHotkeys()
@@ -98,9 +81,10 @@ namespace TilemapEditor
 			hotkeys.Add((true, Keys.Y), ((s, e)
 				=> PaintTiles(Action.Redo), "Redo last undone tiles"));
 
+			const string SEP = "- - - - - - - - - - - - - - - - - - - - - - - -\n";
 			var separators = new List<(bool, Keys)>()
 			{
-				(false, Keys.B), (true, Keys.L), (false, Keys.E), (true, Keys.V), (true, Keys.Y)
+				(false, Keys.B), (true, Keys.L), (false, Keys.E), (true, Keys.V)
 			};
 			var newLines = new List<(bool, Keys)>() { (true, Keys.S) };
 			foreach(var kvp in hotkeys)
@@ -111,17 +95,85 @@ namespace TilemapEditor
 				if(newLines.Contains(kvp.Key))
 					hotkeyDescriptions += "\n";
 				else if(separators.Contains(kvp.Key))
-					hotkeyDescriptions += "- - - - - - - - - - - - - - - - - - - - - - - -\n";
+					hotkeyDescriptions += SEP;
 			}
 
 			hotkeyDescriptions +=
-				"(save & restart occasionally to clear undo/redo history)\n\n" +
+				$"(save & restart occasionally to clear undo/redo history)\n{SEP}" +
 				"On Tilemap:\n" +
 				"[LMB] Draw selected tile with brush color\n" +
 				"[RMB] Draw selected tile square with brush color\n\n" +
 				"On Tileset:\n" +
 				"[LMB] Select tile square\n" +
 				"[RMB] Focus on tile square";
+		}
+		private void SubscribeEvents()
+		{
+			loop.Tick += OnUpdate;
+
+			KeyDown += OnKeyPress;
+			TileWidth.KeyDown += OnKeyPress;
+			TileHeight.KeyDown += OnKeyPress;
+			TileOffsetWidth.KeyDown += OnKeyPress;
+			TileOffsetHeight.KeyDown += OnKeyPress;
+			LoadTilesetButton.KeyDown += OnKeyPress;
+			MapWidth.KeyDown += OnKeyPress;
+			MapHeight.KeyDown += OnKeyPress;
+			Layers.KeyDown += OnKeyPress;
+			Brush.KeyDown += OnKeyPress;
+			BrushOpacity.KeyDown += OnKeyPress;
+			Collision.KeyDown += OnKeyPress;
+			CollisionOpacity.KeyDown += OnKeyPress;
+			Info.KeyDown += OnKeyPress;
+			Info.Click += OnInfoClick;
+
+			TileWidth.ValueChanged += (s, e) => TileChange();
+			TileHeight.ValueChanged += (s, e) => TileChange();
+			TileOffsetWidth.ValueChanged += (s, e) => TileChange();
+			TileOffsetHeight.ValueChanged += (s, e) => TileChange();
+
+			set.Resized += (s, e) => UpdateZoom();
+			Set.MouseWheel += OnSetScroll;
+			Set.MouseDown += OnSetPress;
+			Set.MouseMove += OnSetMouseMove;
+
+			map.Resized += (s, e) => UpdateZoom();
+			Map.MouseWheel += OnMapScroll;
+			Map.MouseMove += OnMapMouseMove;
+			Map.MouseDown += OnMapPress;
+			Map.MouseUp += OnMapRelease;
+
+			MapWidth.ValueChanged += OnNumericValueChange;
+			MapHeight.ValueChanged += OnNumericValueChange;
+
+			Brush.Click += OnBrushCheck;
+			Collision.Click += OnCollisionCheck;
+
+			ColorBrush.Click += (s, e) => SetColor(ColorBrush);
+			ColorCollision.Click += (s, e) => SetColor(ColorCollision);
+			ColorSelection.Click += (s, e) => SetColor(ColorSelection);
+			ColorBackground.Click += (s, e) => SetColor(ColorBackground);
+			ColorGrid1.Click += (s, e) => SetColor(ColorGrid1);
+			ColorGrid5.Click += (s, e) => SetColor(ColorGrid5);
+
+			LoadTilesetButton.Click += OnSetLoadClick;
+
+			void UpdateZoom()
+			{
+				SetViewZoom(map, ref mapZoom, mapZoom);
+				SetViewZoom(set, ref setZoom, setZoom);
+			}
+			void TileChange()
+			{
+				RecreateTilesetVerts();
+				OnNumericValueChange(this, new());
+			}
+			void SetColor(PictureBox p)
+			{
+				Colors.Color = p.BackColor;
+				if(Colors.ShowDialog() == DialogResult.OK)
+					p.BackColor = Colors.Color;
+			}
 		}
 
 		#region Actions
@@ -156,7 +208,7 @@ namespace TilemapEditor
 			}
 			else if(action == Action.Undo)
 			{
-				if(undo.Count == 0 || undoIndex == -1)
+				if(undo[layer].Count == 0 || undoIndex == -1)
 					return;
 
 				var change = undo[layer][undoIndex];
@@ -167,7 +219,7 @@ namespace TilemapEditor
 			}
 			else if(action == Action.Redo)
 			{
-				if(redo.Count == 0 || undoIndex == redo.Count - 1)
+				if(redo[layer].Count == 0 || undoIndex == redo[layer].Count - 1)
 					return;
 
 				undoIndex++;
@@ -199,7 +251,7 @@ namespace TilemapEditor
 					{
 						redo[layer][^1].Add((pos, (int)tile, col.ToInteger()));
 						undo[layer][^1].Add((pos, layer.GetTile(pos), layer.GetColor(pos).ToInteger()));
-						undoIndex = undo.Count - 1;
+						undoIndex = undo[layer].Count - 1;
 
 						layer.SetTile(pos, (int)tile, col);
 						placedAnyTiles = true;
@@ -213,10 +265,10 @@ namespace TilemapEditor
 				redo[layer].Remove(redo[layer][^1]);
 			}
 			else if(placedAnyTiles && action == Action.Paint &&
-				prevUndoIndex != -1 && prevUndoIndex < undo.Count - 2)
+				prevUndoIndex != -1 && prevUndoIndex < undo[layer].Count - 2)
 			{
 				var ind = (prevUndoIndex + 1);
-				var delta = undo.Count - ind - 1;
+				var delta = undo[layer].Count - ind - 1;
 				undo[layer].RemoveRange(ind, delta);
 				redo[layer].RemoveRange(ind, delta);
 				undoIndex -= delta;
@@ -306,7 +358,7 @@ namespace TilemapEditor
 			Layers.SelectedIndex = index;
 		}
 
-		private static void TryScrollView(RenderWindow window, ref float zoom, float delta, Vector2 limit)
+		private static void TryZoomView(RenderWindow window, ref float zoom, float delta, Vector2 limit)
 		{
 			var prevDelta = delta;
 			var pos = ToSystemVector(window.GetView().Center);
@@ -336,7 +388,7 @@ namespace TilemapEditor
 		}
 		private static void SetViewZoom(RenderWindow window, ref float zoom, float scale = 1f)
 		{
-			scale = MathF.Max(scale, 0.02f);
+			scale = MathF.Max(scale, 0.05f);
 			zoom = scale;
 			var view = window.GetView();
 			var w = RoundToMultipleOfTwo((int)(window.Size.X * scale));
@@ -492,6 +544,35 @@ namespace TilemapEditor
 			if(IsHovering(Map) == false)
 				return;
 
+			if(Collision.Checked)
+			{
+				if(isCollSquaring == false && isCollDeleting == false)
+					return;
+
+				var tl = new Vector2f(collStart.X, collStart.Y);
+				var br = new Vector2f(collEnd.X, collEnd.Y);
+				var tr = new Vector2f(br.X, tl.Y);
+				var bl = new Vector2f(tl.X, br.Y);
+				var col = ToSFMLColor(ColorCollision.BackColor);
+
+				col.A = 150;
+
+				if(isCollDeleting)
+				{
+					col.R = (byte)(255 - col.R);
+					col.G = (byte)(255 - col.G);
+					col.B = (byte)(255 - col.B);
+				}
+
+				vertsSelection[0] = new(tl, col);
+				vertsSelection[1] = new(tr, col);
+				vertsSelection[2] = new(br, col);
+				vertsSelection[3] = new(bl, col);
+
+				map.Draw(vertsSelection, PrimitiveType.Quads);
+				return;
+			}
+
 			vertsPreview.Clear();
 			var selectedSz = selectedTileSquare - selectedTile;
 			var sz = selectedSz;
@@ -500,6 +581,7 @@ namespace TilemapEditor
 				sz = previewTileSquare - previewTile;
 
 			var p = previewTile;
+			var selCol = ToSFMLColor(ColorSelection.BackColor);
 			var tileSz = new Vector2((float)TileWidth.Value, (float)TileHeight.Value);
 			var tileOff = new Vector2((float)TileOffsetWidth.Value, (float)TileOffsetHeight.Value);
 			var stepX = sz.X < 0 ? -1 : 1;
@@ -522,7 +604,6 @@ namespace TilemapEditor
 				((multipleTiles ? p.Y + sz.Y - off.Y : p.Y) + 1) * tileSz.Y);
 			var selTr = new Vector2f(selBr.X, selTl.Y);
 			var selBl = new Vector2f(selTl.X, selBr.Y);
-			var selCol = ToSFMLColor(ColorSelection.BackColor);
 
 			sz += new Vector2(stepX, stepY);
 			selCol.A = 150;
@@ -583,6 +664,19 @@ namespace TilemapEditor
 		private static SFML.Graphics.Color ToSFMLColor(Color color)
 		{
 			return new(color.R, color.G, color.B);
+		}
+		private static Vector2 ToGrid(Vector2 vec, Vector2 gridSize)
+		{
+			if(gridSize == default)
+				return vec;
+
+			// this prevents -0 cells
+			var x = vec.X - (vec.X < 0 ? gridSize.X : 0);
+			var y = vec.Y - (vec.Y < 0 ? gridSize.Y : 0);
+
+			x -= vec.X % gridSize.X;
+			y -= vec.Y % gridSize.Y;
+			return new(x, y);
 		}
 
 		private Vector2 GetMapSize()
@@ -728,35 +822,56 @@ namespace TilemapEditor
 			}
 		}
 
-		private void OnNumericValueChange(object sender, EventArgs e)
+		private void OnNumericValueChange(object? sender, EventArgs e)
 		{
 			LimitView(map, GetMapSize());
 			LimitView(set, GetTilesetSize());
 		}
-		private void OnHotkeysClick(object sender, EventArgs e)
+		private void OnInfoClick(object? sender, EventArgs e)
 		{
 			MessageBox.Show(
 				hotkeyDescriptions,
-				"Hotkeys",
+				"Info",
 				MessageBoxButtons.OK,
 				MessageBoxIcon.Information);
 		}
 
-		private void OnMapMouseMove(object sender, MouseEventArgs e)
+		private void OnBrushCheck(object? sender, EventArgs e)
 		{
-			if(e.Button == MouseButtons.Middle)
+			Brush.Checked = true;
+			Collision.Checked = false;
+		}
+		private void OnCollisionCheck(object? sender, EventArgs e)
+		{
+			Collision.Checked = true;
+			Brush.Checked = false;
+		}
+
+		private void OnMapMouseMove(object? sender, MouseEventArgs e)
+		{
+			var right = e.Button == MouseButtons.Right;
+			var left = e.Button == MouseButtons.Left;
+			var middle = e.Button == MouseButtons.Middle;
+
+			if(middle)
 				TryMoveView(map, GetMapSize(), prevFormsMousePosMap);
 
 			prevFormsMousePosMap = GetFormsMousePos(map);
 
-			var right = e.Button == MouseButtons.Right;
+			if(Collision.Checked)
+			{
+				var p = GetMousePosition(map);
+				collEnd = new(MathF.Round(p.X), MathF.Round(p.Y));
+				return;
+			}
+
 			if(right)
 				previewTileSquare = GetHoveredCoordsRounded(map);
 
 			if(right == false || isSquaringCanceled)
 				previewTile = GetHoveredCoordsRounded(map);
 
-			if(isMapClicked && e.Button == MouseButtons.Left && IsHoveringMap())
+			if(isMapClicked && left && IsHoveringMap())
 				PaintTiles();
 		}
 		private void OnMapScroll(object? sender, MouseEventArgs e)
@@ -765,20 +880,37 @@ namespace TilemapEditor
 			isSquaring = false;
 			isSquaringCanceled = true;
 
-			TryScrollView(map, ref mapZoom, e.Delta, GetMapSize());
+			TryZoomView(map, ref mapZoom, e.Delta, GetMapSize());
 		}
-		private void OnMapPress(object sender, MouseEventArgs e)
+		private void OnMapPress(object? sender, MouseEventArgs e)
 		{
 			if(Layers.Items.Count == 0)
 				return;
 
-			if(e.Button == MouseButtons.Right)
+			var left = e.Button == MouseButtons.Left;
+			var right = e.Button == MouseButtons.Right;
+			var middle = e.Button == MouseButtons.Middle;
+
+			if(Collision.Checked)
+			{
+				if(middle)
+					return;
+
+				var p = GetMousePosition(map);
+				collStart = new(MathF.Round(p.X), MathF.Round(p.Y));
+
+				isCollSquaring = left && right == false;
+				isCollDeleting = right && left == false;
+				return;
+			}
+
+			if(right)
 			{
 				previewTileSquare = previewTile;
 				isSquaringCanceled = false;
 				isSquaring = true;
 			}
-			else if(e.Button == MouseButtons.Left)
+			else if(left)
 			{
 				isMapClicked = true;
 				previewTile = GetHoveredCoordsRounded(map);
@@ -795,9 +927,32 @@ namespace TilemapEditor
 					PaintTiles();
 			}
 		}
-		private void OnMapRelease(object sender, MouseEventArgs e)
+		private void OnMapRelease(object? sender, MouseEventArgs e)
 		{
-			if(e.Button == MouseButtons.Right)
+			var left = e.Button == MouseButtons.Left;
+			var right = e.Button == MouseButtons.Right;
+			var middle = e.Button == MouseButtons.Middle;
+
+			if(Collision.Checked)
+			{
+				if(middle)
+					return;
+
+				if(left)
+				{
+
+				}
+				else if(right)
+				{
+
+				}
+
+				isCollSquaring = false;
+				isCollDeleting = false;
+				return;
+			}
+
+			if(right)
 			{
 				// user pressed LMB while dragging - skip draw
 				if(isSquaringCanceled)
@@ -809,11 +964,11 @@ namespace TilemapEditor
 				PaintTiles();
 				isSquaring = false;
 			}
-			else if(e.Button == MouseButtons.Left)
+			else if(left)
 				isMapClicked = false;
 		}
 
-		private void OnSetMouseMove(object sender, MouseEventArgs e)
+		private void OnSetMouseMove(object? sender, MouseEventArgs e)
 		{
 			if(tileset == null)
 				return;
@@ -827,9 +982,9 @@ namespace TilemapEditor
 		}
 		private void OnSetScroll(object? sender, MouseEventArgs e)
 		{
-			TryScrollView(set, ref setZoom, e.Delta, GetTilesetSize());
+			TryZoomView(set, ref setZoom, e.Delta, GetTilesetSize());
 		}
-		private void OnSetLoadClick(object sender, EventArgs e)
+		private void OnSetLoadClick(object? sender, EventArgs e)
 		{
 			if(tileset != null)
 			{
@@ -875,7 +1030,7 @@ namespace TilemapEditor
 			SetViewZoom(set, ref setZoom);
 			RecreateTilesetVerts();
 		}
-		private void OnSetPress(object sender, MouseEventArgs e)
+		private void OnSetPress(object? sender, MouseEventArgs e)
 		{
 			Focus();
 
@@ -897,7 +1052,7 @@ namespace TilemapEditor
 			}
 		}
 
-		private void OnLayerToggle(object s, EventArgs e)
+		private void OnLayerToggle(object? s, EventArgs e)
 		{
 			if(Layers.SelectedItem == null)
 				return;
@@ -905,7 +1060,7 @@ namespace TilemapEditor
 			var index = Layers.SelectedIndex;
 			Layers.SetItemChecked(index, Layers.GetItemChecked(index) == false);
 		}
-		private void OnLayerPress(object sender, MouseEventArgs e)
+		private void OnLayerPress(object? sender, MouseEventArgs e)
 		{
 			var clickedIndex = Layers.IndexFromPoint(e.Location);
 			if(clickedIndex != ListBox.NoMatches)
@@ -928,12 +1083,12 @@ namespace TilemapEditor
 			LayerMenuMoveDown.Enabled = isNotLast;
 			LayerMenuMoveBottom.Enabled = isNotLast;
 		}
-		private void OnLayerRelease(object sender, MouseEventArgs e)
+		private void OnLayerRelease(object? sender, MouseEventArgs e)
 		{
 			if(tileset == null)
 				LayerMenu.Hide();
 		}
-		private void OnLayerSave(object sender, EventArgs e)
+		private void OnLayerSave(object? sender, EventArgs e)
 		{
 			var layer = (Layer)Layers.SelectedItem;
 			if(layer == null)
@@ -944,9 +1099,9 @@ namespace TilemapEditor
 			if(SaveTilemap.ShowDialog() != DialogResult.OK)
 				return;
 
-			layer.Save(SaveTilemap.FileName);
+			layer.SaveMap(SaveTilemap.FileName);
 		}
-		private void OnLayerLoad(object sender, EventArgs e)
+		private void OnLayerLoad(object? sender, EventArgs e)
 		{
 			if(tileset == null || LoadTilemap.ShowDialog() != DialogResult.OK)
 				return;
@@ -978,15 +1133,15 @@ namespace TilemapEditor
 					MessageBoxIcon.Error);
 			}
 		}
-		private void OnLayerCollisionsSave(object sender, EventArgs e)
+		private void OnLayerCollisionsSave(object? sender, EventArgs e)
 		{
 
 		}
-		private void OnLayerCollisionsLoad(object sender, EventArgs e)
+		private void OnLayerCollisionsLoad(object? sender, EventArgs e)
 		{
 
 		}
-		private void OnLayerAdd(object sender, EventArgs e)
+		private void OnLayerAdd(object? sender, EventArgs e)
 		{
 			if(tileset == null)
 				return;
@@ -1009,7 +1164,7 @@ namespace TilemapEditor
 				OnLayerRename(this, new());
 			}
 		}
-		private void OnLayerRename(object sender, EventArgs e)
+		private void OnLayerRename(object? sender, EventArgs e)
 		{
 			var selected = (Layer)Layers.SelectedItem;
 			if(selected == null)
@@ -1066,7 +1221,7 @@ namespace TilemapEditor
 			form.Controls.Add(input);
 			form.ShowDialog();
 		}
-		private void OnLayerRemove(object sender, EventArgs e)
+		private void OnLayerRemove(object? sender, EventArgs e)
 		{
 			var msg = MessageBox.Show(
 				"Any unsaved changes will be lost. Confirm?",
@@ -1084,48 +1239,54 @@ namespace TilemapEditor
 			redo.Remove(layer);
 		}
 
-		private void OnLayerMoveTop(object sender, EventArgs e)
+		private void OnLayerMoveTop(object? sender, EventArgs e)
 		{
 			MoveLayerToIndex(0);
 		}
-		private void OnLayerMoveBottom(object sender, EventArgs e)
+		private void OnLayerMoveBottom(object? sender, EventArgs e)
 		{
 			MoveLayerToIndex(Layers.Items.Count - 1);
 		}
-		private void OnLayerMoveUp(object sender, EventArgs e)
+		private void OnLayerMoveUp(object? sender, EventArgs e)
 		{
 			MoveLayerToIndex(Layers.SelectedIndex - 1);
 		}
-		private void OnLayerMoveDown(object sender, EventArgs e)
+		private void OnLayerMoveDown(object? sender, EventArgs e)
 		{
 			MoveLayerToIndex(Layers.SelectedIndex + 1);
 		}
 
-		private void OnColorBrushClick(object sender, EventArgs e)
+		private void OnColorBrushClick(object? sender, EventArgs e)
 		{
 			Colors.Color = ColorBrush.BackColor;
 			if(Colors.ShowDialog() == DialogResult.OK)
 				ColorBrush.BackColor = Colors.Color;
 		}
-		private void OnColorSelectionClick(object sender, EventArgs e)
+		private void OnColorOpacityClick(object? sender, EventArgs e)
+		{
+			Colors.Color = ColorBrush.BackColor;
+			if(Colors.ShowDialog() == DialogResult.OK)
+				ColorBrush.BackColor = Colors.Color;
+		}
+		private void OnColorSelectionClick(object? sender, EventArgs e)
 		{
 			Colors.Color = ColorSelection.BackColor;
 			if(Colors.ShowDialog() == DialogResult.OK)
 				ColorSelection.BackColor = Colors.Color;
 		}
-		private void OnColorGrid1Click(object sender, EventArgs e)
+		private void OnColorGrid1Click(object? sender, EventArgs e)
 		{
 			Colors.Color = ColorGrid1.BackColor;
 			if(Colors.ShowDialog() == DialogResult.OK)
 				ColorGrid1.BackColor = Colors.Color;
 		}
-		private void OnColorGrid5Click(object sender, EventArgs e)
+		private void OnColorGrid5Click(object? sender, EventArgs e)
 		{
 			Colors.Color = ColorGrid5.BackColor;
 			if(Colors.ShowDialog() == DialogResult.OK)
 				ColorGrid5.BackColor = Colors.Color;
 		}
-		private void OnColorBackgroundClick(object sender, EventArgs e)
+		private void OnColorBackgroundClick(object? sender, EventArgs e)
 		{
 			Colors.Color = ColorBackground.BackColor;
 			if(Colors.ShowDialog() == DialogResult.OK)

@@ -30,13 +30,14 @@
 			}
 		}
 
+		public Grid(string path) : base(path, (0, 0), 1) { }
 		/// <summary>
 		/// Creates the <see cref="Grid"/> with <paramref name="cellSize"/>.
 		/// </summary>
-		public Grid(int cellSize) : base((0, 0), 1)
+		public Grid((int, int) cellSize) : base((0, 0), 1)
 		{
-			if(cellSize < 1)
-				throw new ArgumentException("Value cannot be < 1.", nameof(cellSize));
+			if(cellSize.Item1 < 1 || cellSize.Item2 < 1)
+				throw new ArgumentException("Values cannot be < 1.", nameof(cellSize));
 
 			this.cellSize = cellSize;
 		}
@@ -109,7 +110,7 @@
 		/// </summary>
 		public override bool IsOverlapping((float, float) point)
 		{
-			var neighborRects = GetNeighborRects(point, 1);
+			var neighborRects = GetNeighborRects(point, (1, 1));
 			for(int i = 0; i < neighborRects.Count; i++)
 				if(neighborRects[i].IsOverlapping(point))
 					return true;
@@ -118,7 +119,7 @@
 		}
 
 		#region Backend
-		internal readonly int cellSize;
+		internal readonly (int, int) cellSize;
 
 		private readonly List<Rectangle> cellRects = new();
 		private readonly Dictionary<int, List<Rectangle>> cellRectsMap = new();
@@ -156,8 +157,8 @@
 			var (rw, rh) = localRect.Size;
 			var (offX, offY) = Position;
 
-			x *= sz * sc;
-			y *= sz * sc;
+			x *= sz.Item1 * sc;
+			y *= sz.Item2 * sc;
 
 			rx *= sc;
 			ry *= sc;
@@ -185,14 +186,14 @@
 			w /= sc;
 			h /= sc;
 
-			w /= sz;
-			h /= sz;
-			x /= sz;
-			y /= sz;
+			w /= sz.Item1;
+			h /= sz.Item2;
+			x /= sz.Item1;
+			y /= sz.Item2;
 
 			return new(((int)w, (int)h), ((int)x, (int)y));
 		}
-		internal List<Rectangle> GetNeighborRects((float, float) point, int chunkSize)
+		internal List<Rectangle> GetNeighborRects((float, float) point, (int, int) chunkSize)
 		{
 			var result = new List<Rectangle>(cellRects);
 			var localRect = GlobalToLocal(new(point, (0, 0)));
@@ -200,10 +201,10 @@
 			var (w, h) = localRect.Size;
 			var xStep = w < 0 ? -1 : 1;
 			var yStep = h < 0 ? -1 : 1;
-			var ch = chunkSize;
+			var (chW, chH) = chunkSize;
 
-			for(int j = (int)y - yStep * (ch - 1); j != y + h + yStep * ch; j += yStep)
-				for(int i = (int)x - xStep * (ch - 1); i != x + w + xStep * ch; i += xStep)
+			for(int j = (int)y - yStep * (chH - 1); j != y + h + yStep * chH; j += yStep)
+				for(int i = (int)x - xStep * (chW - 1); i != x + w + xStep * chW; i += xStep)
 				{
 					var pos = (i, j);
 
@@ -220,12 +221,13 @@
 				}
 			return result;
 		}
-		private int GetChunkSizeForRect(Rectangle globalRect)
+		private (int, int) GetChunkSizeForRect(Rectangle globalRect)
 		{
 			var (w, h) = globalRect.Size;
-			var size = w > h ? w : h;
-			size /= cellSize * Scale;
-			return (int)size * 2;
+
+			w /= cellSize.Item1 * Scale;
+			h /= cellSize.Item2 * Scale;
+			return ((int)w * 2, (int)h * 2);
 		}
 		#endregion
 	}

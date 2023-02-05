@@ -1,4 +1,5 @@
-﻿using Pure.Tilemap;
+﻿using Pure.Collision;
+using Pure.Tilemap;
 
 using SFML.Graphics;
 using SFML.System;
@@ -14,6 +15,7 @@ namespace TilemapEditor
 		private readonly uint[,] colors;
 		private readonly VertexBuffer verts;
 		private Vector2i tilesetCount, tileSize, tileOffset;
+		private Grid? grid;
 
 		public string name = "Tilemap";
 
@@ -27,6 +29,7 @@ namespace TilemapEditor
 
 			tiles = new int[size.X, size.Y];
 			colors = new uint[size.X, size.Y];
+			grid = new((tileSize.X, tileSize.Y));
 			verts = new(
 				(uint)(size.X * size.Y * 4),
 				PrimitiveType.Quads,
@@ -46,7 +49,6 @@ namespace TilemapEditor
 			this.tileOffset = tileOffset;
 
 			var tilemap = new Tilemap(path);
-
 			tiles = tilemap;
 			var (w, h) = (tiles.GetLength(0), tiles.GetLength(1));
 
@@ -129,10 +131,18 @@ namespace TilemapEditor
 			return isOutside ? default : new(colors[x, y]);
 		}
 
-		public void Save(string path)
+		public void SaveMap(string path)
 		{
 			var tilemap = new Tilemap(tiles, colors);
 			tilemap.Save(path);
+		}
+		public void LoadCollision(string path)
+		{
+			grid = new Grid(path);
+		}
+		public void SaveCollision(string path)
+		{
+			grid?.Save(path);
 		}
 
 		public void Draw(RenderWindow map, Texture texture)

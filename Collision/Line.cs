@@ -97,7 +97,7 @@ namespace Pure.Collision
 			var (posX, posY) = grid.Position;
 			var (x0, y0) = ((int)A.Item1, (int)A.Item2);
 			var (x1, y1) = ((int)B.Item1, (int)B.Item2);
-			var sz = grid.cellSize;
+			var (w, h) = grid.cellSize;
 			var sc = grid.Scale;
 			var dx = (int)MathF.Abs(x1 - x0);
 			var dy = (int)-MathF.Abs(y1 - y0);
@@ -109,8 +109,8 @@ namespace Pure.Collision
 
 			for(int k = 0; k < MAX_ITERATIONS; k++)
 			{
-				var ix = (int)(x0 / sz / sc - posX / sz);
-				var iy = (int)(y0 / sz / sc - posY / sz);
+				var ix = (int)(x0 / w / sc - posX / w);
+				var iy = (int)(y0 / h / sc - posY / h);
 
 				var neighbourCells = new List<Rectangle[]>()
 				{
