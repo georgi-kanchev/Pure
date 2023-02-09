@@ -15,6 +15,7 @@ namespace TestGame
 		{
 			var t = new Tilemap((48, 27));
 			t.SetTextLine((10, 10), "Hello, World!");
+			
 			while(Window.IsExisting)
 			{
 				Window.Activate(true);
