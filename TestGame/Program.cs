@@ -13,24 +13,17 @@ namespace TestGame
 
 		static void Main()
 		{
-			var t = new Tilemap("world.map")
-			{
-				CameraSize = (32, 18)
-			};
-
+			var t = new Tilemap((48, 27));
+			t.SetTextLine((10, 10), "Hello, World!");
 			while(Window.IsExisting)
 			{
 				Window.Activate(true);
-
-				var pos = MouseCursor.Position;
-				var (mx, my) = t.PositionFrom(pos, Window.Size, false);
-
-				t.CameraPosition = ((int)mx, (int)my);
-				var cam = t.CameraUpdate();
-				Window.DrawTilemap(cam, cam, (12, 12), (1, 1), "urizen.png");
-
+				
+				Window.DrawTilemap(t, t, (8, 8));
+				
 				Window.Activate(false);
 			}
+			System.Console.WriteLine("hello, world");
 		}
 	}
 }

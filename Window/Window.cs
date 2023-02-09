@@ -154,14 +154,9 @@ namespace Pure.Window
 
 			graphics["default"] = DefaultGraphics.CreateTexture();
 
-			var desktopW = VideoMode.DesktopMode.Width;
-			var desktopH = VideoMode.DesktopMode.Height;
 			title = "";
 
-			var width = (uint)RoundToMultipleOfTwo((int)(desktopW * 0.6f));
-			var height = (uint)RoundToMultipleOfTwo((int)(desktopH * 0.6f));
-
-			window = new(new VideoMode(width, height), title);
+			window = new(new VideoMode(1280, 720), title);
 			window.Closed += (s, e) => window.Close();
 			window.Resized += (s, e) => UpdateWindowAndView();
 			window.LostFocus += (s, e) =>
