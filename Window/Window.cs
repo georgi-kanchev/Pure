@@ -18,7 +18,7 @@ namespace Pure.Window
 			get => window != null && window.IsOpen;
 			set
 			{
-				if(value == false)
+				if (value == false)
 					window.Close();
 			}
 		}
@@ -51,6 +51,18 @@ namespace Pure.Window
 		/// </summary>
 		public static bool IsFocused => window.HasFocus();
 
+		public static bool IsRetro
+		{
+			get => isRetro;
+			set
+			{
+				if(value && retroScreen == null && Shader.IsAvailable)
+					retroScreen = Shader.FromString(DEFAULT_VERT, null, RETRO_SCREEN_FRAG);
+					
+				isRetro = value;
+			}
+		}
+
 		/// <summary>
 		/// Determines whether the <see cref="Window"/> <paramref name="isActive"/>.
 		/// An application loop should ideally activate it at the very start and
@@ -58,7 +70,7 @@ namespace Pure.Window
 		/// </summary>
 		public static void Activate(bool isActive)
 		{
-			if(isActive)
+			if (isActive)
 			{
 				window.DispatchEvents();
 				window.Clear();
@@ -80,14 +92,19 @@ namespace Pure.Window
 		/// </summary>
 		public static void DrawTilemap(int[,] tiles, uint[,] tints, (uint, uint) tileSize, (uint, uint) tileMargin = default, string? path = default)
 		{
-			if(tiles == null || tints == null || tiles.Length != tints.Length)
+			if (tiles == null || tints == null || tiles.Length != tints.Length)
 				return;
 
 			path ??= "default";
 
 			TryLoadGraphics(path);
 			var verts = GetTilemapVertices(tiles, tints, tileSize, tileMargin, path);
-			window.Draw(verts, PrimitiveType.Quads, new(graphics[path]));
+			var tex = graphics[path];
+			var shader = IsRetro ? retroScreen : null;
+			var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, shader);
+
+			shader?.SetUniform("viewSize", window.GetView().Size);
+			window.Draw(verts, PrimitiveType.Quads, rend);
 		}
 		/// <summary>
 		/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
@@ -96,11 +113,13 @@ namespace Pure.Window
 		/// </summary>
 		public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue)
 		{
-			if(prevDrawTilemapGfxPath == null)
+			if (prevDrawTilemapGfxPath == null)
 				return;
 
 			var verts = GetSpriteVertices(position, tile, tint);
-			window.Draw(verts, PrimitiveType.Quads, new(graphics[prevDrawTilemapGfxPath]));
+			var tex = graphics[prevDrawTilemapGfxPath];
+			var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, IsRetro ? retroScreen : null);
+			window.Draw(verts, PrimitiveType.Quads, rend);
 		}
 		/// <summary>
 		/// Draws single pixel points with <paramref name="tint"/> onto the OS window.
@@ -108,11 +127,11 @@ namespace Pure.Window
 		/// </summary>
 		public static void DrawPoints(uint tint, params (float, float)[] positions)
 		{
-			if(positions == null || positions.Length == 0)
+			if (positions == null || positions.Length == 0)
 				return;
 
 			var verts = GetPointsVertices(tint, positions);
-			window.Draw(verts, PrimitiveType.Quads);
+			window.Draw(verts, PrimitiveType.Quads, Rend);
 		}
 		/// <summary>
 		/// Draws a rectangle with <paramref name="tint"/> onto the OS window.
@@ -122,7 +141,7 @@ namespace Pure.Window
 		public static void DrawRectangle((float, float) position, (float, float) size, uint tint = uint.MaxValue)
 		{
 			var verts = GetRectangleVertices(position, size, tint);
-			window.Draw(verts, PrimitiveType.Quads);
+			window.Draw(verts, PrimitiveType.Quads, Rend);
 		}
 		/// <summary>
 		/// Draws a line between <paramref name="pointA"/> and <paramref name="pointB"/> with
@@ -132,19 +151,71 @@ namespace Pure.Window
 		public static void DrawLine((float, float) pointA, (float, float) pointB, uint tint = uint.MaxValue)
 		{
 			var verts = GetLineVertices(pointA, pointB, tint);
-			window.Draw(verts, PrimitiveType.Quads);
+			window.Draw(verts, PrimitiveType.Quads, Rend);
 		}
 
 		#region Backend
-		private const int LINE_MAX_ITERATIONS = 10000;
 
-		private static bool isHidden;
+		private const string DEFAULT_VERT = @"
+void main()
+{
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+	gl_FrontColor = gl_Color;
+}";
+
+		private const string RETRO_SCREEN_FRAG = @"
+uniform sampler2D texture;
+uniform vec2 viewSize;
+uniform vec2 curvature = vec2(2.5, 2.5);
+uniform vec2 scanLineOpacity = vec2(0.8, 0.8);
+uniform float vignetteOpacity = 1.0;
+uniform float brightness = 4.0;
+uniform float vignetteRoundness = 10.0;
+
+vec2 curveRemapUV(vec2 uv)
+{
+	uv = uv * 2.0-1.0;
+	vec2 offset = abs(uv.yx) / vec2(curvature.x, curvature.y);
+	uv = uv + uv * offset * offset;
+	uv = uv * 0.5 + 0.5;
+	return uv;
+}
+vec4 scanLineIntensity(float uv, float resolution, float opacity)
+{
+	float intensity = sin(uv * resolution * 2.0);
+	intensity = ((0.5 * intensity) + 0.5) * 0.9 + 0.1;
+	return vec4(vec3(pow(intensity, opacity)), 1.0);
+}
+vec4 vignetteIntensity(vec2 uv, vec2 resolution, float opacity, float roundness)
+{
+	float intensity = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
+	return vec4(vec3(clamp(pow((resolution.x / roundness) * intensity, opacity), 0.0, 1.0)), 1.0);
+}
+void main(void) 
+{
+	vec2 remappedUV = curveRemapUV(gl_FragCoord / viewSize);
+	vec4 baseColor = texture2D(texture, gl_TexCoord[0].xy);
+	
+	baseColor *= vignetteIntensity(remappedUV, viewSize, vignetteOpacity, vignetteRoundness);
+	baseColor *= scanLineIntensity(remappedUV.x, viewSize.y, scanLineOpacity.x);
+	baseColor *= scanLineIntensity(remappedUV.y, viewSize.x, scanLineOpacity.y);
+	baseColor *= vec4(vec3(brightness), 1.0);
+	
+	if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0)
+		gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+	else
+		gl_FragColor = baseColor * gl_Color;
+}";
+		private const int LINE_MAX_ITERATIONS = 10000;
+		private static Shader? retroScreen;
+		private static RenderStates Rend => IsRetro ? new(retroScreen) : default;
+		private static bool isHidden, isRetro;
 		private static string title;
 		internal static string? prevDrawTilemapGfxPath;
 		internal static (uint, uint) prevDrawTilemapTileSz;
 		internal static (float, float) prevDrawTilemapCellSz;
 		internal static (uint, uint) prevDrawTilemapCellCount;
-
 		internal static readonly Dictionary<string, Texture> graphics = new();
 		internal static readonly RenderWindow window;
 
@@ -168,12 +239,13 @@ namespace Pure.Window
 			window.DispatchEvents();
 			window.Clear();
 			window.Display();
+
 			UpdateWindowAndView();
 		}
 
 		private static void TryLoadGraphics(string path)
 		{
-			if(graphics.ContainsKey(path))
+			if (graphics.ContainsKey(path))
 				return;
 
 			graphics[path] = new(path);
@@ -190,7 +262,7 @@ namespace Pure.Window
 
 		private static Vertex[] GetRectangleVertices((float, float) position, (float, float) size, uint tint)
 		{
-			if(prevDrawTilemapGfxPath == null)
+			if (prevDrawTilemapGfxPath == null)
 				return Array.Empty<Vertex>();
 
 			var verts = new Vertex[4];
@@ -226,21 +298,21 @@ namespace Pure.Window
 			var points = new List<(float, float)>();
 			float e2;
 
-			for(int i = 0; i < LINE_MAX_ITERATIONS; i++)
+			for (int i = 0; i < LINE_MAX_ITERATIONS; i++)
 			{
 				points.Add((x0, y0));
 
-				if(IsWithin(x0, x1, stepX) && IsWithin(y0, y1, stepY))
+				if (IsWithin(x0, x1, stepX) && IsWithin(y0, y1, stepY))
 					break;
 
 				e2 = 2f * err;
 
-				if(e2 > dy)
+				if (e2 > dy)
 				{
 					err += dy;
 					x0 += sx;
 				}
-				if(e2 < dx)
+				if (e2 < dx)
 				{
 					err += dx;
 					y0 += sy;
@@ -250,7 +322,7 @@ namespace Pure.Window
 		}
 		private static Vertex[] GetSpriteVertices((float, float) position, int cell, uint tint)
 		{
-			if(prevDrawTilemapGfxPath == null)
+			if (prevDrawTilemapGfxPath == null)
 				return Array.Empty<Vertex>();
 
 			var verts = new Vertex[4];
@@ -277,7 +349,7 @@ namespace Pure.Window
 		}
 		private static Vertex[] GetTilemapVertices(int[,] tiles, uint[,] tints, (uint, uint) tileSz, (uint, uint) tileOff, string path)
 		{
-			if(tiles == null || window == null)
+			if (tiles == null || window == null)
 				return Array.Empty<Vertex>();
 
 			var cellWidth = (float)window.Size.X / tiles.GetLength(0);
@@ -295,24 +367,24 @@ namespace Pure.Window
 			prevDrawTilemapTileSz = tileSz;
 			prevDrawTilemapCellCount = ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
 
-			for(uint y = 0; y < tiles.GetLength(1); y++)
-				for(uint x = 0; x < tiles.GetLength(0); x++)
+			for (uint y = 0; y < tiles.GetLength(1); y++)
+				for (uint x = 0; x < tiles.GetLength(0); x++)
 				{
 					var cell = tiles[x, y];
 					var tint = new Color(tints[x, y]);
 					var i = GetIndex(x, y, (uint)tiles.GetLength(0)) * 4;
-					var tl = new Vector2f(x * (int)cellWidth, y * (int)cellHeight);
-					var tr = new Vector2f((x + 1) * (int)cellWidth, y * (int)cellHeight);
-					var br = new Vector2f((x + 1) * (int)cellWidth, (y + 1) * (int)cellHeight);
-					var bl = new Vector2f(x * (int)cellWidth, (y + 1) * (int)cellHeight);
+					var tl = new Vector2f((int)(x * cellWidth), (int)(y * cellHeight));
+					var tr = new Vector2f((int)((x + 1) * cellWidth), (int)(y * cellHeight));
+					var br = new Vector2f((int)((x + 1) * cellWidth), (int)((y + 1) * cellHeight));
+					var bl = new Vector2f((int)(x * cellWidth), (int)((y + 1) * cellHeight));
 
 					var texCoords = IndexToCoords(cell, tileCount);
 					var tx = new Vector2f(
 						texCoords.Item1 * (tileW + tileOffW),
 						texCoords.Item2 * (tileH + tileOffH));
-					var texTr = new Vector2f((int)tx.X + tileW, (int)tx.Y);
-					var texBr = new Vector2f((int)tx.X + tileW, (int)tx.Y + tileH);
-					var texBl = new Vector2f((int)tx.X, (int)tx.Y + tileH);
+					var texTr = new Vector2f((int)(tx.X + tileW), (int)tx.Y);
+					var texBr = new Vector2f((int)(tx.X + tileW), (int)(tx.Y + tileH));
+					var texBl = new Vector2f((int)tx.X, (int)(tx.Y + tileH));
 
 					verts[i + 0] = new(tl, tint, tx);
 					verts[i + 1] = new(tr, tint, texTr);
@@ -329,7 +401,7 @@ namespace Pure.Window
 			var cellHeight = prevDrawTilemapCellSz.Item2 / tileSz.Item2;
 			var cellCount = prevDrawTilemapCellCount;
 
-			for(int i = 0; i < positions.Length; i++)
+			for (int i = 0; i < positions.Length; i++)
 			{
 				var x = Map(positions[i].Item1, 0, cellCount.Item1, 0, window.Size.X);
 				var y = Map(positions[i].Item2, 0, cellCount.Item2, 0, window.Size.Y);
@@ -361,7 +433,7 @@ namespace Pure.Window
 		}
 		private static (float, float) ToGrid((float, float) pos, (float, float) gridSize)
 		{
-			if(gridSize == default)
+			if (gridSize == default)
 				return pos;
 
 			var X = pos.Item1;
@@ -382,7 +454,7 @@ namespace Pure.Window
 		}
 		private static bool IsBetween(float number, float rangeA, float rangeB)
 		{
-			if(rangeA > rangeB)
+			if (rangeA > rangeB)
 				(rangeA, rangeB) = (rangeB, rangeA);
 
 			var l = rangeA <= number;
@@ -397,7 +469,7 @@ namespace Pure.Window
 		{
 			var rem = n % 2;
 			var result = n - rem;
-			if(rem >= 1)
+			if (rem >= 1)
 				result += 2;
 			return result;
 		}
