@@ -43,7 +43,7 @@ namespace Pure.Tilemap
 				FromBytes(tiles, bTiles);
 				FromBytes(tints, bColors);
 			}
-			catch(Exception)
+			catch (Exception)
 			{
 				throw new Exception($"Could not load {nameof(Tilemap)} from '{path}'.");
 			}
@@ -57,12 +57,12 @@ namespace Pure.Tilemap
 		}
 		public Tilemap(int[,] tiles, uint[,] tints)
 		{
-			if(tiles == null)
+			if (tiles == null)
 				throw new ArgumentNullException(nameof(tiles));
-			if(tints == null)
+			if (tints == null)
 				throw new ArgumentNullException(nameof(tints));
 
-			if(tiles.GetLength(0) != tints.GetLength(0) ||
+			if (tiles.GetLength(0) != tints.GetLength(0) ||
 				tiles.GetLength(1) != tints.GetLength(1))
 				throw new ArgumentException($"The sizes of the {nameof(tiles)} and " +
 					$"{nameof(tints)} must be the same size.");
@@ -102,10 +102,10 @@ namespace Pure.Tilemap
 			var xStep = w < 0 ? -1 : 1;
 			var yStep = h < 0 ? -1 : 1;
 			var i = 0;
-			for(int x = cx; x != cx + w; x += xStep)
+			for (int x = cx; x != cx + w; x += xStep)
 			{
 				var j = 0;
-				for(int y = cy; y != cy + h; y += yStep)
+				for (int y = cy; y != cy + h; y += yStep)
 				{
 					tiles[i, j] = TileAt((x, y));
 					tints[i, j] = TintAt((x, y));
@@ -116,62 +116,62 @@ namespace Pure.Tilemap
 			return new(tiles, tints);
 		}
 
-		public int TileAt((int, int) position)
+		public int TileAt((int, int) cell)
 		{
-			return IndicesAreValid(position) ? tiles[position.Item1, position.Item2] : default;
+			return IndicesAreValid(cell) ? tiles[cell.Item1, cell.Item2] : default;
 		}
-		public uint TintAt((int, int) position)
+		public uint TintAt((int, int) cell)
 		{
-			return IndicesAreValid(position) ? tints[position.Item1, position.Item2] : default;
+			return IndicesAreValid(cell) ? tints[cell.Item1, cell.Item2] : default;
 		}
 
 		public void Fill(int tile = 0, uint tint = 0)
 		{
-			for(uint y = 0; y < Size.Item2; y++)
-				for(uint x = 0; x < Size.Item1; x++)
+			for (uint y = 0; y < Size.Item2; y++)
+				for (uint x = 0; x < Size.Item1; x++)
 				{
 					tiles[x, y] = tile;
 					tints[x, y] = tint;
 				}
 		}
 
-		public void SetTile((int, int) position, int tile, uint tint = uint.MaxValue)
+		public void SetTile((int, int) cell, int tile, uint tint = uint.MaxValue)
 		{
-			if(IndicesAreValid(position) == false)
+			if (IndicesAreValid(cell) == false)
 				return;
 
-			var x = position.Item1;
-			var y = position.Item2;
+			var x = cell.Item1;
+			var y = cell.Item2;
 
 			tiles[x, y] = tile;
 			tints[x, y] = tint;
 		}
-		public void SetSquare((int, int) position, (int, int) size, int tile, uint tint = uint.MaxValue)
+		public void SetSquare((int, int) cell, (int, int) size, int tile, uint tint = uint.MaxValue)
 		{
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
 			var i = 0;
-			for(int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
-				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
+			for (int x = cell.Item1; x != cell.Item1 + size.Item1; x += xStep)
+				for (int y = cell.Item2; y != cell.Item2 + size.Item2; y += yStep)
 				{
-					if(i > Math.Abs(size.Item1 * size.Item2))
+					if (i > Math.Abs(size.Item1 * size.Item2))
 						return;
 
 					SetTile((x, y), tile, tint);
 					i++;
 				}
 		}
-		public void SetSquareTint((int, int) position, (int, int) size, uint tint, params int[] tiles)
+		public void SetSquareTint((int, int) cell, (int, int) size, uint tint, params int[] tiles)
 		{
-			if(tiles == null || tiles.Length == 0)
+			if (tiles == null || tiles.Length == 0)
 				return;
 
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
 			var tileList = tiles.ToList();
 
-			for(int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
-				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
+			for (int x = cell.Item1; x != cell.Item1 + size.Item1; x += xStep)
+				for (int y = cell.Item2; y != cell.Item2 + size.Item2; y += yStep)
 				{
 					var tile = TileAt((x, y));
 					var col = tileList.Contains(tile) ? tint : TintAt((x, y));
@@ -179,44 +179,44 @@ namespace Pure.Tilemap
 				}
 		}
 
-		public void SetTextLine((int, int) position, string text, uint tint = uint.MaxValue)
+		public void SetTextLine((int, int) cell, string text, uint tint = uint.MaxValue)
 		{
 			var errorOffset = 0;
-			for(int i = 0; i < text?.Length; i++)
+			for (int i = 0; i < text?.Length; i++)
 			{
 				var symbol = text[i];
 				var index = TileFrom(symbol);
 
-				if(index == default && symbol != ' ')
+				if (index == default && symbol != ' ')
 				{
 					errorOffset++;
 					continue;
 				}
 
-				if(symbol == ' ')
+				if (symbol == ' ')
 					continue;
 
-				SetTile((position.Item1 + i - errorOffset, position.Item2), index, tint);
+				SetTile((cell.Item1 + i - errorOffset, cell.Item2), index, tint);
 			}
 		}
-		public void SetTextSquare((int, int) position, (int, int) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
+		public void SetTextSquare((int, int) cell, (int, int) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
 		{
-			if(text == null || text.Length == 0 ||
+			if (text == null || text.Length == 0 ||
 				size.Item1 <= 0 || size.Item2 <= 0)
 				return;
 
-			var x = position.Item1;
-			var y = position.Item2;
+			var x = cell.Item1;
+			var y = cell.Item2;
 			var lineList = text.Split("\n", StringSplitOptions.RemoveEmptyEntries).ToList();
 
-			if(lineList == null || lineList.Count == 0)
+			if (lineList == null || lineList.Count == 0)
 				return;
 
-			for(int i = 0; i < lineList.Count; i++)
+			for (int i = 0; i < lineList.Count; i++)
 			{
 				var line = lineList[i];
 
-				if(line.Length <= size.Item1) // line is valid length
+				if (line.Length <= size.Item1) // line is valid length
 					continue;
 
 				var lastLineIndex = size.Item1 - 1;
@@ -224,7 +224,7 @@ namespace Pure.Tilemap
 					GetSafeNewLineIndex(line, (uint)lastLineIndex) : lastLineIndex;
 
 				// end of line? can't word wrap, proceed to symbol wrap
-				if(newLineIndex == 0)
+				if (newLineIndex == 0)
 				{
 					lineList[i] = line[0..size.Item1];
 					lineList.Insert(i + 1, line[size.Item1..line.Length]);
@@ -237,18 +237,18 @@ namespace Pure.Tilemap
 			}
 			var yDiff = size.Item2 - lineList.Count;
 
-			if(alignment == Alignment.Left ||
+			if (alignment == Alignment.Left ||
 				alignment == Alignment.Center ||
 				alignment == Alignment.Right)
 			{
-				for(int i = 0; i < yDiff / 2; i++)
+				for (int i = 0; i < yDiff / 2; i++)
 					lineList.Insert(0, "");
 			}
-			else if(alignment == Alignment.BottomLeft ||
+			else if (alignment == Alignment.BottomLeft ||
 				alignment == Alignment.Bottom ||
 				alignment == Alignment.BottomRight)
 			{
-				for(int i = 0; i < yDiff; i++)
+				for (int i = 0; i < yDiff; i++)
 					lineList.Insert(0, "");
 			}
 			// new lineList.Count
@@ -258,7 +258,7 @@ namespace Pure.Tilemap
 			var end = startIndex + size.Item2;
 			var scrollValue = (int)Math.Round(scrollProgress * (lineList.Count - size.Item2));
 
-			if(yDiff < 0)
+			if (yDiff < 0)
 			{
 				startIndex += scrollValue;
 				end += scrollValue;
@@ -268,18 +268,18 @@ namespace Pure.Tilemap
 			startIndex = Math.Clamp(startIndex, 0, Math.Max(e, 0));
 			end = Math.Clamp(end, 0, lineList.Count);
 
-			for(int i = startIndex; i < end; i++)
+			for (int i = startIndex; i < end; i++)
 			{
 				var line = lineList[i].Replace('\n', ' ');
 
-				if(isWordWrapping == false && i > size.Item1)
+				if (isWordWrapping == false && i > size.Item1)
 					NewLine();
 
-				if(alignment == Alignment.TopRight ||
+				if (alignment == Alignment.TopRight ||
 					alignment == Alignment.Right ||
 					alignment == Alignment.BottomRight)
 					line = line.PadLeft(size.Item1);
-				else if(alignment == Alignment.TopUp ||
+				else if (alignment == Alignment.TopUp ||
 					alignment == Alignment.Center ||
 					alignment == Alignment.Bottom)
 					line = PadLeftAndRight(line, size.Item1);
@@ -290,31 +290,31 @@ namespace Pure.Tilemap
 
 			void NewLine()
 			{
-				x = position.Item1;
+				x = cell.Item1;
 				y++;
 			}
 			int GetSafeNewLineIndex(string line, uint endLineIndex)
 			{
-				for(int i = (int)endLineIndex; i >= 0; i--)
-					if(line[i] == ' ' && i <= size.Item1)
+				for (int i = (int)endLineIndex; i >= 0; i--)
+					if (line[i] == ' ' && i <= size.Item1)
 						return i;
 
 				return default;
 			}
 		}
-		public void SetTextSquareTint((int, int) position, (int, int) size, string text, uint tint = uint.MaxValue, bool isMatchingWord = false)
+		public void SetTextSquareTint((int, int) cell, (int, int) size, string text, uint tint = uint.MaxValue, bool isMatchingWord = false)
 		{
-			if(string.IsNullOrWhiteSpace(text))
+			if (string.IsNullOrWhiteSpace(text))
 				return;
 
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
 			var tileList = TilesFrom(text).ToList();
 
-			for(int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
-				for(int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
+			for (int x = cell.Item1; x != cell.Item1 + size.Item1; x += xStep)
+				for (int y = cell.Item2; y != cell.Item2 + size.Item2; y += yStep)
 				{
-					if(tileList[0] != TileAt((x, y)))
+					if (tileList[0] != TileAt((x, y)))
 						continue;
 
 					var correctSymbCount = 0;
@@ -322,39 +322,39 @@ namespace Pure.Tilemap
 					var curY = y;
 					var startPos = (x - 1, y);
 
-					for(int i = 0; i < text.Length; i++)
+					for (int i = 0; i < text.Length; i++)
 					{
-						if(tileList[i] != TileAt((curX, curY)))
+						if (tileList[i] != TileAt((curX, curY)))
 							break;
 
 						correctSymbCount++;
 						curX++;
 
-						if(curX > x + size.Item1) // try new line
+						if (curX > x + size.Item1) // try new line
 						{
-							curX = position.Item1;
+							curX = cell.Item1;
 							curY++;
 						}
 					}
 
 					var endPos = (curX, curY);
-					var left = TileAt(startPos) == 0 || curX == position.Item1;
-					var right = TileAt(endPos) == 0 || curX == position.Item1 + size.Item1;
+					var left = TileAt(startPos) == 0 || curX == cell.Item1;
+					var right = TileAt(endPos) == 0 || curX == cell.Item1 + size.Item1;
 					var isWord = left && right;
 
-					if(isWord ^ isMatchingWord)
+					if (isWord ^ isMatchingWord)
 						continue;
 
-					if(text.Length != correctSymbCount)
+					if (text.Length != correctSymbCount)
 						continue;
 
 					curX = x;
 					curY = y;
-					for(int i = 0; i < text.Length; i++)
+					for (int i = 0; i < text.Length; i++)
 					{
-						if(curX > x + size.Item1) // try new line
+						if (curX > x + size.Item1) // try new line
 						{
-							curX = position.Item1;
+							curX = cell.Item1;
 							curY++;
 						}
 
@@ -364,12 +364,12 @@ namespace Pure.Tilemap
 				}
 		}
 
-		public void SetBorder((int, int) position, (int, int) size, int tile, uint tint = uint.MaxValue)
+		public void SetBorder((int, int) cell, (int, int) size, int tile, uint tint = uint.MaxValue)
 		{
-			var (x, y) = position;
+			var (x, y) = cell;
 			var (w, h) = size;
 
-			SetTile(position, tile, tint);
+			SetTile(cell, tile, tint);
 			SetSquare((x + 1, y), (w - 2, 1), tile + 1, tint);
 			SetTile((x + w - 1, y), tile + 2, tint);
 
@@ -381,11 +381,11 @@ namespace Pure.Tilemap
 			SetSquare((x + 1, y + h - 1), (w - 2, 1), tile + 1, tint);
 			SetTile((x + w - 1, y + h - 1), tile + 5, tint);
 		}
-		public void SetBar((int, int) position, int tile, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
+		public void SetBar((int, int) cell, int tile, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
 		{
-			var (x, y) = position;
-			SetTile(position, tile, tint);
-			if(isVertical)
+			var (x, y) = cell;
+			SetTile(cell, tile, tint);
+			if (isVertical)
 			{
 				SetSquare((x, y + 1), (1, size - 2), tile + 1, tint);
 				SetTile((x, y + size - 1), tile + 2, tint);
@@ -396,32 +396,32 @@ namespace Pure.Tilemap
 			SetTile((x + size - 1, y), tile + 2, tint);
 		}
 
-		public void SetInputLineCursor((int, int) position, bool isFocused, int cursorIndex, byte cursorColor)
+		public void SetInputLineCursor((int, int) cell, bool isFocused, int cursorIndex, byte cursorColor)
 		{
-			if(isFocused == false)
+			if (isFocused == false)
 				return;
 
-			var cursorPos = (position.Item1 + cursorIndex, position.Item2);
+			var cursorPos = (cell.Item1 + cursorIndex, cell.Item2);
 			SetTile((cursorPos.Item1, cursorPos.Item2), Tile.SHAPE_LINE_LEFT, cursorColor);
 		}
-		public void SetInputLineSelection((int, int) position, int cursorIndex, int selectionIndex, byte selectionColor)
+		public void SetInputLineSelection((int, int) cell, int cursorIndex, int selectionIndex, byte selectionColor)
 		{
-			var cursorPos = (position.Item1 + cursorIndex, position.Item2);
-			var selectedPos = (position.Item1 + selectionIndex, position.Item2);
+			var cursorPos = (cell.Item1 + cursorIndex, cell.Item2);
+			var selectedPos = (cell.Item1 + selectionIndex, cell.Item2);
 			var size = cursorPos.Item1 - selectedPos.Item1;
 
-			if(size < 0)
+			if (size < 0)
 				selectedPos.Item1--;
 
 			SetSquare(selectedPos, (size, 1), Tile.SHADE_OPAQUE, selectionColor);
 		}
 
-		public (float, float) PositionFrom((int, int) screenPixel, (uint, uint) windowSize, bool isAccountingForCamera = true)
+		public (float, float) PointFrom((int, int) screenPixel, (uint, uint) windowSize, bool isAccountingForCamera = true)
 		{
 			var x = Map(screenPixel.Item1, 0, windowSize.Item1, 0, Size.Item1);
 			var y = Map(screenPixel.Item2, 0, windowSize.Item2, 0, Size.Item2);
 
-			if(isAccountingForCamera)
+			if (isAccountingForCamera)
 			{
 				x += CameraPosition.Item1;
 				y += CameraPosition.Item2;
@@ -433,24 +433,24 @@ namespace Pure.Tilemap
 		public static int TileFrom(char symbol)
 		{
 			var index = default(int);
-			if(symbol >= 'A' && symbol <= 'Z')
+			if (symbol >= 'A' && symbol <= 'Z')
 				index = symbol - 'A' + 78;
-			else if(symbol >= 'a' && symbol <= 'z')
+			else if (symbol >= 'a' && symbol <= 'z')
 				index = symbol - 'a' + 104;
-			else if(symbol >= '0' && symbol <= '9')
+			else if (symbol >= '0' && symbol <= '9')
 				index = symbol - '0' + 130;
-			else if(map.ContainsKey(symbol))
+			else if (map.ContainsKey(symbol))
 				index = map[symbol];
 
 			return index;
 		}
 		public static int[] TilesFrom(string text)
 		{
-			if(text == null || text.Length == 0)
+			if (text == null || text.Length == 0)
 				return Array.Empty<int>();
 
 			var result = new int[text.Length];
-			for(int i = 0; i < text.Length; i++)
+			for (int i = 0; i < text.Length; i++)
 				result[i] = TileFrom(text[i]);
 
 			return result;
@@ -464,7 +464,6 @@ namespace Pure.Tilemap
 			=> new(new int[tints.GetLength(0), tints.GetLength(1)], tints);
 		public static implicit operator uint[,](Tilemap tilemap)
 			=> Copy(tilemap.tints);
-
 		#region Backend
 		// save format
 		// [amount of bytes]		- data
@@ -570,7 +569,7 @@ namespace Pure.Tilemap
 		private static byte[] Compress(byte[] data)
 		{
 			var output = new MemoryStream();
-			using(var stream = new DeflateStream(output, CompressionLevel.Optimal))
+			using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
 				stream.Write(data, 0, data.Length);
 
 			return output.ToArray();
@@ -579,7 +578,7 @@ namespace Pure.Tilemap
 		{
 			var input = new MemoryStream(data);
 			var output = new MemoryStream();
-			using(var stream = new DeflateStream(input, CompressionMode.Decompress))
+			using (var stream = new DeflateStream(input, CompressionMode.Decompress))
 				stream.CopyTo(output);
 
 			return output.ToArray();

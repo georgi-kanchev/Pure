@@ -18,6 +18,7 @@
     <ProjectReference Include="..\UserInterface\UserInterface.csproj" />
     <ProjectReference Include="..\Utilities\Utilities.csproj" />
     <ProjectReference Include="..\Window\Window.csproj" />
+    <ProjectReference Include="..\Pathfinding\Pathfinding.csproj" />
   </ItemGroup>
 
 </Project>

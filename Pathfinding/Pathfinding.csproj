@@ -6,8 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="SFML.Graphics" Version="2.5.0" />
-  </ItemGroup>
-
 </Project>

@@ -1,38 +1,40 @@
-﻿using Pure.Tilemap;
-using Pure.Utilities;
+﻿namespace TestGame;
+
+using Pure.Tilemap;
 using Pure.Window;
+using Pure.Pathfinding;
+using Pure.Utilities;
 
-namespace TestGame
+public class Program
 {
-    public class Program
-    {
-        // https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
-        // https://chillmindscapes.itch.io/
-        // https://gigi.nullneuron.net/gigilabs/a-pathfinding-example-in-c/
-        // noise function
-        // inputline double click selection and ctrl+z/y
-        // tilemap editor collisions
+	// https://chillmindscapes.itch.io/
+	// https://gigi.nullneuron.net/gigilabs/a-pathfinding-example-in-c/
+	// inputline double click selection and ctrl+z/y
+	// tilemap editor collisions
 
-        static void Main()
-        {
-            var t = new Tilemap("world.map");
+	static void Main()
+	{
+		var t = new Tilemap((48, 27));
+		var m = new Map(t.Size);
 
-            t.SetTile((47, 26), Tile.ARROW_DOWN, Color.Red);
+		for (int i = 0; i < 10; i++)
+		{
+			var p = (5 + i, 5);
+			m.SetSolid(p);
+			t.SetTile((p), Tile.SHADE_OPAQUE, Color.Red);
+		}
 
-            t.CameraSize = (32, 18);
-            while (Window.IsExisting)
-            {
-                Window.Activate(true);
+		var path = m.FindPath((8, 2), (8, 8));
+		for (int i = 0; i < path.Length; i++)
+			t.SetTile(path[i], Tile.SHADE_OPAQUE, Color.Green);
 
-                Window.IsRetro = KeyboardKey.IsPressed(KeyboardKey.A) == false;
+		while (Window.IsExisting)
+		{
+			Window.Activate(true);
 
-                var (x, y) = t.PositionFrom(MouseCursor.Position, Window.Size, false);
-                t.CameraPosition = ((int)x - 30, (int)y);
-                var cam = t.CameraUpdate();
-                Window.DrawTilemap(cam, cam, (12, 12), (1, 1), "urizen.png");
+			Window.DrawTilemap(t, t, (8, 8));
 
-                Window.Activate(false);
-            }
-        }
-    }
+			Window.Activate(false);
+		}
+	}
 }

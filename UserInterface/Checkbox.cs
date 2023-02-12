@@ -1,15 +1,14 @@
-﻿namespace Pure.UserInterface
+﻿namespace Pure.UserInterface;
+
+public class Checkbox : Button
 {
-	public class Checkbox : Button
+	public bool IsChecked { get; set; }
+
+	public Checkbox((int, int) position) : base(position, (1, 1)) { }
+
+	protected override void OnEvent(UserAction when)
 	{
-		public bool IsChecked { get; set; }
-
-		public Checkbox((int, int) position) : base(position, (1, 1)) { }
-
-		protected override void OnEvent(UserAction when)
-		{
-			if(when == UserAction.Trigger)
-				IsChecked = IsChecked == false;
-		}
+		if (when == UserAction.Trigger)
+			IsChecked = IsChecked == false;
 	}
 }
