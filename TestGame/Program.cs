@@ -17,16 +17,36 @@ public class Program
 		var t = new Tilemap((48, 27));
 		var m = new Map(t.Size);
 
-		for (int i = 0; i < 10; i++)
+		KeyboardKey.OnPressed(KeyboardKey.A, () =>
 		{
-			var p = (5 + i, 5);
-			m.SetSolid(p);
-			t.SetTile((p), Tile.SHADE_OPAQUE, Color.Red);
-		}
+			var (x, y) = t.PointFrom(MouseCursor.Position, Window.Size);
+			var path = m.FindPath((0, 0), ((int)x, (int)y));
 
-		var path = m.FindPath((8, 2), (8, 8));
-		for (int i = 0; i < path.Length; i++)
-			t.SetTile(path[i], Tile.SHADE_OPAQUE, Color.Green);
+			t.Fill();
+
+			for (int i = 0; i < 10; i++)
+			{
+				var p = (i, 2);
+				m.SetSolid(p);
+				t.SetTile((p), Tile.SHADE_OPAQUE, Color.Red);
+			}
+			for (int i = 0; i < 10; i++)
+			{
+				var p = (9, 3 + i);
+				m.SetSolid(p);
+				t.SetTile((p), Tile.SHADE_OPAQUE, Color.Red);
+			}
+			for (int i = 0; i < 10; i++)
+			{
+				var p = (5 + i, 12 + i);
+				m.SetSolid(p);
+				t.SetTile((p), Tile.SHADE_OPAQUE, Color.Red);
+			}
+
+			for (int i = 0; i < path.Length; i++)
+				t.SetTile(path[i], Tile.SHADE_OPAQUE, Color.Green);
+		});
+
 
 		while (Window.IsExisting)
 		{

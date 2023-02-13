@@ -4,34 +4,35 @@ public class Map
 {
 	public (int, int) Size
 	{
-		get => pathfind.size;
-		set => pathfind.size = value;
+		get => pathfind.Size;
+		set => pathfind.Size = value;
 	}
 
 	public Map((int, int) size) => Size = size;
 
 	public bool IsSolid((int, int) cell)
 	{
-		return pathfind.nodes.ContainsKey(cell) && pathfind.nodes[cell].isWalkable;
+		var n = pathfind.GetNode(cell);
+		return n == null ? true : n.isWalkable == false;
 	}
 	public bool IsObstacle((int, int) cell)
 	{
-		return pathfind.nodes.ContainsKey(cell) && pathfind.nodes[cell].weight > 0;
+		var n = pathfind.GetNode(cell);
+		return n == null ? false : n.isWalkable && n.weight > 0;
+	}
+	public int PenaltyAt((int, int) cell)
+	{
+		var n = pathfind.GetNode(cell);
+		return n == null ? 0 : n.weight;
 	}
 
 	public void SetSolid((int, int) cell, bool isSolid = true)
 	{
-		if (isSolid == false)
-		{
-			pathfind.nodes.Remove(cell);
-			return;
-		}
-
-		pathfind.nodes[cell] = new(cell, 0, false);
+		pathfind.SetNode(cell, 0, isSolid == false);
 	}
 	public void SetObstacle((int, int) cell, int penalty = 1)
 	{
-		pathfind.nodes[cell] = new(cell, penalty, true);
+		pathfind.SetNode(cell, penalty, false);
 	}
 	public void SetObstacle(int tile, int[,] tiles, int penalty = 1)
 	{
@@ -49,12 +50,7 @@ public class Map
 		if (Size.Item1 < 1 || Size.Item2 < 1)
 			return Array.Empty<(int, int)>();
 
-		var path = pathfind.FindPath(cellA, cellB);
-		var result = new (int, int)[path.Count];
-		for (int i = 0; i < path.Count; i++)
-			result[i] = path.Pop().position;
-		
-		return result;
+		return pathfind.FindPath(cellA, cellB);
 	}
 	#region Backend
 	private readonly Astar pathfind = new();
