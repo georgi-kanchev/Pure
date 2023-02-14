@@ -8,7 +8,10 @@ public class Map
 		set => pathfind.Size = value;
 	}
 
+	public Map(string path) => pathfind.Load(path);
 	public Map((int, int) size) => Size = size;
+
+	public void Save(string path) => pathfind.Save(path);
 
 	public bool IsSolid((int, int) cell)
 	{

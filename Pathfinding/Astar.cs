@@ -22,6 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.IO.Compression;
+using System.Numerics;
+using System.Runtime.InteropServices;
+
 namespace Pure.Pathfinding;
 
 internal class Node
@@ -103,10 +107,12 @@ internal class Astar
 
 				n.Parent = current;
 
-				var x = Math.Abs(n.Position.Item1 - end.Position.Item1);
-				var y = Math.Abs(n.Position.Item2 - end.Position.Item2);
+				var (nx, ny) = n.Position;
+				var (ex, ey) = end.Position;
+				var nPos = new Vector2((float)nx, (float)ny);
+				var endPos = new Vector2((float)ex, (float)ey);
 
-				n.distanceToTarget = x + y;
+				n.distanceToTarget = Vector2.Distance(nPos, endPos);
 				n.cost = n.weight + n.Parent.cost;
 				open.Enqueue(n, n.F);
 			}
@@ -131,7 +137,115 @@ internal class Astar
 		return result.ToArray();
 	}
 
+	public void Load(string path)
+	{
+		var bytes = Decompress(File.ReadAllBytes(path));
+		var bC = new byte[4];
+		var bW = new byte[4];
+		var bH = new byte[4];
+		var off = bC.Length + bW.Length + bH.Length;
+
+		Array.Copy(bytes, 0, bC, 0, bC.Length);
+		Array.Copy(bytes, bC.Length, bW, 0, bW.Length);
+		Array.Copy(bytes, bC.Length + bW.Length, bH, 0, bH.Length);
+		var c = BitConverter.ToInt32(bC);
+		var w = BitConverter.ToInt32(bW);
+		var h = BitConverter.ToInt32(bH);
+
+		Size = (w, h);
+
+		var szXs = c * Marshal.SizeOf(typeof(int));
+		var szYs = c * Marshal.SizeOf(typeof(int));
+		var szWs = c * Marshal.SizeOf(typeof(int));
+		var szSs = bytes.Length - off - szXs - szYs - szWs;
+		var bXs = new byte[szXs];
+		var bYs = new byte[szYs];
+		var bWs = new byte[szWs];
+		var bSs = new byte[szSs];
+
+		Array.Copy(bytes, off, bXs, 0, bXs.Length);
+		Array.Copy(bytes, off + szXs, bYs, 0, bYs.Length);
+		Array.Copy(bytes, off + szXs + szYs, bWs, 0, bWs.Length);
+		Array.Copy(bytes, off + szXs + szYs + szWs, bSs, 0, bSs.Length);
+
+		var xs = new int[c];
+		var ys = new int[c];
+		var ws = new int[c];
+		var ss = BytesToBools(bSs, c);
+		FromBytes(xs, bXs);
+		FromBytes(ys, bYs);
+		FromBytes(ws, bWs);
+
+		for (int i = 0; i < c; i++)
+		{
+			var (x, y) = (xs[i], ys[i]);
+			var node = grid[x, y];
+			node.Position = (x, y);
+			node.weight = ws[i];
+			node.isWalkable = ss[i];
+		}
+	}
+	public void Save(string path)
+	{
+		var (w, h) = Size;
+		var xs = new List<int>();
+		var ys = new List<int>();
+		var weights = new List<int>();
+		var solids = new List<bool>();
+
+		for (int y = 0; y < h; y++)
+			for (int x = 0; x < w; x++)
+			{
+				var node = grid[x, y];
+				if (node.weight == 0 && node.isWalkable)
+					continue;
+
+				xs.Add(x);
+				ys.Add(y);
+				weights.Add(node.weight);
+				solids.Add(node.isWalkable);
+			}
+
+		var bC = BitConverter.GetBytes(xs.Count);
+		var bW = BitConverter.GetBytes(w);
+		var bH = BitConverter.GetBytes(h);
+		var bXs = ToBytes(xs.ToArray());
+		var bYs = ToBytes(ys.ToArray());
+		var bWs = ToBytes(weights.ToArray());
+		var bSs = BoolsToBytes(solids);
+
+		var result = new byte[bC.Length + bW.Length + bH.Length +
+			bXs.Length + bYs.Length + bWs.Length + bSs.Length];
+
+		Array.Copy(bC, 0, result, 0,
+			bC.Length);
+		Array.Copy(bW, 0, result,
+			bC.Length, bW.Length);
+		Array.Copy(bH, 0, result,
+			bC.Length + bW.Length, bH.Length);
+		Array.Copy(bXs, 0, result,
+			bC.Length + bW.Length + bH.Length, bXs.Length);
+		Array.Copy(bYs, 0, result,
+			bC.Length + bW.Length + bH.Length + bXs.Length, bYs.Length);
+		Array.Copy(bWs, 0, result,
+			bC.Length + bW.Length + bH.Length + bXs.Length + bYs.Length, bWs.Length);
+		Array.Copy(bSs, 0, result,
+			bC.Length + bW.Length + bH.Length + bXs.Length + bYs.Length + bWs.Length, bSs.Length);
+
+		File.WriteAllBytes(path, Compress(result));
+	}
 	#region Backend
+	// save format
+	// [amount of bytes]		- data
+	// --------------------------------
+	// [4]						- width
+	// [4]						- height
+	// [4]						- non-default cells count
+	// [width * height * 4]		- xs
+	// [width * height * 4]		- ys
+	// [width * height * 4]		- weights
+	// [remaining]				- is walkable bools (1 bit per bool)
+
 	private Node[,] grid = new Node[0, 0];
 
 	private bool Contains(PriorityQueue<Node, float> prioQueue, Node item)
@@ -182,6 +296,95 @@ internal class Astar
 				result[i, j] = o == null ? new((i, j), 0, true) : o;
 			}
 		return result;
+	}
+
+	private static byte[] BoolsToBytes(List<bool> bools)
+	{
+		if (bools == null || bools.Count == 0)
+			return Array.Empty<byte>();
+
+		var result = new List<byte>();
+		var bitCount = 0;
+		var curByte = default(byte);
+		for (int i = 0; i < bools.Count; i++)
+		{
+			var curBool = bools[i];
+			var curBoolBit = (byte)(curBool ? 1 : 0);
+
+			curByte <<= 1;
+			curByte |= curBoolBit;
+
+			bitCount++;
+
+			if (bitCount == 8 || i == bools.Count - 1)
+			{
+				result.Add(curByte);
+				curByte = 0;
+				bitCount = 0;
+			}
+		}
+
+		return result.ToArray();
+	}
+	private static bool[] BytesToBools(byte[] bytes, int boolCount)
+	{
+		if (bytes == null || bytes.Length == 0)
+			return Array.Empty<bool>();
+
+		var result = new List<bool>();
+		var curBoolCount = 0;
+		for (int i = 0; i < bytes.Length; i++)
+		{
+			var curByte = bytes[i];
+			var curBools = new List<bool>();
+			for (int j = 0; j < 8; j++)
+			{
+				curBoolCount++;
+
+				var singleBit = curByte & 1;
+				curByte >>= 1;
+
+				curBools.Insert(0, singleBit == 1);
+
+				if (curBoolCount == boolCount)
+					break;
+			}
+
+			result.AddRange(curBools);
+		}
+		return result.ToArray();
+	}
+
+	private static byte[] ToBytes<T>(T[] array) where T : struct
+	{
+		var size = array.Length * Marshal.SizeOf(typeof(T));
+		var buffer = new byte[size];
+		Buffer.BlockCopy(array, 0, buffer, 0, buffer.Length);
+		return buffer;
+	}
+	private static void FromBytes<T>(T[] array, byte[] buffer) where T : struct
+	{
+		var size = array.Length;
+		var len = Math.Min(size * Marshal.SizeOf(typeof(T)), buffer.Length);
+		Buffer.BlockCopy(buffer, 0, array, 0, len);
+	}
+
+	private static byte[] Compress(byte[] data)
+	{
+		var output = new MemoryStream();
+		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+			stream.Write(data, 0, data.Length);
+
+		return output.ToArray();
+	}
+	private static byte[] Decompress(byte[] data)
+	{
+		var input = new MemoryStream(data);
+		var output = new MemoryStream();
+		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+			stream.CopyTo(output);
+
+		return output.ToArray();
 	}
 	#endregion
 }
