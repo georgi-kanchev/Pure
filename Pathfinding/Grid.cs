@@ -1,6 +1,6 @@
 ﻿namespace Pure.Pathfinding;
 
-public class Map
+public class Grid
 {
 	public (int, int) Size
 	{
@@ -8,8 +8,8 @@ public class Map
 		set => pathfind.Size = value;
 	}
 
-	public Map(string path) => pathfind.Load(path);
-	public Map((int, int) size) => Size = size;
+	public Grid(string path) => pathfind.Load(path);
+	public Grid((int, int) size) => Size = size;
 
 	public void Save(string path) => pathfind.Save(path);
 

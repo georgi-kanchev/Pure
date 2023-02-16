@@ -386,5 +386,6 @@ internal class Astar
 
 		return output.ToArray();
 	}
+
 	#endregion
 }

@@ -3,7 +3,6 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 
-
 /// <summary>
 /// A collection of <see cref="Rectangle"/>s which can be positioned and scaled, affecting all
 /// <see cref="Rectangle"/>s accordingly. It checks whether it contains a point in the world or
@@ -94,7 +93,7 @@ public class Hitbox
 			AddRectangle(rectangles[i]);
 	}
 
-	public void Save(string path)
+	public virtual void Save(string path)
 	{
 		var c = rectangles.Count;
 		var bCount = BitConverter.GetBytes(c);

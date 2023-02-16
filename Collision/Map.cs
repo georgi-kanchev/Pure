@@ -1,4 +1,7 @@
-﻿namespace Pure.Collision;
+﻿using System.IO.Compression;
+using System.Runtime.InteropServices;
+
+namespace Pure.Collision;
 
 /// <summary>
 /// (Inherits <see cref="Hitbox"/>)<br></br><br></br>
@@ -30,35 +33,119 @@ public class Map : Hitbox
 		}
 	}
 
-	public Map(string path) : base(path, (0, 0), 1) { }
+	public Map(string path) : base(path, (0, 0), 1)
+	{
+		var bytes = Decompress(File.ReadAllBytes(path));
+		// count (4) | xs * 4, ys * 4, ws * 4, hs * 4
+		var baseOffset = 4 + rectangles.Count * 4 * 4;
+		var bSectorCount = new byte[4];
+
+		Array.Copy(bytes, baseOffset, bSectorCount, 0, bSectorCount.Length);
+
+		var sectorCount = BitConverter.ToInt32(bSectorCount);
+
+		var off = baseOffset + bSectorCount.Length;
+		for (int i = 0; i < sectorCount; i++)
+		{
+			var bTile = new byte[4];
+			var bRectAmount = new byte[4];
+
+			Array.Copy(bytes, off, bTile, 0, bTile.Length);
+			Array.Copy(bytes, off + bTile.Length, bRectAmount, 0, bRectAmount.Length);
+
+			off += bTile.Length + bRectAmount.Length;
+			var tile = BitConverter.ToInt32(bTile);
+			var rectAmount = BitConverter.ToInt32(bRectAmount);
+			var bXs = new byte[rectAmount * 4];
+			var bYs = new byte[rectAmount * 4];
+			var bWs = new byte[rectAmount * 4];
+			var bHs = new byte[rectAmount * 4];
+
+			Array.Copy(bytes, off, bXs, 0, bXs.Length);
+			Array.Copy(bytes, off + bXs.Length, bYs, 0, bYs.Length);
+			Array.Copy(bytes, off + bXs.Length + bYs.Length, bWs, 0, bWs.Length);
+			Array.Copy(bytes, off + bXs.Length + bYs.Length + bWs.Length, bHs, 0, bHs.Length);
+
+			for (int j = 0; j < rectAmount; j++)
+			{
+				var bX = new byte[4];
+				var bY = new byte[4];
+				var bW = new byte[4];
+				var bH = new byte[4];
+
+				Array.Copy(bytes, off, bX, 0, bX.Length);
+				Array.Copy(bytes, off + bX.Length, bY, 0, bY.Length);
+				Array.Copy(bytes, off + bX.Length + bY.Length, bW, 0, bW.Length);
+				Array.Copy(bytes, off + bX.Length + bW.Length, bH, 0, bH.Length);
+
+				var x = BitConverter.ToInt32(bX);
+				var y = BitConverter.ToInt32(bY);
+				var w = BitConverter.ToSingle(bW);
+				var h = BitConverter.ToSingle(bH);
+				AddRectangle(new((w, h), (x, y)), tile);
+
+				off += bX.Length + bY.Length + bW.Length + bH.Length;
+			}
+		}
+	}
 	/// <summary>
 	/// Creates the <see cref="Map"/> with <paramref name="cellSize"/>.
 	/// </summary>
-	public Map((int, int) cellSize) : base((0, 0), 1)
-	{
-		if (cellSize.Item1 < 1 || cellSize.Item2 < 1)
-			throw new ArgumentException("Values cannot be < 1.", nameof(cellSize));
+	public Map() : base((0, 0), 1) { }
 
-		this.cellSize = cellSize;
+	public override void Save(string path)
+	{
+		base.Save(path);
+
+		var baseSavedBytes = Decompress(File.ReadAllBytes(path));
+		var sectorCount = cellRectsMap.Count;
+		var bSectorCount = BitConverter.GetBytes(sectorCount);
+
+		var result = new List<byte>();
+		result.AddRange(baseSavedBytes);
+		result.AddRange(bSectorCount);
+
+		foreach (var kvp in cellRectsMap)
+		{
+			var rects = kvp.Value;
+			var rectAmount = rects.Count;
+			var bTile = BitConverter.GetBytes(kvp.Key);
+			var bRectAmount = BitConverter.GetBytes(rectAmount);
+			var bXs = new List<byte>();
+			var bYs = new List<byte>();
+			var bWs = new List<byte>();
+			var bHs = new List<byte>();
+
+			for (int i = 0; i < rects.Count; i++)
+			{
+				var r = rects[i];
+				bXs.AddRange(BitConverter.GetBytes(r.Position.Item1));
+				bYs.AddRange(BitConverter.GetBytes(r.Position.Item2));
+				bWs.AddRange(BitConverter.GetBytes(r.Size.Item1));
+				bHs.AddRange(BitConverter.GetBytes(r.Size.Item2));
+			}
+			result.AddRange(bTile);
+			result.AddRange(bRectAmount);
+			result.AddRange(bXs);
+			result.AddRange(bYs);
+			result.AddRange(bWs);
+			result.AddRange(bHs);
+		}
+
+		File.WriteAllBytes(path, Compress(result.ToArray()));
 	}
 
 	/// <summary>
-	/// Expands the <see cref="Rectangle"/> collection with a new <paramref name="rectangle"/>
-	/// for each <paramref name="tile"/> in <paramref name="tiles"/>.
+	/// Expands the <see cref="Rectangle"/> collection with a new <paramref name="rectangle"/>.
+	/// This <see cref="Rectangle"/> will be updated over each <paramref name="tile"/> upon
+	/// <see cref="Update"/>. It will have no effect before that.
 	/// </summary>
-	public void AddRectangle(Rectangle rectangle, int tile, int[,] tiles)
+	public void AddRectangle(Rectangle rectangle, int tile)
 	{
-		if (tiles == null)
-			throw new ArgumentNullException(nameof(tiles));
+		if (cellRectsMap.ContainsKey(tile) == false)
+			cellRectsMap[tile] = new List<Rectangle>();
 
-		if (cellRectsMap.ContainsKey(tile))
-		{
-			cellRectsMap[tile].Add(rectangle);
-			return;
-		}
-
-		cellRectsMap[tile] = new List<Rectangle>() { rectangle };
-		UpdatePositions(tiles);
+		cellRectsMap[tile].Add(rectangle);
 	}
 	/// <summary>
 	/// Retrieves the <see cref="Rectangle"/> collection at a certain <paramref name="cell"/> and
@@ -79,6 +166,33 @@ public class Map : Hitbox
 			result.Add(LocalToGlobalRectangle(rects[r], (x, y)));
 
 		return result.ToArray();
+	}
+	/// <summary>
+	/// Updates all rectangles added by <see cref="AddRectangle"/> according to <paramref name="tiles"/>.
+	/// </summary>
+	public void Update(int[,] tiles)
+	{
+		if (tiles == null)
+			throw new ArgumentNullException(nameof(tiles));
+
+		cellRects.Clear();
+		tileIndices.Clear();
+
+		for (int y = 0; y < tiles.GetLength(1); y++)
+			for (int x = 0; x < tiles.GetLength(0); x++)
+			{
+				var tile = tiles[x, y];
+				if (cellRectsMap.ContainsKey(tile) == false)
+					continue;
+
+				var pos = (x, y);
+				var localRects = cellRectsMap[tile];
+
+				for (int i = 0; i < localRects.Count; i++)
+					cellRects.Add(LocalToGlobalRectangle(localRects[i], pos));
+
+				tileIndices[pos] = tile;
+			}
 	}
 
 	/// <summary>
@@ -119,46 +233,38 @@ public class Map : Hitbox
 	}
 
 	#region Backend
-	internal readonly (int, int) cellSize;
+	// save format in sectors
+	// [amount of bytes]		- data
+	// --------------------------------
+	// [4]						- amount of sectors
+	// = = = = = = (sector 1)
+	// [4]						- tile
+	// [4]						- rect amount
+	// [rect amount * 4]		- xs
+	// [rect amount * 4]		- ys
+	// [rect amount * 4]		- widths
+	// [rect amount * 4]		- heights
+	// = = = = = = (sector 2)
+	// [4]						- tile
+	// [4]						- rect amount
+	// [rect amount * 4]		- xs
+	// [rect amount * 4]		- ys
+	// [rect amount * 4]		- widths
+	// [rect amount * 4]		- heights
+	// = = = = = = (sector 3)
+	// ...
 
-	private readonly List<Rectangle> cellRects = new();
-	private readonly Dictionary<int, List<Rectangle>> cellRectsMap = new();
-	private readonly Dictionary<(int, int), int> tileIndices = new();
-
-	private void UpdatePositions(int[,] tiles)
-	{
-		for (int y = 0; y < tiles.GetLength(0); y++)
-			for (int x = 0; x < tiles.GetLength(1); x++)
-			{
-				var tileID = tiles[x, y];
-				if (cellRectsMap.ContainsKey(tileID))
-					tileIndices[(x, y)] = tileID;
-				else
-					tileIndices.Remove((x, y));
-			}
-
-		cellRects.Clear();
-		foreach (var kvp in tileIndices)
-		{
-			var pos = kvp.Key;
-			var id = kvp.Value;
-			var localRects = cellRectsMap[id];
-			for (int i = 0; i < localRects.Count; i++)
-				cellRects.Add(LocalToGlobalRectangle(localRects[i], pos));
-		}
-	}
+	private readonly List<Rectangle> cellRects = new(); // final result, recreated on each update
+	private readonly Dictionary<int, List<Rectangle>> cellRectsMap = new(); // to not repeat the lists
+	private readonly Dictionary<(int, int), int> tileIndices = new(); // for faster pick
 
 	private Rectangle LocalToGlobalRectangle(Rectangle localRect, (float, float) tilePos)
 	{
 		var sc = Scale;
-		var sz = cellSize;
 		var (x, y) = tilePos;
 		var (rx, ry) = localRect.Position;
 		var (rw, rh) = localRect.Size;
 		var (offX, offY) = Position;
-
-		x *= sz.Item1 * sc;
-		y *= sz.Item2 * sc;
 
 		rx *= sc;
 		ry *= sc;
@@ -175,7 +281,6 @@ public class Map : Hitbox
 		var (w, h) = globalRect.Size;
 		var (x, y) = globalRect.Position;
 		var sc = Scale;
-		var sz = cellSize;
 		var (offX, offY) = Position;
 
 		x -= offX * sc;
@@ -185,11 +290,6 @@ public class Map : Hitbox
 		y /= sc;
 		w /= sc;
 		h /= sc;
-
-		w /= sz.Item1;
-		h /= sz.Item2;
-		x /= sz.Item1;
-		y /= sz.Item2;
 
 		return new(((int)w, (int)h), ((int)x, (int)y));
 	}
@@ -225,9 +325,42 @@ public class Map : Hitbox
 	{
 		var (w, h) = globalRect.Size;
 
-		w /= cellSize.Item1 * Scale;
-		h /= cellSize.Item2 * Scale;
+		w /= Scale;
+		h /= Scale;
 		return ((int)w * 2, (int)h * 2);
 	}
+
+	private static byte[] ToBytes<T>(T[] array) where T : struct
+	{
+		var size = array.Length * Marshal.SizeOf(typeof(T));
+		var buffer = new byte[size];
+		Buffer.BlockCopy(array, 0, buffer, 0, buffer.Length);
+		return buffer;
+	}
+	private static void FromBytes<T>(T[] array, byte[] buffer) where T : struct
+	{
+		var size = array.Length;
+		var len = Math.Min(size * Marshal.SizeOf(typeof(T)), buffer.Length);
+		Buffer.BlockCopy(buffer, 0, array, 0, len);
+	}
+
+	private static byte[] Compress(byte[] data)
+	{
+		var output = new MemoryStream();
+		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+			stream.Write(data, 0, data.Length);
+
+		return output.ToArray();
+	}
+	private static byte[] Decompress(byte[] data)
+	{
+		var input = new MemoryStream(data);
+		var output = new MemoryStream();
+		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+			stream.CopyTo(output);
+
+		return output.ToArray();
+	}
+
 	#endregion
 }

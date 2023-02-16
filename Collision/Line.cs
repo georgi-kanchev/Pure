@@ -97,7 +97,6 @@ public struct Line
 		var (posX, posY) = grid.Position;
 		var (x0, y0) = ((int)A.Item1, (int)A.Item2);
 		var (x1, y1) = ((int)B.Item1, (int)B.Item2);
-		var (w, h) = grid.cellSize;
 		var sc = grid.Scale;
 		var dx = (int)MathF.Abs(x1 - x0);
 		var dy = (int)-MathF.Abs(y1 - y0);
@@ -109,8 +108,8 @@ public struct Line
 
 		for (int k = 0; k < MAX_ITERATIONS; k++)
 		{
-			var ix = (int)(x0 / w / sc - posX / w);
-			var iy = (int)(y0 / h / sc - posY / h);
+			var ix = (int)(x0 / sc - posX);
+			var iy = (int)(y0 / sc - posY);
 
 			var neighbourCells = new List<Rectangle[]>()
 				{

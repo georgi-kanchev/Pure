@@ -16,17 +16,17 @@ internal static class Vertices
 		var (tileWidth, tileHeight) = prevDrawTilemapTileSz;
 
 		var (w, h) = size;
-		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
-		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
+		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.Size.Item1);
+		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.Size.Item2);
 		var c = new Color(tint);
 		var (gridX, gridY) = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 		var tl = new Vector2f(gridX, gridY);
 		var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
-
-		verts[0] = new(new(tl.X, tl.Y), c);
-		verts[1] = new(new(br.X, tl.Y), c);
-		verts[2] = new(new(br.X, br.Y), c);
-		verts[3] = new(new(tl.X, br.Y), c);
+		
+		verts[0] = new(new((int)tl.X, (int)tl.Y), c);
+		verts[1] = new(new((int)br.X, (int)tl.Y), c);
+		verts[2] = new(new((int)br.X, (int)br.Y), c);
+		verts[3] = new(new((int)tl.X, (int)br.Y), c);
 		return verts;
 	}
 	public static Vertex[] GetLine((float, float) a, (float, float) b, uint tint)

@@ -175,7 +175,7 @@ public static class Window
 	uint tint = uint.MaxValue)
 	{
 		var verts = Vertices.GetRectangle(position, size, tint);
-		window.Draw(verts, PrimitiveType.Quads, Rend);
+		window.Draw(verts, PrimitiveType.Quads);
 	}
 	/// <summary>
 	/// Draws a line between <paramref name="pointA"/> and <paramref name="pointB"/> with
