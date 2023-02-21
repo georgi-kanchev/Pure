@@ -83,10 +83,6 @@ public class Storage
 	}
 	public void Save(string path, bool isDataFormatted = true)
 	{
-		var dir = Path.GetDirectoryName(path);
-		if (dir != "" && Directory.Exists(dir) == false)
-			return;
-
 		var result = isDataFormatted ? FILE_HEADER + Environment.NewLine : "";
 		var newLine = isDataFormatted ? Environment.NewLine : "";
 		var space = isDataFormatted ? " " : "";
