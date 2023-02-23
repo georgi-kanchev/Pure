@@ -232,7 +232,8 @@ namespace Pure.Tilemap
 				}
 
 				// otherwise wordwrap
-				lineList[i] = line[0..newLineIndex];
+				var endIndex = newLineIndex + (isWordWrapping ? 0 : 1);
+				lineList[i] = line[0..endIndex];
 				lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
 			}
 			var yDiff = size.Item2 - lineList.Count;
@@ -396,15 +397,24 @@ namespace Pure.Tilemap
 			SetTile((x + size - 1, y), tile + 2, tint);
 		}
 
-		public void SetInputLineCursor((int, int) cell, bool isFocused, int cursorIndex, byte cursorColor)
+		public void SetInputBoxCursor((int, int) cell, (int, int) size, bool isFocused, int cursorIndex, uint cursorTint)
 		{
 			if (isFocused == false)
 				return;
 
-			var cursorPos = (cell.Item1 + cursorIndex, cell.Item2);
-			SetTile((cursorPos.Item1, cursorPos.Item2), Tile.SHAPE_LINE_LEFT, cursorColor);
+			var (px, py) = cell;
+			var (w, h) = size;
+			var (x, y) = (cursorIndex % w, cursorIndex / w);
+			if (px + x == px && py + y == py + h)
+			{
+				x = px + w;
+				y = py + h - 1;
+			}
+
+			var pos = (Math.Clamp(px + x, px, px + w), Math.Clamp(py + y, py, py + h - 1));
+			SetTile(pos, Tile.SHAPE_LINE_LEFT, cursorTint);
 		}
-		public void SetInputLineSelection((int, int) cell, int cursorIndex, int selectionIndex, byte selectionColor)
+		public void SetInputBoxSelection((int, int) cell, int cursorIndex, int selectionIndex, uint selectionTint)
 		{
 			var cursorPos = (cell.Item1 + cursorIndex, cell.Item2);
 			var selectedPos = (cell.Item1 + selectionIndex, cell.Item2);
@@ -413,7 +423,7 @@ namespace Pure.Tilemap
 			if (size < 0)
 				selectedPos.Item1--;
 
-			SetSquare(selectedPos, (size, 1), Tile.SHADE_OPAQUE, selectionColor);
+			SetSquare(selectedPos, (size, 1), Tile.SHADE_OPAQUE, selectionTint);
 		}
 
 		public (float, float) PointFrom((int, int) screenPixel, (uint, uint) windowSize, bool isAccountingForCamera = true)
@@ -475,7 +485,7 @@ namespace Pure.Tilemap
 
 		private static readonly Dictionary<char, int> map = new()
 		{
-			{ '░', 1 }, { '▒', 4 }, { '▓', 8 }, { '█', 11 },
+			{ '░', 2 }, { '▒', 5 }, { '▓', 7 }, { '█', 10 },
 
 			{ '⅛', 140 }, { '⅐', 141 }, { '⅙', 142 }, { '⅕', 143 }, { '¼', 144 },
 			{ '⅓', 145 }, { '⅜', 146 }, { '⅖', 147 }, { '½', 148 }, { '⅗', 149 },

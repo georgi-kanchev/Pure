@@ -50,7 +50,7 @@ namespace StorageEditor
 		private void UpdateAllLists()
 		{
 			var instance = (string)ListObjects.SelectedItem;
-			if(instance == null)
+			if (instance == null)
 				return;
 
 			var props = data[instance];
@@ -62,41 +62,41 @@ namespace StorageEditor
 			ListSubProperties.Items.Clear();
 			ListValues.Items.Clear();
 
-			foreach(var kvp in props)
+			foreach (var kvp in props)
 				ListProperties.Items.Add(kvp.Key);
 
-			if(prevPropIndex >= ListProperties.Items.Count)
+			if (prevPropIndex >= ListProperties.Items.Count)
 				prevPropIndex = ListProperties.Items.Count - 1;
 			ListProperties.SelectedIndex = prevPropIndex;
 
-			if(prevSubPropIndex >= ListSubProperties.Items.Count)
+			if (prevSubPropIndex >= ListSubProperties.Items.Count)
 				prevSubPropIndex = ListSubProperties.Items.Count - 1;
 			ListSubProperties.SelectedIndex = prevSubPropIndex;
 
-			if(prevValueIndex >= ListValues.Items.Count)
+			if (prevValueIndex >= ListValues.Items.Count)
 				prevValueIndex = ListValues.Items.Count - 1;
 			ListValues.SelectedIndex = prevValueIndex;
 
-			if(ListProperties.SelectedIndex == -1 && ListProperties.Items.Count > 0)
+			if (ListProperties.SelectedIndex == -1 && ListProperties.Items.Count > 0)
 				ListProperties.SelectedIndex = 0;
-			if(ListSubProperties.SelectedIndex == -1 && ListSubProperties.Items.Count > 0)
+			if (ListSubProperties.SelectedIndex == -1 && ListSubProperties.Items.Count > 0)
 				ListSubProperties.SelectedIndex = 0;
-			if(ListValues.SelectedIndex == -1 && ListValues.Items.Count > 0)
+			if (ListValues.SelectedIndex == -1 && ListValues.Items.Count > 0)
 				ListValues.SelectedIndex = 0;
 		}
 		private void UpdateEditMenu()
 		{
-			if(hoveredList == null)
+			if (hoveredList == null)
 				return;
 
 			MenuEdit.Enabled = hoveredList.SelectedIndex != -1;
 			MenuRemove.Enabled = hoveredList.SelectedIndex != -1;
 
-			if(hoveredList == ListObjects)
+			if (hoveredList == ListObjects)
 				MenuCreate.Enabled = true;
-			else if(hoveredList == ListProperties)
+			else if (hoveredList == ListProperties)
 				MenuCreate.Enabled = ListObjects.Items.Count > 0;
-			else if(hoveredList == ListSubProperties)
+			else if (hoveredList == ListSubProperties)
 			{
 				var objName = (string)ListObjects.SelectedItem;
 				var propName = (string)ListProperties.SelectedItem;
@@ -106,7 +106,7 @@ namespace StorageEditor
 				MenuCreate.Enabled = ListObjects.Items.Count > 0 &&
 					ListProperties.Items.Count > 0 && isArray == false;
 			}
-			else if(hoveredList == ListValues)
+			else if (hoveredList == ListValues)
 			{
 				MenuCreate.Enabled = ListObjects.Items.Count > 0 &&
 					ListProperties.Items.Count > 0;
@@ -123,7 +123,7 @@ namespace StorageEditor
 			var values = prop.Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
 			var valueStr = "";
 
-			for(int k = 1; k < values.Length; k++)
+			for (int k = 1; k < values.Length; k++)
 				valueStr += VALUE + values[k];
 
 			data[instanceName][values[0]] = DecryptText(valueStr);
@@ -133,7 +133,7 @@ namespace StorageEditor
 			var structSplit = prop.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
 			var structProps = "";
 
-			for(int i = 1; i < structSplit.Length; i++)
+			for (int i = 1; i < structSplit.Length; i++)
 				structProps += STRUCT + structSplit[i];
 
 			data[instanceName][structSplit[0]] = structProps;
@@ -141,11 +141,11 @@ namespace StorageEditor
 		private static string ParseSelectedIndexItem(ListBox list)
 		{
 			var value = (string)list.SelectedItem;
-			if(list.Items.Count > 1)
+			if (list.Items.Count > 1)
 			{
 				var split = value.Split("] ", StringSplitOptions.RemoveEmptyEntries);
 				value = "";
-				for(int i = 1; i < split.Length; i++)
+				for (int i = 1; i < split.Length; i++)
 					value += split[i];
 			}
 			return value;
@@ -153,31 +153,31 @@ namespace StorageEditor
 
 		private void TryHotkeys(bool control, Keys key)
 		{
-			foreach(var kvp in hotkeys)
+			foreach (var kvp in hotkeys)
 			{
 				var ctrl = kvp.Key.Item1 == control;
 				var curKey = kvp.Key.Item2;
 
-				if(ctrl && key == curKey)
+				if (ctrl && key == curKey)
 					kvp.Value.Invoke();
 			}
 		}
 		private void TryDuplicate()
 		{
-			if(MenuDuplicate.Enabled == false)
+			if (MenuDuplicate.Enabled == false)
 				return;
 
-			if(hoveredList == ListObjects)
+			if (hoveredList == ListObjects)
 			{
 				var rawData = data[(string)ListObjects.SelectedItem];
 				var newData = new Dictionary<string, string>();
-				foreach(var kvp in rawData)
+				foreach (var kvp in rawData)
 					newData[kvp.Key] = kvp.Value;
 
 				TryCreate();
 				data[(string)ListObjects.SelectedItem] = newData;
 			}
-			else if(hoveredList == ListProperties)
+			else if (hoveredList == ListProperties)
 			{
 				var rawData = data[(string)ListObjects.SelectedItem]
 					[(string)ListProperties.SelectedItem];
@@ -190,14 +190,14 @@ namespace StorageEditor
 		}
 		private void TryCopy()
 		{
-			if(MenuCopyText.Enabled == false || hoveredList == null)
+			if (MenuCopyText.Enabled == false || hoveredList == null)
 				return;
 
 			Clipboard.SetText(ParseSelectedIndexItem(hoveredList));
 		}
 		private void TrySave()
 		{
-			if(StorageSave.ShowDialog() != DialogResult.OK)
+			if (StorageSave.ShowDialog() != DialogResult.OK)
 				return;
 
 			var isDataFormatted = true;
@@ -206,11 +206,11 @@ namespace StorageEditor
 			var space = isDataFormatted ? " " : "";
 			var tab = isDataFormatted ? new string(' ', 4) : "";
 
-			foreach(var kvp in data)
+			foreach (var kvp in data)
 			{
 				result += OBJ + space + kvp.Key;
 
-				foreach(var kvp2 in kvp.Value)
+				foreach (var kvp2 in kvp.Value)
 				{
 					var value = kvp2.Value;
 
@@ -223,7 +223,7 @@ namespace StorageEditor
 		}
 		private void TryLoad()
 		{
-			if(StorageLoad.ShowDialog() != DialogResult.OK)
+			if (StorageLoad.ShowDialog() != DialogResult.OK)
 				return;
 
 			data.Clear();
@@ -235,25 +235,25 @@ namespace StorageEditor
 			var file = File.ReadAllText(StorageLoad.FileName);
 			var instances = file.Split(OBJ, StringSplitOptions.RemoveEmptyEntries);
 
-			for(int i = 0; i < instances.Length; i++)
+			for (int i = 0; i < instances.Length; i++)
 			{
 				var instance = Trim(instances[i]);
-				if(instance.Contains(OBJ_PROP) == false)
+				if (instance.Contains(OBJ_PROP) == false)
 					continue;
 
 				var props = instance.Split(OBJ_PROP, StringSplitOptions.RemoveEmptyEntries);
 				var instanceName = props[0];
 
-				if(data.ContainsKey(instanceName) == false)
+				if (data.ContainsKey(instanceName) == false)
 					data[instanceName] = new();
 
 				ListObjects.Items.Add(Trim(instanceName));
 
-				for(int j = 1; j < props.Length; j++)
+				for (int j = 1; j < props.Length; j++)
 				{
 					var prop = Trim(props[j]);
 
-					if(prop.Contains(STRUCT))
+					if (prop.Contains(STRUCT))
 					{
 						ParseStruct(instanceName, prop);
 						continue;
@@ -262,22 +262,22 @@ namespace StorageEditor
 				}
 			}
 
-			if(ListObjects.Items.Count > 0)
+			if (ListObjects.Items.Count > 0)
 				ListObjects.SelectedIndex = 0;
-			if(ListProperties.Items.Count > 0)
+			if (ListProperties.Items.Count > 0)
 				ListProperties.SelectedIndex = 0;
 
 		}
 		private void TryCreate()
 		{
-			if(hoveredList == null || MenuCreate.Enabled == false)
+			if (hoveredList == null || MenuCreate.Enabled == false)
 				return;
 
-			if(hoveredList == ListObjects)
+			if (hoveredList == ListObjects)
 			{
 				var i = 1;
 				var key = "Object";
-				while(data.ContainsKey($"{key}{i}"))
+				while (data.ContainsKey($"{key}{i}"))
 					i++;
 
 				var result = $"{key}{i}";
@@ -285,12 +285,12 @@ namespace StorageEditor
 
 				ListObjects.Items.Add(result);
 			}
-			else if(hoveredList == ListProperties)
+			else if (hoveredList == ListProperties)
 			{
 				var selectedObj = (string)ListObjects.SelectedItem;
 				var i = 1;
 				var key = "Property";
-				while(data[selectedObj].ContainsKey($"{key}{i}"))
+				while (data[selectedObj].ContainsKey($"{key}{i}"))
 					i++;
 
 				var result = $"{key}{i}";
@@ -298,15 +298,15 @@ namespace StorageEditor
 
 				UpdateAllLists();
 			}
-			else if(hoveredList == ListSubProperties)
+			else if (hoveredList == ListSubProperties)
 			{
 				var selectedObj = (string)ListObjects.SelectedItem;
 				var selectedProp = (string)ListProperties.SelectedItem;
 
-				if(selectedObj == null || selectedProp == null)
+				if (selectedObj == null || selectedProp == null)
 					return;
 
-				if(data[selectedObj][selectedProp].Contains(STRUCT) == false)
+				if (data[selectedObj][selectedProp].Contains(STRUCT) == false)
 				{
 					var val = $"{STRUCT}SubProperty1{VALUE}{ListValues.SelectedItem}";
 					data[selectedObj][selectedProp] = val;
@@ -321,42 +321,42 @@ namespace StorageEditor
 				var props = structs[0].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 				var subPropNames = new List<string>();
 
-				for(int j = 0; j < props.Length; j++)
+				for (int j = 0; j < props.Length; j++)
 				{
 					var values = props[j].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
 					subPropNames.Add(values[0]);
 				}
 
-				while(subPropNames.Contains($"{key}{i}"))
+				while (subPropNames.Contains($"{key}{i}"))
 					i++;
 
-				for(int j = 0; j < structs.Length; j++)
+				for (int j = 0; j < structs.Length; j++)
 					structs[j] = $"{STRUCT}{structs[j]}{STRUCT_PROP}{key}{i}{VALUE}Value";
 
 				var result = "";
-				for(int j = 0; j < structs.Length; j++)
+				for (int j = 0; j < structs.Length; j++)
 					result += structs[j];
 
 				data[selectedObj][selectedProp] = result;
 			}
-			else if(hoveredList == ListValues)
+			else if (hoveredList == ListValues)
 			{
 				var selectedObj = (string)ListObjects.SelectedItem;
 				var selectedProp = (string)ListProperties.SelectedItem;
 
 				var raw = data[selectedObj][selectedProp];
-				if(raw.Contains(STRUCT) == false)
+				if (raw.Contains(STRUCT) == false)
 					data[selectedObj][selectedProp] += $"{VALUE}Value";
 				else
 				{
 					var result = STRUCT;
 					var structs = raw.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
-					if(structs.Length == 0)
+					if (structs.Length == 0)
 						return;
 
 					var props = structs[0].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
-					for(int i = 0; i < props.Length; i++)
+					for (int i = 0; i < props.Length; i++)
 					{
 						var values = props[i].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
 						result += $"{STRUCT_PROP}{values[0]}{VALUE}Value";
@@ -379,18 +379,18 @@ namespace StorageEditor
 		}
 		private void TryEditLists(bool remove)
 		{
-			if(hoveredList == null ||
+			if (hoveredList == null ||
 				(MenuRemove.Enabled == false && remove) ||
 				(MenuEdit.Enabled == false && remove == false))
 				return;
 
-			if(hoveredList == ListObjects)
+			if (hoveredList == ListObjects)
 				EditObject(remove);
-			else if(hoveredList == ListProperties)
+			else if (hoveredList == ListProperties)
 				EditProperties(remove);
-			else if(hoveredList == ListSubProperties)
+			else if (hoveredList == ListSubProperties)
 				EditSubProperties(remove);
-			else if(hoveredList == ListValues)
+			else if (hoveredList == ListValues)
 				EditValues(remove);
 
 			UpdateAllLists();
@@ -420,7 +420,7 @@ namespace StorageEditor
 			window.ShowDialog();
 
 			var t = textBox.Text;
-			if(t.Contains(STRUCT) || t.Contains(STRUCT_PROP) ||
+			if (t.Contains(STRUCT) || t.Contains(STRUCT_PROP) ||
 				t.Contains(OBJ) || t.Contains(OBJ_PROP) ||
 				t.Contains(VALUE) || t.Contains(SPACE) || t.Contains(TAB) ||
 				t.Contains(NEW_LINE))
@@ -439,17 +439,17 @@ namespace StorageEditor
 		private void EditObject(bool remove)
 		{
 			var objName = (string)ListObjects.SelectedItem;
-			if(objName == null)
+			if (objName == null)
 				return;
 
 			var prevSelectedIndex = ListObjects.SelectedIndex;
 
-			if(remove)
+			if (remove)
 			{
 				data.Remove(objName);
 				ListObjects.Items.Remove(objName);
 
-				if(ListObjects.Items.Count == 0)
+				if (ListObjects.Items.Count == 0)
 				{
 					ListProperties.Items.Clear();
 					ListSubProperties.Items.Clear();
@@ -457,7 +457,7 @@ namespace StorageEditor
 					return;
 				}
 
-				if(prevSelectedIndex >= ListObjects.Items.Count)
+				if (prevSelectedIndex >= ListObjects.Items.Count)
 					prevSelectedIndex = ListObjects.Items.Count - 1;
 				ListObjects.SelectedIndex = prevSelectedIndex;
 				return;
@@ -466,7 +466,7 @@ namespace StorageEditor
 			var value = data[objName];
 			var input = Trim(TryGetEdit($"Edit Object '{objName}'", objName));
 
-			if(objName != input && data.ContainsKey(input))
+			if (objName != input && data.ContainsKey(input))
 			{
 				MessageBox.Show($"An Object '{input}' already exists.", $"Edit Object '{objName}'");
 				return;
@@ -484,7 +484,7 @@ namespace StorageEditor
 			var objName = (string)ListObjects.SelectedItem;
 			var prop = (string)ListProperties.SelectedItem;
 
-			if(remove)
+			if (remove)
 			{
 				data[objName].Remove(prop);
 				return;
@@ -493,7 +493,7 @@ namespace StorageEditor
 			var value = data[objName][prop];
 			var input = Trim(TryGetEdit($"Edit Property '{prop}'", prop));
 
-			if(input != prop && data[objName].ContainsKey(input))
+			if (input != prop && data[objName].ContainsKey(input))
 			{
 				MessageBox.Show(
 					$"The Object '{objName}' already has a Property '{input}'.",
@@ -510,7 +510,7 @@ namespace StorageEditor
 			var prop = (string)ListProperties.SelectedItem;
 			var subProp = (string)ListSubProperties.SelectedItem;
 
-			if(prop == null || subProp == null)
+			if (prop == null || subProp == null)
 				return;
 
 			var structs = data[objName][prop]
@@ -518,21 +518,21 @@ namespace StorageEditor
 			var input = remove ? "" : Trim(TryGetEdit($"Edit Sub Property '{subProp}'", subProp));
 			var result = "";
 
-			for(int j = 0; j < structs.Length; j++)
+			for (int j = 0; j < structs.Length; j++)
 			{
 				var subProps = structs[j]
 					.Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
 				result += STRUCT;
 
-				for(int i = 0; i < subProps.Length; i++)
+				for (int i = 0; i < subProps.Length; i++)
 				{
 					var value = subProps[i].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-					if(i == ListSubProperties.SelectedIndex)
+					if (i == ListSubProperties.SelectedIndex)
 					{
-						if(remove)
+						if (remove)
 						{
-							if(ListSubProperties.Items.Count == 1)
+							if (ListSubProperties.Items.Count == 1)
 							{
 								var valueIndex = ListValues.SelectedIndex;
 								var remainingValue = structs[valueIndex]
@@ -546,7 +546,7 @@ namespace StorageEditor
 
 						value[0] = input;
 					}
-					else if(value[0] == input)
+					else if (value[0] == input)
 					{
 						MessageBox.Show(
 							$"The Property '{prop}' of the Object '{objName}' " +
@@ -571,34 +571,34 @@ namespace StorageEditor
 				"" : TryGetEdit($"Edit Value [{ListValues.SelectedIndex}] '{value}'", value);
 			var result = "";
 
-			if(rawValue.Contains(STRUCT))
+			if (rawValue.Contains(STRUCT))
 			{
 				var structs = data[objName][prop]
 					.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
 
-				for(int j = 0; j < structs.Length; j++)
+				for (int j = 0; j < structs.Length; j++)
 				{
 					var subProps = structs[j]
 						.Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
 					result += STRUCT;
 
-					for(int i = 0; i < subProps.Length; i++)
+					for (int i = 0; i < subProps.Length; i++)
 					{
 						var v = subProps[i].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-						if(v.Length < 2)
+						if (v.Length < 2)
 							continue;
 
-						if(j == ListValues.SelectedIndex)
+						if (j == ListValues.SelectedIndex)
 						{
-							if(remove)
+							if (remove)
 							{
-								if(result.Length >= 2 && result[^2..^0] == STRUCT)
+								if (result.Length >= 2 && result[^2..^0] == STRUCT)
 									result = result[0..^2];
 								continue;
 							}
 
-							if(i == ListSubProperties.SelectedIndex)
+							if (i == ListSubProperties.SelectedIndex)
 								v[1] = input;
 						}
 
@@ -609,9 +609,9 @@ namespace StorageEditor
 			else
 			{
 				var values = data[objName][prop].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-				for(int i = 0; i < values.Length; i++)
+				for (int i = 0; i < values.Length; i++)
 				{
-					if(i == ListValues.SelectedIndex)
+					if (i == ListValues.SelectedIndex)
 						values[i] = input;
 
 					result += $"{VALUE}{values[i]}";
@@ -646,7 +646,7 @@ namespace StorageEditor
 		#region Global
 		private void Global_MouseUp(object sender, MouseEventArgs e)
 		{
-			if(e.Button != MouseButtons.Right)
+			if (e.Button != MouseButtons.Right)
 				return;
 
 			Menu.Show(MousePosition);
@@ -683,13 +683,13 @@ namespace StorageEditor
 			Focus();
 			UpdateEditMenu();
 
-			if(e.Button != MouseButtons.Right)
+			if (e.Button != MouseButtons.Right)
 				return;
 
 			var listbox = (ListBox)sender;
 
 			var rightClickedIndex = listbox.IndexFromPoint(e.X, e.Y);
-			if(rightClickedIndex != -1)
+			if (rightClickedIndex != -1)
 				listbox.SelectedIndex = rightClickedIndex;
 
 			Menu.Show(MousePosition);
@@ -703,7 +703,7 @@ namespace StorageEditor
 		{
 			var instance = (string)ListObjects.SelectedItem;
 			var prop = (string)ListProperties.SelectedItem;
-			if(instance == null || prop == null)
+			if (instance == null || prop == null)
 				return;
 
 			var values = data[instance][prop];
@@ -711,14 +711,14 @@ namespace StorageEditor
 			ListSubProperties.Items.Clear();
 			ListValues.Items.Clear();
 
-			if(values.Contains(STRUCT))
+			if (values.Contains(STRUCT))
 			{
 				var structs = values.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
-				if(structs.Length == 0)
+				if (structs.Length == 0)
 					return;
 				var structProp = structs[0].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 
-				for(int j = 0; j < structProp.Length; j++)
+				for (int j = 0; j < structProp.Length; j++)
 				{
 					var structValues = structProp[j]
 						.Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
@@ -731,12 +731,12 @@ namespace StorageEditor
 			}
 
 			var valuesSplit = values.Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-			for(int i = 0; i < valuesSplit.Length; i++)
+			for (int i = 0; i < valuesSplit.Length; i++)
 			{
 				var indexStr = valuesSplit.Length > 1 ? $"[{i}] " : "";
 				ListValues.Items.Add($"{indexStr}{valuesSplit[i]}");
 
-				if(ListValues.SelectedIndex != 0)
+				if (ListValues.SelectedIndex != 0)
 					ListValues.SelectedIndex = 0;
 			}
 		}
@@ -744,7 +744,7 @@ namespace StorageEditor
 		{
 			var instance = (string)ListObjects.SelectedItem;
 			var prop = (string)ListProperties.SelectedItem;
-			if(instance == null || prop == null || ListSubProperties.SelectedIndex == -1)
+			if (instance == null || prop == null || ListSubProperties.SelectedIndex == -1)
 				return;
 
 			var structs = data[instance][prop].Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
@@ -752,13 +752,13 @@ namespace StorageEditor
 
 			ListValues.Items.Clear();
 
-			if(structs.Length > 1)
+			if (structs.Length > 1)
 			{
-				for(int i = 0; i < structs.Length; i++)
+				for (int i = 0; i < structs.Length; i++)
 				{
 					var props = structs[i].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
 					var values = props[propIndex].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-					if(values.Length < 2)
+					if (values.Length < 2)
 						continue;
 
 					ListValues.Items.Add($"[{i}] {DecryptText(values[1])}");
@@ -769,14 +769,14 @@ namespace StorageEditor
 			}
 
 			var property = structs[0].Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
-			if(ListSubProperties.SelectedIndex == -1)
+			if (ListSubProperties.SelectedIndex == -1)
 				return;
 
 			var value = property[ListSubProperties.SelectedIndex]
 				.Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
 			ListValues.Items.Add(DecryptText(value[1]));
 
-			if(ListValues.SelectedIndex == -1)
+			if (ListValues.SelectedIndex == -1)
 				ListValues.SelectedIndex = 0;
 		}
 		#endregion

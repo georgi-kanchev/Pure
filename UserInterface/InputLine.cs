@@ -2,8 +2,19 @@
 
 using System.Diagnostics;
 
-public class InputLine : UserInterface
+public class InputBox : UserInterface
 {
+	public string Selection
+	{
+		get
+		{
+			var a = IndexCursor < IndexSelection ? IndexCursor : IndexSelection;
+			var b = IndexCursor > IndexSelection ? IndexCursor : IndexSelection;
+			var sz = b - a;
+
+			return new string(' ', a) + new string(SELECTION, sz) + new string(' ', Text.Length - b);
+		}
+	}
 	public string TextSelected
 	{
 		get
@@ -27,24 +38,45 @@ public class InputLine : UserInterface
 		set => selPos = Math.Clamp(value, 0, Text.Length);
 	}
 
-	public InputLine((int, int) position, int width, string text = "") : base(position, (width, 1))
+	public InputBox((int, int) position, (int, int) size, string text = "") : base(position, size)
 	{
 		Text = text;
 	}
 
-	static InputLine()
+	static InputBox()
 	{
 		holdDelay.Start();
 		hold.Start();
 	}
 
+	public int PositionToIndex((float, float) position)
+	{
+		var (ppx, ppy) = position;
+		var (px, py) = Position;
+		var (w, h) = Size;
+		var (x, y) = (MathF.Round(ppx) - px, MathF.Floor(ppy) - py);
+		var index = Math.Clamp(y, 0, h) * w + Math.Clamp(x, 0, w);
+		return (int)Math.Clamp(index, 0, Text.Length);
+	}
+	public (int, int) IndexToPosition(int index)
+	{
+		var (px, py) = Position;
+		var (w, h) = Size;
+		var (x, y) = (index % w, index / h);
+
+		if (index == Text.Length - 1)
+			return (px + w, py + h - 1);
+
+		return (Math.Clamp(px + x, px, px + w), Math.Clamp(py + y, py, py + h - 1));
+	}
+
 	protected override void OnUpdate()
 	{
 		var isControlPressed = Pressed(CONTROL_LEFT) || Pressed(CONTROL_RIGHT);
-		var end = Math.Min(Text.Length, Size.Item1);
+		var maxTotalLength = Size.Item1 * Size.Item2;
+		var end = Math.Min(Text.Length, maxTotalLength);
 
 		Text = Text[0..end];
-		Size = (Size.Item1, 1);
 		IndexCursor = Math.Clamp(IndexCursor, 0, Text.Length);
 		IndexSelection = Math.Clamp(IndexSelection, 0, Text.Length);
 
@@ -117,16 +149,16 @@ public class InputLine : UserInterface
 		}
 		void TryTypeOrDelete()
 		{
-			if (isAllowedType && Text.Length < Size.Item1)
+			if (isAllowedType && Text.Length < maxTotalLength)
 			{
 				var symbols = CurrentInput.Typed ?? "";
 
 				if (isPasting && string.IsNullOrWhiteSpace(CopiedText) == false)
 				{
 					symbols = CopiedText;
-					if (IndexCursor + symbols.Length > Size.Item1)
+					if (IndexCursor + symbols.Length > maxTotalLength)
 					{
-						var newSize = Size.Item1 - IndexCursor;
+						var newSize = maxTotalLength - IndexCursor;
 						symbols = symbols[0..(newSize)];
 					}
 
@@ -189,14 +221,11 @@ public class InputLine : UserInterface
 		}
 		void TrySelect()
 		{
-			var cursorPos = CurrentInput.Position.Item1 - Position.Item1;
-			var newCurPos = (int)MathF.Round(cursorPos > Text.Length ? Text.Length : cursorPos);
-
 			if (CurrentInput.IsPressed)
-				IndexCursor = newCurPos;
+				IndexCursor = PositionToIndex(CurrentInput.Position);
 
 			if (CurrentInput.IsJustPressed)
-				IndexSelection = newCurPos;
+				IndexSelection = PositionToIndex(CurrentInput.Position);
 		}
 
 		int GetWordEndOffset(int step)
@@ -225,9 +254,9 @@ public class InputLine : UserInterface
 	}
 
 	#region Backend
+	private const char SELECTION = '█';
 	private const float HOLD = 0.06f, HOLD_DELAY = 0.5f;
 	private static readonly Stopwatch holdDelay = new(), hold = new();
-
 	private int curPos, selPos;
 
 	private void MoveCursor(int offset, bool allowSelection = false)
