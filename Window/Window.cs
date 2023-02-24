@@ -171,8 +171,7 @@ public static class Window
 	/// Its <paramref name="position"/> and <paramref name="size"/> are relative
 	/// to the previously drawn tilemap.
 	/// </summary>
-	public static void DrawRectangle((float, float) position, (float, float) size,
-	uint tint = uint.MaxValue)
+	public static void DrawRectangle((float, float) position, (float, float) size, uint tint = uint.MaxValue)
 	{
 		var verts = Vertices.GetRectangle(position, size, tint);
 		window.Draw(verts, PrimitiveType.Quads);

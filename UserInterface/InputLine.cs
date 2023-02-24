@@ -62,7 +62,7 @@ public class InputBox : UserInterface
 	{
 		var (px, py) = Position;
 		var (w, h) = Size;
-		var (x, y) = (index % w, index / h);
+		var (x, y) = (index % w, index / w);
 
 		if (index == Text.Length - 1)
 			return (px + w, py + h - 1);
@@ -183,21 +183,41 @@ public class InputBox : UserInterface
 		void TryMoveCursor()
 		{
 			var ctrl = Pressed(CONTROL_LEFT) || Pressed(CONTROL_RIGHT);
+			var i = IndexCursor;
+			var s = IndexSelection;
+			var hasSelection = i != s;
+			var w = Size.Item1;
+			var (cx, cy) = IndexToPosition(i);
+			var (x, y) = Position;
+			var selectionCursorDiff = i > s ? i - s : s - i;
+			var hotkeys = new (bool, int)[]
+			{
+				( hasSelection && JustPressed(ARROW_UP), i < s ? -w : s - i - w ),
+				( hasSelection && JustPressed(ARROW_DOWN), i < s ? s - i + w : w ),
+				( hasSelection && JustPressed(ARROW_LEFT), i < s ? 0 : s - i ),
+				( hasSelection && JustPressed(ARROW_RIGHT), i < s ? s - i : 0 ),
+				( ctrl && JustPressed(ARROW_UP), cx - x - w ),
+				( ctrl && JustPressed(ARROW_DOWN), w - (cx - x) + w ),
+				( JustPressed(HOME), x - cx ),
+				( JustPressed(END), w - (cx - x) ),
+				( Allowed(ARROW_LEFT), ctrl ? GetWordEndOffset(-1) : -1 ),
+				( Allowed(ARROW_RIGHT), ctrl ? GetWordEndOffset(1) : 1 ),
+				( Allowed(ARROW_UP), -w ),
+				( Allowed(ARROW_DOWN), w ),
+			};
 
-			if (Allowed(ARROW_LEFT) && IndexCursor > 0)
-				MoveCursor(ctrl ? GetWordEndOffset(-1) : -1, true);
-			else if (Allowed(ARROW_RIGHT) && IndexCursor < Text.Length)
-				MoveCursor(ctrl ? GetWordEndOffset(1) : 1, true);
-
-			if (JustPressed(ARROW_UP) || JustPressed(END))
-				MoveCursor(Text.Length - IndexCursor, true);
-			else if (JustPressed(ARROW_DOWN) || JustPressed(HOME))
-				MoveCursor(-IndexCursor, true);
+			for (int j = 0; j < hotkeys.Length; j++)
+				if (hotkeys[j].Item1)
+				{
+					MoveCursor(hotkeys[j].Item2, true);
+					return;
+				}
 		}
 		void TryResetHoldTimers()
 		{
-			var isAnyJustPressed = JustPressed(BACKSPACE) || JustPressed(DELETE) ||
-				JustPressed(ARROW_LEFT) || JustPressed(ARROW_RIGHT) || isJustTyped;
+			var isAnyJustPressed = JustPressed(BACKSPACE) || JustPressed(DELETE) || isJustTyped ||
+				JustPressed(ARROW_LEFT) || JustPressed(ARROW_RIGHT) ||
+				JustPressed(ARROW_UP) || JustPressed(ARROW_DOWN);
 
 			if (isAnyJustPressed)
 				holdDelay.Restart();
@@ -231,22 +251,34 @@ public class InputBox : UserInterface
 		int GetWordEndOffset(int step)
 		{
 			var index = 0 + (step < 0 ? -1 : 0);
-			var targetIsWord = GetSymbol(IndexCursor + (step < 0 ? -1 : 0)) == ' ';
+			var startY = IndexToPosition(IndexCursor).Item2;
+			var symb = GetSymbol(IndexCursor + (step < 0 ? -1 : 0));
+			var targetIsWord = char.IsLetterOrDigit(symb) == false;
+
 			for (int i = 0; i < Text.Length; i++)
 			{
 				var j = IndexCursor + index;
+				var curY = IndexToPosition(j).Item2;
+
 				if ((j == 0 && step < 0) || (j == Text.Length && step > 0))
 					return index;
 
-				if (GetSymbol(j) == ' ' ^ targetIsWord)
+				if (char.IsLetterOrDigit(GetSymbol(j)) == false ^ targetIsWord)
 					return index + (step < 0 ? 1 : 0);
 
 				index += step;
+
+				// stop at start/end of line
+				if (startY != curY)
+				{
+					index -= step - (step < 0 ? 1 : 0);
+					return index;
+				}
 			}
 
 			return Text.Length * step;
 		}
-		char GetSymbol(int index) => Text[Math.Min(index, Text.Length - 1)];
+		char GetSymbol(int index) => Text.Length == 0 ? default : Text[Math.Clamp(index, 0, Text.Length - 1)];
 
 		bool Pressed(int key) => CurrentInput.IsKeyPressed(key);
 		bool JustPressed(int key) => CurrentInput.IsKeyJustPressed(key);
@@ -264,7 +296,9 @@ public class InputBox : UserInterface
 		var shift = CurrentInput.IsKeyPressed(SHIFT_LEFT) || CurrentInput.IsKeyPressed(SHIFT_RIGHT);
 
 		IndexCursor += offset;
+		IndexCursor = Math.Clamp(IndexCursor, 0, Text.Length);
 		IndexSelection = shift && allowSelection ? IndexSelection : IndexCursor;
+		IndexSelection = Math.Clamp(IndexSelection, 0, Text.Length);
 	}
 	private static bool IsJustTyped()
 	{

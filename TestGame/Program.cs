@@ -8,7 +8,10 @@ using Pure.Window;
 public class Program
 {
 	// https://chillmindscapes.itch.io/
-	// inputline double click selection and ctrl+z/y
+	// inputline
+	// - double click selection
+	// - ctrl+z/y
+	// - ctrl+delete/backspace
 	// tilemap editor collisions
 	// checkbox do toggle button with bigger widths
 
@@ -40,7 +43,7 @@ public class Program
 			t1.SetSquare(i.Position, i.Size, Tile.SHADE_OPAQUE, Color.Gray);
 			t1.SetTextSquare(i.Position, i.Size, i.Selection, Color.Blue, false);
 			t2.SetTextSquare(i.Position, i.Size, i.Text, Color.White, false);
-			t3.SetInputBoxCursor(i.Position, i.Size, i.IsFocused, i.IndexCursor, Color.White);
+			t3.SetInputBoxCursor(i.Position, i.Size, i.IsFocused, i.IndexCursor, Color.Red);
 
 			Window.DrawTilemap(t1, t1, (8, 8));
 			Window.DrawTilemap(t2, t2, (8, 8));
