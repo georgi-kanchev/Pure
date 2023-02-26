@@ -370,17 +370,17 @@ namespace Pure.Tilemap
 			var (x, y) = cell;
 			var (w, h) = size;
 
-			SetTile(cell, tile, tint);
+			SetTile(cell, tile + 2, tint);
 			SetSquare((x + 1, y), (w - 2, 1), tile + 1, tint);
-			SetTile((x + w - 1, y), tile + 2, tint);
+			SetTile((x + w - 1, y), tile + 3, tint);
 
-			SetSquare((x, y + 1), (1, h - 2), tile + 3, tint);
+			SetSquare((x, y + 1), (1, h - 2), tile, tint);
 			SetSquare((x + 1, y + 1), (w - 2, h - 2), 0, 0);
-			SetSquare((x + w - 1, y + 1), (1, h - 2), tile + 3, tint);
+			SetSquare((x + w - 1, y + 1), (1, h - 2), tile, tint);
 
-			SetTile((x, y + h - 1), tile + 4, tint);
+			SetTile((x, y + h - 1), tile + 5, tint);
 			SetSquare((x + 1, y + h - 1), (w - 2, 1), tile + 1, tint);
-			SetTile((x + w - 1, y + h - 1), tile + 5, tint);
+			SetTile((x + w - 1, y + h - 1), tile + 4, tint);
 		}
 		public void SetBar((int, int) cell, int tile, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
 		{
@@ -395,35 +395,6 @@ namespace Pure.Tilemap
 
 			SetSquare((x + 1, y), (size - 2, 1), tile + 1, tint);
 			SetTile((x + size - 1, y), tile + 2, tint);
-		}
-
-		public void SetInputBoxCursor((int, int) cell, (int, int) size, bool isFocused, int cursorIndex, uint cursorTint)
-		{
-			if (isFocused == false)
-				return;
-
-			var (px, py) = cell;
-			var (w, h) = size;
-			var (x, y) = (cursorIndex % w, cursorIndex / w);
-			if (px + x == px && py + y == py + h)
-			{
-				x = px + w;
-				y = py + h - 1;
-			}
-
-			var pos = (Math.Clamp(px + x, px, px + w), Math.Clamp(py + y, py, py + h - 1));
-			SetTile(pos, Tile.SHAPE_LINE_LEFT, cursorTint);
-		}
-		public void SetInputBoxSelection((int, int) cell, int cursorIndex, int selectionIndex, uint selectionTint)
-		{
-			var cursorPos = (cell.Item1 + cursorIndex, cell.Item2);
-			var selectedPos = (cell.Item1 + selectionIndex, cell.Item2);
-			var size = cursorPos.Item1 - selectedPos.Item1;
-
-			if (size < 0)
-				selectedPos.Item1--;
-
-			SetSquare(selectedPos, (size, 1), Tile.SHADE_OPAQUE, selectionTint);
 		}
 
 		public (float, float) PointFrom((int, int) screenPixel, (uint, uint) windowSize, bool isAccountingForCamera = true)
@@ -449,8 +420,8 @@ namespace Pure.Tilemap
 				index = symbol - 'a' + 104;
 			else if (symbol >= '0' && symbol <= '9')
 				index = symbol - '0' + 130;
-			else if (map.ContainsKey(symbol))
-				index = map[symbol];
+			else if (symbolMap.ContainsKey(symbol))
+				index = symbolMap[symbol];
 
 			return index;
 		}
@@ -483,7 +454,7 @@ namespace Pure.Tilemap
 		// [width * height * 4]		- tiles
 		// [width * height * 4]		- tints
 
-		private static readonly Dictionary<char, int> map = new()
+		private static readonly Dictionary<char, int> symbolMap = new()
 		{
 			{ '░', 2 }, { '▒', 5 }, { '▓', 7 }, { '█', 10 },
 
@@ -533,6 +504,8 @@ namespace Pure.Tilemap
 			{ '♙', 462 }, { '♖', 463 }, { '♘', 464 }, { '♗', 465 }, { '♕', 466 }, { '♔', 467 },
 			{ '♠', 448 }, { '♥', 449 }, { '♣', 450 }, { '♦', 451 },
 			{ '♤', 452 }, { '♡', 453 }, { '♧', 454 }, { '♢', 455 },
+
+			{ '▕', 484 }, { '▁', 485 }, { '▏', 486 }, { '▔', 487 },
 		};
 
 		private readonly int[,] tiles;

@@ -98,7 +98,7 @@ public abstract class UserInterface
 	public bool IsPressed => IsHovered && CurrentInput.IsPressed;
 	public bool IsClicked { get; private set; }
 
-	public static string? CopiedText { get; set; } = "";
+	public static string? TextCopied { get; set; } = "";
 	public static int MouseCursorTile { get; internal set; }
 	public static int MouseCursorSystem { get; internal set; }
 

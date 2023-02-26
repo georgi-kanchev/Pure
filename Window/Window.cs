@@ -208,7 +208,7 @@ public static class Window
 
 		graphics["default"] = DefaultGraphics.CreateTexture();
 
-		title = "";
+		title = "Game";
 
 		window = new(new VideoMode(1280, 720), title);
 		window.Closed += (s, e) => Close();

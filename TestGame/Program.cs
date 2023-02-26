@@ -8,11 +8,9 @@ using Pure.Window;
 public class Program
 {
 	// https://chillmindscapes.itch.io/
-	// inputline
-	// - double click selection
-	// - ctrl+z/y
-	// - ctrl+delete/backspace
+	// inputline prevent the next lines from pulling back when deleting
 	// tilemap editor collisions
+	// loading cursor
 	// checkbox do toggle button with bigger widths
 
 	static void Main()
@@ -20,7 +18,7 @@ public class Program
 		var t1 = new Tilemap((48, 27));
 		var t2 = new Tilemap((48, 27));
 		var t3 = new Tilemap((48, 27));
-		var i = new InputBox((5, 5), (10, 3));
+		var i = new InputBox((5, 5), (10, 3)) { Placeholder = "Type..." };
 
 		while (Window.IsExisting)
 		{
@@ -34,23 +32,40 @@ public class Program
 				KeyboardKey.Typed,
 				t1.Size);
 
-			i.Update();
-
 			t1.Fill();
 			t2.Fill();
 			t3.Fill();
 
-			t1.SetSquare(i.Position, i.Size, Tile.SHADE_OPAQUE, Color.Gray);
-			t1.SetTextSquare(i.Position, i.Size, i.Selection, Color.Blue, false);
-			t2.SetTextSquare(i.Position, i.Size, i.Text, Color.White, false);
-			t3.SetInputBoxCursor(i.Position, i.Size, i.IsFocused, i.IndexCursor, Color.Red);
+			SetInputBox(i);
 
-			Window.DrawTilemap(t1, t1, (8, 8));
-			Window.DrawTilemap(t2, t2, (8, 8));
-			Window.DrawTilemap(t3, t3, (8, 8));
+			DrawTilemap(t1);
+			DrawTilemap(t2);
+			DrawTilemap(t3);
+
 			MouseCursor.Type = UserInterface.MouseCursorTile;
 
 			Window.Activate(false);
+		}
+
+		void SetInputBox(InputBox i)
+		{
+			i.Update();
+
+			i.GetGraphics(
+				out var cursor,
+				out var selection,
+				out var placeholder
+			);
+
+			t1.SetSquare(i.Position, i.Size, Tile.SHADE_OPAQUE, Color.Gray);
+			t1.SetTextSquare(i.Position, i.Size, selection, Color.Blue, false);
+			t2.SetTextSquare(i.Position, i.Size, i.Text, Color.White, false);
+			t2.SetTextSquare(i.Position, i.Size, placeholder, new Color(Color.Gray).ToBright(), false);
+			t3.SetTextSquare(i.Position, i.Size, cursor, Color.Red, false);
+		}
+		void DrawTilemap(Tilemap tilemap)
+		{
+			Window.DrawTilemap(tilemap, tilemap, (8, 8));
 		}
 	}
 }
