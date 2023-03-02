@@ -58,10 +58,7 @@ public class InputBox : UserInterface
 		var (w, h) = Size;
 
 		while (lines.Count != h)
-		{
 			lines.Add("");
-			lineIndices.Add(0);
-		}
 
 		TrySetMouseCursor();
 
@@ -144,39 +141,48 @@ public class InputBox : UserInterface
 						lines[i] = "";
 				}
 
+				cursorIndexX = ixa;
 				cursorIndexY = iya;
-				lineIndices[cursorIndexY] = ixa;
 				SelectionIndex = CursorIndex;
 				justDeletedSelection = true;
 			}
 		}
 		void TryTypeEnterDelete()
 		{
-			var (cx, cy) = (lineIndices[cursorIndexY], cursorIndexY);
+			var (cx, cy) = (cursorIndexX, cursorIndexY);
 
-			if (isAllowedType && lines[cy].Length < Size.Item1 - 1)
+			if (isAllowedType)
 			{
 				var symbols = CurrentInput.Typed ?? "";
 
 				//if (isPasting && string.IsNullOrWhiteSpace(TextCopied) == false)
 				//{
 				//	symbols = TextCopied;
-				//	if (cx + symbols.Length > w)
-				//	{
-				//		var newSize = w - cx;
-				//		symbols = symbols[0..(newSize)];
-				//	}
-				//	
-				//	Text = Text.Insert(cx, symbols);
+				//	lines[cy] = lines[cy].Insert(cx, symbols);
 				//	MoveLineCursor(symbols.Length);
 				//	return;
 				//}
 
-				var t = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
-				lines[cy] = lines[cy].Insert(cx, t);
-				MoveLineCursor(1);
+				// is at end of current line
+				if (cx >= w - 1)
+				{
+					CursorIndexX = 0;
+					CursorIndexY++;
+					cx = CursorIndexX;
+					cy = CursorIndexY;
+				}
+
+				if (lines[cy].Length + 1 < w)
+				{
+					var t = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
+					lines[cy] = lines[cy].Insert(cx, t);
+					MoveLineCursor(1);
+				}
+
+				return;
 			}
-			else if (Allowed(ENTER) && justDeletedSelection == false &&
+
+			if (Allowed(ENTER) && justDeletedSelection == false &&
 				cy != y + h - 1) // not last line
 			{
 				var spacesUntilEndOfLine = x + w - cx;
@@ -256,8 +262,8 @@ public class InputBox : UserInterface
 			if (isControlPressed && CurrentInput.Typed == "a")
 			{
 				SelectionIndex = w * h;
+				cursorIndexX = 0;
 				cursorIndexY = 0;
-				lineIndices[cursorIndexY] = 0;
 				return true;
 			}
 			return false;
@@ -290,7 +296,7 @@ public class InputBox : UserInterface
 				{
 					cursorIndexY = Math.Clamp(iy, 0, h - 1);
 					iy = cursorIndexY;
-					lineIndices[iy] = Math.Clamp(ix, 0, lines[iy].Length);
+					cursorIndexX = Math.Clamp(ix, 0, lines[iy].Length);
 				}
 
 				if (CurrentInput.IsJustPressed)
@@ -309,25 +315,25 @@ public class InputBox : UserInterface
 				cursorIndexY = Math.Clamp(iy, 0, h - 1);
 				iy = cursorIndexY;
 				SelectionIndex = PositionToIndex((hx, hy));
-				lineIndices[cursorIndexY] = Math.Clamp(ix, 0, lines[iy].Length);
+				cursorIndexX = Math.Clamp(ix, 0, lines[iy].Length);
 			}
 			else if (clicks == 2)
 			{
 				SelectionIndex = PositionToIndex((hx, hy)) + GetWordEndOffset(1);
-				lineIndices[cursorIndexY] += GetWordEndOffset(-1);
-				lineIndices[cursorIndexY] = Math.Clamp(lineIndices[cursorIndexY], 0, lines[iy].Length);
+				cursorIndexX += GetWordEndOffset(-1);
+				cursorIndexX = Math.Clamp(cursorIndexX, 0, lines[iy].Length);
 			}
 			else if (clicks == 3)
 			{
 				var p = PositionToIndex((x + lines[cursorIndexY].Length, y + cursorIndexY));
 				SelectionIndex = p;
-				lineIndices[cursorIndexY] = 0;
+				cursorIndexX = 0;
 			}
 			else if (clicks == 4)
 			{
 				SelectionIndex = w * h;
 				cursorIndexY = 0;
-				lineIndices[cursorIndexY] = 0;
+				cursorIndexX = 0;
 			}
 		}
 
@@ -373,15 +379,24 @@ public class InputBox : UserInterface
 
 	#region Backend
 	private readonly List<string> lines = new();
-	private readonly List<int> lineIndices = new();
 
 	private const char SELECTION = '█', CURSOR = '▏', SPACE = ' ';
 	private const float HOLD = 0.06f, HOLD_DELAY = 0.5f;
 	private static readonly Stopwatch holdDelay = new(), hold = new(), clickDelay = new();
-	private int selectionIndex, cursorIndexY, clicks;
+	private int selectionIndex, cursorIndexX, cursorIndexY, clicks;
 	private (int, int) lastClickIndices = (-1, -1);
 
-	protected int CursorIndex => cursorIndexY * Size.Item1 + lineIndices[cursorIndexY];
+	protected int CursorIndexX
+	{
+		get => cursorIndexX;
+		set => cursorIndexX = Math.Clamp(value, 0, lines[CursorIndexY].Length);
+	}
+	protected int CursorIndexY
+	{
+		get => cursorIndexY;
+		set => cursorIndexY = Math.Clamp(value, 0, Size.Item2 - 1);
+	}
+	protected int CursorIndex => cursorIndexY * Size.Item1 + cursorIndexX;
 	protected int SelectionIndex
 	{
 		get => selectionIndex;
@@ -403,19 +418,20 @@ public class InputBox : UserInterface
 		if ((cursorIndexY == 0 && offsetY < 0) || (cursorIndexY == Size.Item2 - 1 && offsetY > 0))
 			return;
 
-		cursorIndexY += offsetY;
-		cursorIndexY = Math.Clamp(cursorIndexY, 0, Size.Item2 - 1);
-		var cy = cursorIndexY;
-
-		if (offsetY != 0)
+		if (CursorIndexX == 0 && offsetX < 0)
 		{
-			var newX = lineIndices[cursorIndexY - offsetY];
-			lineIndices[cursorIndexY] = newX;
+			offsetX = Size.Item1 + offsetX;
+			offsetY = -1;
 		}
-		else
-			lineIndices[cy] += offsetX;
+		else if (CursorIndexX == Size.Item1 - 1 && offsetX > 0)
+		{
+			offsetX = -Size.Item1 + offsetX;
+			offsetY = 1;
+		}
 
-		lineIndices[cy] = Math.Clamp(lineIndices[cy], 0, lines[cy].Length);
+		CursorIndexY += offsetY; // y first cuz X uses it
+		CursorIndexX += offsetX;
+
 		SelectionIndex = shift && allowSelection ? SelectionIndex : CursorIndex;
 		SelectionIndex = Math.Clamp(SelectionIndex, 0, Text.Length);
 	}

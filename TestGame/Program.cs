@@ -18,7 +18,7 @@ public class Program
 		var t1 = new Tilemap((48, 27));
 		var t2 = new Tilemap((48, 27));
 		var t3 = new Tilemap((48, 27));
-		var i = new InputBox((5, 5), (10, 3)) { Placeholder = "Type..." };
+		var i = new InputBox((5, 5), (20, 10)) { Placeholder = "Type..." };
 
 		while (Window.IsExisting)
 		{
