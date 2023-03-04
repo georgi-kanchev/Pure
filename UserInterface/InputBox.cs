@@ -531,12 +531,12 @@ public class InputBox : UserInterface
 			return;
 
 		for (int j = lineEnd; j >= lineStart; j--)
-			if (lines[j] == "")
+			if (lines[j] == "" && lines.Count > 1)
 				lines.RemoveAt(j);
 	}
 	private void TrySetMouseCursor()
 	{
-		if (IsHovered)
+		if (IsHovered || IsClicked)
 			TrySetTileAndSystemCursor(TILE_TEXT);
 	}
 	private bool TryCopyPasteCut(ref bool justDeletedSelection, ref bool shouldDelete, out bool isPasting)

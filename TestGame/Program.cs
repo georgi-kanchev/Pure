@@ -8,7 +8,6 @@ using Pure.Window;
 public class Program
 {
 	// https://chillmindscapes.itch.io/
-	// inputline prevent the next lines from pulling back when deleting
 	// tilemap editor collisions
 	// loading cursor
 	// checkbox do toggle button with bigger widths
