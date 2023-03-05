@@ -31,8 +31,8 @@ public class Panel : UserInterface
 		var isHoveringRight = ix == x + w - 1 && IsBetween(iy, y, y + h - 1);
 		var isHoveringBottom = IsBetween(ix, x, x + w - 1) && iy == y + h - 1;
 
-		if (IsHovered)
-			TrySetTileAndSystemCursor(TILE_ARROW);
+		if (IsDisabled == false && IsHovered)
+			SetMouseCursor(MouseCursor.TILE_ARROW);
 
 		if (wasClicked)
 		{
@@ -44,22 +44,27 @@ public class Panel : UserInterface
 		}
 
 		if (IsMovable && isHoveringTop)
-			Process(ref isDragging, TILE_MOVE);
+			Process(ref isDragging, MouseCursor.TILE_MOVE);
 		else if (IsResizable)
 		{
 			if (isHoveringLeft)
-				Process(ref isResizingL, TILE_RESIZE_HORIZONTAL);
+				Process(ref isResizingL, MouseCursor.TILE_RESIZE_HORIZONTAL);
 			if (isHoveringRight)
-				Process(ref isResizingR, TILE_RESIZE_HORIZONTAL);
+				Process(ref isResizingR, MouseCursor.TILE_RESIZE_HORIZONTAL);
 			if (isHoveringBottom)
-				Process(ref isResizingD, TILE_RESIZE_VERTICAL);
+				Process(ref isResizingD, MouseCursor.TILE_RESIZE_VERTICAL);
 			if (isHoveringTopCorners)
-				Process(ref isResizingU, TILE_RESIZE_VERTICAL);
+				Process(ref isResizingU, MouseCursor.TILE_RESIZE_VERTICAL);
 
-			if ((isHoveringRight && isHoveringTopCorners) || (isHoveringBottom && isHoveringLeft))
-				TrySetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_1);
-			if ((isHoveringLeft && isHoveringTopCorners) || (isHoveringBottom && isHoveringRight))
-				TrySetTileAndSystemCursor(TILE_RESIZE_DIAGONAL_2);
+			var tl = isHoveringLeft && isHoveringTopCorners;
+			var tr = isHoveringRight && isHoveringTopCorners;
+			var br = isHoveringBottom && isHoveringRight;
+			var bl = isHoveringBottom && isHoveringLeft;
+
+			if (IsDisabled == false && (tr || bl))
+				SetMouseCursor(MouseCursor.TILE_RESIZE_DIAGONAL_1);
+			if (IsDisabled == false && (tl || br))
+				SetMouseCursor(MouseCursor.TILE_RESIZE_DIAGONAL_2);
 		}
 
 		if (IsFocused && CurrentInput.IsPressed &&
@@ -107,7 +112,8 @@ public class Panel : UserInterface
 			if (isClicked)
 				condition = true;
 
-			TrySetTileAndSystemCursor(cursor);
+			if (IsDisabled == false)
+				SetMouseCursor(cursor);
 		}
 	}
 

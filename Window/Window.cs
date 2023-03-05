@@ -1,8 +1,8 @@
-﻿using SFML.Graphics;
+﻿namespace Pure.Window;
+
+using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
-
-namespace Pure.Window;
 
 /// <summary>
 /// Provides a simple way to create and interact with an OS window.
@@ -80,8 +80,7 @@ public static class Window
 			return;
 		}
 
-		MouseButton.Update();
-		MouseCursor.TryDrawCursor();
+		Mouse.Update();
 		window.Display();
 	}
 	/// <summary>
@@ -215,8 +214,8 @@ public static class Window
 		window.Resized += (s, e) => UpdateWindowAndView();
 		window.LostFocus += (s, e) =>
 		{
-			MouseButton.CancelInput();
-			KeyboardKey.CancelInput();
+			Mouse.CancelInput();
+			Keyboard.CancelInput();
 		};
 
 		window.DispatchEvents();

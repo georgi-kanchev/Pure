@@ -6,7 +6,7 @@ public class Button : UserInterface
 
 	protected override void OnUpdate()
 	{
-		if (IsHovered)
-			TrySetTileAndSystemCursor(TILE_HAND);
+		if (IsDisabled == false && IsHovered)
+			SetMouseCursor(MouseCursor.TILE_HAND);
 	}
 }

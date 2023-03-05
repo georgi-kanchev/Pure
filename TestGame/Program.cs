@@ -4,13 +4,22 @@ using Pure.Tilemap;
 using Pure.UserInterface;
 using Pure.Utilities;
 using Pure.Window;
+using Pure.Act;
 
 public class Program
 {
+	// raycast texture mapping https://youtu.be/fSjc8vLMg8c?t=504
 	// https://chillmindscapes.itch.io/
 	// tilemap editor collisions
 	// loading cursor
 	// checkbox do toggle button with bigger widths
+	// sprite/tile mirror H & V
+
+	private enum MyActs
+	{
+		InputBoxBeingFocused,
+		KeyPressedA
+	}
 
 	static void Main()
 	{
@@ -19,21 +28,26 @@ public class Program
 		var t3 = new Tilemap((48, 27));
 		var i = new InputBox((5, 5), (20, 10)) { Placeholder = "Type..." };
 
+		Act<MyActs>.When(MyActs.KeyPressedA, () => System.Console.WriteLine("key A down"));
+		Act<MyActs>.When(MyActs.KeyPressedA, () => System.Console.WriteLine("another key A down"));
+
 		while (Window.IsExisting)
 		{
 			Window.Activate(true);
 
 			UserInterface.ApplyInput(
-				MouseButton.IsPressed(MouseButton.LEFT),
-				t1.PointFrom(MouseCursor.Position, Window.Size),
-				MouseButton.ScrollDelta,
-				KeyboardKey.Pressed,
-				KeyboardKey.Typed,
+				Mouse.IsButtonPressed(Mouse.Button.LEFT),
+				t1.PointFrom(Mouse.CursorPosition, Window.Size),
+				Mouse.ScrollDelta,
+				Keyboard.KeysPressed,
+				Keyboard.KeyTyped,
 				t1.Size);
 
 			t1.Fill();
 			t2.Fill();
 			t3.Fill();
+
+			Act<MyActs>.Update(MyActs.KeyPressedA, Keyboard.IsKeyPressed(Keyboard.Key.A));
 
 			SetInputBox(i);
 
@@ -41,7 +55,8 @@ public class Program
 			DrawTilemap(t2);
 			DrawTilemap(t3);
 
-			MouseCursor.Type = UserInterface.MouseCursorTile;
+			UserInterface.GetMouseCursorGraphics(out var tile, out _);
+			Mouse.CursorGraphics = tile;
 
 			Window.Activate(false);
 		}

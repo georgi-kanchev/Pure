@@ -6,9 +6,9 @@ public class Checkbox : Button
 
 	public Checkbox((int, int) position) : base(position, (1, 1)) { }
 
-	protected override void OnEvent(UserAction when)
+	protected override void OnUserEvent(int userAction)
 	{
-		if (when == UserAction.Trigger)
+		if (userAction == UserEvent.TRIGGER)
 			IsChecked = IsChecked == false;
 	}
 }

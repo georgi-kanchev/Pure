@@ -27,10 +27,10 @@ public class List : UserInterface
 
 		Add(count);
 
-		ScrollUp.On(UserAction.Press, () => Scroll.Move(1));
-		ScrollUp.On(UserAction.Hold, () => Scroll.Move(1));
-		ScrollDown.On(UserAction.Press, () => Scroll.Move(-1));
-		ScrollDown.On(UserAction.Hold, () => Scroll.Move(-1));
+		ScrollUp.SubscribeToUserEvent(UserEvent.PRESS, () => Scroll.Move(1));
+		ScrollUp.SubscribeToUserEvent(UserEvent.HOLD, () => Scroll.Move(1));
+		ScrollDown.SubscribeToUserEvent(UserEvent.PRESS, () => Scroll.Move(-1));
+		ScrollDown.SubscribeToUserEvent(UserEvent.HOLD, () => Scroll.Move(-1));
 
 		UpdateParts();
 		UpdateItems();

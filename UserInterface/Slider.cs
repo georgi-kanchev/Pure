@@ -52,7 +52,8 @@ public class Slider : UserInterface
 
 		if (IsHovered)
 		{
-			TrySetTileAndSystemCursor(TILE_HAND);
+			if (IsDisabled == false)
+				SetMouseCursor(MouseCursor.TILE_HAND);
 
 			if (CurrentInput.ScrollDelta != 0)
 				Move(CurrentInput.ScrollDelta);
@@ -62,7 +63,7 @@ public class Slider : UserInterface
 		{
 			var p = CurrentInput.Position;
 			MoveTo(((int)p.Item1, (int)p.Item2));
-			TriggerEvent(UserAction.Drag);
+			TriggerUserEvent(UserEvent.DRAG);
 		}
 	}
 

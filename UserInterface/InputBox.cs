@@ -40,6 +40,18 @@ public class InputBox : UserInterface
 		lines.Add("");
 	}
 
+	public void SetLine(int lineIndex, string text)
+	{
+		if (lineIndex < 0 && lineIndex >= lines.Count)
+			throw new IndexOutOfRangeException(nameof(lineIndex));
+
+		text ??= "";
+		lines[lineIndex] = text;
+	}
+	public string GetLine(int lineIndex)
+	{
+		return lineIndex < 0 && lineIndex >= lines.Count ? "" : lines[lineIndex];
+	}
 	public void GetGraphics(out string cursor, out string selection, out string placeholder)
 	{
 		var totalTextLength = 0;
@@ -84,7 +96,8 @@ public class InputBox : UserInterface
 
 	protected void MoveCursor(int offsetX, bool allowSelection = false, int offsetY = 0)
 	{
-		var shift = CurrentInput.IsKeyPressed(SHIFT_LEFT) || CurrentInput.IsKeyPressed(SHIFT_RIGHT);
+		var shift = CurrentInput.IsKeyPressed(Input.SHIFT_LEFT) ||
+			CurrentInput.IsKeyPressed(Input.SHIFT_RIGHT);
 
 		if ((CursorIndexY == 0 && offsetY < 0) || (CursorIndexY == Size.Item2 - 1 && offsetY > 0))
 			return;
@@ -114,7 +127,7 @@ public class InputBox : UserInterface
 
 		TrySetMouseCursor();
 
-		if (IsDisabled || IsFocused == false || TrySelectAll() || JustPressed(TAB))
+		if (IsDisabled || IsFocused == false || TrySelectAll() || JustPressed(Input.TAB))
 			return;
 
 		var isJustTyped = JustTyped();
@@ -122,8 +135,8 @@ public class InputBox : UserInterface
 		TryResetHoldTimers(out var isHolding, isJustTyped);
 
 		var isAllowedType = isJustTyped || (isHolding && CurrentInput.Typed != "");
-		var shouldDelete = isAllowedType ||
-			Allowed(BACKSPACE, isHolding) || Allowed(DELETE, isHolding) || Allowed(ENTER, isHolding);
+		var shouldDelete = isAllowedType || Allowed(Input.BACKSPACE, isHolding) ||
+			Allowed(Input.DELETE, isHolding) || Allowed(Input.ENTER, isHolding);
 
 		var justDeletedSelected = false;
 		if (TryCopyPasteCut(ref justDeletedSelected, ref shouldDelete, out var isPasting))
@@ -298,7 +311,7 @@ public class InputBox : UserInterface
 	}
 	private bool TrySelectAll()
 	{
-		var ctrl = Pressed(CONTROL_LEFT) || Pressed(CONTROL_RIGHT);
+		var ctrl = Pressed(Input.CONTROL_LEFT) || Pressed(Input.CONTROL_RIGHT);
 
 		if (ctrl == false || CurrentInput.Typed != "a")
 			return false;
@@ -312,16 +325,16 @@ public class InputBox : UserInterface
 
 	private void TryMoveCursor(bool isHolding)
 	{
-		var ctrl = Pressed(CONTROL_LEFT) || Pressed(CONTROL_RIGHT);
-		var shift = Pressed(SHIFT_LEFT) || Pressed(SHIFT_RIGHT);
+		var ctrl = Pressed(Input.CONTROL_LEFT) || Pressed(Input.CONTROL_RIGHT);
+		var shift = Pressed(Input.SHIFT_LEFT) || Pressed(Input.SHIFT_RIGHT);
 		var i = CursorIndex;
 		var s = SelectionIndex;
 		var hasSel = shift == false && i != s;
 		var (cx, cy) = PositionFromIndex(i);
 		var (x, y) = Position;
 		var selectionCursorDiff = i > s ? i - s : s - i;
-		var justL = JustPressed(ARROW_LEFT);
-		var justR = JustPressed(ARROW_RIGHT);
+		var justL = JustPressed(Input.ARROW_LEFT);
+		var justR = JustPressed(Input.ARROW_RIGHT);
 		var (ix, iy) = PositionFromIndex(i);
 		var (sx, sy) = PositionFromIndex(s);
 
@@ -329,14 +342,14 @@ public class InputBox : UserInterface
 		{
 				(hasSel && justL, iy == sy ? (i < s ? 0 : s - i, 0) : i < s ? (0, 0) : (sx - ix, sy - iy)),
 				(hasSel && justR, iy == sy ? (i > s ? 0 : s - i, 0) : i > s ? (0, 0) : (sx - ix, sy - iy)),
-				(ctrl && JustPressed(ARROW_UP), (-CursorIndexX, 0)),
-				(ctrl && JustPressed(ARROW_DOWN), (Size.Item1, 0)),
-				(JustPressed(HOME), (-CursorIndexX, -CursorIndexY)),
-				(JustPressed(END), Size),
-				(Allowed(ARROW_LEFT, isHolding), (ctrl ? GetWordEndOffset(-1) : -1, 0)),
-				(Allowed(ARROW_RIGHT, isHolding), (ctrl ? GetWordEndOffset(1) : 1, 0)),
-				(Allowed(ARROW_UP, isHolding), (0, -1)),
-				(Allowed(ARROW_DOWN, isHolding), (0, 1)),
+				(ctrl && JustPressed(Input.ARROW_UP), (-CursorIndexX, 0)),
+				(ctrl && JustPressed(Input.ARROW_DOWN), (Size.Item1, 0)),
+				(JustPressed(Input.HOME), (-CursorIndexX, -CursorIndexY)),
+				(JustPressed(Input.END), Size),
+				(Allowed(Input.ARROW_LEFT, isHolding), (ctrl ? GetWordEndOffset(-1) : -1, 0)),
+				(Allowed(Input.ARROW_RIGHT, isHolding), (ctrl ? GetWordEndOffset(1) : 1, 0)),
+				(Allowed(Input.ARROW_UP, isHolding), (0, -1)),
+				(Allowed(Input.ARROW_DOWN, isHolding), (0, 1)),
 		};
 
 		for (int j = 0; j < hotkeys.Length; j++)
@@ -392,7 +405,7 @@ public class InputBox : UserInterface
 		var (x, y) = Position;
 		var (w, h) = Size;
 
-		if (Allowed(ENTER, isHolding) &&
+		if (Allowed(Input.ENTER, isHolding) &&
 			CursorIndexY != y + h - 1) // not last line
 		{
 			// no space for new line? bail
@@ -416,7 +429,7 @@ public class InputBox : UserInterface
 			CursorIndexX = 0;
 			SelectionIndex = CursorIndex;
 		}
-		else if (Allowed(BACKSPACE, isHolding) && justDeletedSelection == false)
+		else if (Allowed(Input.BACKSPACE, isHolding) && justDeletedSelection == false)
 		{
 			// cursor is at start of current line
 			if (CursorIndexX == 0)
@@ -430,13 +443,13 @@ public class InputBox : UserInterface
 			}
 
 			var off = GetWordEndOffset(-1, true);
-			var ctrl = Pressed(CONTROL_LEFT);
+			var ctrl = Pressed(Input.CONTROL_LEFT);
 			var count = ctrl ? Math.Abs(off) : 1;
 			lines[CursorIndexY] = lines[CursorIndexY].Remove(
 				ctrl ? CursorIndexX + off : CursorIndexX - 1, count);
 			MoveCursor(ctrl ? off : -1);
 		}
-		else if (Allowed(DELETE, isHolding) && justDeletedSelection == false)
+		else if (Allowed(Input.DELETE, isHolding) && justDeletedSelection == false)
 		{
 			// cursor is at end of current line
 			if (CursorIndexX == lines[CursorIndexY].Length)
@@ -451,7 +464,7 @@ public class InputBox : UserInterface
 
 			var off = GetWordEndOffset(1, true);
 			var off2 = GetWordEndOffset(1, false);
-			var ctrl = Pressed(CONTROL_LEFT);
+			var ctrl = Pressed(Input.CONTROL_LEFT);
 			var count = ctrl ? Math.Abs(off) : 1;
 			lines[CursorIndexY] = lines[CursorIndexY].Remove(ctrl ? CursorIndexX : CursorIndexX, count);
 		}
@@ -536,12 +549,12 @@ public class InputBox : UserInterface
 	}
 	private void TrySetMouseCursor()
 	{
-		if (IsHovered || IsClicked)
-			TrySetTileAndSystemCursor(TILE_TEXT);
+		if (IsDisabled == false && (IsHovered || IsClicked))
+			SetMouseCursor(MouseCursor.TILE_TEXT);
 	}
 	private bool TryCopyPasteCut(ref bool justDeletedSelection, ref bool shouldDelete, out bool isPasting)
 	{
-		var ctrl = Pressed(CONTROL_LEFT) || Pressed(CONTROL_RIGHT);
+		var ctrl = Pressed(Input.CONTROL_LEFT) || Pressed(Input.CONTROL_RIGHT);
 		var (x, y) = Position;
 		var hasSelection = CursorIndex != SelectionIndex;
 
@@ -566,10 +579,10 @@ public class InputBox : UserInterface
 	private static void TryResetHoldTimers(out bool isHolding, bool isJustTyped)
 	{
 		var isAnyJustPressed = isJustTyped ||
-			JustPressed(ENTER) ||
-			JustPressed(BACKSPACE) || JustPressed(DELETE) ||
-			JustPressed(ARROW_LEFT) || JustPressed(ARROW_RIGHT) ||
-			JustPressed(ARROW_UP) || JustPressed(ARROW_DOWN);
+			JustPressed(Input.ENTER) ||
+			JustPressed(Input.BACKSPACE) || JustPressed(Input.DELETE) ||
+			JustPressed(Input.ARROW_LEFT) || JustPressed(Input.ARROW_RIGHT) ||
+			JustPressed(Input.ARROW_UP) || JustPressed(Input.ARROW_DOWN);
 
 		if (isAnyJustPressed)
 			holdDelay.Restart();
