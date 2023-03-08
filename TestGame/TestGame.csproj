@@ -19,7 +19,8 @@
     <ProjectReference Include="..\Utilities\Utilities.csproj" />
     <ProjectReference Include="..\Window\Window.csproj" />
     <ProjectReference Include="..\Pathfinding\Pathfinding.csproj" />
-    <ProjectReference Include="..\Act\Act.csproj" />
+    <ProjectReference Include="..\Tracker\Tracker.csproj" />
+    <ProjectReference Include="..\LAN\LAN.csproj" />
   </ItemGroup>
 
 </Project>

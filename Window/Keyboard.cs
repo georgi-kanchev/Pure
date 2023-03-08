@@ -31,7 +31,6 @@ public static class Keyboard
 	/// All currently held keys as text, in order.
 	/// </summary>
 	public static string KeyTyped { get; internal set; } = "";
-
 	public static int[] KeysPressed => pressed.ToArray();
 
 	public static bool IsKeyPressed(int key) => pressed.Contains(key);
