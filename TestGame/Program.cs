@@ -16,11 +16,9 @@ public class Program
 		var server = new Server();
 		var client = new Client();
 
-		server.ReceiveMessage((msg) => System.Console.WriteLine(msg));
-
 		var s = server.Start();
 		var c = client.Connect();
 
-		client.SendToServer("helloooooo, world! :D");
+		//client.SendToServer("helloooooo, world! :D");
 	}
 }

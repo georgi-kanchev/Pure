@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Pure.LAN;
 
@@ -39,13 +39,21 @@ public class Server
 		thread = null;
 	}
 
-	public void ReceiveMessage(Action<string> method)
+	public void WhenReceive(Action<Message> method)
 	{
-		msgStrings.Add(method);
+		methods.Add(method);
+	}
+	public void SendToAll()
+	{
+
+	}
+	public void SendToClient()
+	{
+
 	}
 
 	#region Backend
-	private readonly List<Action<string>> msgStrings = new();
+	private readonly List<Action<Message>> methods = new();
 	private readonly Dictionary<byte, string> nicknames = new();
 	private TcpListener? server;
 	private Thread? thread;
@@ -63,33 +71,38 @@ public class Server
 				continue;
 
 			using var client = server.AcceptTcpClient();
-			client.ReceiveBufferSize = 4096;
-			var stream = client.GetStream();
-			var bytes = new byte[client.ReceiveBufferSize];
+			using var stream = client.GetStream();
+			var bSize = new byte[4];
+			stream.Read(bSize, 0, 4);
+			var size = BitConverter.ToInt32(bSize);
 
-			stream.Read(bytes, 0, bytes.Length);
+			System.Console.WriteLine(client.Client.LocalEndPoint.ToString());
 
-			var id = default(byte);
-			var tag = default(byte);
-			if (bytes.Length > 0)
-				id = bytes[0];
-			if (bytes.Length > 1)
-				tag = bytes[1];
+			var bytes = new byte[size];
+			stream.Read(bytes, 0, size);
 
-			var bMessage = new byte[bytes.Length - 2];
-			Array.Copy(bytes, 2, bMessage, 0, bMessage.Length);
+			var msg = new Message(bytes);
 
-			if (tag == (byte)Tag.ClientToServerConnect)
+			if (msg.Tag == (byte)Tag.ClientToServerConnect)
 			{
+				currID++;
+				nicknames[currID] = msg.Value == null ? "Player" : msg.Value;
 
+				var response = new Message(0, 0, (byte)Tag.ServerToClientID, $"{currID}");
+				stream.Write(response.Data);
+				return;
 			}
-			else if (tag == (byte)Tag.ClientToServerNickname)
+
+			msg.FromNickname = nicknames[msg.FromID];
+
+			if (msg.Tag == (byte)Tag.ClientToServer)
 			{
-				var nick = Utils.Decompress(bMessage);
-				//nicknames(nicknames);
-				var response = new byte[] { 0, (byte)Tag.ServerToClientID, (byte)nicknames.Count };
-				stream.Write(response);
+				for (int i = 0; i < methods.Count; i++)
+					methods[i]?.Invoke(msg);
+
+				return;
 			}
+
 		}
 	}
 	#endregion

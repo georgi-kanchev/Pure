@@ -1,12 +1,15 @@
-using System.Buffers.Text;
 using System.Net.Sockets;
-using System.Text;
 
 namespace Pure.LAN;
 
 public class Client
 {
-	public string Nickname { get; set; }
+	public string Nickname
+	{
+		get => nicknames[ID];
+		set => nicknames[ID] = string.IsNullOrWhiteSpace(value) ? "Player" : value;
+	}
+	public byte ID { get; private set; }
 
 	public Client(string nickname = "Player")
 	{
@@ -22,10 +25,12 @@ public class Client
 		{
 			client = new TcpClient(serverIP, serverPort);
 			networkStream = client.GetStream();
-			networkStream.Write(new byte[] { 0, (byte)Tag.ClientToServerConnect });
 
 			thread = new(Run);
 			thread.Start();
+
+			var msg = new Message(0, 0, (byte)Tag.ClientToServerConnect, Nickname);
+			networkStream.Write(msg.Data);
 
 			return $"'{Nickname}' connected to server '{serverIP}:{serverPort}'";
 		}
@@ -46,26 +51,43 @@ public class Client
 		thread = null;
 	}
 
-	public string SendToServer(string text)
+	public void WhenReceive(Action<Message> method)
+	{
+		methods.Add(method);
+	}
+
+	public string SendToServer(string message)
 	{
 		if (networkStream == null)
-			return $"'{Nickname}' error: No connection!";
+			return ErrorNoConnection;
 
-		var textBytes = Utils.Compress(text);
-		var bytes = new byte[2 + textBytes.Length];
+		var msg = new Message(ID, 0, (byte)Tag.ClientToServer, message);
+		networkStream.Write(msg.Data);
 
-		bytes[1] = (byte)Tag.ClientToServerNickname;
-		Array.Copy(textBytes, 0, bytes, 2, textBytes.Length);
-		networkStream.Write(bytes);
+		return $"'{Nickname}' sent message to server: '{message}'";
+	}
+	public string SendToClient(byte clientID, string message)
+	{
+		if (networkStream == null)
+			return ErrorNoConnection;
 
-		return $"'{Nickname}' sent text to server: '{text}'";
+		if (nicknames.ContainsKey(clientID) == false)
+			return $"'{Nickname}' tried to send message to '{clientID}' but could not find them";
+
+		var msg = new Message(ID, clientID, (byte)Tag.ClientToClient, message);
+		networkStream.Write(msg.Data);
+
+		return $"'{Nickname}' sent message to '{nicknames[clientID]}': '{message}'";
 	}
 
 	#region Backend
+	private string ErrorNoConnection => $"'{Nickname}' error: No connection!";
+
+	private readonly List<Action<Message>> methods = new();
+	private readonly Dictionary<byte, string> nicknames = new();
 	private Thread? thread;
 	private TcpClient? client;
 	private Stream? networkStream;
-	private byte id = 0;
 
 	private void Run()
 	{
@@ -74,21 +96,35 @@ public class Client
 			if (client == null || networkStream == null)
 				continue;
 
-			var bytes = new byte[client.ReceiveBufferSize];
-			networkStream.Read(bytes, 0, bytes.Length);
+			var bSize = new byte[4];
+			networkStream.Read(bSize, 0, 4);
+			var size = BitConverter.ToInt32(bSize);
 
-			var id = default(byte);
-			var tag = default(byte);
-			if (bytes.Length > 0)
-				id = bytes[0];
-			if (bytes.Length > 1)
-				tag = bytes[1];
+			var bytes = new byte[size];
+			networkStream.Read(bytes, 0, size);
 
-			var bMessage = new byte[bytes.Length - 2];
-			Array.Copy(bytes, 2, bMessage, 0, bMessage.Length);
+			var msg = new Message(bytes);
 
-			if (tag == (byte)Tag.ServerToClientID)
-				id = bMessage[0];
+			if (msg.ToID != ID) // not for me?
+				return;
+
+			msg.FromNickname = nicknames.ContainsKey(msg.FromID) ? null : nicknames[msg.FromID];
+			msg.ToNickname = nicknames[ID];
+
+			if (msg.Tag == (byte)Tag.ServerToClientID)
+			{
+				byte.TryParse(msg.Value, out var myNewID);
+				ID = myNewID;
+			}
+
+			if (msg.Tag == (byte)Tag.ServerToClient ||
+				msg.Tag == (byte)Tag.ClientToClient)
+			{
+				for (int i = 0; i < methods.Count; i++)
+					methods[i].Invoke(msg);
+
+				return;
+			}
 		}
 	}
 	#endregion
