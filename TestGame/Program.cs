@@ -15,10 +15,11 @@ public class Program
 	{
 		var server = new Server();
 		var client = new Client();
-
 		var s = server.Start();
-		var c = client.Connect();
+		var c = client.Connect("172.29.130.209");
 
+		System.Console.WriteLine(s);
+		System.Console.WriteLine(c);
 		//client.SendToServer("helloooooo, world! :D");
 	}
 }

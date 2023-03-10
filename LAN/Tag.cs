@@ -2,9 +2,9 @@ namespace Pure.LAN;
 
 public enum Tag : byte
 {
-	ClientToServerConnect, // client just connected
-	ServerToClientID, // response to a client connection, their new ID
-	ClientToServerNickname, // client updated their nick
+	// this is also used as a connection message
+	ClientToServerNickname, // client updated their nick, ask server if free
+	ServerToClientNickname, // server sending back a free nick
 
 	ClientToServer, // regular msg
 	ClientToClient, // regular msg

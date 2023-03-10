@@ -1,15 +1,23 @@
+using System.Net;
 using System.Net.Sockets;
 
 namespace Pure.LAN;
 
 public class Client
 {
-	public string Nickname
+	public string Nickname { get; set; }
+	//{
+	//	get => ipToNicknames[IP];
+	//	set => ipToNicknames[IP] = string.IsNullOrWhiteSpace(value) ? "Player" : value;
+	//}
+	public string? IP
 	{
-		get => nicknames[ID];
-		set => nicknames[ID] = string.IsNullOrWhiteSpace(value) ? "Player" : value;
+		get
+		{
+			var ep = client?.Client.LocalEndPoint;
+			return ep == null ? null : ((IPEndPoint)ep).Address.ToString();
+		}
 	}
-	public byte ID { get; private set; }
 
 	public Client(string nickname = "Player")
 	{
@@ -25,12 +33,16 @@ public class Client
 		{
 			client = new TcpClient(serverIP, serverPort);
 			networkStream = client.GetStream();
+			this.serverIP = serverIP;
 
 			thread = new(Run);
 			thread.Start();
 
-			var msg = new Message(0, 0, (byte)Tag.ClientToServerConnect, Nickname);
-			networkStream.Write(msg.Data);
+			if (IP != null)
+			{
+				var msg = new Message(IP, serverIP, (byte)Tag.ClientToServerNickname, Nickname);
+				networkStream.Write(msg.Data);
+			}
 
 			return $"'{Nickname}' connected to server '{serverIP}:{serverPort}'";
 		}
@@ -61,30 +73,31 @@ public class Client
 		if (networkStream == null)
 			return ErrorNoConnection;
 
-		var msg = new Message(ID, 0, (byte)Tag.ClientToServer, message);
-		networkStream.Write(msg.Data);
+		//var msg = new Message(IP, 0, (byte)Tag.ClientToServer, message);
+		//networkStream.Write(msg.Data);
 
 		return $"'{Nickname}' sent message to server: '{message}'";
 	}
-	public string SendToClient(byte clientID, string message)
+	public string SendToClient(string ip, string message)
 	{
 		if (networkStream == null)
 			return ErrorNoConnection;
 
-		if (nicknames.ContainsKey(clientID) == false)
-			return $"'{Nickname}' tried to send message to '{clientID}' but could not find them";
+		if (ipToNicknames.ContainsKey(ip) == false)
+			return $"'{Nickname}' tried to send message to '{ip}' but could not find them";
 
-		var msg = new Message(ID, clientID, (byte)Tag.ClientToClient, message);
-		networkStream.Write(msg.Data);
+		//var msg = new Message(IP, ip, (byte)Tag.ClientToClient, message);
+		//networkStream.Write(msg.Data);
 
-		return $"'{Nickname}' sent message to '{nicknames[clientID]}': '{message}'";
+		return $"'{Nickname}' sent message to '{ipToNicknames[ip]}': '{message}'";
 	}
 
 	#region Backend
 	private string ErrorNoConnection => $"'{Nickname}' error: No connection!";
 
+	private string? serverIP;
 	private readonly List<Action<Message>> methods = new();
-	private readonly Dictionary<byte, string> nicknames = new();
+	private readonly Dictionary<string, string> ipToNicknames = new();
 	private Thread? thread;
 	private TcpClient? client;
 	private Stream? networkStream;
@@ -97,34 +110,41 @@ public class Client
 				continue;
 
 			var bSize = new byte[4];
-			networkStream.Read(bSize, 0, 4);
+			var r = networkStream.Read(bSize, 0, 4);
 			var size = BitConverter.ToInt32(bSize);
+
+			if (r == 0)
+				continue;
 
 			var bytes = new byte[size];
 			networkStream.Read(bytes, 0, size);
 
-			var msg = new Message(bytes);
+			ParseMessage(new Message(bytes));
+		}
+	}
+	private void ParseMessage(Message msg)
+	{
+		var isForMe = msg.ToIP == IP;
 
-			if (msg.ToID != ID) // not for me?
-				return;
+		// one of the clients has new free nickname
+		if (msg.Tag == (byte)Tag.ServerToClientNickname &&
+			msg.ToIP != null && msg.Value != null)
+			ipToNicknames[msg.ToIP] = msg.Value;
 
-			msg.FromNickname = nicknames.ContainsKey(msg.FromID) ? null : nicknames[msg.FromID];
-			msg.ToNickname = nicknames[ID];
+		msg.FromNickname = msg.FromIP == null ||
+			ipToNicknames.ContainsKey(msg.FromIP) == false ? null :
+			ipToNicknames[msg.FromIP];
+		msg.ToNickname = msg.ToIP == null ||
+			ipToNicknames.ContainsKey(msg.ToIP) == false ? null :
+			ipToNicknames[msg.ToIP];
 
-			if (msg.Tag == (byte)Tag.ServerToClientID)
-			{
-				byte.TryParse(msg.Value, out var myNewID);
-				ID = myNewID;
-			}
+		if (msg.Tag == (byte)Tag.ServerToClient ||
+			msg.Tag == (byte)Tag.ClientToClient)
+		{
+			for (int i = 0; i < methods.Count; i++)
+				methods[i].Invoke(msg);
 
-			if (msg.Tag == (byte)Tag.ServerToClient ||
-				msg.Tag == (byte)Tag.ClientToClient)
-			{
-				for (int i = 0; i < methods.Count; i++)
-					methods[i].Invoke(msg);
-
-				return;
-			}
+			return;
 		}
 	}
 	#endregion
