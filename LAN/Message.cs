@@ -15,6 +15,7 @@ public class Message
 	internal byte Tag { get; }
 	internal byte[]? Data { get; }
 
+	private Message() { }
 	internal Message(string? fromIP, string? toIP, byte tag, string value)
 	{
 		this.FromIP = fromIP;
@@ -58,6 +59,11 @@ public class Message
 		this.ToIP = toID.ToString();
 		this.Value = value;
 		this.Tag = tag;
+	}
+
+	public override string ToString()
+	{
+		return $"{FromIP}: {Value}";
 	}
 
 	#region Backend

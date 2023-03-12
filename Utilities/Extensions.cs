@@ -138,6 +138,17 @@ public static class Extensions
 		list.Add(number);
 		return Average(list);
 	}
+	public static string ToString<T>(this IList<T> list, string separator)
+	{
+		var result = "";
+		for (int i = 0; i < list.Count; i++)
+		{
+			var sep = i != 0 ? separator : "";
+			result += $"{sep}{list[i]}";
+		}
+
+		return result;
+	}
 
 	/// <summary>
 	/// Returns whether <paramref name="text"/> represents a valid number.
