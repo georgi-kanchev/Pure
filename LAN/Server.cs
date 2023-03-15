@@ -1,268 +1,141 @@
-﻿using System.Net;
+﻿// Copyright (c) 2018-2020, Yves Goergen, https://unclassified.software
+//
+// Copying and distribution of this file, with or without modification, are permitted provided the
+// copyright notice and this notice are preserved. This file is offered as-is, without any warranty.
+
+using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Sockets;
-using System.Timers;
 
-namespace Pure.LAN;
-
-public class Server
+namespace Pure.LAN
 {
-	public string Name { get; set; }
-	public string[] IPs
+	/// <summary>
+	/// Listens asynchronously for connections from TCP network clients.
+	/// </summary>
+	public class AsyncTcpListener
 	{
-		get
+		private TcpListener? tcpListener;
+		private volatile bool isStopped;
+		private bool closeClients;
+
+		/// <summary>
+		/// Occurs when a trace message is available.
+		/// </summary>
+		public event EventHandler<AsyncTcpEventArgs>? Message;
+
+		/// <summary>
+		/// Gets or sets the local IP address to listen on. Default is all network interfaces.
+		/// </summary>
+		public IPAddress IPAddress { get; set; } = IPAddress.IPv6Any;
+
+		/// <summary>
+		/// Gets or sets the port on which to listen for incoming connection attempts.
+		/// </summary>
+		public int Port { get; set; }
+
+		/// <summary>
+		/// Called when a pending connection request was accepted. When this method completes, the
+		/// client connection will be closed.
+		/// </summary>
+		/// <remarks>
+		/// This callback method may not be called when the <see cref="OnClientConnected"/> method
+		/// is overridden by a derived class.
+		/// </remarks>
+		public Func<TcpClient, Task>? ClientConnectedCallback { get; set; }
+
+		/// <summary>
+		/// Starts listening asynchronously for incoming connection requests.
+		/// </summary>
+		/// <returns>The task object representing the asynchronous operation.</returns>
+		public async Task RunAsync()
 		{
-			var result = new List<string>();
-			foreach (var ip in host.AddressList)
-				if (ip.AddressFamily == AddressFamily.InterNetwork)
-					result.Add(ip.ToString());
+			if (tcpListener != null)
+				throw new InvalidOperationException("The listener is already running.");
+			if (Port <= 0 || Port > ushort.MaxValue)
+				throw new ArgumentOutOfRangeException(nameof(Port));
 
-			return result.ToArray();
-		}
-	}
-	public bool IsRunning { get; private set; }
+			isStopped = false;
+			closeClients = false;
 
-	public Server(string name = "Server")
-	{
-		host = Dns.GetHostEntry(Dns.GetHostName());
-		Name = name;
-	}
+			tcpListener = new TcpListener(IPAddress, Port);
+			tcpListener.Server.DualMode = true;
+			tcpListener.Start();
+			Message?.Invoke(this, new AsyncTcpEventArgs("Waiting for connections"));
 
-	public bool Start(int port = 13000)
-	{
-		if (server != null)
-			Stop();
-
-		try
-		{
-			server = new TcpListener(IPAddress.Any, port);
-			server.Start();
-
-			thread = new(Run);
-			thread.Start();
-
-			connectionTimer = new() { AutoReset = true, Interval = 2000 };
-			connectionTimer.Elapsed += (s, e) => SendConnectionMessage();
-			connectionTimer.Start();
-
-			var ips = IPs;
-			var ipsString = "";
-			for (int i = 0; i < ips.Length; i++)
+			var clients = new ConcurrentDictionary<TcpClient, bool>();   // bool is dummy, never regarded
+			var clientTasks = new List<Task>();
+			try
 			{
-				var sep = i != 0 ? ", " : "";
-				ipsString += $"{sep}'{ips[i]}:{port}'";
+				while (true)
+				{
+					TcpClient tcpClient;
+					try
+					{
+						tcpClient = await tcpListener.AcceptTcpClientAsync();
+					}
+					catch (ObjectDisposedException) when (isStopped)
+					{
+						// Listener was stopped
+						break;
+					}
+					var endpoint = tcpClient.Client.RemoteEndPoint;
+					Message?.Invoke(this, new AsyncTcpEventArgs("Client connected from " + endpoint));
+					clients.TryAdd(tcpClient, true);
+					var clientTask = Task.Run(async () =>
+					{
+						await OnClientConnected(tcpClient);
+						tcpClient.Dispose();
+						Message?.Invoke(this, new AsyncTcpEventArgs("Client disconnected from " + endpoint));
+						clients.TryRemove(tcpClient, out _);
+					});
+					clientTasks.Add(clientTask);
+				}
 			}
-			IsRunning = true;
-
-			return true;
-		}
-		catch (Exception) { return false; }
-	}
-	public void Stop()
-	{
-		IsRunning = false;
-
-		Thread.Sleep(1);
-		thread = null;
-
-		foreach (var kvp in connections)
-			kvp.Value.stream.Dispose();
-		connections.Clear();
-
-		server = null;
-	}
-
-	public void WhenReceive(Action<Message> method)
-	{
-		methods.Add(method);
-	}
-
-	public void SendToAllClients(string message)
-	{
-		foreach (var kvp in connections)
-		{
-			var msg = new Message(IPs[^1], kvp.Key, Tag.SERVER_TO_CLIENT, message);
-			kvp.Value.stream.Write(msg.Data);
-		}
-	}
-	public void SendToClient(string nickname, string message)
-	{
-		if (connections.ContainsKey(nickname) == false)
-			return;
-
-		foreach (var kvp in connections)
-			if (nickname == kvp.Value.nickname)
+			finally
 			{
-				var msg = new Message(IPs[^1], kvp.Key, Tag.SERVER_TO_CLIENT, message);
-				connections[kvp.Key].stream.Write(msg.Data);
-			}
-	}
+				if (closeClients)
+				{
+					Message?.Invoke(this, new AsyncTcpEventArgs("Shutting down, closing all client connections"));
+					foreach (var tcpClient in clients.Keys)
+					{
+						tcpClient.Dispose();
+					}
+					await Task.WhenAll(clientTasks);
+					Message?.Invoke(this, new AsyncTcpEventArgs("All client connections completed"));
+				}
+				else
+					Message?.Invoke(this, new AsyncTcpEventArgs("Shutting down, client connections remain open"));
 
-	#region Backend
-	private class Connection
-	{
-		public Server parent;
-		public string ip, nickname;
-		public NetworkStream stream;
-		public System.Timers.Timer timeout;
-
-		public Connection(Server parent, string ip, string nickname, NetworkStream stream)
-		{
-			this.ip = ip;
-			this.parent = parent;
-			this.nickname = nickname;
-			this.stream = stream;
-			timeout = new() { AutoReset = true, Interval = 5000 };
-			timeout.Elapsed += (s, e) => parent.ConnectionTimeout(this);
-			timeout.Start();
-		}
-	}
-
-	private readonly Dictionary<string, Connection> connections = new();
-
-	private System.Timers.Timer? connectionTimer;
-	private readonly List<Action<Message>> methods = new();
-	private TcpListener? server;
-	private Thread? thread;
-	private readonly IPHostEntry host;
-
-	private void Run()
-	{
-		while (IsRunning)
-		{
-			if (server == null)
-				continue;
-
-			using var client = server.AcceptTcpClient();
-			using var stream = client.GetStream();
-			var bSize = new byte[4];
-			stream.Read(bSize, 0, 4);
-			var size = BitConverter.ToInt32(bSize);
-
-			var bytes = new byte[size];
-			stream.Read(bytes, 0, size);
-
-			ParseMessage(client, stream, new Message(bytes));
-		}
-	}
-	private void ParseMessage(TcpClient client, NetworkStream responseStream, Message msg)
-	{
-		Console.WriteLine(msg);
-
-		var clientIP = msg.FromIP;
-
-		if (clientIP == null || connections.ContainsKey(clientIP) == false)
-			return;
-
-		msg.FromNickname = connections[clientIP].nickname;
-
-		// client wants to claim a nickname (if free)
-		// this is also the first message they send, so add them to the connections
-		if (msg.Tag == Tag.CLIENT_TO_SERVER_NICKNAME)
-		{
-			var nick = GetFreeNickname(msg.Value);
-
-			if (connections.ContainsKey(clientIP) == false)
-			{
-				var connection = new Connection(this, clientIP, nick, responseStream);
-				connections[clientIP] = connection;
-			}
-			connections[clientIP].nickname = nick;
-
-			System.Console.WriteLine("woooo");
-
-			var response = new Message(IPs[^1], clientIP, Tag.SERVER_TO_CLIENT_NICKNAME, nick);
-			responseStream.Write(response.Data);
-			return;
-		}
-		// client notifies me they are connected, don't timeout
-		else if (msg.Tag == Tag.CLIENT_TO_SERVER_CONNECTION)
-		{
-			// not recognizing client? ignore
-			if (connections.ContainsKey(clientIP) == false)
-				return;
-
-			var t = connections[clientIP].timeout;
-			t.Stop();
-			t.Start();
-		}
-		// a client wants to disconnect and does so, notify everyone else
-		else if (msg.Tag == Tag.CLIENT_TO_SERVER_DISCONNECT)
-		{
-			if (msg.FromIP == null || connections.ContainsKey(msg.FromIP) == false)
-				return;
-
-			var c = connections[msg.FromIP];
-			c.stream.Dispose();
-			c.timeout.Dispose();
-			connections.Remove(c.ip);
-
-			foreach (var kvp in connections)
-			{
-				var respone = new Message(IPs[^1], kvp.Value.ip, Tag.SERVER_TO_CLIENT_DISCONNECT, c.ip);
-				kvp.Value.stream.Write(respone.Data);
+				clientTasks.Clear();
+				tcpListener = null;
 			}
 		}
-	}
-	private string GetFreeNickname(string? nickname)
-	{
-		if (nickname == null)
-			nickname = "Player";
-
-		while (NicknameExists(nickname))
+		/// <summary>
+		/// Closes the listener.
+		/// </summary>
+		/// <param name="closeClients">Specifies whether accepted connections should be closed, too.</param>
+		public void Stop(bool closeClients)
 		{
-			var number = "";
-			for (int i = nickname.Length - 1; i >= 0; i--)
-				if (char.IsNumber(nickname[i]))
-					number = number.Insert(0, nickname[i].ToString());
+			if (tcpListener == null)
+				throw new InvalidOperationException("The listener is not started.");
 
-			if (number == "")
-			{
-				nickname += "1";
-				continue;
-			}
-
-			int.TryParse(nickname, out var n);
-			n++;
-			var nIndex = nickname.Length - number.Length;
-			nickname = nickname[..nIndex] + n.ToString();
+			this.closeClients = closeClients;
+			isStopped = true;
+			tcpListener.Stop();
 		}
-		return nickname;
-	}
-	private bool NicknameExists(string nickname)
-	{
-		foreach (var kvp in connections)
-			if (nickname == kvp.Value.nickname)
-				return true;
 
-		return false;
-	}
-
-	private void SendConnectionMessage()
-	{
-		foreach (var kvp in connections)
+		/// <summary>
+		/// Called when a pending connection request was accepted. When this method completes, the
+		/// client connection will be closed.
+		/// </summary>
+		/// <param name="tcpClient">The <see cref="TcpClient"/> that represents the accepted connection.</param>
+		/// <returns>The task object representing the asynchronous operation.</returns>
+		protected virtual Task OnClientConnected(TcpClient tcpClient)
 		{
-			var msg = new Message(IPs[^1], kvp.Key, Tag.SERVER_TO_CLIENT_CONNECTION, "");
-			kvp.Value.stream.Write(msg.Data);
+			if (ClientConnectedCallback != null)
+				return ClientConnectedCallback(tcpClient);
+
+			return Task.CompletedTask;
 		}
 	}
-	private void ConnectionTimeout(Connection connection)
-	{
-		// this connection hasn't reach out to me in about 5 seconds
-		// so drop it and notify everyone else to do the same - timeout
-		var c = (Connection?)connection;
-
-		if (c == null)
-			return;
-
-		c.stream.Dispose();
-		c.timeout.Dispose();
-		connections.Remove(c.ip);
-
-		foreach (var kvp in connections)
-		{
-			var msg = new Message(IPs[^1], kvp.Value.ip, Tag.SERVER_TO_CLIENT_TIMEOUT, c.ip);
-			kvp.Value.stream.Write(msg.Data);
-		}
-	}
-	#endregion
 }

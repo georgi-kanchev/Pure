@@ -2,7 +2,7 @@
 
 using System;
 using Pure.LAN;
-using Pure.Utilities;
+using Pure.Window;
 
 public class Program
 {
@@ -18,72 +18,22 @@ public class Program
 
 	// pure;to TestGame;dotnet build -c Release;to bin/Release/net6.0;dotnet TestGame.dll
 
-	// https://gist.github.com/define-private-public/cea29b56eebaf59714f6c858f26b46d0
+	// https://github.com/ygoe/AsyncTcpClient
 
 	static void Main()
 	{
-		Console.Write("Enter 'host' or 'join': ");
-		var isHost = Console.ReadLine() == "host";
+		//var server = new Server("server", 13000);
+		//server.Start();
+		//
+		//while (Window.IsExisting)
+		//{
+		//	Window.Activate(true);
+		//	Window.Activate(false);
+		//}
 
-		if (isHost)
-		{
-			Console.Write("Enter a port: ");
-			int.TryParse(Console.ReadLine(), out var port);
-			var server = new Server();
-
-			Console.WriteLine(server.IPs.ToString(", "));
-			server.WhenReceive((m) => Console.WriteLine($"{m.FromNickname}: {m.Value}"));
-
-			while (server.Start(port) == false)
-			{
-				Console.WriteLine("Failed to start");
-				Console.Write("Enter a port: ");
-				int.TryParse(Console.ReadLine(), out var p);
-				port = p;
-			}
-			Console.WriteLine("Started\nEnter 'quit' to exit");
-
-			var input = Console.ReadLine();
-			while (input != "quit")
-			{
-				if (string.IsNullOrWhiteSpace(input) == false)
-				{
-					server.SendToAllClients(input);
-					Console.WriteLine($"Sent: {input}");
-				}
-
-				input = Console.ReadLine();
-			}
-			server.Stop();
-
-			return;
-		}
-
-		Console.Write("Enter the host IP to connect or 'quit' to exit: ");
-		var ip = Console.ReadLine();
-		var client = new Client();
-
-		client.WhenReceive((m) => Console.WriteLine($"{m.FromNickname}: {m.Value}"));
-
-		while (ip == null || (ip != "quit" && client.Connect(ip) == false))
-		{
-			Console.WriteLine("Failed to connect");
-			Console.Write("Enter the host IP to connect or 'quit' to exit: ");
-			ip = Console.ReadLine();
-		}
-		if (ip != "quit")
-		{
-			Console.WriteLine("Connected\nEnter 'quit' to exit");
-
-			var input = Console.ReadLine();
-			while (input != "quit")
-			{
-				if (string.IsNullOrWhiteSpace(input) == false)
-					client.SendToAllClients(input);
-
-				input = Console.ReadLine();
-			}
-		}
-		client.Disconnect();
+		//Console.WriteLine("Server IP:");
+		//var ip = Console.ReadLine();
+		//var client = new Client("niiiick");
+		//client.Connect(ip == null ? "" : ip, 13000);
 	}
 }

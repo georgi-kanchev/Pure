@@ -1,196 +1,356 @@
+// Copyright (c) 2018-2020, Yves Goergen, https://unclassified.software
+//
+// Copying and distribution of this file, with or without modification, are permitted provided the
+// copyright notice and this notice are preserved. This file is offered as-is, without any warranty.
+
 using System.Net;
 using System.Net.Sockets;
 
-namespace Pure.LAN;
-
-public class Client
+namespace Pure.LAN
 {
-	public string Nickname { get; set; }
-	//{
-	//	get => ipToNicknames[IP];
-	//	set => ipToNicknames[IP] = string.IsNullOrWhiteSpace(value) ? "Player" : value;
-	//}
-	public string? IP
+	/// <summary>
+	/// Provides asynchronous client connections for TCP network services.
+	/// </summary>
+	/// <remarks>
+	/// This class can be used directly when setting the relevant callback methods
+	/// <see cref="ConnectedCallback"/>, <see cref="ClosedCallback"/> or
+	/// <see cref="ReceivedCallback"/>. Alternatively, a class inheriting from
+	/// <see cref="AsyncTcpClient"/> can implement the client logic by overriding the protected
+	/// methods.
+	/// </remarks>
+	public class AsyncTcpClient : IDisposable
 	{
-		get
+		/// <summary>
+		/// Occurs when a trace message is available.
+		/// </summary>
+		public event EventHandler<AsyncTcpEventArgs>? Message;
+
+		/// <summary>
+		/// Gets or sets the <see cref="TcpClient"/> to use. Only for client connections that were
+		/// accepted by an <see cref="AsyncTcpListener"/>.
+		/// </summary>
+		public TcpClient? ServerTcpClient { get; set; }
+		/// <summary>
+		/// Gets or sets the remote endpoint of the socket. Only for client connections that were
+		/// accepted by an <see cref="AsyncTcpListener"/>.
+		/// </summary>
+		public EndPoint? RemoteEndPoint { get; set; }
+		/// <summary>
+		/// Gets or sets the amount of time an <see cref="AsyncTcpClient"/> will wait to connect
+		/// once a connection operation is initiated.
+		/// </summary>
+		public TimeSpan ConnectTimeout { get; set; } = TimeSpan.FromSeconds(5);
+		/// <summary>
+		/// Gets or sets the maximum amount of time an <see cref="AsyncTcpClient"/> will wait to
+		/// connect once a repeated connection operation is initiated. The actual connection
+		/// timeout is increased with every try and reset when a connection is established.
+		/// </summary>
+		public TimeSpan MaxConnectTimeout { get; set; } = TimeSpan.FromMinutes(1);
+		/// <summary>
+		/// Gets or sets a value indicating whether the client should try to reconnect after the
+		/// connection was closed.
+		/// </summary>
+		public bool AutoReconnect { get; set; }
+
+		/// <summary>
+		/// Gets or sets the name of the host to connect to.
+		/// </summary>
+		public string HostName { get; set; }
+		/// <summary>
+		/// Gets or sets the IP address of the host to connect to.
+		/// Only regarded if <see cref="HostName"/> is null or empty.
+		/// </summary>
+		public IPAddress IPAddress { get; set; }
+		/// <summary>
+		/// Gets or sets the port number of the remote host.
+		/// </summary>
+		public int Port { get; set; }
+		/// <summary>
+		/// Gets a value indicating whether the client is currently connected.
+		/// </summary>
+		public bool IsConnected => tcpClient.Client.Connected;
+		/// <summary>
+		/// A <see cref="Task"/> that can be awaited to close the connection. This task will
+		/// complete when the connection was closed remotely.
+		/// </summary>
+		public Task? ClosedTask => closedTcs.Task;
+		/// <summary>
+		/// Gets a value indicating whether the <see cref="ClosedTask"/> has completed.
+		/// </summary>
+		public bool IsClosing => ClosedTask.IsCompleted;
+		/// <summary>
+		/// Called when the client has connected to the remote host. This method can implement the
+		/// communication logic to execute when the connection was established. The connection will
+		/// not be closed before this method completes.
+		/// </summary>
+		/// <remarks>
+		/// This callback method may not be called when the <see cref="OnConnectedAsync"/> method
+		/// is overridden by a derived class.
+		/// </remarks>
+		public Func<AsyncTcpClient, bool, Task>? ConnectedCallback { get; set; }
+		/// <summary>
+		/// Called when the connection was closed. The parameter specifies whether the connection
+		/// was closed by the remote host.
+		/// </summary>
+		/// <remarks>
+		/// This callback method may not be called when the <see cref="OnClosed"/> method is
+		/// overridden by a derived class.
+		/// </remarks>
+		public Action<AsyncTcpClient, bool>? ClosedCallback { get; set; }
+		/// <summary>
+		/// Called when data was received from the remote host. The parameter specifies the number
+		/// of bytes that were received. This method can implement the communication logic to
+		/// execute every time data was received. New data will not be received before this method
+		/// completes.
+		/// </summary>
+		/// <remarks>
+		/// This callback method may not be called when the <see cref="OnReceivedAsync"/> method
+		/// is overridden by a derived class.
+		/// </remarks>
+		public Func<AsyncTcpClient, int, Task>? ReceivedCallback { get; set; }
+
+
+		/// <summary>
+		/// Initialises a new instance of the <see cref="AsyncTcpClient"/> class.
+		/// </summary>
+		public AsyncTcpClient()
 		{
-			var ep = client?.Client.LocalEndPoint;
-			return ep == null ? null : ((IPEndPoint)ep).Address.ToString();
+			closedTcs.SetResult(true);
 		}
-	}
-	public bool IsConnected { get; private set; }
 
-	public Client(string nickname = "Player")
-	{
-		Nickname = nickname;
-	}
-
-	public bool Connect(string serverIP = "127.0.0.1", int serverPort = 13000)
-	{
-		if (client != null)
-			Disconnect();
-
-		try
+		/// <summary>
+		/// Closes the socket connection normally. This does not release the resources used by the
+		/// <see cref="AsyncTcpClient"/>.
+		/// </summary>
+		public void Disconnect()
 		{
-			client = new TcpClient(serverIP, serverPort);
-			networkStream = client.GetStream();
-			this.serverIP = serverIP;
+			tcpClient.Client.Disconnect(false);
+		}
+		/// <summary>
+		/// Releases the managed and unmanaged resources used by the <see cref="AsyncTcpClient"/>.
+		/// Closes the connection to the remote host and disables automatic reconnecting.
+		/// </summary>
+		public void Dispose()
+		{
+			AutoReconnect = false;
+			tcpClient?.Dispose();
+			stream = null;
+		}
 
-			thread = new(Run);
-			thread.Start();
+		/// <summary>
+		/// Sends data to the remote host.
+		/// </summary>
+		/// <param name="data">The data to send.</param>
+		/// <param name="cancellationToken">A cancellation token used to propagate notification that this operation should be canceled.</param>
+		/// <returns>The task object representing the asynchronous operation.</returns>
+		public async Task Send(ArraySegment<byte> data, CancellationToken cancellationToken = default)
+		{
+			if (!tcpClient.Client.Connected)
+				throw new InvalidOperationException("Not connected.");
 
-			connectionTimer = new() { AutoReset = true, Interval = 2000 };
-			connectionTimer.Elapsed += (s, e) => SendConnectionMessage();
-			connectionTimer.Start();
+			await stream.WriteAsync(data.Array, data.Offset, data.Count, cancellationToken);
+		}
 
-			timeout = new() { AutoReset = true, Interval = 5000 };
-			timeout.Elapsed += (s, e) => Disconnect();
-			timeout.Start();
+		/// <summary>
+		/// Called when the connection was closed.
+		/// </summary>
+		/// <param name="remote">true, if the connection was closed by the remote host; false, if
+		///   the connection was closed locally.</param>
+		protected virtual void OnClosed(bool remote)
+		{
+			ClosedCallback?.Invoke(this, remote);
+		}
 
-			IsConnected = true;
-
-			if (IP != null)
+		/// <summary>
+		/// Runs the client connection asynchronously.
+		/// </summary>
+		/// <returns>The task object representing the asynchronous operation.</returns>
+		public async Task RunAsync()
+		{
+			bool isReconnected = false;
+			int reconnectTry = -1;
+			do
 			{
-				var msg = new Message(IP, serverIP, (byte)Tag.CLIENT_TO_SERVER_NICKNAME, Nickname);
-				networkStream.Write(msg.Data);
+				reconnectTry++;
+				ByteBuffer = new ByteBuffer();
+				if (ServerTcpClient != null)
+				{
+					// Take accepted connection from listener
+					tcpClient = ServerTcpClient;
+				}
+				else
+				{
+					// Try to connect to remote host
+					var connectTimeout = TimeSpan.FromTicks(ConnectTimeout.Ticks + (MaxConnectTimeout.Ticks - ConnectTimeout.Ticks) / 20 * Math.Min(reconnectTry, 20));
+					tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
+					tcpClient.Client.DualMode = true;
+					Message?.Invoke(this, new AsyncTcpEventArgs("Connecting to server"));
+					Task connectTask;
+					if (!string.IsNullOrWhiteSpace(HostName))
+					{
+						connectTask = tcpClient.ConnectAsync(HostName, Port);
+					}
+					else
+					{
+						connectTask = tcpClient.ConnectAsync(IPAddress, Port);
+					}
+					var timeoutTask = Task.Delay(connectTimeout);
+					if (await Task.WhenAny(connectTask, timeoutTask) == timeoutTask)
+					{
+						Message?.Invoke(this, new AsyncTcpEventArgs("Connection timeout"));
+						continue;
+					}
+					try
+					{
+						await connectTask;
+					}
+					catch (Exception ex)
+					{
+						Message?.Invoke(this, new AsyncTcpEventArgs("Error connecting to remote host", ex));
+						await timeoutTask;
+						continue;
+					}
+				}
+				reconnectTry = -1;
+				stream = tcpClient.GetStream();
+
+				// Read until the connection is closed.
+				// A closed connection can only be detected while reading, so we need to read
+				// permanently, not only when we might use received data.
+				var networkReadTask = Task.Run(async () =>
+				{
+					// 10 KiB should be enough for every Ethernet packet
+					byte[] buffer = new byte[10240];
+					while (true)
+					{
+						int readLength;
+						try
+						{
+							readLength = await stream.ReadAsync(buffer, 0, buffer.Length);
+						}
+						catch (IOException ex) when ((ex.InnerException as SocketException)?.ErrorCode == (int)SocketError.OperationAborted ||
+							(ex.InnerException as SocketException)?.ErrorCode == 125 /* Operation canceled (Linux) */)
+						{
+							// Warning: This error code number (995) may change.
+							// See https://docs.microsoft.com/en-us/windows/desktop/winsock/windows-sockets-error-codes-2
+							// Note: NativeErrorCode and ErrorCode 125 observed on Linux.
+							Message?.Invoke(this, new AsyncTcpEventArgs("Connection closed locally", ex));
+							readLength = -1;
+						}
+						catch (IOException ex) when ((ex.InnerException as SocketException)?.ErrorCode == (int)SocketError.ConnectionAborted)
+						{
+							Message?.Invoke(this, new AsyncTcpEventArgs("Connection aborted", ex));
+							readLength = -1;
+						}
+						catch (IOException ex) when ((ex.InnerException as SocketException)?.ErrorCode == (int)SocketError.ConnectionReset)
+						{
+							Message?.Invoke(this, new AsyncTcpEventArgs("Connection reset remotely", ex));
+							readLength = -2;
+						}
+						if (readLength <= 0)
+						{
+							if (readLength == 0)
+							{
+								Message?.Invoke(this, new AsyncTcpEventArgs("Connection closed remotely"));
+							}
+							closedTcs.TrySetResult(true);
+							OnClosed(readLength != -1);
+							return;
+						}
+						var segment = new ArraySegment<byte>(buffer, 0, readLength);
+						ByteBuffer.Enqueue(segment);
+						await OnReceivedAsync(readLength);
+					}
+				});
+
+				closedTcs = new TaskCompletionSource<bool>();
+				await OnConnectedAsync(isReconnected);
+
+				// Wait for closed connection
+				await networkReadTask;
+				tcpClient.Close();
+
+				isReconnected = true;
 			}
-
-			return true;
+			while (AutoReconnect && ServerTcpClient == null);
 		}
-		catch (Exception) { Disconnect(); return false; }
-	}
-	public void Disconnect()
-	{
-		IsConnected = false;
+		/// <summary>
+		/// Waits asynchronously until received data is available in the buffer.
+		/// </summary>
+		/// <param name="cancellationToken">A cancellation token used to propagate notification that this operation should be canceled.</param>
+		/// <returns>true, if data is available; false, if the connection is closing.</returns>
+		/// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> was canceled.</exception>
+		public async Task<bool> WaitAsync(CancellationToken cancellationToken = default)
+		{
+			return await Task.WhenAny(ByteBuffer.WaitAsync(cancellationToken), closedTcs.Task) != closedTcs.Task;
+		}
 
-		connectionTimer?.Dispose();
-		connectionTimer = null;
-		ipToNicknames.Clear();
-
-		Thread.Sleep(1);
-		thread = null;
-
-		client?.Dispose();
-		client = null;
-
-		networkStream?.Dispose();
-		networkStream = null;
-	}
-
-	public void WhenReceive(Action<Message> method)
-	{
-		methodsMsgReceive.Add(method);
-	}
-
-	public void SendToServer(string message)
-	{
-		if (networkStream == null)
-			return;
-
-		var msg = new Message(IP, serverIP, Tag.CLIENT_TO_SERVER, message);
-		networkStream.Write(msg.Data);
-	}
-	public void SendToClient(string nickname, string message)
-	{
-		if (networkStream == null)
-			return;
-
-		foreach (var kvp in ipToNicknames)
-			if (nickname == kvp.Value)
+		/// <summary>
+		/// Called when the client has connected to the remote host. This method can implement the
+		/// communication logic to execute when the connection was established. The connection will
+		/// not be closed before this method completes.
+		/// </summary>
+		/// <param name="isReconnected">true, if the connection was closed and automatically reopened;
+		///   false, if this is the first established connection for this client instance.</param>
+		/// <returns>The task object representing the asynchronous operation.</returns>
+		protected virtual Task OnConnectedAsync(bool isReconnected)
+		{
+			if (ConnectedCallback != null)
 			{
-				var msg = new Message(IP, kvp.Key, Tag.CLIENT_TO_CLIENT, message);
-				networkStream.Write(msg.Data);
+				return ConnectedCallback(this, isReconnected);
 			}
-	}
-	public void SendToAllClients(string message)
-	{
-		if (networkStream == null)
-			return;
-
-		var msg = new Message(IP, serverIP, Tag.CLIENT_TO_ALL, message);
-		networkStream.Write(msg.Data);
-	}
-
-	#region Backend
-	private System.Timers.Timer? connectionTimer, timeout;
-
-	private string? serverIP;
-	private readonly List<Action<Message>> methodsMsgReceive = new();
-	private readonly Dictionary<string, string> ipToNicknames = new();
-	private Thread? thread;
-	private TcpClient? client;
-	private Stream? networkStream;
-
-	private void Run()
-	{
-		while (IsConnected)
-		{
-			if (client == null || networkStream == null)
-				continue;
-
-			var bSize = new byte[4];
-			var r = networkStream.Read(bSize, 0, 4);
-			var size = BitConverter.ToInt32(bSize);
-
-			if (r == 0)
-				continue;
-
-			var bytes = new byte[size];
-			networkStream.Read(bytes, 0, size);
-
-			ParseMessage(new Message(bytes));
+			return Task.CompletedTask;
 		}
+		/// <summary>
+		/// Called when data was received from the remote host. This method can implement the
+		/// communication logic to execute every time data was received. New data will not be
+		/// received before this method completes.
+		/// </summary>
+		/// <param name="count">The number of bytes that were received. The actual data is available
+		///   through the <see cref="ByteBuffer"/>.</param>
+		/// <returns>The task object representing the asynchronous operation.</returns>
+		protected virtual Task OnReceivedAsync(int count)
+		{
+			if (ReceivedCallback != null)
+			{
+				return ReceivedCallback(this, count);
+			}
+			return Task.CompletedTask;
+		}
+
+		#region Backend
+		private TcpClient? tcpClient;
+		private NetworkStream? stream;
+		private TaskCompletionSource<bool> closedTcs = new();
+
+		internal ByteBuffer ByteBuffer { get; private set; } = new ByteBuffer();
+		#endregion
 	}
-	private void ParseMessage(Message msg)
+
+	/// <summary>
+	/// Provides data for the <see cref="AsyncTcpClient.Message"/> event.
+	/// </summary>
+	public class AsyncTcpEventArgs : EventArgs
 	{
-		// one of the clients has new free nickname
-		if (msg.Tag == Tag.SERVER_TO_CLIENT_NICKNAME &&
-			msg.ToIP != null && msg.Value != null)
-			ipToNicknames[msg.ToIP] = msg.Value;
-
-		// after nickname change...
-		msg.FromNickname = msg.FromIP == null ||
-			ipToNicknames.ContainsKey(msg.FromIP) == false ? null :
-			ipToNicknames[msg.FromIP];
-		msg.ToNickname = msg.ToIP == null ||
-			ipToNicknames.ContainsKey(msg.ToIP) == false ? null :
-			ipToNicknames[msg.ToIP];
-
-		// not for me?
-		if (msg.ToIP != IP)
-			return;
-
-		// regular messagess...
-		if (msg.Tag == Tag.SERVER_TO_CLIENT ||
-			msg.Tag == Tag.CLIENT_TO_CLIENT)
+		/// <summary>
+		/// Initialises a new instance of the <see cref="AsyncTcpEventArgs"/> class.
+		/// </summary>
+		/// <param name="message">The trace message.</param>
+		/// <param name="exception">The exception that was thrown, if any.</param>
+		public AsyncTcpEventArgs(string message, Exception? exception = null)
 		{
-			for (int i = 0; i < methodsMsgReceive.Count; i++)
-				methodsMsgReceive[i].Invoke(msg);
+			Message = message;
+			Exception = exception;
 		}
-		// server says they are still alive, do not timeout
-		else if (msg.Tag == Tag.SERVER_TO_CLIENT_CONNECTION)
-		{
-			timeout?.Stop();
-			timeout?.Start();
-		}
-		// server stopped, time to leave
-		else if (msg.Tag == Tag.SERVER_TO_CLIENT_STOP)
-			Disconnect();
-		// someone timed out or disconnected, remove him locally
-		else if (msg.Tag == Tag.SERVER_TO_CLIENT_TIMEOUT ||
-			msg.Tag == Tag.SERVER_TO_CLIENT_DISCONNECT)
-		{
-			if (msg.Value != null && ipToNicknames.ContainsKey(msg.Value))
-				ipToNicknames.Remove(msg.Value);
-		}
+
+		/// <summary>
+		/// Gets the trace message.
+		/// </summary>
+		public string Message { get; }
+
+		/// <summary>
+		/// Gets the exception that was thrown, if any.
+		/// </summary>
+		public Exception? Exception { get; }
 	}
-	private void SendConnectionMessage()
-	{
-		if (networkStream == null)
-			return;
-
-		var msg = new Message(IP, serverIP, Tag.CLIENT_TO_SERVER_CONNECTION, "");
-		networkStream.Write(msg.Data);
-	}
-	#endregion
 }
