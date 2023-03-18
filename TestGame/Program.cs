@@ -1,6 +1,5 @@
 ﻿namespace TestGame;
 
-using System;
 using Pure.LAN;
 using Pure.Window;
 
@@ -15,21 +14,35 @@ public class Program
 	// loading cursor
 	// checkbox do toggle button with bigger widths
 	// sprite/tile 90 angle rotations + mirror H & V
+	// sprite varying sizes/sprite collection?
+	// smooth camera scroll with 1 tile margin outside the screen
 
 	// pure;to TestGame;dotnet build -c Release;to bin/Release/net6.0;dotnet TestGame.dll
 
 	// https://github.com/ygoe/AsyncTcpClient
 
+	class Server : BaseServer
+	{
+		protected override void OnMessageReceive(string clientIP, string message)
+		{
+			Console.WriteLine($"{clientIP}: {message}");
+		}
+	}
+
 	static void Main()
 	{
-		//var server = new Server("server", 13000);
-		//server.Start();
-		//
-		//while (Window.IsExisting)
-		//{
-		//	Window.Activate(true);
-		//	Window.Activate(false);
-		//}
+		var server = new Server();
+		var client = new BaseClient();
+		server.Start(13000);
+		client.Connect("127.0.0.1", 13000);
+
+		client.SendMessage("helloooo");
+
+		while (Window.IsExisting)
+		{
+			Window.Activate(true);
+			Window.Activate(false);
+		}
 
 		//Console.WriteLine("Server IP:");
 		//var ip = Console.ReadLine();

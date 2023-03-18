@@ -1,345 +1,238 @@
-// Copyright (c) 2018-2020, Yves Goergen, https://unclassified.software
-//
-// Copying and distribution of this file, with or without modification, are permitted provided the
-// copyright notice and this notice are preserved. This file is offered as-is, without any warranty.
-
 namespace Pure.LAN;
 
-internal class ByteBuffer
+using System;
+using System.Diagnostics;
+using System.Text;
+
+/// <summary>
+/// Dynamic byte buffer
+/// </summary>
+public class Buffer
 {
-	public int Count
-	{
-		get
-		{
-			lock (syncObj)
-			{
-				if (isEmpty)
-				{
-					return 0;
-				}
-				if (tail >= head)
-				{
-					return tail - head + 1;
-				}
-				return Capacity - head + tail + 1;
-			}
-		}
-	}
-	public byte[] Buffer
-	{
-		get
-		{
-			lock (syncObj)
-			{
-				byte[] bytes = new byte[Count];
-				if (!isEmpty)
-				{
-					if (tail >= head)
-					{
-						Array.Copy(buffer, head, bytes, 0, tail - head + 1);
-					}
-					else
-					{
-						Array.Copy(buffer, head, bytes, 0, Capacity - head);
-						Array.Copy(buffer, 0, bytes, Capacity - head, tail + 1);
-					}
-				}
-				return bytes;
-			}
-		}
-	}
-	public int Capacity => buffer.Length;
-	public bool AutoTrim { get; set; } = true;
-	public int AutoTrimMinCapacity { get; set; } = DefaultCapacity;
+	private byte[] _data;
+	private long _size;
+	private long _offset;
 
-	public ByteBuffer() { }
-	public ByteBuffer(byte[] bytes)
+	/// <summary>
+	/// Is the buffer empty?
+	/// </summary>
+	public bool IsEmpty => (_data == null) || (_size == 0);
+	/// <summary>
+	/// Bytes memory buffer
+	/// </summary>
+	public byte[] Data => _data;
+	/// <summary>
+	/// Bytes memory buffer capacity
+	/// </summary>
+	public long Capacity => _data.Length;
+	/// <summary>
+	/// Bytes memory buffer size
+	/// </summary>
+	public long Size => _size;
+	/// <summary>
+	/// Bytes memory buffer offset
+	/// </summary>
+	public long Offset => _offset;
+
+	/// <summary>
+	/// Buffer indexer operator
+	/// </summary>
+	public byte this[long index] => _data[index];
+
+	/// <summary>
+	/// Initialize a new expandable buffer with zero capacity
+	/// </summary>
+	public Buffer() { _data = new byte[0]; _size = 0; _offset = 0; }
+	/// <summary>
+	/// Initialize a new expandable buffer with the given capacity
+	/// </summary>
+	public Buffer(long capacity) { _data = new byte[capacity]; _size = 0; _offset = 0; }
+	/// <summary>
+	/// Initialize a new expandable buffer with the given data
+	/// </summary>
+	public Buffer(byte[] data) { _data = data; _size = data.Length; _offset = 0; }
+
+	#region Memory buffer methods
+
+	/// <summary>
+	/// Get a span of bytes from the current buffer
+	/// </summary>
+	public Span<byte> AsSpan()
 	{
-		Enqueue(bytes);
-	}
-	public ByteBuffer(int capacity)
-	{
-		AutoTrimMinCapacity = capacity;
-		SetCapacity(capacity);
+		return new Span<byte>(_data, (int)_offset, (int)_size);
 	}
 
+	/// <summary>
+	/// Get a string from the current buffer
+	/// </summary>
+	public override string ToString()
+	{
+		return ExtractString(0, _size);
+	}
+
+	// Clear the current buffer and its offset
 	public void Clear()
 	{
-		lock (syncObj)
+		_size = 0;
+		_offset = 0;
+	}
+
+	/// <summary>
+	/// Extract the string from buffer of the given offset and size
+	/// </summary>
+	public string ExtractString(long offset, long size)
+	{
+		Debug.Assert(((offset + size) <= Size), "Invalid offset & size!");
+		if ((offset + size) > Size)
+			throw new ArgumentException("Invalid offset & size!", nameof(offset));
+
+		return Encoding.UTF8.GetString(_data, (int)offset, (int)size);
+	}
+
+	/// <summary>
+	/// Remove the buffer of the given offset and size
+	/// </summary>
+	public void Remove(long offset, long size)
+	{
+		Debug.Assert(((offset + size) <= Size), "Invalid offset & size!");
+		if ((offset + size) > Size)
+			throw new ArgumentException("Invalid offset & size!", nameof(offset));
+
+		Array.Copy(_data, offset + size, _data, offset, _size - size - offset);
+		_size -= size;
+		if (_offset >= (offset + size))
+			_offset -= size;
+		else if (_offset >= offset)
 		{
-			head = 0;
-			tail = -1;
-			isEmpty = true;
-			Reset(ref availableTcs);
+			_offset -= _offset - offset;
+			if (_offset > Size)
+				_offset = Size;
 		}
 	}
-	public void SetCapacity(int capacity)
+
+	/// <summary>
+	/// Reserve the buffer of the given capacity
+	/// </summary>
+	public void Reserve(long capacity)
 	{
+		Debug.Assert((capacity >= 0), "Invalid reserve capacity!");
 		if (capacity < 0)
-			throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must not be negative.");
+			throw new ArgumentException("Invalid reserve capacity!", nameof(capacity));
 
-		lock (syncObj)
+		if (capacity > Capacity)
 		{
-			int count = Count;
-			if (capacity < count)
-				throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity is too small to hold the current buffer content.");
-
-			if (capacity != buffer.Length)
-			{
-				byte[] newBuffer = new byte[capacity];
-				Array.Copy(Buffer, newBuffer, count);
-				buffer = newBuffer;
-				head = 0;
-				tail = count - 1;
-			}
-		}
-	}
-	public void TrimExcess()
-	{
-		lock (syncObj)
-		{
-			if (Count < Capacity * 0.9)
-			{
-				SetCapacity(Count);
-			}
+			byte[] data = new byte[Math.Max(capacity, 2 * Capacity)];
+			Array.Copy(_data, 0, data, 0, _size);
+			_data = data;
 		}
 	}
 
-	public byte[] Peek(int maxCount)
+	// Resize the current buffer
+	public void Resize(long size)
 	{
-		return DequeueInternal(maxCount, peek: true);
+		Reserve(size);
+		_size = size;
+		if (_offset > _size)
+			_offset = _size;
 	}
 
-	public void Enqueue(byte[] bytes)
+	// Shift the current buffer offset
+	public void Shift(long offset) { _offset += offset; }
+	// Unshift the current buffer offset
+	public void Unshift(long offset) { _offset -= offset; }
+
+	#endregion
+
+	#region Buffer I/O methods
+
+	/// <summary>
+	/// Append the single byte
+	/// </summary>
+	/// <param name="value">Byte value to append</param>
+	/// <returns>Count of append bytes</returns>
+	public long Append(byte value)
 	{
-		if (bytes == null)
-			throw new ArgumentNullException(nameof(bytes));
-
-		Enqueue(bytes, 0, bytes.Length);
-	}
-	public void Enqueue(ArraySegment<byte> segment)
-	{
-		if (segment.Array == null)
-			return;
-
-		Enqueue(segment.Array, segment.Offset, segment.Count);
-	}
-	public void Enqueue(byte[] bytes, int offset, int count)
-	{
-		if (bytes == null)
-			throw new ArgumentNullException(nameof(bytes));
-		if (offset < 0)
-			throw new ArgumentOutOfRangeException(nameof(offset));
-		if (count < 0)
-			throw new ArgumentOutOfRangeException(nameof(offset));
-		if (offset + count > bytes.Length)
-			throw new ArgumentOutOfRangeException(nameof(count));
-
-		if (count == 0)
-			return;   // Nothing to do
-
-		lock (syncObj)
-		{
-			if (Count + count > Capacity)
-			{
-				SetCapacity(Math.Max(Capacity * 2, Count + count));
-			}
-
-			int tailCount;
-			int wrapCount;
-			if (tail >= head || isEmpty)
-			{
-				tailCount = Math.Min(Capacity - 1 - tail, count);
-				wrapCount = count - tailCount;
-			}
-			else
-			{
-				tailCount = Math.Min(head - 1 - tail, count);
-				wrapCount = 0;
-			}
-
-			if (tailCount > 0)
-			{
-				Array.Copy(bytes, offset, buffer, tail + 1, tailCount);
-			}
-			if (wrapCount > 0)
-			{
-				Array.Copy(bytes, offset + tailCount, buffer, 0, wrapCount);
-			}
-			tail = (tail + count) % Capacity;
-			isEmpty = false;
-			Set(dequeueManualTcs);
-			Set(availableTcs);
-		}
-	}
-	public byte[] Dequeue(int maxCount)
-	{
-		return DequeueInternal(maxCount, peek: false);
-	}
-	public int Dequeue(byte[] buffer, int offset, int maxCount)
-	{
-		return DequeueInternal(buffer, offset, maxCount, peek: false);
+		Reserve(_size + 1);
+		_data[_size] = value;
+		_size += 1;
+		return 1;
 	}
 
-	public async Task<byte[]> DequeueAsync(int count, CancellationToken cancellationToken = default)
+	/// <summary>
+	/// Append the given buffer
+	/// </summary>
+	/// <param name="buffer">Buffer to append</param>
+	/// <returns>Count of append bytes</returns>
+	public long Append(byte[] buffer)
 	{
-		if (count < 0)
-			throw new ArgumentOutOfRangeException(nameof(count), "The count must not be negative.");
-
-		while (true)
-		{
-			TaskCompletionSource<bool> myDequeueManualTcs;
-			lock (syncObj)
-			{
-				if (count <= Count)
-				{
-					return Dequeue(count);
-				}
-				myDequeueManualTcs = Reset(ref dequeueManualTcs);
-			}
-			await AwaitAsync(myDequeueManualTcs, cancellationToken);
-		}
-	}
-	public async Task DequeueAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
-	{
-		if (count < 0)
-			throw new ArgumentOutOfRangeException(nameof(count), "The count must not be negative.");
-		if (buffer.Length < offset + count)
-			throw new ArgumentException("The buffer is too small for the requested data.", nameof(buffer));
-
-		while (true)
-		{
-			TaskCompletionSource<bool> myDequeueManualTcs;
-			lock (syncObj)
-			{
-				if (count <= Count)
-				{
-					Dequeue(buffer, offset, count);
-				}
-				myDequeueManualTcs = Reset(ref dequeueManualTcs);
-			}
-			await AwaitAsync(myDequeueManualTcs, cancellationToken);
-		}
-	}
-	public async Task WaitAsync(CancellationToken cancellationToken = default)
-	{
-		TaskCompletionSource<bool> myAvailableTcs;
-		lock (syncObj)
-		{
-			if (Count > 0)
-			{
-				return;
-			}
-			myAvailableTcs = Reset(ref availableTcs);
-		}
-		await AwaitAsync(myAvailableTcs, cancellationToken);
+		Reserve(_size + buffer.Length);
+		Array.Copy(buffer, 0, _data, _size, buffer.Length);
+		_size += buffer.Length;
+		return buffer.Length;
 	}
 
-	#region Backend
-	private const int DefaultCapacity = 1024;
-	private readonly object syncObj = new object();
-	private byte[] buffer = new byte[DefaultCapacity];
-	private int head;
-	private int tail = -1;
-	private bool isEmpty = true;
-
-	private TaskCompletionSource<bool> dequeueManualTcs =
-		new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-	private TaskCompletionSource<bool> availableTcs =
-		new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-	private byte[] DequeueInternal(int count, bool peek)
+	/// <summary>
+	/// Append the given buffer fragment
+	/// </summary>
+	/// <param name="buffer">Buffer to append</param>
+	/// <param name="offset">Buffer offset</param>
+	/// <param name="size">Buffer size</param>
+	/// <returns>Count of append bytes</returns>
+	public long Append(byte[] buffer, long offset, long size)
 	{
-		if (count > Count)
-			count = Count;
-		byte[] bytes = new byte[count];
-		DequeueInternal(bytes, 0, count, peek);
-		return bytes;
-	}
-	private int DequeueInternal(byte[] bytes, int offset, int count, bool peek)
-	{
-		if (count < 0)
-			throw new ArgumentOutOfRangeException(nameof(count), "The count must not be negative.");
-		if (count == 0)
-			return count;   // Easy
-		if (bytes.Length < offset + count)
-			throw new ArgumentException("The buffer is too small for the requested data.", nameof(bytes));
-
-		lock (syncObj)
-		{
-			if (count > Count)
-				count = Count;
-
-			if (tail >= head)
-			{
-				Array.Copy(buffer, head, bytes, offset, count);
-			}
-			else
-			{
-				if (count <= Capacity - head)
-				{
-					Array.Copy(buffer, head, bytes, offset, count);
-				}
-				else
-				{
-					int headCount = Capacity - head;
-					Array.Copy(buffer, head, bytes, offset, headCount);
-					int wrapCount = count - headCount;
-					Array.Copy(buffer, 0, bytes, offset + headCount, wrapCount);
-				}
-			}
-			if (!peek)
-			{
-				if (count == Count)
-				{
-					isEmpty = true;
-					head = 0;
-					tail = -1;
-					Reset(ref availableTcs);
-				}
-				else
-				{
-					head = (head + count) % Capacity;
-				}
-
-				if (AutoTrim && Capacity > AutoTrimMinCapacity && Count <= Capacity / 2)
-				{
-					int newCapacity = Count;
-					if (newCapacity < AutoTrimMinCapacity)
-					{
-						newCapacity = AutoTrimMinCapacity;
-					}
-					if (newCapacity < Capacity)
-					{
-						SetCapacity(newCapacity);
-					}
-				}
-			}
-			return count;
-		}
+		Reserve(_size + size);
+		Array.Copy(buffer, offset, _data, _size, size);
+		_size += size;
+		return size;
 	}
 
-	private TaskCompletionSource<bool> Reset(ref TaskCompletionSource<bool> tcs)
+	/// <summary>
+	/// Append the given span of bytes
+	/// </summary>
+	/// <param name="buffer">Buffer to append as a span of bytes</param>
+	/// <returns>Count of append bytes</returns>
+	public long Append(ReadOnlySpan<byte> buffer)
 	{
-		if (tcs.Task.IsCompleted)
-		{
-			tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-		}
-		return tcs;
+		Reserve(_size + buffer.Length);
+		buffer.CopyTo(new Span<byte>(_data, (int)_size, buffer.Length));
+		_size += buffer.Length;
+		return buffer.Length;
 	}
-	private void Set(TaskCompletionSource<bool> tcs)
+
+	/// <summary>
+	/// Append the given buffer
+	/// </summary>
+	/// <param name="buffer">Buffer to append</param>
+	/// <returns>Count of append bytes</returns>
+	public long Append(Buffer buffer) => Append(buffer.AsSpan());
+
+	/// <summary>
+	/// Append the given text in UTF-8 encoding
+	/// </summary>
+	/// <param name="text">Text to append</param>
+	/// <returns>Count of append bytes</returns>
+	public long Append(string text)
 	{
-		tcs.TrySetResult(true);
+		int length = Encoding.UTF8.GetMaxByteCount(text.Length);
+		Reserve(_size + length);
+		long result = Encoding.UTF8.GetBytes(text, 0, text.Length, _data, (int)_size);
+		_size += result;
+		return result;
 	}
-	private async Task AwaitAsync(TaskCompletionSource<bool> tcs, CancellationToken cancellationToken)
+
+	/// <summary>
+	/// Append the given text in UTF-8 encoding
+	/// </summary>
+	/// <param name="text">Text to append as a span of characters</param>
+	/// <returns>Count of append bytes</returns>
+	public long Append(ReadOnlySpan<char> text)
 	{
-		if (await Task.WhenAny(tcs.Task, Task.Delay(-1, cancellationToken)) == tcs.Task)
-		{
-			await tcs.Task;   // Already completed
-			return;
-		}
-		cancellationToken.ThrowIfCancellationRequested();
+		int length = Encoding.UTF8.GetMaxByteCount(text.Length);
+		Reserve(_size + length);
+		long result = Encoding.UTF8.GetBytes(text, new Span<byte>(_data, (int)_size, length));
+		_size += result;
+		return result;
 	}
+
 	#endregion
 }

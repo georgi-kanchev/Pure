@@ -6,6 +6,7 @@ namespace Pure.LAN;
 
 public class Message
 {
+	/*
 	public string? FromIP { get; }
 	public string? ToIP { get; }
 	public string? Value { get; }
@@ -112,4 +113,5 @@ public class Message
 		return decompressedBytes;
 	}
 	#endregion
+	*/
 }
