@@ -1,38 +1,32 @@
 using System.IO.Compression;
-using System.Net;
 using System.Text;
 
 namespace Pure.LAN;
 
-public class Message
+internal class Message
 {
-	/*
-	public string? FromIP { get; }
-	public string? ToIP { get; }
-	public string? Value { get; }
-	public string? FromNickname { get; internal set; }
-	public string? ToNickname { get; internal set; }
+	public byte FromID { get; }
+	public byte ToID { get; }
+	public byte Tag { get; }
+	public byte TagSystem { get; }
+	public string Value { get; }
+	public byte[] Data { get; }
 
-	internal byte Tag { get; }
-	internal byte[]? Data { get; }
-
-	private Message() { }
-	internal Message(string? fromIP, string? toIP, byte tag, string value)
+	public Message(byte fromID, byte toID, byte sysTag, byte userTag, string value)
 	{
-		this.FromIP = fromIP;
-		this.ToIP = toIP;
+		this.TagSystem = sysTag;
+		this.Tag = userTag;
+		this.FromID = fromID;
+		this.ToID = toID;
 		this.Value = value;
-		this.Tag = tag;
 
-		var bFromIP = fromIP == null ? new byte[4] : IPAddress.Parse(fromIP).GetAddressBytes();
-		var bToIP = toIP == null ? new byte[4] : IPAddress.Parse(toIP).GetAddressBytes();
 		var message = Encoding.UTF8.GetBytes(value);
-		var bytes = new byte[1 + bFromIP.Length + bToIP.Length + message.Length];
-		bytes[0] = tag;
-
-		Array.Copy(bFromIP, 0, bytes, 1, bFromIP.Length);
-		Array.Copy(bToIP, 0, bytes, 1 + bFromIP.Length, bToIP.Length);
-		Array.Copy(message, 0, bytes, 1 + bFromIP.Length + bToIP.Length, message.Length);
+		var bytes = new byte[4 + message.Length];
+		bytes[0] = sysTag;
+		bytes[1] = userTag;
+		bytes[2] = fromID;
+		bytes[3] = toID;
+		Array.Copy(message, 0, bytes, 4, message.Length);
 
 		var msg = Compress(bytes);
 		var result = new byte[4 + msg.Length];
@@ -45,38 +39,42 @@ public class Message
 
 		Data = result;
 	}
-	internal Message(byte[] bytes)
+	public Message(byte[] bytes, out byte[] remaining)
 	{
-		var b = Decompress(bytes);
-		var tag = b[0];
-		var fromID = new IPAddress(new byte[] { b[1], b[2], b[3], b[4] });
-		var toID = new IPAddress(new byte[] { b[5], b[6], b[7], b[8] });
-		var message = new byte[b.Length - 9];
+		// take a chunk of the bytes just for this message, maybe there are multiple messages
+		var byteAmount = BitConverter.ToInt32(bytes[..4]);
+		var myBytes = bytes[4..(4 + byteAmount)];
 
-		Array.Copy(b, 9, message, 0, message.Length);
-		var value = Encoding.UTF8.GetString(message);
+		remaining = bytes[(4 + myBytes.Length)..];
 
-		this.FromIP = fromID.ToString();
-		this.ToIP = toID.ToString();
+		// decompress
+		var decoded = Decompress(myBytes);
+		var sysTag = decoded[0];
+		var userTag = decoded[1];
+		var fromID = decoded[2];
+		var toID = decoded[3];
+		var value = Encoding.UTF8.GetString(decoded[4..]);
+
+		// and store
+		this.TagSystem = sysTag;
+		this.Tag = userTag;
+		this.FromID = fromID;
+		this.ToID = toID;
 		this.Value = value;
-		this.Tag = tag;
-	}
-
-	public override string ToString()
-	{
-		return $"{FromIP}: {Value}";
+		this.Data = bytes[..(4 + byteAmount)];
 	}
 
 	#region Backend
 	// format
 	// [amount of bytes]		- data
 	// --------------------------------
-	// [4]						- total amount of compressed bytes
+	// [4]						- total amount of bytes for this message (after compression)
 	// --------------------------------
 	// compressed:
-	// [1]						- tag
-	// [4]						- fromIP bytes
-	// [4]						- toIP bytes
+	// [1]						- system tag
+	// [1]						- user tag
+	// [1]						- fromID
+	// [1]						- toID
 	// [rest]					- string message
 
 	private static byte[] Compress(byte[] bytes)
@@ -113,5 +111,4 @@ public class Message
 		return decompressedBytes;
 	}
 	#endregion
-	*/
 }
