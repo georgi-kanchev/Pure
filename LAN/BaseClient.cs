@@ -8,6 +8,7 @@ namespace Pure.LAN
 		public string[] Nicknames => clients.Values.ToArray();
 		public byte[] IDs => clients.Keys.ToArray();
 
+		public bool IsConnected { get; private set; }
 		public byte ID { get; internal set; }
 		public string Nickname { get; private set; }
 
@@ -46,6 +47,9 @@ namespace Pure.LAN
 			client.SendAsync(msg.Data);
 		}
 
+		protected virtual void OnLostConnection() { }
+		protected virtual void OnReconnectionAttempt() { }
+
 		#region Backend
 		private class _Client : TcpClient
 		{
@@ -68,7 +72,9 @@ namespace Pure.LAN
 				if (Id != parent.client.Id)
 					return;
 
-				// this is me connecting;
+				// this is me connecting
+				parent.IsConnected = true;
+
 				// other clients are ignored since just a connection
 				// doesn't have enough information yet, the server will send
 				// their new nick & id at a later point
@@ -79,21 +85,37 @@ namespace Pure.LAN
 			}
 			protected override void OnDisconnected()
 			{
+				var wasConnected = parent.IsConnected;
+
 				// i just disconnected;
 				// clear local clients storage
 				parent.clients.Clear();
 
-				// and notify game user
-				parent.OnClientDisconnect(parent.Nickname);
+				// and notify game user (once)
+				if (parent.IsConnected)
+					parent.OnClientDisconnect(parent.Nickname);
+
+				parent.IsConnected = false;
 
 				// was it intended? bail
 				if (shouldDisconnect)
 					return;
 
+				// notify game user that it's a lost connection
+				if (wasConnected && parent.IsConnected == false)
+					parent.OnLostConnection();
+
 				// or i just lost connection?
 				// wait for awhile and try reconnecting
 				Thread.Sleep(1000);
-				ConnectAsync();
+
+				// still should try reconnect?
+				if (shouldDisconnect == false)
+				{
+					// notify game user about it
+					parent.OnReconnectionAttempt();
+					ConnectAsync();
+				}
 			}
 			protected override void OnReceived(byte[] buffer, long offset, long size)
 			{
@@ -145,11 +167,14 @@ namespace Pure.LAN
 				if (ID == message.ToID)
 					Nickname = message.Value;
 
+				var isNewcomer = clients.ContainsKey(message.ToID) == false;
+
 				// update the local storage of clients with the new ID and new nick
 				clients[message.ToID] = message.Value;
 
-				// and the game user
-				OnClientConnect(message.Value);
+				// and the game user if it's a newcomer
+				if (isNewcomer)
+					OnClientConnect(message.Value);
 			}
 			// the server said someone disconnected
 			else if (tag == Tag.DISCONNECT)

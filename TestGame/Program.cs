@@ -1,7 +1,6 @@
 ﻿namespace TestGame;
 
 using Pure.LAN;
-using Pure.Window;
 
 public class Program
 {
@@ -17,13 +16,32 @@ public class Program
 	// sprite varying sizes/sprite collection?
 	// smooth camera scroll with 1 tile margin outside the screen
 
-	// pure;to TestGame;dotnet build -c Release;to bin/Release/net6.0;dotnet TestGame.dll
+	// <ProjectReference Include="..\Animation\Animation.csproj" />
+	// <ProjectReference Include="..\Audio\Audio.csproj" />
+	// <ProjectReference Include="..\Collision\Collision.csproj" />
+	// <ProjectReference Include="..\Modding\Modding.csproj" />
+	// <ProjectReference Include="..\Particles\Particles.csproj" />
+	// <ProjectReference Include="..\Storage\Storage.csproj" />
+	// <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
+	// <ProjectReference Include="..\UserInterface\UserInterface.csproj" />
+	// <ProjectReference Include="..\Utilities\Utilities.csproj" />
+	// <ProjectReference Include="..\Window\Window.csproj" />
+	// <ProjectReference Include="..\Pathfinding\Pathfinding.csproj" />
+	// <ProjectReference Include="..\Tracker\Tracker.csproj" />
 
 	class Server : BaseServer
 	{
 		protected override void OnMessageReceive(string fromNickname, byte tag, string message)
 		{
-			Console.WriteLine($"Server: from {fromNickname}, {tag} | {message}");
+			Console.WriteLine($"{fromNickname}: {message}");
+		}
+		protected override void OnClientConnect(string clientNickname)
+		{
+			Console.WriteLine($"Client '{clientNickname}' connected.");
+		}
+		protected override void OnClientDisconnect(string clientNickname)
+		{
+			Console.WriteLine($"Client '{clientNickname}' disconnected.");
 		}
 	}
 	class Client : BaseClient
@@ -32,25 +50,63 @@ public class Program
 
 		protected override void OnMessageReceive(string fromNickname, byte tag, string message)
 		{
-			Console.WriteLine($"{Nickname}: from {fromNickname}, {tag} | {message}");
+			fromNickname = fromNickname == "" ? "Server" : fromNickname;
+			Console.WriteLine($"{fromNickname}: {message}");
+		}
+		protected override void OnClientConnect(string clientNickname)
+		{
+			Console.WriteLine($"Client '{clientNickname}' connected.");
+		}
+		protected override void OnClientDisconnect(string clientNickname)
+		{
+			Console.WriteLine($"Client '{clientNickname}' disconnected.");
+		}
+		protected override void OnLostConnection()
+		{
+			Console.WriteLine($"Lost connection!");
+		}
+		protected override void OnReconnectionAttempt()
+		{
+			Console.WriteLine($"Trying to reconnect...");
 		}
 	}
 
 	static void Main()
 	{
-		var server = new Server();
-		var client = new Client("pen4o");
-		var client2 = new Client("stamat");
-		var client3 = new Client("troyan");
-		server.Start(13000);
-		client.Connect("127.0.0.1", 13000);
-		client2.Connect("127.0.0.1", 13000);
-		client3.Connect("127.0.0.1", 13000);
+		Console.WriteLine("[host/join]");
+		var isHost = Console.ReadLine() == "host";
 
-		while (Window.IsExisting)
+		if (isHost)
 		{
-			Window.Activate(true);
-			Window.Activate(false);
+			var server = new Server();
+			server.Start(13000);
+
+			Console.WriteLine("Started a server. Type a message or 'quit'.");
+
+			var msg = Console.ReadLine();
+			while (msg != "quit")
+			{
+				server.SendToAll(msg);
+				msg = Console.ReadLine();
+			}
+
+			return;
+		}
+
+		Console.WriteLine("nickname:");
+		var nick = Console.ReadLine() ?? "Chatter";
+		var client = new Client(nick);
+		Console.WriteLine("server ip:");
+		var ip = Console.ReadLine();
+		Console.WriteLine("server port:");
+		int.TryParse(Console.ReadLine(), out var port);
+		client.Connect(ip, port);
+
+		var input = Console.ReadLine();
+		while (input != "quit")
+		{
+			client.SendToAll(input);
+			input = Console.ReadLine();
 		}
 	}
 }

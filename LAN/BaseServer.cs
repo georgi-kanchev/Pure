@@ -101,9 +101,20 @@ namespace Pure.LAN
 			}
 			protected override void OnReceived(byte[] buffer, long offset, long size)
 			{
+				var msg = System.Text.Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
 				var bytes = buffer[(int)offset..((int)offset + (int)size)];
-				var msg = new Message(bytes, out var remaining);
-				parent.parent.ParseMessage(Id, msg);
+				Parse(bytes);
+
+				void Parse(byte[] bytes)
+				{
+					var msg = new Message(bytes, out var remaining);
+					parent.parent.ParseMessage(Id, msg);
+
+					// some messages are received merged back to back;
+					// keep reading since there are more messages
+					if (remaining.Length > 0)
+						Parse(remaining);
+				}
 			}
 			protected override void OnError(SocketError error)
 			{

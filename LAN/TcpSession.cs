@@ -604,8 +604,12 @@ internal class TcpSession : IDisposable
 		// Received some data from the client
 		if (size > 0)
 		{
+			if (BytesReceived + size > OptionReceiveBufferSize)
+				return false;
+
 			// Update statistic
 			BytesReceived += size;
+
 			Interlocked.Add(ref Server._bytesReceived, size);
 
 			// Call the buffer received handler
