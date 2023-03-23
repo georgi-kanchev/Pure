@@ -109,8 +109,7 @@ public static class Window
 	/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>
 	/// and <paramref name="tints"/>.
 	/// </summary>
-	public static void DrawTilemap(int[,] tiles, uint[,] tints, (uint, uint) tileSize,
-	(uint, uint) tileGaps = default, string? path = default)
+	public static void DrawTilemap(int[,] tiles, uint[,] tints, byte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
 	{
 		if (tiles == null || tints == null || tiles.Length != tints.Length)
 			return;
@@ -143,7 +142,7 @@ public static class Window
 	/// from the last <see cref="DrawTilemap"/> call and a <paramref name="tint"/>. The sprite's
 	/// <paramref name="position"/> is also relative to the previously drawn tilemap.
 	/// </summary>
-	public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue)
+	public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
 	{
 		if (Vertices.prevDrawTilemapGfxPath == null)
 			return;

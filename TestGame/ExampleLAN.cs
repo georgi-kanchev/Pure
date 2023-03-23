@@ -2,33 +2,8 @@
 
 using Pure.LAN;
 
-public class Program
+public class ExampleLAN
 {
-	// raycast texture mapping
-	// - https://youtu.be/fSjc8vLMg8c?t=504
-	// - https://www.youtube.com/watch?v=fRu8kjXvkdY
-	//
-	// https://chillmindscapes.itch.io/
-	// tilemap editor collisions
-	// loading cursor
-	// checkbox do toggle button with bigger widths
-	// sprite/tile 90 angle rotations + mirror H & V
-	// sprite varying sizes/sprite collection?
-	// smooth camera scroll with 1 tile margin outside the screen
-
-	// <ProjectReference Include="..\Animation\Animation.csproj" />
-	// <ProjectReference Include="..\Audio\Audio.csproj" />
-	// <ProjectReference Include="..\Collision\Collision.csproj" />
-	// <ProjectReference Include="..\Modding\Modding.csproj" />
-	// <ProjectReference Include="..\Particles\Particles.csproj" />
-	// <ProjectReference Include="..\Storage\Storage.csproj" />
-	// <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
-	// <ProjectReference Include="..\UserInterface\UserInterface.csproj" />
-	// <ProjectReference Include="..\Utilities\Utilities.csproj" />
-	// <ProjectReference Include="..\Window\Window.csproj" />
-	// <ProjectReference Include="..\Pathfinding\Pathfinding.csproj" />
-	// <ProjectReference Include="..\Tracker\Tracker.csproj" />
-
 	class Server : BaseServer
 	{
 		protected override void OnMessageReceive(string fromNickname, byte tag, string message)
@@ -37,11 +12,11 @@ public class Program
 		}
 		protected override void OnClientConnect(string clientNickname)
 		{
-			Console.WriteLine($"Client '{clientNickname}' connected.");
+			Console.WriteLine($"'{clientNickname}' connected.");
 		}
 		protected override void OnClientDisconnect(string clientNickname)
 		{
-			Console.WriteLine($"Client '{clientNickname}' disconnected.");
+			Console.WriteLine($"'{clientNickname}' disconnected.");
 		}
 	}
 	class Client : BaseClient
@@ -55,15 +30,15 @@ public class Program
 		}
 		protected override void OnClientConnect(string clientNickname)
 		{
-			Console.WriteLine($"Client '{clientNickname}' connected.");
+			Console.WriteLine($"'{clientNickname}' connected.");
 		}
 		protected override void OnClientDisconnect(string clientNickname)
 		{
-			Console.WriteLine($"Client '{clientNickname}' disconnected.");
+			Console.WriteLine($"'{clientNickname}' disconnected.");
 		}
 		protected override void OnLostConnection()
 		{
-			Console.WriteLine($"Lost connection!");
+			Console.WriteLine($"Lost connection.");
 		}
 		protected override void OnReconnectionAttempt()
 		{
@@ -94,7 +69,8 @@ public class Program
 		}
 
 		Console.WriteLine("nickname:");
-		var nick = Console.ReadLine() ?? "Chatter";
+		var n = Console.ReadLine();
+		var nick = string.IsNullOrWhiteSpace(n) ? "Chatter" : n;
 		var client = new Client(nick);
 		Console.WriteLine("server ip:");
 		var ip = Console.ReadLine();
@@ -102,6 +78,7 @@ public class Program
 		int.TryParse(Console.ReadLine(), out var port);
 		client.Connect(ip, port);
 
+		Console.WriteLine("Connected. Type a message or 'quit'.");
 		var input = Console.ReadLine();
 		while (input != "quit")
 		{

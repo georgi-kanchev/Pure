@@ -32,16 +32,31 @@ namespace Pure.Tilemap
 
 				tiles = new int[w, h];
 				tints = new uint[w, h];
-				var bTilesSize = tiles.GetLength(0) * tiles.GetLength(1) * Marshal.SizeOf(typeof(int));
-				var bColorsSize = tints.GetLength(0) * tints.GetLength(1) * Marshal.SizeOf(typeof(uint));
+				angles = new byte[w, h];
+				flips = new (bool, bool)[w, h];
+				var bTilesSize = w * h * Marshal.SizeOf(typeof(int));
+				var bColorsSize = w * h * Marshal.SizeOf(typeof(uint));
+				var bAnglesSize = w * h * Marshal.SizeOf(typeof(byte));
+				var bFlipsSize = w * h * Marshal.SizeOf(typeof((bool, bool)));
 				var bTiles = new byte[bTilesSize];
 				var bColors = new byte[bColorsSize];
+				var bAngles = new byte[bAnglesSize];
+				var bFlips = new (bool, bool)[bFlipsSize];
+				var offset = bWidth.Length + bHeight.Length;
 
-				Array.Copy(bytes, bWidth.Length + bHeight.Length, bTiles, 0, bTiles.Length);
-				Array.Copy(bytes, bWidth.Length + bHeight.Length + bTilesSize, bColors, 0, bColors.Length);
+				Add(bTiles);
+				Add(bColors);
+				Add(bAngles);
+				Add(bFlips);
 
 				FromBytes(tiles, bTiles);
 				FromBytes(tints, bColors);
+
+				void Add(Array array)
+				{
+					Array.Copy(array, offset, bytes, 0, array.Length);
+					offset += array.Length;
+				}
 			}
 			catch (Exception)
 			{
@@ -53,22 +68,34 @@ namespace Pure.Tilemap
 			var (w, h) = tileCount;
 			tiles = new int[w, h];
 			tints = new uint[w, h];
+			angles = new byte[w, h];
+			flips = new (bool, bool)[w, h];
 			CameraSize = tileCount;
 		}
-		public Tilemap(int[,] tiles, uint[,] tints)
+		public Tilemap(int[,] tiles, uint[,] tints, byte[,] angles, (bool, bool)[,] flips)
 		{
 			if (tiles == null)
 				throw new ArgumentNullException(nameof(tiles));
 			if (tints == null)
 				throw new ArgumentNullException(nameof(tints));
+			if (angles == null)
+				throw new ArgumentNullException(nameof(angles));
+			if (flips == null)
+				throw new ArgumentNullException(nameof(flips));
 
-			if (tiles.GetLength(0) != tints.GetLength(0) ||
-				tiles.GetLength(1) != tints.GetLength(1))
-				throw new ArgumentException($"The sizes of the {nameof(tiles)} and " +
-					$"{nameof(tints)} must be the same size.");
+			var w = tiles.GetLength(0);
+			var h = tiles.GetLength(0);
+
+			if (w != tints.GetLength(0) || h != tints.GetLength(1) ||
+				w != angles.GetLength(0) || h != angles.GetLength(1) ||
+				w != flips.GetLength(0) || h != flips.GetLength(1))
+				throw new ArgumentException($"The sizes of the all parameters " +
+					$"must be the same size.");
 
 			this.tiles = Copy(tiles);
 			this.tints = Copy(tints);
+			this.angles = Copy(angles);
+			this.flips = Copy(flips);
 			CameraSize = Size;
 		}
 
@@ -79,18 +106,26 @@ namespace Pure.Tilemap
 			var bHeight = BitConverter.GetBytes(h);
 			var bTiles = ToBytes(tiles);
 			var bColors = ToBytes(tints);
-			var result = new byte[bWidth.Length + bHeight.Length + bTiles.Length + bColors.Length];
+			var bAngles = ToBytes(angles);
+			var bFlips = ToBytes(flips);
+			var result = new byte[bWidth.Length + bHeight.Length +
+				bTiles.Length + bColors.Length + bAngles.Length + bFlips.Length];
+			var offset = 0;
 
-			Array.Copy(bWidth, 0, result, 0,
-				bWidth.Length);
-			Array.Copy(bHeight, 0, result,
-				bWidth.Length, bHeight.Length);
-			Array.Copy(bTiles, 0, result,
-				bWidth.Length + bHeight.Length, bTiles.Length);
-			Array.Copy(bColors, 0, result,
-				bWidth.Length + bHeight.Length + bTiles.Length, bColors.Length);
+			Add(bWidth);
+			Add(bHeight);
+			Add(bTiles);
+			Add(bColors);
+			Add(bAngles);
+			Add(bFlips);
 
 			File.WriteAllBytes(path, Compress(result));
+
+			void Add(Array array)
+			{
+				Array.Copy(array, 0, result, offset, array.Length);
+				offset += array.Length;
+			}
 		}
 
 		public Tilemap CameraUpdate()
@@ -99,6 +134,8 @@ namespace Pure.Tilemap
 			var (cx, cy) = CameraPosition;
 			var tiles = new int[Math.Abs(w), Math.Abs(h)];
 			var tints = new uint[Math.Abs(w), Math.Abs(h)];
+			var angles = new byte[Math.Abs(w), Math.Abs(h)];
+			var flips = new (bool, bool)[Math.Abs(w), Math.Abs(h)];
 			var xStep = w < 0 ? -1 : 1;
 			var yStep = h < 0 ? -1 : 1;
 			var i = 0;
@@ -109,11 +146,13 @@ namespace Pure.Tilemap
 				{
 					tiles[i, j] = TileAt((x, y));
 					tints[i, j] = TintAt((x, y));
+					angles[i, j] = AngleAt((x, y));
+					flips[i, j] = FlipAt((x, y));
 					j++;
 				}
 				i++;
 			}
-			return new(tiles, tints);
+			return new(tiles, tints, angles, flips);
 		}
 
 		public int TileAt((int, int) cell)
@@ -123,6 +162,14 @@ namespace Pure.Tilemap
 		public uint TintAt((int, int) cell)
 		{
 			return IndicesAreValid(cell) ? tints[cell.Item1, cell.Item2] : default;
+		}
+		public (bool, bool) FlipAt((int, int) cell)
+		{
+			return IndicesAreValid(cell) ? flips[cell.Item1, cell.Item2] : default;
+		}
+		public byte AngleAt((int, int) cell)
+		{
+			return IndicesAreValid(cell) ? angles[cell.Item1, cell.Item2] : default;
 		}
 
 		public void Fill(int tile = 0, uint tint = 0)
@@ -135,7 +182,7 @@ namespace Pure.Tilemap
 				}
 		}
 
-		public void SetTile((int, int) cell, int tile, uint tint = uint.MaxValue)
+		public void SetTile((int, int) cell, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
 		{
 			if (IndicesAreValid(cell) == false)
 				return;
@@ -146,7 +193,7 @@ namespace Pure.Tilemap
 			tiles[x, y] = tile;
 			tints[x, y] = tint;
 		}
-		public void SetSquare((int, int) cell, (int, int) size, int tile, uint tint = uint.MaxValue)
+		public void SetSquare((int, int) cell, (int, int) size, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
 		{
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
@@ -438,13 +485,49 @@ namespace Pure.Tilemap
 		}
 
 		public static implicit operator Tilemap(int[,] tiles)
-			=> new(tiles, new uint[tiles.GetLength(0), tiles.GetLength(1)]);
+		{
+			var (w, h) = (tiles.GetLength(0), tiles.GetLength(1));
+
+			return new(tiles,
+				new uint[w, h],
+				new byte[w, h],
+				new (bool, bool)[w, h]);
+		}
 		public static implicit operator int[,](Tilemap tilemap)
 			=> Copy(tilemap.tiles);
 		public static implicit operator Tilemap(uint[,] tints)
-			=> new(new int[tints.GetLength(0), tints.GetLength(1)], tints);
+		{
+			var (w, h) = (tints.GetLength(0), tints.GetLength(1));
+
+			return new(new int[w, h],
+				tints,
+				new byte[w, h],
+				new (bool, bool)[w, h]);
+		}
 		public static implicit operator uint[,](Tilemap tilemap)
 			=> Copy(tilemap.tints);
+		public static implicit operator Tilemap(byte[,] angles)
+		{
+			var (w, h) = (angles.GetLength(0), angles.GetLength(1));
+
+			return new(new int[w, h],
+				new uint[w, h],
+				angles,
+				new (bool, bool)[w, h]);
+		}
+		public static implicit operator byte[,](Tilemap tilemap)
+			=> Copy(tilemap.angles);
+		public static implicit operator Tilemap((bool, bool)[,] flips)
+		{
+			var (w, h) = (flips.GetLength(0), flips.GetLength(1));
+
+			return new(new int[w, h],
+				new uint[w, h],
+				new byte[w, h],
+				flips);
+		}
+		public static implicit operator (bool, bool)[,](Tilemap tilemap)
+			=> Copy(tilemap.flips);
 		#region Backend
 		// save format
 		// [amount of bytes]		- data
@@ -453,6 +536,8 @@ namespace Pure.Tilemap
 		// [4]						- height
 		// [width * height * 4]		- tiles
 		// [width * height * 4]		- tints
+		// [width * height]			- angles
+		// [width * height]			- flips
 
 		private static readonly Dictionary<char, int> symbolMap = new()
 		{
@@ -510,6 +595,8 @@ namespace Pure.Tilemap
 
 		private readonly int[,] tiles;
 		private readonly uint[,] tints;
+		private readonly byte[,] angles;
+		private readonly (bool, bool)[,] flips;
 
 		private bool IndicesAreValid((int, int) indices)
 		{
