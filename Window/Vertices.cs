@@ -1,5 +1,6 @@
 namespace Pure.Window;
 
+using System.Numerics;
 using SFML.Graphics;
 using SFML.System;
 
@@ -22,7 +23,7 @@ internal static class Vertices
 		var (gridX, gridY) = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 		var tl = new Vector2f(gridX, gridY);
 		var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
-		
+
 		verts[0] = new(new((int)tl.X, (int)tl.Y), c);
 		verts[1] = new(new((int)br.X, (int)tl.Y), c);
 		verts[2] = new(new((int)br.X, (int)br.Y), c);
@@ -65,7 +66,7 @@ internal static class Vertices
 		}
 		return GetPoints(tint, points.ToArray());
 	}
-	public static Vertex[] GetSprite((float, float) position, int cell, uint tint)
+	public static Vertex[] GetSprite((float, float) position, int cell, uint tint, byte angle, (bool, bool) flip)
 	{
 		if (prevDrawTilemapGfxPath == null)
 			return Array.Empty<Vertex>();
@@ -79,20 +80,43 @@ internal static class Vertices
 		var tileCount = (texture.Size.X / tileWidth, texture.Size.Y / tileHeight);
 		var texCoords = IndexToCoords(cell, tileCount);
 		var tx = new Vector2f(texCoords.Item1 * tileWidth, texCoords.Item2 * tileHeight);
+		var texTr = tx + new Vector2f(tileWidth, 0);
+		var texBr = tx + new Vector2f(tileWidth, tileHeight);
+		var texBl = tx + new Vector2f(0, tileHeight);
 		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
 		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
 		var c = new Color(tint);
 		var grid = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
-		var tl = new Vector2f(grid.Item1, grid.Item2);
-		var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
+		var tl = new Vector2f((int)grid.Item1, (int)grid.Item2);
+		var br = new Vector2f(((int)grid.Item1 + cellWidth), (int)(grid.Item2 + cellHeight));
+		var tr = new Vector2f(br.X, tl.Y);
+		var bl = new Vector2f(tl.X, br.Y);
+		var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
+		var (flipX, flipY) = flip;
 
-		verts[0] = new(new(tl.X, tl.Y), c, tx);
-		verts[1] = new(new(br.X, tl.Y), c, tx + new Vector2f(tileWidth, 0));
-		verts[2] = new(new(br.X, br.Y), c, tx + new Vector2f(tileWidth, tileHeight));
-		verts[3] = new(new(tl.X, br.Y), c, tx + new Vector2f(0, tileHeight));
+		if (flipX)
+		{
+			(tx, texTr) = (texTr, tx);
+			(texBl, texBr) = (texBr, texBl);
+		}
+		if (flipY)
+		{
+			(tx, texBl) = (texBl, tx);
+			(texTr, texBr) = (texBr, texTr);
+		}
+
+		tl = rotated[0];
+		tr = rotated[1];
+		br = rotated[2];
+		bl = rotated[3];
+
+		verts[0] = new(tl, c, tx);
+		verts[1] = new(tr, c, texTr);
+		verts[2] = new(br, c, texBr);
+		verts[3] = new(bl, c, texBl);
 		return verts;
 	}
-	public static Vertex[] GetTilemap(int[,] tiles, uint[,] tints, (uint, uint) tileSz, (uint, uint) tileOff, string path)
+	public static Vertex[] GetTilemap(int[,] tiles, uint[,] tints, byte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSz, (uint, uint) tileOff, string path)
 	{
 		if (tiles == null || Window.window == null)
 			return Array.Empty<Vertex>();
@@ -130,6 +154,26 @@ internal static class Vertices
 				var texTr = new Vector2f((int)(tx.X + tileW), (int)tx.Y);
 				var texBr = new Vector2f((int)(tx.X + tileW), (int)(tx.Y + tileH));
 				var texBl = new Vector2f((int)tx.X, (int)(tx.Y + tileH));
+				var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
+				var c = new Vector2f((int)center.X, (int)center.Y);
+				var rotated = GetRotatedPoints(angles[x, y], tl, tr, br, bl);
+				var (flipX, flipY) = flips[x, y];
+
+				if (flipX)
+				{
+					(tx, texTr) = (texTr, tx);
+					(texBl, texBr) = (texBr, texBl);
+				}
+				if (flipY)
+				{
+					(tx, texBl) = (texBl, tx);
+					(texTr, texBr) = (texBr, texTr);
+				}
+
+				tl = rotated[0];
+				tr = rotated[1];
+				br = rotated[2];
+				bl = rotated[3];
 
 				verts[i + 0] = new(tl, tint, tx);
 				verts[i + 1] = new(tr, tint, texTr);
@@ -218,5 +262,21 @@ internal static class Vertices
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
 	}
+	private static int Wrap(int number, int targetNumber)
+	{
+		return ((number % targetNumber) + targetNumber) % targetNumber;
+	}
+
+	private static Vector2f[] GetRotatedPoints(byte angle, params Vector2f[] points)
+	{
+		angle = (byte)Wrap((int)angle, 4);
+
+		if (angle == 0) return points;
+		if (angle == 1) return new Vector2f[] { points[1], points[2], points[3], points[0] };
+		if (angle == 2) return new Vector2f[] { points[2], points[3], points[0], points[1] };
+
+		return new Vector2f[] { points[3], points[0], points[1], points[2] };
+	}
+
 	#endregion
 }

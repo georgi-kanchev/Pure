@@ -174,12 +174,9 @@ namespace Pure.Tilemap
 
 		public void Fill(int tile = 0, uint tint = 0)
 		{
-			for (uint y = 0; y < Size.Item2; y++)
-				for (uint x = 0; x < Size.Item1; x++)
-				{
-					tiles[x, y] = tile;
-					tints[x, y] = tint;
-				}
+			for (int y = 0; y < Size.Item2; y++)
+				for (int x = 0; x < Size.Item1; x++)
+					SetTile((x, y), tile, tint);
 		}
 
 		public void SetTile((int, int) cell, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
@@ -192,6 +189,8 @@ namespace Pure.Tilemap
 
 			tiles[x, y] = tile;
 			tints[x, y] = tint;
+			angles[x, y] = angle;
+			flips[x, y] = flip;
 		}
 		public void SetSquare((int, int) cell, (int, int) size, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
 		{
@@ -204,25 +203,8 @@ namespace Pure.Tilemap
 					if (i > Math.Abs(size.Item1 * size.Item2))
 						return;
 
-					SetTile((x, y), tile, tint);
+					SetTile((x, y), tile, tint, angle, flip);
 					i++;
-				}
-		}
-		public void SetSquareTint((int, int) cell, (int, int) size, uint tint, params int[] tiles)
-		{
-			if (tiles == null || tiles.Length == 0)
-				return;
-
-			var xStep = size.Item1 < 0 ? -1 : 1;
-			var yStep = size.Item2 < 0 ? -1 : 1;
-			var tileList = tiles.ToList();
-
-			for (int x = cell.Item1; x != cell.Item1 + size.Item1; x += xStep)
-				for (int y = cell.Item2; y != cell.Item2 + size.Item2; y += yStep)
-				{
-					var tile = TileAt((x, y));
-					var col = tileList.Contains(tile) ? tint : TintAt((x, y));
-					SetTile((x, y), tile, col);
 				}
 		}
 
@@ -412,36 +394,37 @@ namespace Pure.Tilemap
 				}
 		}
 
-		public void SetBorder((int, int) cell, (int, int) size, int tile, uint tint = uint.MaxValue)
+		public void SetBorder((int, int) cell, (int, int) size, int tileCorner, int tileStraight, uint tint = uint.MaxValue)
 		{
 			var (x, y) = cell;
 			var (w, h) = size;
 
-			SetTile(cell, tile + 2, tint);
-			SetSquare((x + 1, y), (w - 2, 1), tile + 1, tint);
-			SetTile((x + w - 1, y), tile + 3, tint);
+			SetTile(cell, tileCorner, tint, 0);
+			SetSquare((x + 1, y), (w - 2, 1), tileStraight, tint, 0);
+			SetTile((x + w - 1, y), tileCorner, tint, 1);
 
-			SetSquare((x, y + 1), (1, h - 2), tile, tint);
+			SetSquare((x, y + 1), (1, h - 2), tileStraight, tint, 3);
 			SetSquare((x + 1, y + 1), (w - 2, h - 2), 0, 0);
-			SetSquare((x + w - 1, y + 1), (1, h - 2), tile, tint);
+			SetSquare((x + w - 1, y + 1), (1, h - 2), tileStraight, tint, 1);
 
-			SetTile((x, y + h - 1), tile + 5, tint);
-			SetSquare((x + 1, y + h - 1), (w - 2, 1), tile + 1, tint);
-			SetTile((x + w - 1, y + h - 1), tile + 4, tint);
+			SetTile((x, y + h - 1), tileCorner, tint, 3);
+			SetSquare((x + 1, y + h - 1), (w - 2, 1), tileStraight, tint, 2);
+			SetTile((x + w - 1, y + h - 1), tileCorner, tint, 2);
 		}
-		public void SetBar((int, int) cell, int tile, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
+		public void SetBar((int, int) cell, int tileEdge, int tileStraight, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
 		{
 			var (x, y) = cell;
-			SetTile(cell, tile, tint);
 			if (isVertical)
 			{
-				SetSquare((x, y + 1), (1, size - 2), tile + 1, tint);
-				SetTile((x, y + size - 1), tile + 2, tint);
+				SetTile(cell, tileEdge, tint, 1);
+				SetSquare((x, y + 1), (1, size - 2), tileStraight, tint, 1);
+				SetTile((x, y + size - 1), tileEdge, tint, 3);
 				return;
 			}
 
-			SetSquare((x + 1, y), (size - 2, 1), tile + 1, tint);
-			SetTile((x + size - 1, y), tile + 2, tint);
+			SetTile(cell, tileEdge, tint);
+			SetSquare((x + 1, y), (size - 2, 1), tileStraight, tint);
+			SetTile((x + size - 1, y), tileEdge, tint, 2);
 		}
 
 		public (float, float) PointFrom((int, int) screenPixel, (uint, uint) windowSize, bool isAccountingForCamera = true)

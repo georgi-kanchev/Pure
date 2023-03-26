@@ -3,7 +3,6 @@
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
-using System.Windows;
 
 /// <summary>
 /// Provides a simple way to create and interact with an OS window.
@@ -108,7 +107,8 @@ public static class Window
 	/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a
 	/// <paramref name="tileSize"/> and <paramref name="tileGaps"/>, then it is cached
 	/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>,
-	/// <paramref name="tints"/>, <paramref name="angles"/> and <paramref name="flips"/>.
+	/// <paramref name="tints"/>, <paramref name="angles"/> and <paramref name="flips"/>
+	/// (flip first, rotation second - order matters).
 	/// </summary>
 	public static void DrawTilemap(int[,] tiles, uint[,] tints, byte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
 	{
@@ -118,7 +118,7 @@ public static class Window
 		path ??= "default";
 
 		TryLoadGraphics(path);
-		var verts = Vertices.GetTilemap(tiles, tints, tileSize, tileGaps, path);
+		var verts = Vertices.GetTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path);
 		var tex = graphics[path];
 		var shader = IsRetro ? retroScreen : null;
 		var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, shader);
@@ -151,15 +151,17 @@ public static class Window
 	}
 	/// <summary>
 	/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
-	/// from the last <see cref="DrawTilemap"/> call and a <paramref name="tint"/>. The sprite's
-	/// <paramref name="position"/> is also relative to the previously drawn tilemap.
+	/// from the last <see cref="DrawTilemap"/> call, a <paramref name="tint"/>, an
+	/// <paramref name="angle"/> and a <paramref name="flip"/>
+	/// (flip first, rotation second - order matters).
+	/// The sprite's <paramref name="position"/> is also relative to the previously drawn tilemap.
 	/// </summary>
 	public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
 	{
 		if (Vertices.prevDrawTilemapGfxPath == null)
 			return;
 
-		var verts = Vertices.GetSprite(position, tile, tint);
+		var verts = Vertices.GetSprite(position, tile, tint, angle, flip);
 		var tex = graphics[Vertices.prevDrawTilemapGfxPath];
 		var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, IsRetro ? retroScreen : null);
 		window.Draw(verts, PrimitiveType.Quads, rend);
