@@ -1,8 +1,8 @@
-﻿namespace TestGame;
+﻿namespace Pure.Examples;
 
 using Pure.LAN;
 
-public class ExampleLAN
+public static class ExampleLAN
 {
 	class Server : BaseServer
 	{
@@ -46,7 +46,7 @@ public class ExampleLAN
 		}
 	}
 
-	static void Main()
+	public static void Run()
 	{
 		Console.WriteLine("[host/join]");
 		var isHost = Console.ReadLine() == "host";

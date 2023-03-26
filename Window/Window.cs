@@ -3,6 +3,7 @@
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
+using System.Windows;
 
 /// <summary>
 /// Provides a simple way to create and interact with an OS window.
@@ -106,8 +107,8 @@ public static class Window
 	/// Draws a tilemap onto the OS window. Its graphics image is loaded from a
 	/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a
 	/// <paramref name="tileSize"/> and <paramref name="tileGaps"/>, then it is cached
-	/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>
-	/// and <paramref name="tints"/>.
+	/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>,
+	/// <paramref name="tints"/>, <paramref name="angles"/> and <paramref name="flips"/>.
 	/// </summary>
 	public static void DrawTilemap(int[,] tiles, uint[,] tints, byte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
 	{
@@ -136,6 +137,17 @@ public static class Window
 			}
 		}
 		window.Draw(verts, PrimitiveType.Quads, rend);
+	}
+	/// <summary>
+	/// Draws a <paramref name="tilemap"/> onto the OS window. Its graphics image is loaded from a
+	///  (default graphics if <see langword="null"/>) using a
+	/// <paramref name="tileSize"/> and <paramref name="tileGaps"/>, then it is cached
+	/// for future draws.
+	/// </summary>
+	public static void DrawTilemap((int[,], uint[,], byte[,], (bool, bool)[,]) tilemap, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
+	{
+		var (tiles, tints, angles, flips) = tilemap;
+		DrawTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path);
 	}
 	/// <summary>
 	/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
@@ -202,7 +214,8 @@ public static class Window
 
 	static Window()
 	{
-		//var str = DefaultGraphics.PNGToBase64String("graphics.png");
+		//var str = DefaultGraphics.PNGToBase64String(
+		//	"/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
 
 		graphics["default"] = DefaultGraphics.CreateTexture();
 

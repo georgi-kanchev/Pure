@@ -528,6 +528,19 @@ namespace Pure.Tilemap
 		}
 		public static implicit operator (bool, bool)[,](Tilemap tilemap)
 			=> Copy(tilemap.flips);
+		public static implicit operator Tilemap((int[,], uint[,], byte[,], (bool, bool)[,]) tilemap)
+		{
+			var (tiles, tints, angles, flips) = tilemap;
+			return new(tiles, tints, angles, flips);
+		}
+		public static implicit operator (int[,], uint[,], byte[,], (bool, bool)[,])(Tilemap tilemap)
+		{
+			return new(
+				Copy(tilemap.tiles),
+				Copy(tilemap.tints),
+				Copy(tilemap.angles),
+				Copy(tilemap.flips));
+		}
 		#region Backend
 		// save format
 		// [amount of bytes]		- data

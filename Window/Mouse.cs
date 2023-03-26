@@ -132,7 +132,7 @@ public static class Mouse
 
 		Vertices.prevDrawTilemapGfxPath = "default";
 		Vertices.prevDrawTilemapTileSz = (8, 8);
-		Window.DrawSprite((x - offX, y - offY), 494 + CursorGraphics, CursorColor);
+		Window.DrawSprite((x - offX, y - offY), 442 + CursorGraphics, CursorColor);
 	}
 	internal static void CancelInput() => pressed.Clear();
 	#endregion

@@ -447,7 +447,7 @@ public static class Tile
 		SHAPE_LINE_UP = 487,
 	#endregion
 	#region Cursor
-		CURSOR_ARROW = 494,
+		CURSOR_ARROW = 442,
 		CURSOR_ARROW_NO_TAIL = 495,
 		CURSOR_HAND = 496,
 		CURSOR_TEXT = 497,
@@ -458,8 +458,6 @@ public static class Tile
 		CURSOR_SIZE_DIAGONAL_1 = 502,
 		CURSOR_SIZE_DIAGONAL_2 = 503,
 		CURSOR_MOVE = 504,
-		CURSOR_WAIT_1 = 505,
-		CURSOR_WAIT_2 = 506,
-		CURSOR_WAIT_3 = 507;
+		CURSOR_WAIT = 505;
 	#endregion
 }

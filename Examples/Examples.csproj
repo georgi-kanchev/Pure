@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,6 +9,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LAN\LAN.csproj" />
+    <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
+    <ProjectReference Include="..\Window\Window.csproj" />
+    <ProjectReference Include="..\Utilities\Utilities.csproj" />
   </ItemGroup>
 
 </Project>
