@@ -1,10 +1,10 @@
-namespace Pure.Examples;
+namespace Pure.Examples.Systems;
 
 using Pure.Window;
 using Pure.Tilemap;
 using Pure.Utilities;
 
-public static class ExampleDefaultGraphics
+public static class DefaultGraphics
 {
 	public static void Run()
 	{
@@ -19,6 +19,7 @@ public static class ExampleDefaultGraphics
 					var tile = new Indices(i, j).ToIndex(26);
 					tilemap.SetTile((j, i), tile);
 				}
+
 			var mousePos = Mouse.CursorPosition;
 			var (x, y) = tilemap.PointFrom(mousePos, Window.Size);
 			var index = tilemap.TileAt(((int)x, (int)y));

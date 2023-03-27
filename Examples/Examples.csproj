@@ -8,10 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LAN\LAN.csproj" />
-    <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
-    <ProjectReference Include="..\Window\Window.csproj" />
-    <ProjectReference Include="..\Utilities\Utilities.csproj" />
+    <ProjectReference Include="..\LAN\LAN.csproj"/>
+    <ProjectReference Include="..\Tilemap\Tilemap.csproj"/>
+    <ProjectReference Include="..\Window\Window.csproj"/>
+    <ProjectReference Include="..\Utilities\Utilities.csproj"/>
+    <ProjectReference Include="..\Animation\Animation.csproj"/>
+    <ProjectReference Include="..\Tracker\Tracker.csproj"/>
+    <ProjectReference Include="..\Collision\Collision.csproj"/>
   </ItemGroup>
 
 </Project>

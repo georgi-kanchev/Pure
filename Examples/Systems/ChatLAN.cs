@@ -1,10 +1,10 @@
-﻿namespace Pure.Examples;
+﻿namespace Pure.Examples.Systems;
 
 using Pure.LAN;
 
-public static class ExampleLAN
+public static class ChatLAN
 {
-	class Server : BaseServer
+	private class Server : BaseServer
 	{
 		protected override void OnMessageReceive(string fromNickname, byte tag, string message)
 		{
@@ -19,7 +19,7 @@ public static class ExampleLAN
 			Console.WriteLine($"'{clientNickname}' disconnected.");
 		}
 	}
-	class Client : BaseClient
+	private class Client : BaseClient
 	{
 		public Client(string nickname) : base(nickname) { }
 

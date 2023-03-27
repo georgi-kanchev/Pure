@@ -88,9 +88,6 @@ public class Map : Hitbox
 			}
 		}
 	}
-	/// <summary>
-	/// Creates the <see cref="Map"/> with <paramref name="cellSize"/>.
-	/// </summary>
 	public Map() : base((0, 0), 1) { }
 
 	public override void Save(string path)

@@ -34,6 +34,14 @@ public class Animation<T>
 	/// Whether the iteration over the collection is currently paused.
 	/// </summary>
 	public bool IsPaused { get; set; }
+	/// <summary>
+	/// The current progress of the iterator in the range[0 - 1].
+	/// </summary>
+	public float CurrentProgress
+	{
+		get => Map(rawIndex, LOWER_BOUND, values.Length, 0, 1);
+		set => rawIndex = Map(value, 0, 1, LOWER_BOUND, values.Length);
+	}
 
 	/// <summary>
 	/// Get: returns the value at <paramref name="index"/>.<br></br>
@@ -110,6 +118,15 @@ public class Animation<T>
 		set => rawIndex = Math.Clamp(value, LOWER_BOUND, values.Length);
 	}
 
+	private static float Map(float number, float a1, float a2, float b1, float b2)
+	{
+		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
+		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+	}
+	private static int Wrap(int number, int targetNumber)
+	{
+		return ((number % targetNumber) + targetNumber) % targetNumber;
+	}
 	private static T[] Copy(T[] array)
 	{
 		var copy = new T[array.Length];
