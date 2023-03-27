@@ -1,10 +1,12 @@
 namespace Pure.Examples.Games;
+
 using Pure.Window;
 using Pure.Tilemap;
 using Pure.Utilities;
 using Pure.Animation;
 using Pure.Tracker;
 using Pure.Collision;
+
 public static class FlappyBird
 {
 	public static void Run()
@@ -31,6 +33,7 @@ public static class FlappyBird
 		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_GRID_STRAIGHT);
 
 		InitializePipes();
+
 		while (Window.IsExisting) // the default game loop
 		{
 			Window.Activate(true);
@@ -61,10 +64,18 @@ public static class FlappyBird
 			foreground.Fill();
 
 			// apply gravity, unless game over
-			if (isGameOver == false) { birdVelocity += Time.Delta * 0.01f; birdY += birdVelocity; }
+			if (isGameOver == false)
+			{
+				birdVelocity += Time.Delta * 0.01f;
+				birdY += birdVelocity;
+			}
 
 			// prevent jumping "over" pipes and going offscreen
-			if (birdY < 0) { birdY = 0; birdVelocity = 0; }
+			if (birdY < 0)
+			{
+				birdY = 0;
+				birdVelocity = 0;
+			}
 
 			// update pipes
 			for (int i = 0; i < pipes?.Count; i++)
@@ -86,12 +97,10 @@ public static class FlappyBird
 
 				var size = (PIPE_WIDTH, PIPE_HEIGHT);
 				var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
-				var straight = Tile.BORDER_GRID_STRAIGHT;
-				var corner = Tile.BORDER_GRID_CORNER;
 				background.SetSquare(((int)pipeX, pipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark());
 				background.SetSquare(((int)pipeX, lowerPipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark());
-				foreground.SetBorder(((int)pipeX, pipeY), size, corner, straight, (Color)Color.Green);
-				foreground.SetBorder(((int)pipeX, lowerPipeY), size, corner, straight, (Color)Color.Green);
+				foreground.SetBorder(((int)pipeX, pipeY), size, Tile.BORDER_GRID_CORNER, Tile.BORDER_GRID_STRAIGHT, (Color)Color.Green);
+				foreground.SetBorder(((int)pipeX, lowerPipeY), size, Tile.BORDER_GRID_CORNER, Tile.BORDER_GRID_STRAIGHT, (Color)Color.Green);
 			}
 
 			collisionMap.Update(foreground);
