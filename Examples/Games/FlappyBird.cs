@@ -34,6 +34,8 @@ public static class FlappyBird
 
 		InitializePipes();
 
+		Window.IsRetro = true;
+
 		while (Window.IsExisting) // the default game loop
 		{
 			Window.Activate(true);
@@ -113,7 +115,8 @@ public static class FlappyBird
 			// finish by drawing everything
 			var (birdTile, birdAngle) = birdAnimation.CurrentValue;
 
-			foreground.SetTextLine(default, $"Score: {score}");
+			var scoreText = $"Score: {score}";
+			foreground.SetTextLine((width / 2 - scoreText.Length / 2, 1), scoreText);
 
 			if (isGameOver)
 				foreground.SetTextLine((width / 2 - GAME_OVER.Length / 2, height / 2), GAME_OVER);
