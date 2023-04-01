@@ -90,24 +90,25 @@ public static class Extensions
 	}
 
 	/// <summary>
-	/// Randomly shuffles the contents of a <paramref name="list"/>.
+	/// Randomly shuffles the contents of a <paramref name="collection"/>.
 	/// </summary>
-	public static void Shuffle<T>(this IList<T> list)
+	public static void Shuffle<T>(this IList<T> collection)
 	{
-		var n = list.Count;
-		while (n > 1)
+		var rand = new Random();
+		for (int i = collection.Count - 1; i > 0; i--)
 		{
-			n--;
-			var k = new Random().Next(n + 1);
-			(list[n], list[k]) = (list[k], list[n]);
+			int j = rand.Next(i + 1);
+			var temp = collection[i];
+			collection[i] = collection[j];
+			collection[j] = temp;
 		}
 	}
 	/// <summary>
-	/// Picks randomly a single <typeparamref name="T"/> value out of <paramref name="list"/> and returns it.
+	/// Picks randomly a single <typeparamref name="T"/> value out of <paramref name="collection"/> and returns it.
 	/// </summary>
-	public static T ChooseOne<T>(this IList<T> list)
+	public static T ChooseOne<T>(this IList<T> collection)
 	{
-		return list[Random(0, list.Count - 1)];
+		return collection[Random(0, collection.Count - 1)];
 	}
 	/// <summary>
 	/// Picks randomly a single <typeparamref name="T"/> value out of <paramref name="choice"/> and
@@ -120,34 +121,184 @@ public static class Extensions
 		return ChooseOne(list);
 	}
 	/// <summary>
-	/// Calculates the average number out of a <paramref name="list"/> of numbers and returns it.
+	/// Calculates the average number out of a <paramref name="collection"/> of numbers and returns it.
 	/// </summary>
-	public static float Average(this IList<float> list)
+	public static float Average(this IList<float> collection)
 	{
 		var sum = 0f;
-		for (int i = 0; i < list.Count; i++)
-			sum += list[i];
-		return sum / list.Count;
+		for (int i = 0; i < collection.Count; i++)
+			sum += collection[i];
+		return sum / collection.Count;
 	}
 	/// <summary>
-	/// Calculates the average number out of <paramref name="numbers"/> and returns it.
+	/// Iterates over a <paramref name="collection"/>, calls <see cref="object.ToString"/>
+	/// on each element and adds the returned <see cref="string"/> to the result, alongside
+	/// a <paramref name="separator"/>. The result is then returned.
 	/// </summary>
-	public static float AverageFrom(this float number, params float[] numbers)
+	public static string ToString<T>(this IList<T> collection, string separator)
 	{
-		var list = numbers == null ? new() : numbers.ToList();
-		list.Add(number);
-		return Average(list);
-	}
-	public static string ToString<T>(this IList<T> list, string separator)
-	{
-		var result = "";
-		for (int i = 0; i < list.Count; i++)
+		var sb = new StringBuilder();
+		for (int i = 0; i < collection.Count; i++)
 		{
 			var sep = i != 0 ? separator : "";
-			result += $"{sep}{list[i]}";
+			sb.Append(sep).Append(collection[i]);
 		}
 
+		return sb.ToString();
+	}
+	/// <summary>
+	/// Shifts all elements in a <paramref name="collection"/> by an <paramref name="offset"/>.
+	/// Elements are wrapped to the back or front (according to the <paramref name="offset"/>)
+	/// when they get out of range.
+	/// </summary>
+	public static void Shift<T>(this IList<T> collection, int offset)
+	{
+		if (offset == default)
+			return;
+
+		if (offset < 0)
+		{
+			offset = Math.Abs(offset);
+			for (int j = 0; j < offset; j++)
+			{
+				var temp = new T[collection.Count];
+				for (int i = 0; i < collection.Count - 1; i++)
+					temp[i] = collection[i + 1];
+				temp[temp.Length - 1] = collection[0];
+
+				for (int i = 0; i < temp.Length; i++)
+					collection[i] = temp[i];
+			}
+			return;
+		}
+
+		offset = Math.Abs(offset);
+		for (int j = 0; j < offset; j++)
+		{
+			var tempp = new T[collection.Count];
+			for (int i = 1; i < collection.Count; i++)
+				tempp[i] = collection[i - 1];
+			tempp[0] = collection[tempp.Length - 1];
+
+			for (int i = 0; i < tempp.Length; i++)
+				collection[i] = tempp[i];
+		}
+	}
+	/// <summary>
+	/// Returns the common elements between a <paramref name="collection"/> and a 
+	/// <paramref name="targetCollection"/>.
+	/// </summary>
+	public static T[] Intersect<T>(this IList<T> collection, IList<T> targetCollection)
+	{
+		var set1 = new HashSet<T>(collection);
+		var set2 = new HashSet<T>(targetCollection);
+		set1.IntersectWith(set2);
+		return set1.ToArray();
+	}
+	/// <summary>
+	/// Takes a section from a <paramref name="collection"/> specified by
+	/// <paramref name="start"/> and <paramref name="end"/>. Those indices are wrapped if
+	/// out of range. The result is then returned.
+	/// </summary>
+	public static T[] Take<T>(this IList<T> collection, int start, int end)
+	{
+		start = start.Wrap(collection.Count);
+		end = end.Wrap(collection.Count);
+
+		if (start > end)
+			(start, end) = (end, start);
+
+		var length = end - start;
+		var result = new T[length];
+		Array.Copy(collection.ToArray(), start, result, 0, length);
 		return result;
+	}
+	/// <summary>
+	/// Reverses the order of elements in a <paramref name="collection"/>.
+	/// </summary>
+	public static void Reverse<T>(this IList<T> collection)
+	{
+		var left = 0;
+		var right = collection.Count - 1;
+		for (int i = 0; i < collection.Count / 2; i++)
+		{
+			var temp = collection[left];
+			collection[left] = collection[right];
+			collection[right] = temp;
+			left++;
+			right--;
+		}
+	}
+	/// <summary>
+	/// Returns whether a <paramref name="collection"/> contains duplicate elements.
+	/// </summary>
+	public static bool HasDuplicates<T>(this IList<T> collection)
+	{
+		var set = new HashSet<T>();
+		for (int i = 0; i < collection.Count; i++)
+			if (set.Add(collection[i]) == false)
+				return true;
+
+		return false;
+	}
+
+	/// <summary>
+	/// Iterates over a <paramref name="collection"/>, calls <see cref="object.ToString"/>
+	/// on each element and adds the returned <see cref="string"/> to the result, alongside
+	/// a <paramref name="separator"/>. The result is then returned.
+	/// </summary>
+	public static string ToString<T>(this T[,] matrix, string separatorColumn, string separatorRow)
+	{
+		var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
+		var result = new StringBuilder();
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				result.Append(matrix[i, j]);
+
+				if (j < n - 1)
+					result.Append(separatorColumn);
+			}
+			result.Append(separatorRow);
+		}
+
+		return result.ToString();
+	}
+	/// <summary>
+	/// Rotates a <paramref name="matrix"/> in a <paramref name="direction"/>.
+	/// A positive <paramref name="direction"/> rotates clockwise and a
+	/// negative one rotates counter-clockwise. A <paramref name="direction"/> of 0
+	/// results in return of the original <paramref name="matrix"/>.
+	/// The result is stored in a new matrix (since the width may be different from the height).
+	/// The result is then returned.
+	/// </summary>
+	public static T[,] Rotate<T>(this T[,] matrix, int direction)
+	{
+		var dir = Math.Abs(direction).Wrap(4);
+		if (dir == 0)
+			return matrix;
+
+		var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
+		var rotated = new T[n, m];
+
+		if (direction > 0)
+		{
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					rotated[i, j] = matrix[m - j - 1, i];
+
+			direction--;
+			return Rotate(rotated, direction);
+		}
+
+		for (int i = 0; i < n; i++)
+			for (int j = 0; j < m; j++)
+				rotated[i, j] = matrix[j, n - i - 1];
+
+		direction++;
+		return Rotate(rotated, direction);
 	}
 
 	/// <summary>
@@ -176,11 +327,11 @@ public static class Extensions
 	/// </summary>
 	public static string Repeat(this string text, int times)
 	{
-		var result = "";
-		times = times.Limit(0, 999999);
+		var sb = new StringBuilder();
+		times = times.Limit(0, 999_999);
 		for (int i = 0; i < times; i++)
-			result = $"{result}{text}";
-		return result;
+			sb.Append(text);
+		return sb.ToString();
 	}
 	/// <summary>
 	/// Encrypts and compresses a <paramref name="text"/> and returns the result.
@@ -235,6 +386,15 @@ public static class Extensions
 		return parsed ? result : float.NaN;
 	}
 
+	/// <summary>
+	/// Calculates the average number out of <paramref name="numbers"/> and returns it.
+	/// </summary>
+	public static float AverageFrom(this float number, params float[] numbers)
+	{
+		var list = numbers == null ? new() : numbers.ToList();
+		list.Add(number);
+		return Average(list);
+	}
 	/// <summary>
 	/// Snaps a <paramref name="number"/> to an <paramref name="interval"/> and returns it.
 	/// </summary>

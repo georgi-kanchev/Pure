@@ -32,15 +32,15 @@ namespace Pure.Tilemap
 
 				tiles = new int[w, h];
 				tints = new uint[w, h];
-				angles = new byte[w, h];
+				angles = new sbyte[w, h];
 				flips = new (bool, bool)[w, h];
 				var bTilesSize = w * h * Marshal.SizeOf(typeof(int));
 				var bColorsSize = w * h * Marshal.SizeOf(typeof(uint));
-				var bAnglesSize = w * h * Marshal.SizeOf(typeof(byte));
+				var bAnglesSize = w * h * Marshal.SizeOf(typeof(sbyte));
 				var bFlipsSize = w * h * Marshal.SizeOf(typeof((bool, bool)));
 				var bTiles = new byte[bTilesSize];
 				var bColors = new byte[bColorsSize];
-				var bAngles = new byte[bAnglesSize];
+				var bAngles = new sbyte[bAnglesSize];
 				var bFlips = new (bool, bool)[bFlipsSize];
 				var offset = bWidth.Length + bHeight.Length;
 
@@ -68,11 +68,11 @@ namespace Pure.Tilemap
 			var (w, h) = tileCount;
 			tiles = new int[w, h];
 			tints = new uint[w, h];
-			angles = new byte[w, h];
+			angles = new sbyte[w, h];
 			flips = new (bool, bool)[w, h];
 			CameraSize = tileCount;
 		}
-		public Tilemap(int[,] tiles, uint[,] tints, byte[,] angles, (bool, bool)[,] flips)
+		public Tilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips)
 		{
 			if (tiles == null)
 				throw new ArgumentNullException(nameof(tiles));
@@ -134,7 +134,7 @@ namespace Pure.Tilemap
 			var (cx, cy) = CameraPosition;
 			var tiles = new int[Math.Abs(w), Math.Abs(h)];
 			var tints = new uint[Math.Abs(w), Math.Abs(h)];
-			var angles = new byte[Math.Abs(w), Math.Abs(h)];
+			var angles = new sbyte[Math.Abs(w), Math.Abs(h)];
 			var flips = new (bool, bool)[Math.Abs(w), Math.Abs(h)];
 			var xStep = w < 0 ? -1 : 1;
 			var yStep = h < 0 ? -1 : 1;
@@ -167,7 +167,7 @@ namespace Pure.Tilemap
 		{
 			return IndicesAreValid(cell) ? flips[cell.Item1, cell.Item2] : default;
 		}
-		public byte AngleAt((int, int) cell)
+		public sbyte AngleAt((int, int) cell)
 		{
 			return IndicesAreValid(cell) ? angles[cell.Item1, cell.Item2] : default;
 		}
@@ -179,7 +179,7 @@ namespace Pure.Tilemap
 					SetTile((x, y), tile, tint);
 		}
 
-		public void SetTile((int, int) cell, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
+		public void SetTile((int, int) cell, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (bool, bool) flip = default)
 		{
 			if (IndicesAreValid(cell) == false)
 				return;
@@ -192,7 +192,7 @@ namespace Pure.Tilemap
 			angles[x, y] = angle;
 			flips[x, y] = flip;
 		}
-		public void SetSquare((int, int) cell, (int, int) size, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
+		public void SetSquare((int, int) cell, (int, int) size, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (bool, bool) flip = default)
 		{
 			var xStep = size.Item1 < 0 ? -1 : 1;
 			var yStep = size.Item2 < 0 ? -1 : 1;
@@ -473,7 +473,7 @@ namespace Pure.Tilemap
 
 			return new(tiles,
 				new uint[w, h],
-				new byte[w, h],
+				new sbyte[w, h],
 				new (bool, bool)[w, h]);
 		}
 		public static implicit operator int[,](Tilemap tilemap)
@@ -484,12 +484,12 @@ namespace Pure.Tilemap
 
 			return new(new int[w, h],
 				tints,
-				new byte[w, h],
+				new sbyte[w, h],
 				new (bool, bool)[w, h]);
 		}
 		public static implicit operator uint[,](Tilemap tilemap)
 			=> Copy(tilemap.tints);
-		public static implicit operator Tilemap(byte[,] angles)
+		public static implicit operator Tilemap(sbyte[,] angles)
 		{
 			var (w, h) = (angles.GetLength(0), angles.GetLength(1));
 
@@ -498,7 +498,7 @@ namespace Pure.Tilemap
 				angles,
 				new (bool, bool)[w, h]);
 		}
-		public static implicit operator byte[,](Tilemap tilemap)
+		public static implicit operator sbyte[,](Tilemap tilemap)
 			=> Copy(tilemap.angles);
 		public static implicit operator Tilemap((bool, bool)[,] flips)
 		{
@@ -506,17 +506,17 @@ namespace Pure.Tilemap
 
 			return new(new int[w, h],
 				new uint[w, h],
-				new byte[w, h],
+				new sbyte[w, h],
 				flips);
 		}
 		public static implicit operator (bool, bool)[,](Tilemap tilemap)
 			=> Copy(tilemap.flips);
-		public static implicit operator Tilemap((int[,], uint[,], byte[,], (bool, bool)[,]) tilemap)
+		public static implicit operator Tilemap((int[,], uint[,], sbyte[,], (bool, bool)[,]) tilemap)
 		{
 			var (tiles, tints, angles, flips) = tilemap;
 			return new(tiles, tints, angles, flips);
 		}
-		public static implicit operator (int[,], uint[,], byte[,], (bool, bool)[,])(Tilemap tilemap)
+		public static implicit operator (int[,], uint[,], sbyte[,], (bool, bool)[,])(Tilemap tilemap)
 		{
 			return new(
 				Copy(tilemap.tiles),
@@ -591,7 +591,7 @@ namespace Pure.Tilemap
 
 		private readonly int[,] tiles;
 		private readonly uint[,] tints;
-		private readonly byte[,] angles;
+		private readonly sbyte[,] angles;
 		private readonly (bool, bool)[,] flips;
 
 		private bool IndicesAreValid((int, int) indices)

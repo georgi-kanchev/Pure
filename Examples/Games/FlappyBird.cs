@@ -21,7 +21,7 @@ public static class FlappyBird
 		var (width, height) = background.Size;
 		var birdY = 5f;
 		var birdVelocity = 0f;
-		var birdAnimation = new Animation<(int, byte)>(0.8f, false,
+		var birdAnimation = new Animation<(int, sbyte)>(0.8f, false,
 			// pairs of (tile, angle)
 			(Tile.ARROW_DIAGONAL, 0),
 			(Tile.ARROW_DIAGONAL, 0), // first frame twice for a bit more upward time
@@ -29,8 +29,8 @@ public static class FlappyBird
 			(Tile.ARROW_DIAGONAL, 1)); // rotated 1 time (90 degrees clockwise)
 		var pipes = new List<(float, int, int)>();
 		var collisionMap = new Map();
-		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_GRID_CORNER);
-		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_GRID_STRAIGHT);
+		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_CORNER);
+		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_STRAIGHT);
 
 		InitializePipes();
 
@@ -99,10 +99,10 @@ public static class FlappyBird
 
 				var size = (PIPE_WIDTH, PIPE_HEIGHT);
 				var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
-				background.SetSquare(((int)pipeX, pipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark());
-				background.SetSquare(((int)pipeX, lowerPipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark());
-				foreground.SetBorder(((int)pipeX, pipeY), size, Tile.BORDER_GRID_CORNER, Tile.BORDER_GRID_STRAIGHT, (Color)Color.Green);
-				foreground.SetBorder(((int)pipeX, lowerPipeY), size, Tile.BORDER_GRID_CORNER, Tile.BORDER_GRID_STRAIGHT, (Color)Color.Green);
+				background.SetSquare(((int)pipeX, pipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark(0.8f));
+				background.SetSquare(((int)pipeX, lowerPipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark(0.8f));
+				foreground.SetBorder(((int)pipeX, pipeY), size, Tile.BORDER_CORNER, Tile.BORDER_STRAIGHT, (Color)Color.Green);
+				foreground.SetBorder(((int)pipeX, lowerPipeY), size, Tile.BORDER_CORNER, Tile.BORDER_STRAIGHT, (Color)Color.Green);
 			}
 
 			collisionMap.Update(foreground);

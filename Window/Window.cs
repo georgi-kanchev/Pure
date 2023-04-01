@@ -110,7 +110,7 @@ public static class Window
 	/// <paramref name="tints"/>, <paramref name="angles"/> and <paramref name="flips"/>
 	/// (flip first, rotation second - order matters).
 	/// </summary>
-	public static void DrawTilemap(int[,] tiles, uint[,] tints, byte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
+	public static void DrawTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
 	{
 		if (tiles == null || tints == null || tiles.Length != tints.Length)
 			return;
@@ -144,7 +144,7 @@ public static class Window
 	/// <paramref name="tileSize"/> and <paramref name="tileGaps"/>, then it is cached
 	/// for future draws.
 	/// </summary>
-	public static void DrawTilemap((int[,], uint[,], byte[,], (bool, bool)[,]) tilemap, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
+	public static void DrawTilemap((int[,], uint[,], sbyte[,], (bool, bool)[,]) tilemap, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
 	{
 		var (tiles, tints, angles, flips) = tilemap;
 		DrawTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path);
@@ -156,15 +156,49 @@ public static class Window
 	/// (flip first, rotation second - order matters).
 	/// The sprite's <paramref name="position"/> is also relative to the previously drawn tilemap.
 	/// </summary>
-	public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue, byte angle = 0, (bool, bool) flip = default)
+	public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (bool, bool) flip = default)
 	{
-		if (Vertices.prevDrawTilemapGfxPath == null)
+		if (Vertices.prevDrawTilesetGfxPath == null)
 			return;
 
 		var verts = Vertices.GetSprite(position, tile, tint, angle, flip);
-		var tex = graphics[Vertices.prevDrawTilemapGfxPath];
+		var tex = graphics[Vertices.prevDrawTilesetGfxPath];
 		var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, IsRetro ? retroScreen : null);
 		window.Draw(verts, PrimitiveType.Quads, rend);
+	}
+	public static void DrawSprite((float, float) position, int tile, (int, int) tileCount, uint tint = uint.MaxValue, sbyte angle = 0, (bool, bool) flip = default)
+	{
+		if (Vertices.prevDrawTilesetGfxPath == null)
+			return;
+
+		var (w, h) = tileCount;
+		var tiles = new int[w, h];
+		var texW = graphics[Vertices.prevDrawTilesetGfxPath].Size.X;
+		var gapW = Vertices.prevDrawTilesetTileGap.Item1;
+		var tilesW = (int)(texW / (Vertices.prevDrawTilesetTileSz.Item1 + gapW));
+
+		for (int i = 0; i < w; i++)
+			for (int j = 0; j < h; j++)
+				tiles[i, j] = tile + (j * tilesW + i);
+
+		var rotated = Vertices.Rotate(tiles, angle);
+		var vertsArr = new VertexArray(PrimitiveType.Quads);
+
+		for (int i = 0; i < w; i++)
+			for (int j = 0; j < h; j++)
+			{
+				var (x, y) = (position.Item1 + i, position.Item2 + j);
+				var verts = Vertices.GetSprite((x, y), tiles[i, j], tint, angle, flip);
+				vertsArr.Append(verts[0]);
+				vertsArr.Append(verts[1]);
+				vertsArr.Append(verts[2]);
+				vertsArr.Append(verts[3]);
+				DrawSprite((x, y), tiles[i, j], tint, angle, flip);
+			}
+
+		var tex = graphics[Vertices.prevDrawTilesetGfxPath];
+		var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, IsRetro ? retroScreen : null);
+		//window.Draw(vertsArr, rend);
 	}
 	/// <summary>
 	/// Draws single pixel points with <paramref name="tint"/> onto the OS window.
@@ -276,5 +310,6 @@ public static class Window
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
 	}
+
 	#endregion
 }

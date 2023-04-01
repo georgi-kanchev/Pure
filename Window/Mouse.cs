@@ -130,8 +130,8 @@ public static class Mouse
 		var (x, y) = Window.PositionFrom(CursorPosition);
 		var (offX, offY) = cursorOffsets[CursorGraphics];
 
-		Vertices.prevDrawTilemapGfxPath = "default";
-		Vertices.prevDrawTilemapTileSz = (8, 8);
+		Vertices.prevDrawTilesetGfxPath = "default";
+		Vertices.prevDrawTilesetTileSz = (8, 8);
 		Window.DrawSprite((x - offX, y - offY), 442 + CursorGraphics, CursorColor);
 	}
 	internal static void CancelInput() => pressed.Clear();

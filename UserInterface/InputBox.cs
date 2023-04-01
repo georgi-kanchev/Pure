@@ -167,15 +167,17 @@ public class InputBox : UserInterface
 
 	private void UpdateText()
 	{
-		Text = "";
+		var sb = new StringBuilder();
 
 		var maxW = Size.Item1 - 1;
 		for (int i = 0; i < lines.Count; i++)
 		{
 			var line = lines[i];
 			line = line.Length > maxW ? line[0..maxW] : line;
-			Text += line.PadRight(Size.Item1, ' ');
+			sb.Append(line.PadRight(Size.Item1, ' '));
 		}
+
+		Text = sb.ToString();
 	}
 
 	private static bool Allowed(int key, bool isHolding) => JustPressed(key) || (Pressed(key) && isHolding);

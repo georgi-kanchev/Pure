@@ -8,13 +8,13 @@ internal static class Vertices
 {
 	public static Vertex[] GetRectangle((float, float) position, (float, float) size, uint tint)
 	{
-		if (prevDrawTilemapGfxPath == null)
+		if (prevDrawTilesetGfxPath == null)
 			return Array.Empty<Vertex>();
 
 		var verts = new Vertex[4];
 		var cellCount = prevDrawTilemapCellCount;
 		var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
-		var (tileWidth, tileHeight) = prevDrawTilemapTileSz;
+		var (tileWidth, tileHeight) = prevDrawTilesetTileSz;
 
 		var (w, h) = size;
 		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.Size.Item1);
@@ -32,7 +32,7 @@ internal static class Vertices
 	}
 	public static Vertex[] GetLine((float, float) a, (float, float) b, uint tint)
 	{
-		var (tileW, tileH) = prevDrawTilemapTileSz;
+		var (tileW, tileH) = prevDrawTilesetTileSz;
 		var (x0, y0) = a;
 		var (x1, y1) = b;
 		var dx = MathF.Abs(x1 - x0);
@@ -66,20 +66,21 @@ internal static class Vertices
 		}
 		return GetPoints(tint, points.ToArray());
 	}
-	public static Vertex[] GetSprite((float, float) position, int cell, uint tint, byte angle, (bool, bool) flip)
+	public static Vertex[] GetSprite((float, float) position, int cell, uint tint, sbyte angle, (bool, bool) flip)
 	{
-		if (prevDrawTilemapGfxPath == null)
+		if (prevDrawTilesetGfxPath == null)
 			return Array.Empty<Vertex>();
 
 		var verts = new Vertex[4];
 		var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
 		var cellCount = prevDrawTilemapCellCount;
-		var (tileWidth, tileHeight) = prevDrawTilemapTileSz;
-		var texture = Window.graphics[prevDrawTilemapGfxPath];
+		var (tileWidth, tileHeight) = prevDrawTilesetTileSz;
+		var texture = Window.graphics[prevDrawTilesetGfxPath];
+		var (tileGapW, tileGapH) = prevDrawTilesetTileGap;
 
 		var tileCount = (texture.Size.X / tileWidth, texture.Size.Y / tileHeight);
 		var texCoords = IndexToCoords(cell, tileCount);
-		var tx = new Vector2f(texCoords.Item1 * tileWidth, texCoords.Item2 * tileHeight);
+		var tx = new Vector2f(texCoords.Item1 * (tileWidth + tileGapW), texCoords.Item2 * (tileHeight + tileGapH));
 		var texTr = tx + new Vector2f(tileWidth, 0);
 		var texBr = tx + new Vector2f(tileWidth, tileHeight);
 		var texBl = tx + new Vector2f(0, tileHeight);
@@ -92,7 +93,7 @@ internal static class Vertices
 		var tr = new Vector2f(br.X, tl.Y);
 		var bl = new Vector2f(tl.X, br.Y);
 		var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
-		var rotated = GetRotatedPoints(angle, center, tl, tr, br, bl);
+		var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
 		var (flipX, flipY) = flip;
 
 		if (flipX)
@@ -117,7 +118,7 @@ internal static class Vertices
 		verts[3] = new(bl, c, texBl);
 		return verts;
 	}
-	public static Vertex[] GetTilemap(int[,] tiles, uint[,] tints, byte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSz, (uint, uint) tileOff, string path)
+	public static Vertex[] GetTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSz, (uint, uint) tileOff, string path)
 	{
 		if (tiles == null || Window.window == null)
 			return Array.Empty<Vertex>();
@@ -132,9 +133,10 @@ internal static class Vertices
 		var verts = new Vertex[tiles.Length * 4];
 
 		// this cache is used for a potential sprite draw
-		prevDrawTilemapGfxPath = path;
+		prevDrawTilesetGfxPath = path;
 		prevDrawTilemapCellSz = (cellWidth, cellHeight);
-		prevDrawTilemapTileSz = tileSz;
+		prevDrawTilesetTileSz = tileSz;
+		prevDrawTilesetTileGap = tileOff;
 		prevDrawTilemapCellCount = ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
 
 		for (uint y = 0; y < tiles.GetLength(1); y++)
@@ -156,7 +158,7 @@ internal static class Vertices
 				var texBr = new Vector2f((int)(tx.X + tileW), (int)(tx.Y + tileH));
 				var texBl = new Vector2f((int)tx.X, (int)(tx.Y + tileH));
 				var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
-				var rotated = GetRotatedPoints(angles[x, y], center, tl, tr, br, bl);
+				var rotated = GetRotatedPoints(angles[x, y], tl, tr, br, bl);
 				var (flipX, flipY) = flips[x, y];
 
 				if (flipX)
@@ -190,7 +192,7 @@ internal static class Vertices
 	public static Vertex[] GetPoints(uint tint, (float, float)[] positions)
 	{
 		var verts = new Vertex[positions.Length * 4];
-		var tileSz = prevDrawTilemapTileSz;
+		var tileSz = prevDrawTilesetTileSz;
 		var cellWidth = prevDrawTilemapCellSz.Item1 / tileSz.Item1;
 		var cellHeight = prevDrawTilemapCellSz.Item2 / tileSz.Item2;
 		var cellCount = prevDrawTilemapCellCount;
@@ -214,10 +216,11 @@ internal static class Vertices
 	}
 
 	#region Backend
-	private const int LINE_MAX_ITERATIONS = 10000;
+	private const int LINE_MAX_ITERATIONS = 10_000;
 
-	public static string? prevDrawTilemapGfxPath;
-	public static (uint, uint) prevDrawTilemapTileSz;
+	public static string? prevDrawTilesetGfxPath;
+	public static (uint, uint) prevDrawTilesetTileSz;
+	public static (uint, uint) prevDrawTilesetTileGap;
 	public static (float, float) prevDrawTilemapCellSz;
 	public static (uint, uint) prevDrawTilemapCellCount;
 
@@ -271,35 +274,69 @@ internal static class Vertices
 	{
 		return ((number % targetNumber) + targetNumber) % targetNumber;
 	}
-
-	private static Vector2f[] GetRotatedPoints(byte angle, Vector2 center, params Vector2f[] points)
+	private static void Shift<T>(IList<T> collection, int offset)
 	{
-		if (points == null)
-			return Array.Empty<Vector2f>();
+		if (offset == default)
+			return;
 
-		angle = (byte)Wrap((int)angle, 4);
-
-		if (angle == 0)
-			return points;
-
-		var rad = MathF.PI / 180f * (angle * 90f);
-
-		for (int i = 0; i < points?.Length; i++)
+		if (offset < 0)
 		{
-			var point = new Vector2(points[i].X, points[i].Y);
-			var p = Vector2.Transform(point, Matrix3x2.CreateRotation(rad, center));
-			points[i] = new(p.X, p.Y);
+			offset = Math.Abs(offset);
+			for (int j = 0; j < offset; j++)
+			{
+				var temp = new T[collection.Count];
+				for (int i = 0; i < collection.Count - 1; i++)
+					temp[i] = collection[i + 1];
+				temp[temp.Length - 1] = collection[0];
+
+				for (int i = 0; i < temp.Length; i++)
+					collection[i] = temp[i];
+			}
+			return;
 		}
 
-		if (points == null)
-			return Array.Empty<Vector2f>();
+		offset = Math.Abs(offset);
+		for (int j = 0; j < offset; j++)
+		{
+			var tempp = new T[collection.Count];
+			for (int i = 1; i < collection.Count; i++)
+				tempp[i] = collection[i - 1];
+			tempp[0] = collection[tempp.Length - 1];
 
+			for (int i = 0; i < tempp.Length; i++)
+				collection[i] = tempp[i];
+		}
+	}
+	private static Vector2f[] GetRotatedPoints(sbyte angle, params Vector2f[] points)
+	{
+		Shift(points, Wrap(-((int)angle), 4));
 		return points;
-		//if (angle == 0) return points;
-		//if (angle == 1) return new Vector2f[] { points[1], points[2], points[3], points[0] };
-		//if (angle == 2) return new Vector2f[] { points[2], points[3], points[0], points[1] };
-		//
-		//return new Vector2f[] { points[3], points[0], points[1], points[2] };
+	}
+	internal static T[,] Rotate<T>(T[,] matrix, int direction)
+	{
+		var dir = Wrap(Math.Abs(direction), 4);
+		if (dir == 0)
+			return matrix;
+
+		var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
+		var rotated = new T[n, m];
+
+		if (direction > 0)
+		{
+			for (int i = 0; i < n; i++)
+				for (int j = 0; j < m; j++)
+					rotated[i, j] = matrix[m - j - 1, i];
+
+			direction--;
+			return Rotate(rotated, direction);
+		}
+
+		for (int i = 0; i < n; i++)
+			for (int j = 0; j < m; j++)
+				rotated[i, j] = matrix[j, n - i - 1];
+
+		direction++;
+		return Rotate(rotated, direction);
 	}
 	#endregion
 }
