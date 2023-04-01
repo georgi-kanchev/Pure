@@ -91,7 +91,8 @@ internal static class Vertices
 		var br = new Vector2f(((int)grid.Item1 + cellWidth), (int)(grid.Item2 + cellHeight));
 		var tr = new Vector2f(br.X, tl.Y);
 		var bl = new Vector2f(tl.X, br.Y);
-		var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
+		var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
+		var rotated = GetRotatedPoints(angle, center, tl, tr, br, bl);
 		var (flipX, flipY) = flip;
 
 		if (flipX)
@@ -142,10 +143,10 @@ internal static class Vertices
 				var cell = tiles[x, y];
 				var tint = new Color(tints[x, y]);
 				var i = GetIndex(x, y, (uint)tiles.GetLength(0)) * 4;
-				var tl = new Vector2f((int)(x * cellWidth), (int)(y * cellHeight));
-				var tr = new Vector2f((int)((x + 1) * cellWidth), (int)(y * cellHeight));
-				var br = new Vector2f((int)((x + 1) * cellWidth), (int)((y + 1) * cellHeight));
-				var bl = new Vector2f((int)(x * cellWidth), (int)((y + 1) * cellHeight));
+				var tl = new Vector2f(x * cellWidth, y * cellHeight);
+				var tr = new Vector2f((x + 1) * cellWidth, y * cellHeight);
+				var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
+				var bl = new Vector2f(x * cellWidth, (y + 1) * cellHeight);
 
 				var texCoords = IndexToCoords(cell, tileCount);
 				var tx = new Vector2f(
@@ -155,8 +156,7 @@ internal static class Vertices
 				var texBr = new Vector2f((int)(tx.X + tileW), (int)(tx.Y + tileH));
 				var texBl = new Vector2f((int)tx.X, (int)(tx.Y + tileH));
 				var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
-				var c = new Vector2f((int)center.X, (int)center.Y);
-				var rotated = GetRotatedPoints(angles[x, y], tl, tr, br, bl);
+				var rotated = GetRotatedPoints(angles[x, y], center, tl, tr, br, bl);
 				var (flipX, flipY) = flips[x, y];
 
 				if (flipX)
@@ -174,6 +174,11 @@ internal static class Vertices
 				tr = rotated[1];
 				br = rotated[2];
 				bl = rotated[3];
+
+				//tl = new((int)tl.X, (int)tl.Y);
+				//tr = new((int)tr.X, (int)tr.Y);
+				//br = new((int)br.X, (int)br.Y);
+				//bl = new((int)bl.X, (int)bl.Y);
 
 				verts[i + 0] = new(tl, tint, tx);
 				verts[i + 1] = new(tr, tint, texTr);
@@ -267,16 +272,34 @@ internal static class Vertices
 		return ((number % targetNumber) + targetNumber) % targetNumber;
 	}
 
-	private static Vector2f[] GetRotatedPoints(byte angle, params Vector2f[] points)
+	private static Vector2f[] GetRotatedPoints(byte angle, Vector2 center, params Vector2f[] points)
 	{
+		if (points == null)
+			return Array.Empty<Vector2f>();
+
 		angle = (byte)Wrap((int)angle, 4);
 
-		if (angle == 0) return points;
-		if (angle == 1) return new Vector2f[] { points[1], points[2], points[3], points[0] };
-		if (angle == 2) return new Vector2f[] { points[2], points[3], points[0], points[1] };
+		if (angle == 0)
+			return points;
 
-		return new Vector2f[] { points[3], points[0], points[1], points[2] };
+		var rad = MathF.PI / 180f * (angle * 90f);
+
+		for (int i = 0; i < points?.Length; i++)
+		{
+			var point = new Vector2(points[i].X, points[i].Y);
+			var p = Vector2.Transform(point, Matrix3x2.CreateRotation(rad, center));
+			points[i] = new(p.X, p.Y);
+		}
+
+		if (points == null)
+			return Array.Empty<Vector2f>();
+
+		return points;
+		//if (angle == 0) return points;
+		//if (angle == 1) return new Vector2f[] { points[1], points[2], points[3], points[0] };
+		//if (angle == 2) return new Vector2f[] { points[2], points[3], points[0], points[1] };
+		//
+		//return new Vector2f[] { points[3], points[0], points[1], points[2] };
 	}
-
 	#endregion
 }
