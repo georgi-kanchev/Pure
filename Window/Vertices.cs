@@ -6,12 +6,17 @@ using SFML.System;
 
 internal static class Vertices
 {
-	public static Vertex[] GetRectangle((float, float) position, (float, float) size, uint tint)
-	{
-		if (prevDrawTilesetGfxPath == null)
-			return Array.Empty<Vertex>();
+	public static string? prevDrawTilesetGfxPath;
+	public static (uint, uint) prevDrawTilesetTileSz;
+	public static (uint, uint) prevDrawTilesetTileGap;
+	public static (float, float) prevDrawTilemapCellSz;
+	public static (uint, uint) prevDrawTilemapCellCount;
 
-		var verts = new Vertex[4];
+	public static void QueueRectangle((float, float) position, (float, float) size, uint tint)
+	{
+		if (Window.window == null || prevDrawTilesetGfxPath == null)
+			return;
+
 		var cellCount = prevDrawTilemapCellCount;
 		var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
 		var (tileWidth, tileHeight) = prevDrawTilesetTileSz;
@@ -23,14 +28,14 @@ internal static class Vertices
 		var (gridX, gridY) = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 		var tl = new Vector2f(gridX, gridY);
 		var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
+		var verts = vertexQueue[prevDrawTilesetGfxPath];
 
-		verts[0] = new(new((int)tl.X, (int)tl.Y), c);
-		verts[1] = new(new((int)br.X, (int)tl.Y), c);
-		verts[2] = new(new((int)br.X, (int)br.Y), c);
-		verts[3] = new(new((int)tl.X, (int)br.Y), c);
-		return verts;
+		verts.Append(new(new((int)tl.X, (int)tl.Y), c));
+		verts.Append(new(new((int)br.X, (int)tl.Y), c));
+		verts.Append(new(new((int)br.X, (int)br.Y), c));
+		verts.Append(new(new((int)tl.X, (int)br.Y), c));
 	}
-	public static Vertex[] GetLine((float, float) a, (float, float) b, uint tint)
+	public static void QueueLine((float, float) a, (float, float) b, uint tint)
 	{
 		var (tileW, tileH) = prevDrawTilesetTileSz;
 		var (x0, y0) = a;
@@ -41,12 +46,11 @@ internal static class Vertices
 		var sx = x0 < x1 ? stepX : -stepY;
 		var sy = y0 < y1 ? stepX : -stepY;
 		var err = dx + dy;
-		var points = new List<(float, float)>();
-		float e2;
+		var e2 = 0f;
 
 		for (int i = 0; i < LINE_MAX_ITERATIONS; i++)
 		{
-			points.Add((x0, y0));
+			QueuePoints(tint, new (float, float)[] { (x0, y0) });
 
 			if (IsWithin(x0, x1, stepX) && IsWithin(y0, y1, stepY))
 				break;
@@ -64,23 +68,21 @@ internal static class Vertices
 				y0 += sy;
 			}
 		}
-		return GetPoints(tint, points.ToArray());
 	}
-	public static Vertex[] GetSprite((float, float) position, int cell, uint tint, sbyte angle, (bool, bool) flip)
+	public static void QueueSprite((float, float) position, int cell, uint tint, sbyte angle, (uint, uint) size, (bool, bool) flip)
 	{
-		if (prevDrawTilesetGfxPath == null)
-			return Array.Empty<Vertex>();
+		if (Window.window == null || prevDrawTilesetGfxPath == null)
+			return;
 
-		var verts = new Vertex[4];
+		var verts = vertexQueue[prevDrawTilesetGfxPath];
 		var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
 		var cellCount = prevDrawTilemapCellCount;
 		var (tileWidth, tileHeight) = prevDrawTilesetTileSz;
 		var texture = Window.graphics[prevDrawTilesetGfxPath];
 		var (tileGapW, tileGapH) = prevDrawTilesetTileGap;
-
 		var tileCount = (texture.Size.X / tileWidth, texture.Size.Y / tileHeight);
-		var texCoords = IndexToCoords(cell, tileCount);
-		var tx = new Vector2f(texCoords.Item1 * (tileWidth + tileGapW), texCoords.Item2 * (tileHeight + tileGapH));
+		var (texX, texY) = IndexToCoords(cell, tileCount);
+		var tx = new Vector2f(texX * (tileWidth + tileGapW), texY * (tileHeight + tileGapH));
 		var texTr = tx + new Vector2f(tileWidth, 0);
 		var texBr = tx + new Vector2f(tileWidth, tileHeight);
 		var texBl = tx + new Vector2f(0, tileHeight);
@@ -89,12 +91,14 @@ internal static class Vertices
 		var c = new Color(tint);
 		var grid = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 		var tl = new Vector2f((int)grid.Item1, (int)grid.Item2);
-		var br = new Vector2f(((int)grid.Item1 + cellWidth), (int)(grid.Item2 + cellHeight));
+		var br = new Vector2f((int)(grid.Item1 + cellWidth), (int)(grid.Item2 + cellHeight));
 		var tr = new Vector2f(br.X, tl.Y);
 		var bl = new Vector2f(tl.X, br.Y);
-		var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
 		var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
 		var (flipX, flipY) = flip;
+
+		size.Item1 = Math.Max(1, size.Item1);
+		size.Item2 = Math.Max(1, size.Item2);
 
 		if (flipX)
 		{
@@ -112,16 +116,15 @@ internal static class Vertices
 		br = rotated[2];
 		bl = rotated[3];
 
-		verts[0] = new(tl, c, tx);
-		verts[1] = new(tr, c, texTr);
-		verts[2] = new(br, c, texBr);
-		verts[3] = new(bl, c, texBl);
-		return verts;
+		verts.Append(new(tl, c, tx));
+		verts.Append(new(tr, c, texTr));
+		verts.Append(new(br, c, texBr));
+		verts.Append(new(bl, c, texBl));
 	}
-	public static Vertex[] GetTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSz, (uint, uint) tileOff, string path)
+	public static void QueueTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSz, (uint, uint) tileOff, string path)
 	{
 		if (tiles == null || Window.window == null)
-			return Array.Empty<Vertex>();
+			return;
 
 		var cellWidth = (float)Window.window.Size.X / tiles.GetLength(0);
 		var cellHeight = (float)Window.window.Size.Y / tiles.GetLength(1);
@@ -130,7 +133,6 @@ internal static class Vertices
 		var (tileW, tileH) = tileSz;
 		var texSz = texture.Size;
 		var tileCount = (texSz.X / (tileW + tileOffW), texSz.Y / (tileH + tileOffH));
-		var verts = new Vertex[tiles.Length * 4];
 
 		// this cache is used for a potential sprite draw
 		prevDrawTilesetGfxPath = path;
@@ -138,6 +140,9 @@ internal static class Vertices
 		prevDrawTilesetTileSz = tileSz;
 		prevDrawTilesetTileGap = tileOff;
 		prevDrawTilemapCellCount = ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
+
+		if (vertexQueue.ContainsKey(path) == false)
+			vertexQueue[path] = new(PrimitiveType.Quads);
 
 		for (uint y = 0; y < tiles.GetLength(1); y++)
 			for (uint x = 0; x < tiles.GetLength(0); x++)
@@ -177,21 +182,24 @@ internal static class Vertices
 				br = rotated[2];
 				bl = rotated[3];
 
-				//tl = new((int)tl.X, (int)tl.Y);
-				//tr = new((int)tr.X, (int)tr.Y);
-				//br = new((int)br.X, (int)br.Y);
-				//bl = new((int)bl.X, (int)bl.Y);
+				tl = new((int)tl.X, (int)tl.Y);
+				tr = new((int)tr.X, (int)tr.Y);
+				br = new((int)br.X, (int)br.Y);
+				bl = new((int)bl.X, (int)bl.Y);
 
-				verts[i + 0] = new(tl, tint, tx);
-				verts[i + 1] = new(tr, tint, texTr);
-				verts[i + 2] = new(br, tint, texBr);
-				verts[i + 3] = new(bl, tint, texBl);
+				vertexQueue[path].Append(new(tl, tint, tx));
+				vertexQueue[path].Append(new(tr, tint, texTr));
+				vertexQueue[path].Append(new(br, tint, texBr));
+				vertexQueue[path].Append(new(bl, tint, texBl));
 			}
-		return verts;
+
 	}
-	public static Vertex[] GetPoints(uint tint, (float, float)[] positions)
+	public static void QueuePoints(uint tint, (float, float)[] positions)
 	{
-		var verts = new Vertex[positions.Length * 4];
+		if (Window.window == null || positions == null || positions.Length == 0 || prevDrawTilesetGfxPath == null)
+			return;
+
+		var verts = vertexQueue[prevDrawTilesetGfxPath];
 		var tileSz = prevDrawTilesetTileSz;
 		var cellWidth = prevDrawTilemapCellSz.Item1 / tileSz.Item1;
 		var cellHeight = prevDrawTilemapCellSz.Item2 / tileSz.Item2;
@@ -206,23 +214,26 @@ internal static class Vertices
 			var tl = new Vector2f(grid.Item1, grid.Item2);
 			var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
 
-			var index = i * 4;
-			verts[index + 0] = new(new(tl.X, tl.Y), c);
-			verts[index + 1] = new(new(br.X, tl.Y), c);
-			verts[index + 2] = new(new(br.X, br.Y), c);
-			verts[index + 3] = new(new(tl.X, br.Y), c);
+			verts.Append(new(new(tl.X, tl.Y), c));
+			verts.Append(new(new(br.X, tl.Y), c));
+			verts.Append(new(new(br.X, br.Y), c));
+			verts.Append(new(new(tl.X, br.Y), c));
 		}
-		return verts;
+	}
+
+	public static VertexArray GetFromQueue(string texturePath)
+	{
+		return vertexQueue[texturePath];
+	}
+	public static void ClearQueue()
+	{
+		foreach (var kvp in vertexQueue)
+			kvp.Value.Clear();
 	}
 
 	#region Backend
 	private const int LINE_MAX_ITERATIONS = 10_000;
-
-	public static string? prevDrawTilesetGfxPath;
-	public static (uint, uint) prevDrawTilesetTileSz;
-	public static (uint, uint) prevDrawTilesetTileGap;
-	public static (float, float) prevDrawTilemapCellSz;
-	public static (uint, uint) prevDrawTilemapCellCount;
+	private static readonly Dictionary<string, VertexArray> vertexQueue = new();
 
 	private static bool IsWithin(float number, float targetNumber, float range)
 	{

@@ -1,15 +1,23 @@
-﻿namespace Pure.Window;
+﻿using SFML.Window;
+
+namespace Pure.Window;
 
 /// <summary>
-/// Handles the physical buttons on a mouse and the on-screen OS cursor.
+/// Handles the physical button presses on a mouse and the on-screen OS cursor.
 /// </summary>
 public static class Mouse
 {
+	/// <summary>
+	/// Each physical button on a standard mouse.
+	/// </summary>
 	public static class Button
 	{
 		public const int LEFT = 0, RIGHT = 1, MIDDLE = 2, EXTRA_1 = 3, EXTRA_2 = 4;
 		internal const int COUNT = 5;
 	}
+	/// <summary>
+	/// Each tile or OS cursor available.
+	/// </summary>
 	public static class Cursor
 	{
 		public const int TILE_ARROW = 0, TILE_ARROW_NO_TAIL = 1, TILE_HAND = 2, TILE_TEXT = 3,
@@ -32,18 +40,25 @@ public static class Mouse
 	{
 		get
 		{
+			Window.TryNoWindowException();
 			var p = SFML.Window.Mouse.GetPosition(Window.window);
 			return (p.X, p.Y);
 		}
 	}
 	/// <summary>
-	/// The mouse cursor type used to display the OS or tile cursor.
+	/// The mouse cursor type used to display the tile or OS cursor.
 	/// </summary>
 	public static int CursorGraphics
 	{
-		get => cursor;
+		get
+		{
+			Window.TryNoWindowException();
+			return cursor;
+		}
 		set
 		{
+			Window.TryNoWindowException();
+
 			cursor = value;
 
 			if (value != Cursor.NONE && value > Cursor.TILE_WAIT_3)
@@ -60,29 +75,85 @@ public static class Mouse
 	/// <summary>
 	/// The mouse cursor color used to draw the tile cursor.
 	/// </summary>
-	public static uint CursorColor { get; set; } = 4294967295;
+	public static uint CursorColor
+	{
+		get
+		{
+			Window.TryNoWindowException();
+			return cursorColor;
+		}
+		set
+		{
+			Window.TryNoWindowException();
+			cursorColor = value;
+		}
+	}
 	/// <summary>
 	/// Whether the mouse cursor is restricted of leaving the OS window.
 	/// </summary>
 	public static bool IsCursorRestriced
 	{
-		get => isMouseGrabbed;
-		set { isMouseGrabbed = value; Window.window.SetMouseCursorGrabbed(value); }
+		get
+		{
+			Window.TryNoWindowException();
+			return isMouseGrabbed;
+		}
+		set
+		{
+			Window.TryNoWindowException();
+			isMouseGrabbed = value;
+			Window.window.SetMouseCursorGrabbed(value);
+		}
 	}
+	/// <summary>
+	/// Whether the mouse cursor hovers the OS window.
+	/// </summary>
 	public static bool IsCursorHoveringWindow
 	{
 		get
 		{
+			Window.TryNoWindowException();
 			var w = Window.window;
 			var pos = SFML.Window.Mouse.GetPosition(w);
 			return pos.X > 0 && pos.X < w.Size.X && pos.Y > 0 && pos.Y < w.Size.Y;
 		}
 	}
 
-	public static int[] ButtonsPressed => pressed.ToArray();
-	public static int ScrollDelta { get; private set; }
-
-	public static bool IsButtonPressed(int button) => pressed.Contains(button);
+	/// <summary>
+	/// The currently pressed mouse buttons, in the order they were pressed.
+	/// </summary>
+	public static int[] ButtonsPressed
+	{
+		get
+		{
+			Window.TryNoWindowException();
+			return pressed.ToArray();
+		}
+	}
+	/// <summary>
+	/// Returns the mouse scroll direction during the current <see cref="Window"/> activation.
+	/// </summary>
+	public static int ScrollDelta
+	{
+		get
+		{
+			Window.TryNoWindowException();
+			return scrollData;
+		}
+		private set
+		{
+			Window.TryNoWindowException();
+			scrollData = value;
+		}
+	}
+	/// <summary>
+	/// Returns whether a <paramref name="key"/> is among the <see cref="ButtonsPressed"/>.
+	/// </summary>
+	public static bool IsButtonPressed(int button)
+	{
+		Window.TryNoWindowException();
+		return pressed.Contains(button);
+	}
 
 	#region Backend
 	private static readonly List<int> pressed = new();
@@ -93,36 +164,27 @@ public static class Mouse
 			(0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f),
 		};
 
-	private static int cursor;
-	private static SFML.Window.Cursor sysCursor;
+	private static int cursor, scrollData;
+	private static uint cursorColor = uint.MaxValue;
+	private static SFML.Window.Cursor sysCursor = new SFML.Window.Cursor(SFML.Window.Cursor.CursorType.Arrow);
 	private static bool isMouseGrabbed;
 
-	static Mouse()
+	internal static void OnButtonPressed(object? s, MouseButtonEventArgs e)
 	{
-		Window.window.MouseButtonPressed += (s, e) =>
-		{
-			var button = (int)e.Button;
-			pressed.Add(button);
-		};
-		Window.window.MouseButtonReleased += (s, e) =>
-		{
-			var button = (int)e.Button;
-			pressed.Remove(button);
-		};
-		Window.window.MouseWheelScrolled += (s, e) =>
-		{
-			ScrollDelta = e.Delta < 0 ? -1 : 1;
-		};
-
-		sysCursor = new SFML.Window.Cursor(SFML.Window.Cursor.CursorType.Arrow);
-
+		pressed.Add((int)e.Button);
+	}
+	internal static void OnButtonReleased(object? s, MouseButtonEventArgs e)
+	{
+		pressed.Remove((int)e.Button);
+	}
+	internal static void OnWheelScrolled(object? s, MouseWheelScrollEventArgs e)
+	{
+		ScrollDelta = e.Delta < 0 ? -1 : 1;
 	}
 
 	internal static void Update()
 	{
 		ScrollDelta = 0;
-
-		Window.window.SetMouseCursorVisible(IsCursorHoveringWindow == false);
 
 		if (cursor > Cursor.TILE_WAIT_3)
 			return;

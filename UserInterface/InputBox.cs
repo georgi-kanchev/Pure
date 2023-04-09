@@ -1,6 +1,7 @@
 ﻿namespace Pure.UserInterface;
 
 using System.Diagnostics;
+using System.Text;
 
 public class InputBox : UserInterface
 {

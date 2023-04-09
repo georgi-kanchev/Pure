@@ -10,8 +10,11 @@ public static class DefaultGraphics
 	{
 		var tilemap = new Tilemap((16 * 3, 9 * 3));
 
-		while (Window.IsExisting)
+		Window.Create();
+		while (Window.IsOpen)
 		{
+			Window.Activate(true);
+
 			tilemap.Fill();
 			for (int i = 0; i < 26; i++)
 				for (int j = 0; j < 26; j++)
@@ -25,7 +28,6 @@ public static class DefaultGraphics
 			var index = tilemap.TileAt(((int)x, (int)y));
 			tilemap.SetTextLine((28, 13), $"{index}");
 
-			Window.Activate(true);
 			Window.DrawTilemap(tilemap, (8, 8));
 			Window.Activate(false);
 		}

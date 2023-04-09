@@ -3,6 +3,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Text;
 
 /// <summary>
@@ -384,6 +385,25 @@ public static class Extensions
 			out var result);
 
 		return parsed ? result : float.NaN;
+	}
+
+	public static void OpenWebPage(this string url)
+	{
+		try { Process.Start(url); }
+		catch
+		{
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				url = url.Replace("&", "^&");
+				Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+			}
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+				Process.Start("xdg-open", url);
+			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+				Process.Start("open", url);
+			else
+				Console.WriteLine($"Could not load URL '{url}'.");
+		}
 	}
 
 	/// <summary>

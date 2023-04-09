@@ -34,9 +34,10 @@ public static class FlappyBird
 
 		InitializePipes();
 
+		Window.Create(Window.State.Windowed);
 		Window.IsRetro = true;
 
-		while (Window.IsExisting) // the default game loop
+		while (Window.IsOpen) // the default game loop
 		{
 			Window.Activate(true);
 

@@ -1,10 +1,15 @@
-﻿namespace Pure.Window;
+﻿using SFML.Window;
+
+namespace Pure.Window;
 
 /// <summary>
-/// Handles the physical keys on a keyboard.
+/// Handles the physical key presses on a keyboard.
 /// </summary>
 public static class Keyboard
 {
+	/// <summary>
+	/// Each physical key on a standard keyboard.
+	/// </summary>
 	public static class Key
 	{
 		public const int UNKNOWN = -1, A = 00, B = 01, C = 02, D = 03, E = 04, F = 05, G = 06,
@@ -28,11 +33,17 @@ public static class Keyboard
 	}
 
 	/// <summary>
-	/// All currently held keys as text, in order.
+	/// All currently pressed keys as text, in the order they were pressed.
 	/// </summary>
 	public static string KeyTyped { get; internal set; } = "";
+	/// <summary>
+	/// All currently pressed keys, in the order they were pressed.
+	/// </summary>
 	public static int[] KeysPressed => pressed.ToArray();
 
+	/// <summary>
+	/// Returns whether a <paramref name="key"/> is among the <see cref="KeysPressed"/>.
+	/// </summary>
 	public static bool IsKeyPressed(int key) => pressed.Contains(key);
 
 	#region Backend
@@ -51,57 +62,6 @@ public static class Keyboard
 	{
 		")", "!", "@", "#", "$", "%", "^", "&", "*", "("
 	};
-
-	static Keyboard()
-	{
-		Window.window.KeyPressed += (s, e) =>
-		{
-			var key = (int)e.Code;
-
-			if (pressed.Contains(key) == false)
-				pressed.Add(key);
-
-			var symb = GetSymbol(key, IsKeyPressed(Key.SHIFT_LEFT) || IsKeyPressed(Key.SHIFT_RIGHT));
-			if (KeyTyped.Contains(symb) == false)
-				KeyTyped += symb;
-		};
-		Window.window.KeyReleased += (s, e) =>
-		{
-			var key = (int)e.Code;
-
-			pressed.Remove(key);
-
-			if (pressed.Count == 0)
-			{
-				KeyTyped = "";
-				return;
-			}
-
-			// shift released while holding special symbol, just like removing
-			// lowercase and uppercase, shift + 1 = !, so releasing shift would
-			// never removes the !
-			if ((key == Key.SHIFT_LEFT || key == Key.SHIFT_RIGHT) && KeyTyped != "")
-			{
-				for (int i = 0; i < pressed.Count; i++)
-				{
-					// get symbol as if shift was pressed
-					var symb = GetSymbol(pressed[i], true);
-					KeyTyped = KeyTyped.Replace(symb, "");
-				}
-			}
-
-			if (KeyTyped.Length == 0)
-				return;
-
-			var symbol = GetSymbol(key, IsKeyPressed(Key.SHIFT_LEFT) || IsKeyPressed(Key.SHIFT_RIGHT));
-			if (symbol == "")
-				return;
-
-			KeyTyped = KeyTyped.Replace(symbol.ToLower(), "");
-			KeyTyped = KeyTyped.Replace(symbol.ToUpper(), "");
-
-		};
-	}
 
 	internal static void CancelInput()
 	{
@@ -136,6 +96,53 @@ public static class Keyboard
 			return shift ? symbols[input].Item2 : symbols[input].Item1;
 
 		return "";
+	}
+
+	internal static void OnKeyPressed(object? s, KeyEventArgs e)
+	{
+		var key = (int)e.Code;
+
+		if (pressed.Contains(key) == false)
+			pressed.Add(key);
+
+		var symb = GetSymbol(key, IsKeyPressed(Key.SHIFT_LEFT) || IsKeyPressed(Key.SHIFT_RIGHT));
+		if (KeyTyped.Contains(symb) == false)
+			KeyTyped += symb;
+	}
+	internal static void OnKeyReleased(object? s, KeyEventArgs e)
+	{
+		var key = (int)e.Code;
+
+		pressed.Remove(key);
+
+		if (pressed.Count == 0)
+		{
+			KeyTyped = "";
+			return;
+		}
+
+		// shift released while holding special symbol, just like removing
+		// lowercase and uppercase, shift + 1 = !, so releasing shift would
+		// never removes the !
+		if ((key == Key.SHIFT_LEFT || key == Key.SHIFT_RIGHT) && KeyTyped != "")
+		{
+			for (int i = 0; i < pressed.Count; i++)
+			{
+				// get symbol as if shift was pressed
+				var symb = GetSymbol(pressed[i], true);
+				KeyTyped = KeyTyped.Replace(symb, "");
+			}
+		}
+
+		if (KeyTyped.Length == 0)
+			return;
+
+		var symbol = GetSymbol(key, IsKeyPressed(Key.SHIFT_LEFT) || IsKeyPressed(Key.SHIFT_RIGHT));
+		if (symbol == "")
+			return;
+
+		KeyTyped = KeyTyped.Replace(symbol.ToLower(), "");
+		KeyTyped = KeyTyped.Replace(symbol.ToUpper(), "");
 	}
 	#endregion
 }
