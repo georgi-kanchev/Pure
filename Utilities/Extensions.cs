@@ -301,6 +301,38 @@ public static class Extensions
 		direction++;
 		return Rotate(rotated, direction);
 	}
+	/// <summary>
+	/// Flips a <paramref name="matrix"/> horizontally.
+	/// </summary>
+	public static void FlipHorizontally<T>(this T[,] matrix)
+	{
+		var rows = matrix.GetLength(0);
+		var cols = matrix.GetLength(1);
+
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols / 2; j++)
+			{
+				T temp = matrix[i, j];
+				matrix[i, j] = matrix[i, cols - j - 1];
+				matrix[i, cols - j - 1] = temp;
+			}
+	}
+	/// <summary>
+	/// Flips a <paramref name="matrix"/> vertically.
+	/// </summary>
+	public static void FlipVertically<T>(this T[,] matrix)
+	{
+		int rows = matrix.GetLength(0);
+		int cols = matrix.GetLength(1);
+
+		for (int i = 0; i < rows / 2; i++)
+			for (int j = 0; j < cols; j++)
+			{
+				T temp = matrix[i, j];
+				matrix[i, j] = matrix[rows - i - 1, j];
+				matrix[rows - i - 1, j] = temp;
+			}
+	}
 
 	/// <summary>
 	/// Returns whether <paramref name="text"/> represents a valid number.

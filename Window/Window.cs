@@ -247,19 +247,20 @@ public static class Window
 	/// <summary>
 	/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
 	/// from the last <see cref="DrawTilemap"/> call, a <paramref name="tint"/>, an
-	/// <paramref name="angle"/> and a <paramref name="flip"/>
-	/// (flip first, rotation second - order matters).
+	/// <paramref name="angle"/>, and a <paramref name="size"/> (negative values flip the sprite).
+	/// Order matters - flips first, rotates second.
 	/// The sprite's <paramref name="position"/> is also relative to the previously drawn tilemap.
 	/// </summary>
-	public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (bool, bool) flip = default, (uint, uint) size = default)
+	public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (int, int) size = default)
 	{
 		TryNoWindowException();
 
 		if (Vertices.prevDrawTilesetGfxPath == null)
 			return;
 
-		Vertices.QueueSprite(position, tile, tint, angle, size, flip);
+		Vertices.QueueSprite(position, tile, tint, angle, size);
 	}
+
 	/// <summary>
 	/// Draws single pixel points with <paramref name="tint"/> onto the OS window.
 	/// Their <paramref name="positions"/> are relative to the previously drawn tilemap.

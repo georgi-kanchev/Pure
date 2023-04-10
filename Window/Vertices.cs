@@ -69,57 +69,43 @@ internal static class Vertices
 			}
 		}
 	}
-	public static void QueueSprite((float, float) position, int cell, uint tint, sbyte angle, (uint, uint) size, (bool, bool) flip)
+	public static void QueueSprite((float, float) position, int tile, uint tint, sbyte angle, (int, int) size)
 	{
 		if (Window.window == null || prevDrawTilesetGfxPath == null)
 			return;
 
-		var verts = vertexQueue[prevDrawTilesetGfxPath];
-		var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
-		var cellCount = prevDrawTilemapCellCount;
-		var (tileWidth, tileHeight) = prevDrawTilesetTileSz;
-		var texture = Window.graphics[prevDrawTilesetGfxPath];
-		var (tileGapW, tileGapH) = prevDrawTilesetTileGap;
-		var tileCount = (texture.Size.X / tileWidth, texture.Size.Y / tileHeight);
-		var (texX, texY) = IndexToCoords(cell, tileCount);
-		var tx = new Vector2f(texX * (tileWidth + tileGapW), texY * (tileHeight + tileGapH));
-		var texTr = tx + new Vector2f(tileWidth, 0);
-		var texBr = tx + new Vector2f(tileWidth, tileHeight);
-		var texBl = tx + new Vector2f(0, tileHeight);
-		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
-		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
-		var c = new Color(tint);
-		var grid = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
-		var tl = new Vector2f((int)grid.Item1, (int)grid.Item2);
-		var br = new Vector2f((int)(grid.Item1 + cellWidth), (int)(grid.Item2 + cellHeight));
-		var tr = new Vector2f(br.X, tl.Y);
-		var bl = new Vector2f(tl.X, br.Y);
-		var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
-		var (flipX, flipY) = flip;
+		var (w, h) = size;
+		w = w == 0 ? 1 : w;
+		h = h == 0 ? 1 : h;
 
-		size.Item1 = Math.Max(1, size.Item1);
-		size.Item2 = Math.Max(1, size.Item2);
+		var tiles = new int[Math.Abs(w), Math.Abs(h)];
+		var gfxSize = Window.graphics[prevDrawTilesetGfxPath].Size;
+		var (gapX, gapY) = prevDrawTilesetTileGap;
+		var (tileW, tileH) = prevDrawTilesetTileSz;
+		var tilesetTileCount = (gfxSize.X / (tileW + gapX), gfxSize.Y / (tileH + gapY));
+		var (tileX, tileY) = IndexToCoords(tile, tilesetTileCount);
+		var (x, y) = position;
 
-		if (flipX)
-		{
-			(tx, texTr) = (texTr, tx);
-			(texBl, texBr) = (texBr, texBl);
-		}
-		if (flipY)
-		{
-			(tx, texBl) = (texBl, tx);
-			(texTr, texBr) = (texBr, texTr);
-		}
+		for (uint j = 0; j < Math.Abs(h); j++)
+			for (uint i = 0; i < Math.Abs(w); i++)
+				tiles[i, j] = (int)CoordsToIndex((uint)tileX + i, (uint)tileY + j, tilesetTileCount.Item1);
 
-		tl = rotated[0];
-		tr = rotated[1];
-		br = rotated[2];
-		bl = rotated[3];
+		if (w < 0)
+			FlipVertically(tiles);
+		if (h < 0)
+			FlipHorizontally(tiles);
 
-		verts.Append(new(tl, c, tx));
-		verts.Append(new(tr, c, texTr));
-		verts.Append(new(br, c, texBr));
-		verts.Append(new(bl, c, texBl));
+		var rotated = Rotate(tiles, -angle);
+
+		for (uint j = 0; j < rotated.GetLength(1); j++)
+			for (uint i = 0; i < rotated.GetLength(0); i++)
+			{
+				// in case offset in position is needed
+				// (-x, -y) resulting in going backwards toward topleft, use these:
+				// var (xi, yj) = (w < 0 ? -i : i, h < 0 ? -j : j);
+				// var (ri, rj) = (w < 0 ? rotated.GetLength(0) - i - 1 : i, h < 0 ? rotated.GetLength(1) - j - 1 : j);
+				QueueSingleSprite((x + i, y + j), rotated[i, j], tint, angle, (w, h));
+			}
 	}
 	public static void QueueTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSz, (uint, uint) tileOff, string path)
 	{
@@ -149,7 +135,7 @@ internal static class Vertices
 			{
 				var cell = tiles[x, y];
 				var tint = new Color(tints[x, y]);
-				var i = GetIndex(x, y, (uint)tiles.GetLength(0)) * 4;
+				var i = CoordsToIndex(x, y, (uint)tiles.GetLength(0)) * 4;
 				var tl = new Vector2f(x * cellWidth, y * cellHeight);
 				var tr = new Vector2f((x + 1) * cellWidth, y * cellHeight);
 				var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
@@ -256,7 +242,7 @@ internal static class Vertices
 
 		return (index % (int)fieldSize.Item1, index / (int)fieldSize.Item1);
 	}
-	private static uint GetIndex(uint x, uint y, uint width)
+	private static uint CoordsToIndex(uint x, uint y, uint width)
 	{
 		return y * width + x;
 	}
@@ -323,7 +309,7 @@ internal static class Vertices
 		Shift(points, Wrap(-((int)angle), 4));
 		return points;
 	}
-	internal static T[,] Rotate<T>(T[,] matrix, int direction)
+	private static T[,] Rotate<T>(T[,] matrix, int direction)
 	{
 		var dir = Wrap(Math.Abs(direction), 4);
 		if (dir == 0)
@@ -348,6 +334,84 @@ internal static class Vertices
 
 		direction++;
 		return Rotate(rotated, direction);
+	}
+	private static void FlipHorizontally<T>(T[,] matrix)
+	{
+		var rows = matrix.GetLength(0);
+		var cols = matrix.GetLength(1);
+
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols / 2; j++)
+			{
+				T temp = matrix[i, j];
+				matrix[i, j] = matrix[i, cols - j - 1];
+				matrix[i, cols - j - 1] = temp;
+			}
+	}
+	private static void FlipVertically<T>(T[,] matrix)
+	{
+		int rows = matrix.GetLength(0);
+		int cols = matrix.GetLength(1);
+
+		for (int i = 0; i < rows / 2; i++)
+			for (int j = 0; j < cols; j++)
+			{
+				T temp = matrix[i, j];
+				matrix[i, j] = matrix[rows - i - 1, j];
+				matrix[rows - i - 1, j] = temp;
+			}
+	}
+	private static void QueueSingleSprite((float, float) position, int cell, uint tint, sbyte angle, (int, int) size)
+	{
+		if (Window.window == null || prevDrawTilesetGfxPath == null)
+			return;
+
+		var verts = vertexQueue[prevDrawTilesetGfxPath];
+		var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
+		var cellCount = prevDrawTilemapCellCount;
+		var (tileWidth, tileHeight) = prevDrawTilesetTileSz;
+		var texture = Window.graphics[prevDrawTilesetGfxPath];
+		var (tileGapW, tileGapH) = prevDrawTilesetTileGap;
+		var tileCount = (texture.Size.X / tileWidth, texture.Size.Y / tileHeight);
+
+		var (texX, texY) = IndexToCoords(cell, tileCount);
+		var tx = new Vector2f(
+			(texX) * (tileWidth + tileGapW),
+			(texY) * (tileHeight + tileGapH));
+		var texTr = tx + new Vector2f(tileWidth, 0);
+		var texBr = tx + new Vector2f(tileWidth, tileHeight);
+		var texBl = tx + new Vector2f(0, tileHeight);
+
+		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
+		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
+		var c = new Color(tint);
+		var grid = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
+		var tl = new Vector2f((int)grid.Item1, (int)grid.Item2);
+		var br = new Vector2f((int)(grid.Item1 + cellWidth), (int)(grid.Item2 + cellHeight));
+		var tr = new Vector2f(br.X, tl.Y);
+		var bl = new Vector2f(tl.X, br.Y);
+		var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
+
+		if (size.Item1 < 0)
+		{
+			(tx, texTr) = (texTr, tx);
+			(texBl, texBr) = (texBr, texBl);
+		}
+		if (size.Item2 < 0)
+		{
+			(tx, texBl) = (texBl, tx);
+			(texTr, texBr) = (texBr, texTr);
+		}
+
+		tl = rotated[0];
+		tr = rotated[1];
+		br = rotated[2];
+		bl = rotated[3];
+
+		verts.Append(new(tl, c, tx));
+		verts.Append(new(tr, c, texTr));
+		verts.Append(new(br, c, texBr));
+		verts.Append(new(bl, c, texBl));
 	}
 	#endregion
 }
