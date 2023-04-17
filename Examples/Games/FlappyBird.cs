@@ -29,8 +29,8 @@ public static class FlappyBird
 			(Tile.ARROW_DIAGONAL, 1)); // rotated 1 time (90 degrees clockwise)
 		var pipes = new List<(float, int, int)>();
 		var collisionMap = new Map();
-		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_CORNER);
-		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_STRAIGHT);
+		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_DEFAULT_CORNER);
+		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_DEFAULT_STRAIGHT);
 
 		InitializePipes();
 
@@ -102,8 +102,8 @@ public static class FlappyBird
 				var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
 				background.SetSquare(((int)pipeX, pipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark(0.8f));
 				background.SetSquare(((int)pipeX, lowerPipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark(0.8f));
-				foreground.SetBorder(((int)pipeX, pipeY), size, Tile.BORDER_CORNER, Tile.BORDER_STRAIGHT, (Color)Color.Green);
-				foreground.SetBorder(((int)pipeX, lowerPipeY), size, Tile.BORDER_CORNER, Tile.BORDER_STRAIGHT, (Color)Color.Green);
+				foreground.SetBorder(((int)pipeX, pipeY), size, Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT, (Color)Color.Green);
+				foreground.SetBorder(((int)pipeX, lowerPipeY), size, Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT, (Color)Color.Green);
 			}
 
 			collisionMap.Update(foreground);
