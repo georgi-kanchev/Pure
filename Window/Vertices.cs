@@ -7,6 +7,7 @@ using SFML.System;
 internal static class Vertices
 {
 	public static string? prevDrawTilesetGfxPath;
+	public static int prevDrawLayer;
 	public static (uint, uint) prevDrawTilesetTileSz;
 	public static (uint, uint) prevDrawTilesetTileGap;
 	public static (float, float) prevDrawTilemapCellSz;
@@ -28,7 +29,7 @@ internal static class Vertices
 		var (gridX, gridY) = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 		var tl = new Vector2f(gridX, gridY);
 		var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
-		var verts = vertexQueue[prevDrawTilesetGfxPath];
+		var verts = vertexQueue[(prevDrawLayer, prevDrawTilesetGfxPath)];
 
 		verts.Append(new(new((int)tl.X, (int)tl.Y), c));
 		verts.Append(new(new((int)br.X, (int)tl.Y), c));
@@ -107,7 +108,7 @@ internal static class Vertices
 				QueueSingleSprite((x + i, y + j), rotated[i, j], tint, angle, (w, h));
 			}
 	}
-	public static void QueueTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSz, (uint, uint) tileOff, string path)
+	public static void QueueTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSz, (uint, uint) tileOff, string path, int layer)
 	{
 		if (tiles == null || Window.window == null)
 			return;
@@ -119,16 +120,18 @@ internal static class Vertices
 		var (tileW, tileH) = tileSz;
 		var texSz = texture.Size;
 		var tileCount = (texSz.X / (tileW + tileOffW), texSz.Y / (tileH + tileOffH));
+		var key = (layer, path);
 
-		// this cache is used for a potential sprite draw
+		// this cache is used for a possible sprite draw
+		prevDrawLayer = layer;
 		prevDrawTilesetGfxPath = path;
 		prevDrawTilemapCellSz = (cellWidth, cellHeight);
 		prevDrawTilesetTileSz = tileSz;
 		prevDrawTilesetTileGap = tileOff;
 		prevDrawTilemapCellCount = ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
 
-		if (vertexQueue.ContainsKey(path) == false)
-			vertexQueue[path] = new(PrimitiveType.Quads);
+		if (vertexQueue.ContainsKey(key) == false)
+			vertexQueue[key] = new(PrimitiveType.Quads);
 
 		for (uint y = 0; y < tiles.GetLength(1); y++)
 			for (uint x = 0; x < tiles.GetLength(0); x++)
@@ -173,10 +176,10 @@ internal static class Vertices
 				br = new((int)br.X, (int)br.Y);
 				bl = new((int)bl.X, (int)bl.Y);
 
-				vertexQueue[path].Append(new(tl, tint, tx));
-				vertexQueue[path].Append(new(tr, tint, texTr));
-				vertexQueue[path].Append(new(br, tint, texBr));
-				vertexQueue[path].Append(new(bl, tint, texBl));
+				vertexQueue[key].Append(new(tl, tint, tx));
+				vertexQueue[key].Append(new(tr, tint, texTr));
+				vertexQueue[key].Append(new(br, tint, texBr));
+				vertexQueue[key].Append(new(bl, tint, texBl));
 			}
 
 	}
@@ -185,7 +188,7 @@ internal static class Vertices
 		if (Window.window == null || positions == null || positions.Length == 0 || prevDrawTilesetGfxPath == null)
 			return;
 
-		var verts = vertexQueue[prevDrawTilesetGfxPath];
+		var verts = vertexQueue[(prevDrawLayer, prevDrawTilesetGfxPath)];
 		var tileSz = prevDrawTilesetTileSz;
 		var cellWidth = prevDrawTilemapCellSz.Item1 / tileSz.Item1;
 		var cellHeight = prevDrawTilemapCellSz.Item2 / tileSz.Item2;
@@ -207,10 +210,6 @@ internal static class Vertices
 		}
 	}
 
-	public static VertexArray GetFromQueue(string texturePath)
-	{
-		return vertexQueue[texturePath];
-	}
 	public static void ClearQueue()
 	{
 		foreach (var kvp in vertexQueue)
@@ -219,7 +218,7 @@ internal static class Vertices
 
 	#region Backend
 	private const int LINE_MAX_ITERATIONS = 10_000;
-	private static readonly Dictionary<string, VertexArray> vertexQueue = new();
+	internal static readonly SortedDictionary<(int, string), VertexArray> vertexQueue = new();
 
 	private static bool IsWithin(float number, float targetNumber, float range)
 	{
@@ -366,7 +365,7 @@ internal static class Vertices
 		if (Window.window == null || prevDrawTilesetGfxPath == null)
 			return;
 
-		var verts = vertexQueue[prevDrawTilesetGfxPath];
+		var verts = vertexQueue[(prevDrawLayer, prevDrawTilesetGfxPath)];
 		var (cellWidth, cellHeight) = prevDrawTilemapCellSz;
 		var cellCount = prevDrawTilemapCellCount;
 		var (tileWidth, tileHeight) = prevDrawTilesetTileSz;

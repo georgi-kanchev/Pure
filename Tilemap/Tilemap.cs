@@ -66,6 +66,12 @@ public class Tilemap
 	public Tilemap((int, int) tileCount)
 	{
 		var (w, h) = tileCount;
+
+		if (w < 1)
+			w = 1;
+		if (h < 1)
+			h = 1;
+
 		tiles = new int[w, h];
 		tints = new uint[w, h];
 		angles = new sbyte[w, h];
@@ -524,6 +530,7 @@ public class Tilemap
 			Copy(tilemap.angles),
 			Copy(tilemap.flips));
 	}
+
 	#region Backend
 	// save format
 	// [amount of bytes]		- data

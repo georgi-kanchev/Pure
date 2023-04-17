@@ -1,13 +1,9 @@
 ﻿namespace Pure.Window;
 
-using Raylib_cs;
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 
-using Shader = SFML.Graphics.Shader;
-using BlendMode = SFML.Graphics.BlendMode;
-using Transform = SFML.Graphics.Transform;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
@@ -108,6 +104,15 @@ public static class Window
 			isRetro = value;
 		}
 	}
+	/// <summary>
+	/// Returns the aspect ratio of the desktop monitor that the OS window was created on.
+	/// This is useful for keeping the size of the window contents consistent throughout
+	/// different resolutions with the same aspect ratio.
+	/// </summary>
+	public static (int, int) MonitorAspectRatio
+	{
+		get { TryNoWindowException(); return aspectRatio; }
+	}
 
 	/// <summary>
 	/// The <see cref="State"/> used to create the OS window with.
@@ -115,20 +120,24 @@ public static class Window
 	public static State InitialState { get; private set; }
 
 	/// <summary>
-	/// Creates an OS window with <paramref name="state"/>.
+	/// Creates an OS window with <paramref name="state"/> on a desktop <paramref name="monitor"/>.
 	/// </summary>
 	[MemberNotNull(nameof(window))]
-	public static void Create(State state = State.Windowed)
+	public static void Create(State state = State.Windowed, uint monitor = 0)
 	{
 		if (window != null)
 			return;
 
-		StoreMonitorData();
-
 		InitialState = state;
 
+		Monitor.Initialize();
+
+		if (monitor >= Monitor.posSizes.Count)
+			monitor = (uint)Monitor.posSizes.Count - 1;
+
 		var style = Styles.Default;
-		var (x, y, w, h) = monitorPosSize[0];
+		var (x, y, w, h) = Monitor.posSizes[(int)monitor];
+		aspectRatio = Monitor.GetAspectRatio(w, h);
 
 		if (state == State.Fullscreen) style = Styles.Fullscreen;
 		else if (state == State.Borderless) style = Styles.None;
@@ -216,12 +225,12 @@ public static class Window
 	/// <summary>
 	/// Draws a tilemap onto the OS window. Its graphics image is loaded from a
 	/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a
-	/// <paramref name="tileSize"/> and <paramref name="tileGaps"/>, then it is cached
+	/// <paramref name="tileSize"/>, <paramref name="tileGaps"/> and then it is cached
 	/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>,
-	/// <paramref name="tints"/>, <paramref name="angles"/> and <paramref name="flips"/>
-	/// (flip first, rotation second - order matters).
+	/// <paramref name="tints"/>, <paramref name="angles"/>, <paramref name="flips"/>
+	/// (flip first, rotation second - order matters) and their Z order by a <paramref name="layer"/>.
 	/// </summary>
-	public static void DrawTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
+	public static void DrawTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = null, int layer = 0)
 	{
 		TryNoWindowException();
 
@@ -231,18 +240,18 @@ public static class Window
 		path ??= "default";
 
 		TryLoadGraphics(path);
-		Vertices.QueueTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path);
+		Vertices.QueueTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path, layer);
 	}
 	/// <summary>
 	/// Draws a <paramref name="tilemap"/> onto the OS window. Its graphics image is loaded from a
-	///  (default graphics if <see langword="null"/>) using a
+	/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a
 	/// <paramref name="tileSize"/> and <paramref name="tileGaps"/>, then it is cached
-	/// for future draws.
+	/// for future draws. The <paramref name="tilemap"/>'s Z order is decided by a <paramref name="layer"/>.
 	/// </summary>
-	public static void DrawTilemap((int[,], uint[,], sbyte[,], (bool, bool)[,]) tilemap, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = default)
+	public static void DrawTilemap((int[,], uint[,], sbyte[,], (bool, bool)[,]) tilemap, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = null, int layer = 0)
 	{
 		var (tiles, tints, angles, flips) = tilemap;
-		DrawTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path);
+		DrawTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path, layer);
 	}
 	/// <summary>
 	/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
@@ -306,7 +315,7 @@ public static class Window
 	private static System.Timers.Timer? retroTurnoff;
 	private static Clock? retroTurnoffTime;
 	private const float RETRO_TURNOFF_TIME = 0.5f;
-	private static List<(int, int, int, int)> monitorPosSize = new();
+	private static (int, int) aspectRatio;
 
 	internal static readonly Dictionary<string, Texture> graphics = new();
 	internal static RenderWindow? window;
@@ -330,31 +339,14 @@ public static class Window
 		window.SetView(view);
 		window.Size = new((uint)w, (uint)h);
 	}
-	private static void StoreMonitorData()
-	{
-		Raylib.SetTraceLogLevel(TraceLogLevel.LOG_NONE);
-		Raylib.InitWindow(1, 1, "");
-		Raylib.SetWindowState(ConfigFlags.FLAG_WINDOW_HIDDEN);
-		Raylib.SetWindowPosition(-1000, -1000);
-
-		var monitorCount = Raylib.GetMonitorCount();
-		for (int i = 0; i < monitorCount; i++)
-		{
-			var p = Raylib.GetMonitorPosition(i);
-			var w = Raylib.GetMonitorWidth(i);
-			var h = Raylib.GetMonitorHeight(i);
-			monitorPosSize.Add(((int)p.X, (int)p.Y, w, h));
-		}
-		Raylib.CloseWindow();
-	}
 	private static void Draw()
 	{
 		if (window == null)
 			return;
 
-		foreach (var kvp in graphics)
+		foreach (var kvp in Vertices.vertexQueue)
 		{
-			var tex = graphics[kvp.Key];
+			var tex = graphics[kvp.Key.Item2];
 			var shader = IsRetro ? retroScreen : null;
 			var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, shader);
 			var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
@@ -371,7 +363,7 @@ public static class Window
 					shader?.SetUniform("turnoffAnimation", timing);
 				}
 			}
-			window.Draw(Vertices.GetFromQueue(kvp.Key), rend);
+			window.Draw(kvp.Value, rend);
 		}
 	}
 
@@ -394,17 +386,6 @@ public static class Window
 	{
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-	}
-	private static (uint, uint) GetAspectRatio(uint width, uint height)
-	{
-		var gcd = height == 0 ? width : GetGreatestCommonDivisor(height, width % height);
-
-		return (width / gcd, height / gcd);
-
-		uint GetGreatestCommonDivisor(uint a, uint b)
-		{
-			return b == 0 ? a : GetGreatestCommonDivisor(b, a % b);
-		}
 	}
 
 	[MemberNotNull(nameof(window))]
