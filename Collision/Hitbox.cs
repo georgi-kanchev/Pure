@@ -18,7 +18,7 @@ public class Hitbox
 	/// <summary>
 	/// Applies to all <see cref="Rectangle"/>s in the collection accordingly.
 	/// </summary>
-	public (float, float) Position { get; set; }
+	public (float x, float y) Position { get; set; }
 	/// <summary>
 	/// Applies to all <see cref="Rectangle"/>s in the collection accordingly.
 	/// </summary>
@@ -38,7 +38,7 @@ public class Hitbox
 		set => rectangles[index] = value;
 	}
 
-	public Hitbox(string path, (float, float) position = default, float scale = 1f)
+	public Hitbox(string path, (float x, float y) position = default, float scale = 1f)
 		: this(position, scale)
 	{
 		try
@@ -77,7 +77,7 @@ public class Hitbox
 	/// Creates an empty <see cref="Rectangle"/> collection with a
 	/// <paramref name="position"/> and <paramref name="scale"/>.
 	/// </summary>
-	public Hitbox((float, float) position = default, float scale = 1f)
+	public Hitbox((float x, float y) position = default, float scale = 1f)
 	{
 		Position = position;
 		Scale = scale;
@@ -86,7 +86,7 @@ public class Hitbox
 	/// Copies the contents of an existing <see cref="Rectangle"/> collection with a
 	/// <paramref name="position"/> and <paramref name="scale"/>.
 	/// </summary>
-	public Hitbox(Rectangle[] rectangles, (float, float) position = default, float scale = 1f)
+	public Hitbox(Rectangle[] rectangles, (float x, float y) position = default, float scale = 1f)
 		: this(position, scale)
 	{
 		for (int i = 0; i < rectangles?.Length; i++)
@@ -164,7 +164,7 @@ public class Hitbox
 	/// Checks whether at least one of the <see cref="Rectangle"/>s in the collection contains a
 	/// <paramref name="point"/> and returns the result.
 	/// </summary>
-	public virtual bool IsOverlapping((float, float) point)
+	public virtual bool IsOverlapping((float x, float y) point)
 	{
 		for (int i = 0; i < RectangleCount; i++)
 			if (this[i].IsOverlapping(point))

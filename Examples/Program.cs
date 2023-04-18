@@ -24,7 +24,7 @@ public class Program
 
 			Window.Activate(true);
 
-			Window.DrawTilemap(tilemap, (8, 8));
+			Window.DrawTilemap(tilemap);
 
 			var (x, y) = tilemap.PointFrom(Mouse.CursorPosition, Window.Size);
 			Window.DrawSprite((x, y + 1), 78, size: (-5, -5), angle: 0);

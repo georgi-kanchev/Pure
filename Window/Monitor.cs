@@ -4,7 +4,7 @@ namespace Pure.Window;
 
 internal static class Monitor
 {
-	internal static List<(int, int, int, int)> posSizes = new();
+	internal static List<(int x, int y, int w, int h)> posSizes = new();
 
 	internal static void Initialize()
 	{
@@ -24,7 +24,7 @@ internal static class Monitor
 		Raylib.CloseWindow();
 	}
 
-	internal static (int, int) GetAspectRatio(int width, int height)
+	internal static (int width, int height) GetAspectRatio(int width, int height)
 	{
 		var gcd = height == 0 ? width : GetGreatestCommonDivisor(height, width % height);
 

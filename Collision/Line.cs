@@ -10,11 +10,11 @@ public struct Line
 	/// <summary>
 	/// The first (starting) point of the <see cref="Line"/>.
 	/// </summary>
-	public (float, float) A { get; set; }
+	public (float x, float y) A { get; set; }
 	/// <summary>
 	/// The second (ending) point of the <see cref="Line"/>.
 	/// </summary>
-	public (float, float) B { get; set; }
+	public (float x, float y) B { get; set; }
 	/// <summary>
 	/// The distance between <see cref="A"/> and <see cref="B"/>.
 	/// </summary>
@@ -26,13 +26,13 @@ public struct Line
 	/// <summary>
 	/// The direction between <see cref="A"/> and <see cref="B"/>.
 	/// </summary>
-	public (float, float) Direction => Normalize((B.Item1 - A.Item1, B.Item2 - A.Item2));
+	public (float x, float y) Direction => Normalize((B.Item1 - A.Item1, B.Item2 - A.Item2));
 
 	/// <summary>
 	/// Creates the <see cref="Line"/> from two points: <paramref name="a"/> and
 	/// <paramref name="b"/>.
 	/// </summary>
-	public Line((float, float) a, (float, float) b)
+	public Line((float x, float y) a, (float x, float y) b)
 	{
 		A = a;
 		B = b;
@@ -79,7 +79,7 @@ public struct Line
 	/// Checks whether a <paramref name="point"/> is on top of the <see cref="Line"/>
 	/// with a 0.01 units margin of error. Then the result is returned.
 	/// </summary>
-	public bool IsCrossing((float, float) point)
+	public bool IsCrossing((float x, float y) point)
 	{
 		var length = Length;
 		var sum = Distance(A, point) + Distance(B, point);
@@ -92,7 +92,7 @@ public struct Line
 	/// neighbouring cells only. The points are placed in an <see cref="Array"/> and returned
 	/// afterwards.
 	/// </summary>
-	public (float, float)[] CrossPoints(Map grid)
+	public (float x, float y)[] CrossPoints(Map grid)
 	{
 		var (posX, posY) = grid.Position;
 		var (x0, y0) = ((int)A.Item1, (int)A.Item2);
@@ -166,7 +166,7 @@ public struct Line
 	/// Calculates the cross points between the <see cref="Line"/> and a <paramref name="hitbox"/>,
 	/// puts them in an <see cref="Array"/> and returns it.
 	/// </summary>
-	public (float, float)[] CrossPoints(Hitbox hitbox)
+	public (float x, float y)[] CrossPoints(Hitbox hitbox)
 	{
 		var result = new List<(float, float)>();
 		for (int i = 0; i < hitbox.RectangleCount; i++)
@@ -178,7 +178,7 @@ public struct Line
 	/// Calculates the cross points between the <see cref="Line"/> and a <see cref="Rectangle"/>,
 	/// puts them in an <see cref="Array"/> and returns it.
 	/// </summary>
-	public (float, float)[] CrossPoints(Rectangle rectangle)
+	public (float x, float y)[] CrossPoints(Rectangle rectangle)
 	{
 		var (x, y) = rectangle.Position;
 		var (w, h) = rectangle.Size;
@@ -205,7 +205,7 @@ public struct Line
 	/// Returns the point where <see langword="this"/> and another <paramref name="line"/> cross.
 	/// Returns (<see cref="float.NaN"/>, <see cref="float.NaN"/>) if there is no such point.
 	/// </summary>
-	public (float, float) CrossPoint(Line line)
+	public (float x, float y) CrossPoint(Line line)
 	{
 		var p = CrossPoint(A, B, line.A, line.B);
 		return IsCrossing(p) && line.IsCrossing(p) ? p : (float.NaN, float.NaN);
@@ -214,7 +214,7 @@ public struct Line
 	/// <summary>
 	/// Returns the closest point on the <see cref="Line"/> to a <paramref name="point"/>.
 	/// </summary>
-	public (float, float) ClosestPoint((float, float) point)
+	public (float x, float y) ClosestPoint((float x, float y) point)
 	{
 		var AP = (point.Item1 - A.Item1, point.Item2 - A.Item2);
 		var AB = (B.Item1 - A.Item1, B.Item2 - A.Item2);

@@ -4,7 +4,7 @@ public class Checkbox : Button
 {
 	public bool IsChecked { get; set; }
 
-	public Checkbox((int, int) position) : base(position, (1, 1)) { }
+	public Checkbox((int x, int y) position) : base(position, (1, 1)) { }
 
 	protected override void OnUserEvent(int userAction)
 	{

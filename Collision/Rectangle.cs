@@ -10,18 +10,18 @@ public struct Rectangle
 	/// <summary>
 	/// The point of the top-left corner of this <see cref="Rectangle"/> in the world.
 	/// </summary>
-	public (float, float) Position { get; set; }
+	public (float x, float y) Position { get; set; }
 	/// <summary>
 	/// The size between the top-left and bottom-right corner of this <see cref="Rectangle"/>
 	/// in the world.
 	/// </summary>
-	public (float, float) Size { get; set; }
+	public (float width, float height) Size { get; set; }
 
 	/// <summary>
 	/// Creates the <see cref="Rectangle"/> with a certain <paramref name="size"/> and
 	/// <paramref name="position"/>.
 	/// </summary>
-	public Rectangle((float, float) size, (float, float) position = default)
+	public Rectangle((float width, float height) size, (float x, float y) position = default)
 	{
 		Position = position;
 		Size = size;
@@ -70,7 +70,7 @@ public struct Rectangle
 	/// Checks whether the <see cref="Rectangle"/> overlaps a <paramref name="point"/>
 	/// and returns the result.
 	/// </summary>
-	public bool IsOverlapping((float, float) point)
+	public bool IsOverlapping((float x, float y) point)
 	{
 		var (x, y) = Position;
 		var (w, h) = Size;

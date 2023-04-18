@@ -73,8 +73,8 @@ public abstract class UserInterface
 		#endregion
 	}
 
-	public (int, int) Position { get; set; }
-	public (int, int) Size
+	public (int x, int y) Position { get; set; }
+	public (int width, int height) Size
 	{
 		get => size;
 		set
@@ -101,9 +101,9 @@ public abstract class UserInterface
 	protected static UserInterface? Focused { get; private set; }
 	protected static bool IsInputCanceled { get; private set; }
 	protected static Input CurrentInput { get; } = new();
-	protected static (int, int) TilemapSize { get; private set; }
+	protected static (int width, int height) TilemapSize { get; private set; }
 
-	public UserInterface((int, int) position, (int, int) size)
+	public UserInterface((int x, int y) position, (int width, int height) size)
 	{
 		Position = position;
 		Size = size;
@@ -187,8 +187,8 @@ public abstract class UserInterface
 
 	protected abstract void OnUpdate();
 
-	public static void ApplyInput(bool isPressed, (float, float) position, int scrollDelta,
-		int[] keysPressed, string keysTyped, (int, int) tilemapSize)
+	public static void ApplyInput(bool isPressed, (float x, float y) position, int scrollDelta,
+		int[] keysPressed, string keysTyped, (int width, int height) tilemapSize)
 	{
 		IsInputCanceled = false;
 

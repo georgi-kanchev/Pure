@@ -36,7 +36,7 @@ public class InputBox : UserInterface
 		}
 	}
 
-	public InputBox((int, int) position, (int, int) size) : base(position, size)
+	public InputBox((int x, int y) position, (int width, int height) size) : base(position, size)
 	{
 		lines.Add("");
 	}
@@ -83,7 +83,7 @@ public class InputBox : UserInterface
 
 		return (int)Math.Clamp(index, 0, w * h);
 	}
-	protected (int, int) PositionFromIndex(int index)
+	protected (int x, int y) PositionFromIndex(int index)
 	{
 		var (px, py) = Position;
 		var (w, h) = Size;

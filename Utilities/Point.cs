@@ -45,7 +45,7 @@ public struct Point
 		y -= Y % gridSize.Y;
 		return new(x, y);
 	}
-	public Point MoveIn((float, float) direction, float speed, float deltaTime = 1)
+	public Point MoveIn((float x, float y) direction, float speed, float deltaTime = 1)
 	{
 		// normalize
 		var x = direction.Item1;
@@ -74,7 +74,7 @@ public struct Point
 		speed *= deltaTime;
 		return result.Distance(targetPoint) < speed * 1.1f ? targetPoint : result;
 	}
-	public Point ToTarget(Point targetPoint, (float, float) unit)
+	public Point ToTarget(Point targetPoint, (float x, float y) unit)
 	{
 		var x = Map(unit.Item1, 0, 1, X, targetPoint.X);
 		var y = Map(unit.Item2, 0, 1, Y, targetPoint.Y);
@@ -109,19 +109,19 @@ public struct Point
 		return (x, y);
 	}
 
-	public static implicit operator Point((int, int) value)
+	public static implicit operator Point((int x, int y) value)
 	{
 		return new Point(value.Item1, value.Item2);
 	}
-	public static implicit operator (int, int)(Point vector)
+	public static implicit operator (int x, int y)(Point vector)
 	{
 		return ((int)MathF.Round(vector.val.Item1), (int)MathF.Round(vector.val.Item2));
 	}
-	public static implicit operator Point((float, float) value)
+	public static implicit operator Point((float x, float y) value)
 	{
 		return new Point(value.Item1, value.Item2);
 	}
-	public static implicit operator (float, float)(Point vector)
+	public static implicit operator (float x, float y)(Point vector)
 	{
 		return vector.val;
 	}

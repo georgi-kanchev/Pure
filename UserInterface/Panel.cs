@@ -4,9 +4,9 @@ public class Panel : UserInterface
 {
 	public bool IsResizable { get; set; } = true;
 	public bool IsMovable { get; set; } = true;
-	public (int, int) AdditionalMinSize { get; set; }
+	public (int width, int height) AdditionalMinSize { get; set; }
 
-	public Panel((int, int) position, (int, int) size) : base(position, size) { }
+	public Panel((int x, int y) position, (int width, int height) size) : base(position, size) { }
 
 	protected override void OnUpdate()
 	{

@@ -81,13 +81,13 @@ public struct Color
 		return this;
 	}
 
-	public static implicit operator Color((byte, byte, byte) rgb)
+	public static implicit operator Color((byte r, byte g, byte b, byte a) rgba)
 	{
-		return new Color(rgb.Item1, rgb.Item2, rgb.Item3);
+		return new Color(rgba.r, rgba.g, rgba.b, rgba.a);
 	}
-	public static implicit operator (byte, byte, byte)(Color color)
+	public static implicit operator (byte r, byte g, byte b, byte a)(Color color)
 	{
-		return (color.R, color.G, color.B);
+		return (color.R, color.G, color.B, color.A);
 	}
 	public static implicit operator Color(uint value) => new(value);
 	public static implicit operator uint(Color color) => color.v;
@@ -99,7 +99,7 @@ public struct Color
 	public override bool Equals(object? obj) => base.Equals(obj);
 	public override string ToString()
 	{
-		return $"{r} {g} {b}";
+		return $"{r} {g} {b} {a}";
 	}
 
 	#region Backend

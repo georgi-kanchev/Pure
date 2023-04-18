@@ -149,7 +149,7 @@ public class Map : Hitbox
 	/// returns it if the provided <paramref name="cell"/> is present.
 	/// Returns an empty <see cref="Rectangle"/> <see cref="Array"/> otherwise. 
 	/// </summary>
-	public Rectangle[] GetRectangles((int, int) cell)
+	public Rectangle[] GetRectangles((int x, int y) cell)
 	{
 		if (tileIndices.ContainsKey(cell) == false)
 			return Array.Empty<Rectangle>();
@@ -219,7 +219,7 @@ public class Map : Hitbox
 	/// Checks whether at least one of the <see cref="Rectangle"/>s in the collection contains
 	/// a <paramref name="point"/> and returns the result.
 	/// </summary>
-	public override bool IsOverlapping((float, float) point)
+	public override bool IsOverlapping((float x, float y) point)
 	{
 		var neighborRects = GetNeighborRects(point, (1, 1));
 		for (int i = 0; i < neighborRects.Count; i++)

@@ -15,7 +15,7 @@ public class List : UserInterface
 
 	public Checkbox? this[int index] => HasIndex(index) ? items[index] : default;
 
-	public List((int, int) position, (int, int) size, int count)
+	public List((int x, int y) position, (int width, int height) size, int count)
 		: base(position, size)
 	{
 		var (x, y) = Position;

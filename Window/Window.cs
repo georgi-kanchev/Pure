@@ -60,7 +60,7 @@ public static class Window
 	/// <summary>
 	/// The size of the OS window.
 	/// </summary>
-	public static (uint, uint) Size
+	public static (uint width, uint height) Size
 	{
 		get
 		{
@@ -98,8 +98,8 @@ public static class Window
 		{
 			TryNoWindowException();
 
-			if (value && retroScreen == null && Shader.IsAvailable)
-				retroScreen = RetroShader.Create();
+			if (value && Vertices.retroScreen == null && Shader.IsAvailable)
+				Vertices.retroScreen = RetroShader.Create();
 
 			isRetro = value;
 		}
@@ -109,7 +109,7 @@ public static class Window
 	/// This is useful for keeping the size of the window contents consistent throughout
 	/// different resolutions with the same aspect ratio.
 	/// </summary>
-	public static (int, int) MonitorAspectRatio
+	public static (int width, int height) MonitorAspectRatio
 	{
 		get { TryNoWindowException(); return aspectRatio; }
 	}
@@ -176,7 +176,6 @@ public static class Window
 		//	"/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
 
 		graphics["default"] = DefaultGraphics.CreateTexture();
-
 	}
 	/// <summary>
 	/// Determines whether the <see cref="Window"/> <paramref name="isActive"/>.
@@ -198,7 +197,7 @@ public static class Window
 
 		window.SetMouseCursorVisible(Mouse.IsCursorHoveringWindow == false);
 		Mouse.Update();
-		Draw();
+		Vertices.DrawQueue();
 		window.Display();
 	}
 	/// <summary>
@@ -212,14 +211,39 @@ public static class Window
 		{
 			isClosing = true;
 
-			retroTurnoffTime = new();
-			retroTurnoff = new(RETRO_TURNOFF_TIME * 1000);
-			retroTurnoff.Start();
-			retroTurnoff.Elapsed += (s, e) => window.Close();
+			Vertices.StartRetroAnimation();
 			return;
 		}
 
 		window.Close();
+	}
+
+	/// <summary>
+	/// Prepares a <paramref name="layer"/> for drawing. The <paramref name="layer"/> has a size of
+	/// <paramref name="cellCount"/> tiles. Its graphics are loaded and cached from a
+	/// <paramref name="graphicsPath"/> containing tiles of <paramref name="tileSize"/> with a
+	/// <paramref name="tileGap"/> in between. Default values result in default graphics:<br></br>
+	/// <paramref name="layer"/>= 0<br></br>
+	/// <paramref name="graphicsPath"/>= "default"/null<br></br>
+	/// <paramref name="cellCount"/>= (48, 27)<br></br>
+	/// </summary>
+	public static void SetLayer((uint cellsHorizontal, uint cellsVertical) cellCount = default, (uint tileWidth, uint tileHeight) tileSize = default, (uint tileGapX, uint tileGapY) tileGap = default, string? graphicsPath = null, int layer = 0)
+	{
+		TryNoWindowException();
+
+		cellCount = cellCount == default ? (48, 27) : cellCount;
+		tileSize = tileSize == default ? (8, 8) : tileSize;
+		graphicsPath ??= "default";
+
+		TryLoadGraphics(graphicsPath);
+
+		Vertices.layer = layer;
+		Vertices.graphicsPath = graphicsPath;
+		Vertices.tileSize = tileSize;
+		Vertices.tileGap = tileGap;
+		Vertices.mapCellCount = ((uint)cellCount.Item1, (uint)cellCount.Item2);
+
+		Vertices.TryInitQueue();
 	}
 
 	/// <summary>
@@ -230,17 +254,15 @@ public static class Window
 	/// <paramref name="tints"/>, <paramref name="angles"/>, <paramref name="flips"/>
 	/// (flip first, rotation second - order matters) and their Z order by a <paramref name="layer"/>.
 	/// </summary>
-	public static void DrawTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = null, int layer = 0)
+	public static void DrawTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool isFlippedHorizontally, bool isFlippedVertically)[,] flips)
 	{
 		TryNoWindowException();
 
-		if (tiles == null || tints == null || tiles.Length != tints.Length)
-			return;
+		if (tiles == null || tints == null || angles == null || flips == null ||
+			tiles.Length != tints.Length || tiles.Length != angles.Length || tiles.Length != flips.Length)
+			throw new ArgumentException("All the provided arrays should be non-null and with equal sizes.");
 
-		path ??= "default";
-
-		TryLoadGraphics(path);
-		Vertices.QueueTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path, layer);
+		Vertices.QueueTilemap(tiles, tints, angles, flips);
 	}
 	/// <summary>
 	/// Draws a <paramref name="tilemap"/> onto the OS window. Its graphics image is loaded from a
@@ -248,10 +270,10 @@ public static class Window
 	/// <paramref name="tileSize"/> and <paramref name="tileGaps"/>, then it is cached
 	/// for future draws. The <paramref name="tilemap"/>'s Z order is decided by a <paramref name="layer"/>.
 	/// </summary>
-	public static void DrawTilemap((int[,], uint[,], sbyte[,], (bool, bool)[,]) tilemap, (uint, uint) tileSize, (uint, uint) tileGaps = default, string? path = null, int layer = 0)
+	public static void DrawTilemap((int[,] tiles, uint[,] tints, sbyte[,] angles, (bool isFlippedHorizontally, bool isFlippedVertically)[,] flips) tilemap)
 	{
 		var (tiles, tints, angles, flips) = tilemap;
-		DrawTilemap(tiles, tints, angles, flips, tileSize, tileGaps, path, layer);
+		DrawTilemap(tiles, tints, angles, flips);
 	}
 	/// <summary>
 	/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
@@ -260,12 +282,9 @@ public static class Window
 	/// Order matters - flips first, rotates second.
 	/// The sprite's <paramref name="position"/> is also relative to the previously drawn tilemap.
 	/// </summary>
-	public static void DrawSprite((float, float) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (int, int) size = default)
+	public static void DrawSprite((float x, float y) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (int width, int height) size = default)
 	{
 		TryNoWindowException();
-
-		if (Vertices.prevDrawTilesetGfxPath == null)
-			return;
 
 		Vertices.QueueSprite(position, tile, tint, angle, size);
 	}
@@ -274,7 +293,7 @@ public static class Window
 	/// Draws single pixel points with <paramref name="tint"/> onto the OS window.
 	/// Their <paramref name="positions"/> are relative to the previously drawn tilemap.
 	/// </summary>
-	public static void DrawPoints(uint tint, params (float, float)[] positions)
+	public static void DrawPoints(uint tint, params (float x, float y)[] positions)
 	{
 		TryNoWindowException();
 
@@ -288,33 +307,25 @@ public static class Window
 	/// Its <paramref name="position"/> and <paramref name="size"/> are relative
 	/// to the previously drawn tilemap.
 	/// </summary>
-	public static void DrawRectangle((float, float) position, (float, float) size, uint tint = uint.MaxValue)
+	public static void DrawRectangle((float x, float y) position, (float width, float height) size, uint tint = uint.MaxValue)
 	{
 		TryNoWindowException();
 		Vertices.QueueRectangle(position, size, tint);
 	}
 	/// <summary>
-	/// Draws a line between <paramref name="pointA"/> and <paramref name="pointB"/> with
+	/// Draws a line between <paramref name="pointStart"/> and <paramref name="pointEnd"/> with
 	/// <paramref name="tint"/> onto the OS window.
 	/// Its points are relative to the previously drawn tilemap.
 	/// </summary>
-	public static void DrawLine((float, float) pointA, (float, float) pointB, uint tint = uint.MaxValue)
+	public static void DrawLine((float x, float y) pointStart, (float x, float y) pointEnd, uint tint = uint.MaxValue)
 	{
 		TryNoWindowException();
-		Vertices.QueueLine(pointA, pointB, tint);
+		Vertices.QueueLine(pointStart, pointEnd, tint);
 	}
 
 	#region Backend
-	private static bool isRetro, isClosing;
+	internal static bool isRetro, isClosing;
 	private static string title = "Game";
-
-	private static Shader? retroScreen;
-	private static RenderStates Rend => IsRetro ? new(retroScreen) : default;
-	private static readonly SFML.System.Clock retroScreenTimer = new();
-	private static Random retroRand = new();
-	private static System.Timers.Timer? retroTurnoff;
-	private static Clock? retroTurnoffTime;
-	private const float RETRO_TURNOFF_TIME = 0.5f;
 	private static (int, int) aspectRatio;
 
 	internal static readonly Dictionary<string, Texture> graphics = new();
@@ -339,33 +350,6 @@ public static class Window
 		window.SetView(view);
 		window.Size = new((uint)w, (uint)h);
 	}
-	private static void Draw()
-	{
-		if (window == null)
-			return;
-
-		foreach (var kvp in Vertices.vertexQueue)
-		{
-			var tex = graphics[kvp.Key.Item2];
-			var shader = IsRetro ? retroScreen : null;
-			var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, shader);
-			var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
-
-			if (IsRetro)
-			{
-				shader?.SetUniform("time", retroScreenTimer.ElapsedTime.AsSeconds());
-				shader?.SetUniform("randomVec", randVec);
-				shader?.SetUniform("viewSize", window.GetView().Size);
-
-				if (isClosing && retroTurnoffTime != null)
-				{
-					var timing = retroTurnoffTime.ElapsedTime.AsSeconds() / RETRO_TURNOFF_TIME;
-					shader?.SetUniform("turnoffAnimation", timing);
-				}
-			}
-			window.Draw(kvp.Value, rend);
-		}
-	}
 
 	private static int RoundToMultipleOfTwo(int n)
 	{
@@ -377,8 +361,8 @@ public static class Window
 	}
 	internal static (float, float) PositionFrom((int, int) screenPixel)
 	{
-		var x = Map(screenPixel.Item1, 0, Size.Item1, 0, Vertices.prevDrawTilemapCellCount.Item1);
-		var y = Map(screenPixel.Item2, 0, Size.Item2, 0, Vertices.prevDrawTilemapCellCount.Item2);
+		var x = Map(screenPixel.Item1, 0, Size.Item1, 0, Vertices.mapCellCount.Item1);
+		var y = Map(screenPixel.Item2, 0, Size.Item2, 0, Vertices.mapCellCount.Item2);
 
 		return (x, y);
 	}

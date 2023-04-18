@@ -2,7 +2,7 @@
 
 public class Button : UserInterface
 {
-	public Button((int, int) position, (int, int) size) : base(position, size) { }
+	public Button((int x, int y) position, (int width, int height) size) : base(position, size) { }
 
 	protected override void OnUpdate()
 	{

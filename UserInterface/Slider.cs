@@ -17,7 +17,7 @@ public class Slider : UserInterface
 
 	public Button Handle { get; }
 
-	public Slider((int, int) position, int size = 5, bool isVertical = false)
+	public Slider((int x, int y) position, int size = 5, bool isVertical = false)
 		: base(position, isVertical ? (1, size) : (size, 1))
 	{
 		IsVertical = isVertical;
@@ -32,7 +32,7 @@ public class Slider : UserInterface
 
 		UpdateHandle();
 	}
-	public void MoveTo((int, int) position)
+	public void MoveTo((int x, int y) position)
 	{
 		var size = IsVertical ? Size.Item2 : Size.Item1;
 		var (x, y) = Position;

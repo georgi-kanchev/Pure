@@ -39,7 +39,7 @@ public struct Direction
 		return this - 2f * Dot(surfaceNormal) * surfaceNormal;
 	}
 
-	public static Direction FromPoints((float, float) point, (float, float) targetPoint)
+	public static Direction FromPoints((float x, float y) point, (float x, float y) targetPoint)
 	{
 		var px = point.Item1;
 		var py = point.Item2;
@@ -71,19 +71,19 @@ public struct Direction
 		var wrap = ((result % 360) + 360) % 360;
 		return wrap;
 	}
-	public static implicit operator Direction((int, int) value)
+	public static implicit operator Direction((int x, int y) value)
 	{
 		return new Direction(value.Item1, value.Item2);
 	}
-	public static implicit operator (int, int)(Direction direction)
+	public static implicit operator (int x, int y)(Direction direction)
 	{
 		return ((int)MathF.Round(direction.Value.Item1), (int)MathF.Round(direction.Value.Item2));
 	}
-	public static implicit operator Direction((float, float) value)
+	public static implicit operator Direction((float x, float y) value)
 	{
 		return new Direction(value.Item1, value.Item2);
 	}
-	public static implicit operator (float, float)(Direction direction)
+	public static implicit operator (float x, float y)(Direction direction)
 	{
 		return direction.Value;
 	}

@@ -30,7 +30,7 @@ public struct Indices
 	{
 		return X * width + Y;
 	}
-	public static Indices FromIndex(int index, (int, int) size)
+	public static Indices FromIndex(int index, (int width, int height) size)
 	{
 		index = index < 0 ? 0 : index;
 		index = index > size.Item1 * size.Item2 - 1 ? size.Item1 * size.Item2 - 1 : index;
@@ -38,19 +38,19 @@ public struct Indices
 		return (index % size.Item1, index / size.Item1);
 	}
 
-	public static implicit operator Indices((int, int) value)
+	public static implicit operator Indices((int x, int y) value)
 	{
 		return new Indices(value.Item1, value.Item2);
 	}
-	public static implicit operator (int, int)(Indices vector)
+	public static implicit operator (int x, int y)(Indices vector)
 	{
 		return (vector.val.Item1, vector.val.Item2);
 	}
-	public static implicit operator Indices((float, float) value)
+	public static implicit operator Indices((float x, float y) value)
 	{
 		return new Indices((int)value.Item1, (int)value.Item2);
 	}
-	public static implicit operator (float, float)(Indices vector)
+	public static implicit operator (float x, float y)(Indices vector)
 	{
 		return vector.val;
 	}

@@ -2,7 +2,7 @@
 
 public class Particle
 {
-	public (float, float) Position { get; set; }
+	public (float x, float y) Position { get; set; }
 	public float MovementAngle { get; set; }
 	public float MovementSpeed { get; set; } = 0.005f;
 

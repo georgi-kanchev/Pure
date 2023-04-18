@@ -56,7 +56,7 @@ public class ParticleManager
 	}
 	public static implicit operator Particle[](ParticleManager manager)
 		=> manager.particles.ToArray();
-	public static implicit operator (float, float)[](ParticleManager manager)
+	public static implicit operator (float x, float y)[](ParticleManager manager)
 	{
 		var positions = new (float, float)[manager.particles.Count];
 		for (int i = 0; i < positions.Length; i++)
