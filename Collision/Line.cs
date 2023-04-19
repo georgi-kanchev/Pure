@@ -3,35 +3,38 @@
 using System.Numerics;
 
 /// <summary>
-/// Useful for collision detection, debugging, raycasting and much more.
+/// Represents a line segment in 2D space defined by two points. Useful for
+/// collision detection, debugging, raycasting and many other things.
 /// </summary>
 public struct Line
 {
 	/// <summary>
-	/// The first (starting) point of the <see cref="Line"/>.
+	/// Gets or sets the start point of the line.
 	/// </summary>
 	public (float x, float y) A { get; set; }
 	/// <summary>
-	/// The second (ending) point of the <see cref="Line"/>.
+	/// Gets or sets the end point of the line.
 	/// </summary>
 	public (float x, float y) B { get; set; }
 	/// <summary>
-	/// The distance between <see cref="A"/> and <see cref="B"/>.
+	/// Gets the length of the line.
 	/// </summary>
 	public float Length => Vector2.Distance(new(A.Item1, A.Item2), new(B.Item1, B.Item2));
 	/// <summary>
-	/// The 360 degree angle between <see cref="A"/> and <see cref="B"/>.
+	/// Gets the angle of the line in degrees.
 	/// </summary>
 	public float Angle => ToAngle(Direction);
 	/// <summary>
-	/// The direction between <see cref="A"/> and <see cref="B"/>.
+	/// Gets the direction of the line as a normalized vector.
 	/// </summary>
 	public (float x, float y) Direction => Normalize((B.Item1 - A.Item1, B.Item2 - A.Item2));
 
 	/// <summary>
-	/// Creates the <see cref="Line"/> from two points: <paramref name="a"/> and
-	/// <paramref name="b"/>.
+	/// Initializes a new instance of the line with the specified 
+	/// <paramref name="start"/> and <paramref name="end"/> points.
 	/// </summary>
+	/// <param name="a">The start point of the line.</param>
+	/// <param name="b">The end point of the line.</param>
 	public Line((float x, float y) a, (float x, float y) b)
 	{
 		A = a;
@@ -39,17 +42,22 @@ public struct Line
 	}
 
 	/// <summary>
-	/// Checks whether the <see cref="Line"/> crosses a <paramref name="grid"/> and
-	/// returns the result.
+	/// Checks if this line is crossing any rectangles in the given <paramref name="map"/>.
 	/// </summary>
-	public bool IsCrossing(Map grid)
+	/// <param name="map">The map to check for crossing.</param>
+	/// <returns>True if this line is crossing with the specified 
+	/// <paramref name="map"/>, otherwise false.</returns>
+	public bool IsCrossing(Map map)
 	{
-		return CrossPoints(grid).Length > 0;
+		return CrossPoints(map).Length > 0;
 	}
 	/// <summary>
-	/// Checks whether the <see cref="Line"/> crosses a <paramref name="hitbox"/> and
-	/// returns the result.
+	/// Checks if this line is crossing with any of the rectangles in the 
+	/// specified <paramref name="hitbox"/>.
 	/// </summary>
+	/// <param name="hitbox">The hitbox to check for crossing.</param>
+	/// <returns>True if this line is crossing with the specified <paramref name="hitbox"/>, 
+	/// otherwise false.</returns>
 	public bool IsCrossing(Hitbox hitbox)
 	{
 		for (int i = 0; i < hitbox.RectangleCount; i++)
@@ -58,27 +66,28 @@ public struct Line
 
 		return false;
 	}
-	/// <summary>
-	/// Checks whether the <see cref="Line"/> crosses a <paramref name="rectangle"/> and
-	/// returns the result.
-	/// </summary>
+	/// <param name="rectangle">
+	/// The rectangle to check for crossing.</param>
+	/// <returns>True if this line is crossing with the specified 
+	/// <paramref name="rectangle"/>, otherwise false.</returns>
 	public bool IsCrossing(Rectangle rectangle)
 	{
 		return CrossPoints(rectangle).Length > 0;
 	}
 	/// <summary>
-	/// Checks whether <see langword="this"/> and another <paramref name="line"/> cross and
-	/// returns the result.
+	/// Determines if this line is crossing another <paramref name="line"/>.
 	/// </summary>
+	/// <param name="line">The other line to check for crossing.</param>
+	/// <returns>True if the lines cross, false otherwise.</returns>
 	public bool IsCrossing(Line line)
 	{
 		var (x, y) = CrossPoint(line);
 		return float.IsNaN(x) == false && float.IsNaN(y) == false;
 	}
-	/// <summary>
-	/// Checks whether a <paramref name="point"/> is on top of the <see cref="Line"/>
-	/// with a 0.01 units margin of error. Then the result is returned.
-	/// </summary>
+	/// <param name="point">
+	/// The point to check for crossing.</param>
+	/// <returns>True if this line is crossing with the specified 
+	/// <paramref name="rectangle"/>, otherwise false.</returns>
 	public bool IsCrossing((float x, float y) point)
 	{
 		var length = Length;
@@ -87,17 +96,18 @@ public struct Line
 	}
 
 	/// <summary>
-	/// Calculates the cross points between the <see cref="Line"/> and a <paramref name="grid"/>.
-	/// This calculation is faster than <see cref="CrossPoints(Hitbox)"/> because it checks its
-	/// neighbouring cells only. The points are placed in an <see cref="Array"/> and returned
-	/// afterwards.
+	/// Calculates all points of intersection between this line and the rectangles of the
+	/// specified <paramref name="map"/>.
 	/// </summary>
-	public (float x, float y)[] CrossPoints(Map grid)
+	/// <param name="map">The map to calculate the intersection points with.</param>
+	/// <returns>An array of all points of intersection between this line and the specified 
+	/// <paramref name="map"/>.</returns>
+	public (float x, float y)[] CrossPoints(Map map)
 	{
-		var (posX, posY) = grid.Position;
+		var (posX, posY) = map.Position;
 		var (x0, y0) = ((int)A.Item1, (int)A.Item2);
 		var (x1, y1) = ((int)B.Item1, (int)B.Item2);
-		var sc = grid.Scale;
+		var sc = map.Scale;
 		var dx = (int)MathF.Abs(x1 - x0);
 		var dy = (int)-MathF.Abs(y1 - y0);
 		var sx = x0 < x1 ? 1 : -1;
@@ -113,17 +123,17 @@ public struct Line
 
 			var neighbourCells = new List<Rectangle[]>()
 				{
-					grid.GetRectangles((ix - 1, iy - 1)),
-					grid.GetRectangles((ix - 0, iy - 1)),
-					grid.GetRectangles((ix + 1, iy - 1)),
+					map.GetRectangles((ix - 1, iy - 1)),
+					map.GetRectangles((ix - 0, iy - 1)),
+					map.GetRectangles((ix + 1, iy - 1)),
 
-					grid.GetRectangles((ix - 1, iy - 0)),
-					grid.GetRectangles((ix - 0, iy - 0)),
-					grid.GetRectangles((ix + 1, iy - 0)),
+					map.GetRectangles((ix - 1, iy - 0)),
+					map.GetRectangles((ix - 0, iy - 0)),
+					map.GetRectangles((ix + 1, iy - 0)),
 
-					grid.GetRectangles((ix - 1, iy + 1)),
-					grid.GetRectangles((ix - 0, iy + 1)),
-					grid.GetRectangles((ix + 1, iy + 1)),
+					map.GetRectangles((ix - 1, iy + 1)),
+					map.GetRectangles((ix - 0, iy + 1)),
+					map.GetRectangles((ix + 1, iy + 1)),
 				};
 			for (int i = 0; i < neighbourCells.Count; i++)
 				for (int j = 0; j < neighbourCells[i].Length; j++)
@@ -163,9 +173,12 @@ public struct Line
 		return result.ToArray();
 	}
 	/// <summary>
-	/// Calculates the cross points between the <see cref="Line"/> and a <paramref name="hitbox"/>,
-	/// puts them in an <see cref="Array"/> and returns it.
+	/// Calculates all points of intersection between this line and the rectangles of the
+	/// specified <paramref name="hitbox"/>.
 	/// </summary>
+	/// <param name="hitbox">The hitbox to calculate the intersection points with.</param>
+	/// <returns>An array of all points of intersection between this line and the specified 
+	/// <paramref name="hitbox"/>.</returns>
 	public (float x, float y)[] CrossPoints(Hitbox hitbox)
 	{
 		var result = new List<(float, float)>();
@@ -174,10 +187,10 @@ public struct Line
 
 		return result.ToArray();
 	}
-	/// <summary>
-	/// Calculates the cross points between the <see cref="Line"/> and a <see cref="Rectangle"/>,
-	/// puts them in an <see cref="Array"/> and returns it.
-	/// </summary>
+	/// <param name="rectangle">
+	/// The rectangle to calculate the intersection points with.</param>
+	/// <returns>An array of all points of intersection between this line and the specified 
+	/// <paramref name="rectangle"/>.</returns>
 	public (float x, float y)[] CrossPoints(Rectangle rectangle)
 	{
 		var (x, y) = rectangle.Position;
@@ -201,19 +214,20 @@ public struct Line
 
 		return result.ToArray();
 	}
-	/// <summary>
-	/// Returns the point where <see langword="this"/> and another <paramref name="line"/> cross.
-	/// Returns (<see cref="float.NaN"/>, <see cref="float.NaN"/>) if there is no such point.
-	/// </summary>
+	/// <param name="line">
+	/// The line to calculate the intersection with.</param>
+	/// <returns>The point of intersection between this line and the specified 
+	/// <paramref name="line"/>, or (<see cref="float.NaN"/>, <see cref="float.NaN"/>) if 
+	/// the two lines do not intersect.</returns>
 	public (float x, float y) CrossPoint(Line line)
 	{
 		var p = CrossPoint(A, B, line.A, line.B);
 		return IsCrossing(p) && line.IsCrossing(p) ? p : (float.NaN, float.NaN);
 	}
-
-	/// <summary>
-	/// Returns the closest point on the <see cref="Line"/> to a <paramref name="point"/>.
-	/// </summary>
+	/// <param name="point">
+	/// The point to find the closest point on the line to.</param>
+	/// <returns>The point on the line that is closest to the given 
+	/// <paramref name="line"/>.</returns>
 	public (float x, float y) ClosestPoint((float x, float y) point)
 	{
 		var AP = (point.Item1 - A.Item1, point.Item2 - A.Item2);
@@ -228,10 +242,8 @@ public struct Line
 			B : (A.Item1 + AB.Item1 * distance, A.Item2 + AB.Item2 * distance);
 	}
 
-	/// <summary>
-	/// Returns a text representation of this <see cref="Line"/> in the format:
-	/// <see langword="A[x y] B[x y]"/>
-	/// </summary>
+	/// <returns>
+	/// A string representation of this line in the format "A[x y] B[x y]".</returns>
 	public override string ToString()
 	{
 		var (x1, y1) = A;

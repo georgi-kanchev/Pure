@@ -4,8 +4,14 @@ using System.Net.Sockets;
 
 namespace Pure.LAN
 {
+	/// <summary>
+	/// A base class for a LAN server.
+	/// </summary>
 	public class BaseServer : Base
 	{
+		/// <summary>
+		/// Gets an array of nicknames of all connected clients.
+		/// </summary>
 		public string[] Nicknames
 		{
 			get
@@ -20,6 +26,9 @@ namespace Pure.LAN
 				return result;
 			}
 		}
+		/// <summary>
+		/// Gets an array of identifiers of all connected clients.
+		/// </summary>
 		public byte[] IDs
 		{
 			get
@@ -35,12 +44,19 @@ namespace Pure.LAN
 			}
 		}
 
+		/// <summary>
+		/// Starts the server on the specified <paramref name="port"/>.
+		/// </summary>
+		/// <param name="port">The port number to listen on.</param>
 		public void Start(int port)
 		{
 			server?.Dispose();
 			server = new(this, IPAddress.Any, port);
 			server.Start();
 		}
+		/// <summary>
+		/// Stops the server.
+		/// </summary>
 		public void Stop()
 		{
 			server.Stop();
@@ -48,11 +64,23 @@ namespace Pure.LAN
 			server = null;
 		}
 
+		/// <summary>
+		/// Sends a <paramref name="message"/> to all connected clients.
+		/// </summary>
+		/// <param name="message">The contents of the message.</param>
+		/// <param name="tag">The tag of the <paramref name="message"/>.</param>
 		public void SendToAll(string message, byte tag = 0)
 		{
 			var msg = new Message(0, 0, Tag.SERVER_TO_ALL, tag, message);
 			server.Multicast(msg.Data);
 		}
+		/// <summary>
+		/// Sends a <paramref name="message"/> to a specific connected client.
+		/// </summary>
+		/// <param name="toNickname">The nickname of the client to send 
+		/// the <paramref name="message"/> to.</param>
+		/// <param name="message">The contents of the message.</param>
+		/// <param name="tag">The tag of the <paramref name="message"/>.</param>
 		public void SendToClient(string toNickname, string message, byte tag = 0)
 		{
 			var msg = new Message(0, GetID(toNickname), Tag.SERVER_TO_CLIENT, tag, message);

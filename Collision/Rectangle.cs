@@ -1,44 +1,46 @@
 ﻿namespace Pure.Collision;
 
 /// <summary>
-/// A simple representation of an <see langword="Axis Aligned Bounding Box (AABB)"/>.
-/// Used for checking whether it contains a point in the world or overlaps another
-/// <see cref="Rectangle"/>. It can be positioned and resized.
+/// Represents a rectangle in 2D space defined by its position and size.
 /// </summary>
 public struct Rectangle
 {
 	/// <summary>
-	/// The point of the top-left corner of this <see cref="Rectangle"/> in the world.
+	/// Gets or sets the position of the top-left corner of the rectangle.
 	/// </summary>
 	public (float x, float y) Position { get; set; }
 	/// <summary>
-	/// The size between the top-left and bottom-right corner of this <see cref="Rectangle"/>
-	/// in the world.
+	/// Gets or sets the size of the rectangle.
 	/// </summary>
 	public (float width, float height) Size { get; set; }
 
 	/// <summary>
-	/// Creates the <see cref="Rectangle"/> with a certain <paramref name="size"/> and
-	/// <paramref name="position"/>.
+	/// Initializes a new rectangle instance with the specified 
+	/// <paramref name="size"/> and <paramref name="position"/>.
 	/// </summary>
+	/// <param name="size">The size of the rectangle.</param>
+	/// <param name="position">The position of the top-left corner of the rectangle. 
+	/// The default value is (0, 0).</param>
 	public Rectangle((float width, float height) size, (float x, float y) position = default)
 	{
 		Position = position;
 		Size = size;
 	}
 
-	/// <summary>
-	/// Checks whether the <see cref="Rectangle"/> overlaps a <paramref name="hitbox"/> and
-	/// returns the result. See <see cref="Hitbox.IsOverlapping(Rectangle)"/> for more info.
-	/// </summary>
+	/// <param name="hitbox">
+	/// The hitbox to test for overlap with.</param>
+	/// <returns>True if this rectangle overlaps with the specified 
+	/// <paramref name="hitbox"/>; otherwise, false.</returns>
 	public bool IsOverlapping(Hitbox hitbox)
 	{
 		return hitbox.IsOverlapping(this);
 	}
 	/// <summary>
-	/// Checks whether <see langword="this"/> and another <paramref name="rectangle"/> overlaps
-	/// overlaps and returns the result.
+	/// Determines whether this rectangle is overlapping with the specified 
+	/// <paramref name="rectangle"/>.
 	/// </summary>
+	/// <param name="rectangle">The rectangle to test for overlap with.</param>
+	/// <returns>True if this rectangles overlap; otherwise, false.</returns>
 	public bool IsOverlapping(Rectangle rectangle)
 	{
 		var (x1, y1) = Position;
@@ -58,18 +60,18 @@ public struct Rectangle
 
 		return overlap1 || overlap2;
 	}
-	/// <summary>
-	/// Checks whether the <see cref="Rectangle"/> overlaps a <paramref name="line"/> and
-	/// returns the result.
-	/// </summary>
+	/// <param name="line"> 
+	/// The line to test for overlap with.</param>
+	/// <returns>True if this rectangle overlaps with the specified 
+	/// <paramref name="line"/>; otherwise, false.</returns>
 	public bool IsOverlapping(Line line)
 	{
 		return line.IsCrossing(this) || IsContaining(line);
 	}
-	/// <summary>
-	/// Checks whether the <see cref="Rectangle"/> overlaps a <paramref name="point"/>
-	/// and returns the result.
-	/// </summary>
+	/// <param name="point">
+	/// The line to test for overlap with.</param>
+	/// <returns>True if this rectangle overlaps with the specified 
+	/// <paramref name="point"/>; otherwise, false.</returns>
 	public bool IsOverlapping((float x, float y) point)
 	{
 		var (x, y) = Position;
@@ -81,19 +83,18 @@ public struct Rectangle
 		return containsX && containsY;
 	}
 
-	/// <summary>
-	/// Checks whether the <see cref="Rectangle"/> contains a <paramref name="line"/> and
-	/// returns the result.
-	/// </summary>
+	/// <param name="line">
+	/// The line to check.</param>
+	/// <returns>True if the <paramref name="line"/> is contained within this
+	/// rectangle; otherwise, false<.</returns>
 	public bool IsContaining(Line line)
 	{
 		return IsOverlapping(line.A) || IsOverlapping(line.B);
 	}
 
-	/// <summary>
-	/// Returns a text representation of this <see cref="Rectangle"/> in the format:
-	/// <see langword="Position[x y] Size[w h]"/>
-	/// </summary>
+	/// <returns>
+	/// A string that represents this rectangle. 
+	/// The string has the format: "Position[x y] Size[width height]".</returns>
 	public override string ToString()
 	{
 		var (x, y) = Position;

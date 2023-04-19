@@ -2,22 +2,46 @@
 
 using MoonSharp.Interpreter;
 
+/// <summary>
+/// Wrapper for executing Lua scripts.
+/// </summary>
 public class Script
 {
+	/// <summary>
+	/// Initializes a new script instance with the specified Lua code.
+	/// </summary>
+	/// <param name="luaCode">The Lua code to execute.</param>
 	public Script(string luaCode)
 	{
 		script.DebuggerEnabled = false;
 		script.DoString(luaCode);
 	}
 
-	public object? Call(string function, params object[] parameters)
+	/// <param name="path">
+	/// The path to the Lua code file.</param>
+	/// <returns>A new script instance with the loaded Lua code.</returns>
+	public static Script Load(string path) => new Script(File.ReadAllText(path));
+
+	/// <summary>
+	/// Calls a Lua function with the specified <paramref name="functionName"/> 
+	/// and <paramref name="parameters"/>.
+	/// </summary>
+	/// <param name="functionName">The name of the function to call.</param>
+	/// <param name="parameters">The parameters to pass to the function.</param>
+	/// <returns>The return value of the function.</returns>
+	public object? Call(string functionName, params object[] parameters)
 	{
-		var result = script.Call(script.Globals.Get(function), parameters);
+		var result = script.Call(script.Globals.Get(functionName), parameters);
 		return GetPrimitive(result);
 	}
-	public void Add(string name, Delegate method)
+	/// <summary>
+	/// Adds a C# method with the specified name to the Lua environment.
+	/// </summary>
+	/// <param name="methodName">The name of the method.</param>
+	/// <param name="method">The method to add.</param>
+	public void Add(string methodName, Delegate method)
 	{
-		script.Globals[name] = method;
+		script.Globals[methodName] = method;
 	}
 
 	#region Backend

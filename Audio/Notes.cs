@@ -4,21 +4,42 @@ using SFML.Audio;
 
 using static System.MathF;
 
+/// <summary>
+/// Represents the type of waveform used in generating audio from notes.
+/// </summary>
 public enum Wave { Sine, Square, Triangle, Sawtooth, Noise }
 
+/// <summary>
+/// Provides functionality for generating, playing and saving/loading audio from a string of notes.
+/// </summary>
+/// <typeparam name="T">The type of identifier used to reference cached sounds.</typeparam>
 public static class Notes<T> where T : notnull
 {
+	/// <summary>
+	/// The volume of generated sounds, between 0 and 1.
+	/// </summary>
 	public static float Volume
 	{
 		get => i.Volume;
 		set => i.Volume = value;
 	}
 
-	public static bool HasID(T id)
+	/// <param name="id">
+	/// The identifier of the sound to check for.</param>
+	/// <returns>True if a sound with the given identifier exists in the cache, otherwise false.</returns>
+	public static bool Hasidentifier(T id)
 	{
 		return i.cachedSounds.ContainsKey(id);
 	}
 
+	/// <summary>
+	/// Generates an audio from a string of <paramref name="notes"/> and caches it with 
+	/// the given identifier.
+	/// </summary>
+	/// <param name="id">The identifier to use for the cached sound.</param>
+	/// <param name="notes">The string of notes to generate audio from.</param>
+	/// <param name="tempoBPM">The tempo of the generated audio in beats per minute.</param>
+	/// <param name="wave">The wave shape of the generated audio.</param>
 	public static void Generate(T id, string notes, int tempoBPM = 120, Wave wave = Wave.Square)
 	{
 		if (id == null)
@@ -37,6 +58,14 @@ public static class Notes<T> where T : notnull
 		}
 		i.cachedSounds[id] = new(new SoundBuffer(samples, 1, SAMPLE_RATE));
 	}
+	/// <summary>
+	/// Saves the audio associated with the given identifier as an audio file to the 
+	/// specified <paramref name="path"/>.
+	/// </summary>
+	/// <param name="id">The identifier of the audio to save.</param>
+	/// <param name="path">The file path to save the audio to.</param>
+	/// <exception cref="ArgumentException">Thrown if the audio cannot 
+	/// be saved to the specified path.</exception>
 	public static void Save(T id, string path)
 	{
 		i.TryError(id);
@@ -47,6 +76,14 @@ public static class Notes<T> where T : notnull
 		if (success == false)
 			throw new ArgumentException($"Cannot save {nameof(Notes<T>)} to the provided {nameof(path)}.");
 	}
+	/// <summary>
+	/// Generates an audio from the contents of the specified file path (full of notes) and 
+	/// caches it with the given identifier.
+	/// </summary>
+	/// <param name="notesPath">The file path containing the string of notes to generate audio from.</param>
+	/// <param name="id">The identifier to use for the cached sound.</param>
+	/// <param name="tempoBPM">The tempo of the generated audio in beats per minute.</param>
+	/// <param name="wave">The wave shape of the generated audio.</param>
 	public static void Load(string notesPath, T id, int tempoBPM = 120, Wave wave = Wave.Square)
 	{
 		if (id == null)
@@ -61,10 +98,32 @@ public static class Notes<T> where T : notnull
 		Generate(id, File.ReadAllText(notesPath), tempoBPM, wave);
 	}
 
+	/// <summary>
+	/// Plays the audio associated with the given identifier at the specified 
+	/// <paramref name="volume"/> and loop settings. Those settings remain.
+	/// </summary>
+	/// <param name="id">The identifier of the audio to play.</param>
+	/// <param name="volume">The volume to play the audio at, between 0 and 1.</param>
+	/// <param name="isLooping">True if the audio should loop, otherwise false.</param>
 	public static void Play(T id, float volume, bool isLooping) => i.Play(id, volume, isLooping);
+	/// <summary>
+	/// Plays the audio associated with the given identifier without changing its settings.
+	/// </summary>
+	/// <param name="id">The identifier of the audio to play.</param>
 	public static void Play(T id) => i.Play(id);
+	/// <summary>
+	/// Pauses playback of the audio associated with the given identifier.
+	/// </summary>
+	/// <param name="id">The identifier of the audio to pause.</param>
 	public static void Pause(T id) => i.Pause(id);
+	/// <summary>
+	/// Stops playback of the audio associated with the given identifier.
+	/// </summary>
+	/// <param name="id">The identifier of the audio to stop.</param>
 	public static void Stop(T id) => i.Stop(id);
+	/// <summary>
+	/// Stops playback of all generated sounds.
+	/// </summary>
 	public static void Stop() => i.StopAll();
 
 	#region Backend

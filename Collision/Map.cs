@@ -4,26 +4,23 @@ using System.Runtime.InteropServices;
 namespace Pure.Collision;
 
 /// <summary>
-/// (Inherits <see cref="Hitbox"/>)<br></br><br></br>
-/// An additional grid collection of <see cref="Rectangle"/>s on top of the
-/// <see cref="Hitbox"/> one.<br></br><br></br>
-/// 
-/// Each <see cref="Map"/> cell has its own <see cref="Rectangle"/> collection and the
-/// <see cref="Map"/> combines them. Unlike <see cref="Hitbox"/>, this collection is optimized
-/// to do checks in chunks by picking only neighbouring cells rather than checking each cell's
-/// collection.
+/// Represents a map hitbox that contains a collection of rectangles that 
+/// define the solid areas of a map.
 /// </summary>
 public class Map : Hitbox
 {
 	/// <summary>
-	/// The amount of <see cref="Rectangle"/>s in the <see cref="Rectangle"/> collection and
-	/// cell <see cref="Rectangle"/> collection, combined.
+	/// Gets the number of rectangles in the map hitbox, including the 
+	/// rectangles that are part of the cells.
 	/// </summary>
 	public override int RectangleCount => rectangles.Count + cellRects.Count;
 
 	/// <summary>
-	/// Get: returns the <see cref="Rectangle"/> at <paramref name="index"/>.
+	/// Gets the rectangle at the specified <paramref name="index"/>, 
+	/// including the rectangles that are part of the cells.
 	/// </summary>
+	/// <param name="index">The index of the rectangle to retrieve.</param>
+	/// <returns>The rectangle at the specified <paramref name="index"/>.</returns>
 	public override Rectangle this[int index]
 	{
 		get
@@ -33,6 +30,10 @@ public class Map : Hitbox
 		}
 	}
 
+	/// <summary>
+	/// Initializes a new map instance from the specified file <paramref name="path"/>.
+	/// </summary>
+	/// <param name="path">The path to the file that contains the map hitbox data.</param>
 	public Map(string path) : base(path, (0, 0), 1)
 	{
 		var bytes = Decompress(File.ReadAllBytes(path));
@@ -88,8 +89,17 @@ public class Map : Hitbox
 			}
 		}
 	}
+	/// <summary>
+	/// Initializes a new map instance with an empty collection of rectangles.
+	/// </summary>
 	public Map() : base((0, 0), 1) { }
 
+	/// <summary>
+	/// Saves the current state of the map to a compressed binary 
+	/// file at the given <paramref name="path"/>.
+	/// Overrides the hitbox implementation to include additional data for each tile's cell rectangles.
+	/// </summary>
+	/// <param name="path">The path to save the file to.</param>
 	public override void Save(string path)
 	{
 		base.Save(path);
@@ -133,10 +143,12 @@ public class Map : Hitbox
 	}
 
 	/// <summary>
-	/// Expands the <see cref="Rectangle"/> collection with a new <paramref name="rectangle"/>.
-	/// This <see cref="Rectangle"/> will be updated over each <paramref name="tile"/> upon
-	/// <see cref="Update"/>. It will have no effect before that.
+	/// Adds a <paramref name="rectangle"/> to the cell corresponding to the 
+	/// specified <paramref name="tile"/>.
 	/// </summary>
+	/// <param name="rectangle">The rectangle to add.</param>
+	/// <param name="tile">The tile corresponding to the cell to add the 
+	/// <paramref name="rectangle"/> to.</param>
 	public void AddRectangle(Rectangle rectangle, int tile)
 	{
 		if (cellRectsMap.ContainsKey(tile) == false)
@@ -145,10 +157,10 @@ public class Map : Hitbox
 		cellRectsMap[tile].Add(rectangle);
 	}
 	/// <summary>
-	/// Retrieves the <see cref="Rectangle"/> collection at a certain <paramref name="cell"/> and
-	/// returns it if the provided <paramref name="cell"/> is present.
-	/// Returns an empty <see cref="Rectangle"/> <see cref="Array"/> otherwise. 
+	/// Gets an array of rectangles that intersect the specified <paramref name="cell"/>.
 	/// </summary>
+	/// <param name="cell">The (x, y) cell coordinates.</param>
+	/// <returns>An array of rectangles that intersect the <paramref name="cell"/>.</returns>
 	public Rectangle[] GetRectangles((int x, int y) cell)
 	{
 		if (tileIndices.ContainsKey(cell) == false)
@@ -164,9 +176,12 @@ public class Map : Hitbox
 
 		return result.ToArray();
 	}
+
 	/// <summary>
-	/// Updates all rectangles added by <see cref="AddRectangle"/> according to <paramref name="tiles"/>.
+	/// Updates the map hitbox with new tile data.
 	/// </summary>
+	/// <param name="tiles">The new tile data.</param>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="tiles"/> is null.</exception>
 	public void Update(int[,] tiles)
 	{
 		if (tiles == null)
@@ -192,18 +207,18 @@ public class Map : Hitbox
 			}
 	}
 
-	/// <summary>
-	/// Checks whether a <paramref name="line"/> overlaps at least one of the
-	/// <see cref="Rectangle"/>s in the collection and returns the result.
-	/// </summary>
+	/// <param name="line">
+	/// The line to check.</param>
+	/// <returns>True if the specified <paramref name="line"/> overlaps with the map hitbox, 
+	/// false otherwise.</returns>
 	public override bool IsOverlapping(Line line)
 	{
 		return line.CrossPoints(this).Length > 0;
 	}
-	/// <summary>
-	/// Checks whether a <paramref name="rectangle"/> overlaps at least one of the
-	/// <see cref="Rectangle"/>s in the collection and returns the result.
-	/// </summary>
+	/// <param name="rectangle">
+	/// The rectangle to check.</param>
+	/// <returns>True if the specified <paramref name="rectangle"/> overlaps with the map hitbox, 
+	/// false otherwise.</returns>
 	public override bool IsOverlapping(Rectangle rectangle)
 	{
 		var point = rectangle.Position;
@@ -215,10 +230,10 @@ public class Map : Hitbox
 
 		return false;
 	}
-	/// <summary>
-	/// Checks whether at least one of the <see cref="Rectangle"/>s in the collection contains
-	/// a <paramref name="point"/> and returns the result.
-	/// </summary>
+	/// <param name="point">
+	/// The point to check.</param>
+	/// <returns>True if the specified <paramref name="point"/> overlaps with the map hitbox, 
+	/// false otherwise.</returns>
 	public override bool IsOverlapping((float x, float y) point)
 	{
 		var neighborRects = GetNeighborRects(point, (1, 1));

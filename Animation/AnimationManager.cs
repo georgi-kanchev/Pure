@@ -1,50 +1,50 @@
 ﻿namespace Pure.Animation;
 
 /// <summary>
-/// A collection of <see cref="Animation{T}"/>.
+/// Stores and updates a collection of <see cref="Animation{T}"/> objects.
 /// </summary>
-public class AnimationManager<T>
+/// <typeparam name="TKey">The type of the keys used to index the animations.</typeparam>
+/// <typeparam name="T">The type of the animations managed by the manager.</typeparam>
+public class AnimationManager<TKey, T>
+	where TKey : notnull
+	where T : notnull, Animation<T>
 {
 	/// <summary>
-	/// Each name of each <see cref="Animation{T}"/> in the collection.
+	/// Gets an array of the keys used to index the animations in the manager.
 	/// </summary>
-	public string[] Names { get; private set; } = Array.Empty<string>();
+	public TKey[] Keys { get; private set; } = Array.Empty<TKey>();
 
 	/// <summary>
-	/// Get: returns <see cref="Animation{T}"/>[<paramref name="name"/>]
-	/// (<see langword="null"/> if it doesn't exist).<br></br>
-	/// Set:<br></br>
-	/// - replaces <see cref="Animation{T}"/>[<paramref name="name"/>] if it exists in the
-	/// collection<br></br>
-	/// - adds it otherwise<br></br>
-	/// - providing <see langword="null"/> value deletes the
-	/// <see cref="Animation{T}"/>[<paramref name="name"/>] if it exist
+	/// Gets or sets the <see cref="Animation{T}"/> at the specified <typeparamref name="TKey"/> index.
 	/// </summary>
-	public Animation<T>? this[string name]
+	/// <param name="key">The key to use to access the <see cref="Animation{T}"/>.</param>
+	/// <returns>The <see cref="Animation{T}"/> associated with the 
+	/// specified <typeparamref name="TKey"/> key.</returns>
+	public T? this[TKey key]
 	{
-		get => animations.ContainsKey(name) ? animations[name] : default;
+		get => animations.ContainsKey(key) ? animations[key] : default;
 		set
 		{
 			if (value == null)
 			{
-				animations.Remove(name);
-				names.Remove(name);
-				Names = names.ToArray();
+				animations.Remove(key);
+				keys.Remove(key);
+				Keys = keys.ToArray();
 				return;
 			}
 
-			if (names.Contains(name) == false)
-				names.Add(name);
+			if (keys.Contains(key) == false)
+				keys.Add(key);
 
-			animations[name] = value;
-			Names = names.ToArray();
+			animations[key] = value;
+			Keys = keys.ToArray();
 		}
 	}
 
 	/// <summary>
-	/// Calls <see cref="Animation{T}.Update"/> on each <see cref="Animation{T}"/> in the
-	/// collection.
+	/// Updates all the animations in the manager by the specified <paramref name="deltaTime"/>.
 	/// </summary>
+	/// <param name="deltaTime">The time elapsed since the last update.</param>
 	public void Update(float deltaTime)
 	{
 		foreach (var kvp in animations)
@@ -52,7 +52,7 @@ public class AnimationManager<T>
 	}
 
 	#region Backend
-	private readonly Dictionary<string, Animation<T>> animations = new();
-	private readonly List<string> names = new();
+	private readonly Dictionary<TKey, T> animations = new();
+	private readonly List<TKey> keys = new();
 	#endregion
 }

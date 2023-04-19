@@ -20,8 +20,7 @@ public class NoteEditor
 
 			Window.DrawSprite((5, 5), Tile.ICON_BOLT);
 			//Window.DrawTilemap(tilemap);
-
-			Window.SetLayer();
+			var img = new SFML.Graphics.Image(0, 0);
 
 			Window.Activate(false);
 		}

@@ -1,25 +1,26 @@
 ﻿namespace Pure.Animation;
 
 /// <summary>
-/// A collection of <typeparamref name="T"/>.
-/// Continuously iterates over its items in a set time period.
+/// Represents an animation that can iterate over a sequence of values of type 
+/// <typeparamref name="T"/>  over time.
 /// </summary>
+/// <typeparam name="T">The type of the values in the animation.</typeparam>
 public class Animation<T>
 {
 	/// <summary>
-	/// The current value from the <see cref="values"/> retrieved by the <see cref="CurrentIndex"/>.
+	/// Gets the current value of the animation.
 	/// </summary>
 	public T CurrentValue => values[CurrentIndex];
 	/// <summary>
-	/// The current index the <see cref="Animation{T}"/> is at.
+	/// Gets the current index of the animation.
 	/// </summary>
 	public int CurrentIndex => (int)MathF.Round(RawIndex);
 	/// <summary>
-	/// The amount of seconds needed to iterate over the <see cref="values"/>.
+	/// Gets or sets the duration of the animation in seconds.
 	/// </summary>
 	public float Duration { get; set; }
 	/// <summary>
-	/// The amount of seconds the iteration stays on a particular value.
+	/// Gets or sets the speed of the animation.
 	/// </summary>
 	public float Speed
 	{
@@ -27,15 +28,15 @@ public class Animation<T>
 		set => Duration = value * values.Length;
 	}
 	/// <summary>
-	/// Whether the iteration over the collection starts over when the end is reached.
+	/// Gets or sets a value indicating whether the animation should repeat.
 	/// </summary>
 	public bool IsRepeating { get; set; }
 	/// <summary>
-	/// Whether the iteration over the collection is currently paused.
+	/// Gets or sets a value indicating whether the animation is paused.
 	/// </summary>
 	public bool IsPaused { get; set; }
 	/// <summary>
-	/// The current progress of the iterator in the range[0 - 1].
+	/// Gets or sets the current progress of the animation as a value between 0 and 1.
 	/// </summary>
 	public float CurrentProgress
 	{
@@ -44,9 +45,10 @@ public class Animation<T>
 	}
 
 	/// <summary>
-	/// Get: returns the value at <paramref name="index"/>.<br></br>
-	/// Set: replaces the value at <paramref name="index"/>.
+	/// Gets or sets the value at the specified index.
 	/// </summary>
+	/// <param name="index">The index of the value to get or set.</param>
+	/// <returns>The value at the specified index.</returns>
 	public T this[int index]
 	{
 		get => values[index];
@@ -54,9 +56,13 @@ public class Animation<T>
 	}
 
 	/// <summary>
-	/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>
-	/// with <paramref name="duration"/> in seconds while it <paramref name="isRepeating"/>.
+	/// Initializes a new instance of the animation with the specified <paramref name="duration"/>, 
+	/// repetition, and <paramref name="values"/>.
 	/// </summary>
+	/// <param name="duration">The duration of the animation in seconds.</param>
+	/// <param name="isRepeating">A value indicating whether the animation should repeat from the beginning
+	/// after it has finished playing through all the <paramref name="values"/>.</param>
+	/// <param name="values">The values of the animation.</param>
 	public Animation(float duration, bool isRepeating, params T[] values)
 	{
 		if (values == null)
@@ -69,23 +75,30 @@ public class Animation<T>
 		RawIndex = LOWER_BOUND;
 	}
 	/// <summary>
-	/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>
-	/// with <paramref name="speed"/> in values per second while it <paramref name="isRepeating"/>.
+	/// Initializes a new instance of the animation with the specified <paramref name="values"/>, 
+	/// repeating and <paramref name="speed"/> properties set.
 	/// </summary>
+	/// <param name="isRepeating">A value indicating whether the animation should repeat 
+	/// from the beginning after it has finished playing through all the <paramref name="values"/>.</param>
+	/// <param name="speed">The speed at which the animation should play, as <paramref name="values"/>
+	/// per second.</param>
+	/// <param name="values">The values to be animated.</param>
 	public Animation(bool isRepeating, float speed, params T[] values)
 		: this(0f, isRepeating, values)
 	{
 		Speed = speed;
 	}
 	/// <summary>
-	/// Creates the <see cref="Animation{T}"/> from a collection of <paramref name="values"/>.
+	/// Initializes a new instance of the animation with the specified <paramref name="values"/> 
+	/// and default properties of <code>Duration = 1f</code> and <code>IsRepeating = false</code>
 	/// </summary>
+	/// <param name="values">The values to be animated.</param>
 	public Animation(params T[] values) : this(1f, false, values) { }
 
 	/// <summary>
-	/// Advances the <see cref="Animation{T}"/> by <paramref name="deltaTime"/> seconds, unless
-	/// <see cref="Animation{T}.IsPaused"/>.
+	/// Updates the animation progress based on the specified delta time.
 	/// </summary>
+	/// <param name="deltaTime">The amount of time that has passed since the last update.</param>
 	public void Update(float deltaTime)
 	{
 		if (values == default || IsPaused)
@@ -97,13 +110,14 @@ public class Animation<T>
 	}
 
 	/// <summary>
-	/// Returns a new <see cref="Animation{T}"/> created from a collection of
-	/// <paramref name="values"/>.
+	/// Implicitly converts an array of values to an Animation object.
 	/// </summary>
+	/// <param name="values">The values to be animated.</param>
 	public static implicit operator Animation<T>(T[] values) => new(values);
 	/// <summary>
-	/// Returns a copy of the values of an <paramref name="animation"/>.
+	/// Implicitly converts an Animation object to an array of values.
 	/// </summary>
+	/// <param name="animation">The Animation object to convert.</param>
 	public static implicit operator T[](Animation<T> animation) => Copy(animation.values);
 
 	#region Backend

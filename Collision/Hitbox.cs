@@ -4,40 +4,45 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 
 /// <summary>
-/// A collection of <see cref="Rectangle"/>s which can be positioned and scaled, affecting all
-/// <see cref="Rectangle"/>s accordingly. It checks whether it contains a point in the world or
-/// overlaps with another <see cref="Hitbox"/>, <see cref="Rectangle"/> or <see cref="Line"/>.
+/// A collection of rectangles representing an area in 2D space that defines a collision zone.
 /// </summary>
 public class Hitbox
 {
 	/// <summary>
-	/// The raw <see cref="Rectangle"/> collection.
+	/// Stores the individual rectangles that make up the hitbox.
 	/// </summary>
 	protected readonly List<Rectangle> rectangles = new();
 
 	/// <summary>
-	/// Applies to all <see cref="Rectangle"/>s in the collection accordingly.
+	/// Gets or sets the position of the hitbox.
 	/// </summary>
 	public (float x, float y) Position { get; set; }
 	/// <summary>
-	/// Applies to all <see cref="Rectangle"/>s in the collection accordingly.
+	/// Gets or sets the scale of the hitbox.
 	/// </summary>
 	public float Scale { get; set; } = 1f;
 	/// <summary>
-	/// The amount of <see cref="Rectangle"/>s in the collection.
+	/// Gets the number of rectangles that make up the hitbox.
 	/// </summary>
 	public virtual int RectangleCount => rectangles.Count;
 
 	/// <summary>
-	/// Get: returns the <see cref="Rectangle"/> at <paramref name="index"/>.<br></br>
-	/// Set: replaces the <see cref="Rectangle"/> at <paramref name="index"/>.
+	/// Gets or sets the rectangle at the specified <paramref name="index"/>.
 	/// </summary>
+	/// <param name="index">The index of the rectangle to get or set.</param>
+	/// <returns>The rectangle at the specified <paramref name="index"/>.</returns>
 	public virtual Rectangle this[int index]
 	{
 		get => rectangles[index];
 		set => rectangles[index] = value;
 	}
 
+	/// <summary>
+	/// Initializes a new hitbox instance from a file.
+	/// </summary>
+	/// <param name="path">The path to the file to load the hitbox from.</param>
+	/// <param name="position">The position of the hitbox.</param>
+	/// <param name="scale">The scale of the hitbox.</param>
 	public Hitbox(string path, (float x, float y) position = default, float scale = 1f)
 		: this(position, scale)
 	{
@@ -74,18 +79,23 @@ public class Hitbox
 		}
 	}
 	/// <summary>
-	/// Creates an empty <see cref="Rectangle"/> collection with a
+	/// Initializes a new empty hitbox instance (with no rectangles in it) with the specified 
 	/// <paramref name="position"/> and <paramref name="scale"/>.
 	/// </summary>
+	/// <param name="position">The position of the hitbox.</param>
+	/// <param name="scale">The scale of the hitbox.</param>
 	public Hitbox((float x, float y) position = default, float scale = 1f)
 	{
 		Position = position;
 		Scale = scale;
 	}
 	/// <summary>
-	/// Copies the contents of an existing <see cref="Rectangle"/> collection with a
-	/// <paramref name="position"/> and <paramref name="scale"/>.
+	/// Initializes aa new hitbox instance with the specified 
+	/// <paramref name="rectangles"/>, <paramref name="position"/>, and <paramref name="scale"/>.
 	/// </summary>
+	/// <param name="rectangles">The rectangles to add to the hitbox.</param>
+	/// <param name="position">The position of the hitbox.</param>
+	/// <param name="scale">The scale of the hitbox.</param>
 	public Hitbox(Rectangle[] rectangles, (float x, float y) position = default, float scale = 1f)
 		: this(position, scale)
 	{
@@ -93,6 +103,10 @@ public class Hitbox
 			AddRectangle(rectangles[i]);
 	}
 
+	/// <summary>
+	/// Saves the hitbox as a compressed binary file to the specified <paramref name="path"/>.
+	/// </summary>
+	/// <param name="path">The path to save the hitbox to.</param>
 	public virtual void Save(string path)
 	{
 		var c = rectangles.Count;
@@ -116,18 +130,19 @@ public class Hitbox
 	}
 
 	/// <summary>
-	/// Expands the <see cref="Rectangle"/> collection with a new <paramref name="rectangle"/>.
+	/// Adds a <paramref name="rectangle"/> to the hitbox.
 	/// </summary>
+	/// <param name="rectangle">The rectangle to add.</param>
 	public virtual void AddRectangle(Rectangle rectangle)
 	{
 		rectangles.Add(LocalToGlobalRectangle(rectangle));
 	}
 
 	/// <summary>
-	/// Checks whether at least one of the <see cref="Rectangle"/>s in the collection overlaps
-	/// at least one of the <see cref="Rectangle"/>s in a <paramref name="hitbox"/>.
-	/// Then the result is returned.
+	/// Checks if the hitbox overlaps with another <paramref name="hitbox"/>.
 	/// </summary>
+	/// <param name="hitbox">The hitbox to check for overlap with.</param>
+	/// <returns>True if the hitboxes overlap, false otherwise.</returns>
 	public virtual bool IsOverlapping(Hitbox hitbox)
 	{
 		for (int i = 0; i < RectangleCount; i++)
@@ -136,10 +151,10 @@ public class Hitbox
 
 		return false;
 	}
-	/// <summary>
-	/// Checks whether a <paramref name="rectangle"/> overlaps at least one of the
-	/// <see cref="Rectangle"/>s in the collection and returns the result.
-	/// </summary>
+	/// <param name="rectangle">
+	/// The rectangle to check for overlap with.</param>
+	/// <returns>True if the hitbox overlaps with the <paramref name="rectangle"/>, 
+	/// false otherwise.</returns>
 	public virtual bool IsOverlapping(Rectangle rectangle)
 	{
 		for (int i = 0; i < RectangleCount; i++)
@@ -148,10 +163,10 @@ public class Hitbox
 
 		return false;
 	}
-	/// <summary>
-	/// Checks whether at least one of the <see cref="Rectangle"/>s in the collection is
-	/// overlapping a <paramref name="line"/> and returns the result.
-	/// </summary>
+	/// <param name="line">
+	/// The line to check for overlap with.</param>
+	/// <returns>True if the hitbox overlaps with the <paramref name="line"/>, 
+	/// false otherwise.</returns>
 	public virtual bool IsOverlapping(Line line)
 	{
 		for (int i = 0; i < rectangles.Count; i++)
@@ -160,10 +175,10 @@ public class Hitbox
 
 		return false;
 	}
-	/// <summary>
-	/// Checks whether at least one of the <see cref="Rectangle"/>s in the collection contains a
-	/// <paramref name="point"/> and returns the result.
-	/// </summary>
+	/// <param name="point">
+	/// The point to check for overlap with.</param>
+	/// <returns>True if the hitbox overlaps with the <paramref name="point"/>, 
+	/// false otherwise.</returns>
 	public virtual bool IsOverlapping((float x, float y) point)
 	{
 		for (int i = 0; i < RectangleCount; i++)
@@ -174,13 +189,14 @@ public class Hitbox
 	}
 
 	/// <summary>
-	/// Returns a new <see cref="Hitbox"/> created from a collection of
-	/// <paramref name="rectangles"/>.
+	/// Implicitly converts a Rectangle array to a Hitbox object.
 	/// </summary>
+	/// <param name="rectangles">The Rectangle array to convert.</param>
 	public static implicit operator Hitbox(Rectangle[] rectangles) => new(rectangles);
 	/// <summary>
-	/// Returns a copy of all the values of a <paramref name="hitbox"/> collection.
+	/// Implicitly converts a Hitbox object to a Rectangle array.
 	/// </summary>
+	/// <param name="hitbox">The Hitbox object to convert.</param>
 	public static implicit operator Rectangle[](Hitbox hitbox) => hitbox.rectangles.ToArray();
 
 	#region Backend
