@@ -194,7 +194,7 @@ public static class Mouse
 
 		Vertices.graphicsPath = "default";
 		Vertices.tileSize = (8, 8);
-		Window.DrawSprite((x - offX, y - offY), 442 + CursorGraphics, CursorColor);
+		Window.DrawBasicSprite((x - offX, y - offY), 442 + CursorGraphics, CursorColor);
 	}
 	internal static void CancelInput() => pressed.Clear();
 	#endregion

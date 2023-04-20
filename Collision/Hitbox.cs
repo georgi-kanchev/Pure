@@ -199,6 +199,10 @@ public class Hitbox
 	/// <param name="hitbox">The Hitbox object to convert.</param>
 	public static implicit operator Rectangle[](Hitbox hitbox) => hitbox.rectangles.ToArray();
 
+	/// <returns>
+	/// An array copy of the rectangles in this hitbox collection.</returns>
+	public Rectangle[] ToArray() => this;
+
 	#region Backend
 	// save format
 	// [amount of bytes]	- data

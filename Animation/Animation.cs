@@ -2,7 +2,7 @@
 
 /// <summary>
 /// Represents an animation that can iterate over a sequence of values of type 
-/// <typeparamref name="T"/>  over time.
+/// <typeparamref name="T"/> over time.
 /// </summary>
 /// <typeparam name="T">The type of the values in the animation.</typeparam>
 public class Animation<T>
@@ -119,6 +119,11 @@ public class Animation<T>
 	/// </summary>
 	/// <param name="animation">The Animation object to convert.</param>
 	public static implicit operator T[](Animation<T> animation) => Copy(animation.values);
+
+	/// <returns>
+	/// An array copy containing the values of type <typeparamref name="T"/> 
+	/// in the animation sequence.</returns>
+	public T[] ToArray() => this;
 
 	#region Backend
 	private readonly T[] values;

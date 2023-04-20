@@ -1,7 +1,35 @@
 ﻿namespace Pure.Tilemap;
 
-public static class Tile
+public struct Tile
 {
+	public int ID { get; set; }
+	public uint Color { get; set; }
+	public sbyte Angle { get; set; }
+	public (bool isFlippedH, bool isFlippedV) Flips { get; set; }
+
+	public Tile(int id, uint color = uint.MaxValue, sbyte angle = default, (bool isFlippedH, bool isFlippedV) flips = default)
+	{
+		ID = id;
+		Color = color;
+		Angle = angle;
+		Flips = flips;
+	}
+
+	public static implicit operator Tile(int id) => new(id);
+	public static implicit operator Tile((int id, uint color, sbyte angle, (bool isFlippedH, bool isFlippedV) flips) tuple)
+	{
+		var (tile, color, angle, flips) = tuple;
+		return new(tile, color, angle, flips);
+	}
+	public static implicit operator (int id, uint color, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)(Tile tile)
+	{
+		return new(
+			tile.ID,
+			tile.Color,
+			tile.Angle,
+			tile.Flips);
+	}
+
 	#region Shade
 	public const int SHADE_TRANSPARENT = 0,
 		SHADE_1 = 1, SHADE_2 = 2, SHADE_3 = 3, SHADE_4 = 4, SHADE_5 = 5,

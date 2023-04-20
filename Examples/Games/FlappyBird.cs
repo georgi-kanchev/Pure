@@ -63,7 +63,7 @@ public static class FlappyBird
 			birdAnimation.Update(Time.Delta);
 
 			// clear the tilemaps from the previous frame
-			background.Fill(Tile.SHADE_OPAQUE, ((Color)Color.Blue).ToDark());
+			background.Fill(new(Tile.SHADE_OPAQUE, ((Color)Color.Blue).ToDark()));
 			foreground.Fill();
 
 			// apply gravity, unless game over
@@ -100,13 +100,13 @@ public static class FlappyBird
 
 				var size = (PIPE_WIDTH, PIPE_HEIGHT);
 				var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
-				background.SetSquare(((int)pipeX, pipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark(0.8f));
-				background.SetSquare(((int)pipeX, lowerPipeY), size, Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark(0.8f));
+				background.SetSquare(((int)pipeX, pipeY), size, new(Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark(0.8f)));
+				background.SetSquare(((int)pipeX, lowerPipeY), size, new(Tile.SHADE_OPAQUE, ((Color)Color.Green).ToDark(0.8f)));
 				foreground.SetBorder(((int)pipeX, pipeY), size, Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT, (Color)Color.Green);
 				foreground.SetBorder(((int)pipeX, lowerPipeY), size, Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT, (Color)Color.Green);
 			}
 
-			collisionMap.Update(foreground);
+			collisionMap.Update(foreground.IDs);
 
 			// whether the bird fell out of the map or bonked into a pipe
 			var birdRect = new Rectangle((1, 1), (BIRD_X, birdY));
@@ -122,9 +122,9 @@ public static class FlappyBird
 			if (isGameOver)
 				foreground.SetTextLine((width / 2 - GAME_OVER.Length / 2, height / 2), GAME_OVER);
 
-			Window.DrawTilemap(background);
-			Window.DrawTilemap(foreground);
-			Window.DrawSprite((BIRD_X, birdY), isGameOver ? Tile.CAPITAL_X : birdTile, Color.Yellow, birdAngle);
+			Window.DrawBundleTilemap(background.ToBundle());
+			Window.DrawBundleTilemap(foreground.ToBundle());
+			Window.DrawBasicSprite((BIRD_X, birdY), isGameOver ? Tile.CAPITAL_X : birdTile, Color.Yellow, birdAngle);
 
 			Window.Activate(false);
 		}

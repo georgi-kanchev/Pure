@@ -12,10 +12,23 @@ public class Tilemap
 		BottomLeft, Bottom, BottomRight
 	};
 
-	public (int width, int height) Size => (tiles.GetLength(0), tiles.GetLength(1));
+	public (int width, int height) Size => (data.GetLength(0), data.GetLength(1));
 
 	public (int x, int y) CameraPosition { get; set; }
 	public (int width, int height) CameraSize { get; set; }
+
+	public int[,] IDs
+	{
+		get
+		{
+			var result = new int[data.GetLength(0), data.GetLength(1)];
+			for (int j = 0; j < data.GetLength(1); j++)
+				for (int i = 0; i < data.GetLength(0); i++)
+					result[i, j] = data[i, j].ID;
+
+			return result;
+		}
+	}
 
 	public Tilemap(string path)
 	{
@@ -30,40 +43,20 @@ public class Tilemap
 			var w = BitConverter.ToInt32(bWidth);
 			var h = BitConverter.ToInt32(bHeight);
 
-			tiles = new int[w, h];
-			tints = new uint[w, h];
-			angles = new sbyte[w, h];
-			flips = new (bool, bool)[w, h];
-			var bTilesSize = w * h * Marshal.SizeOf(typeof(int));
-			var bColorsSize = w * h * Marshal.SizeOf(typeof(uint));
-			var bAnglesSize = w * h * Marshal.SizeOf(typeof(sbyte));
-			var bFlipsSize = w * h * Marshal.SizeOf(typeof((bool, bool)));
-			var bTiles = new byte[bTilesSize];
-			var bColors = new byte[bColorsSize];
-			var bAngles = new sbyte[bAnglesSize];
-			var bFlips = new (bool, bool)[bFlipsSize];
-			var offset = bWidth.Length + bHeight.Length;
+			data = new Tile[w, h];
+			var byteSize = w * h * Marshal.SizeOf(typeof(Tile));
+			var bData = new byte[byteSize];
 
-			Add(bTiles);
-			Add(bColors);
-			Add(bAngles);
-			Add(bFlips);
+			Array.Copy(bData, bWidth.Length + bHeight.Length, bytes, 0, bData.Length);
 
-			FromBytes(tiles, bTiles);
-			FromBytes(tints, bColors);
-
-			void Add(Array array)
-			{
-				Array.Copy(array, offset, bytes, 0, array.Length);
-				offset += array.Length;
-			}
+			FromBytes(data, bData);
 		}
 		catch (Exception)
 		{
 			throw new Exception($"Could not load {nameof(Tilemap)} from '{path}'.");
 		}
 	}
-	public Tilemap((int tilesHorizontally, int tilesVertically) tileCount)
+	public Tilemap((int tilesH, int tilesV) tileCount)
 	{
 		var (w, h) = tileCount;
 
@@ -72,36 +65,18 @@ public class Tilemap
 		if (h < 1)
 			h = 1;
 
-		tiles = new int[w, h];
-		tints = new uint[w, h];
-		angles = new sbyte[w, h];
-		flips = new (bool, bool)[w, h];
+		data = new Tile[w, h];
 		CameraSize = tileCount;
 	}
-	public Tilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool isFlippedHorizontally, bool isFlippedVertically)[,] flips)
+	public Tilemap(Tile[,] data)
 	{
-		if (tiles == null)
-			throw new ArgumentNullException(nameof(tiles));
-		if (tints == null)
-			throw new ArgumentNullException(nameof(tints));
-		if (angles == null)
-			throw new ArgumentNullException(nameof(angles));
-		if (flips == null)
-			throw new ArgumentNullException(nameof(flips));
+		if (data == null)
+			throw new ArgumentNullException(nameof(data));
 
-		var w = tiles.GetLength(0);
-		var h = tiles.GetLength(0);
+		var w = data.GetLength(0);
+		var h = data.GetLength(1);
 
-		if (w != tints.GetLength(0) || h != tints.GetLength(1) ||
-			w != angles.GetLength(0) || h != angles.GetLength(1) ||
-			w != flips.GetLength(0) || h != flips.GetLength(1))
-			throw new ArgumentException($"The sizes of the all parameters " +
-				$"must be the same size.");
-
-		this.tiles = Copy(tiles);
-		this.tints = Copy(tints);
-		this.angles = Copy(angles);
-		this.flips = Copy(flips);
+		this.data = Copy(data);
 		CameraSize = Size;
 	}
 
@@ -110,20 +85,13 @@ public class Tilemap
 		var (w, h) = Size;
 		var bWidth = BitConverter.GetBytes(w);
 		var bHeight = BitConverter.GetBytes(h);
-		var bTiles = ToBytes(tiles);
-		var bColors = ToBytes(tints);
-		var bAngles = ToBytes(angles);
-		var bFlips = ToBytes(flips);
-		var result = new byte[bWidth.Length + bHeight.Length +
-			bTiles.Length + bColors.Length + bAngles.Length + bFlips.Length];
+		var bytes = ToBytes(data);
+		var result = new byte[bWidth.Length + bHeight.Length + bytes.Length];
 		var offset = 0;
 
 		Add(bWidth);
 		Add(bHeight);
-		Add(bTiles);
-		Add(bColors);
-		Add(bAngles);
-		Add(bFlips);
+		Add(data);
 
 		File.WriteAllBytes(path, Compress(result));
 
@@ -138,10 +106,7 @@ public class Tilemap
 	{
 		var (w, h) = CameraSize;
 		var (cx, cy) = CameraPosition;
-		var tiles = new int[Math.Abs(w), Math.Abs(h)];
-		var tints = new uint[Math.Abs(w), Math.Abs(h)];
-		var angles = new sbyte[Math.Abs(w), Math.Abs(h)];
-		var flips = new (bool, bool)[Math.Abs(w), Math.Abs(h)];
+		var data = new Tile[Math.Abs(w), Math.Abs(h)];
 		var xStep = w < 0 ? -1 : 1;
 		var yStep = h < 0 ? -1 : 1;
 		var i = 0;
@@ -150,55 +115,34 @@ public class Tilemap
 			var j = 0;
 			for (int y = cy; y != cy + h; y += yStep)
 			{
-				tiles[i, j] = TileAt((x, y));
-				tints[i, j] = TintAt((x, y));
-				angles[i, j] = AngleAt((x, y));
-				flips[i, j] = FlipAt((x, y));
+				data[i, j] = TileAt((x, y));
 				j++;
 			}
 			i++;
 		}
-		return new(tiles, tints, angles, flips);
+		return new(data);
 	}
 
-	public int TileAt((int x, int y) cell)
+	public Tile TileAt((int x, int y) cell)
 	{
-		return IndicesAreValid(cell) ? tiles[cell.Item1, cell.Item2] : default;
-	}
-	public uint TintAt((int x, int y) cell)
-	{
-		return IndicesAreValid(cell) ? tints[cell.Item1, cell.Item2] : default;
-	}
-	public (bool, bool) FlipAt((int x, int y) cell)
-	{
-		return IndicesAreValid(cell) ? flips[cell.Item1, cell.Item2] : default;
-	}
-	public sbyte AngleAt((int x, int y) cell)
-	{
-		return IndicesAreValid(cell) ? angles[cell.Item1, cell.Item2] : default;
+		return IndicesAreValid(cell) ? data[cell.x, cell.y] : default;
 	}
 
-	public void Fill(int tile = 0, uint tint = 0)
+	public void Fill(Tile withTile = default)
 	{
 		for (int y = 0; y < Size.Item2; y++)
 			for (int x = 0; x < Size.Item1; x++)
-				SetTile((x, y), tile, tint);
+				SetTile((x, y), withTile);
 	}
 
-	public void SetTile((int x, int y) cell, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (bool isFlippedHorizontally, bool isFlippedVertically) flips = default)
+	public void SetTile((int x, int y) cell, Tile tile)
 	{
 		if (IndicesAreValid(cell) == false)
 			return;
 
-		var x = cell.Item1;
-		var y = cell.Item2;
-
-		tiles[x, y] = tile;
-		tints[x, y] = tint;
-		angles[x, y] = angle;
-		this.flips[x, y] = flips;
+		data[cell.x, cell.y] = tile;
 	}
-	public void SetSquare((int x, int y) cell, (int width, int height) size, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (bool isFlippedHorizontally, bool isFlippedVertically) flips = default)
+	public void SetSquare((int x, int y) cell, (int width, int height) size, Tile tile)
 	{
 		var xStep = size.Item1 < 0 ? -1 : 1;
 		var yStep = size.Item2 < 0 ? -1 : 1;
@@ -209,7 +153,7 @@ public class Tilemap
 				if (i > Math.Abs(size.Item1 * size.Item2))
 					return;
 
-				SetTile((x, y), tile, tint, angle, flips);
+				SetTile((x, y), tile);
 				i++;
 			}
 	}
@@ -231,7 +175,7 @@ public class Tilemap
 			if (symbol == ' ')
 				continue;
 
-			SetTile((cell.Item1 + i - errorOffset, cell.Item2), index, tint);
+			SetTile((cell.Item1 + i - errorOffset, cell.Item2), new(index, tint));
 		}
 	}
 	public void SetTextSquare((int x, int y) cell, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
@@ -350,7 +294,7 @@ public class Tilemap
 		for (int x = cell.Item1; x != cell.Item1 + size.Item1; x += xStep)
 			for (int y = cell.Item2; y != cell.Item2 + size.Item2; y += yStep)
 			{
-				if (tileList[0] != TileAt((x, y)))
+				if (tileList[0] != TileAt((x, y)).ID)
 					continue;
 
 				var correctSymbCount = 0;
@@ -360,7 +304,7 @@ public class Tilemap
 
 				for (int i = 0; i < text.Length; i++)
 				{
-					if (tileList[i] != TileAt((curX, curY)))
+					if (tileList[i] != TileAt((curX, curY)).ID)
 						break;
 
 					correctSymbCount++;
@@ -374,8 +318,8 @@ public class Tilemap
 				}
 
 				var endPos = (curX, curY);
-				var left = TileAt(startPos) == 0 || curX == cell.Item1;
-				var right = TileAt(endPos) == 0 || curX == cell.Item1 + size.Item1;
+				var left = TileAt(startPos).ID == 0 || curX == cell.Item1;
+				var right = TileAt(endPos).ID == 0 || curX == cell.Item1 + size.Item1;
 				var isWord = left && right;
 
 				if (isWord ^ isMatchingWord)
@@ -394,7 +338,7 @@ public class Tilemap
 						curY++;
 					}
 
-					SetTile((curX, curY), TileAt((curX, curY)), tint);
+					SetTile((curX, curY), new(TileAt((curX, curY)).ID, tint));
 					curX++;
 				}
 			}
@@ -405,43 +349,43 @@ public class Tilemap
 		var (x, y) = cell;
 		var (w, h) = size;
 
-		SetTile(cell, tileCorner, tint, 0);
-		SetSquare((x + 1, y), (w - 2, 1), tileStraight, tint, 0);
-		SetTile((x + w - 1, y), tileCorner, tint, 1);
+		SetTile(cell, new(tileCorner, tint, 0));
+		SetSquare((x + 1, y), (w - 2, 1), new(tileStraight, tint, 0));
+		SetTile((x + w - 1, y), new(tileCorner, tint, 1));
 
-		SetSquare((x, y + 1), (1, h - 2), tileStraight, tint, 3);
-		SetSquare((x + 1, y + 1), (w - 2, h - 2), 0, 0);
-		SetSquare((x + w - 1, y + 1), (1, h - 2), tileStraight, tint, 1);
+		SetSquare((x, y + 1), (1, h - 2), new(tileStraight, tint, 3));
+		SetSquare((x + 1, y + 1), (w - 2, h - 2), new(0, 0));
+		SetSquare((x + w - 1, y + 1), (1, h - 2), new(tileStraight, tint, 1));
 
-		SetTile((x, y + h - 1), tileCorner, tint, 3);
-		SetSquare((x + 1, y + h - 1), (w - 2, 1), tileStraight, tint, 2);
-		SetTile((x + w - 1, y + h - 1), tileCorner, tint, 2);
+		SetTile((x, y + h - 1), new(tileCorner, tint, 3));
+		SetSquare((x + 1, y + h - 1), (w - 2, 1), new(tileStraight, tint, 2));
+		SetTile((x + w - 1, y + h - 1), new(tileCorner, tint, 2));
 	}
 	public void SetBar((int x, int y) cell, int tileEdge, int tileStraight, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
 	{
 		var (x, y) = cell;
 		if (isVertical)
 		{
-			SetTile(cell, tileEdge, tint, 1);
-			SetSquare((x, y + 1), (1, size - 2), tileStraight, tint, 1);
-			SetTile((x, y + size - 1), tileEdge, tint, 3);
+			SetTile(cell, new(tileEdge, tint, 1));
+			SetSquare((x, y + 1), (1, size - 2), new(tileStraight, tint, 1));
+			SetTile((x, y + size - 1), new(tileEdge, tint, 3));
 			return;
 		}
 
-		SetTile(cell, tileEdge, tint);
-		SetSquare((x + 1, y), (size - 2, 1), tileStraight, tint);
-		SetTile((x + size - 1, y), tileEdge, tint, 2);
+		SetTile(cell, new(tileEdge, tint));
+		SetSquare((x + 1, y), (size - 2, 1), new(tileStraight, tint));
+		SetTile((x + size - 1, y), new(tileEdge, tint, 2));
 	}
 
-	public (float x, float y) PointFrom((int x, int y) screenPixel, (uint width, uint height) windowSize, bool isAccountingForCamera = true)
+	public (float x, float y) PointFrom((int x, int y) screenPixel, (int width, int height) windowSize, bool isAccountingForCamera = true)
 	{
-		var x = Map(screenPixel.Item1, 0, windowSize.Item1, 0, Size.Item1);
-		var y = Map(screenPixel.Item2, 0, windowSize.Item2, 0, Size.Item2);
+		var x = Map(screenPixel.x, 0, windowSize.width, 0, Size.width);
+		var y = Map(screenPixel.y, 0, windowSize.height, 0, Size.height);
 
 		if (isAccountingForCamera)
 		{
-			x += CameraPosition.Item1;
-			y += CameraPosition.Item2;
+			x += CameraPosition.x;
+			y += CameraPosition.y;
 		}
 
 		return (x, y);
@@ -473,62 +417,17 @@ public class Tilemap
 		return result;
 	}
 
-	public static implicit operator Tilemap(int[,] tiles)
-	{
-		var (w, h) = (tiles.GetLength(0), tiles.GetLength(1));
+	public static implicit operator Tilemap(Tile[,] data) => new(data);
+	public static implicit operator Tile[,](Tilemap tilemap) => Copy(tilemap.data);
 
-		return new(tiles,
-			new uint[w, h],
-			new sbyte[w, h],
-			new (bool, bool)[w, h]);
-	}
-	public static implicit operator int[,](Tilemap tilemap)
-		=> Copy(tilemap.tiles);
-	public static implicit operator Tilemap(uint[,] tints)
+	public (int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] ToBundle()
 	{
-		var (w, h) = (tints.GetLength(0), tints.GetLength(1));
+		var result = new (int, uint, sbyte, (bool, bool))[data.GetLength(0), data.GetLength(1)];
+		for (int j = 0; j < data.GetLength(1); j++)
+			for (int i = 0; i < data.GetLength(0); i++)
+				result[i, j] = data[i, j];
 
-		return new(new int[w, h],
-			tints,
-			new sbyte[w, h],
-			new (bool, bool)[w, h]);
-	}
-	public static implicit operator uint[,](Tilemap tilemap)
-		=> Copy(tilemap.tints);
-	public static implicit operator Tilemap(sbyte[,] angles)
-	{
-		var (w, h) = (angles.GetLength(0), angles.GetLength(1));
-
-		return new(new int[w, h],
-			new uint[w, h],
-			angles,
-			new (bool, bool)[w, h]);
-	}
-	public static implicit operator sbyte[,](Tilemap tilemap)
-		=> Copy(tilemap.angles);
-	public static implicit operator Tilemap((bool isFlippedHorizontally, bool isFlippedVertically)[,] flips)
-	{
-		var (w, h) = (flips.GetLength(0), flips.GetLength(1));
-
-		return new(new int[w, h],
-			new uint[w, h],
-			new sbyte[w, h],
-			flips);
-	}
-	public static implicit operator (bool, bool)[,](Tilemap tilemap)
-		=> Copy(tilemap.flips);
-	public static implicit operator Tilemap((int[,] tiles, uint[,] tints, sbyte[,] angles, (bool isFlippedHorizontally, bool isFlippedVertically)[,] flips) tilemap)
-	{
-		var (tiles, tints, angles, flips) = tilemap;
-		return new(tiles, tints, angles, flips);
-	}
-	public static implicit operator (int[,] tiles, uint[,] tints, sbyte[,] angles, (bool isFlippedHorizontally, bool isFlippedVertically)[,] flips)(Tilemap tilemap)
-	{
-		return new(
-			Copy(tilemap.tiles),
-			Copy(tilemap.tints),
-			Copy(tilemap.angles),
-			Copy(tilemap.flips));
+		return result;
 	}
 
 	#region Backend
@@ -596,15 +495,16 @@ public class Tilemap
 			{ '▕', 484 }, { '▁', 485 }, { '▏', 486 }, { '▔', 487 },
 		};
 
-	private readonly int[,] tiles;
-	private readonly uint[,] tints;
-	private readonly sbyte[,] angles;
-	private readonly (bool, bool)[,] flips;
+	private readonly Tile[,] data;
+	//private readonly int[,] tiles;
+	//private readonly uint[,] tints;
+	//private readonly sbyte[,] angles;
+	//private readonly (bool, bool)[,] flips;
 
 	private bool IndicesAreValid((int, int) indices)
 	{
 		return indices.Item1 >= 0 && indices.Item2 >= 0 &&
-			indices.Item1 < tiles.GetLength(0) && indices.Item2 < tiles.GetLength(1);
+			indices.Item1 < data.GetLength(0) && indices.Item2 < data.GetLength(1);
 	}
 	private static string PadLeftAndRight(string text, int length)
 	{

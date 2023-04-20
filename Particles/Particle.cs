@@ -7,4 +7,5 @@ public class Particle
 	public float MovementSpeed { get; set; } = 0.005f;
 
 	public float Age { get; set; } = 1;
+	public uint Color { get; set; } = uint.MaxValue;
 }

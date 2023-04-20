@@ -8,8 +8,8 @@ internal static class Vertices
 {
 	public static string graphicsPath = "default";
 	public static int layer;
-	public static (uint, uint) tileSize = (8, 8);
-	public static (uint, uint) tileGap;
+	public static (int, int) tileSize = (8, 8);
+	public static (int, int) tileGap;
 
 	public static (float, float) MapCellSize
 	{
@@ -66,7 +66,7 @@ internal static class Vertices
 
 		for (int i = 0; i < LINE_MAX_ITERATIONS; i++)
 		{
-			QueuePoints(tint, new (float, float)[] { (x0, y0) });
+			QueuePoint((x0, y0), tint);
 
 			if (IsWithin(x0, x1, stepX) && IsWithin(y0, y1, stepY))
 				break;
@@ -85,7 +85,7 @@ internal static class Vertices
 			}
 		}
 	}
-	public static void QueueSprite((float, float) position, int tile, uint tint, sbyte angle, (int, int) size)
+	public static void QueueTile((float, float) position, int tile, uint tint, sbyte angle, (int, int) size)
 	{
 		TryInitQueue();
 
@@ -97,13 +97,13 @@ internal static class Vertices
 		var gfxSize = Window.graphics[graphicsPath].Size;
 		var (gapX, gapY) = tileGap;
 		var (tileW, tileH) = tileSize;
-		var tilesetTileCount = (gfxSize.X / (tileW + gapX), gfxSize.Y / (tileH + gapY));
+		var tilesetTileCount = ((int)gfxSize.X / (tileW + gapX), (int)gfxSize.Y / (tileH + gapY));
 		var (tileX, tileY) = IndexToCoords(tile, tilesetTileCount);
 		var (x, y) = position;
 
-		for (uint j = 0; j < Math.Abs(h); j++)
-			for (uint i = 0; i < Math.Abs(w); i++)
-				tiles[i, j] = (int)CoordsToIndex((uint)tileX + i, (uint)tileY + j, tilesetTileCount.Item1);
+		for (int j = 0; j < Math.Abs(h); j++)
+			for (int i = 0; i < Math.Abs(w); i++)
+				tiles[i, j] = (int)CoordsToIndex(tileX + i, tileY + j, tilesetTileCount.Item1);
 
 		if (w < 0)
 			FlipVertically(tiles);
@@ -112,8 +112,8 @@ internal static class Vertices
 
 		var rotated = Rotate(tiles, -angle);
 
-		for (uint j = 0; j < rotated.GetLength(1); j++)
-			for (uint i = 0; i < rotated.GetLength(0); i++)
+		for (int j = 0; j < rotated.GetLength(1); j++)
+			for (int i = 0; i < rotated.GetLength(0); i++)
 			{
 				// in case offset in position is needed
 				// (-x, -y) resulting in going backwards toward topleft, use these:
@@ -122,31 +122,32 @@ internal static class Vertices
 				QueueSingleSprite((x + i, y + j), rotated[i, j], tint, angle, (w, h));
 			}
 	}
-	public static void QueueTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool, bool)[,] flips)
+	public static void QueueTilemap((int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tilemap)
 	{
 		if (Window.window == null)
 			return;
 
 		TryInitQueue();
 
-		var cellWidth = (float)Window.window.Size.X / tiles.GetLength(0);
-		var cellHeight = (float)Window.window.Size.Y / tiles.GetLength(1);
+		var (tilemapW, tilemapH) = (tilemap.GetLength(0), tilemap.GetLength(1));
+		var cellWidth = (float)Window.window.Size.X / tilemapW;
+		var cellHeight = (float)Window.window.Size.Y / tilemapH;
 		var texture = Window.graphics[graphicsPath];
 		var (tileGapW, tileGapH) = tileGap;
 		var (tileW, tileH) = tileSize;
 		var texSz = texture.Size;
-		var tileCount = (texSz.X / (tileW + tileGapW), texSz.Y / (tileH + tileGapH));
+		var tileCount = ((int)texSz.X / (tileW + tileGapW), (int)texSz.Y / (tileH + tileGapH));
 		var key = (layer, graphicsPath);
-		var cellCount = ((uint)tiles.GetLength(0), (uint)tiles.GetLength(1));
+		var cellCount = ((uint)tilemapW, (uint)tilemapH);
 
 		mapCellCount = cellCount;
 
-		for (uint y = 0; y < tiles.GetLength(1); y++)
-			for (uint x = 0; x < tiles.GetLength(0); x++)
+		for (int y = 0; y < tilemapH; y++)
+			for (int x = 0; x < tilemapW; x++)
 			{
-				var cell = tiles[x, y];
-				var tint = new Color(tints[x, y]);
-				var i = CoordsToIndex(x, y, (uint)tiles.GetLength(0)) * 4;
+				var cell = tilemap[x, y].tile;
+				var tint = new Color(tilemap[x, y].tint);
+				var i = CoordsToIndex(x, y, tilemapW) * 4;
 				var tl = new Vector2f(x * cellWidth, y * cellHeight);
 				var tr = new Vector2f((x + 1) * cellWidth, y * cellHeight);
 				var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
@@ -160,8 +161,8 @@ internal static class Vertices
 				var texBr = new Vector2f((int)(tx.X + tileW), (int)(tx.Y + tileH));
 				var texBl = new Vector2f((int)tx.X, (int)(tx.Y + tileH));
 				var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
-				var rotated = GetRotatedPoints(angles[x, y], tl, tr, br, bl);
-				var (flipX, flipY) = flips[x, y];
+				var rotated = GetRotatedPoints(tilemap[x, y].angle, tl, tr, br, bl);
+				var (flipX, flipY) = tilemap[x, y].flips;
 
 				if (flipX)
 				{
@@ -191,7 +192,7 @@ internal static class Vertices
 			}
 
 	}
-	public static void QueuePoints(uint tint, (float, float)[] positions)
+	public static void QueuePoint((float x, float y) position, uint color)
 	{
 		if (Window.window == null)
 			return;
@@ -204,20 +205,17 @@ internal static class Vertices
 		var cellHeight = MapCellSize.Item2 / tileSz.Item2;
 		var cellCount = mapCellCount;
 
-		for (int i = 0; i < positions.Length; i++)
-		{
-			var x = Map(positions[i].Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
-			var y = Map(positions[i].Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
-			var c = new Color(tint);
-			var grid = ToGrid((x, y), (cellWidth, cellHeight));
-			var tl = new Vector2f(grid.Item1, grid.Item2);
-			var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
+		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
+		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
+		var c = new Color(color);
+		var grid = ToGrid((x, y), (cellWidth, cellHeight));
+		var tl = new Vector2f(grid.Item1, grid.Item2);
+		var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
 
-			verts.Append(new(new(tl.X, tl.Y), c));
-			verts.Append(new(new(br.X, tl.Y), c));
-			verts.Append(new(new(br.X, br.Y), c));
-			verts.Append(new(new(tl.X, br.Y), c));
-		}
+		verts.Append(new(new(tl.X, tl.Y), c));
+		verts.Append(new(new(br.X, tl.Y), c));
+		verts.Append(new(new(br.X, br.Y), c));
+		verts.Append(new(new(tl.X, br.Y), c));
 	}
 
 	public static void TryInitQueue()
@@ -289,15 +287,15 @@ internal static class Vertices
 		var u = rangeB >= number;
 		return l && u;
 	}
-	private static (int, int) IndexToCoords(int index, (uint, uint) fieldSize)
+	private static (int, int) IndexToCoords(int index, (int, int) fieldSize)
 	{
 		index = index < 0 ? 0 : index;
 		index = index > fieldSize.Item1 * fieldSize.Item2 - 1 ?
 			(int)(fieldSize.Item1 * fieldSize.Item2 - 1) : index;
 
-		return (index % (int)fieldSize.Item1, index / (int)fieldSize.Item1);
+		return (index % fieldSize.Item1, index / fieldSize.Item1);
 	}
-	private static uint CoordsToIndex(uint x, uint y, uint width)
+	private static int CoordsToIndex(int x, int y, int width)
 	{
 		return y * width + x;
 	}
@@ -427,7 +425,7 @@ internal static class Vertices
 		var (tileWidth, tileHeight) = tileSize;
 		var texture = Window.graphics[graphicsPath];
 		var (tileGapW, tileGapH) = tileGap;
-		var tileCount = (texture.Size.X / tileWidth, texture.Size.Y / tileHeight);
+		var tileCount = ((int)texture.Size.X / tileWidth, (int)texture.Size.Y / tileHeight);
 
 		var (texX, texY) = IndexToCoords(cell, tileCount);
 		var tx = new Vector2f(

@@ -63,6 +63,13 @@ public class ParticleManager
 			positions[i] = manager.particles[i].Position;
 		return positions;
 	}
+	public static implicit operator uint[](ParticleManager manager)
+	{
+		var colors = new uint[manager.particles.Count];
+		for (int i = 0; i < colors.Length; i++)
+			colors[i] = manager.particles[i].Color;
+		return colors;
+	}
 
 	#region Backend
 	private Action<Particle>? spawn, update;

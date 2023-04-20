@@ -18,7 +18,7 @@ public class NoteEditor
 		{
 			Window.Activate(true);
 
-			Window.DrawSprite((5, 5), Tile.ICON_BOLT);
+			Window.DrawBasicSprite((5, 5), Tile.ICON_BOLT);
 			//Window.DrawTilemap(tilemap);
 			var img = new SFML.Graphics.Image(0, 0);
 

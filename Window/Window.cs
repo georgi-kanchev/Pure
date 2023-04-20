@@ -6,23 +6,14 @@ using SFML.Window;
 
 using System.Diagnostics.CodeAnalysis;
 
-/// <summary>
-/// Provides a simple way to create and interact with an OS window.
-/// </summary>
 public static class Window
 {
-	/// <summary>
-	/// The state of the OS window upon calling <see cref="Create"/>.
-	/// </summary>
 	public enum State
 	{
 		Windowed, Borderless, Fullscreen
 	}
 
-	/// <summary>
-	/// Whether the OS window exists. This is <see langword="true"/> even when it
-	/// is minimized or <see cref="IsHidden"/>.
-	/// </summary>
+
 	public static bool IsOpen
 	{
 		get
@@ -36,9 +27,7 @@ public static class Window
 				Close();
 		}
 	}
-	/// <summary>
-	/// The title on the title bar of the OS window.
-	/// </summary>
+
 	public static string Title
 	{
 		get
@@ -57,25 +46,16 @@ public static class Window
 			window.SetTitle(title);
 		}
 	}
-	/// <summary>
-	/// The size of the OS window.
-	/// </summary>
-	public static (uint width, uint height) Size
+
+	public static (int width, int height) Size
 	{
 		get
 		{
 			TryNoWindowException();
-			return (window.Size.X, window.Size.Y);
-		}
-		set
-		{
-			TryNoWindowException();
-			window.Size = new(value.Item1, value.Item2);
+			return ((int)window.Size.X, (int)window.Size.Y);
 		}
 	}
-	/// <summary>
-	/// Returns whether the OS window is currently focused.
-	/// </summary>
+
 	public static bool IsFocused
 	{
 		get
@@ -84,9 +64,7 @@ public static class Window
 			return window.HasFocus();
 		}
 	}
-	/// <summary>
-	/// Whether the OS window has a retro TV/arcade screen effect over it.
-	/// </summary>
+
 	public static bool IsRetro
 	{
 		get
@@ -104,24 +82,15 @@ public static class Window
 			isRetro = value;
 		}
 	}
-	/// <summary>
-	/// Returns the aspect ratio of the desktop monitor that the OS window was created on.
-	/// This is useful for keeping the size of the window contents consistent throughout
-	/// different resolutions with the same aspect ratio.
-	/// </summary>
+
 	public static (int width, int height) MonitorAspectRatio
 	{
 		get { TryNoWindowException(); return aspectRatio; }
 	}
 
-	/// <summary>
-	/// The <see cref="State"/> used to create the OS window with.
-	/// </summary>
 	public static State InitialState { get; private set; }
 
-	/// <summary>
-	/// Creates an OS window with <paramref name="state"/> on a desktop <paramref name="monitor"/>.
-	/// </summary>
+
 	[MemberNotNull(nameof(window))]
 	public static void Create(State state = State.Windowed, uint monitor = 0)
 	{
@@ -177,11 +146,7 @@ public static class Window
 
 		graphics["default"] = DefaultGraphics.CreateTexture();
 	}
-	/// <summary>
-	/// Determines whether the <see cref="Window"/> <paramref name="isActive"/>.
-	/// An application loop should ideally activate it at the very start and
-	/// deactivate it at the very end.
-	/// </summary>
+
 	public static void Activate(bool isActive)
 	{
 		TryNoWindowException();
@@ -200,34 +165,8 @@ public static class Window
 		Vertices.DrawQueue();
 		window.Display();
 	}
-	/// <summary>
-	/// Terminates the OS window and closes the application.
-	/// </summary>
-	public static void Close()
-	{
-		TryNoWindowException();
 
-		if (IsRetro || isClosing)
-		{
-			isClosing = true;
-
-			Vertices.StartRetroAnimation();
-			return;
-		}
-
-		window.Close();
-	}
-
-	/// <summary>
-	/// Prepares a <paramref name="layer"/> for drawing. The <paramref name="layer"/> has a size of
-	/// <paramref name="cellCount"/> tiles. Its graphics are loaded and cached from a
-	/// <paramref name="graphicsPath"/> containing tiles of <paramref name="tileSize"/> with a
-	/// <paramref name="tileGap"/> in between. Default values result in default graphics:<br></br>
-	/// <paramref name="layer"/>= 0<br></br>
-	/// <paramref name="graphicsPath"/>= "default"/null<br></br>
-	/// <paramref name="cellCount"/>= (48, 27)<br></br>
-	/// </summary>
-	public static void SetLayer((uint cellsHorizontal, uint cellsVertical) cellCount = default, (uint tileWidth, uint tileHeight) tileSize = default, (uint tileGapX, uint tileGapY) tileGap = default, string? graphicsPath = null, int layer = 0)
+	public static void SetLayer((int cellCountH, int cellCountV) cellCount = default, (int tileWidth, int tileHeight) tileSize = default, (int tileGapX, int tileGapY) tileGap = default, string? graphicsPath = null, int layer = 0)
 	{
 		TryNoWindowException();
 
@@ -246,81 +185,52 @@ public static class Window
 		Vertices.TryInitQueue();
 	}
 
-	/// <summary>
-	/// Draws a tilemap onto the OS window. Its graphics image is loaded from a
-	/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a
-	/// <paramref name="tileSize"/>, <paramref name="tileGaps"/> and then it is cached
-	/// for future draws. The tilemap's contents are decided by <paramref name="tiles"/>,
-	/// <paramref name="tints"/>, <paramref name="angles"/>, <paramref name="flips"/>
-	/// (flip first, rotation second - order matters) and their Z order by a <paramref name="layer"/>.
-	/// </summary>
-	public static void DrawTilemap(int[,] tiles, uint[,] tints, sbyte[,] angles, (bool isFlippedHorizontally, bool isFlippedVertically)[,] flips)
+	public static void Close()
 	{
 		TryNoWindowException();
 
-		if (tiles == null || tints == null || angles == null || flips == null ||
-			tiles.Length != tints.Length || tiles.Length != angles.Length || tiles.Length != flips.Length)
-			throw new ArgumentException("All the provided arrays should be non-null and with equal sizes.");
+		if (IsRetro || isClosing)
+		{
+			isClosing = true;
 
-		Vertices.QueueTilemap(tiles, tints, angles, flips);
-	}
-	/// <summary>
-	/// Draws a <paramref name="tilemap"/> onto the OS window. Its graphics image is loaded from a
-	/// <paramref name="path"/> (default graphics if <see langword="null"/>) using a
-	/// <paramref name="tileSize"/> and <paramref name="tileGaps"/>, then it is cached
-	/// for future draws. The <paramref name="tilemap"/>'s Z order is decided by a <paramref name="layer"/>.
-	/// </summary>
-	public static void DrawTilemap((int[,] tiles, uint[,] tints, sbyte[,] angles, (bool isFlippedHorizontally, bool isFlippedVertically)[,] flips) tilemap)
-	{
-		var (tiles, tints, angles, flips) = tilemap;
-		DrawTilemap(tiles, tints, angles, flips);
-	}
-	/// <summary>
-	/// Draws a sprite onto the OS window. Its graphics are decided by a <paramref name="tile"/>
-	/// from the last <see cref="DrawTilemap"/> call, a <paramref name="tint"/>, an
-	/// <paramref name="angle"/>, and a <paramref name="size"/> (negative values flip the sprite).
-	/// Order matters - flips first, rotates second.
-	/// The sprite's <paramref name="position"/> is also relative to the previously drawn tilemap.
-	/// </summary>
-	public static void DrawSprite((float x, float y) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (int width, int height) size = default)
-	{
-		TryNoWindowException();
-
-		Vertices.QueueSprite(position, tile, tint, angle, size);
-	}
-
-	/// <summary>
-	/// Draws single pixel points with <paramref name="tint"/> onto the OS window.
-	/// Their <paramref name="positions"/> are relative to the previously drawn tilemap.
-	/// </summary>
-	public static void DrawPoints(uint tint, params (float x, float y)[] positions)
-	{
-		TryNoWindowException();
-
-		if (positions == null || positions.Length == 0)
+			Vertices.StartRetroAnimation();
 			return;
+		}
 
-		Vertices.QueuePoints(tint, positions);
+		window.Close();
 	}
-	/// <summary>
-	/// Draws a rectangle with <paramref name="tint"/> onto the OS window.
-	/// Its <paramref name="position"/> and <paramref name="size"/> are relative
-	/// to the previously drawn tilemap.
-	/// </summary>
-	public static void DrawRectangle((float x, float y) position, (float width, float height) size, uint tint = uint.MaxValue)
+
+
+	public static void DrawBasicPoint((float x, float y) position, uint color)
 	{
 		TryNoWindowException();
-		Vertices.QueueRectangle(position, size, tint);
+		Vertices.QueuePoint(position, color);
 	}
-	/// <summary>
-	/// Draws a line between <paramref name="pointStart"/> and <paramref name="pointEnd"/> with
-	/// <paramref name="tint"/> onto the OS window.
-	/// Its points are relative to the previously drawn tilemap.
-	/// </summary>
-	public static void DrawLine((float x, float y) pointStart, (float x, float y) pointEnd, uint tint = uint.MaxValue)
+
+	public static void DrawBasicRectangle((float x, float y) position, (float width, float height) size, uint color = uint.MaxValue)
 	{
 		TryNoWindowException();
-		Vertices.QueueLine(pointStart, pointEnd, tint);
+		Vertices.QueueRectangle(position, size, color);
+	}
+
+	public static void DrawBasicLine((float x, float y) start, (float x, float y) end, uint color)
+	{
+		TryNoWindowException();
+		Vertices.QueueLine(start, end, color);
+	}
+
+	public static void DrawBasicSprite((float x, float y) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (int width, int height) size = default)
+	{
+		TryNoWindowException();
+
+		Vertices.QueueTile(position, tile, tint, angle, size);
+	}
+
+	public static void DrawBundleTilemap((int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tiles)
+	{
+		TryNoWindowException();
+
+		Vertices.QueueTilemap(tiles);
 	}
 
 	#region Backend
@@ -377,6 +287,17 @@ public static class Window
 	{
 		if (window == null)
 			throw new MemberAccessException($"{nameof(Window)} is not created. Use {nameof(Create)}(...).");
+	}
+	internal static void TryArrayMismatchException(params Array[] arrays)
+	{
+		var length = 0;
+		for (int i = 0; i < arrays.Length; i++)
+		{
+			length = i == 0 ? arrays[i].Length : length;
+
+			if (arrays[i] == null || arrays.Length != length)
+				throw new ArgumentException("All the provided arrays should be non-null and with equal sizes.");
+		}
 	}
 
 	#endregion
