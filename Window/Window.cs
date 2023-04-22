@@ -166,7 +166,7 @@ public static class Window
 		window.Display();
 	}
 
-	public static void SetLayer((int cellCountH, int cellCountV) cellCount = default, (int tileWidth, int tileHeight) tileSize = default, (int tileGapX, int tileGapY) tileGap = default, string? graphicsPath = null, int layer = 0)
+	public static void SetLayer((int cellCountH, int cellCountV) cellCount = default, (int tileWidth, int tileHeight) tileSize = default, (int tileGapX, int tileGapY) tileGap = default, string? graphicsPath = null, int drawOrder = 0)
 	{
 		TryNoWindowException();
 
@@ -176,7 +176,7 @@ public static class Window
 
 		TryLoadGraphics(graphicsPath);
 
-		Vertices.layer = layer;
+		Vertices.layer = drawOrder;
 		Vertices.graphicsPath = graphicsPath;
 		Vertices.tileSize = tileSize;
 		Vertices.tileGap = tileGap;
@@ -219,14 +219,14 @@ public static class Window
 		Vertices.QueueLine(start, end, color);
 	}
 
-	public static void DrawBasicSprite((float x, float y) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (int width, int height) size = default)
+	public static void DrawBasicTile((float x, float y) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (int width, int height) size = default)
 	{
 		TryNoWindowException();
 
 		Vertices.QueueTile(position, tile, tint, angle, size);
 	}
 
-	public static void DrawBundleTilemap((int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tiles)
+	public static void DrawBundleTiles((int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tiles)
 	{
 		TryNoWindowException();
 

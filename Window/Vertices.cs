@@ -112,15 +112,15 @@ internal static class Vertices
 
 		var rotated = Rotate(tiles, -angle);
 
-		for (int j = 0; j < rotated.GetLength(1); j++)
-			for (int i = 0; i < rotated.GetLength(0); i++)
-			{
-				// in case offset in position is needed
-				// (-x, -y) resulting in going backwards toward topleft, use these:
-				// var (xi, yj) = (w < 0 ? -i : i, h < 0 ? -j : j);
-				// var (ri, rj) = (w < 0 ? rotated.GetLength(0) - i - 1 : i, h < 0 ? rotated.GetLength(1) - j - 1 : j);
-				QueueSingleSprite((x + i, y + j), rotated[i, j], tint, angle, (w, h));
-			}
+		//for (int j = 0; j < rotated.GetLength(1); j++)
+		//for (int i = 0; i < rotated.GetLength(0); i++)
+		{
+			// in case offset in position is needed
+			// (-x, -y) resulting in going backwards toward topleft, use these:
+			// var (xi, yj) = (w < 0 ? -i : i, h < 0 ? -j : j);
+			// var (ri, rj) = (w < 0 ? rotated.GetLength(0) - i - 1 : i, h < 0 ? rotated.GetLength(1) - j - 1 : j);
+			QueueSingleSprite((x, y), tile, tint, angle, (w, h));
+		}
 	}
 	public static void QueueTilemap((int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tilemap)
 	{
@@ -426,24 +426,35 @@ internal static class Vertices
 		var texture = Window.graphics[graphicsPath];
 		var (tileGapW, tileGapH) = tileGap;
 		var tileCount = ((int)texture.Size.X / tileWidth, (int)texture.Size.Y / tileHeight);
+		var (w, h) = size;
+		w = Math.Abs(w);
+		h = Math.Abs(h);
 
 		var (texX, texY) = IndexToCoords(cell, tileCount);
 		var tx = new Vector2f(
 			(texX) * (tileWidth + tileGapW),
 			(texY) * (tileHeight + tileGapH));
-		var texTr = tx + new Vector2f(tileWidth, 0);
-		var texBr = tx + new Vector2f(tileWidth, tileHeight);
-		var texBl = tx + new Vector2f(0, tileHeight);
+		var texTr = tx + new Vector2f(tileWidth * w, 0);
+		var texBr = tx + new Vector2f(tileWidth * w, tileHeight * h);
+		var texBl = tx + new Vector2f(0, tileHeight * h);
 
 		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
 		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
 		var c = new Color(tint);
 		var grid = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
 		var tl = new Vector2f((int)grid.Item1, (int)grid.Item2);
-		var br = new Vector2f((int)(grid.Item1 + cellWidth), (int)(grid.Item2 + cellHeight));
+		var br = new Vector2f((int)(tl.X + cellWidth * w), (int)(tl.Y + cellHeight * h));
+
+		if (angle == 1 || angle == 3)
+			br = new((int)(tl.X + cellHeight * h), (int)(tl.Y + cellWidth * w));
+
 		var tr = new Vector2f(br.X, tl.Y);
 		var bl = new Vector2f(tl.X, br.Y);
-		var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
+		var rotated = GetRotatedPoints((sbyte)-angle, tx, texTr, texBr, texBl);
+		tx = rotated[0];
+		texTr = rotated[1];
+		texBr = rotated[2];
+		texBl = rotated[3];
 
 		if (size.Item1 < 0)
 		{
@@ -456,11 +467,7 @@ internal static class Vertices
 			(texTr, texBr) = (texBr, texTr);
 		}
 
-		tl = rotated[0];
-		tr = rotated[1];
-		br = rotated[2];
-		bl = rotated[3];
-
+		System.Console.WriteLine($"tl: {tl} | br:{br}");
 		verts.Append(new(tl, c, tx));
 		verts.Append(new(tr, c, texTr));
 		verts.Append(new(br, c, texBr));

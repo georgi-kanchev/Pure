@@ -122,9 +122,9 @@ public static class FlappyBird
 			if (isGameOver)
 				foreground.SetTextLine((width / 2 - GAME_OVER.Length / 2, height / 2), GAME_OVER);
 
-			Window.DrawBundleTilemap(background.ToBundle());
-			Window.DrawBundleTilemap(foreground.ToBundle());
-			Window.DrawBasicSprite((BIRD_X, birdY), isGameOver ? Tile.CAPITAL_X : birdTile, Color.Yellow, birdAngle);
+			Window.DrawBundleTiles(background.ToBundle());
+			Window.DrawBundleTiles(foreground.ToBundle());
+			Window.DrawBasicTile((BIRD_X, birdY), isGameOver ? Tile.CAPITAL_X : birdTile, Color.Yellow, birdAngle);
 
 			Window.Activate(false);
 		}
