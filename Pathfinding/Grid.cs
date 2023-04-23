@@ -15,12 +15,12 @@ public class Grid
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="Grid"/> class using the specified file path.
+	/// Initializes a new grid instance using the specified file path.
 	/// </summary>
 	/// <param name="path">The path of the file containing grid data.</param>
 	public Grid(string path) => pathfind.Load(path);
 	/// <summary>
-	/// Initializes a new instance of the <see cref="Grid"/> class using the specified size.
+	/// Initializes a new grid instance using the specified size.
 	/// </summary>
 	/// <param name="size">The size of the grid.</param>
 	public Grid((int width, int height) size) => Size = size;
@@ -35,17 +35,18 @@ public class Grid
 	/// Determines whether the cell at the specified position is solid (non-walkable).
 	/// </summary>
 	/// <param name="cell">The position of the cell to check.</param>
-	/// <returns><c>true</c> if the cell is solid; otherwise, <c>false</c>.</returns>
+	/// <returns>True if the cell is solid; otherwise, false.</returns>
 	public bool IsSolid((int x, int y) cell)
 	{
 		var n = pathfind.GetNode(cell);
 		return n == null ? true : n.isWalkable == false;
 	}
 	/// <summary>
-	/// Determines whether the cell at the specified position is an obstacle (walkable but with a non-zero penalty).
+	/// Determines whether the cell at the specified position is an obstacle 
+	/// (walkable but with a non-zero penalty).
 	/// </summary>
 	/// <param name="cell">The position of the cell to check.</param>
-	/// <returns><c>true</c> if the cell is an obstacle; otherwise, <c>false</c>.</returns>
+	/// <returns>True if the cell is an obstacle; otherwise, false.</returns>
 	public bool IsObstacle((int x, int y) cell)
 	{
 		var n = pathfind.GetNode(cell);
@@ -82,7 +83,8 @@ public class Grid
 		pathfind.SetNode(cell, penalty, false);
 	}
 	/// <summary>
-	/// Sets the penalties of the specified tile in the provided tilemap (2D array of tiles) to the given penalty value and marks the corresponding cells as obstacles.
+	/// Sets the penalties of the specified tile in the provided tilemap 
+	/// (2D array of tiles) to the given penalty value and marks the corresponding cells as obstacles.
 	/// </summary>
 	/// <param name="tile">The tile to set as an obstacle.</param>
 	/// <param name="tiles">The tilemap to use as reference.</param>
@@ -103,7 +105,8 @@ public class Grid
 	/// </summary>
 	/// <param name="start">The position of the starting cell.</param>
 	/// <param name="goal">The position of the goal cell.</param>
-	/// <returns>The list of positions representing the calculated path, or <c>null</c> if no path could be found.</returns>
+	/// <returns>Array of positions representing the calculated path, or an empty one
+	/// if no path could be found.</returns>
 	public (int x, int y)[] FindPath((int x, int y) start, (int x, int y) goal)
 	{
 		if (Size.Item1 < 1 || Size.Item2 < 1)

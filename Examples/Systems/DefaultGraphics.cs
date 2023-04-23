@@ -28,7 +28,7 @@ public static class DefaultGraphics
 			var index = tilemap.TileAt(((int)x, (int)y));
 			tilemap.SetTextLine((28, 13), $"{index}");
 
-			Window.DrawBundleTiles(tilemap.ToBundle());
+			Window.DrawTiles(tilemap.ToBundle());
 			Window.Activate(false);
 		}
 	}

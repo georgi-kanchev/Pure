@@ -17,18 +17,14 @@ public struct Direction
 
 	public bool IsNaN => float.IsNaN(X) || float.IsNaN(Y);
 
-	public Direction(float xy)
-	{
-		x = xy;
-		y = xy;
-		Normalize();
-	}
 	public Direction(float x, float y)
 	{
 		this.x = x;
 		this.y = y;
 		Normalize();
 	}
+	public Direction(float xy) : this(xy, xy) { }
+	public Direction((float x, float y) bundle) : this(bundle.x, bundle.y) { }
 
 	public float Dot(Direction targetVector)
 	{
@@ -48,6 +44,11 @@ public struct Direction
 
 		return new Direction(tpx - px, tpy - py);
 	}
+	public (float x, float y) ToBundle() => this;
+
+	public override int GetHashCode() => base.GetHashCode();
+	public override bool Equals(object? obj) => base.Equals(obj);
+	public override string ToString() => Value.ToString();
 
 	public static implicit operator Direction(int angle)
 	{
@@ -102,13 +103,6 @@ public struct Direction
 	public static Direction operator /(float a, Direction b) => new(b.X / a, b.Y / a);
 	public static bool operator ==(Direction a, Direction b) => a.Value == b.Value;
 	public static bool operator !=(Direction a, Direction b) => a.Value != b.Value;
-
-	public override int GetHashCode() => base.GetHashCode();
-	public override bool Equals(object? obj) => base.Equals(obj);
-	public override string ToString()
-	{
-		return Value.ToString();
-	}
 
 	#region Backend
 	private float x, y;

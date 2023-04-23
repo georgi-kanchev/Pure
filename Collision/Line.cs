@@ -248,6 +248,9 @@ public struct Line
 	}
 
 	/// <returns>
+	/// A bundle tuple containing the two points and the color of the line.</returns>
+	public ((float x, float y) a, (float x, float y) b, uint color) ToBundle() => this;
+	/// <returns>
 	/// A string representation of this line in the format "A[x y] B[x y]".</returns>
 	public override string ToString()
 	{
@@ -270,10 +273,6 @@ public struct Line
 	/// <returns>A tuple bundle containing the two points and the color of the line.</returns>
 	public static implicit operator ((float x, float y) a, (float x, float y) b, uint color)(Line line)
 		=> (line.A, line.B, line.Color);
-
-	/// <returns>
-	/// A tuple containing the two points and the color of the line.</returns>
-	public ((float x, float y) a, (float x, float y) b, uint color) ToBundle() => this;
 
 	#region Backend
 	private const int MAX_ITERATIONS = 1000;

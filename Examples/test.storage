@@ -1,0 +1,21 @@
+`@ bird
+    `~ Position
+        `&
+        `= 
+System.Runtime.CompilerServices.ITuple.Length 
+            `| 2
+        `= Item1 
+            `| 23
+        `= Item2 
+            `| 57
+    `~ Name
+        `| Chocho
+    `~ Size
+        `&
+        `= 
+System.Runtime.CompilerServices.ITuple.Length 
+            `| 2
+        `= Item1 
+            `| 5
+        `= Item2 
+            `| 3

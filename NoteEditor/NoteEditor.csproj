@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Window\Window.csproj" />
     <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
+    <ProjectReference Include="..\Collision\Collision.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

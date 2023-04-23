@@ -32,10 +32,25 @@ public static class FlappyBird
 		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_DEFAULT_CORNER);
 		collisionMap.AddRectangle(new((1, 1)), Tile.BORDER_DEFAULT_STRAIGHT);
 
-		InitializePipes();
-
 		Window.Create(Window.State.Windowed);
 		Window.IsRetro = true;
+
+		InitializePipes();
+
+		Tracker<string>.When("space-down", () =>
+		{
+			birdVelocity = -0.006f;
+			birdAnimation.CurrentProgress = 0;
+
+			if (isGameOver) // restart game in case it's over
+			{
+				birdY = 5f;
+				birdVelocity = 0f;
+				isGameOver = false;
+				score = 0;
+				InitializePipes();
+			}
+		});
 
 		while (Window.IsOpen) // the default game loop
 		{
@@ -43,20 +58,6 @@ public static class FlappyBird
 
 			// track the spacebar
 			Tracker<string>.Track("space-down", Keyboard.IsKeyPressed(Keyboard.Key.SPACE));
-			Tracker<string>.When("space-down", () =>
-			{
-				birdVelocity = -0.006f;
-				birdAnimation.CurrentProgress = 0;
-
-				if (isGameOver) // restart game in case it's over
-				{
-					birdY = 5f;
-					birdVelocity = 0f;
-					isGameOver = false;
-					score = 0;
-					InitializePipes();
-				}
-			});
 
 			// update some of the systems
 			Time.Update();
@@ -122,9 +123,10 @@ public static class FlappyBird
 			if (isGameOver)
 				foreground.SetTextLine((width / 2 - GAME_OVER.Length / 2, height / 2), GAME_OVER);
 
-			Window.DrawBundleTiles(background.ToBundle());
-			Window.DrawBundleTiles(foreground.ToBundle());
-			Window.DrawBasicTile((BIRD_X, birdY), isGameOver ? Tile.CAPITAL_X : birdTile, Color.Yellow, birdAngle);
+			Window.DrawTiles(background.ToBundle());
+			Window.DrawTiles(foreground.ToBundle());
+			var tile = new Tile(isGameOver ? Tile.CAPITAL_X : birdTile, Color.Yellow, birdAngle);
+			Window.DrawTile((BIRD_X, birdY), tile);
 
 			Window.Activate(false);
 		}

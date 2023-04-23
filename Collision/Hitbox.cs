@@ -43,7 +43,7 @@ public class Hitbox
 	/// <param name="path">The path to the file to load the hitbox from.</param>
 	/// <param name="position">The position of the hitbox.</param>
 	/// <param name="scale">The scale of the hitbox.</param>
-	public Hitbox(string path, (float x, float y) position = default, float scale = 1f)
+	public Hitbox(string path, (float x, float y) position, float scale = 1f)
 		: this(position, scale)
 	{
 		try
@@ -84,19 +84,19 @@ public class Hitbox
 	/// </summary>
 	/// <param name="position">The position of the hitbox.</param>
 	/// <param name="scale">The scale of the hitbox.</param>
-	public Hitbox((float x, float y) position = default, float scale = 1f)
+	public Hitbox((float x, float y) position, float scale = 1f)
 	{
 		Position = position;
 		Scale = scale;
 	}
 	/// <summary>
 	/// Initializes aa new hitbox instance with the specified 
-	/// <paramref name="rectangles"/>, <paramref name="position"/>, and <paramref name="scale"/>.
+	/// <paramref name="position"/>, <paramref name="scale"/> and <paramref name="rectangles"/>.
 	/// </summary>
-	/// <param name="rectangles">The rectangles to add to the hitbox.</param>
 	/// <param name="position">The position of the hitbox.</param>
 	/// <param name="scale">The scale of the hitbox.</param>
-	public Hitbox(Rectangle[] rectangles, (float x, float y) position = default, float scale = 1f)
+	/// <param name="rectangles">The rectangles to add to the hitbox.</param>
+	public Hitbox((float x, float y) position, float scale = 1f, params Rectangle[] rectangles)
 		: this(position, scale)
 	{
 		for (int i = 0; i < rectangles?.Length; i++)
@@ -188,20 +188,45 @@ public class Hitbox
 		return false;
 	}
 
-	/// <summary>
-	/// Implicitly converts a Rectangle array to a Hitbox object.
-	/// </summary>
-	/// <param name="rectangles">The Rectangle array to convert.</param>
-	public static implicit operator Hitbox(Rectangle[] rectangles) => new(rectangles);
-	/// <summary>
-	/// Implicitly converts a Hitbox object to a Rectangle array.
-	/// </summary>
-	/// <param name="hitbox">The Hitbox object to convert.</param>
-	public static implicit operator Rectangle[](Hitbox hitbox) => hitbox.rectangles.ToArray();
-
 	/// <returns>
 	/// An array copy of the rectangles in this hitbox collection.</returns>
-	public Rectangle[] ToArray() => this;
+	public virtual Rectangle[] ToArray() => this;
+	/// <returns>
+	/// An array copy of the rectangles in this hitbox collection, as a bundle tuple.</returns>
+	public virtual ((float x, float y) position, (float width, float height) size, uint color)[] ToBundle() => this;
+
+	/// <summary>
+	/// Implicitly converts a rectangle array to a hitbox object.
+	/// </summary>
+	/// <param name="rectangles">The rectangle array to convert.</param>
+	public static implicit operator Hitbox(Rectangle[] rectangles) => new(default, default, rectangles);
+	/// <summary>
+	/// Implicitly converts a hitbox object to a rectangle array.
+	/// </summary>
+	/// <param name="hitbox">The hitbox object to convert.</param>
+	public static implicit operator Rectangle[](Hitbox hitbox) => hitbox.rectangles.ToArray();
+	/// <summary>
+	/// Implicitly converts a hitbox object to an array of rectangle bundle tuples.
+	/// </summary>
+	/// <param name="hitbox">The hitbox object to convert.</param>
+	public static implicit operator ((float x, float y) position, (float width, float height) size, uint color)[](Hitbox hitbox)
+	{
+		var result = new ((float x, float y) position, (float width, float height) size, uint color)[hitbox.rectangles.Count];
+		for (int i = 0; i < result.Length; i++)
+			result[i] = hitbox.rectangles[i];
+		return result;
+	}
+	/// <summary>
+	/// Implicitly converts an array of rectangle bundle tuples to a hitbox object.
+	/// </summary>
+	/// <param name="rectangles">The array of rectangle bundles to convert.</param>
+	public static implicit operator Hitbox(((float x, float y) position, (float width, float height) size, uint color)[] rectangles)
+	{
+		var result = new Rectangle[rectangles.Length];
+		for (int i = 0; i < result.Length; i++)
+			result[i] = rectangles[i];
+		return result;
+	}
 
 	#region Backend
 	// save format

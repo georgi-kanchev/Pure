@@ -5,8 +5,6 @@ public struct Angle
 	public static Angle NaN => float.NaN;
 	public bool IsNaN => float.IsNaN(Value);
 
-	public float Radians => MathF.PI / 180f * Value;
-
 	public Angle(float degrees)
 	{
 		value = degrees;
@@ -59,6 +57,12 @@ public struct Angle
 		return radians * (180f / MathF.PI);
 	}
 
+	public float ToRadians() => MathF.PI / 180f * Value;
+	public override string ToString()
+	{
+		return Value.ToString() + "°";
+	}
+
 	public static implicit operator Angle((int x, int y) direction)
 	{
 		var result = MathF.Atan2(direction.Item2, direction.Item1) * (180f / MathF.PI);
@@ -96,10 +100,7 @@ public struct Angle
 		return angle.value;
 	}
 
-	public override string ToString()
-	{
-		return Value.ToString() + "°";
-	}
+	// no need of operator overloading since it implicitly casts to int/float
 
 	#region Backend
 	private float Value

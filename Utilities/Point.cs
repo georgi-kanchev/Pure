@@ -16,21 +16,20 @@ public struct Point
 		get => val.Item2;
 		set => val = (val.Item1, value);
 	}
+	public uint Color { get; set; }
 
 	public bool IsNaN => float.IsNaN(X) || float.IsNaN(Y);
 
-	public Point(float xy)
-	{
-		val = (xy, xy);
-		X = xy;
-		Y = xy;
-	}
-	public Point(float x, float y)
+	public Point(float x, float y, uint color = uint.MaxValue)
 	{
 		val = (x, y);
+		Color = color;
 		X = x;
 		Y = y;
 	}
+	public Point(float xy, uint color = uint.MaxValue) : this(xy, xy, color) { }
+	public Point((float x, float y) position, uint color = uint.MaxValue) : this(position.x, position.y, color) { }
+	public Point(((float x, float y) position, uint color) bundle) : this(bundle.position.x, bundle.position.y, bundle.color) { }
 
 	public Point ToGrid(Point gridSize)
 	{
@@ -109,22 +108,21 @@ public struct Point
 		return (x, y);
 	}
 
-	public static implicit operator Point((int x, int y) value)
+	public ((float x, float y) position, uint color) ToBundle() => this;
+
+	public override int GetHashCode() => base.GetHashCode();
+	public override bool Equals(object? obj) => base.Equals(obj);
+	public override string ToString() => val.ToString();
+
+	public static implicit operator Point((int x, int y) position) => new(position.Item1, position.Item2);
+	public static implicit operator (int x, int y)(Point point)
 	{
-		return new Point(value.Item1, value.Item2);
+		return ((int)MathF.Round(point.val.Item1), (int)MathF.Round(point.val.Item2));
 	}
-	public static implicit operator (int x, int y)(Point vector)
-	{
-		return ((int)MathF.Round(vector.val.Item1), (int)MathF.Round(vector.val.Item2));
-	}
-	public static implicit operator Point((float x, float y) value)
-	{
-		return new Point(value.Item1, value.Item2);
-	}
-	public static implicit operator (float x, float y)(Point vector)
-	{
-		return vector.val;
-	}
+	public static implicit operator Point((float x, float y) position) => new(position.Item1, position.Item2);
+	public static implicit operator (float x, float y)(Point point) => point.val;
+	public static implicit operator Point(((float x, float y) position, uint color) bundle) => new(bundle);
+	public static implicit operator ((float x, float y) position, uint color)(Point point) => point.ToBundle();
 
 	public static Point operator +(Point a, Point b) => new(a.X + b.X, a.Y + b.Y);
 	public static Point operator -(Point a, Point b) => new(a.X - b.X, a.Y - b.Y);
@@ -140,13 +138,6 @@ public struct Point
 	public static Point operator /(float a, Point b) => new(b.X / a, b.Y / a);
 	public static bool operator ==(Point a, Point b) => a.val == b.val;
 	public static bool operator !=(Point a, Point b) => a.val != b.val;
-
-	public override int GetHashCode() => base.GetHashCode();
-	public override bool Equals(object? obj) => base.Equals(obj);
-	public override string ToString()
-	{
-		return val.ToString();
-	}
 
 	#region Backend
 	private (float, float) val;

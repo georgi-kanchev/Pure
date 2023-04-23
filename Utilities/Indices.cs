@@ -37,6 +37,11 @@ public struct Indices
 
 		return (index % size.Item1, index / size.Item1);
 	}
+	public (int x, int y) ToBundle() => this;
+
+	public override int GetHashCode() => base.GetHashCode();
+	public override bool Equals(object? obj) => base.Equals(obj);
+	public override string ToString() => val.ToString();
 
 	public static implicit operator Indices((int x, int y) value)
 	{
@@ -69,13 +74,6 @@ public struct Indices
 	public static Indices operator /(int a, Indices b) => new(b.X / a, b.Y / a);
 	public static bool operator ==(Indices a, Indices b) => a.val == b.val;
 	public static bool operator !=(Indices a, Indices b) => a.val != b.val;
-
-	public override int GetHashCode() => base.GetHashCode();
-	public override bool Equals(object? obj) => base.Equals(obj);
-	public override string ToString()
-	{
-		return val.ToString();
-	}
 
 	#region Backend
 	private (int, int) val;

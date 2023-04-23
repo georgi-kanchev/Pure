@@ -244,6 +244,30 @@ public class Map : Hitbox
 		return false;
 	}
 
+	/// <summary>
+	/// Implicitly converts a map object to a rectangle array.
+	/// </summary>
+	/// <param name="map">The map object to convert.</param>
+	public static implicit operator Rectangle[](Map map)
+	{
+		var result = new Rectangle[map.RectangleCount];
+		Array.Copy(map.rectangles.ToArray(), 0, result, 0, map.rectangles.Count);
+		Array.Copy(map.cellRects.ToArray(), 0, result, map.rectangles.Count, map.cellRects.Count);
+
+		return map.rectangles.ToArray();
+	}
+	/// <summary>
+	/// Implicitly converts a map object to an array of rectangle bundles.
+	/// </summary>
+	/// <param name="hitbox">The map object to convert.</param>
+	public static implicit operator ((float x, float y) position, (float width, float height) size, uint color)[](Map map)
+	{
+		var result = new ((float x, float y) position, (float width, float height) size, uint color)[map.RectangleCount];
+		for (int i = 0; i < result.Length; i++)
+			result[i] = map[i];
+		return result;
+	}
+
 	#region Backend
 	// save format in sectors
 	// [amount of bytes]		- data

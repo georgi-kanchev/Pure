@@ -13,18 +13,24 @@ public struct Rectangle
 	/// Gets or sets the size of the rectangle.
 	/// </summary>
 	public (float width, float height) Size { get; set; }
+	/// <summary>
+	/// Gets or sets the color of the rectangle.
+	/// </summary>
+	public uint Color { get; set; }
 
 	/// <summary>
 	/// Initializes a new rectangle instance with the specified 
-	/// <paramref name="size"/> and <paramref name="position"/>.
+	/// <paramref name="position"/>, <paramref name="size"/> and <paramref name="color"/>.
 	/// </summary>
-	/// <param name="size">The size of the rectangle.</param>
 	/// <param name="position">The position of the top-left corner of the rectangle. 
 	/// The default value is (0, 0).</param>
-	public Rectangle((float width, float height) size, (float x, float y) position = default)
+	/// <param name="size">The size of the rectangle.</param>
+	/// <param name="color">The color of the rectangle.</param>
+	public Rectangle((float width, float height) size, (float x, float y) position = default, uint color = uint.MaxValue)
 	{
 		Position = position;
 		Size = size;
+		Color = color;
 	}
 
 	/// <param name="hitbox">
@@ -82,7 +88,6 @@ public struct Rectangle
 		var containsY = y <= py && py <= y + h;
 		return containsX && containsY;
 	}
-
 	/// <param name="line">
 	/// The line to check.</param>
 	/// <returns>True if the <paramref name="line"/> is contained within this
@@ -93,6 +98,10 @@ public struct Rectangle
 	}
 
 	/// <returns>
+	/// A bundle tuple containing the position, size and the color of the rectangle.</returns>
+	public ((float x, float y) position, (float width, float height) size, uint color) ToBundle() => this;
+
+	/// <returns>
 	/// A string that represents this rectangle. 
 	/// The string has the format: "Position[x y] Size[width height]".</returns>
 	public override string ToString()
@@ -101,4 +110,19 @@ public struct Rectangle
 		var (w, h) = Size;
 		return $"{nameof(Position)}[{x} {y}] {nameof(Size)}[{w} {h}]";
 	}
+
+	/// <summary>
+	/// Implicitly converts a bundle tuple of position, size and color into a rectangle.
+	/// </summary>
+	/// <param name="bundle">The bundle tuple to convert.</param>
+	/// <returns>A new rectangle instance.</returns>
+	public static implicit operator Rectangle(((float x, float y) position, (float width, float height) size, uint color) bundle)
+		=> new(bundle.position, bundle.size, bundle.color);
+	/// <summary>
+	/// Implicitly converts a rectangle into a bundle tuple of position, size and color.
+	/// </summary>
+	/// <param name="line">The rectangle to convert.</param>
+	/// <returns>A bundle tuple containing the position, size and color of the rectangle.</returns>
+	public static implicit operator ((float x, float y) position, (float width, float height) size, uint color)(Rectangle rectangle)
+		=> (rectangle.Position, rectangle.Size, rectangle.Color);
 }

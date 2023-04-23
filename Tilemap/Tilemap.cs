@@ -496,10 +496,6 @@ public class Tilemap
 		};
 
 	private readonly Tile[,] data;
-	//private readonly int[,] tiles;
-	//private readonly uint[,] tints;
-	//private readonly sbyte[,] angles;
-	//private readonly (bool, bool)[,] flips;
 
 	private bool IndicesAreValid((int, int) indices)
 	{

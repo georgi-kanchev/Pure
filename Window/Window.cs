@@ -201,32 +201,39 @@ public static class Window
 	}
 
 
-	public static void DrawBasicPoint((float x, float y) position, uint color)
-	{
-		TryNoWindowException();
-		Vertices.QueuePoint(position, color);
-	}
-
-	public static void DrawBasicRectangle((float x, float y) position, (float width, float height) size, uint color = uint.MaxValue)
-	{
-		TryNoWindowException();
-		Vertices.QueueRectangle(position, size, color);
-	}
-
-	public static void DrawBasicLine((float x, float y) start, (float x, float y) end, uint color)
-	{
-		TryNoWindowException();
-		Vertices.QueueLine(start, end, color);
-	}
-
-	public static void DrawBasicTile((float x, float y) position, int tile, uint tint = uint.MaxValue, sbyte angle = 0, (int width, int height) size = default)
+	public static void DrawPoints(params ((float x, float y) position, uint color)[] points)
 	{
 		TryNoWindowException();
 
-		Vertices.QueueTile(position, tile, tint, angle, size);
+		for (int i = 0; i < points?.Length; i++)
+			Vertices.QueuePoint(points[i].position, points[i].color);
 	}
 
-	public static void DrawBundleTiles((int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tiles)
+	public static void DrawRectangles(params ((float x, float y) position, (float width, float height) size, uint color)[] rectangles)
+	{
+		TryNoWindowException();
+
+		for (int i = 0; i < rectangles?.Length; i++)
+			Vertices.QueueRectangle(rectangles[i].position, rectangles[i].size, rectangles[i].color);
+	}
+
+	public static void DrawLines(params ((float x, float y) start, (float x, float y) end, uint color)[] lines)
+	{
+		TryNoWindowException();
+
+		for (int i = 0; i < lines?.Length; i++)
+			Vertices.QueueLine(lines[i].start, lines[i].end, lines[i].color);
+	}
+
+
+	public static void DrawTile((float x, float y) position, (int id, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips) tile, (int width, int height) size = default)
+	{
+		TryNoWindowException();
+		var (id, tint, angle, flips) = tile;
+		Vertices.QueueTile(position, id, tint, angle, size, flips);
+	}
+
+	public static void DrawTiles((int id, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tiles)
 	{
 		TryNoWindowException();
 

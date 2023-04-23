@@ -2,6 +2,7 @@
 
 using Pure.Window;
 using Pure.Tilemap;
+using Pure.Collision;
 
 public class NoteEditor
 {
@@ -12,6 +13,8 @@ public class NoteEditor
 		var (aw, ah) = Window.MonitorAspectRatio;
 		var tilemap = new Tilemap((aw * 3, ah * 3));
 		var (w, h) = tilemap.Size;
+
+		var map = new Map("");
 
 		tilemap.SetBorder((w - 5, 0), (5, h), Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT);
 		while (Window.IsOpen)
@@ -27,7 +30,8 @@ public class NoteEditor
 			{
 				;
 			}
-			Window.DrawBasicTile(hov, Tile.SHADE_OPAQUE, tint: 159233698, size: (1, 1), angle: 0);
+			var tile = new Tile(Tile.SHADE_OPAQUE, 159233698);
+			Window.DrawTile(hov, tile);
 
 			Window.Activate(false);
 		}

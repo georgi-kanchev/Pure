@@ -85,7 +85,7 @@ internal static class Vertices
 			}
 		}
 	}
-	public static void QueueTile((float, float) position, int tile, uint tint, sbyte angle, (int, int) size)
+	public static void QueueTile((float, float) position, int tile, uint tint, sbyte angle, (int, int) size, (bool, bool) flips)
 	{
 		TryInitQueue();
 
@@ -110,17 +110,7 @@ internal static class Vertices
 		if (h < 0)
 			FlipHorizontally(tiles);
 
-		var rotated = Rotate(tiles, -angle);
-
-		//for (int j = 0; j < rotated.GetLength(1); j++)
-		//for (int i = 0; i < rotated.GetLength(0); i++)
-		{
-			// in case offset in position is needed
-			// (-x, -y) resulting in going backwards toward topleft, use these:
-			// var (xi, yj) = (w < 0 ? -i : i, h < 0 ? -j : j);
-			// var (ri, rj) = (w < 0 ? rotated.GetLength(0) - i - 1 : i, h < 0 ? rotated.GetLength(1) - j - 1 : j);
-			QueueSingleSprite((x, y), tile, tint, angle, (w, h));
-		}
+		QueueSingleSprite((x, y), tile, tint, angle, (w, h));
 	}
 	public static void QueueTilemap((int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tilemap)
 	{
@@ -467,7 +457,6 @@ internal static class Vertices
 			(texTr, texBr) = (texBr, texTr);
 		}
 
-		System.Console.WriteLine($"tl: {tl} | br:{br}");
 		verts.Append(new(tl, c, tx));
 		verts.Append(new(tr, c, texTr));
 		verts.Append(new(br, c, texBr));

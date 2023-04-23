@@ -1,10 +1,22 @@
 ﻿namespace Pure.Storage;
 
 using System.Globalization;
+using System.IO.Compression;
 using System.Reflection;
 
+/*
+/// <summary>
+/// Provides a means to store and retrieve objects associated with string identifiers.
+/// Supports saving and loading from a file in two custom formats, one that can be easily read 
+/// and edited by hand, while the other is a binary format that favors disk space.
+/// </summary>
 public class Storage
 {
+	/// <summary>
+	/// Gets or sets the object with the specified identifier in the storage.
+	/// </summary>
+	/// <param name="id">The identifier of the object.</param>
+	/// <returns>The object with the specified identifier.</returns>
 	public object this[string id]
 	{
 		set
@@ -53,77 +65,86 @@ public class Storage
 		}
 	}
 
+	/// <summary>
+	/// Initializes a new empty storage instance.
+	/// </summary>
 	public Storage() { }
-	public Storage(string path)
+	/// <summary>
+	/// Initializes a new storage instance by loading data from a file.
+	/// </summary>
+	/// <param name="path">The path to the file to load from.</param>
+	/// <param name="isBinary">Indicates whether the file format is binary (true) or text (false).</param>
+	public Storage(string path, bool isBinary = false)
 	{
 		if (File.Exists(path) == false)
 			return;
 
-		var file = File.ReadAllText(path);
+		var file = "";
 
-		if (file.Length == 0)
-			return;
-
-		var split = Trim(file).Split(OBJ, StringSplitOptions.RemoveEmptyEntries);
-
-		data.Clear();
-		for (int i = 0; i < split?.Length; i++)
+		//try
 		{
-			var props = split[i].Split(OBJ_PROP, StringSplitOptions.RemoveEmptyEntries);
-			var instanceName = props[0];
-
-			for (int j = 1; j < props?.Length; j++)
-				CacheProp(instanceName, props[j]);
-		}
-	}
-
-	public bool HasID(string id)
-	{
-		return id != null && data.ContainsKey(id);
-	}
-	public void Save(string path, bool isDataFormatted = true)
-	{
-		var result = isDataFormatted ? FILE_HEADER + Environment.NewLine : "";
-		var newLine = isDataFormatted ? Environment.NewLine : "";
-		var space = isDataFormatted ? " " : "";
-		var tab = isDataFormatted ? new string(' ', 4) : "";
-
-		foreach (var kvp in data)
-		{
-			result += OBJ + space + kvp.Key;
-
-			foreach (var kvp2 in kvp.Value)
+			if (isBinary)
 			{
-				var value = kvp2.Value;
-				var type = value.GetType();
+				var rawBytes = Decompress(File.ReadAllBytes(path));
+				var base64 = Convert.ToBase64String(rawBytes);
+				var data = Base64Decode(base64);
 
-				result += newLine + tab + OBJ_PROP + space + kvp2.Key;
+				file = data;
+			}
+			else
+				file = File.ReadAllText(path);
 
-				if (type.IsArray)
-				{
-					var array = (Array)value;
-					var elementType = type.GetElementType();
-					var isStruct = elementType != null && IsStructType(elementType);
+			if (file.Length == 0)
+				return;
 
-					for (int i = 0; i < array.Length; i++)
-					{
-						var curValue = array.GetValue(i);
+			var split = Trim(file).Split(OBJ, StringSplitOptions.RemoveEmptyEntries);
 
-						result += newLine + tab + tab + (isStruct ? "" : VALUE);
-						if (curValue != null)
-							AddToString(ref result, curValue, false, true,
-								isFormatted: isDataFormatted);
-					}
-					continue;
-				}
-				result += newLine + tab + tab;
+			data.Clear();
+			for (int i = 0; i < split?.Length; i++)
+			{
+				var props = split[i].Split(OBJ_PROP, StringSplitOptions.RemoveEmptyEntries);
+				var instanceName = props[0];
 
-				AddToString(ref result, value, isFormatted: isDataFormatted);
+				for (int j = 1; j < props?.Length; j++)
+					CacheProp(instanceName, props[j]);
 			}
 		}
-
-		File.WriteAllText(path, result);
+		//catch (System.Exception)
+		//{
+		//	throw new Exception($"Could not load storage file at '{path}'.");
+		//}
 	}
+
+	/// <summary>
+	/// Saves the storage data to a file.
+	/// </summary>
+	/// <param name="path">The path of the file to save.</param>
+	/// <param name="isFormatted">Whether to format the data in a readable way.</param>
+	public void Save(string path, bool isFormatted = true)
+	{
+		File.WriteAllText(path, GetSaveData(isFormatted));
+	}
+	/// <summary>
+	/// Saves the storage contents as a binary file.
+	/// </summary>
+	/// <param name="path">The path to save the file to.</param>
+	public void SaveAsBinary(string path)
+	{
+		var data = GetSaveData(false);
+		var base64 = Base64Encode(data);
+		var rawBytes = Convert.FromBase64String(base64);
+
+		File.WriteAllBytes(path, Compress(rawBytes));
+	}
+
+	/// <summary>
+	/// Populates the properties and fields of the specified <paramref name="instance"/> with the 
+	/// data from the storage object with the specified identifier. The members of the
+	/// <paramref name="instance"/> with unsupported types will be skipped. Supported types are:
+	/// all primitive value types, structs made of primitive value types and 1D arrays of those types.
+	/// </summary>
+	/// <param name="instance">The instance to populate.</param>
+	/// <param name="id">The identifier of the storage object.</param>
 	public void Populate(object instance, string id)
 	{
 		if (instance == null || data.ContainsKey(id) == false)
@@ -138,6 +159,15 @@ public class Storage
 		for (int i = 0; i < fields.Length; i++)
 			if (fields[i].Name.Contains('<') == false)
 				PopulateMember(fields[i], id, instance);
+	}
+
+	/// <param name="id">
+	/// The identifier of the object.</param>
+	/// <returns>True if an object with the specified identifier
+	/// exists in the storage, false otherwise.</returns>
+	public bool HasObject(string id)
+	{
+		return id != null && data.ContainsKey(id);
 	}
 
 	#region Backend
@@ -163,6 +193,49 @@ public class Storage
 ";
 
 	private readonly Dictionary<string, Dictionary<string, object>> data = new();
+
+	private string GetSaveData(bool isFormatted)
+	{
+		var result = isFormatted ? FILE_HEADER + Environment.NewLine : "";
+		var newLine = isFormatted ? Environment.NewLine : "";
+		var space = isFormatted ? " " : "";
+		var tab = isFormatted ? new string(' ', 4) : "";
+
+		foreach (var kvp in data)
+		{
+			result += OBJ + space + kvp.Key;
+
+			foreach (var kvp2 in kvp.Value)
+			{
+				var value = kvp2.Value;
+				var type = value.GetType();
+
+				result += newLine + tab + OBJ_PROP + space + kvp2.Key;
+
+				if (type.IsArray)
+				{
+					var array = (Array)value;
+					var elementType = type.GetElementType();
+					var isStruct = elementType != null && IsStructType(elementType);
+
+					for (int i = 0; i < array.Length; i++)
+					{
+						var curValue = array.GetValue(i);
+
+						result += newLine + tab + tab + (isStruct ? "" : VALUE);
+						if (curValue != null)
+							AddToString(ref result, curValue, false, true,
+								isFormatted: isFormatted);
+					}
+					continue;
+				}
+				result += newLine + tab + tab;
+
+				AddToString(ref result, value, isFormatted: isFormatted);
+			}
+		}
+		return result;
+	}
 
 	private void AddToString(ref string result, object value, bool isInStruct = false, bool isInArray = false,
 		bool isFormatted = true)
@@ -299,6 +372,53 @@ public class Storage
 		prop?.SetValue(instance, v);
 		field?.SetValue(instance, v);
 	}
+	private void CacheProp(string instanceName, string prop)
+	{
+		if (data.ContainsKey(instanceName) == false)
+			data[instanceName] = new();
+
+		if (prop.Contains(STRUCT))
+		{
+			var struc = prop.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
+			var structPropName = struc[0];
+
+			var val = "";
+			for (int i = 1; i < struc.Length; i++)
+			{
+				var sep = i < struc.Length - 1 ? STRUCT : "";
+				val += struc[i]
+					.Replace(TAB, "\t")
+					.Replace(NEW_LINE, Environment.NewLine)
+					.Replace(SPACE, " ") +
+					sep;
+			}
+
+			data[instanceName][structPropName] = val;
+			return;
+		}
+
+		var values = prop.Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
+		if (values.Length < 2)
+			return;
+
+		var name = values[0];
+		var finalValues = new string[values.Length - 1];
+		for (int i = 1; i < values.Length; i++)
+			finalValues[i - 1] = values[i]
+				.Replace(TAB, "\t")
+				.Replace(NEW_LINE, Environment.NewLine)
+				.Replace(SPACE, " ");
+
+		object finalValue = finalValues.Length == 1 ? finalValues[0] : finalValues;
+		if (finalValue != null)
+			data[instanceName][name] = finalValue;
+	}
+
+	private static string Trim(string text)
+	{
+		return text.Replace("\t", "").Replace(" ", "").Replace(Environment.NewLine, "");
+	}
+
 	private static object? ParseStruct(Type structType, string str)
 	{
 		var structInstance = Activator.CreateInstance(structType);
@@ -339,55 +459,7 @@ public class Storage
 
 		return default;
 	}
-	private void CacheProp(string instanceName, string prop)
-	{
-		if (prop.Contains(STRUCT))
-		{
-			var struc = prop.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
-			var structPropName = struc[0];
 
-			var val = "";
-			for (int i = 1; i < struc.Length; i++)
-			{
-				var sep = i < struc.Length - 1 ? STRUCT : "";
-				val += struc[i]
-					.Replace(TAB, "\t")
-					.Replace(NEW_LINE, Environment.NewLine)
-					.Replace(SPACE, " ") +
-					sep;
-			}
-
-			data[instanceName][structPropName] = val;
-			return;
-		}
-
-		var values = prop.Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-		if (values.Length < 2)
-			return;
-
-		var name = values[0];
-		var finalValues = new string[values.Length - 1];
-		for (int i = 1; i < values.Length; i++)
-			finalValues[i - 1] = values[i]
-				.Replace(TAB, "\t")
-				.Replace(NEW_LINE, Environment.NewLine)
-				.Replace(SPACE, " ");
-
-		if (data.ContainsKey(instanceName) == false)
-			data[instanceName] = new();
-
-		object finalValue = finalValues.Length == 1 ? finalValues[0] : finalValues;
-		if (finalValue != null)
-			data[instanceName][name] = finalValue;
-	}
-	private static bool IsTypeSupported(Type type)
-	{
-		return type.IsClass == false || type.IsArray || type == typeof(string);
-	}
-	private static string Trim(string text)
-	{
-		return text.Replace("\t", "").Replace(" ", "").Replace(Environment.NewLine, "");
-	}
 	private static bool IsNumericType(Type type)
 	{
 		return Type.GetTypeCode(type) switch
@@ -411,5 +483,45 @@ public class Storage
 		return type.IsValueType && type.IsEnum == false && type.IsPrimitive == false &&
 			type.IsEquivalentTo(typeof(decimal)) == false;
 	}
+	private static bool IsTypeSupported(Type type)
+	{
+		var isArray = false;
+		if (type == typeof(Array))
+		{
+			var arrayInstance = (Array?)Activator.CreateInstance(type);
+			isArray = arrayInstance?.Rank >= 2;
+		}
+		return type.IsClass == false || isArray || type == typeof(string);
+	}
+
+	private static byte[] Compress(byte[] data)
+	{
+		var output = new MemoryStream();
+		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+			stream.Write(data, 0, data.Length);
+
+		return output.ToArray();
+	}
+	private static byte[] Decompress(byte[] data)
+	{
+		var input = new MemoryStream(data);
+		var output = new MemoryStream();
+		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+			stream.CopyTo(output);
+
+		return output.ToArray();
+	}
+
+	private static string Base64Encode(string plainText)
+	{
+		var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+		return System.Convert.ToBase64String(plainTextBytes);
+	}
+	private static string Base64Decode(string base64EncodedData)
+	{
+		var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
+		return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+	}
 	#endregion
 }
+*/

@@ -194,7 +194,11 @@ public static class Mouse
 
 		Vertices.graphicsPath = "default";
 		Vertices.tileSize = (8, 8);
-		Window.DrawBasicTile((x - offX, y - offY), 442 + CursorGraphics, CursorColor);
+
+		(int id, uint tint, sbyte ang, (bool h, bool v) fl) tile = default;
+		tile.id = 442 + CursorGraphics;
+		tile.tint = CursorColor;
+		Window.DrawTile((x - offX, y - offY), tile);
 	}
 	internal static void CancelInput() => pressed.Clear();
 	#endregion

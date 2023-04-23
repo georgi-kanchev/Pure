@@ -63,6 +63,9 @@ public struct Color
 
 		UpdateValue();
 	}
+	public Color((byte red, byte green, byte blue, byte alpha) bundle) :
+		this(bundle.red, bundle.green, bundle.blue, bundle.alpha)
+	{ }
 
 	public Color ToDark(float unit = 0.5f)
 	{
@@ -81,6 +84,15 @@ public struct Color
 		return this;
 	}
 
+	public (byte red, byte green, byte blue, byte alpha) ToBundle() => this;
+
+	public override int GetHashCode() => base.GetHashCode();
+	public override bool Equals(object? obj) => base.Equals(obj);
+	public override string ToString()
+	{
+		return $"{r} {g} {b} {a}";
+	}
+
 	public static implicit operator Color((byte r, byte g, byte b, byte a) rgba)
 	{
 		return new Color(rgba.r, rgba.g, rgba.b, rgba.a);
@@ -94,13 +106,6 @@ public struct Color
 
 	public static bool operator ==(Color a, Color b) => a.v == b.v;
 	public static bool operator !=(Color a, Color b) => a.v != b.v;
-
-	public override int GetHashCode() => base.GetHashCode();
-	public override bool Equals(object? obj) => base.Equals(obj);
-	public override string ToString()
-	{
-		return $"{r} {g} {b} {a}";
-	}
 
 	#region Backend
 	private byte r, g, b, a;
