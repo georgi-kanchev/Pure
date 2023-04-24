@@ -1,16 +1,38 @@
 ﻿namespace Pure.Tracker;
 
+/// <summary>
+/// Tracks conditions and triggers methods associated with a unique identifier at certain times.
+/// </summary>
+/// <typeparam name="T">The type of the unique identifier.</typeparam>
 public static class Tracker<T> where T : notnull
 {
+	/// <summary>
+	/// Subscribes a <paramref name="method"/> to continuously get called
+	/// when triggered by the unique identifier.
+	/// </summary>
+	/// <param name="uniqueID">The unique identifier associated with the <paramref name="method"/>.</param>
+	/// <param name="method">The method to subscribe.</param>
 	public static void While(T uniqueID, Action method)
 	{
 		Subscribe(uniqueID, method, continuous);
 	}
+	/// <summary>
+	/// Subscribes a <paramref name="method"/> to get called
+	/// once when triggered by the unique identifier.
+	/// </summary>
+	/// <param name="uniqueID">The unique identifier associated with the <paramref name="method"/>.</param>
+	/// <param name="method">The method to subscribe.</param>
 	public static void When(T uniqueID, Action method)
 	{
 		Subscribe(uniqueID, method, once);
 	}
 
+	/// <summary>
+	/// Tracks the <paramref name="method"/> of the unique identifier and 
+	/// triggers any subscribed methods accordingly.
+	/// </summary>
+	/// <param name="uniqueID">The unique identifier to track.</param>
+	/// <param name="condition">The condition to track.</param>
 	public static void Track(T uniqueID, bool condition)
 	{
 		var isContinuous = continuous.ContainsKey(uniqueID);

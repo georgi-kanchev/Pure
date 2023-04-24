@@ -1,31 +1,84 @@
 ﻿namespace Pure.Tilemap;
 
+/// <summary>
+/// Represents a tile in a tilemap.
+/// </summary>
 public struct Tile
 {
+	/// <summary>
+	/// Gets or sets the identifier of the tile.
+	/// </summary>
 	public int ID { get; set; }
-	public uint Color { get; set; }
+	/// <summary>
+	/// Gets or sets the tint of the tile.
+	/// </summary>
+	public uint Tint { get; set; }
+	/// <summary>
+	/// Gets or sets the amount of 90 degree rotations, wrapping in intervals of 4.
+	/// Positive values indicate clockwise rotation,
+	/// negative values indicate counter-clockwise rotation.
+	/// </summary>
 	public sbyte Angle { get; set; }
-	public (bool isFlippedH, bool isFlippedV) Flips { get; set; }
+	/// <summary>
+	/// Gets or sets a tuple indicating whether the tile is flipped horizontally or vertically.
+	/// </summary>
+	public (bool isHorizontal, bool isVertical) Flips { get; set; }
 
-	public Tile(int id, uint color = uint.MaxValue, sbyte angle = default, (bool isFlippedH, bool isFlippedV) flips = default)
+	/// <summary>
+	/// Initializes a new tile instance with the specified identifier, 
+	/// <paramref name="tint"/>, <paramref name="angle"/>, and <paramref name="flips"/>.
+	/// </summary>
+	/// <param name="id">The identifier of the tile.</param>
+	/// <param name="tint">The tint of the tile (defaults to white).</param>
+	/// <param name="angle">The amount of 90 degree rotations, wrapping in intervals of 4.
+	/// Positive values indicate clockwise rotation,
+	/// negative values indicate counter-clockwise rotation.</param>
+	/// <param name="flips">A tuple indicating whether the tile is flipped 
+	/// horizontally or vertically.</param>
+	public Tile(int id, uint tint = uint.MaxValue, sbyte angle = default, (bool isHorizontal, bool isVertical) flips = default)
 	{
 		ID = id;
-		Color = color;
+		Tint = tint;
 		Angle = angle;
 		Flips = flips;
 	}
 
-	public static implicit operator Tile(int id) => new(id);
-	public static implicit operator Tile((int id, uint color, sbyte angle, (bool isFlippedH, bool isFlippedV) flips) tuple)
+	/// <returns>
+	/// A bundle tuple containing the identifier, tint, angle and flips of the tile.</returns>
+	public (int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips) ToBundle() => this;
+	/// <returns>
+	/// A string representation of this tile in the format of its bundle tuple.".</returns>
+	public override string ToString()
 	{
-		var (tile, color, angle, flips) = tuple;
-		return new(tile, color, angle, flips);
+		return $"ID({ID}) Tint({Tint}) Angle({Angle}) Flips{Flips}";
 	}
-	public static implicit operator (int id, uint color, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)(Tile tile)
+
+	/// <summary>
+	/// Implicitly converts an identifier to a white, not rotated and not flipped tile.
+	/// </summary>
+	/// <param name="id">The identifier of the tile.</param>
+	public static implicit operator Tile(int id) => new(id);
+	/// <summary>
+	/// Implicitly converts a bundle tuple of values to a tile with the 
+	/// specified identifier, tint, angle, and flips.
+	/// </summary>
+	/// <param name="bundle">A bundle tuple of values representing the identifier, 
+	/// tint, angle, and flips of the tile.</param>
+	public static implicit operator Tile((int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips) bundle)
+	{
+		var (tile, tint, angle, flips) = bundle;
+		return new(tile, tint, angle, flips);
+	}
+	/// <summary>
+	/// Implicitly converts a tile to a bundle tuple of values representing its 
+	/// identifier, tint, angle, and flips.
+	/// </summary>
+	/// <param name="tile">The tile to convert.</param>
+	public static implicit operator (int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips)(Tile tile)
 	{
 		return new(
 			tile.ID,
-			tile.Color,
+			tile.Tint,
 			tile.Angle,
 			tile.Flips);
 	}

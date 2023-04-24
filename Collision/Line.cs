@@ -251,12 +251,10 @@ public struct Line
 	/// A bundle tuple containing the two points and the color of the line.</returns>
 	public ((float x, float y) a, (float x, float y) b, uint color) ToBundle() => this;
 	/// <returns>
-	/// A string representation of this line in the format "A[x y] B[x y]".</returns>
+	/// A string representation of this line in the format of its bundle tuple.".</returns>
 	public override string ToString()
 	{
-		var (x1, y1) = A;
-		var (x2, y2) = B;
-		return $"{nameof(A)}[{x1} {y1}] {nameof(B)}[{x2} {y2}]";
+		return $"A{A} B{B} Color{Color}";
 	}
 
 	/// <summary>

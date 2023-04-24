@@ -6,14 +6,22 @@ using SFML.Window;
 
 using System.Diagnostics.CodeAnalysis;
 
+/// <summary>
+/// Provides access to an OS window and its properties.
+/// </summary>
 public static class Window
 {
-	public enum State
+	/// <summary>
+	/// Possible window modes.
+	/// </summary>
+	public enum Mode
 	{
 		Windowed, Borderless, Fullscreen
 	}
 
-
+	/// <summary>
+	/// Gets or sets a value indicating whether the window is open.
+	/// </summary>
 	public static bool IsOpen
 	{
 		get
@@ -27,7 +35,9 @@ public static class Window
 				Close();
 		}
 	}
-
+	/// <summary>
+	/// Gets or sets the title of the window.
+	/// </summary>
 	public static string Title
 	{
 		get
@@ -46,7 +56,9 @@ public static class Window
 			window.SetTitle(title);
 		}
 	}
-
+	/// <summary>
+	/// Gets the size of the window.
+	/// </summary>
 	public static (int width, int height) Size
 	{
 		get
@@ -55,7 +67,9 @@ public static class Window
 			return ((int)window.Size.X, (int)window.Size.Y);
 		}
 	}
-
+	/// <summary>
+	/// Gets a value indicating whether the window is focused.
+	/// </summary>
 	public static bool IsFocused
 	{
 		get
@@ -64,7 +78,9 @@ public static class Window
 			return window.HasFocus();
 		}
 	}
-
+	/// <summary>
+	/// Gets or sets a value indicating whether the window should use retro TV graphics.
+	/// </summary>
 	public static bool IsRetro
 	{
 		get
@@ -82,22 +98,31 @@ public static class Window
 			isRetro = value;
 		}
 	}
-
+	/// <summary>
+	/// Gets the aspect ratio of the monitor the window was created on.
+	/// </summary>
 	public static (int width, int height) MonitorAspectRatio
 	{
 		get { TryNoWindowException(); return aspectRatio; }
 	}
+	/// <summary>
+	/// Gets the mode that the window was created with.
+	/// </summary>
+	public static Mode InitialMode { get; private set; }
 
-	public static State InitialState { get; private set; }
-
-
+	/// <summary>
+	/// Creates the window with the specified <paramref name="mode"/>
+	/// on the specified <paramref name="monitor"/>.
+	/// </summary>
+	/// <param name="mode">The mode to create the window in.</param>
+	/// <param name="monitor">The index of the user monitor to display the window on.</param>
 	[MemberNotNull(nameof(window))]
-	public static void Create(State state = State.Windowed, uint monitor = 0)
+	public static void Create(Mode mode = Mode.Windowed, uint monitor = 0)
 	{
 		if (window != null)
 			return;
 
-		InitialState = state;
+		InitialMode = mode;
 
 		Monitor.Initialize();
 
@@ -108,9 +133,9 @@ public static class Window
 		var (x, y, w, h) = Monitor.posSizes[(int)monitor];
 		aspectRatio = Monitor.GetAspectRatio(w, h);
 
-		if (state == State.Fullscreen) style = Styles.Fullscreen;
-		else if (state == State.Borderless) style = Styles.None;
-		else if (state == State.Windowed)
+		if (mode == Mode.Fullscreen) style = Styles.Fullscreen;
+		else if (mode == Mode.Borderless) style = Styles.None;
+		else if (mode == Mode.Windowed)
 		{
 			w /= 2;
 			h /= 2;
@@ -146,7 +171,11 @@ public static class Window
 
 		graphics["default"] = DefaultGraphics.CreateTexture();
 	}
-
+	/// <summary>
+	/// Activates or deactivates the window for updates and drawing. Ideally, an application
+	/// loop would start with activating and end with deactivating the window.
+	/// </summary>
+	/// <param name="isActive">Whether the window should be activated for updates and drawing.</param>
 	public static void Activate(bool isActive)
 	{
 		TryNoWindowException();
@@ -165,8 +194,15 @@ public static class Window
 		Vertices.DrawQueue();
 		window.Display();
 	}
-
-	public static void SetLayer((int cellCountH, int cellCountV) cellCount = default, (int tileWidth, int tileHeight) tileSize = default, (int tileGapX, int tileGapY) tileGap = default, string? graphicsPath = null, int drawOrder = 0)
+	/// <summary>
+	/// Sets the properties of the layer that the window should draw on.
+	/// </summary>
+	/// <param name="cellCount">The number of cells in the layer.</param>
+	/// <param name="tileSize">The size of each tile in the graphics.</param>
+	/// <param name="tileGap">The gap between each tile in the graphics.</param>
+	/// <param name="graphicsPath">The path to the graphics file to use for the layer.</param>
+	/// <param name="drawOrder">The order in which to draw the layer alongside layers.</param>
+	public static void SetLayer((int horizontal, int vertical) cellCount = default, (int width, int height) tileSize = default, (int x, int y) tileGap = default, string? graphicsPath = null, int drawOrder = 0)
 	{
 		TryNoWindowException();
 
@@ -184,7 +220,9 @@ public static class Window
 
 		Vertices.TryInitQueue();
 	}
-
+	/// <summary>
+	/// Closes the window.
+	/// </summary>
 	public static void Close()
 	{
 		TryNoWindowException();
@@ -200,7 +238,11 @@ public static class Window
 		window.Close();
 	}
 
-
+	/// <summary>
+	/// Draws a set of <paramref name="points"/> to the window.
+	/// </summary>
+	/// <param name="points">An array of bundle tuples representing the position and color 
+	/// of each point.</param>
 	public static void DrawPoints(params ((float x, float y) position, uint color)[] points)
 	{
 		TryNoWindowException();
@@ -208,7 +250,11 @@ public static class Window
 		for (int i = 0; i < points?.Length; i++)
 			Vertices.QueuePoint(points[i].position, points[i].color);
 	}
-
+	/// <summary>
+	/// Draws a set of <paramref name="rectangles"/> to the window.
+	/// </summary>
+	/// <param name="rectangles">An array of bundle tuples representing the 
+	/// position, size, and color of each rectangle.</param>
 	public static void DrawRectangles(params ((float x, float y) position, (float width, float height) size, uint color)[] rectangles)
 	{
 		TryNoWindowException();
@@ -216,7 +262,11 @@ public static class Window
 		for (int i = 0; i < rectangles?.Length; i++)
 			Vertices.QueueRectangle(rectangles[i].position, rectangles[i].size, rectangles[i].color);
 	}
-
+	/// <summary>
+	/// Draws a set of <paramref name="lines"/> to the window.
+	/// </summary>
+	/// <param name="lines">An array of bundle tuples representing the 
+	/// start position, end position, and color of each line.</param>
 	public static void DrawLines(params ((float x, float y) start, (float x, float y) end, uint color)[] lines)
 	{
 		TryNoWindowException();
@@ -224,16 +274,26 @@ public static class Window
 		for (int i = 0; i < lines?.Length; i++)
 			Vertices.QueueLine(lines[i].start, lines[i].end, lines[i].color);
 	}
-
-
-	public static void DrawTile((float x, float y) position, (int id, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips) tile, (int width, int height) size = default)
+	/// <summary>
+	/// Draws a single <paramref name="tile"/> to the window.
+	/// </summary>
+	/// <param name="position">The position at which to draw the <paramref name="tile"/>.</param>
+	/// <param name="tile">A bundle tuple representing the identifier, 
+	/// tint, angle, and flip status of the tile.</param>
+	/// <param name="size">The size of the tile, in tiles. Defaults to (1, 1) if not specified,
+	/// (0, 0) or negative.</param>
+	public static void DrawTile((float x, float y) position, (int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips) tile, (int width, int height) size = default)
 	{
 		TryNoWindowException();
 		var (id, tint, angle, flips) = tile;
 		Vertices.QueueTile(position, id, tint, angle, size, flips);
 	}
-
-	public static void DrawTiles((int id, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tiles)
+	/// <summary>
+	/// Draws a set of <paramref name="tiles"/> to the window.
+	/// </summary>
+	/// <param name="tiles">A 2D array of bundle tuples representing the identifier, 
+	/// tint, angle, and flip status of each tile.</param>
+	public static void DrawTiles((int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips)[,] tiles)
 	{
 		TryNoWindowException();
 

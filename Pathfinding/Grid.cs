@@ -32,48 +32,50 @@ public class Grid
 	public void Save(string path) => pathfind.Save(path);
 
 	/// <summary>
-	/// Determines whether the cell at the specified position is solid (non-walkable).
+	/// Determines whether the cell at the specified <paramref name="position"/> is solid (non-walkable).
 	/// </summary>
-	/// <param name="cell">The position of the cell to check.</param>
+	/// <param name="position">The position of the cell to check.</param>
 	/// <returns>True if the cell is solid; otherwise, false.</returns>
-	public bool IsSolid((int x, int y) cell)
+	public bool IsSolid((int x, int y) position)
 	{
-		var n = pathfind.GetNode(cell);
+		var n = pathfind.GetNode(position);
 		return n == null ? true : n.isWalkable == false;
 	}
 	/// <summary>
-	/// Determines whether the cell at the specified position is an obstacle 
+	/// Determines whether the cell at the specified <paramref name="position"/> is an obstacle 
 	/// (walkable but with a non-zero penalty).
 	/// </summary>
-	/// <param name="cell">The position of the cell to check.</param>
+	/// <param name="position">The position of the cell to check.</param>
 	/// <returns>True if the cell is an obstacle; otherwise, false.</returns>
-	public bool IsObstacle((int x, int y) cell)
+	public bool IsObstacle((int x, int y) position)
 	{
-		var n = pathfind.GetNode(cell);
+		var n = pathfind.GetNode(position);
 		return n == null ? false : n.isWalkable && n.weight > 0;
 	}
 	/// <summary>
-	/// Gets the penalty value of the cell at the specified position.
+	/// Gets the penalty value of the cell at the specified <paramref name="position"/>.
 	/// </summary>
-	/// <param name="cell">The position of the cell to check.</param>
+	/// <param name="position">The position of the cell to check.</param>
 	/// <returns>The penalty value of the cell.</returns>
-	public int PenaltyAt((int x, int y) cell)
+	public int PenaltyAt((int x, int y) position)
 	{
-		var n = pathfind.GetNode(cell);
+		var n = pathfind.GetNode(position);
 		return n == null ? 0 : n.weight;
 	}
 	/// <summary>
-	/// Sets the specified cell as solid or non-solid (walkable or non-walkable).
+	/// Sets the cell at the specified <paramref name="position"/> 
+	/// as solid or non-solid (walkable or non-walkable).
 	/// </summary>
-	/// <param name="cell">The position of the cell to set.</param>
+	/// <param name="position">The position of the cell to set.</param>
 	/// <param name="isSolid">The value indicating whether the cell is solid or not.</param>
-	public void SetSolid((int x, int y) cell, bool isSolid = true)
+	public void SetSolid((int x, int y) position, bool isSolid = true)
 	{
-		pathfind.SetNode(cell, 0, isSolid == false);
+		pathfind.SetNode(position, 0, isSolid == false);
 	}
 
 	/// <summary>
-	/// Sets the specified cell as an obstacle with the given penalty value.
+	/// Sets the cell at the specified <paramref name="position"/> 
+	/// as an obstacle with the given <paramref name="penalty"/> value.
 	/// </summary>
 	/// <param name="cell">The position of the cell to set as an obstacle.</param>
 	/// <param name="penalty">The penalty value
@@ -83,8 +85,9 @@ public class Grid
 		pathfind.SetNode(cell, penalty, false);
 	}
 	/// <summary>
-	/// Sets the penalties of the specified tile in the provided tilemap 
-	/// (2D array of tiles) to the given penalty value and marks the corresponding cells as obstacles.
+	/// Sets the penalties of the specified <paramref name="tile"/> in the provided 
+	/// <paramref name="tiles"/> to the given <paramref name="penalty"/> value 
+	/// and marks the corresponding cells as obstacles.
 	/// </summary>
 	/// <param name="tile">The tile to set as an obstacle.</param>
 	/// <param name="tiles">The tilemap to use as reference.</param>
@@ -101,7 +104,8 @@ public class Grid
 	}
 
 	/// <summary>
-	/// Calculates a path from the start to the goal position using the A* algorithm.
+	/// Calculates a path from the <paramref name="start"/> to the <paramref name="goal"/> 
+	/// position using the A* algorithm.
 	/// </summary>
 	/// <param name="start">The position of the starting cell.</param>
 	/// <param name="goal">The position of the goal cell.</param>

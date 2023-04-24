@@ -3,8 +3,14 @@ using System.Runtime.InteropServices;
 
 namespace Pure.Tilemap;
 
+/// <summary>
+/// Represents a tilemap consisting of a grid of tiles.
+/// </summary>
 public class Tilemap
 {
+	/// <summary>
+	/// Specifies the alignment of the text in <see cref="SetTextSquare"/>.
+	/// </summary>
 	public enum Alignment
 	{
 		TopLeft, TopUp, TopRight,
@@ -12,11 +18,23 @@ public class Tilemap
 		BottomLeft, Bottom, BottomRight
 	};
 
+	/// <summary>
+	/// Gets the size of the tilemap in tiles.
+	/// </summary>
 	public (int width, int height) Size => (data.GetLength(0), data.GetLength(1));
 
+	/// <summary>
+	/// Gets or sets the position of the camera.
+	/// </summary>
 	public (int x, int y) CameraPosition { get; set; }
+	/// <summary>
+	/// Gets or sets the size of the camera viewport.
+	/// </summary>
 	public (int width, int height) CameraSize { get; set; }
 
+	/// <summary>
+	/// Gets the identifiers of the tiles in the tilemap.
+	/// </summary>
 	public int[,] IDs
 	{
 		get
@@ -30,6 +48,12 @@ public class Tilemap
 		}
 	}
 
+	/// <summary>
+	/// Initializes a new tilemap instance and loads tile data into it from the specified file.
+	/// </summary>
+	/// <param name="path">The path to the tilemap file.</param>
+	/// <exception cref="ArgumentException">Thrown if the tilemap could not be 
+	/// loaded from the specified file or the file was not found.</exception>
 	public Tilemap(string path)
 	{
 		try
@@ -51,14 +75,18 @@ public class Tilemap
 
 			FromBytes(data, bData);
 		}
-		catch (Exception)
+		catch (ArgumentException)
 		{
-			throw new Exception($"Could not load {nameof(Tilemap)} from '{path}'.");
+			throw new ArgumentException($"Could not load {nameof(Tilemap)} from '{path}'.");
 		}
 	}
-	public Tilemap((int tilesH, int tilesV) tileCount)
+	/// <summary>
+	/// Initializes a new tilemap instance with the specified <paramref name="size"/>.
+	/// </summary>
+	/// <param name="size">The size of the tilemap in tiles.</param>
+	public Tilemap((int width, int height) size)
 	{
-		var (w, h) = tileCount;
+		var (w, h) = size;
 
 		if (w < 1)
 			w = 1;
@@ -66,20 +94,29 @@ public class Tilemap
 			h = 1;
 
 		data = new Tile[w, h];
-		CameraSize = tileCount;
+		CameraSize = size;
 	}
-	public Tilemap(Tile[,] data)
+	/// <summary>
+	/// Initializes a new tilemap instance with the specified <paramref name="tileData"/>.
+	/// </summary>
+	/// <param name="tileData">The tile data to use for the tilemap.</param>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="tileData"/> is null.</exception>
+	public Tilemap(Tile[,] tileData)
 	{
-		if (data == null)
-			throw new ArgumentNullException(nameof(data));
+		if (tileData == null)
+			throw new ArgumentNullException(nameof(tileData));
 
-		var w = data.GetLength(0);
-		var h = data.GetLength(1);
+		var w = tileData.GetLength(0);
+		var h = tileData.GetLength(1);
 
-		this.data = Copy(data);
+		this.data = Copy(tileData);
 		CameraSize = Size;
 	}
 
+	/// <summary>
+	/// Saves the tilemap to the specified file.
+	/// </summary>
+	/// <param name="path">The path to the file to save the tilemap to.</param>
 	public void Save(string path)
 	{
 		var (w, h) = Size;
@@ -102,6 +139,10 @@ public class Tilemap
 		}
 	}
 
+	/// <summary>
+	/// Updates the camera's view of the tilemap.
+	/// </summary>
+	/// <returns>The updated tilemap view.</returns>
 	public Tilemap CameraUpdate()
 	{
 		var (w, h) = CameraSize;
@@ -123,11 +164,21 @@ public class Tilemap
 		return new(data);
 	}
 
-	public Tile TileAt((int x, int y) cell)
+	/// <summary>
+	/// Gets the tile at the specified <paramref name="position"/>.
+	/// </summary>
+	/// <param name="position">The position to get the tile from.</param>
+	/// <returns>The tile at the specified <paramref name="position"/>, 
+	/// or the default tile value if the <paramref name="position"/> is out of bounds.</returns>
+	public Tile TileAt((int x, int y) position)
 	{
-		return IndicesAreValid(cell) ? data[cell.x, cell.y] : default;
+		return IndicesAreValid(position) ? data[position.x, position.y] : default;
 	}
 
+	/// <summary>
+	/// Fills the entire tilemap with the specified tile.
+	/// </summary>
+	/// <param name="withTile">The tile to fill the tilemap with.</param>
 	public void Fill(Tile withTile = default)
 	{
 		for (int y = 0; y < Size.Item2; y++)
@@ -135,20 +186,33 @@ public class Tilemap
 				SetTile((x, y), withTile);
 	}
 
-	public void SetTile((int x, int y) cell, Tile tile)
+	/// <summary>
+	/// Sets the tile at the specified <paramref name="position"/> 
+	/// to the specified <paramref name="tile"/>.
+	/// </summary>
+	/// <param name="position">The position to set the tile at.</param>
+	/// <param name="tile">The tile to set.</param>
+	public void SetTile((int x, int y) position, Tile tile)
 	{
-		if (IndicesAreValid(cell) == false)
+		if (IndicesAreValid(position) == false)
 			return;
 
-		data[cell.x, cell.y] = tile;
+		data[position.x, position.y] = tile;
 	}
-	public void SetSquare((int x, int y) cell, (int width, int height) size, Tile tile)
+	/// <summary>
+	/// Sets a square region of tiles starting at the specified <paramref name="position"/> with the 
+	/// specified <paramref name="size"/> to the specified <paramref name="tile"/>.
+	/// </summary>
+	/// <param name="position">The position to start setting tiles from.</param>
+	/// <param name="size">The size of the square region to set tiles for.</param>
+	/// <param name="tile">The tile to set the square region to.</param>
+	public void SetSquare((int x, int y) position, (int width, int height) size, Tile tile)
 	{
 		var xStep = size.Item1 < 0 ? -1 : 1;
 		var yStep = size.Item2 < 0 ? -1 : 1;
 		var i = 0;
-		for (int x = cell.Item1; x != cell.Item1 + size.Item1; x += xStep)
-			for (int y = cell.Item2; y != cell.Item2 + size.Item2; y += yStep)
+		for (int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
+			for (int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
 			{
 				if (i > Math.Abs(size.Item1 * size.Item2))
 					return;
@@ -157,8 +221,30 @@ public class Tilemap
 				i++;
 			}
 	}
+	/// <summary>
+	/// Sets a group of tiles starting at the specified <paramref name="position"/> to the 
+	/// specified 2D tile array.
+	/// </summary>
+	/// <param name="position">The position to start setting tiles from.</param>
+	/// <param name="tiles">The 2D array of tiles to set.</param>
+	public void SetGroup((int x, int y) position, Tile[,] tiles)
+	{
+		if (tiles == null || tiles.Length == 0)
+			return;
 
-	public void SetTextLine((int x, int y) cell, string text, uint tint = uint.MaxValue)
+		for (int i = 0; i < tiles.GetLength(1); i++)
+			for (int j = 0; j < tiles.GetLength(0); j++)
+				SetTile((position.x + i, position.y + j), tiles[j, i]);
+	}
+
+	/// <summary>
+	/// Sets a single line of <paramref name="text"/> starting from a <paramref name="position"/>
+	/// with optional <paramref name="tint"/>.
+	/// </summary>
+	/// <param name="position">The starting position to place the text.</param>
+	/// <param name="text">The text to display.</param>
+	/// <param name="tint">Optional tint color value (defaults to white).</param>
+	public void SetTextLine((int x, int y) position, string text, uint tint = uint.MaxValue)
 	{
 		var errorOffset = 0;
 		for (int i = 0; i < text?.Length; i++)
@@ -175,17 +261,28 @@ public class Tilemap
 			if (symbol == ' ')
 				continue;
 
-			SetTile((cell.Item1 + i - errorOffset, cell.Item2), new(index, tint));
+			SetTile((position.Item1 + i - errorOffset, position.Item2), new(index, tint));
 		}
 	}
-	public void SetTextSquare((int x, int y) cell, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
+	/// <summary>
+	/// Sets a square of <paramref name="text"/> with optional 
+	/// <paramref name="alignment"/>, scrolling, and word wrapping.
+	/// </summary>
+	/// <param name="position">The starting position to place the <paramref name="text"/>.</param>
+	/// <param name="size">The width and height of the square.</param>
+	/// <param name="text">The <paramref name="text"/> to display.</param>
+	/// <param name="tint">Optional tint color value (defaults to white).</param>
+	/// <param name="isWordWrapping">Optional flag for enabling word wrapping.</param>
+	/// <param name="alignment">Optional <paramref name="text"/> alignment.</param>
+	/// <param name="scrollProgress">Optional scrolling value (between 0 and 1).</param>
+	public void SetTextSquare((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
 	{
 		if (text == null || text.Length == 0 ||
 			size.Item1 <= 0 || size.Item2 <= 0)
 			return;
 
-		var x = cell.Item1;
-		var y = cell.Item2;
+		var x = position.Item1;
+		var y = position.Item2;
 		var lineList = text.Split("\n", StringSplitOptions.RemoveEmptyEntries).ToList();
 
 		if (lineList == null || lineList.Count == 0)
@@ -270,7 +367,7 @@ public class Tilemap
 
 		void NewLine()
 		{
-			x = cell.Item1;
+			x = position.Item1;
 			y++;
 		}
 		int GetSafeNewLineIndex(string line, uint endLineIndex)
@@ -282,7 +379,18 @@ public class Tilemap
 			return default;
 		}
 	}
-	public void SetTextSquareTint((int x, int y) cell, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isMatchingWord = false)
+	/// <summary>
+	/// Sets the <paramref name="tint"/> of the tiles in a rectangular area of the tilemap to 
+	/// highlight a specific <paramref name="text"/> (if found).
+	/// </summary>
+	/// <param name="position">The position of the top-left corner of the rectangular 
+	/// area to search for the <paramref name="text"/>.</param>
+	/// <param name="size">The size of the rectangular area to search for the <paramref name="text"/>.</param>
+	/// <param name="text">The <paramref name="text"/> to search for and highlight.</param>
+	/// <param name="tint">The color to tint the matching tiles.</param>
+	/// <param name="isMatchingWord">Whether to only match the <paramref name="text"/> 
+	/// as a whole word or any symbols.</param>
+	public void SetTextSquareTint((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isMatchingWord = false)
 	{
 		if (string.IsNullOrWhiteSpace(text))
 			return;
@@ -291,8 +399,8 @@ public class Tilemap
 		var yStep = size.Item2 < 0 ? -1 : 1;
 		var tileList = TilesFrom(text).ToList();
 
-		for (int x = cell.Item1; x != cell.Item1 + size.Item1; x += xStep)
-			for (int y = cell.Item2; y != cell.Item2 + size.Item2; y += yStep)
+		for (int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
+			for (int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
 			{
 				if (tileList[0] != TileAt((x, y)).ID)
 					continue;
@@ -312,14 +420,14 @@ public class Tilemap
 
 					if (curX > x + size.Item1) // try new line
 					{
-						curX = cell.Item1;
+						curX = position.Item1;
 						curY++;
 					}
 				}
 
 				var endPos = (curX, curY);
-				var left = TileAt(startPos).ID == 0 || curX == cell.Item1;
-				var right = TileAt(endPos).ID == 0 || curX == cell.Item1 + size.Item1;
+				var left = TileAt(startPos).ID == 0 || curX == position.Item1;
+				var right = TileAt(endPos).ID == 0 || curX == position.Item1 + size.Item1;
 				var isWord = left && right;
 
 				if (isWord ^ isMatchingWord)
@@ -334,7 +442,7 @@ public class Tilemap
 				{
 					if (curX > x + size.Item1) // try new line
 					{
-						curX = cell.Item1;
+						curX = position.Item1;
 						curY++;
 					}
 
@@ -344,43 +452,72 @@ public class Tilemap
 			}
 	}
 
-	public void SetBorder((int x, int y) cell, (int width, int height) size, int tileCorner, int tileStraight, uint tint = uint.MaxValue)
+	/// <summary>
+	/// Sets the tiles in a rectangular area of the tilemap to create a border.
+	/// </summary>
+	/// <param name="position">The position of the top-left corner of the rectangular 
+	/// area to create the border.</param>
+	/// <param name="size">The size of the rectangular area to create the border.</param>
+	/// <param name="tileIdCorner">The identifier of the tile to use for the corners of the border.</param>
+	/// <param name="tileIdStraight">The identifier of the tile to use for the 
+	/// straight edges of the border.</param>
+	/// <param name="tint">The color to tint the border tiles.</param>
+	public void SetBorder((int x, int y) position, (int width, int height) size, int tileIdCorner, int tileIdStraight, uint tint = uint.MaxValue)
 	{
-		var (x, y) = cell;
+		var (x, y) = position;
 		var (w, h) = size;
 
-		SetTile(cell, new(tileCorner, tint, 0));
-		SetSquare((x + 1, y), (w - 2, 1), new(tileStraight, tint, 0));
-		SetTile((x + w - 1, y), new(tileCorner, tint, 1));
+		SetTile(position, new(tileIdCorner, tint, 0));
+		SetSquare((x + 1, y), (w - 2, 1), new(tileIdStraight, tint, 0));
+		SetTile((x + w - 1, y), new(tileIdCorner, tint, 1));
 
-		SetSquare((x, y + 1), (1, h - 2), new(tileStraight, tint, 3));
+		SetSquare((x, y + 1), (1, h - 2), new(tileIdStraight, tint, 3));
 		SetSquare((x + 1, y + 1), (w - 2, h - 2), new(0, 0));
-		SetSquare((x + w - 1, y + 1), (1, h - 2), new(tileStraight, tint, 1));
+		SetSquare((x + w - 1, y + 1), (1, h - 2), new(tileIdStraight, tint, 1));
 
-		SetTile((x, y + h - 1), new(tileCorner, tint, 3));
-		SetSquare((x + 1, y + h - 1), (w - 2, 1), new(tileStraight, tint, 2));
-		SetTile((x + w - 1, y + h - 1), new(tileCorner, tint, 2));
+		SetTile((x, y + h - 1), new(tileIdCorner, tint, 3));
+		SetSquare((x + 1, y + h - 1), (w - 2, 1), new(tileIdStraight, tint, 2));
+		SetTile((x + w - 1, y + h - 1), new(tileIdCorner, tint, 2));
 	}
-	public void SetBar((int x, int y) cell, int tileEdge, int tileStraight, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
+	/// <summary>
+	/// Sets the tiles in a rectangular area of the tilemap to create a vertical or horizontal bar.
+	/// </summary>
+	/// <param name="position">The position of the top-left corner of the rectangular area 
+	/// to create the bar.</param>
+	/// <param name="tileIdEdge">The identifier of the tile to use for the edges of the bar.</param>
+	/// <param name="tileIdStraight">The identifier of the tile to use for the 
+	/// straight part of the bar.</param>
+	/// <param name="tint">The color to tint the bar tiles.</param>
+	/// <param name="size">The length of the bar in tiles.</param>
+	/// <param name="isVertical">Whether the bar should be vertical or horizontal.</param>
+	public void SetBar((int x, int y) position, int tileIdEdge, int tileIdStraight, uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
 	{
-		var (x, y) = cell;
+		var (x, y) = position;
 		if (isVertical)
 		{
-			SetTile(cell, new(tileEdge, tint, 1));
-			SetSquare((x, y + 1), (1, size - 2), new(tileStraight, tint, 1));
-			SetTile((x, y + size - 1), new(tileEdge, tint, 3));
+			SetTile(position, new(tileIdEdge, tint, 1));
+			SetSquare((x, y + 1), (1, size - 2), new(tileIdStraight, tint, 1));
+			SetTile((x, y + size - 1), new(tileIdEdge, tint, 3));
 			return;
 		}
 
-		SetTile(cell, new(tileEdge, tint));
-		SetSquare((x + 1, y), (size - 2, 1), new(tileStraight, tint));
-		SetTile((x + size - 1, y), new(tileEdge, tint, 2));
+		SetTile(position, new(tileIdEdge, tint));
+		SetSquare((x + 1, y), (size - 2, 1), new(tileIdStraight, tint));
+		SetTile((x + size - 1, y), new(tileIdEdge, tint, 2));
 	}
 
-	public (float x, float y) PointFrom((int x, int y) screenPixel, (int width, int height) windowSize, bool isAccountingForCamera = true)
+	/// <summary>
+	/// Converts a screen <paramref name="pixelPosition"/> to a world point on the tilemap.
+	/// </summary>
+	/// <param name="pixelPosition">The screen pixel position to convert.</param>
+	/// <param name="windowSize">The size of the application window.</param>
+	/// <param name="isAccountingForCamera">Whether or not to account for the camera's position.</param>
+	/// <returns>The world point corresponding to the given screen 
+	/// <paramref name="pixelPosition"/>.</returns>
+	public (float x, float y) PointFrom((int x, int y) pixelPosition, (int width, int height) windowSize, bool isAccountingForCamera = true)
 	{
-		var x = Map(screenPixel.x, 0, windowSize.width, 0, Size.width);
-		var y = Map(screenPixel.y, 0, windowSize.height, 0, Size.height);
+		var x = Map(pixelPosition.x, 0, windowSize.width, 0, Size.width);
+		var y = Map(pixelPosition.y, 0, windowSize.height, 0, Size.height);
 
 		if (isAccountingForCamera)
 		{
@@ -391,20 +528,30 @@ public class Tilemap
 		return (x, y);
 	}
 
+	/// <summary>
+	/// Converts a <paramref name="symbol"/> to its corresponding tile identifier.
+	/// </summary>
+	/// <param name="symbol">The symbol to convert.</param>
+	/// <returns>The tile identifier corresponding to the given symbol.</returns>
 	public static int TileFrom(char symbol)
 	{
-		var index = default(int);
+		var id = default(int);
 		if (symbol >= 'A' && symbol <= 'Z')
-			index = symbol - 'A' + 78;
+			id = symbol - 'A' + 78;
 		else if (symbol >= 'a' && symbol <= 'z')
-			index = symbol - 'a' + 104;
+			id = symbol - 'a' + 104;
 		else if (symbol >= '0' && symbol <= '9')
-			index = symbol - '0' + 130;
+			id = symbol - '0' + 130;
 		else if (symbolMap.ContainsKey(symbol))
-			index = symbolMap[symbol];
+			id = symbolMap[symbol];
 
-		return index;
+		return id;
 	}
+	/// <summary>
+	/// Converts a <paramref name="text"/> to an array of tile identifiers.
+	/// </summary>
+	/// <param name="text">The <paramref name="text"/> to convert.</param>
+	/// <returns>An array of tile identifiers corresponding to the given symbols.</returns>
 	public static int[] TilesFrom(string text)
 	{
 		if (text == null || text.Length == 0)
@@ -417,10 +564,22 @@ public class Tilemap
 		return result;
 	}
 
+	/// <summary>
+	/// Implicitly converts a 2D array of tiles to a tilemap object.
+	/// </summary>
+	/// <param name="data">The 2D array of tiles to convert.</param>
+	/// <returns>A new tilemap object containing the given tiles.</returns>
 	public static implicit operator Tilemap(Tile[,] data) => new(data);
+	/// <summary>
+	/// Implicitly converts a tilemap object to a 2D array of tiles.
+	/// </summary>
+	/// <param name="tilemap">The tilemap object to convert.</param>
+	/// <returns>A new 2D array of tiles containing the tiles from the tilemap object.</returns>
 	public static implicit operator Tile[,](Tilemap tilemap) => Copy(tilemap.data);
 
-	public (int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] ToBundle()
+	/// <returns>
+	/// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
+	public (int tile, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips)[,] ToBundle()
 	{
 		var result = new (int, uint, sbyte, (bool, bool))[data.GetLength(0), data.GetLength(1)];
 		for (int j = 0; j < data.GetLength(1); j++)
@@ -497,6 +656,13 @@ public class Tilemap
 
 	private readonly Tile[,] data;
 
+	public static (int, int) FromIndex(int index, (int width, int height) size)
+	{
+		index = index < 0 ? 0 : index;
+		index = index > size.Item1 * size.Item2 - 1 ? size.Item1 * size.Item2 - 1 : index;
+
+		return (index % size.Item1, index / size.Item1);
+	}
 	private bool IndicesAreValid((int, int) indices)
 	{
 		return indices.Item1 >= 0 && indices.Item2 >= 0 &&

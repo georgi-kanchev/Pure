@@ -8,7 +8,7 @@ public class NoteEditor
 {
 	static void Main()
 	{
-		Window.Create(Window.State.Windowed, 0);
+		Window.Create(Window.Mode.Windowed, 0);
 
 		var (aw, ah) = Window.MonitorAspectRatio;
 		var tilemap = new Tilemap((aw * 3, ah * 3));

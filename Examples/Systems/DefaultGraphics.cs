@@ -25,8 +25,8 @@ public static class DefaultGraphics
 
 			var mousePos = Mouse.CursorPosition;
 			var (x, y) = tilemap.PointFrom(mousePos, Window.Size);
-			var index = tilemap.TileAt(((int)x, (int)y));
-			tilemap.SetTextLine((28, 13), $"{index}");
+			var id = tilemap.TileAt(((int)x, (int)y)).ID;
+			tilemap.SetTextLine((27, 13), $"{id}");
 
 			Window.DrawTiles(tilemap.ToBundle());
 			Window.Activate(false);
