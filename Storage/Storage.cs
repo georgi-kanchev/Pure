@@ -1,527 +1,164 @@
 ﻿namespace Pure.Storage;
 
+using System;
 using System.Globalization;
-using System.IO.Compression;
-using System.Reflection;
+using System.Text;
 
-/*
-/// <summary>
-/// Provides a means to store and retrieve objects associated with string identifiers.
-/// Supports saving and loading from a file in two custom formats, one that can be easily read 
-/// and edited by hand, while the other is a binary format that favors disk space.
-/// </summary>
-public class Storage
+public class Storage<TKey> where TKey : notnull
 {
-	/// <summary>
-	/// Gets or sets the object with the specified identifier in the storage.
-	/// </summary>
-	/// <param name="id">The identifier of the object.</param>
-	/// <returns>The object with the specified identifier.</returns>
-	public object this[string id]
+	public void Set(TKey key, object? instance, int typeId = default)
 	{
-		set
-		{
-			if (id == null)
-				throw new ArgumentNullException(nameof(id));
+		data[key] = (typeId, ObjectToString(typeId, instance));
+	}
+	public bool Remove(TKey key) => data.Remove(key);
 
-			if (value == null)
-			{
-				if (data.ContainsKey(id)) // delete
-					data.Remove(id);
+	public int GetTypeID(TKey key) => data.ContainsKey(key) ? data[key].typeId : default;
+	public string? GetAsText(TKey key) => data.ContainsKey(key) ? data[key].data : default;
+	public T? GetAsObject<T>(TKey key)
+	{
+		if (data.ContainsKey(key) == false)
+			return default;
 
-				return;
-			}
-
-			var type = value.GetType();
-			var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-			var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-			if (data.ContainsKey(id) == false)
-				data[id] = new();
-
-			for (int i = 0; i < props.Length; i++)
-			{
-				var prop = props[i];
-
-				if (IsTypeSupported(prop.PropertyType) == false)
-					continue;
-
-				var val = prop.GetValue(value);
-
-				if (val != null)
-					data[id][prop.Name] = val;
-			}
-			for (int i = 0; i < fields.Length; i++)
-			{
-				var field = fields[i];
-				if (IsTypeSupported(field.FieldType) == false || field.Name.Contains('<'))
-					continue;
-
-				var val = field.GetValue(value);
-
-				if (val != null)
-					data[id][field.Name] = val;
-			}
-		}
+		var obj = StringToObject<T>(data[key].typeId, data[key].data);
+		return obj == null ? default : (T)obj;
 	}
 
-	/// <summary>
-	/// Initializes a new empty storage instance.
-	/// </summary>
-	public Storage() { }
-	/// <summary>
-	/// Initializes a new storage instance by loading data from a file.
-	/// </summary>
-	/// <param name="path">The path to the file to load from.</param>
-	/// <param name="isBinary">Indicates whether the file format is binary (true) or text (false).</param>
-	public Storage(string path, bool isBinary = false)
+	public void SaveToFile(string filename)
 	{
-		if (File.Exists(path) == false)
-			return;
 
-		var file = "";
-
-		//try
-		{
-			if (isBinary)
-			{
-				var rawBytes = Decompress(File.ReadAllBytes(path));
-				var base64 = Convert.ToBase64String(rawBytes);
-				var data = Base64Decode(base64);
-
-				file = data;
-			}
-			else
-				file = File.ReadAllText(path);
-
-			if (file.Length == 0)
-				return;
-
-			var split = Trim(file).Split(OBJ, StringSplitOptions.RemoveEmptyEntries);
-
-			data.Clear();
-			for (int i = 0; i < split?.Length; i++)
-			{
-				var props = split[i].Split(OBJ_PROP, StringSplitOptions.RemoveEmptyEntries);
-				var instanceName = props[0];
-
-				for (int j = 1; j < props?.Length; j++)
-					CacheProp(instanceName, props[j]);
-			}
-		}
-		//catch (System.Exception)
-		//{
-		//	throw new Exception($"Could not load storage file at '{path}'.");
-		//}
 	}
 
-	/// <summary>
-	/// Saves the storage data to a file.
-	/// </summary>
-	/// <param name="path">The path of the file to save.</param>
-	/// <param name="isFormatted">Whether to format the data in a readable way.</param>
-	public void Save(string path, bool isFormatted = true)
+	public void LoadFromFile(string filename)
 	{
-		File.WriteAllText(path, GetSaveData(isFormatted));
-	}
-	/// <summary>
-	/// Saves the storage contents as a binary file.
-	/// </summary>
-	/// <param name="path">The path to save the file to.</param>
-	public void SaveAsBinary(string path)
-	{
-		var data = GetSaveData(false);
-		var base64 = Base64Encode(data);
-		var rawBytes = Convert.FromBase64String(base64);
 
-		File.WriteAllBytes(path, Compress(rawBytes));
 	}
 
-	/// <summary>
-	/// Populates the properties and fields of the specified <paramref name="instance"/> with the 
-	/// data from the storage object with the specified identifier. The members of the
-	/// <paramref name="instance"/> with unsupported types will be skipped. Supported types are:
-	/// all primitive value types, structs made of primitive value types and 1D arrays of those types.
-	/// </summary>
-	/// <param name="instance">The instance to populate.</param>
-	/// <param name="id">The identifier of the storage object.</param>
-	public void Populate(object instance, string id)
+	protected virtual object? OnTextToObject(int typeId, string dataAsText)
 	{
-		if (instance == null || data.ContainsKey(id) == false)
-			return;
-
-		var type = instance.GetType();
-		var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-		var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-		for (int i = 0; i < props.Length; i++)
-			PopulateMember(props[i], id, instance);
-		for (int i = 0; i < fields.Length; i++)
-			if (fields[i].Name.Contains('<') == false)
-				PopulateMember(fields[i], id, instance);
+		return default;
 	}
-
-	/// <param name="id">
-	/// The identifier of the object.</param>
-	/// <returns>True if an object with the specified identifier
-	/// exists in the storage, false otherwise.</returns>
-	public bool HasObject(string id)
+	protected virtual string OnObjectToText(int typeId, object? instance)
 	{
-		return id != null && data.ContainsKey(id);
+		return string.Empty;
 	}
 
 	#region Backend
-	private const string SEP = "`", OBJ = SEP + "@", OBJ_PROP = SEP + "~", VALUE = SEP + "|",
-		STRUCT = SEP + "&", STRUCT_PROP = SEP + "=", SPACE = SEP + "_", TAB = SEP + "__",
-		NEW_LINE = SEP + "/";
-	private const string FILE_HEADER = @$"Pure - Storage file
-| - - - - - - - - - - - - -
-| Map of symbols
-| - - - - - - - - - - - - -
-|	{SEP} Global separator
-|
-|	{OBJ} Object
-|	{OBJ_PROP} Property
-|	{STRUCT} Property containing sub properties (struct)
-|	{STRUCT_PROP} Sub property
-|	{VALUE} Value
-|
-|	{NEW_LINE} String new line
-|	{SPACE} String space
-|	{TAB} String tab
-| - - - - - - - - - - - - -
-";
+	private Dictionary<TKey, (int typeId, string data)> data = new();
 
-	private readonly Dictionary<string, Dictionary<string, object>> data = new();
-
-	private string GetSaveData(bool isFormatted)
+	private object? StringToObject<T>(int typeId, string dataAsText)
 	{
-		var result = isFormatted ? FILE_HEADER + Environment.NewLine : "";
-		var newLine = isFormatted ? Environment.NewLine : "";
-		var space = isFormatted ? " " : "";
-		var tab = isFormatted ? new string(' ', 4) : "";
+		if (typeId != default)
+			return OnTextToObject(typeId, dataAsText);
 
-		foreach (var kvp in data)
+		var t = typeof(T);
+		if (t == typeof(bool)) return Convert.ToBoolean(dataAsText);
+		else if (t == typeof(char)) return Convert.ToChar(dataAsText);
+
+		decimal.TryParse(dataAsText, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
+
+		if (t == typeof(sbyte)) return Wrap<sbyte>(number, sbyte.MinValue, sbyte.MaxValue);
+		else if (t == typeof(byte)) return Wrap<byte>(number, byte.MinValue, byte.MaxValue);
+		else if (t == typeof(short)) return Wrap<short>(number, short.MinValue, short.MaxValue);
+		else if (t == typeof(ushort)) return Wrap<ushort>(number, ushort.MinValue, ushort.MaxValue);
+		else if (t == typeof(int)) return Wrap<int>(number, int.MinValue, int.MaxValue);
+		else if (t == typeof(uint)) return Wrap<uint>(number, uint.MinValue, uint.MaxValue);
+		else if (t == typeof(long)) return Wrap<long>(number, long.MinValue, long.MaxValue);
+		else if (t == typeof(ulong)) return Wrap<ulong>(number, ulong.MinValue, ulong.MaxValue);
+		else if (t == typeof(float)) return Wrap<float>(number, float.MinValue, float.MaxValue);
+		else if (t == typeof(double)) return Wrap<double>(number, double.MinValue, double.MaxValue);
+		else if (t == typeof(decimal)) return number;
+
+		return dataAsText;
+	}
+	private string ObjectToString(int typeId, object? instance)
+	{
+		if (instance == null)
+			return string.Empty;
+
+		var type = instance.GetType();
+
+		if (typeId == default)
 		{
-			result += OBJ + space + kvp.Key;
-
-			foreach (var kvp2 in kvp.Value)
+			if (type.IsPrimitive || type == typeof(string))
+				return instance.ToString() ?? string.Empty;
+			else if (type.IsArray && IsArrayOfPrimitives((Array)instance))
 			{
-				var value = kvp2.Value;
-				var type = value.GetType();
+				var arrayStr = new StringBuilder();
+				var array = (Array)instance;
+				var sep1D = ", ";
+				var sep2D = Environment.NewLine;
 
-				result += newLine + tab + OBJ_PROP + space + kvp2.Key;
-
-				if (type.IsArray)
-				{
-					var array = (Array)value;
-					var elementType = type.GetElementType();
-					var isStruct = elementType != null && IsStructType(elementType);
-
-					for (int i = 0; i < array.Length; i++)
+				if (array.Rank == 1)
+					for (int i = 0; i < array.GetLength(0); i++)
 					{
-						var curValue = array.GetValue(i);
-
-						result += newLine + tab + tab + (isStruct ? "" : VALUE);
-						if (curValue != null)
-							AddToString(ref result, curValue, false, true,
-								isFormatted: isFormatted);
+						var sep = i == 0 ? string.Empty : sep1D;
+						arrayStr.Append(sep + array.GetValue(i)?.ToString());
 					}
-					continue;
-				}
-				result += newLine + tab + tab;
+				else if (array.Rank == 2)
+					for (int i = 0; i < array.GetLength(0); i++)
+					{
+						arrayStr.Append(sep2D);
 
-				AddToString(ref result, value, isFormatted: isFormatted);
-			}
-		}
-		return result;
-	}
+						for (int j = 0; j < array.GetLength(1); j++)
+						{
+							var sep = j == 0 ? string.Empty : sep1D;
+							arrayStr.Append(sep + array.GetValue(i, j)?.ToString());
+						}
+					}
+				else if (array.Rank == 3)
+					for (int i = 0; i < array.GetLength(0); i++)
+					{
+						arrayStr.Append(sep2D);
 
-	private void AddToString(ref string result, object value, bool isInStruct = false, bool isInArray = false,
-		bool isFormatted = true)
-	{
-		var type = value.GetType();
+						for (int j = 0; j < array.GetLength(1); j++)
+						{
+							arrayStr.Append(sep2D);
 
-		var space = isFormatted ? " " : "";
-		var newLine = isFormatted ? Environment.NewLine : "";
-		var tab = isFormatted ? new string(' ', 4) : "";
-		var valueSep = isInArray ? "" : VALUE;
-
-		if (IsStructType(type) && isInStruct == false)
-		{
-			var props = type
-				.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-			var fields = type
-				.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-			result += STRUCT;
-
-			for (int i = 0; i < props.Length; i++)
-			{
-				var prop = props[i];
-
-				if (IsTypeSupported(prop.PropertyType) == false)
-					continue;
-
-				var propValue = prop.GetValue(value);
-
-				result += newLine + tab + tab + STRUCT_PROP + space + newLine;
-
-				if (propValue != null)
-				{
-					result += prop.Name + space + newLine + tab + tab + tab;
-					AddToString(ref result, propValue, true, false, isFormatted: isFormatted);
-				}
-			}
-			for (int i = 0; i < fields.Length; i++)
-			{
-				var field = fields[i];
-				if (IsTypeSupported(field.FieldType) == false || field.Name.Contains('<'))
-					continue;
-
-				var fieldValue = field.GetValue(value);
-
-				result += newLine + tab + tab + STRUCT_PROP + space;
-
-				if (fieldValue != null)
-				{
-					result += field.Name + space + newLine + tab + tab + tab;
-					AddToString(ref result, fieldValue, true, false, isFormatted: isFormatted);
-				}
+							for (int k = 0; k < array.GetLength(2); k++)
+							{
+								var sep = k == 0 ? string.Empty : sep1D;
+								arrayStr.Append(sep + array.GetValue(i, j, k)?.ToString());
+							}
+						}
+					}
+				return arrayStr.ToString().Trim();
 			}
 
-			return;
+			return string.Empty;
 		}
 
-		result += valueSep + space + value?.ToString()?
-			.Replace("\t", TAB)
-			.Replace(Environment.NewLine, NEW_LINE)
-			.Replace(" ", SPACE);
+		return OnObjectToText(typeId, instance);
 	}
-	private void PopulateMember(MemberInfo memberInfo, string instanceName, object instance)
+
+	private static T Wrap<T>(decimal value, T minValue, T maxValue) where T : struct, IComparable, IConvertible
 	{
-		var prop = memberInfo is PropertyInfo p ? p : null;
-		var field = memberInfo is FieldInfo f ? f : null;
-		var type = prop?.PropertyType ?? field?.FieldType;
-		var name = memberInfo.Name;
-
-		if (data[instanceName].ContainsKey(name) == false || type == null)
-			return;
-
-		var value = data[instanceName][name];
-		var valueType = value.GetType();
-
-		if (value is string str && str.Contains(STRUCT_PROP))
+		if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
 		{
-			if (str.Contains(STRUCT))
-			{
-				var elementType = type.GetElementType();
-				if (elementType == null)
-					return;
-
-				var structs = str.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
-				var result = Array.CreateInstance(elementType, structs.Length);
-
-				for (int i = 0; i < structs.Length; i++)
-				{
-					var currStruct = ParseStruct(elementType, structs[i]);
-					result.SetValue(currStruct, i);
-				}
-
-				prop?.SetValue(instance, result);
-				field?.SetValue(instance, result);
-				return;
-			}
-
-			var structInstance = ParseStruct(type, str);
-			prop?.SetValue(instance, structInstance);
-			field?.SetValue(instance, structInstance);
-			return;
+			throw new ArgumentException("Type must be a primitive numeric type.");
 		}
 
-		if (valueType.IsArray || valueType == type.GetElementType())
-		{
-			if (valueType.IsArray == false)
-			{
-				var singleElementArray = Array.CreateInstance(valueType, 1);
-				singleElementArray.SetValue(value, 0);
-				prop?.SetValue(instance, singleElementArray);
-				field?.SetValue(instance, singleElementArray);
-				return;
-			}
+		var range = Convert.ToDouble(maxValue) - Convert.ToDouble(minValue);
+		var wrappedValue = Convert.ToDouble(value);
 
-			var array = (object[])value;
-			var elementType = type.GetElementType();
-			if (elementType == null)
-				return;
+		while (wrappedValue < Convert.ToDouble(minValue))
+			wrappedValue += range;
 
-			var result = Array.CreateInstance(elementType, array.Length);
+		while (wrappedValue > Convert.ToDouble(maxValue))
+			wrappedValue -= range;
 
-			for (int j = 0; j < array.Length; j++)
-			{
-				var arrayValue = TryParseValue(elementType, array[j]);
-				result.SetValue(arrayValue, j);
-			}
-
-			prop?.SetValue(instance, result);
-			field?.SetValue(instance, result);
-			return;
-		}
-
-		var v = TryParseValue(type, value);
-		prop?.SetValue(instance, v);
-		field?.SetValue(instance, v);
+		return (T)Convert.ChangeType(wrappedValue, typeof(T));
 	}
-	private void CacheProp(string instanceName, string prop)
+	private static bool IsArrayOfPrimitives(Array array)
 	{
-		if (data.ContainsKey(instanceName) == false)
-			data[instanceName] = new();
+		if (array == null)
+			throw new ArgumentNullException(nameof(array));
 
-		if (prop.Contains(STRUCT))
-		{
-			var struc = prop.Split(STRUCT, StringSplitOptions.RemoveEmptyEntries);
-			var structPropName = struc[0];
+		var elementType = array.GetType().GetElementType();
 
-			var val = "";
-			for (int i = 1; i < struc.Length; i++)
-			{
-				var sep = i < struc.Length - 1 ? STRUCT : "";
-				val += struc[i]
-					.Replace(TAB, "\t")
-					.Replace(NEW_LINE, Environment.NewLine)
-					.Replace(SPACE, " ") +
-					sep;
-			}
+		if (elementType == null)
+			throw new ArgumentException("Array must have an element type.");
 
-			data[instanceName][structPropName] = val;
-			return;
-		}
-
-		var values = prop.Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-		if (values.Length < 2)
-			return;
-
-		var name = values[0];
-		var finalValues = new string[values.Length - 1];
-		for (int i = 1; i < values.Length; i++)
-			finalValues[i - 1] = values[i]
-				.Replace(TAB, "\t")
-				.Replace(NEW_LINE, Environment.NewLine)
-				.Replace(SPACE, " ");
-
-		object finalValue = finalValues.Length == 1 ? finalValues[0] : finalValues;
-		if (finalValue != null)
-			data[instanceName][name] = finalValue;
-	}
-
-	private static string Trim(string text)
-	{
-		return text.Replace("\t", "").Replace(" ", "").Replace(Environment.NewLine, "");
-	}
-
-	private static object? ParseStruct(Type structType, string str)
-	{
-		var structInstance = Activator.CreateInstance(structType);
-		var structProps = str.Split(STRUCT_PROP, StringSplitOptions.RemoveEmptyEntries);
-
-		for (int i = 0; i < structProps.Length; i++)
-		{
-			var structValues = structProps[i].Split(VALUE, StringSplitOptions.RemoveEmptyEntries);
-			if (structValues.Length < 2)
-				continue;
-			var valStr = structValues[1];
-			var structField = structType.GetField(structValues[0]);
-			var structProp = structType.GetProperty(structValues[0]);
-
-			if (structField != null)
-			{
-				var fieldValue = TryParseValue(structField.FieldType, valStr);
-				structField?.SetValue(structInstance, fieldValue);
-			}
-			else if (structProp != null && structProp.GetSetMethod() != null)
-			{
-				var propValue = TryParseValue(structProp.PropertyType, valStr);
-				structProp?.SetValue(structInstance, propValue);
-			}
-		}
-		return structInstance;
-	}
-	private static object? TryParseValue(Type type, object value)
-	{
-		if (type == typeof(string))
-			return value;
-		else if (type == typeof(bool))
-			return Convert.ChangeType(Convert.ToBoolean(value, CultureInfo.CurrentCulture), type);
-		else if (type == typeof(char))
-			return Convert.ChangeType(Convert.ToChar(value, CultureInfo.CurrentCulture), type);
-		else if (IsNumericType(type))
-			return Convert.ChangeType(Convert.ToSingle(value, CultureInfo.CurrentCulture), type);
-
-		return default;
-	}
-
-	private static bool IsNumericType(Type type)
-	{
-		return Type.GetTypeCode(type) switch
-		{
-			TypeCode.Byte or
-			TypeCode.SByte or
-			TypeCode.UInt16 or
-			TypeCode.UInt32 or
-			TypeCode.UInt64 or
-			TypeCode.Int16 or
-			TypeCode.Int32 or
-			TypeCode.Int64 or
-			TypeCode.Decimal or
-			TypeCode.Double or
-			TypeCode.Single => true,
-			_ => false,
-		};
-	}
-	private static bool IsStructType(Type type)
-	{
-		return type.IsValueType && type.IsEnum == false && type.IsPrimitive == false &&
-			type.IsEquivalentTo(typeof(decimal)) == false;
-	}
-	private static bool IsTypeSupported(Type type)
-	{
-		var isArray = false;
-		if (type == typeof(Array))
-		{
-			var arrayInstance = (Array?)Activator.CreateInstance(type);
-			isArray = arrayInstance?.Rank >= 2;
-		}
-		return type.IsClass == false || isArray || type == typeof(string);
-	}
-
-	private static byte[] Compress(byte[] data)
-	{
-		var output = new MemoryStream();
-		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-			stream.Write(data, 0, data.Length);
-
-		return output.ToArray();
-	}
-	private static byte[] Decompress(byte[] data)
-	{
-		var input = new MemoryStream(data);
-		var output = new MemoryStream();
-		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-			stream.CopyTo(output);
-
-		return output.ToArray();
-	}
-
-	private static string Base64Encode(string plainText)
-	{
-		var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
-		return System.Convert.ToBase64String(plainTextBytes);
-	}
-	private static string Base64Decode(string base64EncodedData)
-	{
-		var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
-		return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+		return elementType.IsPrimitive || elementType == typeof(string);
 	}
 	#endregion
 }
-*/

@@ -1,4 +1,6 @@
-﻿namespace Pure.Tilemap;
+﻿using System.Runtime.InteropServices;
+
+namespace Pure.Tilemap;
 
 /// <summary>
 /// Represents a tile in a tilemap.
