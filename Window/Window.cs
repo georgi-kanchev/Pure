@@ -243,36 +243,39 @@ public static class Window
 	/// </summary>
 	/// <param name="points">An array of bundle tuples representing the position and color 
 	/// of each point.</param>
-	public static void DrawPoints(params ((float x, float y) position, uint color)[] points)
+	public static void DrawPoints(params (float x, float y, uint color)[] points)
 	{
 		TryNoWindowException();
 
 		for (int i = 0; i < points?.Length; i++)
-			Vertices.QueuePoint(points[i].position, points[i].color);
+			Vertices.QueuePoint((points[i].x, points[i].y), points[i].color);
 	}
 	/// <summary>
 	/// Draws a set of <paramref name="rectangles"/> to the window.
 	/// </summary>
 	/// <param name="rectangles">An array of bundle tuples representing the 
 	/// position, size, and color of each rectangle.</param>
-	public static void DrawRectangles(params ((float x, float y) position, (float width, float height) size, uint color)[] rectangles)
+	public static void DrawRectangles(params (float x, float y, float width, float height, uint color)[] rectangles)
 	{
 		TryNoWindowException();
 
 		for (int i = 0; i < rectangles?.Length; i++)
-			Vertices.QueueRectangle(rectangles[i].position, rectangles[i].size, rectangles[i].color);
+		{
+			var r = rectangles[i];
+			Vertices.QueueRectangle((r.x, r.y), (r.width, r.height), r.color);
+		}
 	}
 	/// <summary>
 	/// Draws a set of <paramref name="lines"/> to the window.
 	/// </summary>
 	/// <param name="lines">An array of bundle tuples representing the 
 	/// start position, end position, and color of each line.</param>
-	public static void DrawLines(params ((float x, float y) start, (float x, float y) end, uint color)[] lines)
+	public static void DrawLines(params (float ax, float ay, float bx, float by, uint color)[] lines)
 	{
 		TryNoWindowException();
 
 		for (int i = 0; i < lines?.Length; i++)
-			Vertices.QueueLine(lines[i].start, lines[i].end, lines[i].color);
+			Vertices.QueueLine((lines[i].ax, lines[i].ay), (lines[i].bx, lines[i].by), lines[i].color);
 	}
 	/// <summary>
 	/// Draws a single <paramref name="tile"/> to the window.
@@ -282,18 +285,18 @@ public static class Window
 	/// tint, angle, and flip status of the tile.</param>
 	/// <param name="size">The size of the tile, in tiles. Defaults to (1, 1) if not specified,
 	/// (0, 0) or negative.</param>
-	public static void DrawTile((float x, float y) position, (int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips) tile, (int width, int height) size = default)
+	public static void DrawTile((float x, float y) position, (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically) tile, (int width, int height) size = default)
 	{
 		TryNoWindowException();
-		var (id, tint, angle, flips) = tile;
-		Vertices.QueueTile(position, id, tint, angle, size, flips);
+		var (id, tint, angle, flipH, flipV) = tile;
+		Vertices.QueueTile(position, id, tint, angle, size, (flipH, flipV));
 	}
 	/// <summary>
 	/// Draws a set of <paramref name="tiles"/> to the window.
 	/// </summary>
 	/// <param name="tiles">A 2D array of bundle tuples representing the identifier, 
 	/// tint, angle, and flip status of each tile.</param>
-	public static void DrawTiles((int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips)[,] tiles)
+	public static void DrawTiles((int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,] tiles)
 	{
 		TryNoWindowException();
 

@@ -48,13 +48,13 @@ public class Particle
 
 	/// <returns>
 	/// A bundle tuple containing the position and color of the particle.</returns>
-	public ((float x, float y) position, uint color) ToBundle() => this;
+	public (float x, float y, uint color) ToBundle() => this;
 
 	/// <summary>
 	/// Implicitly converts a particle to a bundle tuple of its position and color.
 	/// </summary>
 	/// <param name="particle">The particle to convert.</param>
 	/// <returns>A bundle tuple containing the position and color of the particle.</returns>
-	public static implicit operator ((float x, float y) position, uint color)(Particle particle)
-		=> (particle.Position, particle.Color);
+	public static implicit operator (float x, float y, uint color)(Particle particle)
+		=> (particle.Position.x, particle.Position.y, particle.Color);
 }

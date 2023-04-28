@@ -579,9 +579,9 @@ public class Tilemap
 
 	/// <returns>
 	/// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-	public (int tile, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips)[,] ToBundle()
+	public (int tile, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,] ToBundle()
 	{
-		var result = new (int, uint, sbyte, (bool, bool))[data.GetLength(0), data.GetLength(1)];
+		var result = new (int, uint, sbyte, bool, bool)[data.GetLength(0), data.GetLength(1)];
 		for (int j = 0; j < data.GetLength(1); j++)
 			for (int i = 0; i < data.GetLength(0); i++)
 				result[i, j] = data[i, j];

@@ -195,7 +195,7 @@ public static class Mouse
 		Vertices.graphicsPath = "default";
 		Vertices.tileSize = (8, 8);
 
-		(int id, uint tint, sbyte ang, (bool h, bool v) fl) tile = default;
+		(int id, uint tint, sbyte ang, bool h, bool v) tile = default;
 		tile.id = 442 + CursorGraphics;
 		tile.tint = CursorColor;
 		Window.DrawTile((x - offX, y - offY), tile);

@@ -249,7 +249,7 @@ public struct Line
 
 	/// <returns>
 	/// A bundle tuple containing the two points and the color of the line.</returns>
-	public ((float x, float y) a, (float x, float y) b, uint color) ToBundle() => this;
+	public (float ax, float ay, float bx, float by, uint color) ToBundle() => this;
 	/// <returns>
 	/// A string representation of this line in the format of its bundle tuple.".</returns>
 	public override string ToString()
@@ -262,15 +262,15 @@ public struct Line
 	/// </summary>
 	/// <param name="bundle">The tuple to convert.</param>
 	/// <returns>A new line instance.</returns>
-	public static implicit operator Line(((float x, float y) a, (float x, float y) b, uint color) bundle)
-		=> new(bundle.a, bundle.b, bundle.color);
+	public static implicit operator Line((float ax, float ay, float bx, float by, uint color) bundle)
+		=> new((bundle.ax, bundle.ay), (bundle.bx, bundle.by), bundle.color);
 	/// <summary>
 	/// Implicitly converts a line into a tuple bundle of two points and a color.
 	/// </summary>
 	/// <param name="line">The line to convert.</param>
 	/// <returns>A tuple bundle containing the two points and the color of the line.</returns>
-	public static implicit operator ((float x, float y) a, (float x, float y) b, uint color)(Line line)
-		=> (line.A, line.B, line.Color);
+	public static implicit operator (float ax, float ay, float bx, float by, uint color)(Line line)
+		=> (line.A.x, line.A.y, line.B.x, line.B.y, line.Color);
 
 	#region Backend
 	private const int MAX_ITERATIONS = 1000;

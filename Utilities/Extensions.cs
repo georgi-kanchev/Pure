@@ -301,6 +301,7 @@ public static class Extensions
 			result.Append(separatorRow);
 		}
 
+		result.Remove(result.Length - 1, 1);
 		return result.ToString();
 	}
 	/// <typeparam name="T">
@@ -368,6 +369,7 @@ public static class Extensions
 				}
 		}
 	}
+
 	/// <param name="text">
 	/// The input string to check.</param>
 	/// <returns>True if the input string represents a number; otherwise, false.</returns>
@@ -479,6 +481,15 @@ public static class Extensions
 			else
 				Console.WriteLine($"Could not load URL '{url}'.");
 		}
+	}
+	/// <param name="text">
+	/// The string to search for occurrences of <paramref name="target"/>.</param>
+	/// <param name="target">The substring to count within <paramref name="text"/>.</param>
+	/// <returns>The number of times <paramref name="target"/> appears 
+	/// within <paramref name="text"/>.</returns>
+	public static int Count(this string text, string target)
+	{
+		return string.IsNullOrEmpty(target) ? 0 : text.Split(target).Length - 1;
 	}
 
 	/// <summary>

@@ -47,7 +47,7 @@ public struct Tile
 
 	/// <returns>
 	/// A bundle tuple containing the identifier, tint, angle and flips of the tile.</returns>
-	public (int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips) ToBundle() => this;
+	public (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically) ToBundle() => this;
 	/// <returns>
 	/// A string representation of this tile in the format of its bundle tuple.".</returns>
 	public override string ToString()
@@ -66,23 +66,24 @@ public struct Tile
 	/// </summary>
 	/// <param name="bundle">A bundle tuple of values representing the identifier, 
 	/// tint, angle, and flips of the tile.</param>
-	public static implicit operator Tile((int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips) bundle)
+	public static implicit operator Tile((int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically) bundle)
 	{
-		var (tile, tint, angle, flips) = bundle;
-		return new(tile, tint, angle, flips);
+		var (tile, tint, angle, flipH, flipV) = bundle;
+		return new(tile, tint, angle, (flipH, flipV));
 	}
 	/// <summary>
 	/// Implicitly converts a tile to a bundle tuple of values representing its 
 	/// identifier, tint, angle, and flips.
 	/// </summary>
 	/// <param name="tile">The tile to convert.</param>
-	public static implicit operator (int id, uint tint, sbyte angle, (bool isHorizontal, bool isVertical) flips)(Tile tile)
+	public static implicit operator (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)(Tile tile)
 	{
-		return new(
+		return (
 			tile.ID,
 			tile.Tint,
 			tile.Angle,
-			tile.Flips);
+			tile.Flips.isHorizontal,
+			tile.Flips.isVertical);
 	}
 
 	#region Shade

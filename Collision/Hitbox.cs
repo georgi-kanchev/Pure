@@ -193,7 +193,7 @@ public class Hitbox
 	public virtual Rectangle[] ToArray() => this;
 	/// <returns>
 	/// An array copy of the rectangles in this hitbox collection, as a bundle tuple.</returns>
-	public virtual ((float x, float y) position, (float width, float height) size, uint color)[] ToBundle() => this;
+	public virtual (float x, float y, float width, float height, uint color)[] ToBundle() => this;
 
 	/// <summary>
 	/// Implicitly converts a rectangle array to a hitbox object.
@@ -209,9 +209,9 @@ public class Hitbox
 	/// Implicitly converts a hitbox object to an array of rectangle bundle tuples.
 	/// </summary>
 	/// <param name="hitbox">The hitbox object to convert.</param>
-	public static implicit operator ((float x, float y) position, (float width, float height) size, uint color)[](Hitbox hitbox)
+	public static implicit operator (float x, float y, float width, float height, uint color)[](Hitbox hitbox)
 	{
-		var result = new ((float x, float y) position, (float width, float height) size, uint color)[hitbox.rectangles.Count];
+		var result = new (float x, float y, float width, float height, uint color)[hitbox.rectangles.Count];
 		for (int i = 0; i < result.Length; i++)
 			result[i] = hitbox.rectangles[i];
 		return result;
@@ -220,7 +220,7 @@ public class Hitbox
 	/// Implicitly converts an array of rectangle bundle tuples to a hitbox object.
 	/// </summary>
 	/// <param name="rectangles">The array of rectangle bundles to convert.</param>
-	public static implicit operator Hitbox(((float x, float y) position, (float width, float height) size, uint color)[] rectangles)
+	public static implicit operator Hitbox((float x, float y, float width, float height, uint color)[] rectangles)
 	{
 		var result = new Rectangle[rectangles.Length];
 		for (int i = 0; i < result.Length; i++)

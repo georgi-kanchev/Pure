@@ -74,9 +74,9 @@ public class BaseParticleManager
 	/// <returns>An array of particles in the particle manager.</returns>
 	public Particle[] ToArray() => this;
 	/// <returns>An array of particle bundle tuples in the particle manager.</returns>
-	public ((float x, float y) position, uint color)[] ToBundle()
+	public (float x, float y, uint color)[] ToBundle()
 	{
-		var result = new ((float x, float y) position, uint color)[particles.Count];
+		var result = new (float x, float y, uint color)[particles.Count];
 		for (int i = 0; i < particles.Count; i++)
 			result[i] = particles[i];
 

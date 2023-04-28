@@ -112,7 +112,7 @@ internal static class Vertices
 
 		QueueSingleSprite((x, y), tile, tint, angle, (w, h));
 	}
-	public static void QueueTilemap((int tile, uint tint, sbyte angle, (bool isFlippedH, bool isFlippedV) flips)[,] tilemap)
+	public static void QueueTilemap((int tile, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,] tilemap)
 	{
 		if (Window.window == null)
 			return;
@@ -152,7 +152,7 @@ internal static class Vertices
 				var texBl = new Vector2f((int)tx.X, (int)(tx.Y + tileH));
 				var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
 				var rotated = GetRotatedPoints(tilemap[x, y].angle, tl, tr, br, bl);
-				var (flipX, flipY) = tilemap[x, y].flips;
+				var (flipX, flipY) = (tilemap[x, y].isFlippedHorizontally, tilemap[x, y].isFlippedVertically);
 
 				if (flipX)
 				{
