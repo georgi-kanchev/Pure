@@ -17,20 +17,11 @@ public class Program
 		var tilemap = new Tilemap((16 * 3, 9 * 3));
 		tilemap.SetTextLine((0, 0), "Hello, World!", Color.Red);
 
-		var arr = new int[4, 2, 3]
-		{
-			{ { 1, 2, 3}, {4, 5, 6} },
+		var storage = new Storage();
+		storage.Set("0", ("123,5", "3,3,,,,5", "ab", "bvc"));
+		var val = storage.GetAsText("0");
 
-			{ { 7, 8, 9}, { 10, 11, 12} },
-
-			{ { 1, 6, 6}, { 3, 5, 2} },
-
-			{ { 7, 2, 8}, { 1, 4, 7} },
-		};
-		var storage = new Storage<int>();
-		storage.Set(0, arr);
-		var val = storage.GetAsText(0);
-		var split = val.Split(Environment.NewLine + Environment.NewLine);
+		var resultArr = storage.GetAsObject<(string, string, string, string)>("0");
 		System.Console.WriteLine(val);
 		//var a = storage.GetAsObject<int[,]>(0);
 		//storage.Add("map", tilemap);
