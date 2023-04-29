@@ -125,7 +125,7 @@ public static class FlappyBird
 
 			Window.DrawTiles(background.ToBundle());
 			Window.DrawTiles(foreground.ToBundle());
-			var tile = new Tile(isGameOver ? Tile.CAPITAL_X : birdTile, Color.Yellow, birdAngle);
+			var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
 			Window.DrawTile((BIRD_X, birdY), tile);
 
 			Window.Activate(false);

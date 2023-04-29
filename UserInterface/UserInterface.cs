@@ -133,6 +133,23 @@ public abstract class UserInterface
 	}
 
 	/// <summary>
+	/// The currently focused user interface element.
+	/// </summary>
+	protected static UserInterface? Focused { get; private set; }
+	/// <summary>
+	/// Indicates whether user input has been cancelled.
+	/// </summary>
+	protected static bool IsInputCanceled { get; private set; }
+	/// <summary>
+	/// The last input received by the user interface.
+	/// </summary>
+	protected static Input CurrentInput { get; } = new();
+	/// <summary>
+	/// The size of the tilemap being used by the user interface.
+	/// </summary>
+	protected static (int width, int height) TilemapSize { get; private set; }
+
+	/// <summary>
 	/// Gets or sets the position of the user interface element.
 	/// </summary>
 	public (int x, int y) Position { get; set; }
@@ -152,7 +169,10 @@ public abstract class UserInterface
 	/// Gets or sets the text displayed (if any) by the user interface element.
 	/// </summary>
 	public string Text { get; set; } = "";
-
+	/// <summary>
+	/// Gets or sets the text that has been copied to the user interface clipboard.
+	/// </summary>
+	public static string? TextCopied { get; set; } = "";
 	/// <summary>
 	/// Gets or sets a value indicating whether the user interface element is hidden.
 	/// </summary>
@@ -184,27 +204,6 @@ public abstract class UserInterface
 	/// (as a button - press and release on it).
 	/// </summary>
 	public bool IsClicked { get; private set; }
-	/// <summary>
-	/// Gets or sets the text that has been copied to the user interface clipboard.
-	/// </summary>
-	public static string? TextCopied { get; set; } = "";
-
-	/// <summary>
-	/// The currently focused user interface element.
-	/// </summary>
-	protected static UserInterface? Focused { get; private set; }
-	/// <summary>
-	/// Indicates whether user input has been cancelled.
-	/// </summary>
-	protected static bool IsInputCanceled { get; private set; }
-	/// <summary>
-	/// The last input received by the user interface.
-	/// </summary>
-	protected static Input CurrentInput { get; } = new();
-	/// <summary>
-	/// The size of the tilemap being used by the user interface.
-	/// </summary>
-	protected static (int width, int height) TilemapSize { get; private set; }
 
 	/// <summary>
 	/// Initializes a new user interface element instance class with the specified 

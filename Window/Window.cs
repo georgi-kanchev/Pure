@@ -189,7 +189,8 @@ public static class Window
 			return;
 		}
 
-		window.SetMouseCursorVisible(Mouse.IsCursorHoveringWindow == false);
+		if (Mouse.CursorGraphics < Mouse.Cursor.TILE_WAIT)
+			window.SetMouseCursorVisible(Mouse.IsCursorHoveringWindow == false);
 		Mouse.Update();
 		Vertices.DrawQueue();
 		window.Display();

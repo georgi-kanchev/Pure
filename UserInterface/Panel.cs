@@ -4,7 +4,7 @@ public class Panel : UserInterface
 {
 	public bool IsResizable { get; set; } = true;
 	public bool IsMovable { get; set; } = true;
-	public (int width, int height) AdditionalMinSize { get; set; }
+	public (int width, int height) AdditionalMinimumSize { get; set; }
 
 	public Panel((int x, int y) position, (int width, int height) size) : base(position, size) { }
 
@@ -73,7 +73,7 @@ public class Panel : UserInterface
 			var (dx, dy) = ((int)ix - (int)px, (int)iy - (int)py);
 			var (newX, newY) = (x, y);
 			var (newW, newH) = (w, h);
-			var (maxX, maxY) = AdditionalMinSize;
+			var (maxX, maxY) = AdditionalMinimumSize;
 
 			if (isDragging && IsBetween(ix, x + 1 + dx, x + w - 2 + dx) && iy == y + dy)
 			{

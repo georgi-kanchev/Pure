@@ -21,16 +21,15 @@ public static class Mouse
 	public static class Cursor
 	{
 		public const int TILE_ARROW = 0, TILE_ARROW_NO_TAIL = 1, TILE_HAND = 2, TILE_TEXT = 3,
-			TILE_CROSSHAIR = 4, TILE_NO = 5, TILE_RESIZE_HORIZONTAL = 6, TILE_RESIZE_VERTICAL = 7,
-			TILE_RESIZE_DIAGONAL_1 = 8, TILE_RESIZE_DIAGONAL_2 = 9, TILE_MOVE = 10, TILE_WAIT_1 = 11,
-			TILE_WAIT_2 = 12, TILE_WAIT_3 = 13,
+			TILE_CROSSHAIR = 4, TILE_NO = 5, TILE_RESIZE = 6, TILE_RESIZE_DIAGONAL = 7,
+			TILE_MOVE = 8, TILE_WAIT = 9,
 
-			SYSTEM_ARROW = 14, SYSTEM_ARROW_WAIT = 15, SYSTEM_WAIT = 16, SYSTEM_TEXT = 17,
-			SYSTEM_HAND = 18, SYSTEM_RESIZE_HORINZONTAL = 19, SYSTEM_RESIZE_VERTICAL = 20,
-			SYSTEM_RESIZE_DIAGONAL_2 = 21, SYSTEM_RESIZE_DIAGONAL_1 = 22, SYSTEM_MOVE = 23,
-			SYSTEM_CROSSHAIR = 24, SYSTEM_HELP = 25, SYSTEM_NO = 26,
+			SYSTEM_ARROW = 10, SYSTEM_ARROW_WAIT = 11, SYSTEM_WAIT = 12, SYSTEM_TEXT = 13,
+			SYSTEM_HAND = 14, SYSTEM_RESIZE_HORINZONTAL = 15, SYSTEM_RESIZE_VERTICAL = 16,
+			SYSTEM_RESIZE_DIAGONAL_2 = 17, SYSTEM_RESIZE_DIAGONAL_1 = 18, SYSTEM_MOVE = 19,
+			SYSTEM_CROSSHAIR = 20, SYSTEM_HELP = 21, SYSTEM_NO = 22,
 
-			NONE = 27;
+			NONE = 23;
 	}
 
 	/// <summary>
@@ -61,7 +60,7 @@ public static class Mouse
 
 			cursor = value;
 
-			if (value != Cursor.NONE && value > Cursor.TILE_WAIT_3)
+			if (value != Cursor.NONE && value > Cursor.TILE_WAIT)
 			{
 				var arrow = Cursor.SYSTEM_ARROW;
 				var sfmlEnum = (SFML.Window.Cursor.CursorType)(value - arrow);
@@ -186,7 +185,7 @@ public static class Mouse
 	{
 		ScrollDelta = 0;
 
-		if (cursor > Cursor.TILE_WAIT_3)
+		if (cursor > Cursor.TILE_WAIT)
 			return;
 
 		var (x, y) = Window.PositionFrom(CursorPosition);

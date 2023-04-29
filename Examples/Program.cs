@@ -1,9 +1,9 @@
 namespace Pure.Examples;
 
 using Pure.Window;
+using Pure.Storage;
 using Pure.Tilemap;
 using Pure.Utilities;
-using Pure.Storage;
 
 public class Program
 {
@@ -14,20 +14,21 @@ public class Program
 
 		//Games.FlappyBird.Run();
 
-		var tilemap = new Tilemap((16 * 3, 9 * 3));
+		var tilemap = new Tilemap((16 * 1, 9 * 1));
 		tilemap.SetTextLine((0, 0), "Hello, World!", Color.Red);
 
+		//var storage = new Storage();
 		var storage = new Storage();
-		storage.Set("0", ("123,5", "3,3,,,,5", "ab", "bvc"));
-		var val = storage.GetAsText("0");
+		storage.Load("test.storage", false);
+		//storage.Set("0", tilemap.ToBundle());
+		//storage.Save("test.storage", false);
 
-		var resultArr = storage.GetAsObject<(string, string, string, string)>("0");
-		System.Console.WriteLine(val);
 		//var a = storage.GetAsObject<int[,]>(0);
 		//storage.Add("map", tilemap);
 		//storage.Save("test.map");
 
 		Window.Create(Window.Mode.Windowed);
+
 		while (Window.IsOpen)
 		{
 			Window.Activate(true);

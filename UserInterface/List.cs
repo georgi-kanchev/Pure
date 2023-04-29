@@ -1,4 +1,6 @@
-﻿namespace Pure.UserInterface;
+﻿using System.Collections;
+
+namespace Pure.UserInterface;
 
 public class List : UserInterface
 {
@@ -197,6 +199,46 @@ public class List : UserInterface
 	{
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+	}
+
+	public int Add(object? value)
+	{
+		throw new NotImplementedException();
+	}
+
+	public bool Contains(object? value)
+	{
+		throw new NotImplementedException();
+	}
+
+	public int IndexOf(object? value)
+	{
+		throw new NotImplementedException();
+	}
+
+	public void Insert(int index, object? value)
+	{
+		throw new NotImplementedException();
+	}
+
+	public void Remove(object? value)
+	{
+		throw new NotImplementedException();
+	}
+
+	public void RemoveAt(int index)
+	{
+		throw new NotImplementedException();
+	}
+
+	public void CopyTo(Array array, int index)
+	{
+		throw new NotImplementedException();
+	}
+
+	public IEnumerator GetEnumerator()
+	{
+		throw new NotImplementedException();
 	}
 	#endregion
 }

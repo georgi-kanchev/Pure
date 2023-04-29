@@ -135,7 +135,7 @@ public static class Time
 			var sep = counter > 0 ? separator : "";
 			var val = counter == 0 ? (int)ts.TotalHours :
 				(units.HasFlag(Unit.AM_PM) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
-			val = val == 0 ? 12 : val;
+			//val = val == 0 ? 12 : val;
 			result += $"{sep}{val:D2}";
 			counter++;
 		}

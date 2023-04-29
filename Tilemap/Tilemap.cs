@@ -528,20 +528,42 @@ public class Tilemap
 		return (x, y);
 	}
 
+	public void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A, int numbers = Tile.NUMBER_0)
+	{
+		textIdLowercase = lowercase;
+		textIdUppercase = uppercase;
+		textIdNumbers = numbers;
+	}
+	public void ConfigureText(string symbols, int startId)
+	{
+		if (string.IsNullOrWhiteSpace(symbols))
+			return;
+
+		for (int i = 0; i < symbols.Length; i++)
+			symbolMap[symbols[i]] = startId + i;
+	}
+
+	public bool IsInside((int x, int y) position, (int width, int height) outsideMargin = default)
+	{
+		var (mx, my) = outsideMargin;
+		return position.x >= -mx && position.y >= -my &&
+			position.x <= Size.width - 1 + mx && position.y <= Size.height - 1 + my;
+	}
+
 	/// <summary>
 	/// Converts a <paramref name="symbol"/> to its corresponding tile identifier.
 	/// </summary>
 	/// <param name="symbol">The symbol to convert.</param>
 	/// <returns>The tile identifier corresponding to the given symbol.</returns>
-	public static int TileFrom(char symbol)
+	public int TileFrom(char symbol)
 	{
 		var id = default(int);
 		if (symbol >= 'A' && symbol <= 'Z')
-			id = symbol - 'A' + 78;
+			id = symbol - 'A' + textIdUppercase;
 		else if (symbol >= 'a' && symbol <= 'z')
-			id = symbol - 'a' + 104;
+			id = symbol - 'a' + textIdLowercase;
 		else if (symbol >= '0' && symbol <= '9')
-			id = symbol - '0' + 130;
+			id = symbol - '0' + textIdNumbers;
 		else if (symbolMap.ContainsKey(symbol))
 			id = symbolMap[symbol];
 
@@ -552,7 +574,7 @@ public class Tilemap
 	/// </summary>
 	/// <param name="text">The <paramref name="text"/> to convert.</param>
 	/// <returns>An array of tile identifiers corresponding to the given symbols.</returns>
-	public static int[] TilesFrom(string text)
+	public int[] TilesFrom(string text)
 	{
 		if (text == null || text.Length == 0)
 			return Array.Empty<int>();
@@ -600,7 +622,8 @@ public class Tilemap
 	// [width * height]			- angles
 	// [width * height]			- flips
 
-	private static readonly Dictionary<char, int> symbolMap = new()
+	private int textIdNumbers = Tile.NUMBER_0, textIdUppercase = Tile.UPPERCASE_A, textIdLowercase = Tile.LOWERCASE_A;
+	private readonly Dictionary<char, int> symbolMap = new()
 		{
 			{ '░', 2 }, { '▒', 5 }, { '▓', 7 }, { '█', 10 },
 
