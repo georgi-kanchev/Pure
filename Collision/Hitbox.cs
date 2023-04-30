@@ -27,10 +27,10 @@ public class Hitbox
 	public virtual int RectangleCount => rectangles.Count;
 
 	/// <summary>
-	/// Gets or sets the rectangle at the specified <paramref name="index"/>.
+	/// Gets or sets the rectangle at the specified index.
 	/// </summary>
 	/// <param name="index">The index of the rectangle to get or set.</param>
-	/// <returns>The rectangle at the specified <paramref name="index"/>.</returns>
+	/// <returns>The rectangle at the specified index.</returns>
 	public virtual Rectangle this[int index]
 	{
 		get => rectangles[index];
@@ -80,7 +80,7 @@ public class Hitbox
 	}
 	/// <summary>
 	/// Initializes a new empty hitbox instance (with no rectangles in it) with the specified 
-	/// <paramref name="position"/> and <paramref name="scale"/>.
+	/// position and scale.
 	/// </summary>
 	/// <param name="position">The position of the hitbox.</param>
 	/// <param name="scale">The scale of the hitbox.</param>
@@ -91,7 +91,7 @@ public class Hitbox
 	}
 	/// <summary>
 	/// Initializes aa new hitbox instance with the specified 
-	/// <paramref name="position"/>, <paramref name="scale"/> and <paramref name="rectangles"/>.
+	/// position, scale and rectangles.
 	/// </summary>
 	/// <param name="position">The position of the hitbox.</param>
 	/// <param name="scale">The scale of the hitbox.</param>
@@ -104,7 +104,7 @@ public class Hitbox
 	}
 
 	/// <summary>
-	/// Saves the hitbox as a compressed binary file to the specified <paramref name="path"/>.
+	/// Saves the hitbox as a compressed binary file to the specified path.
 	/// </summary>
 	/// <param name="path">The path to save the hitbox to.</param>
 	public virtual void Save(string path)
@@ -130,7 +130,7 @@ public class Hitbox
 	}
 
 	/// <summary>
-	/// Adds a <paramref name="rectangle"/> to the hitbox.
+	/// Adds a rectangle to the hitbox.
 	/// </summary>
 	/// <param name="rectangle">The rectangle to add.</param>
 	public virtual void AddRectangle(Rectangle rectangle)
@@ -139,7 +139,7 @@ public class Hitbox
 	}
 
 	/// <summary>
-	/// Checks if the hitbox overlaps with another <paramref name="hitbox"/>.
+	/// Checks if the hitbox overlaps with another hitbox.
 	/// </summary>
 	/// <param name="hitbox">The hitbox to check for overlap with.</param>
 	/// <returns>True if the hitboxes overlap, false otherwise.</returns>
@@ -153,7 +153,7 @@ public class Hitbox
 	}
 	/// <param name="rectangle">
 	/// The rectangle to check for overlap with.</param>
-	/// <returns>True if the hitbox overlaps with the <paramref name="rectangle"/>, 
+	/// <returns>True if the hitbox overlaps with the rectangle, 
 	/// false otherwise.</returns>
 	public virtual bool IsOverlapping(Rectangle rectangle)
 	{
@@ -165,7 +165,7 @@ public class Hitbox
 	}
 	/// <param name="line">
 	/// The line to check for overlap with.</param>
-	/// <returns>True if the hitbox overlaps with the <paramref name="line"/>, 
+	/// <returns>True if the hitbox overlaps with the line, 
 	/// false otherwise.</returns>
 	public virtual bool IsOverlapping(Line line)
 	{
@@ -177,7 +177,7 @@ public class Hitbox
 	}
 	/// <param name="point">
 	/// The point to check for overlap with.</param>
-	/// <returns>True if the hitbox overlaps with the <paramref name="point"/>, 
+	/// <returns>True if the hitbox overlaps with the point, 
 	/// false otherwise.</returns>
 	public virtual bool IsOverlapping((float x, float y) point)
 	{

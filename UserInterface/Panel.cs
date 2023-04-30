@@ -1,13 +1,35 @@
 ﻿namespace Pure.UserInterface;
 
+/// <summary>
+/// Represents a user input panel element that can be moved and resized by the user (like a window).
+/// </summary>
 public class Panel : UserInterface
 {
+	/// <summary>
+	/// Gets or sets a value indicating whether this panel can be resized by the user.
+	/// </summary>
 	public bool IsResizable { get; set; } = true;
+	/// <summary>
+	/// Gets or sets a value indicating whether this panel can be moved by the user.
+	/// </summary>
 	public bool IsMovable { get; set; } = true;
+	/// <summary>
+	/// Gets or sets the minimum additional size that this panel can have beyond its current size.
+	/// </summary>
 	public (int width, int height) AdditionalMinimumSize { get; set; }
 
+	/// <summary>
+	/// Initializes a new panel instance with the specified position and size.
+	/// </summary>
+	/// <param name="position">The position of the panel.</param>
+	/// <param name="size">The size of the panel.</param>
 	public Panel((int x, int y) position, (int width, int height) size) : base(position, size) { }
 
+	/// <summary>
+	/// Called when the panel needs to be updated. This handles all of the user input
+	/// the panel needs for its behavior. Subclasses should override this 
+	/// method to implement their own behavior.
+	/// </summary>
 	protected override void OnUpdate()
 	{
 		if (IsDisabled || IsResizable == false && IsMovable == false)

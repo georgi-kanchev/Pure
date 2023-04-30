@@ -3,12 +3,12 @@
 namespace Pure.Window;
 
 /// <summary>
-/// Handles the physical key presses on a keyboard.
+/// Handles keyboard input.
 /// </summary>
 public static class Keyboard
 {
 	/// <summary>
-	/// Each physical key on a standard keyboard.
+	/// Provides a set of constants representing keyboard keys.
 	/// </summary>
 	public static class Key
 	{
@@ -33,17 +33,16 @@ public static class Keyboard
 	}
 
 	/// <summary>
-	/// All currently pressed keys as text, in the order they were pressed.
+	/// Gets the latest keys typed by the user, in order.
 	/// </summary>
 	public static string KeyTyped { get; internal set; } = "";
 	/// <summary>
-	/// All currently pressed keys, in the order they were pressed.
+	/// Gets an array of currently pressed keys.
 	/// </summary>
 	public static int[] KeysPressed => pressed.ToArray();
-
-	/// <summary>
-	/// Returns whether a <paramref name="key"/> is among the <see cref="KeysPressed"/>.
-	/// </summary>
+	/// <param name="key">
+	/// The key to check.</param>
+	/// <returns>True if the key is currently pressed, otherwise false.</returns>
 	public static bool IsKeyPressed(int key) => pressed.Contains(key);
 
 	#region Backend

@@ -56,12 +56,12 @@ public class Animation<T>
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the animation with the specified <paramref name="duration"/>, 
-	/// repetition, and <paramref name="values"/>.
+	/// Initializes a new instance of the animation with the specified duration, 
+	/// repetition, and values.
 	/// </summary>
 	/// <param name="duration">The duration of the animation in seconds.</param>
 	/// <param name="isRepeating">A value indicating whether the animation should repeat from the beginning
-	/// after it has finished playing through all the <paramref name="values"/>.</param>
+	/// after it has finished playing through all the values.</param>
 	/// <param name="values">The values of the animation.</param>
 	public Animation(float duration, bool isRepeating, params T[] values)
 	{
@@ -75,12 +75,12 @@ public class Animation<T>
 		RawIndex = LOWER_BOUND;
 	}
 	/// <summary>
-	/// Initializes a new instance of the animation with the specified <paramref name="values"/>, 
-	/// repeating and <paramref name="speed"/> properties set.
+	/// Initializes a new instance of the animation with the specified values, 
+	/// repeating and speed properties set.
 	/// </summary>
 	/// <param name="isRepeating">A value indicating whether the animation should repeat 
-	/// from the beginning after it has finished playing through all the <paramref name="values"/>.</param>
-	/// <param name="speed">The speed at which the animation should play, as <paramref name="values"/>
+	/// from the beginning after it has finished playing through all the values.</param>
+	/// <param name="speed">The speed at which the animation should play, as values
 	/// per second.</param>
 	/// <param name="values">The values to be animated.</param>
 	public Animation(bool isRepeating, float speed, params T[] values)
@@ -89,7 +89,7 @@ public class Animation<T>
 		Speed = speed;
 	}
 	/// <summary>
-	/// Initializes a new instance of the animation with the specified <paramref name="values"/> 
+	/// Initializes a new instance of the animation with the specified values 
 	/// and default properties of <code>Duration = 1f</code> and <code>IsRepeating = false</code>
 	/// </summary>
 	/// <param name="values">The values to be animated.</param>
@@ -121,8 +121,7 @@ public class Animation<T>
 	public static implicit operator T[](Animation<T> animation) => Copy(animation.values);
 
 	/// <returns>
-	/// An array copy containing the values of type <typeparamref name="T"/> 
-	/// in the animation sequence.</returns>
+	/// An array copy containing the values in the animation sequence.</returns>
 	public T[] ToArray() => this;
 
 	#region Backend

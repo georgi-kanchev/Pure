@@ -103,14 +103,14 @@ public abstract class UserInterface
 
 		/// <param name="key">
 		/// The key to check.</param>
-		/// <returns>True if the specified <paramref name="key"/> is pressed, false otherwise.</returns>
+		/// <returns>True if the specified key is pressed, false otherwise.</returns>
 		public bool IsKeyPressed(int key)
 		{
 			return pressedKeys.Contains(key);
 		}
 		/// <param name="key">
 		/// The key to check.</param>
-		/// <returns>True if the specified <paramref name="key"/> has just been 
+		/// <returns>True if the specified key has just been 
 		/// pressed, false otherwise.</returns>
 		public bool IsKeyJustPressed(int key)
 		{
@@ -118,7 +118,7 @@ public abstract class UserInterface
 		}
 		/// <param name="key">
 		/// The key to check.</param>
-		/// <returns>True if the specified <paramref name="key"/> has just been 
+		/// <returns>True if the specified key has just been 
 		/// released, false otherwise.</returns>
 
 		public bool IsKeyJustReleased(int key)
@@ -207,7 +207,7 @@ public abstract class UserInterface
 
 	/// <summary>
 	/// Initializes a new user interface element instance class with the specified 
-	/// <paramref name="position"/> and <paramref name="size"/>.
+	/// position and size.
 	/// </summary>
 	/// <param name="position">The position of the user interface element.</param>
 	/// <param name="size">The size of the ser interface element.</param>
@@ -288,7 +288,7 @@ public abstract class UserInterface
 	}
 
 	/// <summary>
-	/// Triggers the specified <paramref name="userEvent"/>, invoking all the registered
+	/// Triggers the specified user event, invoking all the registered
 	/// methods associated with it.
 	/// Used internally by the user interface elements to notify subscribers of
 	/// user interactions and state changes.
@@ -305,7 +305,7 @@ public abstract class UserInterface
 			userEvents[userEventId][i].Invoke();
 	}
 	/// <summary>
-	/// Subscribes the specified <paramref name="method"/> to the specified <paramref name="userEvent"/>, 
+	/// Subscribes the specified method to the specified user event, 
 	/// so that it will be invoked every time the event is triggered. Multiple methods can be 
 	/// associated with the same event.
 	/// </summary>

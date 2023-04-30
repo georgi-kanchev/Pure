@@ -1,8 +1,17 @@
 ﻿namespace Pure.UserInterface;
 
+/// <summary>
+/// Represents a user interface slider element.
+/// </summary>
 public class Slider : UserInterface
 {
+	/// <summary>
+	/// Gets or sets a value indicating whether this slider is vertical or horizontal.
+	/// </summary>
 	public bool IsVertical { get; set; }
+	/// <summary>
+	/// Gets or sets the current progress of the slider (ranged 0 to 1).
+	/// </summary>
 	public float Progress
 	{
 		get => progress;
@@ -15,8 +24,17 @@ public class Slider : UserInterface
 		}
 	}
 
+	/// <summary>
+	/// Gets the handle button of the slider.
+	/// </summary>
 	public Button Handle { get; }
 
+	/// <summary>
+	/// Initializes a slider new instance with the specified position, size and orientation.
+	/// </summary>
+	/// <param name="position">The position of the slider.</param>
+	/// <param name="size">The size of the slider.</param>
+	/// <param name="isVertical">Whether the slider is vertical or horizontal.</param>
 	public Slider((int x, int y) position, int size = 5, bool isVertical = false)
 		: base(position, isVertical ? (1, size) : (size, 1))
 	{
@@ -24,6 +42,10 @@ public class Slider : UserInterface
 		Handle = new(position, (1, 1));
 	}
 
+	/// <summary>
+	/// Moves the handle of the slider by the specified amount.
+	/// </summary>
+	/// <param name="delta">The amount to move the handle.</param>
 	public void Move(int delta)
 	{
 		var size = IsVertical ? Size.Item2 : Size.Item1;
@@ -32,6 +54,11 @@ public class Slider : UserInterface
 
 		UpdateHandle();
 	}
+	/// <summary>
+	/// Tries to move the handle of the slider to the specified position. Picks the closest
+	/// position on the slider if not succesful.
+	/// </summary>
+	/// <param name="position">The position to try move the handle to.</param>
 	public void MoveTo((int x, int y) position)
 	{
 		var size = IsVertical ? Size.Item2 : Size.Item1;
@@ -43,6 +70,11 @@ public class Slider : UserInterface
 		UpdateHandle();
 	}
 
+	/// <summary>
+	/// Called when the slider needs to be updated. This handles all of the user input
+	/// the slider needs for its behavior. Subclasses should override this 
+	/// method to implement their own behavior.
+	/// </summary>
 	protected override void OnUpdate()
 	{
 		UpdateHandle();

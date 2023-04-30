@@ -3,26 +3,48 @@
 using System.Diagnostics;
 using System.Text;
 
+/// <summary>
+/// A user interface element for accepting text input from the user.
+/// </summary>
 public class InputBox : UserInterface
 {
+	/// <summary>
+	/// The text displayed in the input box when it is empty.
+	/// </summary>
 	public string Placeholder { get; set; } = "";
 
-	protected int CursorIndexX
+	/// <summary>
+	/// Gets or sets the zero-based horizontal index of the cursor in the input box's text.
+	/// </summary>
+	protected int CursorIndexSymbol
 	{
 		get => cx;
-		set => cx = Math.Clamp(value, 0, lines[CursorIndexY].Length);
+		set => cx = Math.Clamp(value, 0, lines[CursorIndexLine].Length);
 	}
-	protected int CursorIndexY
+	/// <summary>
+	/// Gets or sets the zero-based vertical index of the line containing the cursor in the input box's text.
+	/// </summary>
+	protected int CursorIndexLine
 	{
 		get => cy;
 		set => cy = Math.Clamp(value, 0, lines.Count - 1);
 	}
+	/// <summary>
+	/// Gets the zero-based index of the character at the cursor's position in the input box's text.
+	/// </summary>
 	protected int CursorIndex => cy * Size.Item1 + cx;
+	/// <summary>
+	/// Gets or sets the zero-based index of the first character in the current 
+	/// selection of the input box's text.
+	/// </summary>
 	protected int SelectionIndex
 	{
 		get => selectionIndex;
 		set => selectionIndex = Math.Clamp(value, 0, Size.Item1 * Size.Item2);
 	}
+	/// <summary>
+	/// Gets the currently selected text in the input box.
+	/// </summary>
 	protected string SelectedText
 	{
 		get
@@ -36,23 +58,45 @@ public class InputBox : UserInterface
 		}
 	}
 
+	/// <summary>
+	/// Initializes a new input box instance with a specific position and size.
+	/// </summary>
+	/// <param name="position">The position of the input box.</param>
+	/// <param name="size">The size of the input box.</param>
 	public InputBox((int x, int y) position, (int width, int height) size) : base(position, size)
 	{
 		lines.Add("");
 	}
 
+	/// <summary>
+	/// Sets the text of a specific line in the input box.
+	/// </summary>
+	/// <param name="lineIndex">The zero-based index of the line to set the text of.</param>
+	/// <param name="text">The new text for the line.</param>
 	public void SetLine(int lineIndex, string text)
 	{
 		if (lineIndex < 0 && lineIndex >= lines.Count)
-			throw new IndexOutOfRangeException(nameof(lineIndex));
+			return;
 
 		text ??= "";
 		lines[lineIndex] = text;
 	}
-	public string GetLine(int lineIndex)
+	/// <summary>
+	/// Gets the text of a specific line in the input box.
+	/// </summary>
+	/// <param name="lineIndex">The zero-based index of the line to get the text of.</param>
+	/// <returns>The text of the specified line.</returns>
+	public string TextAt(int lineIndex)
 	{
 		return lineIndex < 0 && lineIndex >= lines.Count ? "" : lines[lineIndex];
 	}
+	/// <summary>
+	/// Gets the graphics information for the input box represented by strings.
+	/// </summary>
+	/// <param name="cursor">The character to represent the cursor.</param>
+	/// <param name="selection">The characters to represent the selected text.</param>
+	/// <param name="placeholder">The text to display as the placeholder when 
+	/// the input box is empty.</param>
 	public void GetGraphics(out string cursor, out string selection, out string placeholder)
 	{
 		var totalTextLength = 0;
@@ -72,6 +116,12 @@ public class InputBox : UserInterface
 		placeholder = totalTextLength > 0 ? "" : Placeholder;
 	}
 
+	/// <summary>
+	/// Converts a world position to the closest zero-based index in the input box's text.
+	/// </summary>
+	/// <param name="position">The position to convert.</param>
+	/// <returns>The closest zero-based index to
+	/// the given position in the input box's text.</returns>
 	protected int PositionToIndex((float, float) position)
 	{
 		var (ppx, ppy) = position;
@@ -83,6 +133,11 @@ public class InputBox : UserInterface
 
 		return (int)Math.Clamp(index, 0, w * h);
 	}
+	/// <summary>
+	/// Converts a text index to a world position.
+	/// </summary>
+	/// <param name="index">The index to convert.</param>
+	/// <returns>The position corresponding to the given index.</returns>
 	protected (int x, int y) PositionFromIndex(int index)
 	{
 		var (px, py) = Position;
@@ -95,32 +150,43 @@ public class InputBox : UserInterface
 		return (px + newX, py + newY);
 	}
 
+	/// <summary>
+	/// Moves the cursor by the given offsets, optionally allowing selection.
+	/// </summary>
+	/// <param name="offsetX">The X offset to move the cursor.</param>
+	/// <param name="allowSelection">Whether or not selection is allowed.</param>
+	/// <param name="offsetY">The Y offset to move the cursor.</param>
 	protected void MoveCursor(int offsetX, bool allowSelection = false, int offsetY = 0)
 	{
 		var shift = CurrentInput.IsKeyPressed(Input.Key.SHIFT_LEFT) ||
 			CurrentInput.IsKeyPressed(Input.Key.SHIFT_RIGHT);
 
-		if ((CursorIndexY == 0 && offsetY < 0) || (CursorIndexY == Size.Item2 - 1 && offsetY > 0))
+		if ((CursorIndexLine == 0 && offsetY < 0) || (CursorIndexLine == Size.Item2 - 1 && offsetY > 0))
 			return;
 
-		if (CursorIndexX == 0 && offsetX < 0)
+		if (CursorIndexSymbol == 0 && offsetX < 0)
 		{
-			offsetX = CursorIndexY == 0 ? 0 : Size.Item1 + offsetX;
+			offsetX = CursorIndexLine == 0 ? 0 : Size.Item1 + offsetX;
 			offsetY = -1;
 		}
-		else if (CursorIndexX == lines[CursorIndexY].Length && offsetX > 0)
+		else if (CursorIndexSymbol == lines[CursorIndexLine].Length && offsetX > 0)
 		{
-			offsetX = CursorIndexY == lines.Count - 1 ? 0 : -Size.Item1 + offsetX;
+			offsetX = CursorIndexLine == lines.Count - 1 ? 0 : -Size.Item1 + offsetX;
 			offsetY = 1;
 		}
 
-		CursorIndexY += offsetY; // y first cuz X uses it
-		CursorIndexX += offsetX;
+		CursorIndexLine += offsetY; // y first cuz X uses it
+		CursorIndexSymbol += offsetX;
 
 		SelectionIndex = shift && allowSelection ? SelectionIndex : CursorIndex;
 		SelectionIndex = Math.Clamp(SelectionIndex, 0, Text.Length);
 	}
 
+	/// <summary>
+	/// Called when the input box needs to be updated. This handles all of the user input
+	/// the input box needs for its behavior. Subclasses should override this 
+	/// method to implement their own behavior.
+	/// </summary>
 	protected override void OnUpdate()
 	{
 		var (x, y) = Position;
@@ -226,7 +292,7 @@ public class InputBox : UserInterface
 			if (stopAtLineEnd == false)
 				continue;
 
-			if (startY != curY || curX - x >= lines[CursorIndexY].Length)
+			if (startY != curY || curX - x >= lines[CursorIndexLine].Length)
 			{
 				index -= step - (step < 0 ? 1 : 0);
 				return index;
@@ -263,10 +329,10 @@ public class InputBox : UserInterface
 		{
 			if (CurrentInput.IsPressed)
 			{
-				CursorIndexY = iy;
-				iy = CursorIndexY;
-				CursorIndexX = ix;
-				ix = CursorIndexX;
+				CursorIndexLine = iy;
+				iy = CursorIndexLine;
+				CursorIndexSymbol = ix;
+				ix = CursorIndexSymbol;
 			}
 
 			if (CurrentInput.IsJustPressed)
@@ -288,28 +354,28 @@ public class InputBox : UserInterface
 
 		if (clicks == 1)
 		{
-			CursorIndexY = indexY;
-			indexY = CursorIndexY;
-			CursorIndexX = indexX;
+			CursorIndexLine = indexY;
+			indexY = CursorIndexLine;
+			CursorIndexSymbol = indexX;
 			SelectionIndex = PositionToIndex((hx, hy));
 		}
 		else if (clicks == 2)
 		{
 			SelectionIndex = PositionToIndex((hx, hy)) + GetWordEndOffset(1);
-			CursorIndexX += GetWordEndOffset(-1);
-			CursorIndexX = Math.Clamp(CursorIndexX, 0, lines[indexY].Length);
+			CursorIndexSymbol += GetWordEndOffset(-1);
+			CursorIndexSymbol = Math.Clamp(CursorIndexSymbol, 0, lines[indexY].Length);
 		}
 		else if (clicks == 3)
 		{
-			var p = PositionToIndex((x + lines[CursorIndexY].Length, y + CursorIndexY));
+			var p = PositionToIndex((x + lines[CursorIndexLine].Length, y + CursorIndexLine));
 			SelectionIndex = p;
-			CursorIndexX = 0;
+			CursorIndexSymbol = 0;
 		}
 		else if (clicks == 4)
 		{
 			SelectionIndex = w * h;
-			CursorIndexY = 0;
-			CursorIndexX = 0;
+			CursorIndexLine = 0;
+			CursorIndexSymbol = 0;
 		}
 	}
 	private bool TrySelectAll()
@@ -321,8 +387,8 @@ public class InputBox : UserInterface
 
 		var (w, h) = Size;
 		SelectionIndex = w * h;
-		CursorIndexX = 0;
-		CursorIndexY = 0;
+		CursorIndexSymbol = 0;
+		CursorIndexLine = 0;
 		return true;
 	}
 
@@ -345,9 +411,9 @@ public class InputBox : UserInterface
 		{
 				(hasSel && justL, iy == sy ? (i < s ? 0 : s - i, 0) : i < s ? (0, 0) : (sx - ix, sy - iy)),
 				(hasSel && justR, iy == sy ? (i > s ? 0 : s - i, 0) : i > s ? (0, 0) : (sx - ix, sy - iy)),
-				(ctrl && JustPressed(Input.Key.ARROW_UP), (-CursorIndexX, 0)),
+				(ctrl && JustPressed(Input.Key.ARROW_UP), (-CursorIndexSymbol, 0)),
 				(ctrl && JustPressed(Input.Key.ARROW_DOWN), (Size.Item1, 0)),
-				(JustPressed(Input.Key.HOME), (-CursorIndexX, -CursorIndexY)),
+				(JustPressed(Input.Key.HOME), (-CursorIndexSymbol, -CursorIndexLine)),
 				(JustPressed(Input.Key.END), Size),
 				(Allowed(Input.Key.ARROW_LEFT, isHolding), (ctrl ? GetWordEndOffset(-1) : -1, 0)),
 				(Allowed(Input.Key.ARROW_RIGHT, isHolding), (ctrl ? GetWordEndOffset(1) : 1, 0)),
@@ -377,25 +443,25 @@ public class InputBox : UserInterface
 				symbols = TextCopied;
 
 				// crop paste to fit in line
-				var pasteLength = Math.Min(w - lines[CursorIndexY].Length - 1, symbols.Length - 1);
+				var pasteLength = Math.Min(w - lines[CursorIndexLine].Length - 1, symbols.Length - 1);
 				symbols = symbols[..pasteLength];
 
-				lines[CursorIndexY] = lines[CursorIndexY].Insert(CursorIndexX, symbols);
+				lines[CursorIndexLine] = lines[CursorIndexLine].Insert(CursorIndexSymbol, symbols);
 				MoveCursor(symbols.Length);
 				return;
 			}
 
 			// is at end of current line, not text
-			if (CursorIndexX >= w - 1 && CursorIndexY != h - 1)
+			if (CursorIndexSymbol >= w - 1 && CursorIndexLine != h - 1)
 			{
 				lines.Add("");
 				MoveCursor(1);
 			}
 
-			if (lines[CursorIndexY].Length + 1 < w)
+			if (lines[CursorIndexLine].Length + 1 < w)
 			{
 				var t = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
-				lines[CursorIndexY] = lines[CursorIndexY].Insert(CursorIndexX, t);
+				lines[CursorIndexLine] = lines[CursorIndexLine].Insert(CursorIndexSymbol, t);
 				MoveCursor(1);
 				SelectionIndex = CursorIndex;
 			}
@@ -409,59 +475,59 @@ public class InputBox : UserInterface
 		var (w, h) = Size;
 
 		if (Allowed(Input.Key.ENTER, isHolding) &&
-			CursorIndexY != y + h - 1) // not last line
+			CursorIndexLine != y + h - 1) // not last line
 		{
 			// no space for new line? bail
 			if (lines.Count == h)
 				return;
 
 			// insert line above?
-			if (CursorIndexX == 0)
+			if (CursorIndexSymbol == 0)
 			{
-				lines.Insert(CursorIndexY, "");
+				lines.Insert(CursorIndexLine, "");
 				MoveCursor(0, false, 1);
 				return;
 			}
 
-			var textForNewLine = lines[CursorIndexY][CursorIndexX..];
+			var textForNewLine = lines[CursorIndexLine][CursorIndexSymbol..];
 
-			lines[CursorIndexY] = lines[CursorIndexY][..CursorIndexX];
-			lines.Insert(CursorIndexY + 1, textForNewLine);
+			lines[CursorIndexLine] = lines[CursorIndexLine][..CursorIndexSymbol];
+			lines.Insert(CursorIndexLine + 1, textForNewLine);
 
-			CursorIndexY++;
-			CursorIndexX = 0;
+			CursorIndexLine++;
+			CursorIndexSymbol = 0;
 			SelectionIndex = CursorIndex;
 		}
 		else if (Allowed(Input.Key.BACKSPACE, isHolding) && justDeletedSelection == false)
 		{
 			// cursor is at start of current line
-			if (CursorIndexX == 0)
+			if (CursorIndexSymbol == 0)
 			{
 				// first line?
-				if (CursorIndexY == 0)
+				if (CursorIndexLine == 0)
 					return;
 
-				TryMergeBottomLine(CursorIndexY - 1);
+				TryMergeBottomLine(CursorIndexLine - 1);
 				return;
 			}
 
 			var off = GetWordEndOffset(-1, true);
 			var ctrl = Pressed(Input.Key.CONTROL_LEFT);
 			var count = ctrl ? Math.Abs(off) : 1;
-			lines[CursorIndexY] = lines[CursorIndexY].Remove(
-				ctrl ? CursorIndexX + off : CursorIndexX - 1, count);
+			lines[CursorIndexLine] = lines[CursorIndexLine].Remove(
+				ctrl ? CursorIndexSymbol + off : CursorIndexSymbol - 1, count);
 			MoveCursor(ctrl ? off : -1);
 		}
 		else if (Allowed(Input.Key.DELETE, isHolding) && justDeletedSelection == false)
 		{
 			// cursor is at end of current line
-			if (CursorIndexX == lines[CursorIndexY].Length)
+			if (CursorIndexSymbol == lines[CursorIndexLine].Length)
 			{
 				// last line?
-				if (CursorIndexY == w - 1)
+				if (CursorIndexLine == w - 1)
 					return;
 
-				TryMergeBottomLine(CursorIndexY);
+				TryMergeBottomLine(CursorIndexLine);
 				return;
 			}
 
@@ -469,7 +535,7 @@ public class InputBox : UserInterface
 			var off2 = GetWordEndOffset(1, false);
 			var ctrl = Pressed(Input.Key.CONTROL_LEFT);
 			var count = ctrl ? Math.Abs(off) : 1;
-			lines[CursorIndexY] = lines[CursorIndexY].Remove(ctrl ? CursorIndexX : CursorIndexX, count);
+			lines[CursorIndexLine] = lines[CursorIndexLine].Remove(ctrl ? CursorIndexSymbol : CursorIndexSymbol, count);
 		}
 	}
 	private void TryDeleteSelected(ref bool justDeletedSelection, bool shouldDelete)
@@ -519,8 +585,8 @@ public class InputBox : UserInterface
 		}
 
 		// y first cuz x uses it
-		CursorIndexY = iya;
-		CursorIndexX = ixa;
+		CursorIndexLine = iya;
+		CursorIndexSymbol = ixa;
 		SelectionIndex = CursorIndex;
 		justDeletedSelection = true;
 	}
@@ -537,8 +603,8 @@ public class InputBox : UserInterface
 
 		TryRemoveEmptyLinesInRange(iyb, iyb);
 
-		CursorIndexY = iya;
-		CursorIndexX = lineLength;
+		CursorIndexLine = iya;
+		CursorIndexSymbol = lineLength;
 		SelectionIndex = CursorIndex;
 	}
 	private void TryRemoveEmptyLinesInRange(int lineStart, int lineEnd)

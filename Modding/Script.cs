@@ -23,8 +23,8 @@ public class Script
 	public static Script Load(string path) => new Script(File.ReadAllText(path));
 
 	/// <summary>
-	/// Calls a Lua function with the specified <paramref name="functionName"/> 
-	/// and <paramref name="parameters"/>.
+	/// Calls a Lua function with the specified function name 
+	/// and parameters.
 	/// </summary>
 	/// <param name="functionName">The name of the function to call.</param>
 	/// <param name="parameters">The parameters to pass to the function.</param>

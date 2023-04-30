@@ -8,8 +8,20 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 
+/// <summary>
+/// Provides a simple key-value storage system that can serialize and deserialize objects 
+/// to and from text or binary files. Supported types include:<br></br>
+/// A. Primitives and Strings<br></br>
+/// B. Tuples of A<br></br>
+/// C. Arrays of A and B<br></br>
+/// D. Lists of A and B<br></br>
+/// E. Dictionaries of A and B<br></br>
+/// </summary>
 public class Storage
 {
+	/// <summary>
+	/// Gets or sets the separator used for 1D collections.
+	/// </summary>
 	public string? SeparatorCollection1D
 	{
 		get => sep1D;
@@ -22,6 +34,9 @@ public class Storage
 		}
 	}
 	// 3D separator is two 2D ones
+	/// <summary>
+	/// Gets or sets the separator used for 2D collections.
+	/// </summary>
 	public string? SeparatorCollection2D
 	{
 		get => sep2D;
@@ -33,6 +48,9 @@ public class Storage
 			sep2D = value;
 		}
 	}
+	/// <summary>
+	/// Gets or sets the separator used for tuples.
+	/// </summary>
 	public string? SeparatorTuple
 	{
 		get => sepTuple;
@@ -44,6 +62,9 @@ public class Storage
 			sepTuple = value;
 		}
 	}
+	/// <summary>
+	/// Gets or sets the separator used for dictionaries.
+	/// </summary>
 	public string? SeparatorDictionary
 	{
 		get => sepDict;
@@ -55,6 +76,9 @@ public class Storage
 			sepDict = value;
 		}
 	}
+	/// <summary>
+	/// Gets or sets the separator used for files.
+	/// </summary>
 	public string? SeparatorFile
 	{
 		get => sepFile;
@@ -67,6 +91,9 @@ public class Storage
 		}
 	}
 
+	/// <summary>
+	/// Initializes a new storage instance.
+	/// </summary>
 	public Storage()
 	{
 		SeparatorCollection1D = default;
@@ -76,6 +103,12 @@ public class Storage
 		SeparatorFile = default;
 	}
 
+	/// <summary>
+	/// Sets the specified object instance with the given key and type identifier.
+	/// </summary>
+	/// <param name="key">The key used to store the object.</param>
+	/// <param name="instance">The object instance to be stored.</param>
+	/// <param name="typeId">The type identifier of the object instance.</param>
 	public void Set(string key, object? instance, int typeId = default)
 	{
 		if (key == null)
@@ -83,14 +116,34 @@ public class Storage
 
 		data[key] = (typeId, TextFromObject(typeId, instance));
 	}
+	/// <summary>
+	/// Removes the object with the specified key from storage.
+	/// </summary>
+	/// <param name="key">The key of the object to be removed.</param>
 	public void Remove(string key)
 	{
 		if (key != null)
 			data.Remove(key);
 	}
 
+	/// <summary>
+	/// Gets the type ID of the object instance with the specified key.
+	/// </summary>
+	/// <param name="key">The key of the object instance.</param>
+	/// <returns>The type ID of the object instance.</returns>
 	public int GetTypeID(string key) => key != null && data.ContainsKey(key) ? data[key].typeId : default;
+	/// <summary>
+	/// Gets the object instance with the specified key as text.
+	/// </summary>
+	/// <param name="key">The key of the object instance.</param>
+	/// <returns>The object instance as text.</returns>
 	public string? GetAsText(string key) => key != null && data.ContainsKey(key) ? data[key].data : default;
+	/// <summary>
+	/// Gets the object instance with the specified key as an object of type <typeparamref name="T"/>.
+	/// </summary>
+	/// <typeparam name="T">The type of the object instance.</typeparam>
+	/// <param name="key">The key of the object instance.</param>
+	/// <returns>The object instance as an object of type <typeparamref name="T"/>.</returns>
 	public T? GetAsObject<T>(string key)
 	{
 		if (key == null || data.ContainsKey(key) == false)
@@ -100,6 +153,12 @@ public class Storage
 		return obj == null ? default : (T)obj;
 	}
 
+	/// <summary>
+	/// Saves the storage data to a file.
+	/// </summary>
+	/// <param name="path">The path of the file.</param>
+	/// <param name="isBinary">A value indicating whether the data should be saved as binary.</param>
+	/// <exception cref="System.Exception">Thrown when the file cannot be saved.</exception>
 	public void Save(string path, bool isBinary = false)
 	{
 		if (string.IsNullOrEmpty(SeparatorFile))
@@ -132,6 +191,12 @@ public class Storage
 		}
 		catch (Exception) { throw new Exception("Could not save file."); }
 	}
+	/// <summary>
+	/// Loads the storage data from a file.
+	/// </summary>
+	/// <param name="path">The path to the file to load.</param>
+	/// <param name="isBinary">Whether the file is binary or text-based. Defaults to false.</param>
+	/// <exception cref="Exception">Thrown when the file could not be loaded.</exception>
 	public void Load(string path, bool isBinary = false)
 	{
 		var strData = string.Empty;
@@ -173,10 +238,24 @@ public class Storage
 		}
 	}
 
+	/// <summary>
+	/// Called when text data is required to be turned into an object of a given type.
+	/// Subclasses should override this method to implement their own behavior.
+	/// </summary>
+	/// <param name="typeId">The identifier of the object's type.</param>
+	/// <param name="instance">The object instance to serialize.</param>
+	/// <returns>The serialized object data as text.</returns>
 	protected virtual object? OnObjectFromText(int typeId, string dataAsText)
 	{
 		return default;
 	}
+	/// <summary>
+	/// Called when an object of a given type is required to be turned into text data.
+	/// Subclasses should override this method to implement their own behavior.
+	/// </summary>
+	/// <param name="typeId">The identifier of the object's type.</param>
+	/// <param name="dataAsText">The object data as text.</param>
+	/// <returns>The deserialized object.</returns>
 	protected virtual string OnObjectToText(int typeId, object? instance)
 	{
 		return string.Empty;

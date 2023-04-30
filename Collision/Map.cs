@@ -16,11 +16,11 @@ public class Map : Hitbox
 	public override int RectangleCount => rectangles.Count + cellRects.Count;
 
 	/// <summary>
-	/// Gets the rectangle at the specified <paramref name="index"/>, 
+	/// Gets the rectangle at the specified index, 
 	/// including the rectangles that are part of the cells.
 	/// </summary>
 	/// <param name="index">The index of the rectangle to retrieve.</param>
-	/// <returns>The rectangle at the specified <paramref name="index"/>.</returns>
+	/// <returns>The rectangle at the specified index.</returns>
 	public override Rectangle this[int index]
 	{
 		get
@@ -31,7 +31,7 @@ public class Map : Hitbox
 	}
 
 	/// <summary>
-	/// Initializes a new map instance from the specified file <paramref name="path"/>.
+	/// Initializes a new map instance from the specified file path.
 	/// </summary>
 	/// <param name="path">The path to the file that contains the map hitbox data.</param>
 	public Map(string path) : base(path, (0, 0), 1)
@@ -96,7 +96,7 @@ public class Map : Hitbox
 
 	/// <summary>
 	/// Saves the current state of the map to a compressed binary 
-	/// file at the given <paramref name="path"/>.
+	/// file at the given path.
 	/// Overrides the hitbox implementation to include additional data for each tile's cell rectangles.
 	/// </summary>
 	/// <param name="path">The path to save the file to.</param>
@@ -143,12 +143,12 @@ public class Map : Hitbox
 	}
 
 	/// <summary>
-	/// Adds a <paramref name="rectangle"/> to the cell corresponding to the 
-	/// specified <paramref name="tile"/>.
+	/// Adds a rectangle to the cell corresponding to the 
+	/// specified tile.
 	/// </summary>
 	/// <param name="rectangle">The rectangle to add.</param>
 	/// <param name="tile">The tile corresponding to the cell to add the 
-	/// <paramref name="rectangle"/> to.</param>
+	/// rectangle to.</param>
 	public void AddRectangle(Rectangle rectangle, int tile)
 	{
 		if (cellRectsMap.ContainsKey(tile) == false)
@@ -157,10 +157,10 @@ public class Map : Hitbox
 		cellRectsMap[tile].Add(rectangle);
 	}
 	/// <summary>
-	/// Gets an array of rectangles that intersect the specified <paramref name="cell"/>.
+	/// Gets an array of rectangles that intersect the specified cell.
 	/// </summary>
 	/// <param name="cell">The (x, y) cell coordinates.</param>
-	/// <returns>An array of rectangles that intersect the <paramref name="cell"/>.</returns>
+	/// <returns>An array of rectangles that intersect the cell.</returns>
 	public Rectangle[] GetRectangles((int x, int y) cell)
 	{
 		if (tileIndices.ContainsKey(cell) == false)
@@ -181,7 +181,7 @@ public class Map : Hitbox
 	/// Updates the map hitbox with new tile data.
 	/// </summary>
 	/// <param name="tiles">The new tile data.</param>
-	/// <exception cref="ArgumentNullException">Thrown if <paramref name="tiles"/> is null.</exception>
+	/// <exception cref="ArgumentNullException">Thrown if tiles is null.</exception>
 	public void Update(int[,] tiles)
 	{
 		if (tiles == null)
@@ -209,7 +209,7 @@ public class Map : Hitbox
 
 	/// <param name="line">
 	/// The line to check.</param>
-	/// <returns>True if the specified <paramref name="line"/> overlaps with the map hitbox, 
+	/// <returns>True if the specified line overlaps with the map hitbox, 
 	/// false otherwise.</returns>
 	public override bool IsOverlapping(Line line)
 	{
@@ -217,7 +217,7 @@ public class Map : Hitbox
 	}
 	/// <param name="rectangle">
 	/// The rectangle to check.</param>
-	/// <returns>True if the specified <paramref name="rectangle"/> overlaps with the map hitbox, 
+	/// <returns>True if the specified rectangle overlaps with the map hitbox, 
 	/// false otherwise.</returns>
 	public override bool IsOverlapping(Rectangle rectangle)
 	{
@@ -232,7 +232,7 @@ public class Map : Hitbox
 	}
 	/// <param name="point">
 	/// The point to check.</param>
-	/// <returns>True if the specified <paramref name="point"/> overlaps with the map hitbox, 
+	/// <returns>True if the specified point overlaps with the map hitbox, 
 	/// false otherwise.</returns>
 	public override bool IsOverlapping((float x, float y) point)
 	{

@@ -2,21 +2,50 @@
 
 namespace Pure.UserInterface;
 
+/// <summary>
+/// Represents a user input list element storing items, represented as checkboxes that can be
+/// scrolled, clicked, selected and manipulated.
+/// </summary>
 public class List : UserInterface
 {
+	/// <summary>
+	/// Gets the slider used to scroll the list.
+	/// </summary>
 	public Slider Scroll { get; }
+	/// <summary>
+	/// Gets the button used to scroll up.
+	/// </summary>
 	public Button ScrollUp { get; }
+	/// <summary>
+	/// Gets the button used to scroll down.
+	/// </summary>
 	public Button ScrollDown { get; }
 
+	/// <summary>
+	/// Gets the number of items in the list.
+	/// </summary>
 	public int Count => items.Count;
+	/// <summary>
+	/// Gets or sets a value indicating whether the list allows single selection or not.
+	/// </summary>
 	public bool IsSingleSelecting
 	{
 		get => isSingleSelecting;
 		set { isSingleSelecting = value; TrySingleSelectOneItem(); }
 	}
 
+	/// <summary>
+	/// Gets the checkbox at the specified index, or null if the index is out of range.
+	/// </summary>
+	/// <param name="index">The index of the checkbox to get.</param>
 	public Checkbox? this[int index] => HasIndex(index) ? items[index] : default;
 
+	/// <summary>
+	/// Initializes a new list instance with the specified position, size and number of items.
+	/// </summary>
+	/// <param name="position">The position of the top-left corner of the list.</param>
+	/// <param name="size">The size of the list.</param>
+	/// <param name="count">The initial number of checkboxes in the list.</param>
 	public List((int x, int y) position, (int width, int height) size, int count)
 		: base(position, size)
 	{
@@ -38,6 +67,10 @@ public class List : UserInterface
 		UpdateItems();
 	}
 
+	/// <summary>
+	/// Adds the specified number of items to the list.
+	/// </summary>
+	/// <param name="count">The number of items to add.</param>
 	public void Add(int count = 1)
 	{
 		for (int i = 0; i < count; i++)
@@ -45,6 +78,10 @@ public class List : UserInterface
 
 		TrySingleSelectOneItem();
 	}
+	/// <summary>
+	/// Removes the item at the specified index and adjusts the selection accordingly.
+	/// </summary>
+	/// <param name="index">The index of the item to remove.</param>
 	public void Remove(int index)
 	{
 		if (HasIndex(index) == false)
@@ -59,6 +96,9 @@ public class List : UserInterface
 
 		TrySingleSelectOneItem();
 	}
+	/// <summary>
+	/// Clears all items from the list and resets the selection.
+	/// </summary>
 	public void Clear()
 	{
 		items.Clear();
@@ -66,15 +106,32 @@ public class List : UserInterface
 		TrySingleSelectOneItem();
 	}
 
+	/// <summary>
+	/// Determines whether the list contains the specified checkbox item.
+	/// </summary>
+	/// <param name="item">The checkbox item to locate in the list.</param>
+	/// <returns>True if the checkbox item is found in the list; otherwise, false.</returns>
 	public bool Contains(Checkbox item)
 	{
 		return item != null && items.Contains(item);
 	}
+	/// <summary>
+	/// Searches for the specified checkbox item and returns the zero-based index of the first occurrence
+	/// within the entire list.
+	/// </summary>
+	/// <param name="item">The checkbox item to locate in the list.</param>
+	/// <returns>The zero-based index of the first occurrence of the checkbox item within the entire list,
+	/// if found; otherwise, -1.</returns>
 	public int IndexOf(Checkbox item)
 	{
 		return item == null ? -1 : items.IndexOf(item);
 	}
 
+	/// <summary>
+	/// Called when the list and its items needs to be updated. This handles all of the user input
+	/// the list and its items need for thier behavior. Subclasses should override this 
+	/// method to implement their own behavior.
+	/// </summary>
 	protected override void OnUpdate()
 	{
 		if (IsDisabled)
@@ -89,6 +146,11 @@ public class List : UserInterface
 		UpdateItems();
 	}
 
+	/// <summary>
+	/// Implicitly converts an array of checkbox objects to a list object.
+	/// </summary>
+	/// <param name="items">The array of checkbox objects to convert.</param>
+	/// <returns>A new list object containing the specified checkbox objects.</returns>
 	public static implicit operator List(Checkbox[] items)
 	{
 		var result = new List((0, 0), (10, Math.Max(items.Length, 5)), 0);
@@ -97,6 +159,11 @@ public class List : UserInterface
 
 		return result;
 	}
+	/// <summary>
+	/// Implicitly converts a list object to an array of its checkbox item objects.
+	/// </summary>
+	/// <param name="list">The list object to convert.</param>
+	/// <returns>An array of checkbox objects contained in the list object.</returns>
 	public static implicit operator Checkbox[](List list) => list.items.ToArray();
 
 	#region Backend

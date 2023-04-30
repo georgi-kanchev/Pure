@@ -33,7 +33,7 @@ public static class Notes<T> where T : notnull
 	}
 
 	/// <summary>
-	/// Generates an audio from a string of <paramref name="notes"/> and caches it with 
+	/// Generates an audio from a string of notes and caches it with 
 	/// the given identifier.
 	/// </summary>
 	/// <param name="id">The identifier to use for the cached sound.</param>
@@ -60,7 +60,7 @@ public static class Notes<T> where T : notnull
 	}
 	/// <summary>
 	/// Saves the audio associated with the given identifier as an audio file to the 
-	/// specified <paramref name="path"/>.
+	/// specified path.
 	/// </summary>
 	/// <param name="id">The identifier of the audio to save.</param>
 	/// <param name="path">The file path to save the audio to.</param>
@@ -100,7 +100,7 @@ public static class Notes<T> where T : notnull
 
 	/// <summary>
 	/// Plays the audio associated with the given identifier at the specified 
-	/// <paramref name="volume"/> and loop settings. Those settings remain.
+	/// volume and loop settings. Those settings remain.
 	/// </summary>
 	/// <param name="id">The identifier of the audio to play.</param>
 	/// <param name="volume">The volume to play the audio at, between 0 and 1.</param>

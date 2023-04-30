@@ -20,7 +20,7 @@ public struct Rectangle
 
 	/// <summary>
 	/// Initializes a new rectangle instance with the specified 
-	/// <paramref name="position"/>, <paramref name="size"/> and <paramref name="color"/>.
+	/// position, size and color.
 	/// </summary>
 	/// <param name="position">The position of the top-left corner of the rectangle. 
 	/// The default value is (0, 0).</param>
@@ -36,14 +36,14 @@ public struct Rectangle
 	/// <param name="hitbox">
 	/// The hitbox to test for overlap with.</param>
 	/// <returns>True if this rectangle overlaps with the specified 
-	/// <paramref name="hitbox"/>; otherwise, false.</returns>
+	/// hitbox; otherwise, false.</returns>
 	public bool IsOverlapping(Hitbox hitbox)
 	{
 		return hitbox.IsOverlapping(this);
 	}
 	/// <summary>
 	/// Determines whether this rectangle is overlapping with the specified 
-	/// <paramref name="rectangle"/>.
+	/// rectangle.
 	/// </summary>
 	/// <param name="rectangle">The rectangle to test for overlap with.</param>
 	/// <returns>True if this rectangles overlap; otherwise, false.</returns>
@@ -69,7 +69,7 @@ public struct Rectangle
 	/// <param name="line"> 
 	/// The line to test for overlap with.</param>
 	/// <returns>True if this rectangle overlaps with the specified 
-	/// <paramref name="line"/>; otherwise, false.</returns>
+	/// line; otherwise, false.</returns>
 	public bool IsOverlapping(Line line)
 	{
 		return line.IsCrossing(this) || IsContaining(line);
@@ -77,7 +77,7 @@ public struct Rectangle
 	/// <param name="point">
 	/// The line to test for overlap with.</param>
 	/// <returns>True if this rectangle overlaps with the specified 
-	/// <paramref name="point"/>; otherwise, false.</returns>
+	/// point; otherwise, false.</returns>
 	public bool IsOverlapping((float x, float y) point)
 	{
 		var (x, y) = Position;
@@ -90,7 +90,7 @@ public struct Rectangle
 	}
 	/// <param name="line">
 	/// The line to check.</param>
-	/// <returns>True if the <paramref name="line"/> is contained within this
+	/// <returns>True if the line is contained within this
 	/// rectangle; otherwise, false<.</returns>
 	public bool IsContaining(Line line)
 	{

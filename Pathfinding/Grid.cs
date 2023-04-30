@@ -32,7 +32,7 @@ public class Grid
 	public void Save(string path) => pathfind.Save(path);
 
 	/// <summary>
-	/// Determines whether the cell at the specified <paramref name="position"/> is solid (non-walkable).
+	/// Determines whether the cell at the specified position is solid (non-walkable).
 	/// </summary>
 	/// <param name="position">The position of the cell to check.</param>
 	/// <returns>True if the cell is solid; otherwise, false.</returns>
@@ -42,7 +42,7 @@ public class Grid
 		return n == null ? true : n.isWalkable == false;
 	}
 	/// <summary>
-	/// Determines whether the cell at the specified <paramref name="position"/> is an obstacle 
+	/// Determines whether the cell at the specified position is an obstacle 
 	/// (walkable but with a non-zero penalty).
 	/// </summary>
 	/// <param name="position">The position of the cell to check.</param>
@@ -53,7 +53,7 @@ public class Grid
 		return n == null ? false : n.isWalkable && n.weight > 0;
 	}
 	/// <summary>
-	/// Gets the penalty value of the cell at the specified <paramref name="position"/>.
+	/// Gets the penalty value of the cell at the specified position.
 	/// </summary>
 	/// <param name="position">The position of the cell to check.</param>
 	/// <returns>The penalty value of the cell.</returns>
@@ -63,7 +63,7 @@ public class Grid
 		return n == null ? 0 : n.weight;
 	}
 	/// <summary>
-	/// Sets the cell at the specified <paramref name="position"/> 
+	/// Sets the cell at the specified position 
 	/// as solid or non-solid (walkable or non-walkable).
 	/// </summary>
 	/// <param name="position">The position of the cell to set.</param>
@@ -74,8 +74,8 @@ public class Grid
 	}
 
 	/// <summary>
-	/// Sets the cell at the specified <paramref name="position"/> 
-	/// as an obstacle with the given <paramref name="penalty"/> value.
+	/// Sets the cell at the specified position 
+	/// as an obstacle with the given penalty value.
 	/// </summary>
 	/// <param name="cell">The position of the cell to set as an obstacle.</param>
 	/// <param name="penalty">The penalty value
@@ -85,8 +85,8 @@ public class Grid
 		pathfind.SetNode(cell, penalty, false);
 	}
 	/// <summary>
-	/// Sets the penalties of the specified <paramref name="tile"/> in the provided 
-	/// <paramref name="tiles"/> to the given <paramref name="penalty"/> value 
+	/// Sets the penalties of the specified tile in the provided 
+	/// tiles to the given penalty value 
 	/// and marks the corresponding cells as obstacles.
 	/// </summary>
 	/// <param name="tile">The tile to set as an obstacle.</param>
@@ -104,7 +104,7 @@ public class Grid
 	}
 
 	/// <summary>
-	/// Calculates a path from the <paramref name="start"/> to the <paramref name="goal"/> 
+	/// Calculates a path from the start to the goal 
 	/// position using the A* algorithm.
 	/// </summary>
 	/// <param name="start">The position of the starting cell.</param>

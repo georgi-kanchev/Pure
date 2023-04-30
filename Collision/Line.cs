@@ -35,7 +35,7 @@ public struct Line
 
 	/// <summary>
 	/// Initializes a new instance of the line with the specified 
-	/// <paramref name="start"/> and <paramref name="end"/> points.
+	/// start and end points.
 	/// </summary>
 	/// <param name="a">The start point of the line.</param>
 	/// <param name="b">The end point of the line.</param>
@@ -47,21 +47,21 @@ public struct Line
 	}
 
 	/// <summary>
-	/// Checks if this line is crossing any rectangles in the given <paramref name="map"/>.
+	/// Checks if this line is crossing any rectangles in the given map.
 	/// </summary>
 	/// <param name="map">The map to check for crossing.</param>
 	/// <returns>True if this line is crossing with the specified 
-	/// <paramref name="map"/>, otherwise false.</returns>
+	/// map, otherwise false.</returns>
 	public bool IsCrossing(Map map)
 	{
 		return CrossPoints(map).Length > 0;
 	}
 	/// <summary>
 	/// Checks if this line is crossing with any of the rectangles in the 
-	/// specified <paramref name="hitbox"/>.
+	/// specified hitbox.
 	/// </summary>
 	/// <param name="hitbox">The hitbox to check for crossing.</param>
-	/// <returns>True if this line is crossing with the specified <paramref name="hitbox"/>, 
+	/// <returns>True if this line is crossing with the specified hitbox, 
 	/// otherwise false.</returns>
 	public bool IsCrossing(Hitbox hitbox)
 	{
@@ -74,13 +74,13 @@ public struct Line
 	/// <param name="rectangle">
 	/// The rectangle to check for crossing.</param>
 	/// <returns>True if this line is crossing with the specified 
-	/// <paramref name="rectangle"/>, otherwise false.</returns>
+	/// rectangle, otherwise false.</returns>
 	public bool IsCrossing(Rectangle rectangle)
 	{
 		return CrossPoints(rectangle).Length > 0;
 	}
 	/// <summary>
-	/// Determines if this line is crossing another <paramref name="line"/>.
+	/// Determines if this line is crossing another line.
 	/// </summary>
 	/// <param name="line">The other line to check for crossing.</param>
 	/// <returns>True if the lines cross, false otherwise.</returns>
@@ -92,7 +92,7 @@ public struct Line
 	/// <param name="point">
 	/// The point to check for crossing.</param>
 	/// <returns>True if this line is crossing with the specified 
-	/// <paramref name="rectangle"/>, otherwise false.</returns>
+	/// rectangle, otherwise false.</returns>
 	public bool IsCrossing((float x, float y) point)
 	{
 		var length = Length;
@@ -102,11 +102,11 @@ public struct Line
 
 	/// <summary>
 	/// Calculates all points of intersection between this line and the rectangles of the
-	/// specified <paramref name="map"/>.
+	/// specified map.
 	/// </summary>
 	/// <param name="map">The map to calculate the intersection points with.</param>
 	/// <returns>An array of all points of intersection between this line and the specified 
-	/// <paramref name="map"/>.</returns>
+	/// map.</returns>
 	public (float x, float y)[] CrossPoints(Map map)
 	{
 		var (posX, posY) = map.Position;
@@ -179,11 +179,11 @@ public struct Line
 	}
 	/// <summary>
 	/// Calculates all points of intersection between this line and the rectangles of the
-	/// specified <paramref name="hitbox"/>.
+	/// specified hitbox.
 	/// </summary>
 	/// <param name="hitbox">The hitbox to calculate the intersection points with.</param>
 	/// <returns>An array of all points of intersection between this line and the specified 
-	/// <paramref name="hitbox"/>.</returns>
+	/// hitbox.</returns>
 	public (float x, float y)[] CrossPoints(Hitbox hitbox)
 	{
 		var result = new List<(float, float)>();
@@ -195,7 +195,7 @@ public struct Line
 	/// <param name="rectangle">
 	/// The rectangle to calculate the intersection points with.</param>
 	/// <returns>An array of all points of intersection between this line and the specified 
-	/// <paramref name="rectangle"/>.</returns>
+	/// rectangle.</returns>
 	public (float x, float y)[] CrossPoints(Rectangle rectangle)
 	{
 		var (x, y) = rectangle.Position;
@@ -222,7 +222,7 @@ public struct Line
 	/// <param name="line">
 	/// The line to calculate the intersection with.</param>
 	/// <returns>The point of intersection between this line and the specified 
-	/// <paramref name="line"/>, or (<see cref="float.NaN"/>, <see cref="float.NaN"/>) if 
+	/// line, or (<see cref="float.NaN, <see cref="float.NaN) if 
 	/// the two lines do not intersect.</returns>
 	public (float x, float y) CrossPoint(Line line)
 	{
@@ -232,7 +232,7 @@ public struct Line
 	/// <param name="point">
 	/// The point to find the closest point on the line to.</param>
 	/// <returns>The point on the line that is closest to the given 
-	/// <paramref name="line"/>.</returns>
+	/// line.</returns>
 	public (float x, float y) ClosestPoint((float x, float y) point)
 	{
 		var AP = (point.Item1 - A.Item1, point.Item2 - A.Item2);

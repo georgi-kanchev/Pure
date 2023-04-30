@@ -28,9 +28,9 @@ public class Particle
 	public uint Color { get; set; } = uint.MaxValue;
 
 	/// <summary>
-	/// Initializes a new particle instance with the specified <paramref name="position"/>, 
-	/// <paramref name="movementAngle"/>, <paramref name="movementSpeed"/>, 
-	/// <paramref name="age"/> and <paramref name="color"/>.
+	/// Initializes a new particle instance with the specified position, 
+	/// movement angle, movement speed, 
+	/// age and color.
 	/// </summary>
 	/// <param name="position">The position of the particle.</param>
 	/// <param name="movementAngle">The movement angle of the particle.</param>

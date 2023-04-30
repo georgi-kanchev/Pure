@@ -1,7 +1,8 @@
 ﻿namespace Pure.Animation;
 
 /// <summary>
-/// Stores and updates a collection of <see cref="Animation{T}"/> objects.
+/// Stores and updates a collection of <see cref="Animation{T}"/> objects by a key of type 
+/// <typeparamref name="TKey"/>.
 /// </summary>
 /// <typeparam name="TKey">The type of the keys used to index the animations.</typeparam>
 /// <typeparam name="T">The type of the animations managed by the manager.</typeparam>
@@ -15,11 +16,11 @@ public class AnimationManager<TKey, T>
 	public TKey[] Keys { get; private set; } = Array.Empty<TKey>();
 
 	/// <summary>
-	/// Gets or sets the <see cref="Animation{T}"/> at the specified <typeparamref name="TKey"/> index.
+	/// Gets or sets the animation at the specified index.
 	/// </summary>
-	/// <param name="key">The key to use to access the <see cref="Animation{T}"/>.</param>
-	/// <returns>The <see cref="Animation{T}"/> associated with the 
-	/// specified <typeparamref name="TKey"/> key.</returns>
+	/// <param name="key">The key to use to access the animation.</param>
+	/// <returns>The animation associated with the 
+	/// specified  key.</returns>
 	public T? this[TKey key]
 	{
 		get => animations.ContainsKey(key) ? animations[key] : default;
@@ -42,7 +43,7 @@ public class AnimationManager<TKey, T>
 	}
 
 	/// <summary>
-	/// Updates all the animations in the manager by the specified <paramref name="deltaTime"/>.
+	/// Updates all the animations in the manager by the specified deltaTime.
 	/// </summary>
 	/// <param name="deltaTime">The time elapsed since the last update.</param>
 	public void Update(float deltaTime)

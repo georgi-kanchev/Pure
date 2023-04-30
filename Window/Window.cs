@@ -111,8 +111,8 @@ public static class Window
 	public static Mode InitialMode { get; private set; }
 
 	/// <summary>
-	/// Creates the window with the specified <paramref name="mode"/>
-	/// on the specified <paramref name="monitor"/>.
+	/// Creates the window with the specified mode
+	/// on the specified monitor.
 	/// </summary>
 	/// <param name="mode">The mode to create the window in.</param>
 	/// <param name="monitor">The index of the user monitor to display the window on.</param>
@@ -240,7 +240,7 @@ public static class Window
 	}
 
 	/// <summary>
-	/// Draws a set of <paramref name="points"/> to the window.
+	/// Draws a set of points to the window.
 	/// </summary>
 	/// <param name="points">An array of bundle tuples representing the position and color 
 	/// of each point.</param>
@@ -252,7 +252,7 @@ public static class Window
 			Vertices.QueuePoint((points[i].x, points[i].y), points[i].color);
 	}
 	/// <summary>
-	/// Draws a set of <paramref name="rectangles"/> to the window.
+	/// Draws a set of rectangles to the window.
 	/// </summary>
 	/// <param name="rectangles">An array of bundle tuples representing the 
 	/// position, size, and color of each rectangle.</param>
@@ -267,7 +267,7 @@ public static class Window
 		}
 	}
 	/// <summary>
-	/// Draws a set of <paramref name="lines"/> to the window.
+	/// Draws a set of lines to the window.
 	/// </summary>
 	/// <param name="lines">An array of bundle tuples representing the 
 	/// start position, end position, and color of each line.</param>
@@ -279,9 +279,9 @@ public static class Window
 			Vertices.QueueLine((lines[i].ax, lines[i].ay), (lines[i].bx, lines[i].by), lines[i].color);
 	}
 	/// <summary>
-	/// Draws a single <paramref name="tile"/> to the window.
+	/// Draws a single tile to the window.
 	/// </summary>
-	/// <param name="position">The position at which to draw the <paramref name="tile"/>.</param>
+	/// <param name="position">The position at which to draw the tile.</param>
 	/// <param name="tile">A bundle tuple representing the identifier, 
 	/// tint, angle, and flip status of the tile.</param>
 	/// <param name="size">The size of the tile, in tiles. Defaults to (1, 1) if not specified,
@@ -293,7 +293,7 @@ public static class Window
 		Vertices.QueueTile(position, id, tint, angle, size, (flipH, flipV));
 	}
 	/// <summary>
-	/// Draws a set of <paramref name="tiles"/> to the window.
+	/// Draws a set of tiles to the window.
 	/// </summary>
 	/// <param name="tiles">A 2D array of bundle tuples representing the identifier, 
 	/// tint, angle, and flip status of each tile.</param>

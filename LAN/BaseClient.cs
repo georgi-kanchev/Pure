@@ -31,7 +31,7 @@ public class BaseClient : Base
 	public string Nickname { get; private set; }
 
 	/// <summary>
-	/// Initializes a new instance with the specified <paramref name="nickname"/>.
+	/// Initializes a new instance with the specified nickname.
 	/// </summary>
 	/// <param name="nickname">The nickname of the client. If null or whitespace, 
 	/// the default value "Player" will be used.</param>
@@ -41,8 +41,8 @@ public class BaseClient : Base
 	}
 
 	/// <summary>
-	/// Connects the client to a server at the specified <paramref name="ip"/>
-	/// address and <paramref name="port"/>.
+	/// Connects the client to a server at the specified ip
+	/// address and port.
 	/// </summary>
 	/// <param name="ip">The IP address of the server.</param>
 	/// <param name="port">The port of the server.</param>
@@ -63,32 +63,32 @@ public class BaseClient : Base
 	}
 
 	/// <summary>
-	/// Sends a <paramref name="message"/> to the server.
+	/// Sends a message to the server.
 	/// </summary>
-	/// <param name="message">The content of the <paramref name="message"/>.</param>
-	/// <param name="tag">The tag of the <paramref name="message"/>.</param>
+	/// <param name="message">The content of the message.</param>
+	/// <param name="tag">The tag of the message.</param>
 	public void SendToServer(string message, byte tag = default)
 	{
 		var msg = new Message(ID, 0, Tag.CLIENT_TO_SERVER, tag, message);
 		client.SendAsync(msg.Data);
 	}
 	/// <summary>
-	/// Sends a <paramref name="message"/> to the server and all clients.
+	/// Sends a message to the server and all clients.
 	/// </summary>
-	/// <param name="message">The content of the <paramref name="message"/>.</param>
-	/// <param name="tag">The tag of the <paramref name="message"/>.</param>
+	/// <param name="message">The content of the message.</param>
+	/// <param name="tag">The tag of the message.</param>
 	public void SendToAll(string message, byte tag = default)
 	{
 		var msg = new Message(ID, 0, Tag.CLIENT_TO_ALL, tag, message);
 		client.SendAsync(msg.Data);
 	}
 	/// <summary>
-	/// Sends a <paramref name="message"/> to a specific client with the specified nickname.
+	/// Sends a message to a specific client with the specified nickname.
 	/// </summary>
 	/// <param name="toNickname">The nickname of the client to send the 
-	/// <paramref name="message"/> to.</param>
-	/// <param name="message">The content of the <paramref name="message"/>.</param>
-	/// <param name="tag">The tag of the <paramref name="message"/>.</param>
+	/// message to.</param>
+	/// <param name="message">The content of the message.</param>
+	/// <param name="tag">The tag of the message.</param>
 	public void SendToClient(string toNickname, string message, byte tag = default)
 	{
 		// self message is possible / goes through server

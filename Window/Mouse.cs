@@ -3,12 +3,12 @@
 namespace Pure.Window;
 
 /// <summary>
-/// Handles the physical button presses on a mouse and the on-screen OS cursor.
+/// Handles mouse input.
 /// </summary>
 public static class Mouse
 {
 	/// <summary>
-	/// Each physical button on a standard mouse.
+	/// Provides constant values for common mouse button identifiers.
 	/// </summary>
 	public static class Button
 	{
@@ -16,7 +16,7 @@ public static class Mouse
 		internal const int COUNT = 5;
 	}
 	/// <summary>
-	/// Each tile or OS cursor available.
+	/// Provides constant values for mouse cursor graphics identifiers.
 	/// </summary>
 	public static class Cursor
 	{
@@ -33,7 +33,7 @@ public static class Mouse
 	}
 
 	/// <summary>
-	/// The mouse cursor position relative to the OS window.
+	/// Gets the current position of the mouse cursor.
 	/// </summary>
 	public static (int x, int y) CursorPosition
 	{
@@ -44,8 +44,9 @@ public static class Mouse
 			return (p.X, p.Y);
 		}
 	}
+
 	/// <summary>
-	/// The mouse cursor type used to display the tile or OS cursor.
+	/// Gets or sets the graphics for the mouse cursor.
 	/// </summary>
 	public static int CursorGraphics
 	{
@@ -72,7 +73,7 @@ public static class Mouse
 		}
 	}
 	/// <summary>
-	/// The mouse cursor color used to draw the tile cursor.
+	/// Gets or sets the color of the mouse cursor (if tile).
 	/// </summary>
 	public static uint CursorColor
 	{
@@ -88,7 +89,7 @@ public static class Mouse
 		}
 	}
 	/// <summary>
-	/// Whether the mouse cursor is restricted of leaving the OS window.
+	/// Gets or sets whether the mouse cursor is restricted to the window.
 	/// </summary>
 	public static bool IsCursorRestriced
 	{
@@ -105,7 +106,7 @@ public static class Mouse
 		}
 	}
 	/// <summary>
-	/// Whether the mouse cursor hovers the OS window.
+	/// Gets whether the mouse cursor is hovering over the window.
 	/// </summary>
 	public static bool IsCursorHoveringWindow
 	{
@@ -119,7 +120,7 @@ public static class Mouse
 	}
 
 	/// <summary>
-	/// The currently pressed mouse buttons, in the order they were pressed.
+	/// Gets an array of currently pressed mouse buttons, in order.
 	/// </summary>
 	public static int[] ButtonsPressed
 	{
@@ -130,7 +131,7 @@ public static class Mouse
 		}
 	}
 	/// <summary>
-	/// Returns the mouse scroll direction during the current <see cref="Window"/> activation.
+	/// Gets the scroll delta of the mouse.
 	/// </summary>
 	public static int ScrollDelta
 	{
@@ -145,9 +146,12 @@ public static class Mouse
 			scrollData = value;
 		}
 	}
+
 	/// <summary>
-	/// Returns whether a <paramref name="key"/> is among the <see cref="ButtonsPressed"/>.
+	/// Gets whether the specified mouse button is currently pressed.
 	/// </summary>
+	/// <param name="button">The button to check.</param>
+	/// <returns>True if the button is currently pressed, false otherwise.</returns>
 	public static bool IsButtonPressed(int button)
 	{
 		Window.TryNoWindowException();

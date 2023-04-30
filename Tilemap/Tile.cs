@@ -28,7 +28,7 @@ public struct Tile
 
 	/// <summary>
 	/// Initializes a new tile instance with the specified identifier, 
-	/// <paramref name="tint"/>, <paramref name="angle"/>, and <paramref name="flips"/>.
+	/// tint, angle, and flips.
 	/// </summary>
 	/// <param name="id">The identifier of the tile.</param>
 	/// <param name="tint">The tint of the tile (defaults to white).</param>
@@ -49,7 +49,7 @@ public struct Tile
 	/// A bundle tuple containing the identifier, tint, angle and flips of the tile.</returns>
 	public (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically) ToBundle() => this;
 	/// <returns>
-	/// A string representation of this tile in the format of its bundle tuple.".</returns>
+	/// A string representation of this tile.".</returns>
 	public override string ToString()
 	{
 		return $"ID({ID}) Tint({Tint}) Angle({Angle}) Flips{Flips}";

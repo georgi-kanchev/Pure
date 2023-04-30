@@ -6,16 +6,16 @@ namespace Pure.LAN;
 public abstract class Base
 {
 	/// <summary>
-	/// Occurs when an <paramref name="error"/> is encountered during communication.
+	/// Occurs when an error is encountered during communication.
 	/// </summary>
 	/// <param name="error">The error message.</param>
 	protected virtual void OnError(string error) { }
 	/// <summary>
-	/// Occurs when a <paramref name="message"/> is received from a client.
+	/// Occurs when a message is received from a client.
 	/// </summary>
 	/// <param name="fromNickname">The nickname of the client sending the 
-	/// <paramref name="message"/>.</param>
-	/// <param name="tag">The tag of the <paramref name="message"/>.</param>
+	/// message.</param>
+	/// <param name="tag">The tag of the message.</param>
 	/// <param name="message">The content of the message.</param>
 	protected virtual void OnMessageReceive(string fromNickname, byte tag, string message) { }
 	/// <summary>

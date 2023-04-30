@@ -3,7 +3,8 @@
 using SFML.Audio;
 
 /// <summary>
-/// Provides methods for loading, playing, pausing, and stopping audio files.
+/// Provides methods for loading, playing, pausing, and stopping audio files by a key of type
+/// <typeparamref name="T"/>.
 /// </summary>
 /// <typeparam name="T">The type of the audio file identifier.</typeparam>
 /// <remarks>
@@ -12,16 +13,16 @@ using SFML.Audio;
 public static class Audio<T> where T : notnull
 {
 	/// <summary>
-	/// Loads an audio file from the specified <paramref name="path"/> and assigns it 
+	/// Loads an audio file from the specified path and assigns it 
 	/// the specified identifier.
 	/// </summary>
 	/// <param name="path">The path to the audio file.</param>
 	/// <param name="id">The identifier to assign to the audio file.</param>
 	/// <param name="isStreaming">Whether to stream the audio file or load it into memory.</param>
-	/// <exception cref="ArgumentNullException">Thrown if either <paramref name="path"/> or 
-	/// <paramref name="id"/> is null.</exception>
+	/// <exception cref="ArgumentNullException">Thrown if either path or 
+	/// id is null.</exception>
 	/// <exception cref="ArgumentException">Thrown if the file at the specified 
-	/// <paramref name="path"/> does not exist.</exception>
+	/// path does not exist.</exception>
 	public static void Load(string path, T id, bool isStreaming = false)
 	{
 		if (id == null)
@@ -64,7 +65,7 @@ public static class Audio<T> where T : notnull
 	}
 
 	/// <summary>
-	/// Plays the audio file with the specified identifier at the specified <paramref name="volume"/> 
+	/// Plays the audio file with the specified identifier at the specified volume 
 	/// and with looping enabled or disabled. Those settings remain.
 	/// </summary>
 	/// <param name="id">The identifier of the audio file to play.</param>

@@ -18,8 +18,8 @@ public class Program
 		tilemap.SetTextLine((0, 0), "Hello, World!", Color.Red);
 
 		//var storage = new Storage();
-		var storage = new Storage();
-		storage.Load("test.storage", false);
+		// var storage = new Storage();
+		// storage.Load("test.storage", false);
 		//storage.Set("0", tilemap.ToBundle());
 		//storage.Save("test.storage", false);
 

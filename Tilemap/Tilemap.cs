@@ -9,7 +9,7 @@ namespace Pure.Tilemap;
 public class Tilemap
 {
 	/// <summary>
-	/// Specifies the alignment of the text in <see cref="SetTextSquare"/>.
+	/// Specifies the alignment of the text in <see cref="SetTextSquare.
 	/// </summary>
 	public enum Alignment
 	{
@@ -81,7 +81,7 @@ public class Tilemap
 		}
 	}
 	/// <summary>
-	/// Initializes a new tilemap instance with the specified <paramref name="size"/>.
+	/// Initializes a new tilemap instance with the specified size.
 	/// </summary>
 	/// <param name="size">The size of the tilemap in tiles.</param>
 	public Tilemap((int width, int height) size)
@@ -97,10 +97,10 @@ public class Tilemap
 		CameraSize = size;
 	}
 	/// <summary>
-	/// Initializes a new tilemap instance with the specified <paramref name="tileData"/>.
+	/// Initializes a new tilemap instance with the specified tileData.
 	/// </summary>
 	/// <param name="tileData">The tile data to use for the tilemap.</param>
-	/// <exception cref="ArgumentNullException">Thrown if <paramref name="tileData"/> is null.</exception>
+	/// <exception cref="ArgumentNullException">Thrown if tileData is null.</exception>
 	public Tilemap(Tile[,] tileData)
 	{
 		if (tileData == null)
@@ -165,11 +165,11 @@ public class Tilemap
 	}
 
 	/// <summary>
-	/// Gets the tile at the specified <paramref name="position"/>.
+	/// Gets the tile at the specified position.
 	/// </summary>
 	/// <param name="position">The position to get the tile from.</param>
-	/// <returns>The tile at the specified <paramref name="position"/>, 
-	/// or the default tile value if the <paramref name="position"/> is out of bounds.</returns>
+	/// <returns>The tile at the specified position, 
+	/// or the default tile value if the position is out of bounds.</returns>
 	public Tile TileAt((int x, int y) position)
 	{
 		return IndicesAreValid(position) ? data[position.x, position.y] : default;
@@ -187,8 +187,8 @@ public class Tilemap
 	}
 
 	/// <summary>
-	/// Sets the tile at the specified <paramref name="position"/> 
-	/// to the specified <paramref name="tile"/>.
+	/// Sets the tile at the specified position 
+	/// to the specified tile.
 	/// </summary>
 	/// <param name="position">The position to set the tile at.</param>
 	/// <param name="tile">The tile to set.</param>
@@ -200,8 +200,8 @@ public class Tilemap
 		data[position.x, position.y] = tile;
 	}
 	/// <summary>
-	/// Sets a square region of tiles starting at the specified <paramref name="position"/> with the 
-	/// specified <paramref name="size"/> to the specified <paramref name="tile"/>.
+	/// Sets a square region of tiles starting at the specified position with the 
+	/// specified size to the specified tile.
 	/// </summary>
 	/// <param name="position">The position to start setting tiles from.</param>
 	/// <param name="size">The size of the square region to set tiles for.</param>
@@ -222,7 +222,7 @@ public class Tilemap
 			}
 	}
 	/// <summary>
-	/// Sets a group of tiles starting at the specified <paramref name="position"/> to the 
+	/// Sets a group of tiles starting at the specified position to the 
 	/// specified 2D tile array.
 	/// </summary>
 	/// <param name="position">The position to start setting tiles from.</param>
@@ -238,8 +238,8 @@ public class Tilemap
 	}
 
 	/// <summary>
-	/// Sets a single line of <paramref name="text"/> starting from a <paramref name="position"/>
-	/// with optional <paramref name="tint"/>.
+	/// Sets a single line of text starting from a position
+	/// with optional tint.
 	/// </summary>
 	/// <param name="position">The starting position to place the text.</param>
 	/// <param name="text">The text to display.</param>
@@ -265,15 +265,15 @@ public class Tilemap
 		}
 	}
 	/// <summary>
-	/// Sets a square of <paramref name="text"/> with optional 
-	/// <paramref name="alignment"/>, scrolling, and word wrapping.
+	/// Sets a square of text with optional 
+	/// alignment, scrolling, and word wrapping.
 	/// </summary>
-	/// <param name="position">The starting position to place the <paramref name="text"/>.</param>
+	/// <param name="position">The starting position to place the text.</param>
 	/// <param name="size">The width and height of the square.</param>
-	/// <param name="text">The <paramref name="text"/> to display.</param>
+	/// <param name="text">The text to display.</param>
 	/// <param name="tint">Optional tint color value (defaults to white).</param>
 	/// <param name="isWordWrapping">Optional flag for enabling word wrapping.</param>
-	/// <param name="alignment">Optional <paramref name="text"/> alignment.</param>
+	/// <param name="alignment">Optional text alignment.</param>
 	/// <param name="scrollProgress">Optional scrolling value (between 0 and 1).</param>
 	public void SetTextSquare((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
 	{
@@ -380,15 +380,15 @@ public class Tilemap
 		}
 	}
 	/// <summary>
-	/// Sets the <paramref name="tint"/> of the tiles in a rectangular area of the tilemap to 
-	/// highlight a specific <paramref name="text"/> (if found).
+	/// Sets the tint of the tiles in a rectangular area of the tilemap to 
+	/// highlight a specific text (if found).
 	/// </summary>
 	/// <param name="position">The position of the top-left corner of the rectangular 
-	/// area to search for the <paramref name="text"/>.</param>
-	/// <param name="size">The size of the rectangular area to search for the <paramref name="text"/>.</param>
-	/// <param name="text">The <paramref name="text"/> to search for and highlight.</param>
+	/// area to search for the text.</param>
+	/// <param name="size">The size of the rectangular area to search for the text.</param>
+	/// <param name="text">The text to search for and highlight.</param>
 	/// <param name="tint">The color to tint the matching tiles.</param>
-	/// <param name="isMatchingWord">Whether to only match the <paramref name="text"/> 
+	/// <param name="isMatchingWord">Whether to only match the text 
 	/// as a whole word or any symbols.</param>
 	public void SetTextSquareTint((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isMatchingWord = false)
 	{
@@ -507,13 +507,13 @@ public class Tilemap
 	}
 
 	/// <summary>
-	/// Converts a screen <paramref name="pixelPosition"/> to a world point on the tilemap.
+	/// Converts a screen pixelPosition to a world point on the tilemap.
 	/// </summary>
 	/// <param name="pixelPosition">The screen pixel position to convert.</param>
 	/// <param name="windowSize">The size of the application window.</param>
 	/// <param name="isAccountingForCamera">Whether or not to account for the camera's position.</param>
 	/// <returns>The world point corresponding to the given screen 
-	/// <paramref name="pixelPosition"/>.</returns>
+	/// pixelPosition.</returns>
 	public (float x, float y) PointFrom((int x, int y) pixelPosition, (int width, int height) windowSize, bool isAccountingForCamera = true)
 	{
 		var x = Map(pixelPosition.x, 0, windowSize.width, 0, Size.width);
@@ -551,7 +551,7 @@ public class Tilemap
 	}
 
 	/// <summary>
-	/// Converts a <paramref name="symbol"/> to its corresponding tile identifier.
+	/// Converts a symbol to its corresponding tile identifier.
 	/// </summary>
 	/// <param name="symbol">The symbol to convert.</param>
 	/// <returns>The tile identifier corresponding to the given symbol.</returns>
@@ -570,9 +570,9 @@ public class Tilemap
 		return id;
 	}
 	/// <summary>
-	/// Converts a <paramref name="text"/> to an array of tile identifiers.
+	/// Converts a text to an array of tile identifiers.
 	/// </summary>
-	/// <param name="text">The <paramref name="text"/> to convert.</param>
+	/// <param name="text">The text to convert.</param>
 	/// <returns>An array of tile identifiers corresponding to the given symbols.</returns>
 	public int[] TilesFrom(string text)
 	{

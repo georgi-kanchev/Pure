@@ -13,7 +13,7 @@ using System.Text;
 public static class Extensions
 {
 	/// <summary>
-	/// The type of number animations used by <see cref="Animate"/>. Also known as 'easing functions'.
+	/// The type of number animations used by <see cref="Animate. Also known as 'easing functions'.
 	/// </summary>
 	public enum Animation
 	{
@@ -27,23 +27,23 @@ public static class Extensions
 		Bounce // Bounce
 	}
 	/// <summary>
-	/// The type of number animation direction used by <see cref="Animate"/>.
+	/// The type of number animation direction used by <see cref="Animate.
 	/// </summary>
 	public enum AnimationCurve { Backward, Forward, BackwardThenForward }
 
 	/// <summary>
-	/// Returns true only the first time a <paramref name="condition"/> is true.
-	/// This is reset whenever the <paramref name="condition"/> becomes false.
-	/// This process can be repeated <paramref name="maximum"/> amount of times, always returns false after that.
-	/// A <paramref name="uniqueID"/> needs to be provided that describes each type of
-	/// <paramref name="condition"/> in order to separate/identify them.
+	/// Returns true only the first time a condition is true.
+	/// This is reset whenever the condition becomes false.
+	/// This process can be repeated maximum amount of times, always returns false after that.
+	/// A uniqueID needs to be provided that describes each type of
+	/// condition in order to separate/identify them.
 	/// Useful for triggering continuous checks only once, rather than every update.
 	/// </summary>
 	/// <param name="condition">The bool value to check for.</param>
-	/// <param name="uniqueID">The <paramref name="uniqueID"/> to associate the check with.</param>
+	/// <param name="uniqueID">The uniqueID to associate the check with.</param>
 	/// <param name="maximum">The maximum number of entries allowed.</param>
-	/// <returns>True if the <paramref name="condition"/> is true and the <paramref name="uniqueID"/> has not been checked before,
-	/// or if the <paramref name="condition"/> is true and the number of entries is less than the <paramref name="maximum"/> allowed. False otherwise.</returns>
+	/// <returns>True if the condition is true and the uniqueID has not been checked before,
+	/// or if the condition is true and the number of entries is less than the maximum allowed. False otherwise.</returns>
 	public static bool Once(this bool condition, string uniqueID, uint maximum = uint.MaxValue)
 	{
 		if (gates.ContainsKey(uniqueID) == false && condition == false)
@@ -69,10 +69,10 @@ public static class Extensions
 		return false;
 	}
 	/// <summary>
-	/// Returns true the first time a <paramref name="condition"/> is true.
-	/// Also returns true after a <paramref name="delay"/> in seconds every <paramref name="frequency"/> seconds.
+	/// Returns true the first time a condition is true.
+	/// Also returns true after a delay in seconds every frequency seconds.
 	/// Returns false otherwise.
-	/// A <paramref name="uniqueID"/> needs to be provided that describes each type of <paramref name="condition"/> in order to separate/identify them.
+	/// A uniqueID needs to be provided that describes each type of condition in order to separate/identify them.
 	/// Useful for turning a continuous input condition into the familiar "press and hold" key trigger.
 	/// </summary>
 	/// <param name="condition">The bool value to check for.</param>
@@ -99,9 +99,9 @@ public static class Extensions
 	}
 
 	/// <summary>
-	/// Randomly shuffles the elements in the given <paramref name="collection"/>.
+	/// Randomly shuffles the elements in the given collection.
 	/// </summary>
-	/// <typeparam name="T">The type of elements in the <paramref name="collection"/>.</typeparam>
+	/// <typeparam name="T">The type of elements in the collection.</typeparam>
 	/// <param name="collection">The collection to shuffle.</param>
 	public static void Shuffle<T>(this IList<T> collection)
 	{
@@ -115,18 +115,18 @@ public static class Extensions
 		}
 	}
 	/// <typeparam name="T">
-	/// The type of objects in the <paramref name="collection"/>.</typeparam>
+	/// The type of objects in the collection.</typeparam>
 	/// <param name="collection">The collection to choose from.</param>
-	/// <returns>A randomly selected value from the <paramref name="collection"/>.</returns>
+	/// <returns>A randomly selected value from the collection.</returns>
 	public static T ChooseOne<T>(this IList<T> collection)
 	{
 		return collection[Random(0, collection.Count - 1)];
 	}
 	/// <typeparam name="T">
-	/// The type of objects in the <paramref name="choices"/>.</typeparam>
+	/// The type of objects in the choices.</typeparam>
 	/// <param name="choice">The first choice to include in the selection.</param>
 	/// <param name="choices">Additional choices to include in the selection.</param>
-	/// <returns>A randomly selected <typeparamref name="T"/> value from the given <paramref name="choices"/>.</returns>
+	/// <returns>A randomly selected <typeparamref name="T"/> value from the given choices.</returns>
 	public static T ChooseOneFrom<T>(this T choice, params T[] choices)
 	{
 		var list = choices == null ? new() : choices.ToList();
@@ -134,10 +134,10 @@ public static class Extensions
 		return ChooseOne(list);
 	}
 	/// <summary>
-	/// Calculates the average number out of a <paramref name="collection"/> of numbers and returns it.
+	/// Calculates the average number out of a collection of numbers and returns it.
 	/// </summary>
 	/// <param name="collection">The collection of numbers to calculate the average of.</param>
-	/// <returns>The average of the numbers in the <paramref name="collection"/>.</returns>
+	/// <returns>The average of the numbers in the collection.</returns>
 	public static float Average(this IList<float> collection)
 	{
 		var sum = 0f;
@@ -146,9 +146,9 @@ public static class Extensions
 		return sum / collection.Count;
 	}
 	/// <summary>
-	/// Iterates over a <paramref name="collection"/>, calls <see cref="object.ToString"/>
-	/// on each element and adds the returned <see cref="string"/> to the result, alongside
-	/// a <paramref name="separator"/>. The result is then returned.
+	/// Iterates over a collection, calls <see cref="object.ToString"/>
+	/// on each element and adds the returned string to the result, alongside
+	/// a separator. The result is then returned.
 	/// </summary>
 	/// <typeparam name="T">The type of elements in the collection.</typeparam>
 	/// <param name="collection">The collection of elements to iterate over.</param>
@@ -167,15 +167,15 @@ public static class Extensions
 		return sb.ToString();
 	}
 	/// <summary>
-	/// Shifts the elements of the given <paramref name="collection"/> by the specified offset.
+	/// Shifts the elements of the given collection by the specified offset.
 	/// </summary>
-	/// <typeparam name="T">The type of elements in the <paramref name="collection"/>.</typeparam>
-	/// <param name="collection">The <paramref name="collection"/> to be shifted.</param>
+	/// <typeparam name="T">The type of elements in the collection.</typeparam>
+	/// <param name="collection">The collection to be shifted.</param>
 	/// <param name="offset">The number of positions by which to shift the elements. Positive values 
 	/// shift elements to the right, negative values shift elements to the left.</param>
 	/// <remarks>
-	/// If the offset is greater than the size of the <paramref name="collection"/>, the method will wrap 
-	/// around the <paramref name="collection"/>.
+	/// If the offset is greater than the size of the collection, the method will wrap 
+	/// around the collection.
 	/// </remarks>
 	public static void Shift<T>(this IList<T> collection, int offset)
 	{
@@ -225,9 +225,9 @@ public static class Extensions
 		return set1.ToArray();
 	}
 	/// <summary>
-	/// Returns a subsequence of elements from a <paramref name="collection"/>.
+	/// Returns a subsequence of elements from a collection.
 	/// </summary>
-	/// <typeparam name="T">The type of elements in the <paramref name="collection"/>.</typeparam>
+	/// <typeparam name="T">The type of elements in the collection.</typeparam>
 	/// <param name="collection">The collection to take elements from.</param>
 	/// <param name="start">The index of the first element to take.</param>
 	/// <param name="end">The index of the last element to take.</param>
@@ -246,9 +246,9 @@ public static class Extensions
 		return result;
 	}
 	/// <summary>
-	/// Reverses the order of the elements in a <paramref name="collection"/>.
+	/// Reverses the order of the elements in a collection.
 	/// </summary>
-	/// <typeparam name="T">The type of elements in the <paramref name="collection"/>.</typeparam>
+	/// <typeparam name="T">The type of elements in the collection.</typeparam>
 	/// <param name="collection">The collection to reverse.</param>
 	public static void Reverse<T>(this IList<T> collection)
 	{
@@ -264,9 +264,9 @@ public static class Extensions
 		}
 	}
 	/// <typeparam name="T">
-	/// The type of elements in the <paramref name="collection"/>.</typeparam>
+	/// The type of elements in the collection.</typeparam>
 	/// <param name="collection">The collection to check for duplicates.</param>
-	/// <returns>True if the <paramref name="collection"/> contains at least one duplicate element, 
+	/// <returns>True if the collection contains at least one duplicate element, 
 	/// false otherwise.</returns>
 	public static bool HasDuplicates<T>(this IList<T> collection)
 	{
@@ -279,7 +279,7 @@ public static class Extensions
 	}
 
 	/// <typeparam name="T">
-	/// The type of the elements in the <paramref name="matrix"/>.</typeparam>
+	/// The type of the elements in the matrix.</typeparam>
 	/// <param name="matrix">The two-dimensional array to convert to a string.</param>
 	/// <param name="separatorColumn">The string used to separate columns in the resulting string.</param>
 	/// <param name="separatorRow">The string used to separate rows in the resulting string.</param>
@@ -305,7 +305,7 @@ public static class Extensions
 		return result.ToString();
 	}
 	/// <typeparam name="T">
-	/// The type of the elements in the <paramref name="matrix"/>.</typeparam>
+	/// The type of the elements in the matrix.</typeparam>
 	/// <param name="matrix">The two-dimensional array to rotate.</param>
 	/// <param name="direction">The direction and number of 90-degree turns to rotate the array. 
 	/// Positive values rotate clockwise, negative values rotate counterclockwise.</param>
@@ -339,7 +339,7 @@ public static class Extensions
 	/// <summary>
 	/// Flips a two-dimensional array horizontally and/or vertically.
 	/// </summary>
-	/// <typeparam name="T">The type of the elements in the <paramref name="matrix"/>.</typeparam>
+	/// <typeparam name="T">The type of the elements in the matrix.</typeparam>
 	/// <param name="matrix">The two-dimensional array to flip.</param>
 	/// <param name="flips">A tuple indicating the flip direction for the horizontal and vertical axes. The first element indicates whether to flip horizontally, and the second element indicates whether to flip vertically.</param>
 	public static void Flip<T>(this T[,] matrix, (bool isFlippedHorizontally, bool isFlippedVertically) flips)
@@ -391,11 +391,11 @@ public static class Extensions
 		return true;
 	}
 	/// <summary>
-	/// Returns a new string that repeats the input string a specified number of <paramref name="times"/>.
+	/// Returns a new string that repeats the input string a specified number of times.
 	/// </summary>
 	/// <param name="text">The input string to repeat.</param>
 	/// <param name="times">The number of times to repeat the input string.</param>
-	/// <returns>A new string that consists of the input string repeated a specified number of <paramref name="times"/>.</returns>
+	/// <returns>A new string that consists of the input string repeated a specified number of times.</returns>
 	public static string Repeat(this string text, int times)
 	{
 		var sb = new StringBuilder();
@@ -451,7 +451,8 @@ public static class Extensions
 	/// Attempts to convert a string to a single-precision floating point number.
 	/// </summary>
 	/// <param name="text">The string to convert.</param>
-	/// <returns>The single-precision floating point number represented by the input string. If the input string is not a valid number, returns <see cref="float.NaN"/>.</returns>
+	/// <returns>The single-precision floating point number represented by the input string. 
+	/// If the input string is not a valid number, returns <see cref="float.NaN"/>.</returns>
 	public static float ToNumber(this string text)
 	{
 		text = text.Replace(',', '.');
@@ -483,23 +484,23 @@ public static class Extensions
 		}
 	}
 	/// <param name="text">
-	/// The string to search for occurrences of <paramref name="target"/>.</param>
-	/// <param name="target">The substring to count within <paramref name="text"/>.</param>
-	/// <returns>The number of times <paramref name="target"/> appears 
-	/// within <paramref name="text"/>.</returns>
+	/// The string to search for occurrences of target.</param>
+	/// <param name="target">The substring to count within text.</param>
+	/// <returns>The number of times target appears 
+	/// within text.</returns>
 	public static int Count(this string text, string target)
 	{
 		return string.IsNullOrEmpty(target) ? 0 : text.Split(target).Length - 1;
 	}
 
 	/// <summary>
-	/// Calculates the average of the given <paramref name="numbers"/>, 
-	/// including the specified <paramref name="number"/>.
+	/// Calculates the average of the given numbers, 
+	/// including the specified number.
 	/// </summary>
 	/// <param name="number">The number to be included in the average calculation.</param>
 	/// <param name="numbers">Additional numbers to be included in the average calculation.</param>
-	/// <returns>The average of the given <paramref name="numbers"/>, 
-	/// including the specified <paramref name="number"/>.</returns>
+	/// <returns>The average of the given numbers, 
+	/// including the specified number.</returns>
 	public static float AverageFrom(this float number, params float[] numbers)
 	{
 		var list = numbers == null ? new() : numbers.ToList();
@@ -507,12 +508,12 @@ public static class Extensions
 		return Average(list);
 	}
 	/// <summary>
-	/// Rounds the given <paramref name="number"/> to the nearest multiple of the 
-	/// specified <paramref name="internval"/>.
+	/// Rounds the given number to the nearest multiple of the 
+	/// specified internval.
 	/// </summary>
 	/// <param name="number">The number to be rounded.</param>
-	/// <param name="interval">The interval to which the <paramref name="number"/> should be rounded.</param>
-	/// <returns>The nearest multiple of the specified <paramref name="interval"/>.</returns>
+	/// <param name="interval">The interval to which the number should be rounded.</param>
+	/// <returns>The nearest multiple of the specified interval.</returns>
 	public static float Snap(this float number, float interval)
 	{
 		if (interval == default)
@@ -524,7 +525,7 @@ public static class Extensions
 		return value;
 	}
 	/// <summary>
-	/// Wraps a value within a range of 0 to <paramref name="targetNumber"/> inclusive. Useful for
+	/// Wraps a value within a range of 0 to target number inclusive. Useful for
 	/// wrapping an angle in the range [0-359].
 	/// </summary>
 	/// <param name="value">The value to wrap.</param>
@@ -535,7 +536,7 @@ public static class Extensions
 		return ((number % targetNumber) + targetNumber) % targetNumber;
 	}
 	/// <summary>
-	/// Wraps a value within a range of 0 to <paramref name="targetNumber"/> inclusive. Useful for
+	/// Wraps a value within a range of 0 to target number inclusive. Useful for
 	/// wrapping an angle in the range [0-359].
 	/// </summary>
 	/// <param name="value">The value to wrap.</param>
@@ -546,7 +547,7 @@ public static class Extensions
 		return ((number % targetNumber) + targetNumber) % targetNumber;
 	}
 	/// <summary>
-	/// Animate the specified value using the given <paramref name="animation"/> and <paramref name="curve"/>.
+	/// Animate the specified value using the given animation and curve.
 	/// </summary>
 	/// <param name="unit">The unit value to animate (ranged 0 to 1).</param>
 	/// <param name="animation">The animation to apply.</param>
@@ -621,14 +622,14 @@ public static class Extensions
 		}
 	}
 	/// <summary>
-	/// Limits a float <paramref name="number"/> to a specified range.
+	/// Limits a float number to a specified range.
 	/// </summary>
 	/// <param name="number">The number to limit.</param>
 	/// <param name="rangeA">The first range value.</param>
 	/// <param name="rangeB">The second range value.</param>
 	/// <param name="isOverflowing">Indicates whether the range is treated as circular, 
 	/// allowing overflow.</param>
-	/// <returns>The limited float <paramref name="number"/>.</returns>
+	/// <returns>The limited float number.</returns>
 	public static float Limit(this float number, float rangeA, float rangeB, bool isOverflowing = false)
 	{
 		if (rangeA > rangeB)
@@ -649,23 +650,23 @@ public static class Extensions
 		}
 	}
 	/// <summary>
-	/// Limits an int <paramref name="number"/> to a specified range.
+	/// Limits an int number to a specified range.
 	/// </summary>
 	/// <param name="number">The number to limit.</param>
 	/// <param name="rangeA">The first range value.</param>
 	/// <param name="rangeB">The second range value.</param>
 	/// <param name="isOverflowing">Indicates whether the range is treated as circular, 
 	/// allowing overflow.</param>
-	/// <returns>The limited int <paramref name="number"/>.</returns>
+	/// <returns>The limited int number.</returns>
 	public static int Limit(this int number, int rangeA, int rangeB, bool isOverflowing = false)
 	{
 		return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
 	}
 	/// <param name="number">
 	/// The number whose sign to adjust.</param>
-	/// <param name="isSigned">Indicates whether the sign of the <paramref name="number"/> 
+	/// <param name="isSigned">Indicates whether the sign of the number 
 	/// should be negative.</param>
-	/// <returns>The absolute value of the float <paramref name="number"/> 
+	/// <returns>The absolute value of the float number 
 	/// with the specified sign.</returns>
 	public static float Sign(this float number, bool isSigned)
 	{
@@ -673,15 +674,15 @@ public static class Extensions
 	}
 	/// <param name="number">
 	/// The number whose sign to adjust.</param>
-	/// <param name="isSigned">Indicates whether the sign of the <paramref name="number"/> 
+	/// <param name="isSigned">Indicates whether the sign of the number 
 	/// should be negative.</param>
-	/// <returns>The absolute value of the int <paramref name="number"/> 
+	/// <returns>The absolute value of the int number 
 	/// with the specified sign.</returns>
 	public static int Sign(this int number, bool signed)
 		=> (int)Sign((float)number, signed);
 	/// <param name="number">
 	/// The float number to check.</param>
-	/// <returns>The number of decimal places of the given float <paramref name="number"/>.</returns>
+	/// <returns>The number of decimal places of the given float number.</returns>
 	public static int Precision(this float number)
 	{
 		var cultDecPoint = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
@@ -694,7 +695,7 @@ public static class Extensions
 	/// <param name="rangeB">The upper bound of the range.</param>
 	/// <param name="inclusiveA">If true, the lower bound is included in the range.</param>
 	/// <param name="inclusiveB">If true, the upper bound is included in the range.</param>
-	/// <returns>True if the given float <paramref name="number"/> is within the given range, 
+	/// <returns>True if the given float number is within the given range, 
 	/// false otherwise.</returns>
 	public static bool IsBetween(this float number, float rangeA, float rangeB, bool inclusiveA = false, bool inclusiveB = false)
 	{
@@ -711,57 +712,57 @@ public static class Extensions
 	/// <param name="rangeB">The upper bound of the range.</param>
 	/// <param name="inclusiveA">If true, the lower bound is included in the range.</param>
 	/// <param name="inclusiveB">If true, the upper bound is included in the range.</param>
-	/// <returns>True if the given int <paramref name="number"/> is within the given range, 
+	/// <returns>True if the given int number is within the given range, 
 	/// false otherwise.</returns>
 	public static bool IsBetween(this int number, int rangeA, int rangeB, bool inclusiveA = false, bool inclusiveB = false)
 		=> IsBetween((float)number, rangeA, rangeB, inclusiveA, inclusiveB);
 	/// <summary>
-	/// Checks whether the given float <paramref name="number"/> is within the range defined by a 
-	/// <paramref name="targetNumber"/> and a <paramref name="range"/> value.
+	/// Checks whether the given float number is within the range defined by a 
+	/// targetNumber and a range value.
 	/// </summary>
 	/// <param name="number">The float number to check.</param>
-	/// <param name="targetNumber">The target <paramref name="number"/> defining the center of the range.</param>
+	/// <param name="targetNumber">The target number defining the center of the range.</param>
 	/// <param name="range">The range value defining the size of the range.</param>
-	/// <returns>True if the given float <paramref name="number"/> is within the range defined by the target number and 
-	/// the <paramref name="range"/> value, false otherwise.</returns>
+	/// <returns>True if the given float number is within the range defined by the target number and 
+	/// the range value, false otherwise.</returns>
 	public static bool IsWithin(this float number, float targetNumber, float range)
 	{
 		return IsBetween(number, targetNumber - range, targetNumber + range, true, true);
 	}
 	/// <summary>
-	/// Checks whether the given int <paramref name="number"/> is within the range defined by a 
-	/// <paramref name="targetNumber"/> and a <paramref name="range"/> value.
+	/// Checks whether the given int number is within the range defined by a 
+	/// targetNumber and a range value.
 	/// </summary>
 	/// <param name="number">The int number to check.</param>
-	/// <param name="targetNumber">The target <paramref name="number"/> defining the center of the range.</param>
+	/// <param name="targetNumber">The target number defining the center of the range.</param>
 	/// <param name="range">The range value defining the size of the range.</param>
-	/// <returns>True if the given int <paramref name="number"/> is within the range defined by the target number and 
-	/// the <paramref name="range"/> value, false otherwise.</returns>
+	/// <returns>True if the given int number is within the range defined by the target number and 
+	/// the range value, false otherwise.</returns>
 	public static bool IsWithin(this int number, int targetNumber, int range)
 	{
 		return IsBetween(number, targetNumber - range, targetNumber + range, true, true);
 	}
 	/// <summary>
-	/// Moves the given float <paramref name="number"/> by a certain <paramref name="speed"/> 
+	/// Moves the given float number by a certain speed 
 	/// over a certain time.
 	/// </summary>
 	/// <param name="number">The float number to move.</param>
-	/// <param name="speed">The speed at which to move the float <paramref name="number"/>.</param>
+	/// <param name="speed">The speed at which to move the float number.</param>
 	/// <param name="deltaTime">The time elapsed since the last move operation.</param>
-	/// <returns>The new value of the moved float <paramref name="number"/>.</returns>
+	/// <returns>The new value of the moved float number.</returns>
 	public static float Move(this float number, float speed, float deltaTime = 1)
 	{
 		return number + speed * deltaTime;
 	}
 	/// <summary>
-	/// Moves a float <paramref name="number"/> towards a <paramref name="targetNumber"/> 
-	/// by a given <paramref name="speed"/>.
+	/// Moves a float number towards a targetNumber 
+	/// by a given speed.
 	/// </summary>
 	/// <param name="number">The current number.</param>
 	/// <param name="targetNumber">The target number to move towards.</param>
 	/// <param name="speed">The speed of movement.</param>
 	/// <param name="deltaTime">The time step for the movement.</param>
-	/// <returns>The new <paramref name="number"/> after the movement.</returns>
+	/// <returns>The new number after the movement.</returns>
 	public static float MoveTo(this float number, float targetNumber, float speed, float deltaTime = 1)
 	{
 		var goingPos = number < targetNumber;
@@ -774,28 +775,28 @@ public static class Extensions
 		return result;
 	}
 	/// <summary>
-	/// Maps a float <paramref name="number"/> from one range of values to another range of values.
+	/// Maps a float number from one range of values to another range of values.
 	/// </summary>
 	/// <param name="number">The number to map.</param>
 	/// <param name="a1">The first bound of the input range.</param>
 	/// <param name="a2">The second bound of the input range.</param>
 	/// <param name="b1">The first bound of the output range.</param>
 	/// <param name="b2">The second bound of the output range.</param>
-	/// <returns>The mapped <paramref name="number"/>.</returns>
+	/// <returns>The mapped number.</returns>
 	public static float Map(this float number, float a1, float a2, float b1, float b2)
 	{
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
 	}
 	/// <summary>
-	/// Maps a int <paramref name="number"/> from one range of values to another range of values.
+	/// Maps a int number from one range of values to another range of values.
 	/// </summary>
 	/// <param name="number">The number to map.</param>
 	/// <param name="a1">The first bound of the input range.</param>
 	/// <param name="a2">The second bound of the input range.</param>
 	/// <param name="b1">The first bound of the output range.</param>
 	/// <param name="b2">The second bound of the output range.</param>
-	/// <returns>The mapped <paramref name="number"/>.</returns>
+	/// <returns>The mapped number.</returns>
 	public static int Map(this int number, int a1, int a2, int b1, int b2) =>
 		(int)Map((float)number, a1, a2, b1, b2);
 	/// <summary>
@@ -841,12 +842,14 @@ public static class Extensions
 	/// given percentage value.
 	/// </summary>
 	/// <param name="percent">The percentage value to check (between 0 and 100).</param>
+	/// <param name="seed">The seed to use for the random generator (default is NaN, 
+	/// meaning randomly chosen).</param>
 	/// <returns>True if the random float value is less than or equal to the percentage value, 
 	/// false otherwise.</returns>
-	public static bool HasChance(this float percent)
+	public static bool HasChance(this float percent, float seed = float.NaN)
 	{
 		percent = percent.Limit(0, 100);
-		var n = Random(1f, 100f); // should not roll 0 so it doesn't return true with 0% (outside of roll)
+		var n = Random(1f, 100f, seed); // should not roll 0 so it doesn't return true with 0% (outside of roll)
 		return n <= percent;
 	}
 	/// <summary>
@@ -854,11 +857,13 @@ public static class Extensions
 	/// given percentage value.
 	/// </summary>
 	/// <param name="percent">The percentage value to check (between 0 and 100).</param>
+	/// <param name="seed">The seed to use for the random generator (default is NaN, 
+	/// meaning randomly chosen).</param>
 	/// <returns>True if the random int value is less than or equal to the percentage value, 
 	/// false otherwise.</returns>
-	public static bool HasChance(this int percent)
+	public static bool HasChance(this int percent, float seed = float.NaN)
 	{
-		return HasChance((float)percent);
+		return HasChance((float)percent, seed);
 	}
 
 	#region Backend

@@ -10,9 +10,9 @@
 			"request": "launch",
 			"preLaunchTask": "build",
 			// If you have changed target frameworks, make sure to update the program path.
-			"program": "${workspaceFolder}/Examples/bin/Debug/net6.0/Examples.dll",
+			"program": "${workspaceFolder}/NoteEditor/bin/Debug/net6.0/NoteEditor.dll",
 			"args": [],
-			"cwd": "${workspaceFolder}/Examples",
+			"cwd": "${workspaceFolder}/NoteEditor",
 			// For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
 			"console": "integratedTerminal",
 			"stopAtEntry": false

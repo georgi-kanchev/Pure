@@ -45,7 +45,7 @@ namespace Pure.LAN
 		}
 
 		/// <summary>
-		/// Starts the server on the specified <paramref name="port"/>.
+		/// Starts the server on the specified port.
 		/// </summary>
 		/// <param name="port">The port number to listen on.</param>
 		public void Start(int port)
@@ -65,22 +65,22 @@ namespace Pure.LAN
 		}
 
 		/// <summary>
-		/// Sends a <paramref name="message"/> to all connected clients.
+		/// Sends a message to all connected clients.
 		/// </summary>
 		/// <param name="message">The contents of the message.</param>
-		/// <param name="tag">The tag of the <paramref name="message"/>.</param>
+		/// <param name="tag">The tag of the message.</param>
 		public void SendToAll(string message, byte tag = 0)
 		{
 			var msg = new Message(0, 0, Tag.SERVER_TO_ALL, tag, message);
 			server.Multicast(msg.Data);
 		}
 		/// <summary>
-		/// Sends a <paramref name="message"/> to a specific connected client.
+		/// Sends a message to a specific connected client.
 		/// </summary>
 		/// <param name="toNickname">The nickname of the client to send 
-		/// the <paramref name="message"/> to.</param>
+		/// the message to.</param>
 		/// <param name="message">The contents of the message.</param>
-		/// <param name="tag">The tag of the <paramref name="message"/>.</param>
+		/// <param name="tag">The tag of the message.</param>
 		public void SendToClient(string toNickname, string message, byte tag = 0)
 		{
 			var msg = new Message(0, GetID(toNickname), Tag.SERVER_TO_CLIENT, tag, message);
