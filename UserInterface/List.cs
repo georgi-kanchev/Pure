@@ -6,7 +6,7 @@ namespace Pure.UserInterface;
 /// Represents a user input list element storing items, represented as checkboxes that can be
 /// scrolled, clicked, selected and manipulated.
 /// </summary>
-public class List : UserInterface
+public class List : Element
 {
 	/// <summary>
 	/// Gets the slider used to scroll the list.
@@ -58,10 +58,10 @@ public class List : UserInterface
 
 		Add(count);
 
-		ScrollUp.SubscribeToUserEvent(UserEvent.PRESS, () => Scroll.Move(1));
-		ScrollUp.SubscribeToUserEvent(UserEvent.HOLD, () => Scroll.Move(1));
-		ScrollDown.SubscribeToUserEvent(UserEvent.PRESS, () => Scroll.Move(-1));
-		ScrollDown.SubscribeToUserEvent(UserEvent.HOLD, () => Scroll.Move(-1));
+		ScrollUp.SubscribeToUserEvent(UserEvent.Press, () => Scroll.Move(1));
+		ScrollUp.SubscribeToUserEvent(UserEvent.Hold, () => Scroll.Move(1));
+		ScrollDown.SubscribeToUserEvent(UserEvent.Press, () => Scroll.Move(-1));
+		ScrollDown.SubscribeToUserEvent(UserEvent.Hold, () => Scroll.Move(-1));
 
 		UpdateParts();
 		UpdateItems();
@@ -137,8 +137,8 @@ public class List : UserInterface
 		if (IsDisabled)
 			return;
 
-		if (IsHovered && CurrentInput.ScrollDelta != 0)
-			Scroll.Move(CurrentInput.ScrollDelta);
+		if (IsHovered && Input.Current.ScrollDelta != 0)
+			Scroll.Move(Input.Current.ScrollDelta);
 
 		TrySingleSelect();
 
@@ -192,16 +192,16 @@ public class List : UserInterface
 		var isHoveringItems = IsHovered && Scroll.IsHovered == false &&
 			ScrollUp.IsHovered == false && ScrollDown.IsHovered == false;
 
-		if (CurrentInput.IsJustReleased == false ||
+		if (Input.Current.IsJustReleased == false ||
 			IsSingleSelecting == false || isHoveringItems == false)
 			return;
 
-		var hoveredIndex = (int)CurrentInput.Position.Item2 - Position.Item2 + GetScrollIndex();
+		var hoveredIndex = (int)Input.Current.Position.Item2 - Position.Item2 + GetScrollIndex();
 
 		if (hoveredIndex == singleSelectedIndex || HasIndex(hoveredIndex) == false)
 			return;
 
-		if (items[hoveredIndex].IsClicked)
+		if (items[hoveredIndex].IsHeld)
 			singleSelectedIndex = hoveredIndex;
 	}
 

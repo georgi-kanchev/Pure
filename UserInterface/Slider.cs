@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a user interface slider element.
 /// </summary>
-public class Slider : UserInterface
+public class Slider : Element
 {
 	/// <summary>
 	/// Gets or sets a value indicating whether this slider is vertical or horizontal.
@@ -85,17 +85,17 @@ public class Slider : UserInterface
 		if (IsHovered)
 		{
 			if (IsDisabled == false)
-				SetMouseCursor(MouseCursor.TILE_HAND);
+				MouseCursorResult = MouseCursor.Hand;
 
-			if (CurrentInput.ScrollDelta != 0)
-				Move(CurrentInput.ScrollDelta);
+			if (Input.Current.ScrollDelta != 0)
+				Move(Input.Current.ScrollDelta);
 		}
 
-		if (IsClicked)
+		if (IsHeld)
 		{
-			var p = CurrentInput.Position;
+			var p = Input.Current.Position;
 			MoveTo(((int)p.Item1, (int)p.Item2));
-			TriggerUserEvent(UserEvent.DRAG);
+			TriggerUserEvent(UserEvent.Drag);
 		}
 	}
 

@@ -21,10 +21,10 @@ public class Checkbox : Button
 	/// Responds to a user event on the checkbox. Subclasses should 
 	/// override this method to implement their own behavior.
 	/// </summary>
-	/// <param name="userAction">The user event that occurred.</param>
-	protected override void OnUserEvent(int userAction)
+	/// <param name="userEvent">The user event that occurred.</param>
+	protected override void OnUserEvent(UserEvent userEvent)
 	{
-		if (userAction == UserEvent.TRIGGER)
+		if (userEvent == UserEvent.Trigger)
 			IsChecked = IsChecked == false;
 	}
 }

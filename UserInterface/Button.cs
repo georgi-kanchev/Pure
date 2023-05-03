@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a user interface button element.
 /// </summary>
-public class Button : UserInterface
+public class Button : Element
 {
 	/// <summary>
 	/// Initializes a new button instance with the specified position and size.
@@ -19,6 +19,6 @@ public class Button : UserInterface
 	protected override void OnUpdate()
 	{
 		if (IsDisabled == false && IsHovered)
-			SetMouseCursor(MouseCursor.TILE_HAND);
+			MouseCursorResult = MouseCursor.Hand;
 	}
 }

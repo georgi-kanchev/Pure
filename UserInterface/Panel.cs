@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a user input panel element that can be moved and resized by the user (like a window).
 /// </summary>
-public class Panel : UserInterface
+public class Panel : Element
 {
 	/// <summary>
 	/// Gets or sets a value indicating whether this panel can be resized by the user.
@@ -37,10 +37,10 @@ public class Panel : UserInterface
 
 		var (x, y) = Position;
 		var (w, h) = Size;
-		var (ix, iy) = CurrentInput.Position;
-		var (px, py) = CurrentInput.PositionPrevious;
-		var isClicked = CurrentInput.IsPressed && CurrentInput.wasPressed == false;
-		var wasClicked = CurrentInput.IsPressed == false && CurrentInput.wasPressed;
+		var (ix, iy) = Input.Current.Position;
+		var (px, py) = Input.Current.PositionPrevious;
+		var isClicked = Input.Current.IsPressed && Input.Current.wasPressed == false;
+		var wasClicked = Input.Current.IsPressed == false && Input.Current.wasPressed;
 
 		ix = MathF.Floor(ix);
 		iy = MathF.Floor(iy);
@@ -54,7 +54,7 @@ public class Panel : UserInterface
 		var isHoveringBottom = IsBetween(ix, x, x + w - 1) && iy == y + h - 1;
 
 		if (IsDisabled == false && IsHovered)
-			SetMouseCursor(MouseCursor.TILE_ARROW);
+			MouseCursorResult = MouseCursor.Arrow;
 
 		if (wasClicked)
 		{
@@ -66,17 +66,17 @@ public class Panel : UserInterface
 		}
 
 		if (IsMovable && isHoveringTop)
-			Process(ref isDragging, MouseCursor.TILE_MOVE);
+			Process(ref isDragging, MouseCursor.Move);
 		else if (IsResizable)
 		{
 			if (isHoveringLeft)
-				Process(ref isResizingL, MouseCursor.TILE_RESIZE_HORIZONTAL);
+				Process(ref isResizingL, MouseCursor.ResizeHorizontal);
 			if (isHoveringRight)
-				Process(ref isResizingR, MouseCursor.TILE_RESIZE_HORIZONTAL);
+				Process(ref isResizingR, MouseCursor.ResizeHorizontal);
 			if (isHoveringBottom)
-				Process(ref isResizingD, MouseCursor.TILE_RESIZE_VERTICAL);
+				Process(ref isResizingD, MouseCursor.ResizeVertical);
 			if (isHoveringTopCorners)
-				Process(ref isResizingU, MouseCursor.TILE_RESIZE_VERTICAL);
+				Process(ref isResizingU, MouseCursor.ResizeVertical);
 
 			var tl = isHoveringLeft && isHoveringTopCorners;
 			var tr = isHoveringRight && isHoveringTopCorners;
@@ -84,13 +84,13 @@ public class Panel : UserInterface
 			var bl = isHoveringBottom && isHoveringLeft;
 
 			if (IsDisabled == false && (tr || bl))
-				SetMouseCursor(MouseCursor.TILE_RESIZE_DIAGONAL_1);
+				MouseCursorResult = MouseCursor.ResizeDiagonal1;
 			if (IsDisabled == false && (tl || br))
-				SetMouseCursor(MouseCursor.TILE_RESIZE_DIAGONAL_2);
+				MouseCursorResult = MouseCursor.ResizeDiagonal2;
 		}
 
-		if (IsFocused && CurrentInput.IsPressed &&
-			CurrentInput.Position != CurrentInput.PositionPrevious)
+		if (IsFocused && Input.Current.IsPressed &&
+			Input.Current.Position != Input.Current.PositionPrevious)
 		{
 			var (dx, dy) = ((int)ix - (int)px, (int)iy - (int)py);
 			var (newX, newY) = (x, y);
@@ -129,13 +129,13 @@ public class Panel : UserInterface
 			Position = (newX, newY);
 		}
 
-		void Process(ref bool condition, int cursor)
+		void Process(ref bool condition, MouseCursor cursor)
 		{
 			if (isClicked)
 				condition = true;
 
 			if (IsDisabled == false)
-				SetMouseCursor(cursor);
+				MouseCursorResult = cursor;
 		}
 	}
 

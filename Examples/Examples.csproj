@@ -16,6 +16,7 @@
     <ProjectReference Include="..\Tracker\Tracker.csproj" />
     <ProjectReference Include="..\Collision\Collision.csproj" />
     <ProjectReference Include="..\Storage\Storage.csproj" />
+    <ProjectReference Include="..\UserInterface\UserInterface.csproj" />
   </ItemGroup>
 
 </Project>

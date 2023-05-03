@@ -5,25 +5,25 @@
 /// </summary>
 public struct Color
 {
-	public const uint Black = 255; // 0, 0, 0
-	public const uint Gray = 2139062271; // 127, 127, 127
-	public const uint White = uint.MaxValue; // 255, 255, 255
+	public static Color Black => new(0, 0, 0);
+	public static Color Gray => new(127, 127, 127);
+	public static Color White => new(255, 255, 255);
 
-	public const uint Red = 4278190335; // 255, 0, 0
-	public const uint Green = 16711935; // 0, 255, 0
-	public const uint Blue = 65535; // 0, 0, 255
+	public static Color Red => new(255, 0, 0);
+	public static Color Green => new(0, 255, 0);
+	public static Color Blue => new(0, 0, 255);
 
-	public const uint Pink = 4285117695; // 255, 105, 180
-	public const uint Magenta = 4278255615; // 255, 0, 255
-	public const uint Violet = 2399207423; // 143, 0, 255
-	public const uint Purple = 1258324735; // 75, 0, 130
+	public static Color Pink => new(255, 105, 180);
+	public static Color Magenta => new(255, 0, 255);
+	public static Color Violet => new(143, 0, 255);
+	public static Color Purple => new(75, 0, 130);
 
-	public const uint Yellow = 4294902015; // 255, 255, 0
-	public const uint Orange = 4286533887; // 255, 127, 80
-	public const uint Brown = 2523470335; // 150, 105, 25
+	public static Color Yellow => new(255, 255, 0);
+	public static Color Orange => new(255, 127, 80);
+	public static Color Brown => new(150, 105, 25);
 
-	public const uint Cyan = 16777215; // 0, 255, 255
-	public const uint Azure = 8388607; // 0, 127, 255
+	public static Color Cyan => new(0, 255, 255);
+	public static Color Azure => new(0, 127, 255);
 
 	/// <summary>
 	/// Gets or sets the red component of the color.
@@ -102,29 +102,27 @@ public struct Color
 	/// Converts the color to a darker shade.
 	/// </summary>
 	/// <param name="unit">The darkness level, expressed as a float value between 
-	/// 0 and 1 (default: 0.5).</param>
-	/// <returns>The color itself, after being darkened.</returns>
+	/// 0 and 1.</param>
+	/// <returns>The new darkened color.</returns>
 	public Color ToDark(float unit = 0.5f)
 	{
-		r = (byte)Map(unit, 0, 1, r, 0);
-		g = (byte)Map(unit, 0, 1, g, 0);
-		b = (byte)Map(unit, 0, 1, b, 0);
-		UpdateValue();
-		return this;
+		var r = (byte)Map(unit, 0, 1, R, 0);
+		var g = (byte)Map(unit, 0, 1, G, 0);
+		var b = (byte)Map(unit, 0, 1, B, 0);
+		return new(r, g, b);
 	}
 	/// <summary>
 	/// Converts the color to a brighter shade.
 	/// </summary>
 	/// <param name="unit">The brightness level, expressed as a float 
-	/// value between 0 and 1 (default: 0.5).</param>
-	/// <returns>The color itself, after being brightened.</returns>
+	/// value between 0 and 1.</param>
+	/// <returns>The new brightened color.</returns>
 	public Color ToBright(float unit = 0.5f)
 	{
-		r = (byte)Map(unit, 0, 1, r, 255);
-		g = (byte)Map(unit, 0, 1, g, 255);
-		b = (byte)Map(unit, 0, 1, b, 255);
-		UpdateValue();
-		return this;
+		var r = (byte)Map(unit, 0, 1, R, 255);
+		var g = (byte)Map(unit, 0, 1, G, 255);
+		var b = (byte)Map(unit, 0, 1, B, 255);
+		return new(r, g, b);
 	}
 
 	/// <returns>

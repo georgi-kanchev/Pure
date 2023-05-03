@@ -33,7 +33,7 @@ public static class Keyboard
 	}
 
 	/// <summary>
-	/// Gets the latest keys typed by the user, in order.
+	/// Gets the latest key typed by the user as its text representation.
 	/// </summary>
 	public static string KeyTyped { get; internal set; } = "";
 	/// <summary>
