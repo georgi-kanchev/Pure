@@ -11,7 +11,29 @@ public class InputBox : Element
 	/// <summary>
 	/// The text displayed in the input box when it is empty.
 	/// </summary>
-	public string Placeholder { get; set; } = "";
+	public string Placeholder { get; set; } = "Type...";
+
+	protected string Selection
+	{
+		get
+		{
+			var totalTextLength = 0;
+			for (int i = 0; i < lines.Count; i++)
+				totalTextLength += lines[i].Length;
+
+			var c = new string(SPACE, CursorIndex) + CURSOR +
+				new string(SPACE, Size.Item1 * Size.Item2 - CursorIndex);
+			var a = CursorIndex < SelectionIndex ? CursorIndex : SelectionIndex;
+			var b = CursorIndex > SelectionIndex ? CursorIndex : SelectionIndex;
+			var sz = b - a;
+
+			var selection = totalTextLength == 0 ? "" :
+				new string(SPACE, a) + new string(SELECTION, sz) +
+				new string(SPACE, Math.Clamp(totalTextLength - b, 0, totalTextLength));
+			return selection;
+		}
+	}
+	protected (int x, int y) CursorPosition => PositionFromIndex(CursorIndex);
 
 	/// <summary>
 	/// Gets or sets the zero-based horizontal index of the cursor in the input box's text.
@@ -63,9 +85,10 @@ public class InputBox : Element
 	/// </summary>
 	/// <param name="position">The position of the input box.</param>
 	/// <param name="size">The size of the input box.</param>
-	public InputBox((int x, int y) position, (int width, int height) size) : base(position, size)
+	public InputBox((int x, int y) position) : base(position)
 	{
 		lines.Add("");
+		Size = (12, 1);
 	}
 
 	/// <summary>
@@ -89,31 +112,6 @@ public class InputBox : Element
 	public string TextAt(int lineIndex)
 	{
 		return lineIndex < 0 && lineIndex >= lines.Count ? "" : lines[lineIndex];
-	}
-	/// <summary>
-	/// Gets the graphics information for the input box represented by strings.
-	/// </summary>
-	/// <param name="cursor">The character to represent the cursor.</param>
-	/// <param name="selection">The characters to represent the selected text.</param>
-	/// <param name="placeholder">The text to display as the placeholder when 
-	/// the input box is empty.</param>
-	public void GetGraphics(out string cursor, out string selection, out string placeholder)
-	{
-		var totalTextLength = 0;
-		for (int i = 0; i < lines.Count; i++)
-			totalTextLength += lines[i].Length;
-
-		var c = new string(SPACE, CursorIndex) + CURSOR +
-			new string(SPACE, Size.Item1 * Size.Item2 - CursorIndex);
-		var a = CursorIndex < SelectionIndex ? CursorIndex : SelectionIndex;
-		var b = CursorIndex > SelectionIndex ? CursorIndex : SelectionIndex;
-		var sz = b - a;
-
-		cursor = IsFocused ? c : "";
-		selection = totalTextLength == 0 ? "" :
-			new string(SPACE, a) + new string(SELECTION, sz) +
-			new string(SPACE, Math.Clamp(totalTextLength - b, 0, totalTextLength));
-		placeholder = totalTextLength > 0 ? "" : Placeholder;
 	}
 
 	/// <summary>
@@ -220,7 +218,7 @@ public class InputBox : Element
 	#region Backend
 	private readonly List<string> lines = new();
 
-	private const char SELECTION = '█', CURSOR = '▏', SPACE = ' ';
+	private const char SELECTION = '█', CURSOR = '▕', SPACE = ' ';
 	private const float HOLD = 0.06f, HOLD_DELAY = 0.5f;
 	private static readonly Stopwatch holdDelay = new(), hold = new(), clickDelay = new();
 	private int selectionIndex, cx, cy, clicks;

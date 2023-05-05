@@ -189,8 +189,6 @@ public static class Window
 			return;
 		}
 
-		if (Mouse.CursorGraphics < Mouse.Cursor.TILE_WAIT)
-			window.SetMouseCursorVisible(Mouse.IsCursorHoveringWindow == false);
 		Mouse.Update();
 		Vertices.DrawQueue();
 		window.Display();
@@ -370,6 +368,5 @@ public static class Window
 				throw new ArgumentException("All the provided arrays should be non-null and with equal sizes.");
 		}
 	}
-
 	#endregion
 }

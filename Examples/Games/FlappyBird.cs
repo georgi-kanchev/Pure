@@ -57,7 +57,7 @@ public static class FlappyBird
 			Window.Activate(true);
 
 			// track the spacebar
-			Tracker<string>.Track("space-down", Keyboard.IsKeyPressed(Keyboard.Key.SPACE));
+			Tracker<string>.Track("space-down", Keyboard.IsKeyPressed(Keyboard.Key.Space));
 
 			// update some of the systems
 			Time.Update();

@@ -8,54 +8,69 @@ namespace Pure.Window;
 public static class Keyboard
 {
 	/// <summary>
-	/// Provides a set of constants representing keyboard keys.
+	/// The common keyboard keys.
 	/// </summary>
-	public static class Key
+	public enum Key
 	{
-		public const int UNKNOWN = -1, A = 00, B = 01, C = 02, D = 03, E = 04, F = 05, G = 06,
-			H = 07, I = 08, J = 09, K = 10, L = 11, M = 12, N = 13, O = 14, P = 15, Q = 16,
-			R = 17, S = 18, T = 19, U = 20, V = 21, W = 22, X = 23, Y = 24, Z = 25,
-			NUMBER_0 = 26, NUMBER_1 = 27, NUMBER_2 = 28, NUMBER_3 = 29, NUMBER_4 = 30, NUMBER_5 = 31,
-			NUMBER_6 = 32, NUMBER_7 = 33, NUMBER_8 = 34, NUMBER_9 = 35,
-			ESCAPE = 36, CONTROL_LEFT = 37, SHIFT_LEFT = 38, ALT_LEFT = 39, SYSTEM_LEFT = 40,
-			CONTROL_RIGHT = 41, SHIFT_RIGHT = 42, ALT_RIGHT = 43, SYSTEM_RIGHT = 44, MENU = 45,
-			BRACKET_LEFT = 46, BRACKET_RIGHT = 47, SEMICOLON = 48, COMMA = 49, DOT = 50, PERIOD = 50,
-			QUOTE = 51, SLASH = 52, BACKSLASH = 53, TILDE = 54, EQUAL = 55, HYPHEN = 56, DASH = 56,
-			SPACE = 57, ENTER = 58, RETURN = 58, BACKSPACE = 59, TAB = 60, PAGE_UP = 61, PAGE_DOWN = 62,
-			END = 63, HOME = 64, INSERT = 65, DELETE = 66, ADD = 67, PLUS = 67, SUBTRACT = 68,
-			MINUS = 68, ASTERISK = 69, MULTIPLY = 69, DIVIDE = 70,
-			ARROW_LEFT = 71, ARROW_RIGHT = 72, ARROW_UP = 73, ARROW_DOWN = 74,
-			NUMPAD_0 = 75, NUMPAD_1 = 76, NUMPAD_2 = 77, NUMPAD_3 = 78, NUMPAD_4 = 79, NUMPAD_5 = 80,
-			NUMPAD_6 = 81, NUMPAD_7 = 82, NUMPAD_8 = 83, NUMPAD_9 = 84,
-			F1 = 85, F2 = 86, F3 = 87, F4 = 88, F5 = 89, F6 = 90, F7 = 91, F8 = 92, F9 = 93,
-			F10 = 94, F11 = 95, F12 = 96, F13 = 97, F14 = 98, F15 = 99,
-			PAUSE = 100;
+		Unknown = -1, A = 00, B = 01, C = 02, D = 03, E = 04, F = 05, G = 06,
+		H = 07, I = 08, J = 09, K = 10, L = 11, M = 12, N = 13, O = 14, P = 15, Q = 16,
+		R = 17, S = 18, T = 19, U = 20, V = 21, W = 22, X = 23, Y = 24, Z = 25,
+		Number0 = 26, Number1 = 27, Number2 = 28, Number3 = 29, Number4 = 30, Number5 = 31,
+		Number6 = 32, Number7 = 33, Number8 = 34, Number9 = 35,
+		Escape = 36, ControlLeft = 37, ShiftLeft = 38, AltLeft = 39, SystemLeft = 40,
+		ControlRight = 41, ShiftRight = 42, AltRight = 43, SystemRight = 44, Menu = 45,
+		BracketLeft = 46, BracketRight = 47, Semicolon = 48, Comma = 49, Dot = 50, Period = 50,
+		Quote = 51, Slash = 52, Backslash = 53, Tilde = 54, Equal = 55, Hyphen = 56, Dash = 56,
+		Space = 57, Enter = 58, Return = 58, Backspace = 59, Tab = 60, PageUp = 61, PageDown = 62,
+		End = 63, Home = 64, Insert = 65, Delete = 66, Add = 67, Plus = 67, Subtract = 68,
+		Minus = 68, Asterisk = 69, Multiply = 69, Divide = 70,
+		ArrowLeft = 71, ArrowRight = 72, ArrowUp = 73, ArrowDown = 74,
+		Numpad0 = 75, Numpad1 = 76, Numpad2 = 77, Numpad3 = 78, Numpad4 = 79, Numpad5 = 80,
+		Numpad6 = 81, Numpad7 = 82, Numpad8 = 83, Numpad9 = 84,
+		F1 = 85, F2 = 86, F3 = 87, F4 = 88, F5 = 89, F6 = 90, F7 = 91, F8 = 92, F9 = 93,
+		F10 = 94, F11 = 95, F12 = 96, F13 = 97, F14 = 98, F15 = 99,
+		Pause = 100
 	}
 
 	/// <summary>
-	/// Gets the latest key typed by the user as its text representation.
+	/// Gets the text representation of the latest key typed by the user.
 	/// </summary>
 	public static string KeyTyped { get; internal set; } = "";
 	/// <summary>
 	/// Gets an array of currently pressed keys.
 	/// </summary>
-	public static int[] KeysPressed => pressed.ToArray();
+	public static Key[] KeysPressed => pressed.ToArray();
+	/// <summary>
+	/// Gets an array of currently pressed key identifiers.
+	/// </summary>
+	public static int[] KeyIDsPressed
+	{
+		get
+		{
+			var pressed = KeysPressed;
+			var result = new int[pressed.Length];
+			for (int i = 0; i < pressed.Length; i++)
+				result[i] = (int)pressed[i];
+
+			return result;
+		}
+	}
 	/// <param name="key">
 	/// The key to check.</param>
 	/// <returns>True if the key is currently pressed, otherwise false.</returns>
-	public static bool IsKeyPressed(int key) => pressed.Contains(key);
+	public static bool IsKeyPressed(Key key) => pressed.Contains(key);
 
 	#region Backend
-	private static readonly List<int> pressed = new();
-	private static readonly Dictionary<int, (string, string)> symbols = new()
+	private static readonly List<Key> pressed = new();
+	private static readonly Dictionary<Key, (string, string)> symbols = new()
 		{
-			{ Key.BRACKET_LEFT, ("[", "{") }, { Key.BRACKET_RIGHT, ("]", "}") },
-			{ Key.SEMICOLON, (";", ":") }, { Key.COMMA, (",", "<") }, { Key.DOT, (".", ">") },
-			{ Key.QUOTE, ("'", "\"") }, { Key.SLASH, ("/", "?") }, { Key.BACKSLASH, ("\\", "|") },
-			{ Key.TILDE, ("`", "~") }, { Key.EQUAL, ("=", "+") }, { Key.HYPHEN, ("-", "_") },
-			{ Key.SPACE, (" ", " ") }, { Key.ENTER, ("\n", "\n") },
-			{ Key.TAB, ("\t", "") }, { Key.ADD, ("+", "+") }, { Key.MINUS, ("-", "-") },
-			{ Key.ASTERISK, ("*", "*") }, { Key.DIVIDE, ("/", "/") }
+			{ Key.BracketLeft, ("[", "{") }, { Key.BracketRight, ("]", "}") },
+			{ Key.Semicolon, (";", ":") }, { Key.Comma, (",", "<") }, { Key.Dot, (".", ">") },
+			{ Key.Quote, ("'", "\"") }, { Key.Slash, ("/", "?") }, { Key.Backslash, ("\\", "|") },
+			{ Key.Tilde, ("`", "~") }, { Key.Equal, ("=", "+") }, { Key.Hyphen, ("-", "_") },
+			{ Key.Space, (" ", " ") }, { Key.Enter, ("\n", "\n") },
+			{ Key.Tab, ("\t", "") }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
+			{ Key.Asterisk, ("*", "*") }, { Key.Divide, ("/", "/") }
 		};
 	private static readonly string[] shiftNumbers = new string[10]
 	{
@@ -72,23 +87,23 @@ public static class Keyboard
 	{
 		return (int)a <= number && number <= (int)b;
 	}
-	private static string GetSymbol(int input, bool shift)
+	private static string GetSymbol(Key input, bool shift)
 	{
 		var i = input;
 
-		if (IsBetween(i, Key.A, Key.Z))
+		if (IsBetween((int)i, (int)Key.A, (int)Key.Z))
 		{
 			var str = ((char)('A' + i)).ToString();
 			return shift ? str : str.ToLower();
 		}
-		else if (IsBetween(i, Key.NUMBER_0, Key.NUMBER_9))
+		else if (IsBetween((int)i, (int)Key.Number0, (int)Key.Number9))
 		{
-			var n = i - Key.NUMBER_0;
+			var n = i - Key.Number0;
 			return shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
 		}
-		else if (IsBetween(i, Key.NUMPAD_0, Key.NUMPAD_9))
+		else if (IsBetween((int)i, (int)Key.Numpad0, (int)Key.Numpad9))
 		{
-			var n = i - Key.NUMPAD_0;
+			var n = i - Key.Numpad0;
 			return ((char)('0' + n)).ToString();
 		}
 		else if (symbols.ContainsKey(input))
@@ -99,18 +114,18 @@ public static class Keyboard
 
 	internal static void OnKeyPressed(object? s, KeyEventArgs e)
 	{
-		var key = (int)e.Code;
+		var key = (Key)e.Code;
 
 		if (pressed.Contains(key) == false)
 			pressed.Add(key);
 
-		var symb = GetSymbol(key, IsKeyPressed(Key.SHIFT_LEFT) || IsKeyPressed(Key.SHIFT_RIGHT));
+		var symb = GetSymbol(key, IsKeyPressed(Key.ShiftLeft) || IsKeyPressed(Key.ShiftRight));
 		if (KeyTyped.Contains(symb) == false)
 			KeyTyped += symb;
 	}
 	internal static void OnKeyReleased(object? s, KeyEventArgs e)
 	{
-		var key = (int)e.Code;
+		var key = (Key)e.Code;
 
 		pressed.Remove(key);
 
@@ -123,7 +138,7 @@ public static class Keyboard
 		// shift released while holding special symbol, just like removing
 		// lowercase and uppercase, shift + 1 = !, so releasing shift would
 		// never removes the !
-		if ((key == Key.SHIFT_LEFT || key == Key.SHIFT_RIGHT) && KeyTyped != "")
+		if ((key == Key.ShiftLeft || key == Key.ShiftRight) && KeyTyped != "")
 		{
 			for (int i = 0; i < pressed.Count; i++)
 			{
@@ -136,7 +151,7 @@ public static class Keyboard
 		if (KeyTyped.Length == 0)
 			return;
 
-		var symbol = GetSymbol(key, IsKeyPressed(Key.SHIFT_LEFT) || IsKeyPressed(Key.SHIFT_RIGHT));
+		var symbol = GetSymbol(key, IsKeyPressed(Key.ShiftLeft) || IsKeyPressed(Key.ShiftRight));
 		if (symbol == "")
 			return;
 

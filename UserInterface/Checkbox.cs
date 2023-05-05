@@ -15,7 +15,11 @@ public class Checkbox : Button
 	/// Initializes a new checkbox instance with the specified position.
 	/// </summary>
 	/// <param name="position">The position of the checkbox.</param>
-	public Checkbox((int x, int y) position) : base(position, (1, 1)) { }
+	public Checkbox((int x, int y) position) : base(position)
+	{
+		Text = "Checkbox";
+		Size = (1, 1);
+	}
 
 	/// <summary>
 	/// Responds to a user event on the checkbox. Subclasses should 

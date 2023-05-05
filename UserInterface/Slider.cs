@@ -35,11 +35,11 @@ public class Slider : Element
 	/// <param name="position">The position of the slider.</param>
 	/// <param name="size">The size of the slider.</param>
 	/// <param name="isVertical">Whether the slider is vertical or horizontal.</param>
-	public Slider((int x, int y) position, int size = 5, bool isVertical = false)
-		: base(position, isVertical ? (1, size) : (size, 1))
+	public Slider((int x, int y) position, int size = 5, bool isVertical = false) : base(position)
 	{
 		IsVertical = isVertical;
-		Handle = new(position, (1, 1));
+		Handle = new(position) { Size = (1, 1) };
+		Size = isVertical ? (1, size) : (size, 1);
 	}
 
 	/// <summary>

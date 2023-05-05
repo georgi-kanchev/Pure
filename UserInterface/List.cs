@@ -46,15 +46,16 @@ public class List : Element
 	/// <param name="position">The position of the top-left corner of the list.</param>
 	/// <param name="size">The size of the list.</param>
 	/// <param name="count">The initial number of checkboxes in the list.</param>
-	public List((int x, int y) position, (int width, int height) size, int count)
-		: base(position, size)
+	public List((int x, int y) position, int count)
+		: base(position)
 	{
+		Size = (12, 8);
 		var (x, y) = Position;
 		var (w, h) = Size;
 
 		Scroll = new((x + w - 1, y + 1), h - 2, true);
-		ScrollUp = new((x + w, y), (1, 1));
-		ScrollDown = new((x + w, y + w), (1, 1));
+		ScrollUp = new((x + w, y)) { Size = (1, 1) };
+		ScrollDown = new((x + w, y + w)) { Size = (1, 1) };
 
 		Add(count);
 
@@ -153,7 +154,7 @@ public class List : Element
 	/// <returns>A new list object containing the specified checkbox objects.</returns>
 	public static implicit operator List(Checkbox[] items)
 	{
-		var result = new List((0, 0), (10, Math.Max(items.Length, 5)), 0);
+		var result = new List((0, 0), 0);
 		for (int i = 0; i < items?.Length; i++)
 			result.items[i] = items[i];
 

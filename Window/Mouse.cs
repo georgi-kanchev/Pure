@@ -8,28 +8,19 @@ namespace Pure.Window;
 public static class Mouse
 {
 	/// <summary>
-	/// Provides constant values for common mouse button identifiers.
+	/// The common mouse button types.
 	/// </summary>
-	public static class Button
+	public enum Button
 	{
-		public const int LEFT = 0, RIGHT = 1, MIDDLE = 2, EXTRA_1 = 3, EXTRA_2 = 4;
-		internal const int COUNT = 5;
+		Left, Right, Middle, Extra1, Extra2
 	}
 	/// <summary>
-	/// Provides constant values for mouse cursor graphics identifiers.
+	/// The types of mouse cursor graphics that can be displayed on the window.
 	/// </summary>
-	public static class Cursor
+	public enum Cursor
 	{
-		public const int TILE_ARROW = 0, TILE_ARROW_NO_TAIL = 1, TILE_HAND = 2, TILE_TEXT = 3,
-			TILE_CROSSHAIR = 4, TILE_NO = 5, TILE_RESIZE = 6, TILE_RESIZE_DIAGONAL = 7,
-			TILE_MOVE = 8, TILE_WAIT = 9,
-
-			SYSTEM_ARROW = 10, SYSTEM_ARROW_WAIT = 11, SYSTEM_WAIT = 12, SYSTEM_TEXT = 13,
-			SYSTEM_HAND = 14, SYSTEM_RESIZE_HORINZONTAL = 15, SYSTEM_RESIZE_VERTICAL = 16,
-			SYSTEM_RESIZE_DIAGONAL_2 = 17, SYSTEM_RESIZE_DIAGONAL_1 = 18, SYSTEM_MOVE = 19,
-			SYSTEM_CROSSHAIR = 20, SYSTEM_HELP = 21, SYSTEM_NO = 22,
-
-			NONE = 23;
+		None = -1, Arrow, ArrowWait, Wait, Text, Hand, ResizeHorizontal, ResizeVertical,
+		ResizeDiagonal1, ResizeDiagonal2, Move, Crosshair, Help, Disable
 	}
 
 	/// <summary>
@@ -44,11 +35,10 @@ public static class Mouse
 			return (p.X, p.Y);
 		}
 	}
-
 	/// <summary>
 	/// Gets or sets the graphics for the mouse cursor.
 	/// </summary>
-	public static int CursorGraphics
+	public static Cursor CursorGraphics
 	{
 		get
 		{
@@ -58,34 +48,12 @@ public static class Mouse
 		set
 		{
 			Window.TryNoWindowException();
+			if (cursor == value)
+				return;
 
 			cursor = value;
-
-			if (value != Cursor.NONE && value > Cursor.TILE_WAIT)
-			{
-				var arrow = Cursor.SYSTEM_ARROW;
-				var sfmlEnum = (SFML.Window.Cursor.CursorType)(value - arrow);
-				sysCursor.Dispose();
-				sysCursor = new(sfmlEnum);
-
-				Window.window.SetMouseCursor(sysCursor);
-			}
-		}
-	}
-	/// <summary>
-	/// Gets or sets the color of the mouse cursor (if tile).
-	/// </summary>
-	public static uint CursorColor
-	{
-		get
-		{
-			Window.TryNoWindowException();
-			return cursorColor;
-		}
-		set
-		{
-			Window.TryNoWindowException();
-			cursorColor = value;
+			TryUpdateSystemCursor();
+			UpdateMouseVisibility();
 		}
 	}
 	/// <summary>
@@ -118,11 +86,24 @@ public static class Mouse
 			return pos.X > 0 && pos.X < w.Size.X && pos.Y > 0 && pos.Y < w.Size.Y;
 		}
 	}
+	/// <summary>
+	/// Gets or sets whether the mouse cursor graphics are the system ones or custom tiles.
+	/// </summary>
+	public static bool IsCursorTile
+	{
+		get { Window.TryNoWindowException(); return isCursorTile; }
+		set
+		{
+			Window.TryNoWindowException();
+			isCursorTile = value;
+			UpdateMouseVisibility();
+		}
+	}
 
 	/// <summary>
 	/// Gets an array of currently pressed mouse buttons, in order.
 	/// </summary>
-	public static int[] ButtonsPressed
+	public static Button[] ButtonsPressed
 	{
 		get
 		{
@@ -147,19 +128,26 @@ public static class Mouse
 		}
 	}
 
+	public static void SetupCursorTile(int tile, uint color)
+	{
+		Window.TryNoWindowException();
+		cursorColor = color;
+		cursorTile = tile;
+	}
+
 	/// <summary>
 	/// Gets whether the specified mouse button is currently pressed.
 	/// </summary>
 	/// <param name="button">The button to check.</param>
 	/// <returns>True if the button is currently pressed, false otherwise.</returns>
-	public static bool IsButtonPressed(int button)
+	public static bool IsButtonPressed(Button button)
 	{
 		Window.TryNoWindowException();
 		return pressed.Contains(button);
 	}
 
 	#region Backend
-	private static readonly List<int> pressed = new();
+	private static readonly List<Button> pressed = new();
 	private static readonly List<(float, float)> cursorOffsets = new()
 		{
 			(0.0f, 0.0f), (0.0f, 0.0f), (0.2f, 0.0f), (0.3f, 0.4f), (0.3f, 0.3f),
@@ -167,18 +155,19 @@ public static class Mouse
 			(0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f),
 		};
 
-	private static int cursor, scrollData;
+	private static int cursorTile = 442, scrollData;
+	private static Cursor cursor;
 	private static uint cursorColor = uint.MaxValue;
 	private static SFML.Window.Cursor sysCursor = new SFML.Window.Cursor(SFML.Window.Cursor.CursorType.Arrow);
-	private static bool isMouseGrabbed;
+	private static bool isMouseGrabbed, isCursorTile = true;
 
 	internal static void OnButtonPressed(object? s, MouseButtonEventArgs e)
 	{
-		pressed.Add((int)e.Button);
+		pressed.Add((Button)(e.Button));
 	}
 	internal static void OnButtonReleased(object? s, MouseButtonEventArgs e)
 	{
-		pressed.Remove((int)e.Button);
+		pressed.Remove((Button)e.Button);
 	}
 	internal static void OnWheelScrolled(object? s, MouseWheelScrollEventArgs e)
 	{
@@ -189,20 +178,37 @@ public static class Mouse
 	{
 		ScrollDelta = 0;
 
-		if (cursor > Cursor.TILE_WAIT)
+		if (IsCursorTile == false)
 			return;
 
 		var (x, y) = Window.PositionFrom(CursorPosition);
-		var (offX, offY) = cursorOffsets[CursorGraphics];
+		var (offX, offY) = cursorOffsets[(int)CursorGraphics];
 
 		Vertices.graphicsPath = "default";
 		Vertices.tileSize = (8, 8);
 
 		(int id, uint tint, sbyte ang, bool h, bool v) tile = default;
-		tile.id = 442 + CursorGraphics;
-		tile.tint = CursorColor;
+		tile.id = cursorTile + (int)CursorGraphics;
+		tile.tint = cursorColor;
 		Window.DrawTile((x - offX, y - offY), tile);
 	}
 	internal static void CancelInput() => pressed.Clear();
+
+	private static void TryUpdateSystemCursor()
+	{
+		Window.TryNoWindowException();
+		var sfmlEnum = (SFML.Window.Cursor.CursorType)(cursor);
+		sysCursor.Dispose();
+		sysCursor = new(sfmlEnum);
+		Window.window.SetMouseCursor(sysCursor);
+	}
+	private static void UpdateMouseVisibility()
+	{
+		Window.TryNoWindowException();
+		Window.window.SetMouseCursorVisible(CursorGraphics != Cursor.None);
+
+		if (IsCursorTile)
+			Window.window.SetMouseCursorVisible(Mouse.IsCursorHoveringWindow == false);
+	}
 	#endregion
 }

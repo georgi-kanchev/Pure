@@ -10,7 +10,11 @@ public class Button : Element
 	/// </summary>
 	/// <param name="position">The position of the button.</param>
 	/// <param name="size">The size of the button.</param>
-	public Button((int x, int y) position, (int width, int height) size) : base(position, size) { }
+	public Button((int x, int y) position) : base(position)
+	{
+		Text = "Button";
+		Size = (10, 1);
+	}
 
 	/// <summary>
 	/// Called when the button needs to be updated. Subclasses should 

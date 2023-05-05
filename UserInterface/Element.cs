@@ -14,8 +14,8 @@ public enum UserEvent
 /// </summary>
 public enum MouseCursor
 {
-	Arrow, ArrowNoTail, Hand, Text, Crosshair, Disable, ResizeHorizontal, ResizeVertical,
-	ResizeDiagonal1, ResizeDiagonal2, Move, Wait, None
+	None = -1, Arrow, ArrowWait, Wait, Text, Hand, ResizeHorizontal, ResizeVertical,
+	ResizeDiagonal1, ResizeDiagonal2, Move, Crosshair, Help, Disable
 }
 /// <summary>
 /// Represents the keyboard keys used for input by the user interface.
@@ -112,10 +112,9 @@ public abstract partial class Element
 	/// </summary>
 	/// <param name="position">The position of the user interface element.</param>
 	/// <param name="size">The size of the ser interface element.</param>
-	public Element((int x, int y) position, (int width, int height) size)
+	public Element((int x, int y) position)
 	{
 		Position = position;
-		Size = size;
 
 		hold.Start();
 		holdTrigger.Start();

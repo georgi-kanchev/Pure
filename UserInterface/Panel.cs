@@ -23,7 +23,11 @@ public class Panel : Element
 	/// </summary>
 	/// <param name="position">The position of the panel.</param>
 	/// <param name="size">The size of the panel.</param>
-	public Panel((int x, int y) position, (int width, int height) size) : base(position, size) { }
+	public Panel((int x, int y) position) : base(position)
+	{
+		Text = "Panel";
+		Size = (12, 8);
+	}
 
 	/// <summary>
 	/// Called when the panel needs to be updated. This handles all of the user input
