@@ -19,6 +19,7 @@ public class Program
 		{
 			base.OnUpdate();
 
+
 			Size = (Text.Length + 2, 3);
 
 			var color = currentColor;
