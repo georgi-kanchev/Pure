@@ -4,7 +4,11 @@ using SFML.Graphics;
 
 internal static class RetroShader
 {
-	public static Shader Create() => Shader.FromString(DEFAULT_VERT, null, RETRO_SCREEN_FRAG);
+	public static Shader? Create()
+	{
+		try { return Shader.FromString(DEFAULT_VERT, null, RETRO_SCREEN_FRAG); }
+		catch(Exception) { return default; }
+	}
 
 	#region Backend
 	private const string DEFAULT_VERT = @"

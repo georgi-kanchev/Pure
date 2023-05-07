@@ -48,12 +48,12 @@ public static class Mouse
 		set
 		{
 			Window.TryNoWindowException();
-			if (cursor == value)
+			if(cursor == value)
 				return;
 
 			cursor = value;
 			TryUpdateSystemCursor();
-			UpdateMouseVisibility();
+			UpdateCursorVisibility();
 		}
 	}
 	/// <summary>
@@ -83,7 +83,8 @@ public static class Mouse
 			Window.TryNoWindowException();
 			var w = Window.window;
 			var pos = SFML.Window.Mouse.GetPosition(w);
-			return pos.X > 0 && pos.X < w.Size.X && pos.Y > 0 && pos.Y < w.Size.Y;
+			// this -1 -1 padding works on windows
+			return pos.X > -1 && pos.X < w.Size.X && pos.Y > -1 && pos.Y < w.Size.Y;
 		}
 	}
 	/// <summary>
@@ -96,7 +97,7 @@ public static class Mouse
 		{
 			Window.TryNoWindowException();
 			isCursorTile = value;
-			UpdateMouseVisibility();
+			UpdateCursorVisibility();
 		}
 	}
 
@@ -128,7 +129,7 @@ public static class Mouse
 		}
 	}
 
-	public static void SetupCursorTile(int tile, uint color)
+	public static void SetupCursorTile(int tile = 442, uint color = uint.MaxValue)
 	{
 		Window.TryNoWindowException();
 		cursorColor = color;
@@ -150,15 +151,14 @@ public static class Mouse
 	private static readonly List<Button> pressed = new();
 	private static readonly List<(float, float)> cursorOffsets = new()
 		{
-			(0.0f, 0.0f), (0.0f, 0.0f), (0.2f, 0.0f), (0.3f, 0.4f), (0.3f, 0.3f),
-			(0.4f, 0.4f), (0.4f, 0.3f), (0.3f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f),
-			(0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f),
+			(0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
+			(0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
 		};
 
 	private static int cursorTile = 442, scrollData;
 	private static Cursor cursor;
 	private static uint cursorColor = uint.MaxValue;
-	private static SFML.Window.Cursor sysCursor = new SFML.Window.Cursor(SFML.Window.Cursor.CursorType.Arrow);
+	private static SFML.Window.Cursor sysCursor = new(SFML.Window.Cursor.CursorType.Arrow);
 	private static bool isMouseGrabbed, isCursorTile = true;
 
 	internal static void OnButtonPressed(object? s, MouseButtonEventArgs e)
@@ -178,7 +178,7 @@ public static class Mouse
 	{
 		ScrollDelta = 0;
 
-		if (IsCursorTile == false)
+		if(IsCursorTile == false)
 			return;
 
 		var (x, y) = Window.PositionFrom(CursorPosition);
@@ -187,9 +187,18 @@ public static class Mouse
 		Vertices.graphicsPath = "default";
 		Vertices.tileSize = (8, 8);
 
+		var cursorTile = Mouse.cursorTile;
+		var ang = default(sbyte);
+
+		if(CursorGraphics == Cursor.ResizeVertical) { cursorTile--; ang = 1; }
+		else if(CursorGraphics == Cursor.ResizeDiagonal1) { cursorTile--; ang = 1; }
+		else if((int)CursorGraphics >= (int)Cursor.ResizeDiagonal2) { cursorTile -= 2; }
+
 		(int id, uint tint, sbyte ang, bool h, bool v) tile = default;
 		tile.id = cursorTile + (int)CursorGraphics;
 		tile.tint = cursorColor;
+		tile.ang = ang;
+
 		Window.DrawTile((x - offX, y - offY), tile);
 	}
 	internal static void CancelInput() => pressed.Clear();
@@ -202,13 +211,13 @@ public static class Mouse
 		sysCursor = new(sfmlEnum);
 		Window.window.SetMouseCursor(sysCursor);
 	}
-	private static void UpdateMouseVisibility()
+	internal static void UpdateCursorVisibility()
 	{
 		Window.TryNoWindowException();
 		Window.window.SetMouseCursorVisible(CursorGraphics != Cursor.None);
 
-		if (IsCursorTile)
-			Window.window.SetMouseCursorVisible(Mouse.IsCursorHoveringWindow == false);
+		if(IsCursorTile)
+			Window.window.SetMouseCursorVisible(IsCursorHoveringWindow == false);
 	}
 	#endregion
 }

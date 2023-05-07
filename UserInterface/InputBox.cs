@@ -18,11 +18,9 @@ public class InputBox : Element
 		get
 		{
 			var totalTextLength = 0;
-			for (int i = 0; i < lines.Count; i++)
+			for(int i = 0; i < lines.Count; i++)
 				totalTextLength += lines[i].Length;
 
-			var c = new string(SPACE, CursorIndex) + CURSOR +
-				new string(SPACE, Size.Item1 * Size.Item2 - CursorIndex);
 			var a = CursorIndex < SelectionIndex ? CursorIndex : SelectionIndex;
 			var b = CursorIndex > SelectionIndex ? CursorIndex : SelectionIndex;
 			var sz = b - a;
@@ -33,8 +31,33 @@ public class InputBox : Element
 			return selection;
 		}
 	}
-	protected (int x, int y) CursorPosition => PositionFromIndex(CursorIndex);
+	/// <summary>
+	/// Gets or sets the zero-based index of the first character in the current 
+	/// selection of the input box's text.
+	/// </summary>
+	protected int SelectionIndex
+	{
+		get => selectionIndex;
+		set => selectionIndex = Math.Clamp(value, 0, Size.width * Size.height);
+	}
+	/// <summary>
+	/// Gets the currently selected text in the input box.
+	/// </summary>
+	protected string SelectedText
+	{
+		get
+		{
+			if(SelectionIndex == CursorIndex)
+				return "";
 
+			var a = CursorIndex < SelectionIndex ? CursorIndex : SelectionIndex;
+			var b = CursorIndex > SelectionIndex ? CursorIndex : SelectionIndex;
+			return Text[a..b];
+		}
+	}
+
+	protected bool IsCursorVisible => IsFocused && cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f;
+	protected (int x, int y) CursorPosition => PositionFromIndex(CursorIndex);
 	/// <summary>
 	/// Gets or sets the zero-based horizontal index of the cursor in the input box's text.
 	/// </summary>
@@ -54,31 +77,7 @@ public class InputBox : Element
 	/// <summary>
 	/// Gets the zero-based index of the character at the cursor's position in the input box's text.
 	/// </summary>
-	protected int CursorIndex => cy * Size.Item1 + cx;
-	/// <summary>
-	/// Gets or sets the zero-based index of the first character in the current 
-	/// selection of the input box's text.
-	/// </summary>
-	protected int SelectionIndex
-	{
-		get => selectionIndex;
-		set => selectionIndex = Math.Clamp(value, 0, Size.Item1 * Size.Item2);
-	}
-	/// <summary>
-	/// Gets the currently selected text in the input box.
-	/// </summary>
-	protected string SelectedText
-	{
-		get
-		{
-			if (SelectionIndex == CursorIndex)
-				return "";
-
-			var a = CursorIndex < SelectionIndex ? CursorIndex : SelectionIndex;
-			var b = CursorIndex > SelectionIndex ? CursorIndex : SelectionIndex;
-			return Text[a..b];
-		}
-	}
+	protected int CursorIndex => cy * Size.width + cx;
 
 	/// <summary>
 	/// Initializes a new input box instance with a specific position and size.
@@ -98,7 +97,7 @@ public class InputBox : Element
 	/// <param name="text">The new text for the line.</param>
 	public void SetLine(int lineIndex, string text)
 	{
-		if (lineIndex < 0 && lineIndex >= lines.Count)
+		if(lineIndex < 0 && lineIndex >= lines.Count)
 			return;
 
 		text ??= "";
@@ -159,17 +158,19 @@ public class InputBox : Element
 		var shift = Input.Current.IsKeyPressed(Key.ShiftLeft) ||
 			Input.Current.IsKeyPressed(Key.ShiftRight);
 
-		if ((CursorIndexLine == 0 && offsetY < 0) || (CursorIndexLine == Size.Item2 - 1 && offsetY > 0))
+		cursorBlink.Restart();
+
+		if((CursorIndexLine == 0 && offsetY < 0) || (CursorIndexLine == Size.width - 1 && offsetY > 0))
 			return;
 
-		if (CursorIndexSymbol == 0 && offsetX < 0)
+		if(CursorIndexSymbol == 0 && offsetX < 0)
 		{
-			offsetX = CursorIndexLine == 0 ? 0 : Size.Item1 + offsetX;
+			offsetX = CursorIndexLine == 0 ? 0 : Size.width + offsetX;
 			offsetY = -1;
 		}
-		else if (CursorIndexSymbol == lines[CursorIndexLine].Length && offsetX > 0)
+		else if(CursorIndexSymbol == lines[CursorIndexLine].Length && offsetX > 0)
 		{
-			offsetX = CursorIndexLine == lines.Count - 1 ? 0 : -Size.Item1 + offsetX;
+			offsetX = CursorIndexLine == lines.Count - 1 ? 0 : -Size.width + offsetX;
 			offsetY = 1;
 		}
 
@@ -187,16 +188,14 @@ public class InputBox : Element
 	/// </summary>
 	protected override void OnUpdate()
 	{
-		var (x, y) = Position;
-		var (w, h) = Size;
-
 		TrySetMouseCursor();
 
-		if (IsDisabled || IsFocused == false || TrySelectAll() || JustPressed(Key.Tab))
+		if(IsDisabled || IsFocused == false || TrySelectAll() || JustPressed(Key.Tab))
 			return;
 
 		var isJustTyped = JustTyped();
 
+		TryResetCursorBlinkTimer();
 		TryResetHoldTimers(out var isHolding, isJustTyped);
 
 		var isAllowedType = isJustTyped || (isHolding && Input.Current.Typed != "");
@@ -204,12 +203,12 @@ public class InputBox : Element
 			Allowed(Key.Delete, isHolding) || Allowed(Key.Enter, isHolding);
 
 		var justDeletedSelected = false;
-		if (TryCopyPasteCut(ref justDeletedSelected, ref shouldDelete, out var isPasting))
+		if(TryCopyPasteCut(ref justDeletedSelected, ref shouldDelete, out var isPasting))
 			return;
 
 		TrySelect();
 		TryDeleteSelected(ref justDeletedSelected, shouldDelete);
-		TryType(isHolding, justDeletedSelected, isAllowedType, isPasting);
+		TryType(isAllowedType, isPasting);
 		TryDeleteEnter(isHolding, justDeletedSelected);
 		TryMoveCursor(isHolding);
 		UpdateText();
@@ -218,9 +217,9 @@ public class InputBox : Element
 	#region Backend
 	private readonly List<string> lines = new();
 
-	private const char SELECTION = '█', CURSOR = '▕', SPACE = ' ';
-	private const float HOLD = 0.06f, HOLD_DELAY = 0.5f;
-	private static readonly Stopwatch holdDelay = new(), hold = new(), clickDelay = new();
+	private const char SELECTION = '█', SPACE = ' ';
+	private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
+	private static readonly Stopwatch holdDelay = new(), hold = new(), clickDelay = new(), cursorBlink = new();
 	private int selectionIndex, cx, cy, clicks;
 	private (int, int) lastClickIndices = (-1, -1);
 
@@ -230,16 +229,22 @@ public class InputBox : Element
 		hold.Start();
 	}
 
+	protected override void OnUserEvent(UserEvent userEvent)
+	{
+		if(userEvent == UserEvent.Press)
+			cursorBlink.Restart();
+	}
+
 	private void UpdateText()
 	{
 		var sb = new StringBuilder();
 
-		var maxW = Size.Item1 - 1;
-		for (int i = 0; i < lines.Count; i++)
+		var maxW = Size.width - 1;
+		for(int i = 0; i < lines.Count; i++)
 		{
 			var line = lines[i];
 			line = line.Length > maxW ? line[0..maxW] : line;
-			sb.Append(line.PadRight(Size.Item1, ' '));
+			sb.Append(line.PadRight(Size.width, ' '));
 		}
 
 		Text = sb.ToString();
@@ -253,9 +258,9 @@ public class InputBox : Element
 		var typed = Input.Current.Typed ?? "";
 		var prev = Input.Current.TypedPrevious ?? "";
 
-		for (int i = 0; i < typed.Length; i++)
+		for(int i = 0; i < typed.Length; i++)
 		{
-			if (prev.Contains(typed[i]) == false)
+			if(prev.Contains(typed[i]) == false)
 				return true;
 		}
 		return false;
@@ -267,30 +272,30 @@ public class InputBox : Element
 	}
 	private int GetWordEndOffset(int step, bool stopAtLineEnd = true)
 	{
-		var x = Position.Item1;
+		var x = Position.x;
 		var index = 0 + (step < 0 ? -1 : 0);
-		var startY = PositionFromIndex(CursorIndex).Item2;
+		var startY = PositionFromIndex(CursorIndex).y;
 		var symb = GetSymbol(CursorIndex + (step < 0 ? -1 : 0));
 		var targetIsWord = char.IsLetterOrDigit(symb) == false;
 
-		for (int i = 0; i < Text.Length; i++)
+		for(int i = 0; i < Text.Length; i++)
 		{
 			var j = CursorIndex + index;
 			var (curX, curY) = PositionFromIndex(j);
 
-			if ((j == 0 && step < 0) || (j == Text.Length && step > 0))
+			if((j == 0 && step < 0) || (j == Text.Length && step > 0))
 				return index;
 
-			if (char.IsLetterOrDigit(GetSymbol(j)) == false ^ targetIsWord)
+			if(char.IsLetterOrDigit(GetSymbol(j)) == false ^ targetIsWord)
 				return index + (step < 0 ? 1 : 0);
 
 			index += step;
 
 			// stop at start/end of line
-			if (stopAtLineEnd == false)
+			if(stopAtLineEnd == false)
 				continue;
 
-			if (startY != curY || curX - x >= lines[CursorIndexLine].Length)
+			if(startY != curY || curX - x >= lines[CursorIndexLine].Length)
 			{
 				index -= step - (step < 0 ? 1 : 0);
 				return index;
@@ -302,20 +307,19 @@ public class InputBox : Element
 
 	private void TrySelect()
 	{
-		var (x, y) = Position;
-		var (w, h) = Size;
 		var isSamePosClick = false;
 		var (hx, hy) = Input.Current.Position;
-		var ix = (int)Math.Round(hx - Position.Item1);
-		var iy = (int)Math.Clamp(hy - Position.Item2, 0, lines.Count - 1);
+		var ix = (int)Math.Round(hx - Position.x);
+		var iy = (int)Math.Clamp(hy - Position.y, 0, lines.Count - 1);
 
-		if (Input.Current.IsPressed)
+		if(Input.Current.IsPressed)
 		{
+			cursorBlink.Restart();
 			clickDelay.Restart();
 			isSamePosClick = lastClickIndices == (ix, iy);
 			lastClickIndices = (ix, iy);
 		}
-		if (clickDelay.Elapsed.TotalSeconds > 1f)
+		if(clickDelay.Elapsed.TotalSeconds > 1f)
 		{
 			clickDelay.Stop();
 			clicks = 0;
@@ -323,23 +327,21 @@ public class InputBox : Element
 			return;
 		}
 
-		if (isSamePosClick == false)
+		if(isSamePosClick == false)
 		{
-			if (Input.Current.IsPressed)
+			if(Input.Current.IsPressed)
 			{
 				CursorIndexLine = iy;
-				iy = CursorIndexLine;
 				CursorIndexSymbol = ix;
-				ix = CursorIndexSymbol;
 			}
 
-			if (Input.Current.IsJustPressed)
+			if(Input.Current.IsJustPressed)
 				SelectionIndex = CursorIndex;
 
 			return;
 		}
 
-		if (Input.Current.IsJustPressed)
+		if(Input.Current.IsJustPressed)
 			TryCycleSelected(ix, iy);
 	}
 	private void TryCycleSelected(int indexX, int indexY)
@@ -350,26 +352,25 @@ public class InputBox : Element
 
 		clicks = clicks == 4 ? 1 : clicks + 1;
 
-		if (clicks == 1)
+		if(clicks == 1)
 		{
 			CursorIndexLine = indexY;
-			indexY = CursorIndexLine;
 			CursorIndexSymbol = indexX;
 			SelectionIndex = PositionToIndex((hx, hy));
 		}
-		else if (clicks == 2)
+		else if(clicks == 2)
 		{
 			SelectionIndex = PositionToIndex((hx, hy)) + GetWordEndOffset(1);
 			CursorIndexSymbol += GetWordEndOffset(-1);
 			CursorIndexSymbol = Math.Clamp(CursorIndexSymbol, 0, lines[indexY].Length);
 		}
-		else if (clicks == 3)
+		else if(clicks == 3)
 		{
 			var p = PositionToIndex((x + lines[CursorIndexLine].Length, y + CursorIndexLine));
 			SelectionIndex = p;
 			CursorIndexSymbol = 0;
 		}
-		else if (clicks == 4)
+		else if(clicks == 4)
 		{
 			SelectionIndex = w * h;
 			CursorIndexLine = 0;
@@ -380,7 +381,7 @@ public class InputBox : Element
 	{
 		var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
 
-		if (ctrl == false || Input.Current.Typed != "a")
+		if(ctrl == false || Input.Current.Typed != "a")
 			return false;
 
 		var (w, h) = Size;
@@ -397,9 +398,6 @@ public class InputBox : Element
 		var i = CursorIndex;
 		var s = SelectionIndex;
 		var hasSel = shift == false && i != s;
-		var (cx, cy) = PositionFromIndex(i);
-		var (x, y) = Position;
-		var selectionCursorDiff = i > s ? i - s : s - i;
 		var justL = JustPressed(Key.ArrowLeft);
 		var justR = JustPressed(Key.ArrowRight);
 		var (ix, iy) = PositionFromIndex(i);
@@ -410,7 +408,7 @@ public class InputBox : Element
 				(hasSel && justL, iy == sy ? (i < s ? 0 : s - i, 0) : i < s ? (0, 0) : (sx - ix, sy - iy)),
 				(hasSel && justR, iy == sy ? (i > s ? 0 : s - i, 0) : i > s ? (0, 0) : (sx - ix, sy - iy)),
 				(ctrl && JustPressed(Key.ArrowUp), (-CursorIndexSymbol, 0)),
-				(ctrl && JustPressed(Key.ArrowDown), (Size.Item1, 0)),
+				(ctrl && JustPressed(Key.ArrowDown), (Size.width, 0)),
 				(JustPressed(Key.Home), (-CursorIndexSymbol, -CursorIndexLine)),
 				(JustPressed(Key.End), Size),
 				(Allowed(Key.ArrowLeft, isHolding), (ctrl ? GetWordEndOffset(-1) : -1, 0)),
@@ -419,24 +417,23 @@ public class InputBox : Element
 				(Allowed(Key.ArrowDown, isHolding), (0, 1)),
 		};
 
-		for (int j = 0; j < hotkeys.Length; j++)
-			if (hotkeys[j].Item1)
+		for(int j = 0; j < hotkeys.Length; j++)
+			if(hotkeys[j].Item1)
 			{
 				MoveCursor(hotkeys[j].Item2.Item1, true, hotkeys[j].Item2.Item2);
 				return;
 			}
 	}
 
-	private void TryType(bool isHolding, bool justDeletedSelection, bool isAllowedType, bool isPasting)
+	private void TryType(bool isAllowedType, bool isPasting)
 	{
-		var (x, y) = Position;
 		var (w, h) = Size;
 
-		if (isAllowedType)
+		if(isAllowedType)
 		{
 			var symbols = Input.Current.Typed ?? "";
 
-			if (isPasting && string.IsNullOrWhiteSpace(TextCopied) == false)
+			if(isPasting && string.IsNullOrWhiteSpace(TextCopied) == false)
 			{
 				symbols = TextCopied;
 
@@ -450,13 +447,13 @@ public class InputBox : Element
 			}
 
 			// is at end of current line, not text
-			if (CursorIndexSymbol >= w - 1 && CursorIndexLine != h - 1)
+			if(CursorIndexSymbol >= w - 1 && CursorIndexLine != h - 1)
 			{
 				lines.Add("");
 				MoveCursor(1);
 			}
 
-			if (lines[CursorIndexLine].Length + 1 < w)
+			if(lines[CursorIndexLine].Length + 1 < w)
 			{
 				var t = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
 				lines[CursorIndexLine] = lines[CursorIndexLine].Insert(CursorIndexSymbol, t);
@@ -469,18 +466,18 @@ public class InputBox : Element
 	}
 	private void TryDeleteEnter(bool isHolding, bool justDeletedSelection)
 	{
-		var (x, y) = Position;
+		var (_, y) = Position;
 		var (w, h) = Size;
 
-		if (Allowed(Key.Enter, isHolding) &&
+		if(Allowed(Key.Enter, isHolding) &&
 			CursorIndexLine != y + h - 1) // not last line
 		{
 			// no space for new line? bail
-			if (lines.Count == h)
+			if(lines.Count == h)
 				return;
 
 			// insert line above?
-			if (CursorIndexSymbol == 0)
+			if(CursorIndexSymbol == 0)
 			{
 				lines.Insert(CursorIndexLine, "");
 				MoveCursor(0, false, 1);
@@ -496,13 +493,13 @@ public class InputBox : Element
 			CursorIndexSymbol = 0;
 			SelectionIndex = CursorIndex;
 		}
-		else if (Allowed(Key.Backspace, isHolding) && justDeletedSelection == false)
+		else if(Allowed(Key.Backspace, isHolding) && justDeletedSelection == false)
 		{
 			// cursor is at start of current line
-			if (CursorIndexSymbol == 0)
+			if(CursorIndexSymbol == 0)
 			{
 				// first line?
-				if (CursorIndexLine == 0)
+				if(CursorIndexLine == 0)
 					return;
 
 				TryMergeBottomLine(CursorIndexLine - 1);
@@ -516,13 +513,13 @@ public class InputBox : Element
 				ctrl ? CursorIndexSymbol + off : CursorIndexSymbol - 1, count);
 			MoveCursor(ctrl ? off : -1);
 		}
-		else if (Allowed(Key.Delete, isHolding) && justDeletedSelection == false)
+		else if(Allowed(Key.Delete, isHolding) && justDeletedSelection == false)
 		{
 			// cursor is at end of current line
-			if (CursorIndexSymbol == lines[CursorIndexLine].Length)
+			if(CursorIndexSymbol == lines[CursorIndexLine].Length)
 			{
 				// last line?
-				if (CursorIndexLine == w - 1)
+				if(CursorIndexLine == w - 1)
 					return;
 
 				TryMergeBottomLine(CursorIndexLine);
@@ -530,7 +527,6 @@ public class InputBox : Element
 			}
 
 			var off = GetWordEndOffset(1, true);
-			var off2 = GetWordEndOffset(1, false);
 			var ctrl = Pressed(Key.ControlLeft);
 			var count = ctrl ? Math.Abs(off) : 1;
 			lines[CursorIndexLine] = lines[CursorIndexLine].Remove(ctrl ? CursorIndexSymbol : CursorIndexSymbol, count);
@@ -541,21 +537,21 @@ public class InputBox : Element
 		var (x, y) = Position;
 		var isSelected = SelectionIndex != CursorIndex;
 
-		if (shouldDelete == false || isSelected == false)
+		if(shouldDelete == false || isSelected == false)
 			return;
 
 		var a = SelectionIndex < CursorIndex ? SelectionIndex : CursorIndex;
 		var b = SelectionIndex > CursorIndex ? SelectionIndex : CursorIndex;
 		var pa = PositionFromIndex(a);
 		var pb = PositionFromIndex(b);
-		var (ixa, iya) = (pa.Item1 - x, Math.Clamp(pa.Item2 - y, 0, lines.Count - 1));
-		var (ixb, iyb) = (pb.Item1 - x, Math.Clamp(pb.Item2 - y, 0, lines.Count - 1));
-		var (w, h) = Size;
+		var (ixa, iya) = (pa.x - x, Math.Clamp(pa.y - y, 0, lines.Count - 1));
+		var (ixb, iyb) = (pb.x - x, Math.Clamp(pb.y - y, 0, lines.Count - 1));
+		var (w, _) = Size;
 
-		for (int i = iya; i <= iyb; i++)
+		for(int i = iya; i <= iyb; i++)
 		{
 			// single line selected
-			if (iya == iyb)
+			if(iya == iyb)
 			{
 				lines[i] = lines[i][..ixa] + lines[i][ixb..];
 				break;
@@ -563,10 +559,10 @@ public class InputBox : Element
 
 			// multiline selected...
 			// first selected line
-			if (i == iya)
+			if(i == iya)
 				lines[i] = lines[i][..ixa];
 			// last selected line
-			else if (i == iyb)
+			else if(i == iyb)
 			{
 				lines[i] = lines[i][ixb..];
 
@@ -589,13 +585,18 @@ public class InputBox : Element
 		justDeletedSelection = true;
 	}
 
+	private static void TryResetCursorBlinkTimer()
+	{
+		if(cursorBlink.Elapsed.TotalSeconds >= CURSOR_BLINK)
+			cursorBlink.Restart();
+	}
 	private void TryMergeBottomLine(int lineIndex)
 	{
 		// try to fit bottom line onto this line, leave the rest
 		var iya = lineIndex;
 		var iyb = lineIndex + 1;
 		var lineLength = lines[iya].Length;
-		var upLineFreeSpace = Math.Min(Size.Item1 - lines[iya].Length - 1, lines[iyb].Length);
+		var upLineFreeSpace = Math.Min(Size.width - lines[iya].Length - 1, lines[iyb].Length);
 		lines[iya] += lines[iyb][..upLineFreeSpace];
 		lines[iyb] = lines[iyb][upLineFreeSpace..];
 
@@ -607,34 +608,33 @@ public class InputBox : Element
 	}
 	private void TryRemoveEmptyLinesInRange(int lineStart, int lineEnd)
 	{
-		if (lineEnd > lines.Count - 1)
+		if(lineEnd > lines.Count - 1)
 			return;
 
-		for (int j = lineEnd; j >= lineStart; j--)
-			if (lines[j] == "" && lines.Count > 1)
+		for(int j = lineEnd; j >= lineStart; j--)
+			if(lines[j] == "" && lines.Count > 1)
 				lines.RemoveAt(j);
 	}
 	private void TrySetMouseCursor()
 	{
-		if (IsDisabled == false && (IsHovered || IsHeld))
+		if(IsDisabled == false && (IsHovered || IsHeld))
 			MouseCursorResult = MouseCursor.Text;
 	}
 	private bool TryCopyPasteCut(ref bool justDeletedSelection, ref bool shouldDelete, out bool isPasting)
 	{
 		var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
-		var (x, y) = Position;
 		var hasSelection = CursorIndex != SelectionIndex;
 
 		isPasting = false;
 
-		if (ctrl && Input.Current.Typed == "c")
+		if(ctrl && Input.Current.Typed == "c")
 		{
 			TextCopied = SelectedText;
 			return true;
 		}
-		else if (ctrl && Input.Current.Typed == "v")
+		else if(ctrl && Input.Current.Typed == "v")
 			isPasting = true;
-		else if (hasSelection && ctrl && Input.Current.Typed == "x")
+		else if(hasSelection && ctrl && Input.Current.Typed == "x")
 		{
 			TextCopied = SelectedText;
 			shouldDelete = true;
@@ -651,10 +651,10 @@ public class InputBox : Element
 			JustPressed(Key.ArrowLeft) || JustPressed(Key.ArrowRight) ||
 			JustPressed(Key.ArrowUp) || JustPressed(Key.ArrowDown);
 
-		if (isAnyJustPressed)
+		if(isAnyJustPressed)
 			holdDelay.Restart();
 
-		if (holdDelay.Elapsed.TotalSeconds > HOLD_DELAY &&
+		if(holdDelay.Elapsed.TotalSeconds > HOLD_DELAY &&
 			hold.Elapsed.TotalSeconds > HOLD)
 		{
 			hold.Restart();

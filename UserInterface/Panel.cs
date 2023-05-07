@@ -36,7 +36,7 @@ public class Panel : Element
 	/// </summary>
 	protected override void OnUpdate()
 	{
-		if (IsDisabled || IsResizable == false && IsMovable == false)
+		if(IsDisabled || IsResizable == false && IsMovable == false)
 			return;
 
 		var (x, y) = Position;
@@ -57,10 +57,10 @@ public class Panel : Element
 		var isHoveringRight = ix == x + w - 1 && IsBetween(iy, y, y + h - 1);
 		var isHoveringBottom = IsBetween(ix, x, x + w - 1) && iy == y + h - 1;
 
-		if (IsDisabled == false && IsHovered)
+		if(IsDisabled == false && IsHovered)
 			MouseCursorResult = MouseCursor.Arrow;
 
-		if (wasClicked)
+		if(wasClicked)
 		{
 			isDragging = false;
 			isResizingL = false;
@@ -69,17 +69,17 @@ public class Panel : Element
 			isResizingD = false;
 		}
 
-		if (IsMovable && isHoveringTop)
+		if(IsMovable && isHoveringTop)
 			Process(ref isDragging, MouseCursor.Move);
-		else if (IsResizable)
+		else if(IsResizable)
 		{
-			if (isHoveringLeft)
+			if(isHoveringLeft)
 				Process(ref isResizingL, MouseCursor.ResizeHorizontal);
-			if (isHoveringRight)
+			if(isHoveringRight)
 				Process(ref isResizingR, MouseCursor.ResizeHorizontal);
-			if (isHoveringBottom)
+			if(isHoveringBottom)
 				Process(ref isResizingD, MouseCursor.ResizeVertical);
-			if (isHoveringTopCorners)
+			if(isHoveringTopCorners)
 				Process(ref isResizingU, MouseCursor.ResizeVertical);
 
 			var tl = isHoveringLeft && isHoveringTopCorners;
@@ -87,13 +87,13 @@ public class Panel : Element
 			var br = isHoveringBottom && isHoveringRight;
 			var bl = isHoveringBottom && isHoveringLeft;
 
-			if (IsDisabled == false && (tr || bl))
+			if(IsDisabled == false && (tl || br))
 				MouseCursorResult = MouseCursor.ResizeDiagonal1;
-			if (IsDisabled == false && (tl || br))
+			if(IsDisabled == false && (tr || bl))
 				MouseCursorResult = MouseCursor.ResizeDiagonal2;
 		}
 
-		if (IsFocused && Input.Current.IsPressed &&
+		if(IsFocused && Input.Current.IsPressed &&
 			Input.Current.Position != Input.Current.PositionPrevious)
 		{
 			var (dx, dy) = ((int)ix - (int)px, (int)iy - (int)py);
@@ -101,27 +101,27 @@ public class Panel : Element
 			var (newW, newH) = (w, h);
 			var (maxX, maxY) = AdditionalMinimumSize;
 
-			if (isDragging && IsBetween(ix, x + 1 + dx, x + w - 2 + dx) && iy == y + dy)
+			if(isDragging && IsBetween(ix, x + 1 + dx, x + w - 2 + dx) && iy == y + dy)
 			{
 				newX += dx;
 				newY += dy;
 			}
-			if (isResizingL && ix == x + dx)
+			if(isResizingL && ix == x + dx)
 			{
 				newX += dx;
 				newW -= dx;
 			}
-			if (isResizingR && ix == x + w - 1 + dx)
+			if(isResizingR && ix == x + w - 1 + dx)
 				newW += dx;
-			if (isResizingD && iy == y + h - 1 + dy)
+			if(isResizingD && iy == y + h - 1 + dy)
 				newH += dy;
-			if (isResizingU && iy == y + dy)
+			if(isResizingU && iy == y + dy)
 			{
 				newY += dy;
 				newH -= dy;
 			}
 
-			if (newW < 2 + Math.Abs(maxX) ||
+			if(newW < 2 + Math.Abs(maxX) ||
 				newH < 2 + Math.Abs(maxY) ||
 				newX < 0 ||
 				newY < 0 ||
@@ -135,10 +135,10 @@ public class Panel : Element
 
 		void Process(ref bool condition, MouseCursor cursor)
 		{
-			if (isClicked)
+			if(isClicked)
 				condition = true;
 
-			if (IsDisabled == false)
+			if(IsDisabled == false)
 				MouseCursorResult = cursor;
 		}
 	}
@@ -148,7 +148,7 @@ public class Panel : Element
 
 	private static bool IsBetween(float number, float rangeA, float rangeB)
 	{
-		if (rangeA > rangeB)
+		if(rangeA > rangeB)
 			(rangeA, rangeB) = (rangeB, rangeA);
 
 		var l = rangeA <= number;
