@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace Pure.UserInterface;
+﻿namespace Pure.UserInterface;
 
 /// <summary>
 /// Represents a user input list element storing items, represented as checkboxes that can be
@@ -66,6 +64,7 @@ public class List : Element
 
 		UpdateParts();
 		UpdateItems();
+		isInitialized = true;
 	}
 
 	/// <summary>
@@ -74,7 +73,7 @@ public class List : Element
 	/// <param name="count">The number of items to add.</param>
 	public void Add(int count = 1)
 	{
-		for (int i = 0; i < count; i++)
+		for(int i = 0; i < count; i++)
 			items.Add(new(Position) { Size = (Size.Item1, 1) });
 
 		TrySingleSelectOneItem();
@@ -85,14 +84,14 @@ public class List : Element
 	/// <param name="index">The index of the item to remove.</param>
 	public void Remove(int index)
 	{
-		if (HasIndex(index) == false)
+		if(HasIndex(index) == false)
 			return;
 
 		items.RemoveAt(index);
 
-		if (index == singleSelectedIndex && index != items.Count)
+		if(index == singleSelectedIndex && index != items.Count)
 			return;
-		else if (index <= singleSelectedIndex)
+		else if(index <= singleSelectedIndex)
 			singleSelectedIndex--;
 
 		TrySingleSelectOneItem();
@@ -129,16 +128,16 @@ public class List : Element
 	}
 
 	/// <summary>
-	/// Called when the list and its items needs to be updated. This handles all of the user input
-	/// the list and its items need for thier behavior. Subclasses should override this 
+	/// Called when the list and its scroll need to be updated. This handles all of the user input
+	/// the list and its scroll need for thier behavior. Subclasses should override this 
 	/// method to implement their own behavior.
 	/// </summary>
 	protected override void OnUpdate()
 	{
-		if (IsDisabled)
+		if(IsDisabled)
 			return;
 
-		if (IsHovered && Input.Current.ScrollDelta != 0)
+		if(IsHovered && Input.Current.ScrollDelta != 0)
 			Scroll.Move(Input.Current.ScrollDelta);
 
 		TrySingleSelect();
@@ -148,6 +147,13 @@ public class List : Element
 	}
 
 	/// <summary>
+	/// Called when the items of the list need to be updated. This handles all of the user input
+	/// for the items in the list need for thier behavior. Subclasses should override this 
+	/// method to implement their own behavior.
+	/// </summary>
+	protected virtual void OnItemUpdate(Checkbox item) { }
+
+	/// <summary>
 	/// Implicitly converts an array of checkbox objects to a list object.
 	/// </summary>
 	/// <param name="items">The array of checkbox objects to convert.</param>
@@ -155,7 +161,7 @@ public class List : Element
 	public static implicit operator List(Checkbox[] items)
 	{
 		var result = new List((0, 0), 0);
-		for (int i = 0; i < items?.Length; i++)
+		for(int i = 0; i < items?.Length; i++)
 			result.items[i] = items[i];
 
 		return result;
@@ -170,11 +176,11 @@ public class List : Element
 	#region Backend
 	private int singleSelectedIndex = -1;
 	private readonly List<Checkbox> items = new();
-	private bool isSingleSelecting;
+	private bool isSingleSelecting, isInitialized;
 
 	private void TrySingleSelectOneItem()
 	{
-		if (IsSingleSelecting == false || items.Count == 0)
+		if(IsSingleSelecting == false || items.Count == 0)
 		{
 			singleSelectedIndex = -1;
 			return;
@@ -182,7 +188,7 @@ public class List : Element
 
 		var isOneSelected = HasIndex(singleSelectedIndex);
 
-		if (isOneSelected)
+		if(isOneSelected)
 			return;
 
 		singleSelectedIndex = 0;
@@ -193,16 +199,16 @@ public class List : Element
 		var isHoveringItems = IsHovered && Scroll.IsHovered == false &&
 			ScrollUp.IsHovered == false && ScrollDown.IsHovered == false;
 
-		if (Input.Current.IsJustReleased == false ||
+		if(Input.Current.IsJustReleased == false ||
 			IsSingleSelecting == false || isHoveringItems == false)
 			return;
 
 		var hoveredIndex = (int)Input.Current.Position.Item2 - Position.Item2 + GetScrollIndex();
 
-		if (hoveredIndex == singleSelectedIndex || HasIndex(hoveredIndex) == false)
+		if(hoveredIndex == singleSelectedIndex || HasIndex(hoveredIndex) == false)
 			return;
 
-		if (items[hoveredIndex].IsHeld)
+		if(items[hoveredIndex].IsHeld)
 			singleSelectedIndex = hoveredIndex;
 	}
 
@@ -230,25 +236,31 @@ public class List : Element
 		var (x, y) = Position;
 		var top = GetScrollIndex();
 		var bottom = Math.Min(items.Count, top + Size.Item2);
-		for (int i = 0; i < items.Count; i++)
+		for(int i = 0; i < items.Count; i++)
 		{
 			var item = items[i];
 
-			if (i < top || i >= bottom)
+			if(item == null)
+				continue;
+
+			if(i < top || i >= bottom)
 			{
 				item.Position = (int.MaxValue, int.MaxValue);
 				continue;
 			}
 
 			item.Position = (x, y + (i - top));
-			item.Size = (Size.Item1 - 1, 1);
+			item.Size = (Size.width - 1, 1);
 			item.Update();
 
-			if (IsSingleSelecting)
+			if(isInitialized)
+				OnItemUpdate(item);
+
+			if(IsSingleSelecting)
 				item.IsChecked = false;
 		}
 
-		if (IsSingleSelecting && HasIndex(singleSelectedIndex))
+		if(IsSingleSelecting && HasIndex(singleSelectedIndex))
 			items[singleSelectedIndex].IsChecked = true;
 	}
 
@@ -267,46 +279,6 @@ public class List : Element
 	{
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-	}
-
-	public int Add(object? value)
-	{
-		throw new NotImplementedException();
-	}
-
-	public bool Contains(object? value)
-	{
-		throw new NotImplementedException();
-	}
-
-	public int IndexOf(object? value)
-	{
-		throw new NotImplementedException();
-	}
-
-	public void Insert(int index, object? value)
-	{
-		throw new NotImplementedException();
-	}
-
-	public void Remove(object? value)
-	{
-		throw new NotImplementedException();
-	}
-
-	public void RemoveAt(int index)
-	{
-		throw new NotImplementedException();
-	}
-
-	public void CopyTo(Array array, int index)
-	{
-		throw new NotImplementedException();
-	}
-
-	public IEnumerator GetEnumerator()
-	{
-		throw new NotImplementedException();
 	}
 	#endregion
 }

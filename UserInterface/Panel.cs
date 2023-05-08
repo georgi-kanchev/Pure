@@ -16,7 +16,17 @@ public class Panel : Element
 	/// <summary>
 	/// Gets or sets the minimum additional size that this panel can have beyond its current size.
 	/// </summary>
-	public (int width, int height) AdditionalMinimumSize { get; set; }
+	public (int width, int height) MinimumSize
+	{
+		get => minimumSize;
+		set
+		{
+			value.width = Math.Max(value.width, 3);
+			value.height = Math.Max(value.height, 3);
+
+			minimumSize = value;
+		}
+	}
 
 	/// <summary>
 	/// Initializes a new panel instance with the specified position and size.
@@ -36,26 +46,31 @@ public class Panel : Element
 	/// </summary>
 	protected override void OnUpdate()
 	{
+		if(MinimumSize.width > Size.width)
+			Size = (MinimumSize.width, Size.height);
+		if(MinimumSize.height > Size.height)
+			Size = (Size.width, MinimumSize.height);
+
 		if(IsDisabled || IsResizable == false && IsMovable == false)
 			return;
 
 		var (x, y) = Position;
 		var (w, h) = Size;
-		var (ix, iy) = Input.Current.Position;
-		var (px, py) = Input.Current.PositionPrevious;
+		var (inputX, inputY) = Input.Current.Position;
+		var (prevX, prevY) = Input.Current.PositionPrevious;
 		var isClicked = Input.Current.IsPressed && Input.Current.wasPressed == false;
 		var wasClicked = Input.Current.IsPressed == false && Input.Current.wasPressed;
 
-		ix = MathF.Floor(ix);
-		iy = MathF.Floor(iy);
-		px = MathF.Floor(px);
-		py = MathF.Floor(py);
+		inputX = MathF.Floor(inputX);
+		inputY = MathF.Floor(inputY);
+		prevX = MathF.Floor(prevX);
+		prevY = MathF.Floor(prevY);
 
-		var isHoveringTop = IsBetween(ix, x + 1, x + w - 2) && iy == y;
-		var isHoveringTopCorners = (x, y) == (ix, iy) || (x + w - 1, y) == (ix, iy);
-		var isHoveringLeft = ix == x && IsBetween(iy, y, y + h - 1);
-		var isHoveringRight = ix == x + w - 1 && IsBetween(iy, y, y + h - 1);
-		var isHoveringBottom = IsBetween(ix, x, x + w - 1) && iy == y + h - 1;
+		var isHoveringTop = IsBetween(inputX, x + 1, x + w - 2) && inputY == y;
+		var isHoveringTopCorners = (x, y) == (inputX, inputY) || (x + w - 1, y) == (inputX, inputY);
+		var isHoveringLeft = inputX == x && IsBetween(inputY, y, y + h - 1);
+		var isHoveringRight = inputX == x + w - 1 && IsBetween(inputY, y, y + h - 1);
+		var isHoveringBottom = IsBetween(inputX, x, x + w - 1) && inputY == y + h - 1;
 
 		if(IsDisabled == false && IsHovered)
 			MouseCursorResult = MouseCursor.Arrow;
@@ -96,37 +111,29 @@ public class Panel : Element
 		if(IsFocused && Input.Current.IsPressed &&
 			Input.Current.Position != Input.Current.PositionPrevious)
 		{
-			var (dx, dy) = ((int)ix - (int)px, (int)iy - (int)py);
+			var (deltaX, deltaY) = ((int)inputX - (int)prevX, (int)inputY - (int)prevY);
 			var (newX, newY) = (x, y);
 			var (newW, newH) = (w, h);
-			var (maxX, maxY) = AdditionalMinimumSize;
+			var (maxX, maxY) = MinimumSize;
 
-			if(isDragging && IsBetween(ix, x + 1 + dx, x + w - 2 + dx) && iy == y + dy)
+			if(isDragging && IsBetween(inputX, x + 1 + deltaX, x + w - 2 + deltaX) && inputY == y + deltaY)
 			{
-				newX += dx;
-				newY += dy;
+				newX += deltaX;
+				newY += deltaY;
 			}
-			if(isResizingL && ix == x + dx)
-			{
-				newX += dx;
-				newW -= dx;
-			}
-			if(isResizingR && ix == x + w - 1 + dx)
-				newW += dx;
-			if(isResizingD && iy == y + h - 1 + dy)
-				newH += dy;
-			if(isResizingU && iy == y + dy)
-			{
-				newY += dy;
-				newH -= dy;
-			}
+			if(isResizingL && inputX == x + deltaX) { newX += deltaX; newW -= deltaX; }
+			if(isResizingR && inputX == x + w - 1 + deltaX) newW += deltaX;
+			if(isResizingD && inputY == y + h - 1 + deltaY) newH += deltaY;
+			if(isResizingU && inputY == y + deltaY) { newY += deltaY; newH -= deltaY; }
 
-			if(newW < 2 + Math.Abs(maxX) ||
-				newH < 2 + Math.Abs(maxY) ||
+			var isOutsideScreen =
+				newX + newW > TilemapSize.width ||
+				newY + newH > TilemapSize.height ||
 				newX < 0 ||
-				newY < 0 ||
-				newX + newW > TilemapSize.Item1 ||
-				newY + newH > TilemapSize.Item2)
+				newY < 0;
+			var isBelowMinimumSize = newW < Math.Abs(maxX) || newH < Math.Abs(maxY);
+
+			if(isOutsideScreen || isBelowMinimumSize)
 				return;
 
 			Size = (newW, newH);
@@ -145,6 +152,7 @@ public class Panel : Element
 
 	#region Backend
 	private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
+	private (int, int) minimumSize;
 
 	private static bool IsBetween(float number, float rangeA, float rangeB)
 	{

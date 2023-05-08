@@ -9,8 +9,8 @@ public class Program
 {
 	class MyCustomButton : Button
 	{
-		private Tilemap tilemap;
-		private Color currentColor = Color.Green;
+		private readonly Tilemap tilemap;
+		private int clickCount = 0;
 
 		public MyCustomButton(Tilemap tilemap, (int x, int y) position) : base(position)
 			=> this.tilemap = tilemap;
@@ -21,7 +21,7 @@ public class Program
 
 			Size = (Text.Length + 2, 3);
 
-			var color = currentColor;
+			var color = Color.Yellow;
 
 			if(IsHovered) color = color.ToBright();
 			if(IsHeld) color = color.ToDark();
@@ -29,16 +29,17 @@ public class Program
 			tilemap.SetBorder(Position, Size,
 				Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT, color.ToDark());
 			tilemap.SetTextLine((Position.x + 1, Position.y + 1), Text, color);
+			tilemap.SetTextLine((Position.x + 1 + Size.width, Position.y + 1), $"{clickCount}", Color.White);
 		}
 		protected override void OnUserEvent(UserEvent userEvent)
 		{
 			if(userEvent == UserEvent.Trigger)
-				currentColor = currentColor == Color.Green ? Color.Gray : Color.Green;
+				clickCount++;
 		}
 	}
 	class MyCustomCheckbox : Checkbox
 	{
-		private Tilemap tilemap;
+		private readonly Tilemap tilemap;
 
 		public MyCustomCheckbox(Tilemap tilemap, (int x, int y) position) :
 			base(position) => this.tilemap = tilemap;
@@ -61,7 +62,7 @@ public class Program
 	}
 	class MyCustomInputBox : InputBox
 	{
-		private Tilemap back, middle, front;
+		private readonly Tilemap back, middle, front;
 
 		public MyCustomInputBox(Tilemap back, Tilemap middle, Tilemap front, (int x, int y) position) :
 			base(position)
@@ -77,7 +78,7 @@ public class Program
 			base.OnUpdate();
 
 			back.SetSquare(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray));
-			back.SetTextSquare(Position, Size, Selection, IsFocused ? Color.Blue : Color.Cyan, isWordWrapping: false);
+			back.SetTextSquare(Position, Size, Selection, IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
 			middle.SetTextSquare(Position, Size, Text, isWordWrapping: false);
 
 			if(string.IsNullOrWhiteSpace(Text) && CursorIndex == 0)
@@ -89,7 +90,7 @@ public class Program
 	}
 	class MyCustomSlider : Slider
 	{
-		private Tilemap tilemap;
+		private readonly Tilemap tilemap;
 
 		public MyCustomSlider(Tilemap tilemap, (int x, int y) position, int size = 5) :
 			base(position, size) => this.tilemap = tilemap;
@@ -110,7 +111,7 @@ public class Program
 	}
 	class MyCustomList : List
 	{
-		private Tilemap tilemap;
+		private readonly Tilemap tilemap;
 
 		public MyCustomList(Tilemap tilemap, (int x, int y) position, int count = 10) :
 			base(position, count) => this.tilemap = tilemap;
@@ -119,27 +120,37 @@ public class Program
 		{
 			base.OnUpdate();
 
-			tilemap.SetTile(ScrollUp.Position, new(Tile.ARROW, Color.White, 3));
-			tilemap.SetTile(Scroll.Handle.Position, new(Tile.SHAPE_CIRCLE, Color.White));
-			tilemap.SetTile(ScrollDown.Position, new(Tile.ARROW, Color.White, 1));
+			var scrollUpColor = Color.Gray.ToBright();
+			var scrollDownColor = Color.Gray.ToBright();
+			var scrollHandleColor = Color.Gray.ToBright();
 
-			for(int i = 0; i < Count; i++)
-			{
-				var item = this[i];
-				if(item == null)
-					continue;
+			if(ScrollUp.IsHovered) scrollUpColor = scrollUpColor.ToBright();
+			if(ScrollUp.IsHeld) scrollUpColor = scrollUpColor.ToDark();
 
-				var itemColor = Color.Red;
-				if(item.IsChecked)
-					itemColor = Color.Green;
+			if(Scroll.IsHovered) scrollHandleColor = scrollHandleColor.ToBright();
+			if(Scroll.IsHeld) scrollHandleColor = scrollHandleColor.ToDark();
 
-				tilemap.SetTextLine(item.Position, $"{item.Text} {i}", itemColor);
-			}
+			if(ScrollDown.IsHovered) scrollDownColor = scrollDownColor.ToBright();
+			if(ScrollDown.IsHeld) scrollDownColor = scrollDownColor.ToDark();
+
+			tilemap.SetTile(ScrollUp.Position, new(Tile.ARROW, scrollUpColor, 3));
+			tilemap.SetTile(Scroll.Handle.Position, new(Tile.SHAPE_CIRCLE, scrollHandleColor));
+			tilemap.SetTile(ScrollDown.Position, new(Tile.ARROW, scrollDownColor, 1));
+		}
+		protected override void OnItemUpdate(Checkbox item)
+		{
+			var color = Color.Red;
+
+			if(item.IsChecked) color = Color.Green;
+			if(item.IsHovered) color = color.ToBright();
+			if(item.IsHeld) color = color.ToDark();
+
+			tilemap.SetTextLine(item.Position, $"{item.Text} {IndexOf(item)}", color);
 		}
 	}
 	class MyCustomPanel : Panel
 	{
-		private Tilemap background, foreground;
+		private readonly Tilemap background, foreground;
 
 		public MyCustomPanel(Tilemap background, Tilemap foreground, (int x, int y) position) : base(position)
 		{
@@ -152,15 +163,16 @@ public class Program
 			base.OnUpdate();
 
 			background.SetSquare(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray));
-			foreground.SetBorder(Position, Size, Tile.BORDER_SOLID_CORNER, Tile.BORDER_SOLID_STRAIGHT, Color.Blue);
-			foreground.SetTextLine((Position.x + 1, Position.y), Text);
+			foreground.SetBorder(Position, Size, Tile.BORDER_GRID_CORNER, Tile.BORDER_GRID_STRAIGHT, Color.Blue);
+			background.SetSquare((Position.x + 1, Position.y), (Size.width - 2, 1),
+				new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.2f)));
+			foreground.SetTextSquare((Position.x, Position.y), (Size.width, 1), Text,
+				alignment: Tilemap.Alignment.Center);
 		}
 	}
 
 	static void Main()
 	{
-		// panel less than minimum size can't move or resize
-
 		//Systems.DefaultGraphics.Run();
 		//Systems.ChatLAN.Run();
 
@@ -170,8 +182,8 @@ public class Program
 		var back = new Tilemap(tilemap.Size);
 		var front = new Tilemap(tilemap.Size);
 
-		var panel = new MyCustomPanel(back, tilemap, (20, 12)) { Size = (14, 7), AdditionalMinimumSize = (11, 3) };
-		var list = new MyCustomList(tilemap, (20, 2));
+		var panel = new MyCustomPanel(back, tilemap, (16, 2)) { Size = (13, 7), MinimumSize = (13, 5) };
+		var list = new MyCustomList(tilemap, default);
 		var elements = new List<Element>()
 		{
 			new MyCustomButton(tilemap, (2, 2)),
