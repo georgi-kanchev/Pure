@@ -48,7 +48,7 @@ public static class Mouse
 		set
 		{
 			Window.TryNoWindowException();
-			if(cursor == value)
+			if (cursor == value)
 				return;
 
 			cursor = value;
@@ -178,7 +178,7 @@ public static class Mouse
 	{
 		ScrollDelta = 0;
 
-		if(IsCursorTile == false)
+		if (IsCursorTile == false)
 			return;
 
 		var (x, y) = Window.PositionFrom(CursorPosition);
@@ -190,9 +190,9 @@ public static class Mouse
 		var cursorTile = Mouse.cursorTile;
 		var ang = default(sbyte);
 
-		if(CursorGraphics == Cursor.ResizeVertical) { cursorTile--; ang = 1; }
-		else if(CursorGraphics == Cursor.ResizeDiagonal1) { cursorTile--; ang = 1; }
-		else if((int)CursorGraphics >= (int)Cursor.ResizeDiagonal2) { cursorTile -= 2; }
+		if (CursorGraphics == Cursor.ResizeVertical) { cursorTile--; ang = 1; }
+		else if (CursorGraphics == Cursor.ResizeDiagonal1) { cursorTile--; ang = 1; }
+		else if ((int)CursorGraphics >= (int)Cursor.ResizeDiagonal2) { cursorTile -= 2; }
 
 		(int id, uint tint, sbyte ang, bool h, bool v) tile = default;
 		tile.id = cursorTile + (int)CursorGraphics;
@@ -205,18 +205,27 @@ public static class Mouse
 
 	private static void TryUpdateSystemCursor()
 	{
+		if (IsCursorTile)
+			return;
+
 		Window.TryNoWindowException();
-		var sfmlEnum = (SFML.Window.Cursor.CursorType)(cursor);
-		sysCursor.Dispose();
-		sysCursor = new(sfmlEnum);
-		Window.window.SetMouseCursor(sysCursor);
+
+		if (sysCursor.CPointer == IntPtr.Zero)
+			sysCursor.Dispose();
+		else
+		{
+			var sfmlEnum = (SFML.Window.Cursor.CursorType)(cursor);
+			sysCursor.Dispose();
+			sysCursor = new(sfmlEnum);
+			Window.window.SetMouseCursor(sysCursor);
+		}
 	}
 	internal static void UpdateCursorVisibility()
 	{
 		Window.TryNoWindowException();
 		Window.window.SetMouseCursorVisible(CursorGraphics != Cursor.None);
 
-		if(IsCursorTile)
+		if (IsCursorTile)
 			Window.window.SetMouseCursorVisible(IsCursorHoveringWindow == false);
 	}
 	#endregion
