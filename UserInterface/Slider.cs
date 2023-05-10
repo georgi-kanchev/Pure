@@ -38,7 +38,7 @@ public class Slider : Element
 	public Slider((int x, int y) position, int size = 5, bool isVertical = false) : base(position)
 	{
 		IsVertical = isVertical;
-		Handle = new(position) { Size = (1, 1) };
+		Handle = new(position) { Size = (1, 1), hasParent = true };
 		Size = isVertical ? (1, size) : (size, 1);
 	}
 

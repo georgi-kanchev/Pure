@@ -33,6 +33,11 @@ public class List : Element
 	}
 
 	public bool IsHorizontal { get; private set; }
+	public int MaximumItemWidth
+	{
+		get => maximumItemWidth;
+		set => maximumItemWidth = Math.Max(value, 1);
+	}
 
 	/// <summary>
 	/// Gets the checkbox at the specified index, or null if the index is out of range.
@@ -54,9 +59,9 @@ public class List : Element
 		var (x, y) = Position;
 		var (w, h) = Size;
 
-		Scroll = new((x + w - 1, y + 1), h - 2, true);
-		ScrollUp = new((x + w, y)) { Size = (1, 1) };
-		ScrollDown = new((x + w, y + w)) { Size = (1, 1) };
+		Scroll = new((x + w - 1, y + 1), h - 2, true) { hasParent = true };
+		ScrollUp = new((x + w, y)) { Size = (1, 1), hasParent = true };
+		ScrollDown = new((x + w, y + w)) { Size = (1, 1), hasParent = true };
 
 		Add(count);
 
@@ -80,7 +85,8 @@ public class List : Element
 		{
 			var item = new Checkbox(default);
 			item.Text = $"Item#{items.Count}";
-			item.Size = (IsHorizontal ? item.Text.Length : Size.width, 1);
+			item.size = (IsHorizontal ? item.Text.Length : Size.width, 1);
+			item.hasParent = true;
 			items.Add(item);
 		}
 		TrySingleSelectOneItem();
@@ -141,6 +147,8 @@ public class List : Element
 	/// </summary>
 	protected override void OnUpdate()
 	{
+		MaximumItemWidth = maximumItemWidth; // reclamp value
+
 		if (IsDisabled)
 			return;
 
@@ -181,9 +189,11 @@ public class List : Element
 	public static implicit operator Checkbox[](List list) => list.items.ToArray();
 
 	#region Backend
+	const int HOR_ITEM_OFFSET = 1;
 	private int singleSelectedIndex = -1;
 	private readonly List<Checkbox> items = new();
 	private bool isSingleSelecting, isInitialized;
+	private int maximumItemWidth = 11;
 
 	private void TrySingleSelectOneItem()
 	{
@@ -256,37 +266,35 @@ public class List : Element
 	private void UpdateItems()
 	{
 		var (x, y) = Position;
+		var (w, h) = Size;
 		var scrollIndex = GetScrollIndex();
-		var bottom = Math.Min(items.Count, scrollIndex + Size.height);
-		var right = Math.Min(items.Count, scrollIndex + GetHorizontalVisibleIndexCount());
 
 		for (int i = 0; i < items.Count; i++)
 		{
 			var item = items[i];
+			var (ix, iy) = item.position;
+			var (iw, ih) = item.size;
 
 			if (item == null)
 				continue;
 
-			var isOutsideVertical = IsHorizontal == false && (i < scrollIndex || i >= bottom);
-			var isOutsideHorizontal = IsHorizontal && (i < scrollIndex || i >= right);
-			if (isOutsideVertical || isOutsideHorizontal)
-			{
-				// item is not visible in current scroll view
-				item.Position = (int.MaxValue, int.MaxValue);
-				continue;
-			}
-
 			if (IsHorizontal)
 			{
-				var newI = i - scrollIndex;
-				item.Position = (x + newI * item.Size.width + newI, y + 1);
-				item.Size = (item.Size.width, 1);
+				var visibleItems = w / MaximumItemWidth;
+				var totalWidth = items.Count * (MaximumItemWidth + HOR_ITEM_OFFSET);
+				var offsetX = (int)Map(Scroll.Progress, 0, 1, 0, totalWidth - w - HOR_ITEM_OFFSET - 1);
+				offsetX = Math.Max(offsetX, 0);
+				item.position = (x - offsetX + i * (MaximumItemWidth + HOR_ITEM_OFFSET), y + 1);
 			}
 			else
-			{
-				item.Position = (x, y + (i - scrollIndex));
-				item.Size = (Size.width - 1, 1);
-			}
+				item.position = (x, y + (i - scrollIndex));
+
+			(ix, iy) = item.position;
+			if (ix < x || ix > x + w)
+				item.position = (int.MaxValue, int.MaxValue);
+			else
+				TryTrimItem(item);
+
 			item.Update();
 
 			if (isInitialized)
@@ -313,23 +321,21 @@ public class List : Element
 	{
 		return index >= 0 && index < items.Count;
 	}
-	private int GetHorizontalVisibleIndexCount()
+	private void TryTrimItem(Checkbox item)
 	{
-		var scrollIndex = GetScrollIndex();
-		var width = 0;
-		var result = 0;
-		for (int i = scrollIndex; i < items.Count; i++)
-		{
-			var value = items[i].Size.width + 1;
+		var (x, y) = Position;
+		var (w, h) = Size;
+		var (ix, iy) = item.position;
+		var (iw, ih) = item.size;
 
-			width += value;
-			result++;
+		var horOffset = IsHorizontal ? HOR_ITEM_OFFSET : -HOR_ITEM_OFFSET;
+		var rightTrim = Math.Min(MaximumItemWidth, x + w - ix + horOffset);
+		var width = MaximumItemWidth;
 
-			if (width + value - 3 >= Size.width)
-				break;
-		}
+		if (ix <= x + w && ix + iw > x + w) // on right edge
+			width = rightTrim;
 
-		return result;
+		item.size = (width, 1);
 	}
 
 	private static float Map(float number, float a1, float a2, float b1, float b2)

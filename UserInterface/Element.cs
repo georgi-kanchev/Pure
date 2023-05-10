@@ -47,18 +47,18 @@ public abstract partial class Element
 	/// <summary>
 	/// Gets or sets the position of the user interface element.
 	/// </summary>
-	public (int x, int y) Position { get; set; }
+	public (int x, int y) Position
+	{
+		get => position;
+		set { if (hasParent == false) position = value; }
+	}
 	/// <summary>
 	/// Gets or sets the size of the user interface element.
 	/// </summary>
 	public (int width, int height) Size
 	{
 		get => size;
-		set
-		{
-			var (x, y) = value;
-			size = (Math.Max(x, 1), Math.Max(y, 1));
-		}
+		set { if (hasParent == false) size = (Math.Max(value.height, 1), Math.Max(value.width, 1)); }
 	}
 	/// <summary>
 	/// Gets or sets the text displayed (if any) by the user interface element.
@@ -271,7 +271,8 @@ public abstract partial class Element
 	}
 
 	#region Backend
-	private (int, int) size;
+	internal (int, int) position, size;
+	internal bool hasParent;
 	private static readonly Stopwatch hold = new(), holdTrigger = new();
 
 	private bool wasFocused, wasHovered;

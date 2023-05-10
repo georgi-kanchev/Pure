@@ -147,7 +147,8 @@ public static class UserInterface
 			if (item.IsHovered) color = color.ToBright();
 			if (item.IsHeld) color = color.ToDark();
 
-			tilemap.SetTextLine(item.Position, item.Text, color);
+			tilemap.SetSquare(item.Position, item.Size, Tile.SHADE_OPAQUE);
+			//tilemap.SetTextLine(item.Position, item.Text, color);
 		}
 	}
 	class MyCustomPanel : Panel
@@ -180,8 +181,8 @@ public static class UserInterface
 		var front = new Tilemap(tilemap.Size);
 
 		var panel = new MyCustomPanel(back, tilemap, (16, 2)) { Size = (9, 8), MinimumSize = (9, 5) };
-		var list = new MyCustomList(tilemap, default);
-		var hList = new MyCustomList(tilemap, (2, 20), 10, true) { Size = (29, 2) };
+		//var list = new MyCustomList(tilemap, default);
+		var hList = new MyCustomList(tilemap, (2, 20), 10, true) { Size = (29, 2), MaximumItemWidth = 5 };
 		var elements = new List<Element>()
 		{
 			new MyCustomButton(tilemap, (2, 2)),
@@ -190,7 +191,7 @@ public static class UserInterface
 			new MyCustomSlider(tilemap, (2, 12), 7),
 			hList,
 			panel,
-			list
+			//list
 		};
 
 		Window.Create(Window.Mode.Windowed);
@@ -211,8 +212,8 @@ public static class UserInterface
 				keysTyped: Keyboard.KeyTyped,
 				tilemapSize: tilemap.Size);
 
-			list.Position = (panel.Position.x + 1, panel.Position.y + 1);
-			list.Size = (panel.Size.width - 2, panel.Size.height - 2);
+			//list.Position = (panel.Position.x + 1, panel.Position.y + 1);
+			//list.Size = (panel.Size.width - 2, panel.Size.height - 2);
 
 			for (int i = 0; i < elements.Count; i++)
 				elements[i].Update();
