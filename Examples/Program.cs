@@ -1,16 +1,14 @@
 namespace Pure.Examples;
 
 using Pure.Tilemap;
-using Pure.UserInterface;
-using Pure.Utilities;
 using Pure.Window;
 
 public class Program
 {
 	static void Main()
 	{
-		Systems.UserInterface.Run();
 		//Systems.DefaultGraphics.Run();
+		Systems.UserInterface.Run();
 		//Systems.ChatLAN.Run();
 
 		//Games.FlappyBird.Run();
@@ -19,11 +17,9 @@ public class Program
 
 		Window.Create(Window.Mode.Windowed);
 
-		while (Window.IsOpen)
+		while(Window.IsOpen)
 		{
 			Window.Activate(true);
-
-			tilemap.Fill();
 
 			Window.DrawTiles(tilemap.ToBundle());
 
