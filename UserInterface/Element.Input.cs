@@ -36,11 +36,11 @@ public abstract partial class Element
 		/// <summary>
 		/// Gets the current position of the input.
 		/// </summary>
-		public (float, float) Position { get; internal set; }
+		public (float x, float y) Position { get; internal set; }
 		/// <summary>
 		/// Gets the previous position of the input.
 		/// </summary>
-		public (float, float) PositionPrevious { get; internal set; }
+		public (float x, float y) PositionPrevious { get; internal set; }
 		/// <summary>
 		/// Gets the most recent typed text.
 		/// </summary>
@@ -64,7 +64,7 @@ public abstract partial class Element
 			{
 				pressedKeys.Clear();
 
-				if (value != null && value.Length != 0)
+				if(value != null && value.Length != 0)
 					pressedKeys.AddRange(value);
 			}
 		}
