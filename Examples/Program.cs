@@ -17,7 +17,7 @@ public class Program
 
 		Window.Create(Window.Mode.Windowed);
 
-		while(Window.IsOpen)
+		while (Window.IsOpen)
 		{
 			Window.Activate(true);
 

@@ -81,7 +81,7 @@ public class List : Element
 	/// <param name="count">The number of items to add.</param>
 	public void Add(int count = 1)
 	{
-		for(int i = 0; i < count; i++)
+		for (int i = 0; i < count; i++)
 		{
 			var item = new Checkbox(default);
 			item.Text = $"Item#{items.Count}";
@@ -97,14 +97,14 @@ public class List : Element
 	/// <param name="index">The index of the item to remove.</param>
 	public void Remove(int index)
 	{
-		if(HasIndex(index) == false)
+		if (HasIndex(index) == false)
 			return;
 
 		items.RemoveAt(index);
 
-		if(index == singleSelectedIndex && index != items.Count)
+		if (index == singleSelectedIndex && index != items.Count)
 			return;
-		else if(index <= singleSelectedIndex)
+		else if (index <= singleSelectedIndex)
 			singleSelectedIndex--;
 
 		TrySingleSelectOneItem();
@@ -149,10 +149,10 @@ public class List : Element
 	{
 		MaximumItemWidth = maximumItemWidth; // reclamp value
 
-		if(IsDisabled)
+		if (IsDisabled)
 			return;
 
-		if(IsHovered && Input.Current.ScrollDelta != 0)
+		if (IsHovered && Input.Current.ScrollDelta != 0)
 			Scroll.Move(Input.Current.ScrollDelta);
 
 		TrySingleSelect();
@@ -176,7 +176,7 @@ public class List : Element
 	public static implicit operator List(Checkbox[] items)
 	{
 		var result = new List((0, 0), 0);
-		for(int i = 0; i < items?.Length; i++)
+		for (int i = 0; i < items?.Length; i++)
 			result.items[i] = items[i];
 
 		return result;
@@ -197,7 +197,7 @@ public class List : Element
 
 	private void TrySingleSelectOneItem()
 	{
-		if(IsSingleSelecting == false || items.Count == 0)
+		if (IsSingleSelecting == false || items.Count == 0)
 		{
 			singleSelectedIndex = -1;
 			return;
@@ -205,7 +205,7 @@ public class List : Element
 
 		var isOneSelected = HasIndex(singleSelectedIndex);
 
-		if(isOneSelected)
+		if (isOneSelected)
 			return;
 
 		singleSelectedIndex = 0;
@@ -216,16 +216,16 @@ public class List : Element
 		var isHoveringItems = IsHovered && Scroll.IsHovered == false &&
 			ScrollUp.IsHovered == false && ScrollDown.IsHovered == false;
 
-		if(Input.Current.IsJustReleased == false ||
+		if (Input.Current.IsJustReleased == false ||
 			IsSingleSelecting == false || isHoveringItems == false)
 			return;
 
 		var hoveredIndex = (int)Input.Current.Position.Item2 - Position.Item2 + GetScrollIndex();
 
-		if(hoveredIndex == singleSelectedIndex || HasIndex(hoveredIndex) == false)
+		if (hoveredIndex == singleSelectedIndex || HasIndex(hoveredIndex) == false)
 			return;
 
-		if(items[hoveredIndex].IsHeld)
+		if (items[hoveredIndex].IsHeld)
 			singleSelectedIndex = hoveredIndex;
 	}
 
@@ -234,7 +234,7 @@ public class List : Element
 		var (x, y) = Position;
 		var (w, h) = Size;
 
-		if(IsHorizontal)
+		if (IsHorizontal)
 		{
 			Scroll.position = (x + 1, y);
 			Scroll.size = (w - 1, 1);
@@ -269,14 +269,14 @@ public class List : Element
 		var (w, h) = Size;
 		var scrollIndex = GetScrollIndex();
 
-		for(int i = 0; i < items.Count; i++)
+		for (int i = 0; i < items.Count; i++)
 		{
 			var item = items[i];
 
-			if(item == null)
+			if (item == null)
 				continue;
 
-			if(IsHorizontal)
+			if (IsHorizontal)
 			{
 				var totalWidth = items.Count * (MaximumItemWidth + HOR_ITEM_OFFSET);
 				var offsetX = (int)Map(Scroll.Progress, 0, 1, 0, totalWidth - w - HOR_ITEM_OFFSET - 1);
@@ -287,8 +287,8 @@ public class List : Element
 				item.position = (x, y + (i - scrollIndex));
 
 			var (ix, iy) = item.position;
-			var (iw, ih) = (item.Size.width + item.offset.Item1, item.Size.height);
-			if(ix + iw <= x || ix >= x + w ||
+			var (iw, ih) = (item.Size.width + item.listWidthTrimOffset.Item1, item.Size.height);
+			if (ix + iw <= x || ix >= x + w ||
 				iy < y || iy + ih > y + h)
 				item.position = (int.MaxValue, int.MaxValue);
 			else
@@ -296,14 +296,14 @@ public class List : Element
 
 			item.Update();
 
-			if(isInitialized)
+			if (isInitialized)
 				OnItemUpdate(item);
 
-			if(IsSingleSelecting)
+			if (IsSingleSelecting)
 				item.IsChecked = false;
 		}
 
-		if(IsSingleSelecting && HasIndex(singleSelectedIndex))
+		if (IsSingleSelecting && HasIndex(singleSelectedIndex))
 			items[singleSelectedIndex].IsChecked = true;
 	}
 
@@ -311,7 +311,7 @@ public class List : Element
 	{
 		var end = Math.Max(0, items.Count - Scroll.Size.height - 2);
 
-		if(IsHorizontal)
+		if (IsHorizontal)
 			end = items.Count;
 
 		return (int)MathF.Round(Map(Scroll.Progress, 0, 1, 0, end));
@@ -330,15 +330,15 @@ public class List : Element
 		var width = MaximumItemWidth;
 
 		var iw = MaximumItemWidth;
-		item.offset.Item1 = 0;
+		item.listWidthTrimOffset.Item1 = 0;
 
-		if(ix <= x + w && ix + iw >= x + w) // on right edge
+		if (ix <= x + w && ix + iw >= x + w) // on right edge
 			width = Math.Min(MaximumItemWidth, x + w - ix + horOffset);
-		else if(ix < x && ix + iw > x) // on left edge
+		else if (ix < x && ix + iw > x) // on left edge
 		{
 			width = ix + iw - x;
 			item.position = (x, item.position.Item2);
-			item.offset = (MaximumItemWidth - width, 1);
+			item.listWidthTrimOffset = (MaximumItemWidth - width, 1);
 		}
 
 		item.size = (width, 1);

@@ -50,7 +50,7 @@ public abstract partial class Element
 	public (int x, int y) Position
 	{
 		get => position;
-		set { if(hasParent == false) position = value; }
+		set { if (hasParent == false) position = value; }
 	}
 	/// <summary>
 	/// Gets or sets the size of the user interface element.
@@ -58,7 +58,7 @@ public abstract partial class Element
 	public (int width, int height) Size
 	{
 		get => size;
-		set { if(hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1)); }
+		set { if (hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1)); }
 	}
 	/// <summary>
 	/// Gets or sets the text displayed (if any) by the user interface element.
@@ -132,38 +132,38 @@ public abstract partial class Element
 
 		UpdateHovered();
 
-		if(IsDisabled)
+		if (IsDisabled)
 		{
-			if(IsHovered)
+			if (IsHovered)
 				MouseCursorResult = MouseCursor.Disable;
 
 			OnUpdate();
 			return;
 		}
 
-		if(Input.Current.wasPressed == false && Input.Current.IsPressed && IsHovered)
+		if (Input.Current.wasPressed == false && Input.Current.IsPressed && IsHovered)
 			IsFocused = true;
 
-		if(Input.Current.IsKeyJustPressed(Key.Escape))
+		if (Input.Current.IsKeyJustPressed(Key.Escape))
 			IsFocused = false;
 
 		TryTrigger();
 
-		if(IsFocused && wasFocused == false)
+		if (IsFocused && wasFocused == false)
 			TriggerUserEvent(UserEvent.Focus);
-		if(IsFocused == false && wasFocused)
+		if (IsFocused == false && wasFocused)
 			TriggerUserEvent(UserEvent.Unfocus);
-		if(IsHovered && wasHovered == false)
+		if (IsHovered && wasHovered == false)
 			TriggerUserEvent(UserEvent.Hover);
-		if(IsHovered == false && wasHovered)
+		if (IsHovered == false && wasHovered)
 			TriggerUserEvent(UserEvent.Unhover);
-		if(IsPressed && Input.Current.wasPressed == false)
+		if (IsPressed && Input.Current.wasPressed == false)
 			TriggerUserEvent(UserEvent.Press);
-		if(IsPressed == false && Input.Current.wasPressed)
+		if (IsPressed == false && Input.Current.wasPressed)
 			TriggerUserEvent(UserEvent.Release);
-		if(IsPressed && Input.Current.IsJustHeld)
+		if (IsPressed && Input.Current.IsJustHeld)
 			TriggerUserEvent(UserEvent.Hold);
-		if(Input.Current.ScrollDelta != 0)
+		if (Input.Current.ScrollDelta != 0)
 			TriggerUserEvent(UserEvent.Scroll);
 
 		OnUpdate();
@@ -187,10 +187,10 @@ public abstract partial class Element
 	{
 		OnUserEvent(userEvent);
 
-		if(userEvents.ContainsKey(userEvent) == false)
+		if (userEvents.ContainsKey(userEvent) == false)
 			return;
 
-		for(int i = 0; i < userEvents[userEvent].Count; i++)
+		for (int i = 0; i < userEvents[userEvent].Count; i++)
 			userEvents[userEvent][i].Invoke();
 	}
 	/// <summary>
@@ -202,7 +202,7 @@ public abstract partial class Element
 	/// <param name="method">The method to subscribe.</param>
 	protected internal void SubscribeToUserEvent(UserEvent userEvent, Action method)
 	{
-		if(userEvents.ContainsKey(userEvent) == false)
+		if (userEvents.ContainsKey(userEvent) == false)
 			userEvents[userEvent] = new();
 
 		userEvents[userEvent].Add(method);
@@ -246,7 +246,7 @@ public abstract partial class Element
 		Input.Current.Position = position;
 
 		var keys = new Key[keysPressed.Length];
-		for(int i = 0; i < keysPressed.Length; i++)
+		for (int i = 0; i < keysPressed.Length; i++)
 			keys[i] = (Key)keysPressed[i];
 
 		Input.Current.PressedKeys = keys;
@@ -256,22 +256,22 @@ public abstract partial class Element
 			.Replace("\r", "");
 		Input.Current.ScrollDelta = scrollDelta;
 
-		if(Input.Current.IsJustPressed)
+		if (Input.Current.IsJustPressed)
 			hold.Restart();
 
 		Input.Current.IsJustHeld = false;
-		if(hold.Elapsed.TotalSeconds > 0.5f && holdTrigger.Elapsed.TotalSeconds > 0.05f)
+		if (hold.Elapsed.TotalSeconds > 0.5f && holdTrigger.Elapsed.TotalSeconds > 0.05f)
 		{
 			holdTrigger.Restart();
 			Input.Current.IsJustHeld = true;
 		}
 
-		if(Input.Current.wasPressed == false && Input.Current.IsPressed)
+		if (Input.Current.wasPressed == false && Input.Current.IsPressed)
 			Focused = null;
 	}
 
 	#region Backend
-	internal (int, int) position, size, offset;
+	internal (int, int) position, size, listWidthTrimOffset;
 	internal bool hasParent;
 	private static readonly Stopwatch hold = new(), holdTrigger = new();
 
@@ -291,31 +291,31 @@ public abstract partial class Element
 		var (w, h) = Size;
 		var isHoveredX = ix >= x && ix < x + w;
 		var isHoveredY = iy >= y && iy < y + h;
-		if(w < 0)
+		if (w < 0)
 			isHoveredX = ix > x + w && ix <= x;
-		if(h < 0)
+		if (h < 0)
 			isHoveredY = iy > y + h && iy <= y;
 
 		IsHovered = isHoveredX && isHoveredY;
 	}
 	private void TryTrigger()
 	{
-		if(IsFocused == false || IsDisabled)
+		if (IsFocused == false || IsDisabled)
 		{
 			IsHeld = false;
 			return;
 		}
 
-		if(IsHovered && Input.Current.IsJustReleased && IsHeld)
+		if (IsHovered && Input.Current.IsJustReleased && IsHeld)
 		{
 			IsHeld = false;
 			TriggerUserEvent(UserEvent.Trigger);
 		}
 
-		if(IsHovered && Input.Current.IsJustPressed)
+		if (IsHovered && Input.Current.IsJustPressed)
 			IsHeld = true;
 
-		if(Input.Current.IsJustReleased)
+		if (Input.Current.IsJustReleased)
 			IsHeld = false;
 	}
 	#endregion
