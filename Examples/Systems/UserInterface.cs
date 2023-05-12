@@ -23,8 +23,8 @@ public static class UserInterface
 
 			var color = Color.Yellow;
 
-			if(IsHeld) color = color.ToDark();
-			else if(IsHovered) color = color.ToBright();
+			if (IsHeld) color = color.ToDark();
+			else if (IsHovered) color = color.ToBright();
 
 			tilemap.SetBorder(Position, Size,
 				Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT, color.ToDark());
@@ -33,7 +33,7 @@ public static class UserInterface
 		}
 		protected override void OnUserEvent(UserEvent userEvent)
 		{
-			if(userEvent == UserEvent.Trigger)
+			if (userEvent == UserEvent.Trigger)
 				clickCount++;
 		}
 	}
@@ -51,9 +51,9 @@ public static class UserInterface
 			var color = Color.Red;
 			Size = (Text.Length + 2, 1);
 
-			if(IsChecked) color = Color.Green;
-			if(IsHeld) color = Color.Gray;
-			else if(IsHovered) color = Color.White;
+			if (IsChecked) color = Color.Green;
+			if (IsHeld) color = Color.Gray;
+			else if (IsHovered) color = Color.White;
 
 			var tile = new Tile(IsChecked ? Tile.ICON_TICK : Tile.UPPERCASE_X, color);
 			tilemap.SetTile(Position, tile);
@@ -81,10 +81,10 @@ public static class UserInterface
 			back.SetTextSquare(Position, Size, Selection, IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
 			middle.SetTextSquare(Position, Size, Text, isWordWrapping: false);
 
-			if(string.IsNullOrWhiteSpace(Text) && CursorIndex == 0)
+			if (string.IsNullOrWhiteSpace(Text) && CursorIndex == 0)
 				middle.SetTextSquare(Position, Size, Placeholder, Color.Gray.ToBright(), false);
 
-			if(IsCursorVisible)
+			if (IsCursorVisible)
 				front.SetTile(CursorPosition, new(Tile.SHAPE_LINE, Color.White, 2));
 		}
 	}
@@ -101,8 +101,8 @@ public static class UserInterface
 
 			var color = Color.Yellow;
 
-			if(IsHeld) color = color.ToDark();
-			else if(IsHovered) color = color.ToBright();
+			if (IsHeld) color = color.ToDark();
+			else if (IsHovered) color = color.ToBright();
 
 			tilemap.SetBar(Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, Color.Gray, Size.width);
 			tilemap.SetTile(Handle.Position, new(Tile.SHADE_OPAQUE, color));
@@ -124,14 +124,14 @@ public static class UserInterface
 			var scrollDownColor = Color.Gray.ToBright();
 			var scrollHandleColor = Color.Gray.ToBright();
 
-			if(ScrollUp.IsHovered) scrollUpColor = scrollUpColor.ToBright();
-			if(ScrollUp.IsHeld) scrollUpColor = scrollUpColor.ToDark();
+			if (ScrollUp.IsHovered) scrollUpColor = scrollUpColor.ToBright();
+			if (ScrollUp.IsHeld) scrollUpColor = scrollUpColor.ToDark();
 
-			if(Scroll.IsHovered) scrollHandleColor = scrollHandleColor.ToBright();
-			if(Scroll.IsHeld) scrollHandleColor = scrollHandleColor.ToDark();
+			if (Scroll.IsHovered) scrollHandleColor = scrollHandleColor.ToBright();
+			if (Scroll.IsHeld) scrollHandleColor = scrollHandleColor.ToDark();
 
-			if(ScrollDown.IsHovered) scrollDownColor = scrollDownColor.ToBright();
-			if(ScrollDown.IsHeld) scrollDownColor = scrollDownColor.ToDark();
+			if (ScrollDown.IsHovered) scrollDownColor = scrollDownColor.ToBright();
+			if (ScrollDown.IsHeld) scrollDownColor = scrollDownColor.ToDark();
 
 			var scorllUpAng = (sbyte)(IsHorizontal ? 0 : 3);
 			var scorllDownAng = (sbyte)(IsHorizontal ? 2 : 1);
@@ -143,17 +143,17 @@ public static class UserInterface
 		{
 			var color = Color.Red;
 
-			if(item.IsChecked) color = Color.Green;
-			if(item.IsHeld) color = color.ToDark();
-			else if(item.IsHovered) color = color.ToBright();
+			if (item.IsChecked) color = Color.Green;
+			if (item.IsHeld) color = color.ToDark();
+			else if (item.IsHovered) color = color.ToBright();
 
 			tilemap.SetSquare(item.Position, item.Size, new(Tile.PATTERN_6, color.ToDark()));
 
-			if(item.Size.width < 2 || item.Size.height < 2)
+			if (item.Size.width < 2 || item.Size.height < 2)
 				return;
 
 			var text = item.Text;
-			if(item.Size.width > 1 && item.Size.width - 2 < text.Length)
+			if (item.Size.width > 1 && item.Size.width - 2 < text.Length)
 			{
 				text = text[..Math.Max(item.Size.width - 3, 0)];
 				var tile = new Tile(Tile.PUNCTUATION_ELLIPSIS, color);
@@ -197,8 +197,8 @@ public static class UserInterface
 
 		var panel = new MyCustomPanel(back, tilemap, (16, 2)) { Size = (9, 16), MinimumSize = (5, 5) };
 		var panel2 = new MyCustomPanel(back, tilemap, (3, 20)) { Size = (42, 6), MinimumSize = (5, 5) };
-		var list = new MyCustomList(tilemap, default) { MaximumItemSize = (7, 3), IsSingleSelecting = true };
-		var listH = new MyCustomList(tilemap, (2, 20), 10, true) { MaximumItemSize = (7, 3) };
+		var list = new MyCustomList(tilemap, default, 5) { MaximumItemSize = (7, 3), IsSingleSelecting = true };
+		var listH = new MyCustomList(tilemap, (2, 20), 5, true) { MaximumItemSize = (7, 3) };
 		var elements = new List<Element>()
 		{
 			new MyCustomButton(tilemap, (2, 2)),
@@ -211,7 +211,7 @@ public static class UserInterface
 			listH
 		};
 
-		while(Window.IsOpen)
+		while (Window.IsOpen)
 		{
 			Window.Activate(true);
 
@@ -231,14 +231,12 @@ public static class UserInterface
 			list.Size = (panel.Size.width - 2, panel.Size.height - 2);
 
 			listH.Position = (panel2.Position.x + 1, panel2.Position.y + 1);
-			listH.Size = (panel2.Size.width - 3, panel2.Size.height - 2);
+			listH.Size = (panel2.Size.width - 2, panel2.Size.height - 2);
 
-			for(int i = 0; i < elements.Count; i++)
+			for (int i = 0; i < elements.Count; i++)
 				elements[i].Update();
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
-
-			Console.WriteLine(panel.Contains(tilemap.PointFrom(Mouse.CursorPosition, Window.Size)));
 
 			Window.DrawTiles(back.ToBundle());
 			Window.DrawTiles(tilemap.ToBundle());
