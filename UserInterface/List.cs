@@ -1,7 +1,7 @@
 ﻿namespace Pure.UserInterface;
 
 /// <summary>
-/// Represents a user input list element storing items, represented as checkboxes that can be
+/// Represents a user input list element storing items, represented as buttons that can be
 /// scrolled, clicked, selected and manipulated.
 /// </summary>
 public class List : Element
@@ -51,18 +51,18 @@ public class List : Element
 	}
 
 	/// <summary>
-	/// Gets the checkbox at the specified index, or null if the index is out of range.
+	/// Gets the button item at the specified index, or null if the index is out of range.
 	/// </summary>
-	/// <param name="index">The index of the checkbox to get.</param>
-	public Checkbox? this[int index] => HasIndex(index) ? items[index] : default;
+	/// <param name="index">The index of the button to get.</param>
+	public Button? this[int index] => HasIndex(index) ? items[index] : default;
 
 	/// <summary>
 	/// Initializes a new list instance with the specified position, size and number of items.
 	/// </summary>
 	/// <param name="position">The position of the top-left corner of the list.</param>
 	/// <param name="size">The size of the list.</param>
-	/// <param name="count">The initial number of checkboxes in the list.</param>
-	public List((int x, int y) position, int count, bool isHorizontal = false)
+	/// <param name="count">The initial number of buttons in the list.</param>
+	public List((int x, int y) position, int count = 10, bool isHorizontal = false)
 		: base(position)
 	{
 		Size = (12, 8);
@@ -70,9 +70,9 @@ public class List : Element
 		var (x, y) = Position;
 		var (w, h) = Size;
 
-		Scroll = new((x + w - 1, y + 1), h - 2, true) { hasParent = true };
-		ScrollUp = new((x + w, y)) { Size = (1, 1), hasParent = true };
-		ScrollDown = new((x + w, y + w)) { Size = (1, 1), hasParent = true };
+		Scroll = new(default, 0, true) { hasParent = true };
+		ScrollUp = new(default) { hasParent = true };
+		ScrollDown = new(default) { hasParent = true };
 
 		Add(count);
 
@@ -87,17 +87,21 @@ public class List : Element
 	}
 
 	/// <summary>
-	/// Adds the specified number of items to the list.
+	/// Adds the specified number of items to the end of the list.
 	/// </summary>
 	/// <param name="count">The number of items to add.</param>
-	public void Add(int count = 1)
+	public void Add(int count = 1) => Insert(items.Count, count);
+	public void Insert(int index = 0, int count = 1)
 	{
-		for (int i = 0; i < count; i++)
+		if (index < 0 || index > items.Count)
+			return;
+
+		for (int i = index; i < count; i++)
 		{
-			var item = new Checkbox(default) { Text = $"Item{items.Count}" };
+			var item = new Button(default) { Text = $"Item{i}" };
 			item.size = (IsHorizontal ? item.Text.Length : Size.width, 1);
 			item.hasParent = true;
-			items.Add(item);
+			items.Insert(i, item);
 		}
 		TrySingleSelectOneItem();
 	}
@@ -105,7 +109,7 @@ public class List : Element
 	/// Removes the item at the specified index and adjusts the selection accordingly.
 	/// </summary>
 	/// <param name="index">The index of the item to remove.</param>
-	public void Remove(int index)
+	public void Remove(int index = 0)
 	{
 		if (HasIndex(index) == false)
 			return;
@@ -130,25 +134,38 @@ public class List : Element
 	}
 
 	/// <summary>
-	/// Determines whether the list contains the specified checkbox item.
+	/// Determines whether the list contains the specified item.
 	/// </summary>
-	/// <param name="item">The checkbox item to locate in the list.</param>
-	/// <returns>True if the checkbox item is found in the list; otherwise, false.</returns>
-	public bool Contains(Checkbox item)
+	/// <param name="item">The item to locate in the list.</param>
+	/// <returns>True if the item is found in the list; otherwise, false.</returns>
+	public bool Contains(Button item)
 	{
 		return item != null && items.Contains(item);
 	}
 	/// <summary>
-	/// Searches for the specified checkbox item and returns the zero-based index of the first occurrence
+	/// Searches for the specified item and returns the zero-based index of the first occurrence
 	/// within the entire list.
 	/// </summary>
-	/// <param name="item">The checkbox item to locate in the list.</param>
-	/// <returns>The zero-based index of the first occurrence of the checkbox item within the entire list,
+	/// <param name="item">The item to locate in the list.</param>
+	/// <returns>The zero-based index of the first occurrence of the item within the entire list,
 	/// if found; otherwise, -1.</returns>
-	public int IndexOf(Checkbox item)
+	public int IndexOf(Button item)
 	{
 		return item == null ? -1 : items.IndexOf(item);
 	}
+
+	public void Select(int index, bool isSelected = true)
+	{
+		if (HasIndex(index) == false)
+			return;
+
+		singleSelectedIndex = index;
+
+		var item = this[index];
+		if (item != null)
+			item.IsSelected = isSelected;
+	}
+	public void Select(Button item, bool isSelected = true) => Select(IndexOf(item), isSelected);
 
 	/// <summary>
 	/// Called when the list and its scroll need to be updated. This handles all of the user input
@@ -176,14 +193,14 @@ public class List : Element
 	/// for the items in the list need for thier behavior. Subclasses should override this 
 	/// method to implement their own behavior.
 	/// </summary>
-	protected virtual void OnItemUpdate(Checkbox item) { }
+	protected virtual void OnItemUpdate(Button item) { }
 
 	/// <summary>
-	/// Implicitly converts an array of checkbox objects to a list object.
+	/// Implicitly converts an array of button objects to a list object.
 	/// </summary>
-	/// <param name="items">The array of checkbox objects to convert.</param>
-	/// <returns>A new list object containing the specified checkbox objects.</returns>
-	public static implicit operator List(Checkbox[] items)
+	/// <param name="items">The array of button objects to convert.</param>
+	/// <returns>A new list object containing the specified button objects.</returns>
+	public static implicit operator List(Button[] items)
 	{
 		var result = new List((0, 0), 0);
 		for (int i = 0; i < items?.Length; i++)
@@ -192,20 +209,20 @@ public class List : Element
 		return result;
 	}
 	/// <summary>
-	/// Implicitly converts a list object to an array of its checkbox item objects.
+	/// Implicitly converts a list object to an array of its button item objects.
 	/// </summary>
 	/// <param name="list">The list object to convert.</param>
-	/// <returns>An array of checkbox objects contained in the list object.</returns>
-	public static implicit operator Checkbox[](List list) => list.items.ToArray();
+	/// <returns>An array of button objects contained in the list object.</returns>
+	public static implicit operator Button[](List list) => list.items.ToArray();
 
 	#region Backend
 	private int singleSelectedIndex = -1;
-	private readonly List<Checkbox> items = new();
+	private readonly List<Button> items = new();
 	private bool isSingleSelecting;
 	private readonly bool isInitialized;
 	private (int width, int height) itemMaxSize = (5, 1), itemGap = (1, 1);
 
-	private void TrySingleSelectOneItem()
+	internal void TrySingleSelectOneItem()
 	{
 		if (IsSingleSelecting == false || items.Count == 0)
 		{
@@ -219,9 +236,9 @@ public class List : Element
 			return;
 
 		singleSelectedIndex = 0;
-		items[singleSelectedIndex].IsChecked = true;
+		items[singleSelectedIndex].IsSelected = true;
 	}
-	private void TrySingleSelect()
+	internal void TrySingleSelect()
 	{
 		var isHoveringItems = IsHovered && Scroll.IsHovered == false &&
 			ScrollUp.IsHovered == false && ScrollDown.IsHovered == false;
@@ -335,11 +352,11 @@ public class List : Element
 				OnItemUpdate(item);
 
 			if (IsSingleSelecting)
-				item.IsChecked = false;
+				item.IsSelected = false;
 		}
 
 		if (IsSingleSelecting && HasIndex(singleSelectedIndex))
-			items[singleSelectedIndex].IsChecked = true;
+			items[singleSelectedIndex].IsSelected = true;
 	}
 
 	private int GetScrollIndex()
@@ -355,7 +372,7 @@ public class List : Element
 	{
 		return index >= 0 && index < items.Count;
 	}
-	private void TryTrimItem(Checkbox item)
+	private void TryTrimItem(Button item)
 	{
 		var (x, y) = Position;
 		var (w, h) = Size;

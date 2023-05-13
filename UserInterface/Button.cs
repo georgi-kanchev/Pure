@@ -6,6 +6,11 @@
 public class Button : Element
 {
 	/// <summary>
+	/// Gets or sets a value indicating whether the button is selected.
+	/// </summary>
+	public bool IsSelected { get; set; }
+
+	/// <summary>
 	/// Initializes a new button instance with the specified position and size.
 	/// </summary>
 	/// <param name="position">The position of the button.</param>
@@ -24,5 +29,16 @@ public class Button : Element
 	{
 		if (IsDisabled == false && IsHovered)
 			MouseCursorResult = MouseCursor.Hand;
+	}
+
+	/// <summary>
+	/// Responds to a user event on the button. Subclasses should 
+	/// override this method to implement their own behavior.
+	/// </summary>
+	/// <param name="userEvent">The user event that occurred.</param>
+	protected override void OnUserEvent(UserEvent userEvent)
+	{
+		if (userEvent == UserEvent.Trigger)
+			IsSelected = IsSelected == false;
 	}
 }

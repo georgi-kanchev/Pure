@@ -79,19 +79,19 @@ public class Slider : Element
 	{
 		UpdateHandle();
 
-		if(IsDisabled)
+		if (IsDisabled)
 			return;
 
-		if(IsHovered)
+		if (IsHovered)
 		{
-			if(IsDisabled == false)
+			if (IsDisabled == false)
 				MouseCursorResult = MouseCursor.Hand;
 
-			if(Input.Current.ScrollDelta != 0)
+			if (Input.Current.ScrollDelta != 0)
 				Move(Input.Current.ScrollDelta);
 		}
 
-		if(IsHeld)
+		if (IsHeld)
 		{
 			var p = Input.Current.Position;
 			MoveTo(((int)p.Item1, (int)p.Item2));
@@ -112,7 +112,7 @@ public class Slider : Element
 		index = Math.Clamp(index, 0, sz);
 		progress = Map(index, 0, size - 1, 0, 1);
 
-		if(IsVertical)
+		if (IsVertical)
 		{
 			Handle.position = (x, y + index);
 			Handle.size = (w, 1);

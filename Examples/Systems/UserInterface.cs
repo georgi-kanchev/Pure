@@ -18,17 +18,11 @@ public static class UserInterface
 		protected override void OnUpdate()
 		{
 			base.OnUpdate();
-
 			Size = (Text.Length + 2, 3);
 
-			var color = Color.Yellow;
-
-			if (IsHeld) color = color.ToDark();
-			else if (IsHovered) color = color.ToBright();
-
 			tilemap.SetBorder(Position, Size,
-				Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT, color.ToDark());
-			tilemap.SetTextLine((Position.x + 1, Position.y + 1), Text, color);
+				Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT, GetColor(this, Color.Yellow).ToDark());
+			tilemap.SetTextLine((Position.x + 1, Position.y + 1), Text, GetColor(this, Color.Yellow));
 			tilemap.SetTextLine((Position.x + 1 + Size.width, Position.y + 1), $"{clickCount}", Color.White);
 		}
 		protected override void OnUserEvent(UserEvent userEvent)
@@ -37,7 +31,7 @@ public static class UserInterface
 				clickCount++;
 		}
 	}
-	class MyCustomCheckbox : Checkbox
+	class MyCustomCheckbox : Button
 	{
 		private readonly Tilemap tilemap;
 
@@ -47,17 +41,11 @@ public static class UserInterface
 		protected override void OnUpdate()
 		{
 			base.OnUpdate();
-
-			var color = Color.Red;
 			Size = (Text.Length + 2, 1);
 
-			if (IsChecked) color = Color.Green;
-			if (IsHeld) color = Color.Gray;
-			else if (IsHovered) color = Color.White;
-
-			var tile = new Tile(IsChecked ? Tile.ICON_TICK : Tile.UPPERCASE_X, color);
+			var tile = new Tile(IsSelected ? Tile.ICON_TICK : Tile.UPPERCASE_X, GetColor(this, Color.Red));
 			tilemap.SetTile(Position, tile);
-			tilemap.SetTextLine((Position.x + 2, Position.y), Text, color);
+			tilemap.SetTextLine((Position.x + 2, Position.y), Text, GetColor(this, Color.Red));
 		}
 	}
 	class MyCustomInputBox : InputBox
@@ -77,7 +65,7 @@ public static class UserInterface
 		{
 			base.OnUpdate();
 
-			back.SetSquare(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray));
+			back.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray));
 			back.SetTextSquare(Position, Size, Selection, IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
 			middle.SetTextSquare(Position, Size, Text, isWordWrapping: false);
 
@@ -99,13 +87,8 @@ public static class UserInterface
 		{
 			base.OnUpdate();
 
-			var color = Color.Yellow;
-
-			if (IsHeld) color = color.ToDark();
-			else if (IsHovered) color = color.ToBright();
-
 			tilemap.SetBar(Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, Color.Gray, Size.width);
-			tilemap.SetTile(Handle.Position, new(Tile.SHADE_OPAQUE, color));
+			tilemap.SetTile(Handle.Position, new(Tile.SHADE_OPAQUE, GetColor(this, Color.Yellow)));
 			tilemap.SetTextLine((Position.x + Size.width + 1, Position.y), $"{Progress:F2}");
 		}
 	}
@@ -120,30 +103,16 @@ public static class UserInterface
 		{
 			base.OnUpdate();
 
-			var scrollUpColor = Color.Gray.ToBright();
-			var scrollDownColor = Color.Gray.ToBright();
-			var scrollHandleColor = Color.Gray.ToBright();
-
-			if (ScrollUp.IsHovered) scrollUpColor = scrollUpColor.ToBright();
-			if (ScrollUp.IsHeld) scrollUpColor = scrollUpColor.ToDark();
-
-			if (Scroll.IsHovered) scrollHandleColor = scrollHandleColor.ToBright();
-			if (Scroll.IsHeld) scrollHandleColor = scrollHandleColor.ToDark();
-
-			if (ScrollDown.IsHovered) scrollDownColor = scrollDownColor.ToBright();
-			if (ScrollDown.IsHeld) scrollDownColor = scrollDownColor.ToDark();
-
 			var scorllUpAng = (sbyte)(IsHorizontal ? 0 : 3);
 			var scorllDownAng = (sbyte)(IsHorizontal ? 2 : 1);
-			tilemap.SetTile(ScrollUp.Position, new(Tile.ARROW, scrollUpColor, scorllUpAng));
-			tilemap.SetTile(Scroll.Handle.Position, new(Tile.SHAPE_CIRCLE, scrollHandleColor));
-			tilemap.SetTile(ScrollDown.Position, new(Tile.ARROW, scrollDownColor, scorllDownAng));
+			tilemap.SetTile(ScrollUp.Position, new(Tile.ARROW, GetColor(ScrollUp, Color.Gray), scorllUpAng));
+			tilemap.SetTile(Scroll.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Scroll, Color.Gray)));
+			tilemap.SetTile(ScrollDown.Position, new(Tile.ARROW, GetColor(ScrollDown, Color.Gray), scorllDownAng));
 		}
-		protected override void OnItemUpdate(Checkbox item)
+		protected override void OnItemUpdate(Button item)
 		{
-			var color = Color.Red;
+			var color = item.IsSelected ? Color.Green : Color.Red;
 
-			if (item.IsChecked) color = Color.Green;
 			if (item.IsHeld) color = color.ToDark();
 			else if (item.IsHovered) color = color.ToBright();
 
@@ -172,12 +141,34 @@ public static class UserInterface
 		{
 			base.OnUpdate();
 
-			background.SetSquare(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
+			background.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
 			foreground.SetBorder(Position, Size, Tile.BORDER_GRID_CORNER, Tile.BORDER_GRID_STRAIGHT, Color.Blue);
-			background.SetSquare((Position.x + 1, Position.y), (Size.width - 2, 1),
+			background.SetRectangle((Position.x + 1, Position.y), (Size.width - 2, 1),
 				new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.2f)));
 			foreground.SetTextSquare((Position.x, Position.y), (Size.width, 1), Text,
 				alignment: Tilemap.Alignment.Center);
+		}
+	}
+	class MyCustomPagination : Pagination
+	{
+		private readonly Tilemap tilemap;
+
+		public MyCustomPagination(Tilemap tilemap, (int x, int y) position, int count = 10) :
+			base(position, count) => this.tilemap = tilemap;
+
+		protected override void OnUpdate()
+		{
+			tilemap.SetTile(First.Position, new(Tile.MATH_MUCH_LESS, GetColor(First, Color.Gray)));
+			tilemap.SetTile(Previous.Position, new(Tile.MATH_LESS, GetColor(Previous, Color.Gray)));
+			tilemap.SetTile(Next.Position, new(Tile.MATH_GREATER, GetColor(Next, Color.Gray)));
+			tilemap.SetTile(Last.Position, new(Tile.MATH_MUCH_GREATER, GetColor(Last, Color.Gray)));
+
+			base.OnUpdate();
+		}
+		protected override void OnPageUpdate(Button page)
+		{
+			var color = page.IsSelected ? Color.Green : Color.Gray;
+			tilemap.SetTextLine(page.Position, page.Text, GetColor(page, color));
 		}
 	}
 
@@ -207,6 +198,7 @@ public static class UserInterface
 			new MyCustomCheckbox(tilemap, (2, 7)),
 			new MyCustomInputBox(back, tilemap, front, (2, 10)) { Size = (12, 4) },
 			new MyCustomSlider(tilemap, (2, 17), 7),
+			new MyCustomPagination(tilemap, (27, 2)) { Size = (19, 2) },
 			panelHorizontal, listHorizontal,
 			panelVertical, listVertical,
 		};
@@ -235,6 +227,11 @@ public static class UserInterface
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 
+			if (Keyboard.IsKeyPressed(Keyboard.Key.A).Once("hoink"))
+			{
+				var pagination = (MyCustomPagination)elements[4];
+				pagination.Count = 3;
+			}
 			Window.DrawTiles(back.ToBundle());
 			Window.DrawTiles(tilemap.ToBundle());
 			Window.DrawTiles(front.ToBundle());
@@ -246,5 +243,13 @@ public static class UserInterface
 			list.Position = (panel.Position.x + 1, panel.Position.y + 1);
 			list.Size = (panel.Size.width - 2, panel.Size.height - 2);
 		}
+	}
+
+	private static Color GetColor(Element element, Color baseColor)
+	{
+		if (element.IsHeld) return baseColor.ToDark();
+		else if (element.IsHovered) return baseColor.ToBright();
+
+		return baseColor;
 	}
 }

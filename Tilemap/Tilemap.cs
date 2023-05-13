@@ -206,7 +206,7 @@ public class Tilemap
 	/// <param name="position">The position to start setting tiles from.</param>
 	/// <param name="size">The size of the square region to set tiles for.</param>
 	/// <param name="tile">The tile to set the square region to.</param>
-	public void SetSquare((int x, int y) position, (int width, int height) size, Tile tile)
+	public void SetRectangle((int x, int y) position, (int width, int height) size, Tile tile)
 	{
 		var xStep = size.Item1 < 0 ? -1 : 1;
 		var yStep = size.Item2 < 0 ? -1 : 1;
@@ -468,15 +468,15 @@ public class Tilemap
 		var (w, h) = size;
 
 		SetTile(position, new(tileIdCorner, tint, 0));
-		SetSquare((x + 1, y), (w - 2, 1), new(tileIdStraight, tint, 0));
+		SetRectangle((x + 1, y), (w - 2, 1), new(tileIdStraight, tint, 0));
 		SetTile((x + w - 1, y), new(tileIdCorner, tint, 1));
 
-		SetSquare((x, y + 1), (1, h - 2), new(tileIdStraight, tint, 3));
-		SetSquare((x + 1, y + 1), (w - 2, h - 2), new(0, 0));
-		SetSquare((x + w - 1, y + 1), (1, h - 2), new(tileIdStraight, tint, 1));
+		SetRectangle((x, y + 1), (1, h - 2), new(tileIdStraight, tint, 3));
+		SetRectangle((x + 1, y + 1), (w - 2, h - 2), new(0, 0));
+		SetRectangle((x + w - 1, y + 1), (1, h - 2), new(tileIdStraight, tint, 1));
 
 		SetTile((x, y + h - 1), new(tileIdCorner, tint, 3));
-		SetSquare((x + 1, y + h - 1), (w - 2, 1), new(tileIdStraight, tint, 2));
+		SetRectangle((x + 1, y + h - 1), (w - 2, 1), new(tileIdStraight, tint, 2));
 		SetTile((x + w - 1, y + h - 1), new(tileIdCorner, tint, 2));
 	}
 	/// <summary>
@@ -496,13 +496,13 @@ public class Tilemap
 		if (isVertical)
 		{
 			SetTile(position, new(tileIdEdge, tint, 1));
-			SetSquare((x, y + 1), (1, size - 2), new(tileIdStraight, tint, 1));
+			SetRectangle((x, y + 1), (1, size - 2), new(tileIdStraight, tint, 1));
 			SetTile((x, y + size - 1), new(tileIdEdge, tint, 3));
 			return;
 		}
 
 		SetTile(position, new(tileIdEdge, tint));
-		SetSquare((x + 1, y), (size - 2, 1), new(tileIdStraight, tint));
+		SetRectangle((x + 1, y), (size - 2, 1), new(tileIdStraight, tint));
 		SetTile((x + size - 1, y), new(tileIdEdge, tint, 2));
 	}
 
