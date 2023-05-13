@@ -147,20 +147,15 @@ public static class UserInterface
 			if (item.IsHeld) color = color.ToDark();
 			else if (item.IsHovered) color = color.ToBright();
 
-			tilemap.SetSquare(item.Position, item.Size, new(Tile.PATTERN_6, color.ToDark()));
-
-			if (item.Size.width < 2 || item.Size.height < 2)
-				return;
-
 			var text = item.Text;
-			if (item.Size.width > 1 && item.Size.width - 2 < text.Length)
+			if (item.Size.width < text.Length)
 			{
-				text = text[..Math.Max(item.Size.width - 3, 0)];
+				text = text[..Math.Max(item.Size.width - 1, 0)];
 				var tile = new Tile(Tile.PUNCTUATION_ELLIPSIS, color);
-				tilemap.SetTile((item.Position.x + item.Size.width - 2, item.Position.y + 1), tile);
+				tilemap.SetTile((item.Position.x + item.Size.width - 1, item.Position.y), tile);
 			}
 
-			tilemap.SetTextLine((item.Position.x + 1, item.Position.y + 1), text, color);
+			tilemap.SetTextLine(item.Position, text, color);
 		}
 	}
 	class MyCustomPanel : Panel
@@ -195,20 +190,25 @@ public static class UserInterface
 		var back = new Tilemap(tilemap.Size);
 		var front = new Tilemap(tilemap.Size);
 
-		var panel = new MyCustomPanel(back, tilemap, (16, 2)) { Size = (9, 16), MinimumSize = (5, 5) };
-		var panel2 = new MyCustomPanel(back, tilemap, (3, 20)) { Size = (42, 6), MinimumSize = (5, 5) };
-		var list = new MyCustomList(tilemap, default, 5) { MaximumItemSize = (7, 3), IsSingleSelecting = true };
-		var listH = new MyCustomList(tilemap, (2, 20), 5, true) { MaximumItemSize = (7, 3) };
+		var panelVertical = new MyCustomPanel(back, tilemap, (16, 2)) { Size = (9, 16), MinimumSize = (5, 5) };
+		var listVertical = new MyCustomList(tilemap, default, 5) { IsSingleSelecting = true, ItemGap = (0, 0) };
+
+		var panelHorizontal = new MyCustomPanel(back, tilemap, (2, 20))
+		{
+			Size = (25, 3),
+			IsResizable = false,
+			IsMovable = false
+		};
+		var listHorizontal = new MyCustomList(tilemap, (2, 20), 4, true);
+
 		var elements = new List<Element>()
 		{
 			new MyCustomButton(tilemap, (2, 2)),
-			new MyCustomCheckbox(tilemap, (2, 6)),
-			new MyCustomInputBox(back, tilemap, front, (2, 8)),
-			new MyCustomSlider(tilemap, (2, 12), 7),
-			panel2,
-			panel,
-			list,
-			listH
+			new MyCustomCheckbox(tilemap, (2, 7)),
+			new MyCustomInputBox(back, tilemap, front, (2, 10)) { Size = (12, 4) },
+			new MyCustomSlider(tilemap, (2, 17), 7),
+			panelHorizontal, listHorizontal,
+			panelVertical, listVertical,
 		};
 
 		while (Window.IsOpen)
@@ -227,11 +227,8 @@ public static class UserInterface
 				keysTyped: Keyboard.KeyTyped,
 				tilemapSize: tilemap.Size);
 
-			list.Position = (panel.Position.x + 1, panel.Position.y + 1);
-			list.Size = (panel.Size.width - 2, panel.Size.height - 2);
-
-			listH.Position = (panel2.Position.x + 1, panel2.Position.y + 1);
-			listH.Size = (panel2.Size.width - 2, panel2.Size.height - 2);
+			StickListToPanel(panelVertical, listVertical);
+			StickListToPanel(panelHorizontal, listHorizontal);
 
 			for (int i = 0; i < elements.Count; i++)
 				elements[i].Update();
@@ -242,6 +239,12 @@ public static class UserInterface
 			Window.DrawTiles(tilemap.ToBundle());
 			Window.DrawTiles(front.ToBundle());
 			Window.Activate(false);
+		}
+
+		void StickListToPanel(MyCustomPanel panel, MyCustomList list)
+		{
+			list.Position = (panel.Position.x + 1, panel.Position.y + 1);
+			list.Size = (panel.Size.width - 2, panel.Size.height - 2);
 		}
 	}
 }

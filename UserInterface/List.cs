@@ -39,10 +39,15 @@ public class List : Element
 	/// <summary>
 	/// Gets or sets maximum size of each item.
 	/// </summary>
-	public (int width, int height) MaximumItemSize
+	public (int width, int height) ItemMaximumSize
 	{
-		get => maximumItemSize;
-		set => maximumItemSize = (Math.Max(value.width, 1), Math.Max(value.height, 1));
+		get => itemMaxSize;
+		set => itemMaxSize = (Math.Max(value.width, 1), Math.Max(value.height, 1));
+	}
+	public (int width, int height) ItemGap
+	{
+		get => itemGap;
+		set => itemGap = (Math.Max(value.width, 0), Math.Max(value.height, 0));
 	}
 
 	/// <summary>
@@ -152,7 +157,7 @@ public class List : Element
 	/// </summary>
 	protected override void OnUpdate()
 	{
-		MaximumItemSize = maximumItemSize; // reclamp value
+		ItemMaximumSize = itemMaxSize; // reclamp value
 
 		if (IsDisabled)
 			return;
@@ -194,13 +199,11 @@ public class List : Element
 	public static implicit operator Checkbox[](List list) => list.items.ToArray();
 
 	#region Backend
-	const int HOR_ITEM_OFFSET = 1;
-	const int VER_ITEM_OFFSET = 1;
 	private int singleSelectedIndex = -1;
 	private readonly List<Checkbox> items = new();
 	private bool isSingleSelecting;
 	private readonly bool isInitialized;
-	private (int width, int height) maximumItemSize = (11, 1);
+	private (int width, int height) itemMaxSize = (5, 1), itemGap = (1, 1);
 
 	private void TrySingleSelectOneItem()
 	{
@@ -239,13 +242,10 @@ public class List : Element
 	{
 		var (x, y) = Position;
 		var (w, h) = Size;
-		var (maxW, maxH) = MaximumItemSize;
-		var totalW = items.Count * (maxW + HOR_ITEM_OFFSET) - HOR_ITEM_OFFSET;
-		var totalH = items.Count * (maxH + VER_ITEM_OFFSET) - VER_ITEM_OFFSET;
 
 		if (IsHorizontal)
 		{
-			if (totalW <= Size.width)
+			if (HasScroll().horizontal == false)
 			{
 				Disable();
 				return;
@@ -263,7 +263,7 @@ public class List : Element
 		}
 		else
 		{
-			if (totalH <= Size.height)
+			if (HasScroll().vertical == false)
 			{
 				Disable();
 				return;
@@ -306,24 +306,26 @@ public class List : Element
 
 			if (IsHorizontal)
 			{
-				var totalWidth = items.Count * (MaximumItemSize.width + HOR_ITEM_OFFSET);
-				var offsetX = (int)Map(Scroll.Progress, 0, 1, 0, totalWidth - w - HOR_ITEM_OFFSET);
+				var totalWidth = items.Count * (ItemMaximumSize.width + ItemGap.width);
+				var offsetX = (int)Map(Scroll.Progress, 0, 1, 0, totalWidth - w - ItemGap.width);
 				offsetX = Math.Max(offsetX, 0);
-				item.position = (x - offsetX + i * (MaximumItemSize.width + HOR_ITEM_OFFSET), y);
+				item.position = (x - offsetX + i * (ItemMaximumSize.width + ItemGap.width), y);
 			}
 			else
 			{
-				var totalHeight = items.Count * (MaximumItemSize.height + VER_ITEM_OFFSET);
-				var offsetY = (int)Map(Scroll.Progress, 0, 1, 0, totalHeight - h - VER_ITEM_OFFSET);
+				var totalHeight = items.Count * (ItemMaximumSize.height + ItemGap.height);
+				var offsetY = (int)Map(Scroll.Progress, 0, 1, 0, totalHeight - h - ItemGap.height);
 				offsetY = Math.Max(offsetY, 0);
-				item.position = (x, y - offsetY + i * (MaximumItemSize.height + VER_ITEM_OFFSET));
+				item.position = (x, y - offsetY + i * (ItemMaximumSize.height + ItemGap.height));
 			}
 
 			var (ix, iy) = item.position;
 			var (offW, offH) = item.listSizeTrimOffset;
+			var botEdgeTrim = IsHorizontal && HasScroll().horizontal ? 1 : 0;
+			var rightEdgeTrim = IsHorizontal == false && HasScroll().vertical ? 1 : 0;
 			var (iw, ih) = (item.Size.width + offW, item.Size.height + offH);
 			if (ix + iw <= x || ix >= x + w ||
-				iy + ih <= y || iy >= y + h - 1)
+				iy + ih <= y || iy >= y + h - botEdgeTrim)
 				item.position = (int.MaxValue, int.MaxValue);
 
 			TryTrimItem(item);
@@ -359,36 +361,32 @@ public class List : Element
 		var (w, h) = Size;
 		var (ix, iy) = item.position;
 
-		var (maxW, maxH) = MaximumItemSize;
-		var totalW = items.Count * (maxW + HOR_ITEM_OFFSET) - HOR_ITEM_OFFSET;
-		var totalH = items.Count * (maxH + VER_ITEM_OFFSET) - VER_ITEM_OFFSET;
-		var horScrollIsVisible = totalW > Size.width;
-		var verScrollIsVisible = totalH > Size.height;
-		var botEdgeTrim = IsHorizontal && horScrollIsVisible ? 1 : 0;
-		var rightEdgeTrim = IsHorizontal == false && verScrollIsVisible ? 1 : 0;
-		var newWidth = MaximumItemSize.width;
-		var newHeight = MaximumItemSize.height;
+		var (maxW, maxH) = ItemMaximumSize;
+		var botEdgeTrim = IsHorizontal && HasScroll().horizontal ? 1 : 0;
+		var rightEdgeTrim = IsHorizontal == false && HasScroll().vertical ? 1 : 0;
+		var newWidth = ItemMaximumSize.width;
+		var newHeight = ItemMaximumSize.height;
 		var iw = newWidth;
 		var ih = newHeight;
 
 		item.listSizeTrimOffset = (0, 0);
 
 		if (ix <= x + w && ix + iw >= x + w) // on right edge
-			newWidth = Math.Min(MaximumItemSize.width, x + w - rightEdgeTrim - ix);
+			newWidth = Math.Min(ItemMaximumSize.width, x + w - rightEdgeTrim - ix);
 		if (ix < x && ix + iw > x) // on left edge
 		{
 			newWidth = ix + iw - x;
 			item.position = (x, item.position.Item2);
-			item.listSizeTrimOffset = (MaximumItemSize.width - newWidth, item.listSizeTrimOffset.Item2);
+			item.listSizeTrimOffset = (ItemMaximumSize.width - newWidth, item.listSizeTrimOffset.Item2);
 		}
 
 		if (iy <= y + h && iy + ih >= y + h - botEdgeTrim) // on bottom edge
-			newHeight = Math.Min(MaximumItemSize.height, y + h - botEdgeTrim - iy);
+			newHeight = Math.Min(ItemMaximumSize.height, y + h - botEdgeTrim - iy);
 		if (iy < y && iy + ih > y) // on top edge
 		{
 			newHeight = iy + ih - y;
 			item.position = (item.position.Item1, y);
-			item.listSizeTrimOffset = (item.listSizeTrimOffset.Item1, MaximumItemSize.height - newHeight);
+			item.listSizeTrimOffset = (item.listSizeTrimOffset.Item1, ItemMaximumSize.height - newHeight);
 		}
 
 		item.size = (newWidth, newHeight);
@@ -397,10 +395,18 @@ public class List : Element
 	{
 		var (x, y) = Input.Current.Position;
 		for (int i = 0; i < items.Count; i++)
-			if (items[i].Contains(((int)x, (int)y)))
+			if (items[i].IsHovered)
 				return i;
 
 		return -1;
+	}
+	private (bool horizontal, bool vertical) HasScroll()
+	{
+		var (maxW, maxH) = ItemMaximumSize;
+		var totalW = items.Count * (maxW + ItemGap.width) - ItemGap.width;
+		var totalH = items.Count * (maxH + ItemGap.height) - ItemGap.height;
+
+		return (totalW > Size.width, totalH > Size.height);
 	}
 
 	private static float Map(float number, float a1, float a2, float b1, float b2)
