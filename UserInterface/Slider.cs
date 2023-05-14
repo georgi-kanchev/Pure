@@ -48,7 +48,7 @@ public class Slider : Element
 	/// <param name="delta">The amount to move the handle.</param>
 	public void Move(int delta)
 	{
-		var size = IsVertical ? Size.Item2 : Size.Item1;
+		var size = IsVertical ? Size.height : Size.width;
 		index += delta * (IsVertical ? -1 : 1);
 		index = Math.Clamp(index, 0, size - 1);
 

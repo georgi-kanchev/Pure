@@ -36,7 +36,11 @@ public static class UserInterface
 		private readonly Tilemap tilemap;
 
 		public MyCustomCheckbox(Tilemap tilemap, (int x, int y) position) :
-			base(position) => this.tilemap = tilemap;
+			base(position)
+		{
+			this.tilemap = tilemap;
+			Text = "Checkbox";
+		}
 
 		protected override void OnUpdate()
 		{
@@ -96,15 +100,15 @@ public static class UserInterface
 	{
 		private readonly Tilemap tilemap;
 
-		public MyCustomList(Tilemap tilemap, (int x, int y) position, int count = 10, bool isHorizontal = false) :
-			base(position, count, isHorizontal) => this.tilemap = tilemap;
+		public MyCustomList(Tilemap tilemap, (int x, int y) position, Types type, int count = 10) :
+			base(position, count, type) => this.tilemap = tilemap;
 
 		protected override void OnUpdate()
 		{
 			base.OnUpdate();
 
-			var scorllUpAng = (sbyte)(IsHorizontal ? 0 : 3);
-			var scorllDownAng = (sbyte)(IsHorizontal ? 2 : 1);
+			var scorllUpAng = (sbyte)(Type == Types.Horizontal ? 0 : 3);
+			var scorllDownAng = (sbyte)(Type == Types.Horizontal ? 2 : 1);
 			tilemap.SetTile(ScrollUp.Position, new(Tile.ARROW, GetColor(ScrollUp, Color.Gray), scorllUpAng));
 			tilemap.SetTile(Scroll.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Scroll, Color.Gray)));
 			tilemap.SetTile(ScrollDown.Position, new(Tile.ARROW, GetColor(ScrollDown, Color.Gray), scorllDownAng));
@@ -125,6 +129,10 @@ public static class UserInterface
 			}
 
 			tilemap.SetTextLine(item.Position, text, color);
+
+			var (itemX, itemY) = item.Position;
+			if (IsExpanded == false)
+				tilemap.SetTile((itemX + item.Size.width - 1, itemY), new(Tile.MATH_GREATER, color, 1));
 		}
 	}
 	class MyCustomPanel : Panel
@@ -182,7 +190,11 @@ public static class UserInterface
 		var front = new Tilemap(tilemap.Size);
 
 		var panelVertical = new MyCustomPanel(back, tilemap, (16, 2)) { Size = (9, 16), MinimumSize = (5, 5) };
-		var listVertical = new MyCustomList(tilemap, default, 5) { IsSingleSelecting = true, ItemGap = (0, 0) };
+		var listVertical = new MyCustomList(tilemap, default, List.Types.Vertical, 5)
+		{
+			IsSingleSelecting = true,
+			ItemGap = (0, 0)
+		};
 
 		var panelHorizontal = new MyCustomPanel(back, tilemap, (2, 20))
 		{
@@ -190,7 +202,7 @@ public static class UserInterface
 			IsResizable = false,
 			IsMovable = false
 		};
-		var listHorizontal = new MyCustomList(tilemap, (2, 20), 4, true);
+		var listHorizontal = new MyCustomList(tilemap, (2, 20), List.Types.Horizontal, 4);
 
 		var elements = new List<Element>()
 		{
@@ -199,6 +211,7 @@ public static class UserInterface
 			new MyCustomInputBox(back, tilemap, front, (2, 10)) { Size = (12, 4) },
 			new MyCustomSlider(tilemap, (2, 17), 7),
 			new MyCustomPagination(tilemap, (27, 2)) { Size = (19, 2) },
+			new MyCustomList(tilemap, (27, 5), List.Types.Dropdown) { Size = (6, 9) },
 			panelHorizontal, listHorizontal,
 			panelVertical, listVertical,
 		};

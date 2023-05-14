@@ -6,6 +6,8 @@
 /// </summary>
 public class List : Element
 {
+	public enum Types { Vertical, Horizontal, Dropdown }
+
 	/// <summary>
 	/// Gets the slider used to scroll the list.
 	/// </summary>
@@ -29,13 +31,22 @@ public class List : Element
 	public bool IsSingleSelecting
 	{
 		get => isSingleSelecting;
-		set { isSingleSelecting = value; TrySingleSelectOneItem(); }
+		set
+		{
+			isSingleSelecting = value;
+
+			if (Type == Types.Dropdown)
+				isSingleSelecting = true;
+
+			TrySingleSelectOneItem();
+		}
 	}
+	public bool IsExpanded => isExpanded || Type != Types.Dropdown;
 
 	/// <summary>
-	/// Gets or sets a value indicating whether the list spans horizontally or vertically.
+	/// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
 	/// </summary>
-	public bool IsHorizontal { get; private set; }
+	public Types Type { get; private set; }
 	/// <summary>
 	/// Gets or sets maximum size of each item.
 	/// </summary>
@@ -62,11 +73,11 @@ public class List : Element
 	/// <param name="position">The position of the top-left corner of the list.</param>
 	/// <param name="size">The size of the list.</param>
 	/// <param name="count">The initial number of buttons in the list.</param>
-	public List((int x, int y) position, int count = 10, bool isHorizontal = false)
+	public List((int x, int y) position, int count = 10, Types type = Types.Vertical)
 		: base(position)
 	{
 		Size = (12, 8);
-		IsHorizontal = isHorizontal;
+		Type = type;
 		var (x, y) = Position;
 		var (w, h) = Size;
 
@@ -81,9 +92,14 @@ public class List : Element
 		ScrollDown.SubscribeToUserEvent(UserEvent.Press, () => Scroll.Move(-1));
 		ScrollDown.SubscribeToUserEvent(UserEvent.Hold, () => Scroll.Move(-1));
 
-		UpdateParts();
+		if (type != Types.Dropdown)
+			UpdateParts();
 		UpdateItems();
+
 		isInitialized = true;
+
+		if (type == Types.Dropdown)
+			IsSingleSelecting = true;
 	}
 
 	/// <summary>
@@ -99,7 +115,7 @@ public class List : Element
 		for (int i = index; i < count; i++)
 		{
 			var item = new Button(default) { Text = $"Item{i}" };
-			item.size = (IsHorizontal ? item.Text.Length : Size.width, 1);
+			item.size = (Type == Types.Horizontal ? item.Text.Length : Size.width, 1);
 			item.hasParent = true;
 			items.Insert(i, item);
 		}
@@ -176,13 +192,44 @@ public class List : Element
 	{
 		ItemMaximumSize = itemMaxSize; // reclamp value
 
+		if (Type == Types.Dropdown)
+		{
+			IsSingleSelecting = true;
+
+			if (isExpanded == false)
+			{
+				Scroll.position = (int.MaxValue, int.MaxValue);
+				Scroll.Handle.position = (int.MaxValue, int.MaxValue);
+				ScrollDown.position = (int.MaxValue, int.MaxValue);
+				ScrollUp.position = (int.MaxValue, int.MaxValue);
+			}
+		}
+
 		if (IsDisabled)
 			return;
 
-		if (IsHovered && Input.Current.ScrollDelta != 0)
+		TrySingleSelect();
+
+		if (IsHovered && Input.Current.ScrollDelta != 0 &&
+			(isExpanded || Type != Types.Dropdown))
 			Scroll.Move(Input.Current.ScrollDelta);
 
-		TrySingleSelect();
+		if (Type == Types.Dropdown && isInitialized && isExpanded == false)
+		{
+			var selectedItem = this[singleSelectedIndex];
+			if (selectedItem == null)
+				return;
+
+			selectedItem.position = Position;
+			TryTrimItem(selectedItem);
+			// after trim
+			selectedItem.size = (selectedItem.Size.width + 1, selectedItem.Size.height);
+
+			selectedItem.Update();
+			OnItemUpdate(selectedItem);
+			selectedItem.IsSelected = true;
+			return;
+		}
 
 		UpdateParts();
 		UpdateItems();
@@ -218,7 +265,7 @@ public class List : Element
 	#region Backend
 	private int singleSelectedIndex = -1;
 	private readonly List<Button> items = new();
-	private bool isSingleSelecting;
+	private bool isSingleSelecting, isExpanded;
 	private readonly bool isInitialized;
 	private (int width, int height) itemMaxSize = (5, 1), itemGap = (1, 1);
 
@@ -243,16 +290,27 @@ public class List : Element
 		var isHoveringItems = IsHovered && Scroll.IsHovered == false &&
 			ScrollUp.IsHovered == false && ScrollDown.IsHovered == false;
 
+		if (Input.Current.IsJustPressed && IsHovered == false)
+		{
+			isExpanded = false;
+			return;
+		}
+
 		if (Input.Current.IsJustReleased == false ||
 			IsSingleSelecting == false || isHoveringItems == false)
 			return;
 
 		var hoveredIndex = GetHoveredIndex();
-		if (hoveredIndex == singleSelectedIndex || HasIndex(hoveredIndex) == false)
+		if (HasIndex(hoveredIndex) == false)
 			return;
 
 		if (items[hoveredIndex].IsHeld)
+		{
 			singleSelectedIndex = hoveredIndex;
+
+			if (Type == Types.Dropdown)
+				isExpanded = isExpanded == false;
+		}
 	}
 
 	private void UpdateParts()
@@ -260,7 +318,7 @@ public class List : Element
 		var (x, y) = Position;
 		var (w, h) = Size;
 
-		if (IsHorizontal)
+		if (Type == Types.Horizontal)
 		{
 			if (HasScroll().horizontal == false)
 			{
@@ -321,7 +379,7 @@ public class List : Element
 			if (item == null)
 				continue;
 
-			if (IsHorizontal)
+			if (Type == List.Types.Horizontal)
 			{
 				var totalWidth = items.Count * (ItemMaximumSize.width + ItemGap.width);
 				var offsetX = (int)Map(Scroll.Progress, 0, 1, 0, totalWidth - w - ItemGap.width);
@@ -338,8 +396,8 @@ public class List : Element
 
 			var (ix, iy) = item.position;
 			var (offW, offH) = item.listSizeTrimOffset;
-			var botEdgeTrim = IsHorizontal && HasScroll().horizontal ? 1 : 0;
-			var rightEdgeTrim = IsHorizontal == false && HasScroll().vertical ? 1 : 0;
+			var botEdgeTrim = Type == List.Types.Horizontal && HasScroll().horizontal ? 1 : 0;
+			var rightEdgeTrim = Type == List.Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
 			var (iw, ih) = (item.Size.width + offW, item.Size.height + offH);
 			if (ix + iw <= x || ix >= x + w ||
 				iy + ih <= y || iy >= y + h - botEdgeTrim)
@@ -363,7 +421,7 @@ public class List : Element
 	{
 		var end = Math.Max(0, items.Count - Scroll.Size.height - 2);
 
-		if (IsHorizontal)
+		if (Type == List.Types.Horizontal)
 			end = items.Count;
 
 		return (int)MathF.Round(Map(Scroll.Progress, 0, 1, 0, end));
@@ -379,8 +437,8 @@ public class List : Element
 		var (ix, iy) = item.position;
 
 		var (maxW, maxH) = ItemMaximumSize;
-		var botEdgeTrim = IsHorizontal && HasScroll().horizontal ? 1 : 0;
-		var rightEdgeTrim = IsHorizontal == false && HasScroll().vertical ? 1 : 0;
+		var botEdgeTrim = Type == List.Types.Horizontal && HasScroll().horizontal ? 1 : 0;
+		var rightEdgeTrim = Type == List.Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
 		var newWidth = ItemMaximumSize.width;
 		var newHeight = ItemMaximumSize.height;
 		var iw = newWidth;
