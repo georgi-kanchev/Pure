@@ -43,6 +43,9 @@ public class Pagination : Element
 		Previous.SubscribeToUserEvent(UserEvent.Trigger, () => CurrentPage--);
 		Next.SubscribeToUserEvent(UserEvent.Trigger, () => CurrentPage++);
 		Last.SubscribeToUserEvent(UserEvent.Trigger, () => CurrentPage = Count);
+
+		Previous.SubscribeToUserEvent(UserEvent.PressAndHold, () => CurrentPage--);
+		Next.SubscribeToUserEvent(UserEvent.PressAndHold, () => CurrentPage++);
 	}
 
 	protected override void OnUpdate()
@@ -56,7 +59,7 @@ public class Pagination : Element
 
 		First.position = (x, y);
 		Previous.position = (x + 1, y);
-		Next.position = (Previous.Position.x + visibleWidth, y);
+		Next.position = (Previous.Position.x + visibleWidth + 1, y);
 		Last.position = (Next.Position.x + 1, y);
 
 		First.size = (1, Size.height);
@@ -100,7 +103,7 @@ public class Pagination : Element
 		var visibleWidth = GetVisibleWidth();
 		var result = 0;
 		var width = 0;
-		while (width + PAGE_WIDTH < visibleWidth)
+		while (width + PAGE_WIDTH <= visibleWidth)
 		{
 			width += PAGE_WIDTH + PAGE_GAP;
 			result++;

@@ -72,8 +72,8 @@ public class List : Element
 	/// </summary>
 	/// <param name="position">The position of the top-left corner of the list.</param>
 	/// <param name="size">The size of the list.</param>
-	/// <param name="count">The initial number of buttons in the list.</param>
-	public List((int x, int y) position, int count = 10, Types type = Types.Vertical)
+	/// <param name="itemCount">The initial number of buttons in the list.</param>
+	public List((int x, int y) position, int itemCount = 10, Types type = Types.Vertical)
 		: base(position)
 	{
 		Size = (12, 8);
@@ -85,12 +85,12 @@ public class List : Element
 		ScrollUp = new(default) { hasParent = true };
 		ScrollDown = new(default) { hasParent = true };
 
-		Add(count);
+		Add(itemCount);
 
 		ScrollUp.SubscribeToUserEvent(UserEvent.Press, () => Scroll.Move(1));
-		ScrollUp.SubscribeToUserEvent(UserEvent.Hold, () => Scroll.Move(1));
+		ScrollUp.SubscribeToUserEvent(UserEvent.PressAndHold, () => Scroll.Move(1));
 		ScrollDown.SubscribeToUserEvent(UserEvent.Press, () => Scroll.Move(-1));
-		ScrollDown.SubscribeToUserEvent(UserEvent.Hold, () => Scroll.Move(-1));
+		ScrollDown.SubscribeToUserEvent(UserEvent.PressAndHold, () => Scroll.Move(-1));
 
 		if (type != Types.Dropdown)
 			UpdateParts();
@@ -304,7 +304,7 @@ public class List : Element
 		if (HasIndex(hoveredIndex) == false)
 			return;
 
-		if (items[hoveredIndex].IsHeld)
+		if (items[hoveredIndex].IsPressedAndHeld)
 		{
 			singleSelectedIndex = hoveredIndex;
 

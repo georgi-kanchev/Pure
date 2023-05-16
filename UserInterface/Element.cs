@@ -7,7 +7,7 @@ using System.Diagnostics;
 /// </summary>
 public enum UserEvent
 {
-	Focus, Unfocus, Hover, Unhover, Press, Release, Trigger, Drag, Dragged, Hold, Scroll
+	Focus, Unfocus, Hover, Unhover, Press, Release, Trigger, Drag, Dragged, PressAndHold, Scroll
 }
 /// <summary>
 /// The type of mouse cursor result from a user interaction with the user interface.
@@ -99,7 +99,7 @@ public abstract partial class Element
 	/// Gets a value indicating whether the user interface element is currently held by the input,
 	/// regardless of being hovered or not.
 	/// </summary>
-	public bool IsHeld { get; private set; }
+	public bool IsPressedAndHeld { get; private set; }
 	/// <summary>
 	/// Gets or sets the mouse cursor graphics result. Usually set by each user interface element
 	/// when the user interacts with that specific element.
@@ -161,8 +161,8 @@ public abstract partial class Element
 			TriggerUserEvent(UserEvent.Press);
 		if (IsPressed == false && Input.Current.wasPressed)
 			TriggerUserEvent(UserEvent.Release);
-		if (IsPressed && Input.Current.IsJustHeld)
-			TriggerUserEvent(UserEvent.Hold);
+		if (IsPressedAndHeld && Input.Current.IsJustHeld)
+			TriggerUserEvent(UserEvent.PressAndHold);
 		if (Input.Current.ScrollDelta != 0)
 			TriggerUserEvent(UserEvent.Scroll);
 
@@ -275,7 +275,7 @@ public abstract partial class Element
 			hold.Restart();
 
 		Input.Current.IsJustHeld = false;
-		if (hold.Elapsed.TotalSeconds > 0.5f && holdTrigger.Elapsed.TotalSeconds > 0.05f)
+		if (hold.Elapsed.TotalSeconds > HOLD_DELAY && holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
 		{
 			holdTrigger.Restart();
 			Input.Current.IsJustHeld = true;
@@ -286,6 +286,7 @@ public abstract partial class Element
 	}
 
 	#region Backend
+	private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
 	internal (int, int) position, size, listSizeTrimOffset;
 	internal bool hasParent;
 	private static readonly Stopwatch hold = new(), holdTrigger = new();
@@ -317,21 +318,21 @@ public abstract partial class Element
 	{
 		if (IsFocused == false || IsDisabled)
 		{
-			IsHeld = false;
+			IsPressedAndHeld = false;
 			return;
 		}
 
-		if (IsHovered && Input.Current.IsJustReleased && IsHeld)
+		if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
 		{
-			IsHeld = false;
+			IsPressedAndHeld = false;
 			TriggerUserEvent(UserEvent.Trigger);
 		}
 
 		if (IsHovered && Input.Current.IsJustPressed)
-			IsHeld = true;
+			IsPressedAndHeld = true;
 
 		if (Input.Current.IsJustReleased)
-			IsHeld = false;
+			IsPressedAndHeld = false;
 	}
 	#endregion
 }

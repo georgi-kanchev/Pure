@@ -200,12 +200,12 @@ public class Tilemap
 		data[position.x, position.y] = tile;
 	}
 	/// <summary>
-	/// Sets a square region of tiles starting at the specified position with the 
+	/// Sets a rectangle region of tiles starting at the specified position with the 
 	/// specified size to the specified tile.
 	/// </summary>
 	/// <param name="position">The position to start setting tiles from.</param>
-	/// <param name="size">The size of the square region to set tiles for.</param>
-	/// <param name="tile">The tile to set the square region to.</param>
+	/// <param name="size">The size of the rectangle region to set tiles for.</param>
+	/// <param name="tile">The tile to set the rectangle region to.</param>
 	public void SetRectangle((int x, int y) position, (int width, int height) size, Tile tile)
 	{
 		var xStep = size.Item1 < 0 ? -1 : 1;
@@ -265,17 +265,17 @@ public class Tilemap
 		}
 	}
 	/// <summary>
-	/// Sets a square of text with optional 
+	/// Sets a rectangle of text with optional 
 	/// alignment, scrolling, and word wrapping.
 	/// </summary>
 	/// <param name="position">The starting position to place the text.</param>
-	/// <param name="size">The width and height of the square.</param>
+	/// <param name="size">The width and height of the rectangle.</param>
 	/// <param name="text">The text to display.</param>
 	/// <param name="tint">Optional tint color value (defaults to white).</param>
 	/// <param name="isWordWrapping">Optional flag for enabling word wrapping.</param>
 	/// <param name="alignment">Optional text alignment.</param>
 	/// <param name="scrollProgress">Optional scrolling value (between 0 and 1).</param>
-	public void SetTextSquare((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
+	public void SetTextRectangle((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
 	{
 		if (text == null || text.Length == 0 ||
 			size.Item1 <= 0 || size.Item2 <= 0)
@@ -390,7 +390,7 @@ public class Tilemap
 	/// <param name="tint">The color to tint the matching tiles.</param>
 	/// <param name="isMatchingWord">Whether to only match the text 
 	/// as a whole word or any symbols.</param>
-	public void SetTextSquareTint((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isMatchingWord = false)
+	public void SetTextRectangleTint((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isMatchingWord = false)
 	{
 		if (string.IsNullOrWhiteSpace(text))
 			return;

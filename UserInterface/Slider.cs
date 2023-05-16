@@ -91,7 +91,7 @@ public class Slider : Element
 				Move(Input.Current.ScrollDelta);
 		}
 
-		if (IsHeld)
+		if (IsPressedAndHeld)
 		{
 			var p = Input.Current.Position;
 			MoveTo(((int)p.Item1, (int)p.Item2));
