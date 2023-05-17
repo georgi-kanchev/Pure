@@ -119,9 +119,6 @@ public static class UserInterface
 		{
 			var color = item.IsSelected ? Color.Green : Color.Red;
 
-			if (item.IsPressedAndHeld) color = color.ToDark();
-			else if (item.IsHovered) color = color.ToBright();
-
 			var text = item.Text;
 			if (item.Size.width < text.Length)
 			{
@@ -130,11 +127,12 @@ public static class UserInterface
 				tilemap.SetTile((item.Position.x + item.Size.width - 1, item.Position.y), tile);
 			}
 
-			tilemap.SetTextLine(item.Position, text, color);
+			tilemap.SetTextLine(item.Position, text, GetColor(item, color));
 
 			var (itemX, itemY) = item.Position;
+			var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(item, color), 1);
 			if (IsExpanded == false)
-				tilemap.SetTile((itemX + item.Size.width - 1, itemY), new(Tile.MATH_GREATER, color, 1));
+				tilemap.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
 		}
 	}
 	class MyCustomPanel : Panel
