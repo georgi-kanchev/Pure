@@ -438,7 +438,7 @@ public class InputBox : Element
 				symbols = TextCopied;
 
 				// crop paste to fit in line
-				var pasteLength = Math.Min(w - lines[CursorIndexLine].Length - 1, symbols.Length - 1);
+				var pasteLength = Math.Min(w - lines[CursorIndexLine].Length - 1, symbols.Length);
 				symbols = symbols[..pasteLength];
 
 				lines[CursorIndexLine] = lines[CursorIndexLine].Insert(CursorIndexSymbol, symbols);

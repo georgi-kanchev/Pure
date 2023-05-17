@@ -47,9 +47,10 @@ public static class UserInterface
 			base.OnUpdate();
 			Size = (Text.Length + 2, 1);
 
-			var tile = new Tile(IsSelected ? Tile.ICON_TICK : Tile.UPPERCASE_X, GetColor(this, Color.Red));
+			var color = IsSelected ? Color.Green : Color.Red;
+			var tile = new Tile(IsSelected ? Tile.ICON_TICK : Tile.UPPERCASE_X, GetColor(this, color));
 			tilemap.SetTile(Position, tile);
-			tilemap.SetTextLine((Position.x + 2, Position.y), Text, GetColor(this, Color.Red));
+			tilemap.SetTextLine((Position.x + 2, Position.y), Text, GetColor(this, color));
 		}
 	}
 	class MyCustomInputBox : InputBox
@@ -225,6 +226,22 @@ public static class UserInterface
 			return tilemap.TileAt(((int)position.x, (int)position.y)).Tint;
 		}
 	}
+	class MyCustomNumericScroll : NumericScroll
+	{
+		private readonly Tilemap tilemap;
+
+		public MyCustomNumericScroll(Tilemap tilemap, (int x, int y) position) :
+			base(position) => this.tilemap = tilemap;
+
+		protected override void OnUpdate()
+		{
+			base.OnUpdate();
+
+			tilemap.SetTile(Down.Position, new(Tile.MATH_LESS, GetColor(Down, Color.Gray), 3));
+			tilemap.SetTextLine((Position.x, Position.y + 1), $"{Value}");
+			tilemap.SetTile(Up.Position, new(Tile.MATH_GREATER, GetColor(Up, Color.Gray), 3));
+		}
+	}
 
 	public static void Run()
 	{
@@ -257,6 +274,7 @@ public static class UserInterface
 			new MyCustomInputBox(back, tilemap, front, (2, 10)) { Size = (12, 4) },
 			new MyCustomSlider(tilemap, (2, 17), size: 7),
 			new MyCustomPagination(tilemap, (27, 2)) { Size = (18, 2) },
+			new MyCustomNumericScroll(tilemap, (34, 6)),
 			new MyCustomList(tilemap, (27, 5), List.Types.Dropdown) { Size = (6, 9) },
 			panelHorizontal, listHorizontal,
 			panelVertical, listVertical,
@@ -290,11 +308,6 @@ public static class UserInterface
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 
-			if (Keyboard.IsKeyPressed(Keyboard.Key.A).Once("hoink"))
-			{
-				var pagination = (MyCustomPagination)elements[4];
-				pagination.Count = 3;
-			}
 			Window.DrawTiles(back.ToBundle());
 			Window.DrawTiles(tilemap.ToBundle());
 			Window.DrawTiles(front.ToBundle());

@@ -114,6 +114,7 @@ public abstract partial class Element
 	/// <param name="size">The size of the ser interface element.</param>
 	public Element((int x, int y) position)
 	{
+		Size = (1, 1);
 		Position = position;
 
 		hold.Start();
