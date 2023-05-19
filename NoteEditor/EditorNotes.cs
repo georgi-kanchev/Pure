@@ -1,10 +1,9 @@
-﻿namespace Pure.NoteEditor;
+﻿namespace Pure.EditorNotes;
 
-using Pure.Window;
 using Pure.Tilemap;
-using Pure.Collision;
+using Pure.Window;
 
-public class NoteEditor
+public class EditorNotes
 {
 	static void Main()
 	{
@@ -15,7 +14,7 @@ public class NoteEditor
 		var (w, h) = tilemap.Size;
 
 		tilemap.SetBorder((w - 5, 0), (5, h), Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT);
-		while (Window.IsOpen)
+		while(Window.IsOpen)
 		{
 			Window.Activate(true);
 

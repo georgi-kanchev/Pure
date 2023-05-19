@@ -48,7 +48,7 @@ public static class Mouse
 		set
 		{
 			Window.TryNoWindowException();
-			if (cursor == value)
+			if(cursor == value)
 				return;
 
 			cursor = value;
@@ -150,10 +150,10 @@ public static class Mouse
 	#region Backend
 	private static readonly List<Button> pressed = new();
 	private static readonly List<(float, float)> cursorOffsets = new()
-		{
-			(0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
-			(0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
-		};
+	{
+		(0.0f, 0.0f), (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
+		(0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
+	};
 
 	private static int cursorTile = 442, scrollData;
 	private static Cursor cursor;
@@ -178,7 +178,7 @@ public static class Mouse
 	{
 		ScrollDelta = 0;
 
-		if (IsCursorTile == false)
+		if(IsCursorTile == false)
 			return;
 
 		var (x, y) = Window.PositionFrom(CursorPosition);
@@ -190,9 +190,9 @@ public static class Mouse
 		var cursorTile = Mouse.cursorTile;
 		var ang = default(sbyte);
 
-		if (CursorGraphics == Cursor.ResizeVertical) { cursorTile--; ang = 1; }
-		else if (CursorGraphics == Cursor.ResizeDiagonal1) { cursorTile--; ang = 1; }
-		else if ((int)CursorGraphics >= (int)Cursor.ResizeDiagonal2) { cursorTile -= 2; }
+		if(CursorGraphics == Cursor.ResizeVertical) { cursorTile--; ang = 1; }
+		else if(CursorGraphics == Cursor.ResizeDiagonal1) { cursorTile--; ang = 1; }
+		else if((int)CursorGraphics >= (int)Cursor.ResizeDiagonal2) { cursorTile -= 2; }
 
 		(int id, uint tint, sbyte ang, bool h, bool v) tile = default;
 		tile.id = cursorTile + (int)CursorGraphics;
@@ -205,12 +205,12 @@ public static class Mouse
 
 	private static void TryUpdateSystemCursor()
 	{
-		if (IsCursorTile)
+		if(IsCursorTile)
 			return;
 
 		Window.TryNoWindowException();
 
-		if (sysCursor.CPointer == IntPtr.Zero)
+		if(sysCursor.CPointer == IntPtr.Zero)
 			sysCursor.Dispose();
 		else
 		{
@@ -225,7 +225,7 @@ public static class Mouse
 		Window.TryNoWindowException();
 		Window.window.SetMouseCursorVisible(CursorGraphics != Cursor.None);
 
-		if (IsCursorTile)
+		if(IsCursorTile)
 			Window.window.SetMouseCursorVisible(IsCursorHoveringWindow == false);
 	}
 	#endregion
