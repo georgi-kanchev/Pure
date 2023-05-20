@@ -111,9 +111,9 @@ public static class UserInterface
 			var scorllUpAng = (sbyte)(Type == Types.Horizontal ? 0 : 3);
 			var scorllDownAng = (sbyte)(Type == Types.Horizontal ? 2 : 1);
 			var scrollColor = Color.Gray.ToBright();
-			tilemap.SetTile(ScrollUp.Position, new(Tile.ARROW, GetColor(ScrollUp, scrollColor), scorllUpAng));
-			tilemap.SetTile(Scroll.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
-			tilemap.SetTile(ScrollDown.Position, new(Tile.ARROW, GetColor(ScrollDown, scrollColor), scorllDownAng));
+			tilemap.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), scorllUpAng));
+			tilemap.SetTile(Scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Scroll.Slider, scrollColor)));
+			tilemap.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), scorllDownAng));
 		}
 		protected override void OnItemUpdate(Button item)
 		{
@@ -157,11 +157,11 @@ public static class UserInterface
 				alignment: Tilemap.Alignment.Center);
 		}
 	}
-	class MyCustomPagination : Pagination
+	class MyCustomPages : Pages
 	{
 		private readonly Tilemap tilemap;
 
-		public MyCustomPagination(Tilemap tilemap, (int x, int y) position, int count = 10) :
+		public MyCustomPages(Tilemap tilemap, (int x, int y) position, int count = 10) :
 			base(position, count) => this.tilemap = tilemap;
 
 		protected override void OnUpdate()
@@ -235,9 +235,28 @@ public static class UserInterface
 		{
 			base.OnUpdate();
 
-			tilemap.SetTile(Down.Position, new(Tile.MATH_LESS, GetColor(Down, Color.Gray), 3));
+			tilemap.SetTile(Down.Position, new(Tile.ARROW, GetColor(Down, Color.Gray), 1));
 			tilemap.SetTextLine((Position.x, Position.y + 1), $"{Value}");
-			tilemap.SetTile(Up.Position, new(Tile.MATH_GREATER, GetColor(Up, Color.Gray), 3));
+			tilemap.SetTile(Up.Position, new(Tile.ARROW, GetColor(Up, Color.Gray), 3));
+		}
+	}
+	class MyCustomScroll : Scroll
+	{
+		private readonly Tilemap tilemap;
+
+		public MyCustomScroll(Tilemap tilemap, (int x, int y) position, int size = 5, bool isVertical = true) :
+			base(position, size, isVertical) => this.tilemap = tilemap;
+
+		protected override void OnUpdate()
+		{
+			base.OnUpdate();
+
+			var scorllUpAng = (sbyte)(IsVertical ? 3 : 0);
+			var scorllDownAng = (sbyte)(IsVertical ? 1 : 2);
+			var scrollColor = Color.Gray.ToBright();
+			tilemap.SetTile(Up.Position, new(Tile.ARROW, GetColor(Up, scrollColor), scorllUpAng));
+			tilemap.SetTile(Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Slider, scrollColor)));
+			tilemap.SetTile(Down.Position, new(Tile.ARROW, GetColor(Down, scrollColor), scorllDownAng));
 		}
 	}
 
@@ -251,17 +270,18 @@ public static class UserInterface
 		var front = new Tilemap(tilemap.Size);
 
 		var panelVertical = new MyCustomPanel(back, tilemap, (16, 2)) { Size = (9, 16), MinimumSize = (5, 5) };
-		var listVertical = new MyCustomList(tilemap, default, List.Types.Vertical, itemCount: 20)
+		var listVertical = new MyCustomList(tilemap, default, List.Types.Vertical, itemCount: 15)
 		{
 			IsSingleSelecting = true,
-			ItemGap = (0, 0)
+			ItemGap = (0, 1),
+			ItemMaximumSize = (7, 1)
 		};
 
 		var panelHorizontal = new MyCustomPanel(back, tilemap, (2, 20))
 		{
 			Size = (25, 3),
 			IsResizable = false,
-			IsMovable = false
+			IsMovable = false,
 		};
 		var listHorizontal = new MyCustomList(tilemap, (2, 20), List.Types.Horizontal, itemCount: 4);
 
@@ -271,12 +291,14 @@ public static class UserInterface
 			new MyCustomCheckbox(tilemap, (2, 7)),
 			new MyCustomInputBox(back, tilemap, front, (2, 10)) { Size = (12, 4) },
 			new MyCustomSlider(tilemap, (2, 17), size: 7),
-			new MyCustomPagination(tilemap, (27, 2)) { Size = (18, 2) },
-			new MyCustomNumericScroll(tilemap, (34, 6)),
-			new MyCustomList(tilemap, (27, 5), List.Types.Dropdown) { Size = (6, 9) },
+			new MyCustomPages(tilemap, (27, 2)) { Size = (18, 2) },
+			new MyCustomNumericScroll(tilemap, (34, 6)) { Range = (-9, 13) },
+			new MyCustomList(tilemap, (27, 5), List.Types.Dropdown, 15) { Size = (6, 9) },
+			new MyCustomScroll(tilemap, (37, 6), 9),
+			new MyCustomScroll(tilemap, (38, 15), 9, false),
 			panelHorizontal, listHorizontal,
 			panelVertical, listVertical,
-			new MyCustomPalette(tilemap, (34, 16), brightnessLevels: 30),
+			new MyCustomPalette(tilemap, (34, 20), brightnessLevels: 30),
 		};
 
 		while (Window.IsOpen)
@@ -298,8 +320,7 @@ public static class UserInterface
 			StickListToPanel(panelVertical, listVertical);
 			StickListToPanel(panelHorizontal, listHorizontal);
 
-			back.SetRectangle((34, 17), (13, 1), new(Tile.SHADE_5, Color.Gray.ToDark()));
-			back.SetRectangle((34, 13), (13, 3), new(Tile.SHADE_5, Color.Gray.ToDark()));
+			back.SetRectangle((34, 17), (13, 6), new(Tile.SHADE_5, Color.Gray.ToDark()));
 
 			for (int i = 0; i < elements.Count; i++)
 				elements[i].Update();

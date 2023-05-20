@@ -50,7 +50,7 @@ public class Slider : Element
 	{
 		var size = IsVertical ? Size.height : Size.width;
 		index += delta * (IsVertical ? -1 : 1);
-		index = Math.Clamp(index, 0, size - 1);
+		index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(size - 1, 0));
 
 		UpdateHandle();
 	}
@@ -65,7 +65,7 @@ public class Slider : Element
 		var (x, y) = Position;
 		var (px, py) = position;
 		index = IsVertical ? py - y : px - x;
-		index = Math.Clamp(index, 0, size - 1);
+		index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(size - 1, 0));
 
 		UpdateHandle();
 	}

@@ -233,7 +233,7 @@ public abstract partial class Element
 	/// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
 	/// Subclasses should override this method to implement their own behavior.
 	/// </summary>
-	protected abstract void OnUpdate();
+	protected virtual void OnUpdate() { }
 
 	/// <summary>
 	/// Applies input to the user interface element, updating its state accordingly.

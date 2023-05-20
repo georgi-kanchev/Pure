@@ -8,7 +8,6 @@ using Pure.Window;
 
 public partial class Program
 {
-
 	private static void Main()
 	{
 		Window.Create(Window.Mode.Windowed);
@@ -19,6 +18,7 @@ public partial class Program
 		var front = new Tilemap(back.Size);
 		var ui = new Tilemap(back.Size);
 
+		const int ON_MENU_EXPAND = 0;
 		var rightClickMenuTexts = new string[]
 		{
 			"Add-", "-Button", "-Slider", "-Scroll", "-Scroll Numeric", "-Input", "-Pages", "-Panel",
@@ -29,7 +29,7 @@ public partial class Program
 		for (int i = 0; i < rightClickMenuTexts.Length; i++)
 			SetText(rightClickMenu, i, rightClickMenuTexts[i]);
 
-		Tracker<string>.When("on-right-click-menu-collapse", () => rightClickMenu.Position = (int.MaxValue, int.MaxValue));
+		Tracker<int>.When(ON_MENU_EXPAND, () => rightClickMenu.Position = (int.MaxValue, int.MaxValue));
 
 		while (Window.IsOpen)
 		{
@@ -53,7 +53,7 @@ public partial class Program
 				back.Size);
 
 			rightClickMenu.Update();
-			Tracker<string>.Track("on-right-click-menu-collapse", rightClickMenu.IsExpanded == false);
+			Tracker<int>.Track(ON_MENU_EXPAND, rightClickMenu.IsExpanded == false);
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 			Window.DrawTiles(ui.ToBundle());

@@ -11,16 +11,21 @@ public class RightClickMenu : List
 	public RightClickMenu(Tilemap tilemap, int count) : base((int.MaxValue, int.MaxValue), count, Types.Dropdown)
 		=> this.tilemap = tilemap;
 
+	public void CustomUpdate()
+	{
+		ItemMaximumSize = (Size.width - 1, 1);
+
+		var scrollColor = Color.Gray.ToBright();
+		tilemap.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), 3));
+		tilemap.SetTile(Scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
+		tilemap.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
+	}
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
 
-		ItemMaximumSize = (Size.width - 1, 1);
 
-		var scrollColor = Color.Gray.ToBright();
-		tilemap.SetTile(ScrollUp.Position, new(Tile.ARROW, GetColor(ScrollUp, scrollColor), 3));
-		tilemap.SetTile(Scroll.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
-		tilemap.SetTile(ScrollDown.Position, new(Tile.ARROW, GetColor(ScrollDown, scrollColor), 1));
+
 	}
 	protected override void OnItemUpdate(Button item)
 	{
