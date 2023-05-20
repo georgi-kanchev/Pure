@@ -10,8 +10,8 @@ internal static class DefaultGraphics
 	{
 		var img = new Image(pngPath);
 		var rawBits = "";
-		for(uint y = 0; y < img.Size.Y; y++)
-			for(uint x = 0; x < img.Size.X; x++)
+		for (uint y = 0; y < img.Size.Y; y++)
+			for (uint x = 0; x < img.Size.X; x++)
 			{
 				var value = img.GetPixel(x, y).A > byte.MaxValue / 2 ? "1" : "0";
 				rawBits += value;
@@ -32,23 +32,23 @@ internal static class DefaultGraphics
 				Convert.ToByte(h[BYTE_BITS_COUNT..^0], BINARY),
 			};
 
-		for(int i = 0; i < rawBits.Length; i++)
+		for (int i = 0; i < rawBits.Length; i++)
 		{
 			var bit = rawBits[i];
 			var hasProcessed = false;
 
-			if(bit == prevBit)
+			if (bit == prevBit)
 				sameBitSequence++;
 			// if start of new sequence while packed
-			else if(isPacked)
+			else if (isPacked)
 				ProcessPackedSequence();
 
 			// if end of repeated sequence (max 63 bits)
-			if(hasProcessed == false && sameBitSequence == PACKED_REPEAT_COUNT)
+			if (hasProcessed == false && sameBitSequence == PACKED_REPEAT_COUNT)
 				ProcessPackedSequence();
 
 			// if end of image on repeated sequence
-			if(isPacked && hasProcessed == false && i == rawBits.Length - 1)
+			if (isPacked && hasProcessed == false && i == rawBits.Length - 1)
 			{
 				readIndexCounter++;
 				ProcessPackedSequence();
@@ -58,7 +58,7 @@ internal static class DefaultGraphics
 			isPacked = sameBitSequence >= RAW_BITS_COUNT;
 
 			// if end of raw sequence (max 7 bits)
-			if(hasProcessed == false && isPacked == false &&
+			if (hasProcessed == false && isPacked == false &&
 				readIndexCounter == RAW_BITS_COUNT && sameBitSequence < RAW_BITS_COUNT)
 				ProcessRawSequence();
 
@@ -88,7 +88,7 @@ internal static class DefaultGraphics
 		}
 
 		// if end of image on raw sequence
-		if(isPacked == false)
+		if (isPacked == false)
 		{
 			var raw = rawBits[^readIndexCounter..^0];
 			raw = raw.PadLeft(RAW_BITS_COUNT, '0');
@@ -116,7 +116,7 @@ internal static class DefaultGraphics
 		var decodedBits = "";
 		var img = new Image(width, height);
 
-		for(int i = 4; i < bytes.Length; i++)
+		for (int i = 4; i < bytes.Length; i++)
 		{
 			var curByte = bytes[i];
 			var bits = Convert.ToString(curByte, BINARY);
@@ -124,7 +124,7 @@ internal static class DefaultGraphics
 			var isPacked = bits[0] == '1';
 			var isLast = i == bytes.Length - 1;
 
-			if(isPacked)
+			if (isPacked)
 			{
 				var color = bits[1];
 				var repCountBinary = bits[2..^0];
@@ -134,7 +134,7 @@ internal static class DefaultGraphics
 			}
 			else
 			{
-				if(isLast)
+				if (isLast)
 				{
 					var lastLength = total - decodedBits.Length;
 					var lastRawBits = bits[^lastLength..^0];
@@ -147,7 +147,7 @@ internal static class DefaultGraphics
 			}
 		}
 
-		for(uint i = 0; i < decodedBits.Length; i++)
+		for (uint i = 0; i < decodedBits.Length; i++)
 		{
 			var bit = decodedBits[(int)i];
 			var color = bit == '1' ? Color.White : Color.Transparent;
@@ -157,7 +157,7 @@ internal static class DefaultGraphics
 			img.SetPixel(x, y, color);
 		}
 
-		img.SaveToFile("graphics.png");
+		//img.SaveToFile("graphics.png");
 		return new Texture(img);
 	}
 
@@ -178,7 +178,7 @@ internal static class DefaultGraphics
 	private static byte[] Compress(byte[] data)
 	{
 		var output = new MemoryStream();
-		using(var stream = new DeflateStream(output, CompressionLevel.Optimal))
+		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
 			stream.Write(data, 0, data.Length);
 
 		return output.ToArray();
@@ -187,7 +187,7 @@ internal static class DefaultGraphics
 	{
 		var input = new MemoryStream(data);
 		var output = new MemoryStream();
-		using(var stream = new DeflateStream(input, CompressionMode.Decompress))
+		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
 			stream.CopyTo(output);
 
 		return output.ToArray();

@@ -30,7 +30,7 @@ public static class Window
 		}
 		set
 		{
-			if(value == false)
+			if (value == false)
 				Close();
 		}
 	}
@@ -48,7 +48,7 @@ public static class Window
 		{
 			TryNoWindowException();
 
-			if(string.IsNullOrWhiteSpace(value))
+			if (string.IsNullOrWhiteSpace(value))
 				value = "Game";
 
 			title = value;
@@ -91,7 +91,7 @@ public static class Window
 		{
 			TryNoWindowException();
 
-			if(value && Vertices.retroScreen == null && Shader.IsAvailable)
+			if (value && Vertices.retroScreen == null && Shader.IsAvailable)
 				Vertices.retroScreen = RetroShader.Create();
 
 			isRetro = value;
@@ -118,23 +118,23 @@ public static class Window
 	[MemberNotNull(nameof(window))]
 	public static void Create(Mode mode = Mode.Windowed, uint monitor = 0)
 	{
-		if(window != null)
+		if (window != null)
 			return;
 
 		InitialMode = mode;
 
 		Monitor.Initialize();
 
-		if(monitor >= Monitor.posSizes.Count)
+		if (monitor >= Monitor.posSizes.Count)
 			monitor = (uint)Monitor.posSizes.Count - 1;
 
 		var style = Styles.Default;
 		var (x, y, w, h) = Monitor.posSizes[(int)monitor];
 		aspectRatio = Monitor.GetAspectRatio(w, h);
 
-		if(mode == Mode.Fullscreen) style = Styles.Fullscreen;
-		else if(mode == Mode.Borderless) style = Styles.None;
-		else if(mode == Mode.Windowed)
+		if (mode == Mode.Fullscreen) style = Styles.Fullscreen;
+		else if (mode == Mode.Borderless) style = Styles.None;
+		else if (mode == Mode.Windowed)
 		{
 			w /= 2;
 			h /= 2;
@@ -180,7 +180,7 @@ public static class Window
 	{
 		TryNoWindowException();
 
-		if(isActive)
+		if (isActive)
 		{
 			window.DispatchEvents();
 			window.Clear();
@@ -226,7 +226,7 @@ public static class Window
 	{
 		TryNoWindowException();
 
-		if(IsRetro || isClosing)
+		if (IsRetro || isClosing)
 		{
 			isClosing = true;
 
@@ -246,7 +246,7 @@ public static class Window
 	{
 		TryNoWindowException();
 
-		for(int i = 0; i < points?.Length; i++)
+		for (int i = 0; i < points?.Length; i++)
 			Vertices.QueuePoint((points[i].x, points[i].y), points[i].color);
 	}
 	/// <summary>
@@ -258,7 +258,7 @@ public static class Window
 	{
 		TryNoWindowException();
 
-		for(int i = 0; i < rectangles?.Length; i++)
+		for (int i = 0; i < rectangles?.Length; i++)
 		{
 			var r = rectangles[i];
 			Vertices.QueueRectangle((r.x, r.y), (r.width, r.height), r.color);
@@ -273,7 +273,7 @@ public static class Window
 	{
 		TryNoWindowException();
 
-		for(int i = 0; i < lines?.Length; i++)
+		for (int i = 0; i < lines?.Length; i++)
 			Vertices.QueueLine((lines[i].ax, lines[i].ay), (lines[i].bx, lines[i].by), lines[i].color);
 	}
 	/// <summary>
@@ -312,14 +312,14 @@ public static class Window
 
 	private static void TryLoadGraphics(string path)
 	{
-		if(graphics.ContainsKey(path))
+		if (graphics.ContainsKey(path))
 			return;
 
 		graphics[path] = new(path);
 	}
 	private static void UpdateWindowAndView()
 	{
-		if(window == null)
+		if (window == null)
 			return;
 
 		var view = window.GetView();
@@ -334,7 +334,7 @@ public static class Window
 	{
 		var rem = n % 2;
 		var result = n - rem;
-		if(rem >= 1)
+		if (rem >= 1)
 			result += 2;
 		return result;
 	}
@@ -354,17 +354,17 @@ public static class Window
 	[MemberNotNull(nameof(window))]
 	internal static void TryNoWindowException()
 	{
-		if(window == null)
+		if (window == null)
 			throw new MemberAccessException($"{nameof(Window)} is not created. Use {nameof(Create)}(...).");
 	}
 	internal static void TryArrayMismatchException(params Array[] arrays)
 	{
 		var length = 0;
-		for(int i = 0; i < arrays.Length; i++)
+		for (int i = 0; i < arrays.Length; i++)
 		{
 			length = i == 0 ? arrays[i].Length : length;
 
-			if(arrays[i] == null || arrays.Length != length)
+			if (arrays[i] == null || arrays.Length != length)
 				throw new ArgumentException("All the provided arrays should be non-null and with equal sizes.");
 		}
 	}

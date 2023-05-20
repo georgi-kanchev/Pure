@@ -1,6 +1,6 @@
 namespace Pure.UserInterface;
 
-public class Pagination : Element
+public class Pages : Element
 {
 	public Button First { get; }
 	public Button Previous { get; }
@@ -29,7 +29,7 @@ public class Pagination : Element
 		}
 	}
 
-	public Pagination((int x, int y) position, int count = 10) : base(position)
+	public Pages((int x, int y) position, int count = 10) : base(position)
 	{
 		Size = (13, 1);
 		Count = count;

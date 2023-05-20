@@ -3,7 +3,7 @@ namespace Pure.UserInterface;
 public class Palette : Element
 {
 	public Slider Opacity { get; }
-	public Pagination Brightness { get; }
+	public Pages Brightness { get; }
 	public Button Pick { get; }
 
 	public uint SelectedColor { get; set; } = uint.MaxValue;
@@ -68,7 +68,7 @@ public class Palette : Element
 	protected virtual uint OnPick((float x, float y) position) => default;
 
 	#region Backend
-	private class ChildPagination : Pagination
+	private class ChildPagination : Pages
 	{
 		// custom class for receiving events
 		private Palette parent;
