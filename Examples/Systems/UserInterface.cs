@@ -265,57 +265,60 @@ public static class UserInterface
 		Window.Create(Window.Mode.Windowed);
 
 		var aspectRatio = Window.MonitorAspectRatio;
-		var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
-		var back = new Tilemap(tilemap.Size);
-		var front = new Tilemap(tilemap.Size);
+		var tilemaps = new TilemapManager(3, (aspectRatio.width * 3, aspectRatio.height * 3));
+		var back = tilemaps[0];
+		var middle = tilemaps[1];
+		var front = tilemaps[2];
 
-		var panelVertical = new MyCustomPanel(back, tilemap, (16, 2)) { Size = (9, 16), MinimumSize = (5, 5) };
-		var listVertical = new MyCustomList(tilemap, default, List.Types.Vertical, itemCount: 15)
+		var panelVertical = new MyCustomPanel(back, middle, (16, 2))
+		{
+			Size = (9, 16),
+			MinimumSize = (5, 5)
+		};
+		var listVertical = new MyCustomList(middle, default, List.Types.Vertical, itemCount: 15)
 		{
 			IsSingleSelecting = true,
 			ItemGap = (0, 1),
 			ItemMaximumSize = (7, 1)
 		};
 
-		var panelHorizontal = new MyCustomPanel(back, tilemap, (2, 20))
+		var panelHorizontal = new MyCustomPanel(back, middle, (2, 20))
 		{
 			Size = (25, 3),
 			IsResizable = false,
 			IsMovable = false,
 		};
-		var listHorizontal = new MyCustomList(tilemap, (2, 20), List.Types.Horizontal, itemCount: 4);
+		var listHorizontal = new MyCustomList(middle, (2, 20), List.Types.Horizontal, itemCount: 4);
 
 		var elements = new List<Element>()
 		{
-			new MyCustomButton(tilemap, (2, 2)),
-			new MyCustomCheckbox(tilemap, (2, 7)),
-			new MyCustomInputBox(back, tilemap, front, (2, 10)) { Size = (12, 4) },
-			new MyCustomSlider(tilemap, (2, 17), size: 7),
-			new MyCustomPages(tilemap, (27, 2)) { Size = (18, 2) },
-			new MyCustomNumericScroll(tilemap, (34, 6)) { Range = (-9, 13) },
-			new MyCustomList(tilemap, (27, 5), List.Types.Dropdown, 15) { Size = (6, 9) },
-			new MyCustomScroll(tilemap, (37, 6), 9),
-			new MyCustomScroll(tilemap, (38, 15), 9, false),
+			new MyCustomButton(middle, (2, 2)),
+			new MyCustomCheckbox(middle, (2, 7)),
+			new MyCustomInputBox(back, middle, front, (2, 10)) { Size = (12, 4) },
+			new MyCustomSlider(middle, (2, 17), size: 7),
+			new MyCustomPages(middle, (27, 2)) { Size = (18, 2) },
+			new MyCustomNumericScroll(middle, (34, 6)) { Range = (-9, 13) },
+			new MyCustomList(middle, (27, 5), List.Types.Dropdown, 15) { Size = (6, 9) },
+			new MyCustomScroll(middle, (37, 6), 9),
+			new MyCustomScroll(middle, (38, 15), 9, false),
 			panelHorizontal, listHorizontal,
 			panelVertical, listVertical,
-			new MyCustomPalette(tilemap, (34, 20), brightnessLevels: 30),
+			new MyCustomPalette(middle, (34, 20), brightnessLevels: 30),
 		};
 
 		while (Window.IsOpen)
 		{
 			Window.Activate(true);
 
-			back.Fill();
-			tilemap.Fill();
-			front.Fill();
+			tilemaps.Fill();
 
 			Element.ApplyInput(
 				isPressed: Mouse.IsButtonPressed(Mouse.Button.Left),
-				position: tilemap.PointFrom(Mouse.CursorPosition, Window.Size),
+				position: tilemaps.PointFrom(Mouse.CursorPosition, Window.Size),
 				scrollDelta: Mouse.ScrollDelta,
 				keysPressed: Keyboard.KeyIDsPressed,
 				keysTyped: Keyboard.KeyTyped,
-				tilemapSize: tilemap.Size);
+				tilemapSize: tilemaps.Size);
 
 			StickListToPanel(panelVertical, listVertical);
 			StickListToPanel(panelHorizontal, listHorizontal);
@@ -327,9 +330,9 @@ public static class UserInterface
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 
-			Window.DrawTiles(back.ToBundle());
-			Window.DrawTiles(tilemap.ToBundle());
-			Window.DrawTiles(front.ToBundle());
+			for (int i = 0; i < tilemaps.Count; i++)
+				Window.DrawTiles(tilemaps[i].ToBundle());
+
 			Window.Activate(false);
 		}
 

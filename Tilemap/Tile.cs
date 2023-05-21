@@ -1,4 +1,6 @@
-﻿namespace Pure.Tilemap;
+﻿using System.Runtime.InteropServices;
+
+namespace Pure.Tilemap;
 
 /// <summary>
 /// Represents a tile in a tilemap.
@@ -460,5 +462,57 @@ public struct Tile
 		CURSOR_CROSSHAIR = 450,
 		CURSOR_HELP = 451,
 		CURSOR_DISABLE = 452;
+	#endregion
+
+	#region Backend
+	internal const int BYTE_SIZE = 14;
+	internal byte[] ToBytes()
+	{
+		var offset = 0;
+		var result = new byte[BYTE_SIZE];
+
+		Add(BitConverter.GetBytes(ID));
+		Add(BitConverter.GetBytes(Tint));
+		Add(BitConverter.GetBytes(Angle));
+		Add(BitConverter.GetBytes(Flips.isHorizontal));
+		Add(BitConverter.GetBytes(Flips.isVertical));
+
+		return result;
+
+		void Add(Array array)
+		{
+			Array.Copy(array, 0, result, offset, array.Length);
+			offset += array.Length;
+		}
+	}
+	internal static Tile FromBytes(byte[] bytes)
+	{
+		var offset = 0;
+		var bID = new byte[4];
+		var bTint = new byte[4];
+		var bAngle = new byte[2];
+		var bFlipHor = new byte[1];
+		var bFlipVer = new byte[1];
+
+		Add(bID);
+		Add(bTint);
+		Add(bAngle);
+		Add(bFlipHor);
+		Add(bFlipVer);
+
+		var id = BitConverter.ToInt32(bID);
+		var tint = BitConverter.ToUInt32(bTint);
+		var angle = (sbyte)BitConverter.ToInt16(bAngle);
+		var flipHor = BitConverter.ToBoolean(bFlipHor);
+		var flipVer = BitConverter.ToBoolean(bFlipVer);
+
+		return new(id, tint, angle, (flipHor, flipVer));
+
+		void Add(Array array)
+		{
+			Array.Copy(bytes, offset, array, 0, array.Length);
+			offset += array.Length;
+		}
+	}
 	#endregion
 }

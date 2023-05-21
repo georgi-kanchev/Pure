@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a base class for managing particles that can be inherited and overridden to catch events.
 /// </summary>
-public class BaseParticleManager
+public class ParticleManager
 {
 	/// <summary>
 	/// Gets or sets a value indicating whether the particle manager has paused the updates
@@ -89,9 +89,9 @@ public class BaseParticleManager
 	/// <param name="particles">The array of particles to convert.</param>
 	/// <returns>A new base particle manager instance with the given 
 	/// particles added to it.</returns>
-	public static implicit operator BaseParticleManager(Particle[] particles)
+	public static implicit operator ParticleManager(Particle[] particles)
 	{
-		var manager = new BaseParticleManager();
+		var manager = new ParticleManager();
 		for (int i = 0; i < particles.Length; i++)
 			manager.particles.Add(particles[i]);
 		return manager;
@@ -101,7 +101,7 @@ public class BaseParticleManager
 	/// </summary>
 	/// <param name="manager">The base particle manager instance to convert.</param>
 	/// <returns>An array of particles contained in the given base particle manager instance.</returns>
-	public static implicit operator Particle[](BaseParticleManager manager) => manager.particles.ToArray();
+	public static implicit operator Particle[](ParticleManager manager) => manager.particles.ToArray();
 
 	#region Backend
 	private readonly List<Particle> particles = new();

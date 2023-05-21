@@ -6,32 +6,32 @@ using Pure.Utilities;
 
 public class RightClickMenu : List
 {
-	private readonly Tilemap tilemap;
+	private readonly Tilemap background, tilemap;
 
-	public RightClickMenu(Tilemap tilemap, int count) : base((int.MaxValue, int.MaxValue), count, Types.Dropdown)
-		=> this.tilemap = tilemap;
-
-	public void CustomUpdate()
+	public RightClickMenu(Tilemap background, Tilemap tilemap, int count) :
+		base((int.MaxValue, int.MaxValue), count, Types.Dropdown)
 	{
-		ItemMaximumSize = (Size.width - 1, 1);
-
-		var scrollColor = Color.Gray.ToBright();
-		tilemap.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), 3));
-		tilemap.SetTile(Scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
-		tilemap.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
+		this.background = background;
+		this.tilemap = tilemap;
 	}
+
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
 
+		ItemMaximumSize = (Size.width - 1, 1);
 
-
+		var scrollColor = Color.Gray;
+		background.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
+		tilemap.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), 3));
+		tilemap.SetTile(Scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
+		tilemap.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
 	}
 	protected override void OnItemUpdate(Button item)
 	{
-		var color = Color.Gray;
+		item.IsDisabled = item.Text.EndsWith(" ");
 
-		item.IsDisabled = item.Text.StartsWith("-") == false;
+		var color = item.IsDisabled ? Color.Gray : Color.Gray.ToBright();
 
 		tilemap.SetTextLine(item.Position, item.Text, GetColor(item, color));
 

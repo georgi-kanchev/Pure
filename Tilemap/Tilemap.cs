@@ -56,29 +56,9 @@ public class Tilemap
 	/// loaded from the specified file or the file was not found.</exception>
 	public Tilemap(string path)
 	{
-		try
-		{
-			var bytes = Decompress(File.ReadAllBytes(path));
-			var bWidth = new byte[4];
-			var bHeight = new byte[4];
-
-			Array.Copy(bytes, 0, bWidth, 0, bWidth.Length);
-			Array.Copy(bytes, bWidth.Length, bHeight, 0, bHeight.Length);
-			var w = BitConverter.ToInt32(bWidth);
-			var h = BitConverter.ToInt32(bHeight);
-
-			data = new Tile[w, h];
-			var byteSize = w * h * Marshal.SizeOf(typeof(Tile));
-			var bData = new byte[byteSize];
-
-			Array.Copy(bData, bWidth.Length + bHeight.Length, bytes, 0, bData.Length);
-
-			FromBytes(data, bData);
-		}
-		catch (ArgumentException)
-		{
-			throw new ArgumentException($"Could not load {nameof(Tilemap)} from '{path}'.");
-		}
+		try { data = FromBytes(Decompress(File.ReadAllBytes(path)), out _); }
+		catch (Exception)
+		{ throw new Exception($"Could not load {nameof(Tilemap)} from '{path}'."); }
 	}
 	/// <summary>
 	/// Initializes a new tilemap instance with the specified size.
@@ -119,24 +99,9 @@ public class Tilemap
 	/// <param name="path">The path to the file to save the tilemap to.</param>
 	public void Save(string path)
 	{
-		var (w, h) = Size;
-		var bWidth = BitConverter.GetBytes(w);
-		var bHeight = BitConverter.GetBytes(h);
-		var bytes = ToBytes(data);
-		var result = new byte[bWidth.Length + bHeight.Length + bytes.Length];
-		var offset = 0;
-
-		Add(bWidth);
-		Add(bHeight);
-		Add(data);
-
-		File.WriteAllBytes(path, Compress(result));
-
-		void Add(Array array)
-		{
-			Array.Copy(array, 0, result, offset, array.Length);
-			offset += array.Length;
-		}
+		try { File.WriteAllBytes(path, Compress(ToBytes(data))); }
+		catch (Exception)
+		{ throw new Exception($"Could not save {nameof(Tilemap)} at '{path}'."); }
 	}
 
 	/// <summary>
@@ -250,7 +215,7 @@ public class Tilemap
 		for (int i = 0; i < text?.Length; i++)
 		{
 			var symbol = text[i];
-			var index = TileFrom(symbol);
+			var index = TileIDFrom(symbol);
 
 			if (index == default && symbol != ' ')
 			{
@@ -397,7 +362,7 @@ public class Tilemap
 
 		var xStep = size.Item1 < 0 ? -1 : 1;
 		var yStep = size.Item2 < 0 ? -1 : 1;
-		var tileList = TilesFrom(text).ToList();
+		var tileList = TileIDsFrom(text).ToList();
 
 		for (int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
 			for (int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
@@ -536,10 +501,7 @@ public class Tilemap
 	}
 	public void ConfigureText(string symbols, int startId)
 	{
-		if (string.IsNullOrWhiteSpace(symbols))
-			return;
-
-		for (int i = 0; i < symbols.Length; i++)
+		for (int i = 0; i < symbols?.Length; i++)
 			symbolMap[symbols[i]] = startId + i;
 	}
 
@@ -555,7 +517,7 @@ public class Tilemap
 	/// </summary>
 	/// <param name="symbol">The symbol to convert.</param>
 	/// <returns>The tile identifier corresponding to the given symbol.</returns>
-	public int TileFrom(char symbol)
+	public int TileIDFrom(char symbol)
 	{
 		var id = default(int);
 		if (symbol >= 'A' && symbol <= 'Z')
@@ -574,14 +536,14 @@ public class Tilemap
 	/// </summary>
 	/// <param name="text">The text to convert.</param>
 	/// <returns>An array of tile identifiers corresponding to the given symbols.</returns>
-	public int[] TilesFrom(string text)
+	public int[] TileIDsFrom(string text)
 	{
 		if (text == null || text.Length == 0)
 			return Array.Empty<int>();
 
 		var result = new int[text.Length];
 		for (int i = 0; i < text.Length; i++)
-			result[i] = TileFrom(text[i]);
+			result[i] = TileIDFrom(text[i]);
 
 		return result;
 	}
@@ -615,12 +577,13 @@ public class Tilemap
 	// save format
 	// [amount of bytes]		- data
 	// --------------------------------
+	// [4]						- camera x
+	// [4]						- camera y
+	// [4]						- camera width
+	// [4]						- camera height
 	// [4]						- width
 	// [4]						- height
-	// [width * height * 4]		- tiles
-	// [width * height * 4]		- tints
-	// [width * height]			- angles
-	// [width * height]			- flips
+	// [width * height]			- tile bundles array
 
 	private int textIdNumbers = Tile.NUMBER_0, textIdUppercase = Tile.UPPERCASE_A, textIdLowercase = Tile.LOWERCASE_A;
 	private readonly Dictionary<char, int> symbolMap = new()
@@ -706,21 +669,21 @@ public class Tilemap
 		return copy;
 	}
 
-	private static byte[] ToBytes<T>(T[,] array) where T : struct
-	{
-		var size = array.GetLength(0) * array.GetLength(1) * Marshal.SizeOf(typeof(T));
-		var buffer = new byte[size];
-		Buffer.BlockCopy(array, 0, buffer, 0, buffer.Length);
-		return buffer;
-	}
-	private static void FromBytes<T>(T[,] array, byte[] buffer) where T : struct
-	{
-		var size = array.GetLength(0) * array.GetLength(1);
-		var len = Math.Min(size * Marshal.SizeOf(typeof(T)), buffer.Length);
-		Buffer.BlockCopy(buffer, 0, array, 0, len);
-	}
+	//private static byte[] ToBytes<T>(T[,] array) where T : struct
+	//{
+	//	var size = array.GetLength(0) * array.GetLength(1) * Marshal.SizeOf(typeof(T));
+	//	var buffer = new byte[size];
+	//	Buffer.BlockCopy(array, 0, buffer, 0, buffer.Length);
+	//	return buffer;
+	//}
+	//private static void FromBytes<T>(T[,] array, byte[] buffer) where T : struct
+	//{
+	//	var size = array.GetLength(0) * array.GetLength(1);
+	//	var len = Math.Min(size * Marshal.SizeOf(typeof(T)), buffer.Length);
+	//	Buffer.BlockCopy(buffer, 0, array, 0, len);
+	//}
 
-	private static byte[] Compress(byte[] data)
+	internal static byte[] Compress(byte[] data)
 	{
 		var output = new MemoryStream();
 		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
@@ -728,7 +691,7 @@ public class Tilemap
 
 		return output.ToArray();
 	}
-	private static byte[] Decompress(byte[] data)
+	internal static byte[] Decompress(byte[] data)
 	{
 		var input = new MemoryStream(data);
 		var output = new MemoryStream();
@@ -736,6 +699,90 @@ public class Tilemap
 			stream.CopyTo(output);
 
 		return output.ToArray();
+	}
+
+	internal static Tilemap FromBytes(byte[] bytes, out byte[] remainingBytes)
+	{
+		var offset = 0;
+		var bCamX = new byte[4];
+		var bCamY = new byte[4];
+		var bCamW = new byte[4];
+		var bCamH = new byte[4];
+		var bWidth = new byte[4];
+		var bHeight = new byte[4];
+
+		Add(bCamX);
+		Add(bCamY);
+		Add(bCamW);
+		Add(bCamH);
+		Add(bWidth);
+		Add(bHeight);
+
+		var camX = BitConverter.ToInt32(bCamX);
+		var camY = BitConverter.ToInt32(bCamY);
+		var camW = BitConverter.ToInt32(bCamW);
+		var camH = BitConverter.ToInt32(bCamH);
+		var w = BitConverter.ToInt32(bWidth);
+		var h = BitConverter.ToInt32(bHeight);
+
+		var tilemap = new Tilemap((w, h))
+		{
+			CameraPosition = (camX, camY),
+			CameraSize = (camW, camH)
+		};
+		for (int i = 0; i < h; i++)
+			for (int j = 0; j < w; j++)
+			{
+				var bTile = bytes[offset..(offset + Tile.BYTE_SIZE)];
+				tilemap.SetTile((j, i), Tile.FromBytes(bTile));
+				offset += Tile.BYTE_SIZE;
+			}
+
+		remainingBytes = bytes[offset..];
+
+		return tilemap;
+
+		void Add(Array array)
+		{
+			Array.Copy(bytes, offset, array, 0, array.Length);
+			offset += array.Length;
+		}
+	}
+	internal static byte[] ToBytes(Tilemap tilemap)
+	{
+		var (w, h) = tilemap.Size;
+		var bCamX = BitConverter.GetBytes(tilemap.CameraPosition.x);
+		var bCamY = BitConverter.GetBytes(tilemap.CameraPosition.y);
+		var bCamW = BitConverter.GetBytes(tilemap.CameraSize.width);
+		var bCamH = BitConverter.GetBytes(tilemap.CameraSize.height);
+		var bWidth = BitConverter.GetBytes(w);
+		var bHeight = BitConverter.GetBytes(h);
+		var bTiles = new List<byte>();
+
+		for (int i = 0; i < h; i++)
+			for (int j = 0; j < w; j++)
+				bTiles.AddRange(tilemap.TileAt((j, i)).ToBytes());
+
+		var result = new byte[
+			bCamX.Length + bCamY.Length + bCamW.Length + bCamH.Length +
+			bWidth.Length + bHeight.Length + bTiles.Count];
+		var offset = 0;
+
+		Add(bCamX);
+		Add(bCamY);
+		Add(bCamW);
+		Add(bCamH);
+		Add(bWidth);
+		Add(bHeight);
+		Add(bTiles.ToArray());
+
+		return result;
+
+		void Add(Array array)
+		{
+			Array.Copy(array, 0, result, offset, array.Length);
+			offset += array.Length;
+		}
 	}
 	#endregion
 }

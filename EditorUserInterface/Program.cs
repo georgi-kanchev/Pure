@@ -8,23 +8,45 @@ using Pure.Window;
 
 public partial class Program
 {
+	enum Layer
+	{
+		Scene_Back, Scene_Middle, Scene_Front,
+		UI_Back, UI_Middle, UI_Front,
+		Count
+	}
+
 	private static void Main()
 	{
 		Window.Create(Window.Mode.Windowed);
 
 		var aspectRatio = Window.MonitorAspectRatio;
-		var back = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
-		var tilemap = new Tilemap(back.Size);
-		var front = new Tilemap(back.Size);
-		var ui = new Tilemap(back.Size);
+		var tilemaps = new TilemapManager((int)Layer.Count, (aspectRatio.width * 3, aspectRatio.height * 3));
 
 		const int ON_MENU_EXPAND = 0;
 		var rightClickMenuTexts = new string[]
 		{
-			"Add-", "-Button", "-Slider", "-Scroll", "-Scroll Numeric", "-Input", "-Pages", "-Panel",
-		  	"-List Dropdown", "-List Vertical", "-List Horizontal", "-Color Palette"
+			"Add ",
+			"  Button",
+			"  Input Box",
+			"  Pages",
+			"  Panel",
+			"  Color Palette",
+			"  Slider ",
+			"    Vertical",
+			"    Horizontal",
+			"  Scroll ",
+			"    Vertical",
+			"    Horizontal",
+			"    Numeric",
+			"  List ",
+			"    Vertical",
+			"    Horizontal",
+			"    Dropdown",
 		};
-		var rightClickMenu = new RightClickMenu(ui, rightClickMenuTexts.Length) { Size = (17, 8) };
+		var rightClickMenu = new RightClickMenu(
+			tilemaps[(int)Layer.UI_Back],
+			tilemaps[(int)Layer.UI_Middle], rightClickMenuTexts.Length)
+		{ Size = (16, 12) };
 
 		for (int i = 0; i < rightClickMenuTexts.Length; i++)
 			SetText(rightClickMenu, i, rightClickMenuTexts[i]);
@@ -35,9 +57,9 @@ public partial class Program
 		{
 			Window.Activate(true);
 
-			ui.Fill();
+			tilemaps.Fill();
 
-			var mousePos = ui.PointFrom(Mouse.CursorPosition, Window.Size);
+			var mousePos = tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
 
 			if (Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRmb"))
 			{
@@ -50,13 +72,15 @@ public partial class Program
 				Mouse.ScrollDelta,
 				Keyboard.KeyIDsPressed,
 				Keyboard.KeyTyped,
-				back.Size);
+				tilemaps.Size);
 
 			rightClickMenu.Update();
 			Tracker<int>.Track(ON_MENU_EXPAND, rightClickMenu.IsExpanded == false);
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
-			Window.DrawTiles(ui.ToBundle());
+
+			for (int i = 0; i < tilemaps.Count; i++)
+				Window.DrawTiles(tilemaps[i].ToBundle());
 
 			Window.Activate(false);
 		}
