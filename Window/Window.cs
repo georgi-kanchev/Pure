@@ -201,7 +201,7 @@ public static class Window
 	/// <param name="tileGap">The gap between each tile in the graphics.</param>
 	/// <param name="graphicsPath">The path to the graphics file to use for the layer.</param>
 	/// <param name="drawOrder">The order in which to draw the layer alongside layers.</param>
-	public static void SetLayer((int horizontal, int vertical) cellCount = default, (int width, int height) tileSize = default, (int x, int y) tileGap = default, string? graphicsPath = null, int drawOrder = 0)
+	public static void SetLayer((int horizontal, int vertical) cellCount = default, (int width, int height) tileSize = default, (int x, int y) tileGap = default, string? graphicsPath = null, int drawOrder = 0, int tileIdEmpty = 0, int tileIdFull = 10)
 	{
 		TryNoWindowException();
 
@@ -216,6 +216,8 @@ public static class Window
 		Vertices.tileSize = tileSize;
 		Vertices.tileGap = tileGap;
 		Vertices.mapCellCount = ((uint)cellCount.Item1, (uint)cellCount.Item2);
+		Vertices.tileIdEmpty = tileIdEmpty;
+		Vertices.tileIdFull = tileIdFull;
 
 		Vertices.TryInitQueue();
 	}

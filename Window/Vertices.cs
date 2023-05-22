@@ -7,7 +7,7 @@ using SFML.System;
 internal static class Vertices
 {
 	public static string graphicsPath = "default";
-	public static int layer;
+	public static int layer, tileIdEmpty, tileIdFull = 10;
 	public static (int, int) tileSize = (8, 8);
 	public static (int, int) tileGap;
 
@@ -43,11 +43,12 @@ internal static class Vertices
 		var tl = new Vector2f(gridX, gridY);
 		var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
 		var verts = vertexQueue[(layer, graphicsPath)];
+		var (ttl, ttr, tbr, tbl) = GetTexCoords(tileIdFull, (1, 1));
 
-		verts.Append(new(new((int)tl.X, (int)tl.Y), c));
-		verts.Append(new(new((int)br.X, (int)tl.Y), c));
-		verts.Append(new(new((int)br.X, (int)br.Y), c));
-		verts.Append(new(new((int)tl.X, (int)br.Y), c));
+		verts.Append(new(new((int)tl.X, (int)tl.Y), c, ttl));
+		verts.Append(new(new((int)br.X, (int)tl.Y), c, ttr));
+		verts.Append(new(new((int)br.X, (int)br.Y), c, tbr));
+		verts.Append(new(new((int)tl.X, (int)br.Y), c, tbl));
 	}
 	public static void QueueLine((float, float) a, (float, float) b, uint tint)
 	{
@@ -122,11 +123,6 @@ internal static class Vertices
 		var (tilemapW, tilemapH) = (tilemap.GetLength(0), tilemap.GetLength(1));
 		var cellWidth = (float)Window.window.Size.X / tilemapW;
 		var cellHeight = (float)Window.window.Size.Y / tilemapH;
-		var texture = Window.graphics[graphicsPath];
-		var (tileGapW, tileGapH) = tileGap;
-		var (tileW, tileH) = tileSize;
-		var texSz = texture.Size;
-		var tileCount = ((int)texSz.X / (tileW + tileGapW), (int)texSz.Y / (tileH + tileGapH));
 		var key = (layer, graphicsPath);
 		var cellCount = ((uint)tilemapW, (uint)tilemapH);
 
@@ -135,34 +131,26 @@ internal static class Vertices
 		for (int y = 0; y < tilemapH; y++)
 			for (int x = 0; x < tilemapW; x++)
 			{
-				var cell = tilemap[x, y].tile;
+				var id = tilemap[x, y].tile;
 				var tint = new Color(tilemap[x, y].tint);
 				var i = CoordsToIndex(x, y, tilemapW) * 4;
 				var tl = new Vector2f(x * cellWidth, y * cellHeight);
 				var tr = new Vector2f((x + 1) * cellWidth, y * cellHeight);
 				var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
 				var bl = new Vector2f(x * cellWidth, (y + 1) * cellHeight);
-
-				var texCoords = IndexToCoords(cell, tileCount);
-				var tx = new Vector2f(
-					texCoords.Item1 * (tileW + tileGapW),
-					texCoords.Item2 * (tileH + tileGapH));
-				var texTr = new Vector2f((int)(tx.X + tileW), (int)tx.Y);
-				var texBr = new Vector2f((int)(tx.X + tileW), (int)(tx.Y + tileH));
-				var texBl = new Vector2f((int)tx.X, (int)(tx.Y + tileH));
-				var center = Vector2.Lerp(new(tl.X, tl.Y), new(br.X, br.Y), 0.5f);
+				var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (1, 1));
 				var rotated = GetRotatedPoints(tilemap[x, y].angle, tl, tr, br, bl);
 				var (flipX, flipY) = (tilemap[x, y].isFlippedHorizontally, tilemap[x, y].isFlippedVertically);
 
 				if (flipX)
 				{
-					(tx, texTr) = (texTr, tx);
-					(texBl, texBr) = (texBr, texBl);
+					(ttl, ttr) = (ttr, ttl);
+					(tbl, tbr) = (tbr, tbl);
 				}
 				if (flipY)
 				{
-					(tx, texBl) = (texBl, tx);
-					(texTr, texBr) = (texBr, texTr);
+					(ttl, tbl) = (tbl, ttl);
+					(ttr, tbr) = (tbr, ttr);
 				}
 
 				tl = rotated[0];
@@ -175,10 +163,10 @@ internal static class Vertices
 				br = new((int)br.X, (int)br.Y);
 				bl = new((int)bl.X, (int)bl.Y);
 
-				vertexQueue[key].Append(new(tl, tint, tx));
-				vertexQueue[key].Append(new(tr, tint, texTr));
-				vertexQueue[key].Append(new(br, tint, texBr));
-				vertexQueue[key].Append(new(bl, tint, texBl));
+				vertexQueue[key].Append(new(tl, tint, ttl));
+				vertexQueue[key].Append(new(tr, tint, ttr));
+				vertexQueue[key].Append(new(br, tint, tbr));
+				vertexQueue[key].Append(new(bl, tint, tbl));
 			}
 
 	}
@@ -201,11 +189,12 @@ internal static class Vertices
 		var grid = ToGrid((x, y), (cellWidth, cellHeight));
 		var tl = new Vector2f(grid.Item1, grid.Item2);
 		var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
+		var (ttl, ttr, tbr, tbl) = GetTexCoords(tileIdFull, (1, 1));
 
-		verts.Append(new(new(tl.X, tl.Y), c));
-		verts.Append(new(new(br.X, tl.Y), c));
-		verts.Append(new(new(br.X, br.Y), c));
-		verts.Append(new(new(tl.X, br.Y), c));
+		verts.Append(new(new((int)tl.X, (int)tl.Y), c, ttl));
+		verts.Append(new(new((int)br.X, (int)tl.Y), c, ttr));
+		verts.Append(new(new((int)br.X, (int)br.Y), c, tbr));
+		verts.Append(new(new((int)tl.X, (int)br.Y), c, tbl));
 	}
 
 	public static void TryInitQueue()
@@ -224,10 +213,10 @@ internal static class Vertices
 			var tex = Window.graphics[kvp.Key.Item2];
 			var shader = Window.IsRetro ? retroScreen : null;
 			var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, shader);
-			var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
 
 			if (Window.IsRetro)
 			{
+				var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
 				shader?.SetUniform("time", retroScreenTimer.ElapsedTime.AsSeconds());
 				shader?.SetUniform("randomVec", randVec);
 				shader?.SetUniform("viewSize", Window.window.GetView().Size);
@@ -404,7 +393,7 @@ internal static class Vertices
 				matrix[rows - i - 1, j] = temp;
 			}
 	}
-	private static void QueueSingleSprite((float, float) position, int cell, uint tint, sbyte angle, (int, int) size)
+	private static void QueueSingleSprite((float, float) position, int id, uint tint, sbyte angle, (int, int) size)
 	{
 		if (Window.window == null)
 			return;
@@ -413,21 +402,11 @@ internal static class Vertices
 		var (cellWidth, cellHeight) = MapCellSize;
 		var cellCount = mapCellCount;
 		var (tileWidth, tileHeight) = tileSize;
-		var texture = Window.graphics[graphicsPath];
-		var (tileGapW, tileGapH) = tileGap;
-		var tileCount = ((int)texture.Size.X / tileWidth, (int)texture.Size.Y / tileHeight);
 		var (w, h) = size;
 		w = Math.Abs(w);
 		h = Math.Abs(h);
 
-		var (texX, texY) = IndexToCoords(cell, tileCount);
-		var tx = new Vector2f(
-			(texX) * (tileWidth + tileGapW),
-			(texY) * (tileHeight + tileGapH));
-		var texTr = tx + new Vector2f(tileWidth * w, 0);
-		var texBr = tx + new Vector2f(tileWidth * w, tileHeight * h);
-		var texBl = tx + new Vector2f(0, tileHeight * h);
-
+		var (ttl, ttr, tbr, tbl) = GetTexCoords(id, size);
 		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
 		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
 		var c = new Color(tint);
@@ -440,27 +419,44 @@ internal static class Vertices
 
 		var tr = new Vector2f(br.X, tl.Y);
 		var bl = new Vector2f(tl.X, br.Y);
-		var rotated = GetRotatedPoints((sbyte)-angle, tx, texTr, texBr, texBl);
-		tx = rotated[0];
-		texTr = rotated[1];
-		texBr = rotated[2];
-		texBl = rotated[3];
+		var rotated = GetRotatedPoints((sbyte)-angle, ttl, ttr, tbr, tbl);
+		ttl = rotated[0];
+		ttr = rotated[1];
+		tbr = rotated[2];
+		tbl = rotated[3];
 
 		if (size.Item1 < 0)
 		{
-			(tx, texTr) = (texTr, tx);
-			(texBl, texBr) = (texBr, texBl);
+			(ttl, ttr) = (ttr, ttl);
+			(tbl, tbr) = (tbr, tbl);
 		}
 		if (size.Item2 < 0)
 		{
-			(tx, texBl) = (texBl, tx);
-			(texTr, texBr) = (texBr, texTr);
+			(ttl, tbl) = (tbl, ttl);
+			(ttr, tbr) = (tbr, ttr);
 		}
 
-		verts.Append(new(tl, c, tx));
-		verts.Append(new(tr, c, texTr));
-		verts.Append(new(br, c, texBr));
-		verts.Append(new(bl, c, texBl));
+		verts.Append(new(tl, c, ttl));
+		verts.Append(new(tr, c, ttr));
+		verts.Append(new(br, c, tbr));
+		verts.Append(new(bl, c, tbl));
+	}
+	private static (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int id, (int, int) size)
+	{
+		var (w, h) = size;
+		var texture = Window.graphics[graphicsPath];
+		var (tileW, tileH) = tileSize;
+		var texSz = texture.Size;
+		var (tileGapW, tileGapH) = tileGap;
+		var tileCount = ((int)texSz.X / (tileW + tileGapW), (int)texSz.Y / (tileH + tileGapH));
+		var (texX, texY) = IndexToCoords(id, tileCount);
+		var tl = new Vector2f(
+			(texX) * (tileW + tileGapW),
+			(texY) * (tileH + tileGapH));
+		var tr = tl + new Vector2f(tileW * w, 0);
+		var br = tl + new Vector2f(tileW * w, tileH * h);
+		var bl = tl + new Vector2f(0, tileH * h);
+		return (tl, tr, br, bl);
 	}
 	#endregion
 }
