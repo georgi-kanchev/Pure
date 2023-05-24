@@ -144,17 +144,17 @@ public class Map : Hitbox
 
 	/// <summary>
 	/// Adds a rectangle to the cell corresponding to the 
-	/// specified tile.
+	/// specified tile identifier.
 	/// </summary>
 	/// <param name="rectangle">The rectangle to add.</param>
-	/// <param name="tile">The tile corresponding to the cell to add the 
+	/// <param name="tileID">The tile identifier corresponding to the cell to add the 
 	/// rectangle to.</param>
-	public void AddRectangle(Rectangle rectangle, int tile)
+	public void AddRectangle(Rectangle rectangle, int tileID)
 	{
-		if (cellRectsMap.ContainsKey(tile) == false)
-			cellRectsMap[tile] = new List<Rectangle>();
+		if (cellRectsMap.ContainsKey(tileID) == false)
+			cellRectsMap[tileID] = new List<Rectangle>();
 
-		cellRectsMap[tile].Add(rectangle);
+		cellRectsMap[tileID].Add(rectangle);
 	}
 	/// <summary>
 	/// Gets an array of rectangles that intersect the specified cell.
@@ -178,22 +178,22 @@ public class Map : Hitbox
 	}
 
 	/// <summary>
-	/// Updates the map hitbox with new tile data.
+	/// Updates the map hitbox with new tile identifiers data.
 	/// </summary>
-	/// <param name="tiles">The new tile data.</param>
+	/// <param name="tileIDs">The new tile identifiers data.</param>
 	/// <exception cref="ArgumentNullException">Thrown if tiles is null.</exception>
-	public void Update(int[,] tiles)
+	public void Update(int[,] tileIDs)
 	{
-		if (tiles == null)
-			throw new ArgumentNullException(nameof(tiles));
+		if (tileIDs == null)
+			throw new ArgumentNullException(nameof(tileIDs));
 
 		cellRects.Clear();
 		tileIndices.Clear();
 
-		for (int y = 0; y < tiles.GetLength(1); y++)
-			for (int x = 0; x < tiles.GetLength(0); x++)
+		for (int y = 0; y < tileIDs.GetLength(1); y++)
+			for (int x = 0; x < tileIDs.GetLength(0); x++)
 			{
-				var tile = tiles[x, y];
+				var tile = tileIDs[x, y];
 				if (cellRectsMap.ContainsKey(tile) == false)
 					continue;
 
@@ -243,6 +243,10 @@ public class Map : Hitbox
 
 		return false;
 	}
+
+	/// <returns>
+	/// An array copy of the rectangles in this map hitbox collection, as a bundle tuple.</returns>
+	public override (float x, float y, float width, float height, uint color)[] ToBundle() => this;
 
 	/// <summary>
 	/// Implicitly converts a map object to a rectangle array.

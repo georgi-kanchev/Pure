@@ -243,6 +243,7 @@ public struct Tile
 		SYMBOL_TRADE_MARK = 254,
 	#endregion
 	#region Punctuation
+		PUNCTUATION_TILDE = 220,
 		PUNCTUATION_EXCLAMATION_MARK = 234,
 		PUNCTUATION_QUESTION_MARK = 235,
 		PUNCTUATION_DOT = 236,
@@ -331,6 +332,8 @@ public struct Tile
 		ARROW_DIAGONAL_HOLLOW = 311,
 	#endregion
 	#region Icon
+		ICON_WAVE = 220,
+		ICON_WAVE_DOUBLE = 190,
 		ICON_HOME = 312,
 		ICON_SETTINGS = 313,
 		ICON_SAVE_LOAD = 314,

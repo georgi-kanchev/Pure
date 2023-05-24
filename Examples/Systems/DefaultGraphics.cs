@@ -23,8 +23,7 @@ public static class DefaultGraphics
 					tilemap.SetTile((j, i), tile);
 				}
 
-			var mousePos = Mouse.CursorPosition;
-			var (x, y) = tilemap.PointFrom(mousePos, Window.Size);
+			var (x, y) = tilemap.PointFrom(Mouse.CursorPosition, Window.Size);
 			var id = tilemap.TileAt(((int)x, (int)y)).ID;
 			tilemap.SetTextLine((27, 13), $"{id}");
 

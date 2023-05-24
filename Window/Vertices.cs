@@ -65,7 +65,7 @@ internal static class Vertices
 		var err = dx + dy;
 		var e2 = 0f;
 
-		for (int i = 0; i < LINE_MAX_ITERATIONS; i++)
+		while (true)
 		{
 			QueuePoint((x0, y0), tint);
 
@@ -251,7 +251,6 @@ internal static class Vertices
 	}
 
 	#region Backend
-	private const int LINE_MAX_ITERATIONS = 10_000;
 	private static Random retroRand = new();
 	private static RenderStates Rend => Window.IsRetro ? new(retroScreen) : default;
 	private static readonly SFML.System.Clock retroScreenTimer = new();

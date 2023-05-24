@@ -820,7 +820,7 @@ public static class Extensions
 		rangeB *= precision;
 
 		var s = new Random(float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed);
-		var randInt = s.Next((int)rangeA, (int)rangeB + 1).Limit((int)rangeA, (int)rangeB);
+		var randInt = s.Next((int)rangeA, (int)rangeB + 1).Limit((int)rangeA, (int)rangeB + 1);
 
 		return randInt / (precision);
 	}

@@ -153,18 +153,48 @@ public class Tilemap
 
 	public void Flood((int x, int y) position, Tile tile)
 	{
-		var curTile = TileAt(position);
+		var stack = new Stack<(int x, int y)>();
+		var initialTile = TileAt(position);
+		stack.Push(position);
 
-		if (position.x < 0 || position.x >= Size.width || position.y < 0 ||
-			position.y >= Size.height || curTile == tile || curTile != default)
+		while (stack.Count > 0)
+		{
+			var currentPosition = stack.Pop();
+			var curTile = TileAt(currentPosition);
+
+			if (currentPosition.x < 0 || currentPosition.x >= Size.width ||
+				currentPosition.y < 0 || currentPosition.y >= Size.height ||
+				curTile == tile || curTile != initialTile)
+				continue;
+
+			SetTile(currentPosition, tile);
+
+			stack.Push((currentPosition.x - 1, currentPosition.y));
+			stack.Push((currentPosition.x + 1, currentPosition.y));
+			stack.Push((currentPosition.x, currentPosition.y - 1));
+			stack.Push((currentPosition.x, currentPosition.y + 1));
+		}
+	}
+	public void Replace((int x, int y) position, (int width, int height) size, Tile targetTile, int seedOffset = 0, params Tile[] tiles)
+	{
+		if (tiles == null || tiles.Length == 0)
 			return;
 
-		SetTile(position, tile);
+		var xStep = size.width < 0 ? -1 : 1;
+		var yStep = size.height < 0 ? -1 : 1;
+		var i = 0;
+		for (int x = position.x; x != position.x + size.width; x += xStep)
+			for (int y = position.y; y != position.y + size.height; y += yStep)
+			{
+				if (i > Math.Abs(size.width * size.height))
+					return;
 
-		Flood((position.x - 1, position.y), tile);
-		Flood((position.x + 1, position.y), tile);
-		Flood((position.x, position.y - 1), tile);
-		Flood((position.x, position.y + 1), tile);
+				if (TileAt((x, y)) != targetTile)
+					continue;
+
+				SetTile((x, y), ChooseOne(tiles, HashCode.Combine(x, y) + seedOffset));
+				i++;
+			}
 	}
 
 	/// <summary>
@@ -189,13 +219,13 @@ public class Tilemap
 	/// <param name="tile">The tile to set the rectangle region to.</param>
 	public void SetRectangle((int x, int y) position, (int width, int height) size, Tile tile)
 	{
-		var xStep = size.Item1 < 0 ? -1 : 1;
-		var yStep = size.Item2 < 0 ? -1 : 1;
+		var xStep = size.width < 0 ? -1 : 1;
+		var yStep = size.height < 0 ? -1 : 1;
 		var i = 0;
-		for (int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
-			for (int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
+		for (int x = position.x; x != position.x + size.width; x += xStep)
+			for (int y = position.y; y != position.y + size.height; y += yStep)
 			{
-				if (i > Math.Abs(size.Item1 * size.Item2))
+				if (i > Math.Abs(size.width * size.height))
 					return;
 
 				SetTile((x, y), tile);
@@ -242,7 +272,7 @@ public class Tilemap
 			if (symbol == ' ')
 				continue;
 
-			SetTile((position.Item1 + i - errorOffset, position.Item2), new(index, tint));
+			SetTile((position.x + i - errorOffset, position.y), new(index, tint));
 		}
 	}
 	/// <summary>
@@ -259,11 +289,11 @@ public class Tilemap
 	public void SetTextRectangle((int x, int y) position, (int width, int height) size, string text, uint tint = uint.MaxValue, bool isWordWrapping = true, Alignment alignment = Alignment.TopLeft, float scrollProgress = 0)
 	{
 		if (text == null || text.Length == 0 ||
-			size.Item1 <= 0 || size.Item2 <= 0)
+			size.width <= 0 || size.height <= 0)
 			return;
 
-		var x = position.Item1;
-		var y = position.Item2;
+		var x = position.x;
+		var y = position.y;
 		var lineList = text.Split("\n", StringSplitOptions.RemoveEmptyEntries).ToList();
 
 		if (lineList == null || lineList.Count == 0)
@@ -273,18 +303,18 @@ public class Tilemap
 		{
 			var line = lineList[i];
 
-			if (line.Length <= size.Item1) // line is valid length
+			if (line.Length <= size.width) // line is valid length
 				continue;
 
-			var lastLineIndex = size.Item1 - 1;
+			var lastLineIndex = size.width - 1;
 			var newLineIndex = isWordWrapping ?
 				GetSafeNewLineIndex(line, (uint)lastLineIndex) : lastLineIndex;
 
 			// end of line? can't word wrap, proceed to symbol wrap
 			if (newLineIndex == 0)
 			{
-				lineList[i] = line[0..size.Item1];
-				lineList.Insert(i + 1, line[size.Item1..line.Length]);
+				lineList[i] = line[0..size.width];
+				lineList.Insert(i + 1, line[size.width..line.Length]);
 				continue;
 			}
 
@@ -293,7 +323,7 @@ public class Tilemap
 			lineList[i] = line[0..endIndex];
 			lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
 		}
-		var yDiff = size.Item2 - lineList.Count;
+		var yDiff = size.height - lineList.Count;
 
 		if (alignment == Alignment.Left ||
 			alignment == Alignment.Center ||
@@ -310,11 +340,11 @@ public class Tilemap
 				lineList.Insert(0, "");
 		}
 		// new lineList.Count
-		yDiff = size.Item2 - lineList.Count;
+		yDiff = size.height - lineList.Count;
 
 		var startIndex = 0;
-		var end = startIndex + size.Item2;
-		var scrollValue = (int)Math.Round(scrollProgress * (lineList.Count - size.Item2));
+		var end = startIndex + size.height;
+		var scrollValue = (int)Math.Round(scrollProgress * (lineList.Count - size.height));
 
 		if (yDiff < 0)
 		{
@@ -322,7 +352,7 @@ public class Tilemap
 			end += scrollValue;
 		}
 
-		var e = lineList.Count - size.Item2;
+		var e = lineList.Count - size.height;
 		startIndex = Math.Clamp(startIndex, 0, Math.Max(e, 0));
 		end = Math.Clamp(end, 0, lineList.Count);
 
@@ -330,17 +360,17 @@ public class Tilemap
 		{
 			var line = lineList[i].Replace('\n', ' ');
 
-			if (isWordWrapping == false && i > size.Item1)
+			if (isWordWrapping == false && i > size.width)
 				NewLine();
 
 			if (alignment == Alignment.TopRight ||
 				alignment == Alignment.Right ||
 				alignment == Alignment.BottomRight)
-				line = line.PadLeft(size.Item1);
+				line = line.PadLeft(size.width);
 			else if (alignment == Alignment.TopUp ||
 				alignment == Alignment.Center ||
 				alignment == Alignment.Bottom)
-				line = PadLeftAndRight(line, size.Item1);
+				line = PadLeftAndRight(line, size.width);
 
 			SetTextLine((x, y), line, tint);
 			NewLine();
@@ -348,13 +378,13 @@ public class Tilemap
 
 		void NewLine()
 		{
-			x = position.Item1;
+			x = position.x;
 			y++;
 		}
 		int GetSafeNewLineIndex(string line, uint endLineIndex)
 		{
 			for (int i = (int)endLineIndex; i >= 0; i--)
-				if (line[i] == ' ' && i <= size.Item1)
+				if (line[i] == ' ' && i <= size.width)
 					return i;
 
 			return default;
@@ -376,12 +406,12 @@ public class Tilemap
 		if (string.IsNullOrWhiteSpace(text))
 			return;
 
-		var xStep = size.Item1 < 0 ? -1 : 1;
-		var yStep = size.Item2 < 0 ? -1 : 1;
+		var xStep = size.width < 0 ? -1 : 1;
+		var yStep = size.height < 0 ? -1 : 1;
 		var tileList = TileIDsFrom(text).ToList();
 
-		for (int x = position.Item1; x != position.Item1 + size.Item1; x += xStep)
-			for (int y = position.Item2; y != position.Item2 + size.Item2; y += yStep)
+		for (int x = position.x; x != position.x + size.width; x += xStep)
+			for (int y = position.y; y != position.y + size.height; y += yStep)
 			{
 				if (tileList[0] != TileAt((x, y)).ID)
 					continue;
@@ -399,16 +429,16 @@ public class Tilemap
 					correctSymbCount++;
 					curX++;
 
-					if (curX > x + size.Item1) // try new line
+					if (curX > x + size.width) // try new line
 					{
-						curX = position.Item1;
+						curX = position.x;
 						curY++;
 					}
 				}
 
 				var endPos = (curX, curY);
-				var left = TileAt(startPos).ID == 0 || curX == position.Item1;
-				var right = TileAt(endPos).ID == 0 || curX == position.Item1 + size.Item1;
+				var left = TileAt(startPos).ID == 0 || curX == position.x;
+				var right = TileAt(endPos).ID == 0 || curX == position.x + size.width;
 				var isWord = left && right;
 
 				if (isWord ^ isMatchingWord)
@@ -421,9 +451,9 @@ public class Tilemap
 				curY = y;
 				for (int i = 0; i < text.Length; i++)
 				{
-					if (curX > x + size.Item1) // try new line
+					if (curX > x + size.width) // try new line
 					{
-						curX = position.Item1;
+						curX = position.x;
 						curY++;
 					}
 
@@ -498,7 +528,29 @@ public class Tilemap
 			}
 		}
 	}
+	public void SetLine((int x, int y) pointA, (int x, int y) pointB, Tile tile)
+	{
+		var (x0, y0) = pointA;
+		var (x1, y1) = pointB;
+		var dx = Math.Abs(x1 - x0);
+		var dy = Math.Abs(y1 - y0);
+		var sx = x0 < x1 ? 1 : -1;
+		var sy = y0 < y1 ? 1 : -1;
+		var err = dx - dy;
 
+		while (true)
+		{
+			SetTile((x0, y0), tile);
+
+			if (x0 == x1 && y0 == y1)
+				break;
+
+			var e2 = 2 * err;
+
+			if (e2 > -dy) { err -= dy; x0 += sx; }
+			if (e2 < dx) { err += dx; y0 += sy; }
+		}
+	}
 
 	/// <summary>
 	/// Sets the tiles in a rectangular area of the tilemap to create a border.
@@ -724,9 +776,9 @@ public class Tilemap
 	public static (int, int) FromIndex(int index, (int width, int height) size)
 	{
 		index = index < 0 ? 0 : index;
-		index = index > size.Item1 * size.Item2 - 1 ? size.Item1 * size.Item2 - 1 : index;
+		index = index > size.width * size.height - 1 ? size.width * size.height - 1 : index;
 
-		return (index % size.Item1, index / size.Item1);
+		return (index % size.width, index / size.width);
 	}
 	private bool IndicesAreValid((int, int) indices)
 	{
@@ -763,7 +815,7 @@ public class Tilemap
 		rangeB *= precision;
 
 		var s = new Random(float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed);
-		var randInt = s.Next((int)rangeA, Limit((int)rangeB + 1, (int)rangeA, (int)rangeB));
+		var randInt = s.Next((int)rangeA, Limit((int)rangeB, (int)rangeA, (int)rangeB) + 1);
 
 		return randInt / (precision);
 	}
@@ -789,6 +841,10 @@ public class Tilemap
 	private static int Limit(int number, int rangeA, int rangeB, bool isOverflowing = false)
 	{
 		return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
+	}
+	private static T ChooseOne<T>(IList<T> collection, float seed)
+	{
+		return collection[(int)Random(0, collection.Count - 1, 0, seed)];
 	}
 
 	internal static byte[] Compress(byte[] data)
