@@ -88,6 +88,9 @@ internal static class Vertices
 	}
 	public static void QueueTile((float, float) position, int tile, uint tint, sbyte angle, (int, int) size, (bool, bool) flips)
 	{
+		if (tile == Vertices.tileIdEmpty)
+			return;
+
 		TryInitQueue();
 
 		var (w, h) = size;
@@ -132,6 +135,9 @@ internal static class Vertices
 			for (int x = 0; x < tilemapW; x++)
 			{
 				var id = tilemap[x, y].tile;
+				if (id == Vertices.tileIdEmpty)
+					continue;
+
 				var tint = new Color(tilemap[x, y].tint);
 				var i = CoordsToIndex(x, y, tilemapW) * 4;
 				var tl = new Vector2f(x * cellWidth, y * cellHeight);

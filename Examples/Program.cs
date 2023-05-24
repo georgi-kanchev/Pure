@@ -15,22 +15,47 @@ public class Program
 
 		//Games.FlappyBird.Run();
 
-		var tilemap = new Tilemap((16 * 3, 9 * 3));
+		Window.Create(Window.Mode.Windowed);
+		var aspectRatio = Window.MonitorAspectRatio;
+		var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
+
 		var hitbox = new Hitbox((0, 0), 1f, new Rectangle((10, 10)));
 		var map = new Map();
 
-		Window.Create(Window.Mode.Windowed);
+		// make line and replace in rectangle tilemap.Set
+		tilemap.SetEllipse((20, 10), (7, 7), Tile.SHAPE_CIRCLE, false);
+		tilemap.Flood((0, 10), Tile.SHAPE_SQUARE);
 
 		while (Window.IsOpen)
 		{
 			Window.Activate(true);
 
-			//Window.DrawTiles(tilemap.ToBundle());
+			//FillWithRandomGrass();
+			//SetLake((0, 0), (14, 9));
+			//SetLake((26, 18), (5, 7));
 
-			Window.DrawRectangles(new Rectangle((1, 1)));
-			Window.DrawLines((2, 2, 30, 4, Color.Red));
+
+			Window.DrawTiles(tilemap.ToBundle());
 
 			Window.Activate(false);
+		}
+
+		void FillWithRandomGrass()
+		{
+			for (int i = 0; i < tilemap.Size.height; i++)
+				for (int j = 0; j < tilemap.Size.width; j++)
+				{
+					// this is controlled randomness, it will always give the same
+					// tile in the particular coordinate (might still contain some visible patterns)
+					var tile = new Tile(Tile.SHADE_1, Color.Green.ToDark());
+					var seed = (i * 73856093) ^ (j * 19349663) + 83492791;
+					tile.Angle = (sbyte)0.Random(3, seed);
+					tilemap.SetTile((j, i), tile);
+				}
+		}
+		void SetLake((int x, int y) position, (int width, int height) size)
+		{
+			tilemap.SetRectangle(position, size, new(Tile.MATH_APPROXIMATE, Color.Blue));
 		}
 	}
 }

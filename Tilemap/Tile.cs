@@ -55,6 +55,9 @@ public struct Tile
 		return $"ID({ID}) Tint({Tint}) Angle({Angle}) Flips{Flips}";
 	}
 
+	public override int GetHashCode() => base.GetHashCode();
+	public override bool Equals(object? obj) => base.Equals(obj);
+
 	/// <summary>
 	/// Implicitly converts an identifier to a white, not rotated and not flipped tile.
 	/// </summary>
@@ -84,6 +87,19 @@ public struct Tile
 			tile.Angle,
 			tile.Flips.isHorizontal,
 			tile.Flips.isVertical);
+	}
+
+	public static bool operator ==(Tile a, Tile b)
+	{
+		return a.ID == b.ID && a.Tint == b.Tint && a.Angle == b.Angle &&
+			a.Flips.isHorizontal == b.Flips.isHorizontal &&
+			a.Flips.isVertical == b.Flips.isVertical;
+	}
+	public static bool operator !=(Tile a, Tile b)
+	{
+		return a.ID != b.ID || a.Tint != b.Tint || a.Angle != b.Angle ||
+			a.Flips.isHorizontal != b.Flips.isHorizontal ||
+			a.Flips.isVertical != b.Flips.isVertical;
 	}
 
 	#region Shade

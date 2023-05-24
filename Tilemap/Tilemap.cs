@@ -143,12 +143,28 @@ public class Tilemap
 	/// <summary>
 	/// Fills the entire tilemap with the specified tile.
 	/// </summary>
-	/// <param name="withTile">The tile to fill the tilemap with.</param>
-	public void Fill(Tile withTile = default)
+	/// <param name="tile">The tile to fill the tilemap with.</param>
+	public void Fill(Tile tile = default)
 	{
 		for (int y = 0; y < Size.Item2; y++)
 			for (int x = 0; x < Size.Item1; x++)
-				SetTile((x, y), withTile);
+				SetTile((x, y), tile);
+	}
+
+	public void Flood((int x, int y) position, Tile tile)
+	{
+		var curTile = TileAt(position);
+
+		if (position.x < 0 || position.x >= Size.width || position.y < 0 ||
+			position.y >= Size.height || curTile == tile || curTile != default)
+			return;
+
+		SetTile(position, tile);
+
+		Flood((position.x - 1, position.y), tile);
+		Flood((position.x + 1, position.y), tile);
+		Flood((position.x, position.y - 1), tile);
+		Flood((position.x, position.y + 1), tile);
 	}
 
 	/// <summary>
@@ -417,6 +433,73 @@ public class Tilemap
 			}
 	}
 
+	public void SetEllipse((int x, int y) center, (int width, int height) radius, Tile tile, bool isFilled = true)
+	{
+		var sqrRX = radius.width * radius.width;
+		var sqrRY = radius.height * radius.height;
+		var x = 0;
+		var y = radius.height;
+		var px = 0;
+		var py = (sqrRX * 2) * y;
+
+		// Region 1
+		var p = (int)(sqrRY - (sqrRX * radius.height) + (0.25f * sqrRX));
+		while (px < py)
+		{
+			Set();
+
+			x++;
+			px += (sqrRY * 2);
+
+			if (p < 0)
+				p += sqrRY + px;
+			else
+			{
+				y--;
+				py -= (sqrRX * 2);
+				p += sqrRY + px - py;
+			}
+		}
+
+		// Region 2
+		p = (int)(sqrRY * (x + 0.5f) * (x + 0.5f) + sqrRX * (y - 1) * (y - 1) - sqrRX * sqrRY);
+		while (y >= 0)
+		{
+			Set();
+
+			y--;
+			py -= (sqrRX * 2);
+
+			if (p > 0)
+				p += sqrRX - py;
+			else
+			{
+				x++;
+				px += (sqrRY * 2);
+				p += sqrRX - py + px;
+			}
+		}
+
+		void Set()
+		{
+			if (isFilled == false)
+			{
+				SetTile((center.x + x, center.y - y), tile);
+				SetTile((center.x - x, center.y - y), tile);
+				SetTile((center.x - x, center.y + y), tile);
+				SetTile((center.x + x, center.y + y), tile);
+				return;
+			}
+
+			for (int i = center.x - x; i <= center.x + x; i++)
+			{
+				SetTile((i, center.y - y), tile);
+				SetTile((i, center.y + y), tile);
+			}
+		}
+	}
+
+
 	/// <summary>
 	/// Sets the tiles in a rectangular area of the tilemap to create a border.
 	/// </summary>
@@ -668,20 +751,45 @@ public class Tilemap
 		Array.Copy(array, copy, array.Length);
 		return copy;
 	}
+	private static float Random(float rangeA, float rangeB, float precision = 0, float seed = float.NaN)
+	{
+		if (rangeA > rangeB)
+			(rangeA, rangeB) = (rangeB, rangeA);
 
-	//private static byte[] ToBytes<T>(T[,] array) where T : struct
-	//{
-	//	var size = array.GetLength(0) * array.GetLength(1) * Marshal.SizeOf(typeof(T));
-	//	var buffer = new byte[size];
-	//	Buffer.BlockCopy(array, 0, buffer, 0, buffer.Length);
-	//	return buffer;
-	//}
-	//private static void FromBytes<T>(T[,] array, byte[] buffer) where T : struct
-	//{
-	//	var size = array.GetLength(0) * array.GetLength(1);
-	//	var len = Math.Min(size * Marshal.SizeOf(typeof(T)), buffer.Length);
-	//	Buffer.BlockCopy(buffer, 0, array, 0, len);
-	//}
+		precision = (int)Limit(precision, 0, 5);
+		precision = MathF.Pow(10, precision);
+
+		rangeA *= precision;
+		rangeB *= precision;
+
+		var s = new Random(float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed);
+		var randInt = s.Next((int)rangeA, Limit((int)rangeB + 1, (int)rangeA, (int)rangeB));
+
+		return randInt / (precision);
+	}
+	private static float Limit(float number, float rangeA, float rangeB, bool isOverflowing = false)
+	{
+		if (rangeA > rangeB)
+			(rangeA, rangeB) = (rangeB, rangeA);
+
+		if (isOverflowing)
+		{
+			var d = rangeB - rangeA;
+			return ((number - rangeA) % d + d) % d + rangeA;
+		}
+		else
+		{
+			if (number < rangeA)
+				return rangeA;
+			else if (number > rangeB)
+				return rangeB;
+			return number;
+		}
+	}
+	private static int Limit(int number, int rangeA, int rangeB, bool isOverflowing = false)
+	{
+		return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
+	}
 
 	internal static byte[] Compress(byte[] data)
 	{

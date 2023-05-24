@@ -800,7 +800,7 @@ public static class Extensions
 	public static int Map(this int number, int a1, int a2, int b1, int b2) =>
 		(int)Map((float)number, a1, a2, b1, b2);
 	/// <summary>
-	/// Returns a random float value between the given range of values.
+	/// Returns a random float value between the given inclusive range of values.
 	/// </summary>
 	/// <param name="rangeA">The first value of the range.</param>
 	/// <param name="rangeB">The second value of the range.</param>
@@ -825,7 +825,7 @@ public static class Extensions
 		return randInt / (precision);
 	}
 	/// <summary>
-	/// Returns a random int value between the given range of values.
+	/// Returns a random int value between the given inclusive range of values.
 	/// </summary>
 	/// <param name="rangeA">The first value of the range.</param>
 	/// <param name="rangeB">The second value of the range.</param>
