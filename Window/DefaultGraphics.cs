@@ -158,7 +158,7 @@ internal static class DefaultGraphics
 		}
 
 		//img.SaveToFile("graphics.png");
-		return new Texture(img);
+		return new Texture(img) { Repeated = true };
 	}
 
 	#region Backend

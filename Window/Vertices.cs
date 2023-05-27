@@ -1,6 +1,5 @@
 namespace Pure.Window;
 
-using System.Numerics;
 using SFML.Graphics;
 using SFML.System;
 
@@ -17,8 +16,8 @@ internal static class Vertices
 		{
 			Window.TryNoWindowException();
 
-			var w = (float)Window.window.Size.X / mapCellCount.Item1;
-			var h = (float)Window.window.Size.Y / mapCellCount.Item2;
+			var w = (float)Window.Size.width / mapCellCount.Item1;
+			var h = (float)Window.Size.height / mapCellCount.Item2;
 			return (w, h);
 		}
 	}
@@ -29,6 +28,8 @@ internal static class Vertices
 
 	public static void QueueRectangle((float, float) position, (float, float) size, uint tint)
 	{
+		Window.TryNoWindowException();
+
 		TryInitQueue();
 
 		var cellCount = mapCellCount;
@@ -36,19 +37,27 @@ internal static class Vertices
 		var (tileWidth, tileHeight) = tileSize;
 
 		var (w, h) = size;
-		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.Size.Item1);
-		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.Size.Item2);
+		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.Size.width);
+		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.Size.height);
 		var c = new Color(tint);
-		var (gridX, gridY) = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
-		var tl = new Vector2f(gridX, gridY);
-		var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
 		var verts = vertexQueue[(layer, graphicsPath)];
 		var (ttl, ttr, tbr, tbl) = GetTexCoords(tileIdFull, (1, 1));
 
-		verts.Append(new(new((int)tl.X, (int)tl.Y), c, ttl));
-		verts.Append(new(new((int)br.X, (int)tl.Y), c, ttr));
-		verts.Append(new(new((int)br.X, (int)br.Y), c, tbr));
-		verts.Append(new(new((int)tl.X, (int)br.Y), c, tbl));
+		verts.Append(new(new(x, y), c, ttl));
+		verts.Append(new(new(x + (int)(cellWidth * w), y), c, ttr));
+		verts.Append(new(new(x + (int)(cellWidth * w), y + (int)(cellHeight * h)), c, tbr));
+		verts.Append(new(new(x, y + (int)(cellHeight * h)), c, tbl));
+
+		//var (gridX, gridY) = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
+		//var tl = new Vector2f(gridX, gridY);
+		//var br = new Vector2f(gridX + cellWidth * w, gridY + cellHeight * h);
+		//var verts = vertexQueue[(layer, graphicsPath)];
+		//var (ttl, ttr, tbr, tbl) = GetTexCoords(tileIdFull, (1, 1));
+
+		//verts.Append(new(new((int)tl.X, (int)tl.Y), c, ttl));
+		//verts.Append(new(new((int)br.X, (int)tl.Y), c, ttr));
+		//verts.Append(new(new((int)br.X, (int)br.Y), c, tbr));
+		//verts.Append(new(new((int)tl.X, (int)br.Y), c, tbl));
 	}
 	public static void QueueLine((float, float) a, (float, float) b, uint tint)
 	{
@@ -88,9 +97,6 @@ internal static class Vertices
 	}
 	public static void QueueTile((float, float) position, int tile, uint tint, sbyte angle, (int, int) size, (bool, bool) flips)
 	{
-		if (tile == Vertices.tileIdEmpty)
-			return;
-
 		TryInitQueue();
 
 		var (w, h) = size;
@@ -114,18 +120,19 @@ internal static class Vertices
 		if (h < 0)
 			FlipHorizontally(tiles);
 
-		QueueSingleSprite((x, y), tile, tint, angle, (w, h));
+		for (int i = 0; i < tiles.GetLength(1); i++)
+			for (int j = 0; j < tiles.GetLength(0); j++)
+				QueueTile((x + j, y + i), tiles[j, i], tint, angle, (w, h));
 	}
 	public static void QueueTilemap((int tile, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,] tilemap)
 	{
-		if (Window.window == null)
-			return;
+		Window.TryNoWindowException();
 
 		TryInitQueue();
 
 		var (tilemapW, tilemapH) = (tilemap.GetLength(0), tilemap.GetLength(1));
-		var cellWidth = (float)Window.window.Size.X / tilemapW;
-		var cellHeight = (float)Window.window.Size.Y / tilemapH;
+		var cellWidth = (float)Window.Size.width / tilemapW;
+		var cellHeight = (float)Window.Size.height / tilemapH;
 		var key = (layer, graphicsPath);
 		var cellCount = ((uint)tilemapW, (uint)tilemapH);
 
@@ -181,26 +188,9 @@ internal static class Vertices
 		if (Window.window == null)
 			return;
 
-		TryInitQueue();
-
-		var verts = vertexQueue[(layer, graphicsPath)];
-		var tileSz = tileSize;
-		var cellWidth = MapCellSize.Item1 / tileSz.Item1;
-		var cellHeight = MapCellSize.Item2 / tileSz.Item2;
-		var cellCount = mapCellCount;
-
-		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
-		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
-		var c = new Color(color);
-		var grid = ToGrid((x, y), (cellWidth, cellHeight));
-		var tl = new Vector2f(grid.Item1, grid.Item2);
-		var br = new Vector2f(grid.Item1 + cellWidth, grid.Item2 + cellHeight);
-		var (ttl, ttr, tbr, tbl) = GetTexCoords(tileIdFull, (1, 1));
-
-		verts.Append(new(new((int)tl.X, (int)tl.Y), c, ttl));
-		verts.Append(new(new((int)br.X, (int)tl.Y), c, ttr));
-		verts.Append(new(new((int)br.X, (int)br.Y), c, tbr));
-		verts.Append(new(new((int)tl.X, (int)br.Y), c, tbl));
+		var cellWidth = MapCellSize.Item1 / tileSize.Item1;
+		var cellHeight = MapCellSize.Item2 / tileSize.Item2;
+		QueueRectangle(position, (cellWidth, cellHeight), color);
 	}
 
 	public static void TryInitQueue()
@@ -211,28 +201,27 @@ internal static class Vertices
 	}
 	public static void DrawQueue()
 	{
-		if (Window.window == null)
-			return;
+		Window.TryNoWindowException();
 
+		var shader = Window.IsRetro ? retroScreen : null;
+
+		if (Window.IsRetro)
+		{
+			var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
+			shader?.SetUniform("time", retroScreenTimer.ElapsedTime.AsSeconds());
+			shader?.SetUniform("randomVec", randVec);
+			shader?.SetUniform("viewSize", Window.window.GetView().Size);
+
+			if (Window.isClosing && retroTurnoffTime != null)
+			{
+				var timing = retroTurnoffTime.ElapsedTime.AsSeconds() / RETRO_TURNOFF_TIME;
+				shader?.SetUniform("turnoffAnimation", timing);
+			}
+		}
 		foreach (var kvp in Vertices.vertexQueue)
 		{
 			var tex = Window.graphics[kvp.Key.Item2];
-			var shader = Window.IsRetro ? retroScreen : null;
 			var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, shader);
-
-			if (Window.IsRetro)
-			{
-				var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
-				shader?.SetUniform("time", retroScreenTimer.ElapsedTime.AsSeconds());
-				shader?.SetUniform("randomVec", randVec);
-				shader?.SetUniform("viewSize", Window.window.GetView().Size);
-
-				if (Window.isClosing && retroTurnoffTime != null)
-				{
-					var timing = retroTurnoffTime.ElapsedTime.AsSeconds() / RETRO_TURNOFF_TIME;
-					shader?.SetUniform("turnoffAnimation", timing);
-				}
-			}
 			Window.window.Draw(kvp.Value, rend);
 		}
 	}
@@ -398,9 +387,9 @@ internal static class Vertices
 				matrix[rows - i - 1, j] = temp;
 			}
 	}
-	private static void QueueSingleSprite((float, float) position, int id, uint tint, sbyte angle, (int, int) size)
+	private static void QueueTile((float, float) position, int id, uint tint, sbyte angle, (int, int) size)
 	{
-		if (Window.window == null)
+		if (Window.window == null || id == tileIdEmpty)
 			return;
 
 		var verts = vertexQueue[(layer, graphicsPath)];
@@ -412,10 +401,12 @@ internal static class Vertices
 		h = Math.Abs(h);
 
 		var (ttl, ttr, tbr, tbl) = GetTexCoords(id, size);
-		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.window.Size.X);
-		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.window.Size.Y);
+		var x = Map(position.Item1, 0, cellCount.Item1, 0, Window.Size.width);
+		var y = Map(position.Item2, 0, cellCount.Item2, 0, Window.Size.height);
 		var c = new Color(tint);
 		var grid = ToGrid((x, y), (cellWidth / tileWidth, cellHeight / tileHeight));
+		//var tl = new Vector2f((int)x, (int)y);
+		//var br = new Vector2f((int)x + (int)(cellWidth * w), (int)y + (int)(cellHeight * h));
 		var tl = new Vector2f((int)grid.Item1, (int)grid.Item2);
 		var br = new Vector2f((int)(tl.X + cellWidth * w), (int)(tl.Y + cellHeight * h));
 

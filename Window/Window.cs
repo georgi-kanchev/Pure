@@ -110,11 +110,11 @@ public static class Window
 	public static Mode InitialMode { get; private set; }
 
 	/// <summary>
-	/// Creates the window with the specified mode
-	/// on the specified monitor.
+	/// Creates the window with the specified mode and pixel scale on the specified monitor.
 	/// </summary>
 	/// <param name="mode">The mode to create the window in.</param>
 	/// <param name="monitor">The index of the user monitor to display the window on.</param>
+	/// <param name="pixelScale">The multiplier applied to the monitor pixel size.</param>
 	[MemberNotNull(nameof(window))]
 	public static void Create(Mode mode = Mode.Windowed, uint monitor = 0)
 	{
@@ -130,6 +130,7 @@ public static class Window
 
 		var style = Styles.Default;
 		var (x, y, w, h) = Monitor.posSizes[(int)monitor];
+		monitorSize = (w, h);
 		aspectRatio = Monitor.GetAspectRatio(w, h);
 
 		if (mode == Mode.Fullscreen) style = Styles.Fullscreen;
@@ -144,8 +145,9 @@ public static class Window
 		}
 
 		window = new(new VideoMode((uint)w, (uint)h), title, style) { Position = new(x, y) };
+
 		window.Closed += (s, e) => Close();
-		window.Resized += (s, e) => UpdateWindowAndView();
+		window.Resized += (s, e) => Resize();
 		window.LostFocus += (s, e) =>
 		{
 			Mouse.CancelInput();
@@ -163,7 +165,7 @@ public static class Window
 		window.Clear();
 		window.Display();
 
-		UpdateWindowAndView();
+		Resize();
 
 		//var str = DefaultGraphics.PNGToBase64String(
 		//	"/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
@@ -305,6 +307,7 @@ public static class Window
 	}
 
 	#region Backend
+	internal static (int, int) monitorSize;
 	internal static bool isRetro, isClosing;
 	private static string title = "Game";
 	private static (int, int) aspectRatio;
@@ -317,19 +320,7 @@ public static class Window
 		if (graphics.ContainsKey(path))
 			return;
 
-		graphics[path] = new(path);
-	}
-	private static void UpdateWindowAndView()
-	{
-		if (window == null)
-			return;
-
-		var view = window.GetView();
-		var (w, h) = (RoundToMultipleOfTwo((int)Size.Item1), RoundToMultipleOfTwo((int)Size.Item2));
-		view.Size = new(w, h);
-		view.Center = new(RoundToMultipleOfTwo((int)(Size.Item1 / 2f)), RoundToMultipleOfTwo((int)(Size.Item2 / 2f)));
-		window.SetView(view);
-		window.Size = new((uint)w, (uint)h);
+		graphics[path] = new(path) { Repeated = true };
 	}
 
 	private static int RoundToMultipleOfTwo(int n)
@@ -351,6 +342,15 @@ public static class Window
 	{
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+	}
+	private static void Resize()
+	{
+		TryNoWindowException();
+
+		var view = window.GetView();
+		view.Size = new(window.Size.X, window.Size.Y);
+		view.Center = new(view.Size.X / 2, view.Size.Y / 2);
+		window.SetView(view);
 	}
 
 	[MemberNotNull(nameof(window))]

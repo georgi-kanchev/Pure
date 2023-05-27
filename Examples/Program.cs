@@ -15,48 +15,38 @@ public class Program
 
 		//Games.FlappyBird.Run();
 
-		Window.Create(Window.Mode.Windowed);
+		Window.Create(Window.Mode.Windowed, 0);
 		var aspectRatio = Window.MonitorAspectRatio;
 		var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
 		var collisionMap = new Map();
-		collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE); // lake
-		collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE_DOUBLE); // lake
-		collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE); // house roof
-		collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE_RIGHT); // house wall
-		collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
-		collisionMap.AddRectangle(new((1, 1)), Tile.PATTERN_33); // tree top
+		collisionMap.AddRectangle(new((1, 1)), Tile.SHADE_1);
+		collisionMap.AddRectangle(new((1, 1)), Tile.SHADE_2);
+		//collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE); // lake
+		//collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE_DOUBLE); // lake
+		//collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE); // house roof
+		//collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE_RIGHT); // house wall
+		//collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
+		//collisionMap.AddRectangle(new((1, 1)), Tile.PATTERN_33); // tree top
 
 		while (Window.IsOpen)
 		{
 			Window.Activate(true);
 
 			FillWithRandomGrass();
-			SetLake((0, 0), (14, 9));
-			SetLake((26, 18), (5, 7));
-			SetLake((16, 24), (12, 6));
-
-			SetHouse((30, 10));
-			SetHouse((34, 11));
-			SetHouse((33, 8));
-
-			SetBridge((21, 16), (31, 16));
-			SetRoad((32, 0), (32, 26));
-			SetRoad((33, 10), (47, 10));
-			SetRoad((20, 16), (0, 16));
-
-			SetTree((31, 5));
-			SetTree((26, 8));
-			SetTree((20, 12));
-			SetTree((39, 11));
-			SetTree((36, 18));
-			SetTree((38, 19));
+			//SetLake((0, 0), (14, 9));
+			//SetLake((26, 18), (5, 7));
+			//SetLake((16, 24), (12, 6));
+			//SetHouses((30, 10), (34, 11), (33, 8));
+			//SetBridge((21, 16), (31, 16));
+			//SetRoad((32, 0), (32, 26));
+			//SetRoad((33, 10), (47, 10));
+			//SetRoad((20, 16), (0, 16));
+			//SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
 
 			collisionMap.Update(tilemap.IDs);
 
 			Window.DrawRectangles(collisionMap.ToBundle());
-
 			Window.DrawTiles(tilemap.ToBundle());
-
 			Window.Activate(false);
 		}
 
@@ -84,19 +74,22 @@ public class Program
 				new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 0),
 				new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 2));
 		}
-		void SetHouse((int x, int y) position)
+		void SetHouses(params (int x, int y)[] positions)
 		{
-			var (x, y) = position;
-			var roof = new Tile(Tile.GEOMETRY_ANGLE, Color.Red.ToDark());
-			var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Color.Brown.ToBright());
+			for (int i = 0; i < positions?.Length; i++)
+			{
+				var (x, y) = positions[i];
+				var roof = new Tile(Tile.GEOMETRY_ANGLE, Color.Red.ToDark());
+				var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Color.Brown.ToBright());
 
-			tilemap.SetTile((x, y), roof);
-			roof.Flips = (true, false);
-			tilemap.SetTile((x + 1, y), roof);
+				tilemap.SetTile((x, y), roof);
+				roof.Flips = (true, false);
+				tilemap.SetTile((x + 1, y), roof);
 
-			tilemap.SetTile((x, y + 1), walls);
-			walls.Flips = (true, false);
-			tilemap.SetTile((x + 1, y + 1), walls);
+				tilemap.SetTile((x, y + 1), walls);
+				walls.Flips = (true, false);
+				tilemap.SetTile((x + 1, y + 1), walls);
+			}
 		}
 		void SetRoad((int x, int y) pointA, (int x, int y) pointB)
 		{
@@ -107,11 +100,14 @@ public class Program
 		{
 			tilemap.SetLine(pointA, pointB, new(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
 		}
-		void SetTree((int x, int y) position)
+		void SetTrees(params (int x, int y)[] positions)
 		{
-			var (x, y) = position;
-			tilemap.SetEllipse((x, y - 1), (1, 1), new(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
-			tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
+			for (int i = 0; i < positions?.Length; i++)
+			{
+				var (x, y) = positions[i];
+				tilemap.SetEllipse((x, y - 1), (1, 1), new(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
+				tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
+			}
 		}
 	}
 }
