@@ -262,7 +262,7 @@ public static class UserInterface
 
 	public static void Run()
 	{
-		Window.Create(Window.Mode.Windowed);
+		Window.Create(3);
 
 		var aspectRatio = Window.MonitorAspectRatio;
 		var tilemaps = new TilemapManager(3, (aspectRatio.width * 3, aspectRatio.height * 3));

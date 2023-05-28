@@ -33,7 +33,7 @@ public class Hitbox
 	/// <returns>The rectangle at the specified index.</returns>
 	public virtual Rectangle this[int index]
 	{
-		get => rectangles[index];
+		get => LocalToGlobalRectangle(rectangles[index]);
 		set => rectangles[index] = value;
 	}
 
@@ -213,7 +213,7 @@ public class Hitbox
 	{
 		var result = new (float x, float y, float width, float height, uint color)[hitbox.rectangles.Count];
 		for (int i = 0; i < result.Length; i++)
-			result[i] = hitbox.rectangles[i];
+			result[i] = hitbox[i];
 		return result;
 	}
 	/// <summary>
@@ -274,7 +274,7 @@ public class Hitbox
 	{
 		var (x, y) = localRect.Position;
 		var (w, h) = localRect.Size;
-		localRect.Position = (x * Scale, y * Scale);
+		localRect.Position = (Position.x + x * Scale, Position.y + y * Scale);
 		localRect.Size = (w * Scale, h * Scale);
 		return localRect;
 	}

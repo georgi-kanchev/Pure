@@ -175,7 +175,7 @@ public class Tilemap
 			stack.Push((currentPosition.x, currentPosition.y + 1));
 		}
 	}
-	public void Replace((int x, int y) position, (int width, int height) size, Tile targetTile, int seedOffset = 0, params Tile[] tiles)
+	public void Replace((int x, int y) position, (int width, int height) size, Tile targetTile, (int x, int y, int z) seedOffset = default, params Tile[] tiles)
 	{
 		if (tiles == null || tiles.Length == 0)
 			return;
@@ -183,6 +183,7 @@ public class Tilemap
 		var xStep = size.width < 0 ? -1 : 1;
 		var yStep = size.height < 0 ? -1 : 1;
 		var i = 0;
+		var (sx, sy, sz) = seedOffset;
 		for (int x = position.x; x != position.x + size.width; x += xStep)
 			for (int y = position.y; y != position.y + size.height; y += yStep)
 			{
@@ -192,7 +193,7 @@ public class Tilemap
 				if (TileAt((x, y)) != targetTile)
 					continue;
 
-				SetTile((x, y), ChooseOne(tiles, HashCode.Combine(x, y) + seedOffset));
+				SetTile((x, y), ChooseOne(tiles, HashCode.Combine(x + sx, y + sy) + sz));
 				i++;
 			}
 	}

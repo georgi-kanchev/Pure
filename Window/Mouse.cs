@@ -178,10 +178,10 @@ public static class Mouse
 	{
 		ScrollDelta = 0;
 
-		if (IsCursorTile == false)
+		if (IsCursorTile == false || CursorGraphics == Cursor.None)
 			return;
 
-		var (x, y) = Window.PositionFrom(CursorPosition);
+		var (x, y) = Window.PointFrom(CursorPosition);
 		var (offX, offY) = cursorOffsets[(int)CursorGraphics];
 
 		Vertices.graphicsPath = "default";

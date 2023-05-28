@@ -110,16 +110,22 @@ public static class Window
 	public static Mode InitialMode { get; private set; }
 
 	/// <summary>
-	/// Creates the window with the specified mode and pixel scale on the specified monitor.
+	/// Creates the window with the specified mode, pixel scale and main tile size on the specified monitor.
 	/// </summary>
 	/// <param name="mode">The mode to create the window in.</param>
 	/// <param name="monitor">The index of the user monitor to display the window on.</param>
 	/// <param name="pixelScale">The multiplier applied to the monitor pixel size.</param>
+	/// <param name="mainTileSize">The main target tile size of the application used to calculate each
+	/// window pixel, defaults to (8, 8) - the size of the default graphics.</param>
 	[MemberNotNull(nameof(window))]
-	public static void Create(Mode mode = Mode.Windowed, uint monitor = 0)
+	public static void Create(float pixelScale, Mode mode = Mode.Windowed, uint monitor = 0, (int width, int height) mainTileSize = default)
 	{
 		if (window != null)
 			return;
+
+		var (tw, th) = mainTileSize;
+		tw = tw < 1 ? 8 : tw;
+		th = th < 1 ? 8 : th;
 
 		InitialMode = mode;
 
@@ -128,10 +134,13 @@ public static class Window
 		if (monitor >= Monitor.posSizes.Count)
 			monitor = (uint)Monitor.posSizes.Count - 1;
 
+		Window.pixelScale = pixelScale;
 		var style = Styles.Default;
 		var (x, y, w, h) = Monitor.posSizes[(int)monitor];
 		monitorSize = (w, h);
 		aspectRatio = Monitor.GetAspectRatio(w, h);
+		var (aw, ah) = aspectRatio;
+		renderTexture = new((uint)(aw * pixelScale * tw), (uint)(ah * pixelScale * th));
 
 		if (mode == Mode.Fullscreen) style = Styles.Fullscreen;
 		else if (mode == Mode.Borderless) style = Styles.None;
@@ -309,11 +318,13 @@ public static class Window
 	#region Backend
 	internal static (int, int) monitorSize;
 	internal static bool isRetro, isClosing;
+	internal static float pixelScale;
 	private static string title = "Game";
 	private static (int, int) aspectRatio;
 
 	internal static readonly Dictionary<string, Texture> graphics = new();
 	internal static RenderWindow? window;
+	internal static RenderTexture? renderTexture;
 
 	private static void TryLoadGraphics(string path)
 	{
@@ -331,7 +342,7 @@ public static class Window
 			result += 2;
 		return result;
 	}
-	internal static (float, float) PositionFrom((int, int) screenPixel)
+	internal static (float, float) PointFrom((int, int) screenPixel)
 	{
 		var x = Map(screenPixel.Item1, 0, Size.Item1, 0, Vertices.mapCellCount.Item1);
 		var y = Map(screenPixel.Item2, 0, Size.Item2, 0, Vertices.mapCellCount.Item2);
@@ -354,9 +365,10 @@ public static class Window
 	}
 
 	[MemberNotNull(nameof(window))]
+	[MemberNotNull(nameof(renderTexture))]
 	internal static void TryNoWindowException()
 	{
-		if (window == null)
+		if (window == null || renderTexture == null)
 			throw new MemberAccessException($"{nameof(Window)} is not created. Use {nameof(Create)}(...).");
 	}
 	internal static void TryArrayMismatchException(params Array[] arrays)
