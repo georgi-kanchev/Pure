@@ -84,8 +84,8 @@ public struct Rectangle
 		var (w, h) = Size;
 		var (px, py) = point;
 
-		var containsX = x <= px && px <= x + w;
-		var containsY = y <= py && py <= y + h;
+		var containsX = x < px && px < x + w;
+		var containsY = y < py && py < y + h;
 		return containsX && containsY;
 	}
 	/// <param name="line">

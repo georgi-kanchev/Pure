@@ -30,8 +30,10 @@ public class Program
 		collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
 		collisionMap.AddRectangle(new((1, 1)), Tile.PATTERN_33); // tree top
 
-		// icon tiles are 7x7, not 8x8, cut one row & column
-		var hitbox = new Hitbox((0, 0), 1f, new Rectangle((1f - 1f / 8f, 1f - 1f / 8f)));
+		// icon tiles are 7x7, not 8x8, cut one row & column,
+		// hitbox and tile on screen might mismatch since the tile is pixel perfect
+		// and the hitbox is not
+		var hitbox = new Hitbox((0, 0), 1f - 1f / 8f, new Rectangle((1f, 1f)));
 
 		var t = 0f;
 
@@ -56,20 +58,19 @@ public class Program
 
 			collisionMap.Update(tilemap.IDs);
 
-			Window.DrawTiles(background.ToBundle());
-			Window.DrawTiles(tilemap.ToBundle());
+			Window.DrawTiles(background);
+			Window.DrawTiles(tilemap);
 
 			var mousePosition = tilemap.PointFrom(Mouse.CursorPosition, Window.Size);
 			hitbox.Position = mousePosition;
 
 			var isOverlapping = collisionMap.IsOverlapping(hitbox);
-			var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_HAPPY;
+			var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_SMILING;
 			var tint = isOverlapping ? Color.Red : Color.Green;
 			var tile = new Tile(id, tint);
 
-			Window.DrawRectangles(hitbox.ToBundle());
 			Window.DrawTile(hitbox.Position, tile);
-
+			Window.DrawRectangles(collisionMap);
 			Window.Activate(false);
 		}
 

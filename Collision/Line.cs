@@ -109,10 +109,8 @@ public struct Line
 	/// map.</returns>
 	public (float x, float y)[] CrossPoints(Map map)
 	{
-		var (posX, posY) = map.Position;
 		var (x0, y0) = ((int)A.Item1, (int)A.Item2);
 		var (x1, y1) = ((int)B.Item1, (int)B.Item2);
-		var sc = map.Scale;
 		var dx = (int)MathF.Abs(x1 - x0);
 		var dy = (int)-MathF.Abs(y1 - y0);
 		var sx = x0 < x1 ? 1 : -1;
@@ -123,8 +121,8 @@ public struct Line
 
 		for (int k = 0; k < MAX_ITERATIONS; k++)
 		{
-			var ix = (int)(x0 / sc - posX);
-			var iy = (int)(y0 / sc - posY);
+			var ix = (int)x0;
+			var iy = (int)y0;
 
 			var neighbourCells = new List<Rectangle[]>()
 				{

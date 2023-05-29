@@ -24,14 +24,14 @@ public class Hitbox
 	/// <summary>
 	/// Gets the number of rectangles that make up the hitbox.
 	/// </summary>
-	public virtual int RectangleCount => rectangles.Count;
+	public int RectangleCount => rectangles.Count;
 
 	/// <summary>
 	/// Gets or sets the rectangle at the specified index.
 	/// </summary>
 	/// <param name="index">The index of the rectangle to get or set.</param>
 	/// <returns>The rectangle at the specified index.</returns>
-	public virtual Rectangle this[int index]
+	public Rectangle this[int index]
 	{
 		get => LocalToGlobalRectangle(rectangles[index]);
 		set => rectangles[index] = value;
@@ -107,7 +107,7 @@ public class Hitbox
 	/// Saves the hitbox as a compressed binary file to the specified path.
 	/// </summary>
 	/// <param name="path">The path to save the hitbox to.</param>
-	public virtual void Save(string path)
+	public void Save(string path)
 	{
 		var c = rectangles.Count;
 		var bCount = BitConverter.GetBytes(c);
@@ -133,7 +133,7 @@ public class Hitbox
 	/// Adds a rectangle to the hitbox.
 	/// </summary>
 	/// <param name="rectangle">The rectangle to add.</param>
-	public virtual void AddRectangle(Rectangle rectangle)
+	public void AddRectangle(Rectangle rectangle)
 	{
 		rectangles.Add(LocalToGlobalRectangle(rectangle));
 	}
@@ -143,7 +143,7 @@ public class Hitbox
 	/// </summary>
 	/// <param name="hitbox">The hitbox to check for overlap with.</param>
 	/// <returns>True if the hitboxes overlap, false otherwise.</returns>
-	public virtual bool IsOverlapping(Hitbox hitbox)
+	public bool IsOverlapping(Hitbox hitbox)
 	{
 		for (int i = 0; i < RectangleCount; i++)
 			if (hitbox.IsOverlapping(this[i]))
@@ -155,7 +155,7 @@ public class Hitbox
 	/// The rectangle to check for overlap with.</param>
 	/// <returns>True if the hitbox overlaps with the rectangle, 
 	/// false otherwise.</returns>
-	public virtual bool IsOverlapping(Rectangle rectangle)
+	public bool IsOverlapping(Rectangle rectangle)
 	{
 		for (int i = 0; i < RectangleCount; i++)
 			if (this[i].IsOverlapping(rectangle))
@@ -167,7 +167,7 @@ public class Hitbox
 	/// The line to check for overlap with.</param>
 	/// <returns>True if the hitbox overlaps with the line, 
 	/// false otherwise.</returns>
-	public virtual bool IsOverlapping(Line line)
+	public bool IsOverlapping(Line line)
 	{
 		for (int i = 0; i < rectangles.Count; i++)
 			if (rectangles[i].IsOverlapping(line))
@@ -179,7 +179,7 @@ public class Hitbox
 	/// The point to check for overlap with.</param>
 	/// <returns>True if the hitbox overlaps with the point, 
 	/// false otherwise.</returns>
-	public virtual bool IsOverlapping((float x, float y) point)
+	public bool IsOverlapping((float x, float y) point)
 	{
 		for (int i = 0; i < RectangleCount; i++)
 			if (this[i].IsOverlapping(point))
@@ -190,10 +190,10 @@ public class Hitbox
 
 	/// <returns>
 	/// An array copy of the rectangles in this hitbox collection.</returns>
-	public virtual Rectangle[] ToArray() => this;
+	public Rectangle[] ToArray() => this;
 	/// <returns>
 	/// An array copy of the rectangles in this hitbox collection, as a bundle tuple.</returns>
-	public virtual (float x, float y, float width, float height, uint color)[] ToBundle() => this;
+	public (float x, float y, float width, float height, uint color)[] ToBundle() => this;
 
 	/// <summary>
 	/// Implicitly converts a rectangle array to a hitbox object.

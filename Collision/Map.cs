@@ -7,112 +7,92 @@ namespace Pure.Collision;
 /// Represents a map hitbox that contains a collection of rectangles that 
 /// define the solid areas of a map.
 /// </summary>
-public class Map : Hitbox
+public class Map
 {
 	/// <summary>
-	/// Gets the number of rectangles in the map hitbox, including the 
-	/// rectangles that are part of the cells.
+	/// Gets the total number of rectangles at all cells.
 	/// </summary>
-	public override int RectangleCount => rectangles.Count + cellRects.Count;
+	public int RectangleCount => count;
 
 	/// <summary>
-	/// Gets the rectangle at the specified index, 
-	/// including the rectangles that are part of the cells.
+	/// Initializes a new empty map instance.
 	/// </summary>
-	/// <param name="index">The index of the rectangle to retrieve.</param>
-	/// <returns>The rectangle at the specified index.</returns>
-	public override Rectangle this[int index]
-	{
-		get
-		{
-			var r = rectangles;
-			return index < r.Count ? r[index] : cellRects[index - r.Count];
-		}
-	}
-
+	public Map() { }
 	/// <summary>
 	/// Initializes a new map instance from the specified file path.
 	/// </summary>
 	/// <param name="path">The path to the file that contains the map hitbox data.</param>
-	public Map(string path) : base(path, (0, 0), 1)
+	public Map(string path)
 	{
-		var bytes = Decompress(File.ReadAllBytes(path));
-		// count (4) | xs * 4, ys * 4, ws * 4, hs * 4
-		var baseOffset = 4 + rectangles.Count * 4 * 4;
-		var bSectorCount = new byte[4];
+		//var bytes = Decompress(File.ReadAllBytes(path));
+		//// count (4) | xs * 4, ys * 4, ws * 4, hs * 4
+		//var baseOffset = 4 + rectangles.Count * 4 * 4;
+		//var bSectorCount = new byte[4];
 
-		Array.Copy(bytes, baseOffset, bSectorCount, 0, bSectorCount.Length);
+		//Array.Copy(bytes, baseOffset, bSectorCount, 0, bSectorCount.Length);
 
-		var sectorCount = BitConverter.ToInt32(bSectorCount);
+		//var sectorCount = BitConverter.ToInt32(bSectorCount);
 
-		var off = baseOffset + bSectorCount.Length;
-		for (int i = 0; i < sectorCount; i++)
-		{
-			var bTile = new byte[4];
-			var bRectAmount = new byte[4];
+		//var off = baseOffset + bSectorCount.Length;
+		//for (int i = 0; i < sectorCount; i++)
+		//{
+		//	var bTile = new byte[4];
+		//	var bRectAmount = new byte[4];
 
-			Array.Copy(bytes, off, bTile, 0, bTile.Length);
-			Array.Copy(bytes, off + bTile.Length, bRectAmount, 0, bRectAmount.Length);
+		//	Array.Copy(bytes, off, bTile, 0, bTile.Length);
+		//	Array.Copy(bytes, off + bTile.Length, bRectAmount, 0, bRectAmount.Length);
 
-			off += bTile.Length + bRectAmount.Length;
-			var tile = BitConverter.ToInt32(bTile);
-			var rectAmount = BitConverter.ToInt32(bRectAmount);
-			var bXs = new byte[rectAmount * 4];
-			var bYs = new byte[rectAmount * 4];
-			var bWs = new byte[rectAmount * 4];
-			var bHs = new byte[rectAmount * 4];
+		//	off += bTile.Length + bRectAmount.Length;
+		//	var tile = BitConverter.ToInt32(bTile);
+		//	var rectAmount = BitConverter.ToInt32(bRectAmount);
+		//	var bXs = new byte[rectAmount * 4];
+		//	var bYs = new byte[rectAmount * 4];
+		//	var bWs = new byte[rectAmount * 4];
+		//	var bHs = new byte[rectAmount * 4];
 
-			Array.Copy(bytes, off, bXs, 0, bXs.Length);
-			Array.Copy(bytes, off + bXs.Length, bYs, 0, bYs.Length);
-			Array.Copy(bytes, off + bXs.Length + bYs.Length, bWs, 0, bWs.Length);
-			Array.Copy(bytes, off + bXs.Length + bYs.Length + bWs.Length, bHs, 0, bHs.Length);
+		//	Array.Copy(bytes, off, bXs, 0, bXs.Length);
+		//	Array.Copy(bytes, off + bXs.Length, bYs, 0, bYs.Length);
+		//	Array.Copy(bytes, off + bXs.Length + bYs.Length, bWs, 0, bWs.Length);
+		//	Array.Copy(bytes, off + bXs.Length + bYs.Length + bWs.Length, bHs, 0, bHs.Length);
 
-			for (int j = 0; j < rectAmount; j++)
-			{
-				var bX = new byte[4];
-				var bY = new byte[4];
-				var bW = new byte[4];
-				var bH = new byte[4];
+		//	for (int j = 0; j < rectAmount; j++)
+		//{
+		//	var bX = new byte[4];
+		//	var bY = new byte[4];
+		//	var bW = new byte[4];
+		//	var bH = new byte[4];
 
-				Array.Copy(bytes, off, bX, 0, bX.Length);
-				Array.Copy(bytes, off + bX.Length, bY, 0, bY.Length);
-				Array.Copy(bytes, off + bX.Length + bY.Length, bW, 0, bW.Length);
-				Array.Copy(bytes, off + bX.Length + bW.Length, bH, 0, bH.Length);
+		//	Array.Copy(bytes, off, bX, 0, bX.Length);
+		//	Array.Copy(bytes, off + bX.Length, bY, 0, bY.Length);
+		//	Array.Copy(bytes, off + bX.Length + bY.Length, bW, 0, bW.Length);
+		//	Array.Copy(bytes, off + bX.Length + bW.Length, bH, 0, bH.Length);
 
-				var x = BitConverter.ToInt32(bX);
-				var y = BitConverter.ToInt32(bY);
-				var w = BitConverter.ToSingle(bW);
-				var h = BitConverter.ToSingle(bH);
-				AddRectangle(new((w, h), (x, y)), tile);
+		//	var x = BitConverter.ToInt32(bX);
+		//	var y = BitConverter.ToInt32(bY);
+		//	var w = BitConverter.ToSingle(bW);
+		//	var h = BitConverter.ToSingle(bH);
+		//	AddRectangle(new((w, h), (x, y)), tile);
 
-				off += bX.Length + bY.Length + bW.Length + bH.Length;
-			}
-		}
+		//	off += bX.Length + bY.Length + bW.Length + bH.Length;
+		//}
+		//}
 	}
-	/// <summary>
-	/// Initializes a new map instance with an empty collection of rectangles.
-	/// </summary>
-	public Map() : base((0, 0), 1) { }
 
 	/// <summary>
-	/// Saves the current state of the map to a compressed binary 
-	/// file at the given path.
-	/// Overrides the hitbox implementation to include additional data for each tile's cell rectangles.
+	/// Saves the current state of the map to a compressed binary file at the given path.
 	/// </summary>
 	/// <param name="path">The path to save the file to.</param>
-	public override void Save(string path)
+	public void Save(string path)
 	{
-		base.Save(path);
-
 		var baseSavedBytes = Decompress(File.ReadAllBytes(path));
-		var sectorCount = cellRectsMap.Count;
+		var sectorCount = cellRects.Count;
 		var bSectorCount = BitConverter.GetBytes(sectorCount);
 
 		var result = new List<byte>();
 		result.AddRange(baseSavedBytes);
 		result.AddRange(bSectorCount);
 
-		foreach (var kvp in cellRectsMap)
+		foreach (var kvp in cellRects)
 		{
 			var rects = kvp.Value;
 			var rectAmount = rects.Count;
@@ -151,28 +131,44 @@ public class Map : Hitbox
 	/// rectangle to.</param>
 	public void AddRectangle(Rectangle rectangle, int tileID)
 	{
-		if (cellRectsMap.ContainsKey(tileID) == false)
-			cellRectsMap[tileID] = new List<Rectangle>();
+		if (cellRects.ContainsKey(tileID) == false)
+			cellRects[tileID] = new List<Rectangle>();
 
-		cellRectsMap[tileID].Add(rectangle);
+		cellRects[tileID].Add(rectangle);
+		count++;
 	}
 	/// <summary>
-	/// Gets an array of rectangles that intersect the specified cell.
+	/// Gets an array of rectangles at the specified cell.
 	/// </summary>
 	/// <param name="cell">The (x, y) cell coordinates.</param>
-	/// <returns>An array of rectangles that intersect the cell.</returns>
+	/// <returns>An array of rectangles at the cell.</returns>
 	public Rectangle[] GetRectangles((int x, int y) cell)
 	{
 		if (tileIndices.ContainsKey(cell) == false)
 			return Array.Empty<Rectangle>();
 
 		var id = tileIndices[cell];
-		var rects = cellRectsMap[id];
+		var rects = cellRects[id];
 		var result = new List<Rectangle>();
 		var (x, y) = cell;
 
 		for (int r = 0; r < rects.Count; r++)
-			result.Add(LocalToGlobalRectangle(rects[r], (x, y)));
+			result.Add(rects[r]);
+
+		return result.ToArray();
+	}
+	public Rectangle[] GetRectangles(int tile)
+	{
+		if (cellRects.ContainsKey(tile) == false)
+			return Array.Empty<Rectangle>();
+
+		return cellRects[tile].ToArray();
+	}
+	public Rectangle[] GetRectangles()
+	{
+		var result = new List<Rectangle>();
+		foreach (var kvp in tileIndices)
+			result.AddRange(cellRects[kvp.Value]);
 
 		return result.ToArray();
 	}
@@ -187,31 +183,36 @@ public class Map : Hitbox
 		if (tileIDs == null)
 			throw new ArgumentNullException(nameof(tileIDs));
 
-		cellRects.Clear();
 		tileIndices.Clear();
 
 		for (int y = 0; y < tileIDs.GetLength(1); y++)
 			for (int x = 0; x < tileIDs.GetLength(0); x++)
 			{
 				var tile = tileIDs[x, y];
-				if (cellRectsMap.ContainsKey(tile) == false)
+				if (cellRects.ContainsKey(tile) == false)
 					continue;
 
-				var pos = (x, y);
-				var localRects = cellRectsMap[tile];
-
-				for (int i = 0; i < localRects.Count; i++)
-					cellRects.Add(LocalToGlobalRectangle(localRects[i], pos));
-
-				tileIndices[pos] = tile;
+				tileIndices[(x, y)] = tile;
 			}
 	}
 
+	/// <param name="hitbox">
+	/// The hitbox to check.</param>
+	/// <returns>True if the specified hitbox overlaps with the map hitbox, 
+	/// false otherwise.</returns>
+	public bool IsOverlapping(Hitbox hitbox)
+	{
+		for (int i = 0; i < hitbox.RectangleCount; i++)
+			if (IsOverlapping(hitbox[i]))
+				return true;
+
+		return false;
+	}
 	/// <param name="line">
 	/// The line to check.</param>
 	/// <returns>True if the specified line overlaps with the map hitbox, 
 	/// false otherwise.</returns>
-	public override bool IsOverlapping(Line line)
+	public bool IsOverlapping(Line line)
 	{
 		return line.CrossPoints(this).Length > 0;
 	}
@@ -219,11 +220,9 @@ public class Map : Hitbox
 	/// The rectangle to check.</param>
 	/// <returns>True if the specified rectangle overlaps with the map hitbox, 
 	/// false otherwise.</returns>
-	public override bool IsOverlapping(Rectangle rectangle)
+	public bool IsOverlapping(Rectangle rectangle)
 	{
-		var point = rectangle.Position;
-		var chunkSize = GetChunkSizeForRect(rectangle);
-		var neighborRects = GetNeighborRects(point, chunkSize);
+		var neighborRects = GetNeighborRects(rectangle);
 		for (int i = 0; i < neighborRects.Count; i++)
 			if (neighborRects[i].IsOverlapping(rectangle))
 				return true;
@@ -234,9 +233,9 @@ public class Map : Hitbox
 	/// The point to check.</param>
 	/// <returns>True if the specified point overlaps with the map hitbox, 
 	/// false otherwise.</returns>
-	public override bool IsOverlapping((float x, float y) point)
+	public bool IsOverlapping((float x, float y) point)
 	{
-		var neighborRects = GetNeighborRects(point, (1, 1));
+		var neighborRects = GetNeighborRects(new(point, (1, 1)));
 		for (int i = 0; i < neighborRects.Count; i++)
 			if (neighborRects[i].IsOverlapping(point))
 				return true;
@@ -246,29 +245,23 @@ public class Map : Hitbox
 
 	/// <returns>
 	/// An array copy of the rectangles in this map hitbox collection, as a bundle tuple.</returns>
-	public override (float x, float y, float width, float height, uint color)[] ToBundle() => this;
+	public (float x, float y, float width, float height, uint color)[] ToBundle() => this;
 
 	/// <summary>
 	/// Implicitly converts a map object to a rectangle array.
 	/// </summary>
 	/// <param name="map">The map object to convert.</param>
-	public static implicit operator Rectangle[](Map map)
-	{
-		var result = new Rectangle[map.RectangleCount];
-		Array.Copy(map.rectangles.ToArray(), 0, result, 0, map.rectangles.Count);
-		Array.Copy(map.cellRects.ToArray(), 0, result, map.rectangles.Count, map.cellRects.Count);
-
-		return map.rectangles.ToArray();
-	}
+	public static implicit operator Rectangle[](Map map) => map.GetRectangles();
 	/// <summary>
 	/// Implicitly converts a map object to an array of rectangle bundles.
 	/// </summary>
-	/// <param name="hitbox">The map object to convert.</param>
+	/// <param name="map">The map object to convert.</param>
 	public static implicit operator (float x, float y, float width, float height, uint color)[](Map map)
 	{
-		var result = new (float x, float y, float width, float height, uint color)[map.RectangleCount];
-		for (int i = 0; i < result.Length; i++)
-			result[i] = map[i];
+		var rectangles = map.GetRectangles();
+		var result = new (float x, float y, float width, float height, uint color)[rectangles.Length];
+		for (int i = 0; i < rectangles.Length; i++)
+			result[i] = rectangles[i];
 		return result;
 	}
 
@@ -293,81 +286,42 @@ public class Map : Hitbox
 	// [rect amount * 4]		- heights
 	// = = = = = = (sector 3)
 	// ...
+	private int count;
 
-	private readonly List<Rectangle> cellRects = new(); // final result, recreated on each update
-	private readonly Dictionary<int, List<Rectangle>> cellRectsMap = new(); // to not repeat the lists
-	private readonly Dictionary<(int, int), int> tileIndices = new(); // for faster pick
+	// to not repeat rectangles for each tile
+	// saving map of tiles [(x, y), tile]
+	// and rectangles for each tile [tile, list of rectangles]
+	private readonly Dictionary<(int, int), int> tileIndices = new();
+	private readonly Dictionary<int, List<Rectangle>> cellRects = new();
 
-	private Rectangle LocalToGlobalRectangle(Rectangle localRect, (float, float) tilePos)
+	internal List<Rectangle> GetNeighborRects(Rectangle rect)
 	{
-		var sc = Scale;
-		var (x, y) = tilePos;
-		var (rx, ry) = localRect.Position;
-		var (rw, rh) = localRect.Size;
-		var (offX, offY) = Position;
+		var result = new List<Rectangle>();
+		var (x, y) = rect.Position;
+		var (w, h) = rect.Size;
+		var (chW, chH) = GetChunkSizeForRect(rect);
 
-		rx *= sc;
-		ry *= sc;
-		rw *= sc;
-		rh *= sc;
-
-		rx += offX * sc;
-		ry += offY * sc;
-
-		return new((rw, rh), (x + rx, y + ry));
-	}
-	private Rectangle GlobalToLocal(Rectangle globalRect)
-	{
-		var (w, h) = globalRect.Size;
-		var (x, y) = globalRect.Position;
-		var sc = Scale;
-		var (offX, offY) = Position;
-
-		x -= offX * sc;
-		y -= offY * sc;
-
-		x /= sc;
-		y /= sc;
-		w /= sc;
-		h /= sc;
-
-		return new(((int)w, (int)h), ((int)x, (int)y));
-	}
-	internal List<Rectangle> GetNeighborRects((float, float) point, (int, int) chunkSize)
-	{
-		var result = new List<Rectangle>(cellRects);
-		var localRect = GlobalToLocal(new(point, (0, 0)));
-		var (x, y) = localRect.Position;
-		var (w, h) = localRect.Size;
-		var xStep = w < 0 ? -1 : 1;
-		var yStep = h < 0 ? -1 : 1;
-		var (chW, chH) = chunkSize;
-
-		for (int j = (int)y - yStep * (chH - 1); j != y + h + yStep * chH; j += yStep)
-			for (int i = (int)x - xStep * (chW - 1); i != x + w + xStep * chW; i += xStep)
+		for (int j = -chW; j < chW; j++)
+			for (int i = -chH; i < chH; i++)
 			{
-				var pos = (i, j);
+				var cell = ((int)x + i, (int)y + j);
 
-				if (tileIndices.ContainsKey(pos) == false)
+				if (tileIndices.ContainsKey(cell) == false)
 					continue;
 
-				var id = tileIndices[(i, j)];
-				var rects = cellRectsMap[id];
+				var id = tileIndices[cell];
+				var rects = cellRects[id];
 				for (int r = 0; r < rects.Count; r++)
-				{
-					var rect = LocalToGlobalRectangle(rects[r], (i, j));
-					result.Add(rect);
-				}
+					result.Add(rects[r]);
 			}
 		return result;
 	}
 	private (int, int) GetChunkSizeForRect(Rectangle globalRect)
 	{
 		var (w, h) = globalRect.Size;
-
-		w /= Scale;
-		h /= Scale;
-		return ((int)w * 2, (int)h * 2);
+		var resultW = Math.Max((int)MathF.Ceiling(w * 2f), 1);
+		var resultH = Math.Max((int)MathF.Ceiling(h * 2f), 1);
+		return (resultW, resultH);
 	}
 
 	private static byte[] ToBytes<T>(T[] array) where T : struct

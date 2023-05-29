@@ -696,11 +696,14 @@ public class Tilemap
 	/// <param name="tilemap">The tilemap object to convert.</param>
 	/// <returns>A new 2D array of tiles containing the tiles from the tilemap object.</returns>
 	public static implicit operator Tile[,](Tilemap tilemap) => Copy(tilemap.data);
-
-	/// <returns>
-	/// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-	public (int tile, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,] ToBundle()
+	/// <summary>
+	/// Implicitly converts a tilemap object to a 2D array of tile bundles.
+	/// </summary>
+	/// <param name="tilemap">The tilemap object to convert.</param>
+	/// <returns>A new 2D array of tile bundles containing the tiles from the tilemap object.</returns>
+	public static implicit operator (int tile, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,](Tilemap tilemap)
 	{
+		var data = tilemap.data;
 		var result = new (int, uint, sbyte, bool, bool)[data.GetLength(0), data.GetLength(1)];
 		for (int j = 0; j < data.GetLength(1); j++)
 			for (int i = 0; i < data.GetLength(0); i++)
@@ -708,6 +711,10 @@ public class Tilemap
 
 		return result;
 	}
+
+	/// <returns>
+	/// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
+	public (int tile, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,] ToBundle() => this;
 
 	#region Backend
 	// save format
