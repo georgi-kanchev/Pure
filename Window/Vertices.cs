@@ -163,12 +163,13 @@ internal static class Vertices
 				vertexQueue[key].Append(new(bl, tint, tbl));
 			}
 	}
-	public static void QueuePoint((float x, float y) position, uint color)
+	public static void QueuePoint((float x, float y) position, uint tint)
 	{
 		if (Window.window == null)
 			return;
 
-		QueueRectangle(position, tileSize, color);
+		var (tileW, tileH) = tileSize;
+		QueueRectangle(position, (1f / tileW, 1f / tileH), tint);
 	}
 
 	public static void TryInitQueue()

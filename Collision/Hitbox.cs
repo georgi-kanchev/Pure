@@ -48,30 +48,30 @@ public class Hitbox
 	{
 		try
 		{
-			var bytes = Decompress(File.ReadAllBytes(path));
-			var bCount = new byte[4];
-
-			Array.Copy(bytes, 0, bCount, 0, bCount.Length);
-			var count = BitConverter.ToInt32(bCount);
-
-			var xs = new int[count];
-			var ys = new int[count];
-			var ws = new int[count];
-			var hs = new int[count];
-			var bXs = new byte[xs.Length * Marshal.SizeOf(typeof(int))];
-			var bYs = new byte[ys.Length * Marshal.SizeOf(typeof(int))];
-			var bWs = new byte[ws.Length * Marshal.SizeOf(typeof(int))];
-			var bHs = new byte[hs.Length * Marshal.SizeOf(typeof(int))];
-
-			Array.Copy(bytes, bCount.Length, bXs, 0, bXs.Length);
-			Array.Copy(bytes, bCount.Length + bXs.Length, bYs, 0, bYs.Length);
-			Array.Copy(bytes, bCount.Length + bXs.Length + bYs.Length, bWs, 0, bWs.Length);
-			Array.Copy(bytes, bCount.Length + bXs.Length + bYs.Length + bWs.Length, bHs, 0, bHs.Length);
-
-			FromBytes(xs, bXs);
-			FromBytes(ys, bYs);
-			FromBytes(ws, bWs);
-			FromBytes(hs, bHs);
+			//var bytes = Decompress(File.ReadAllBytes(path));
+			//var bCount = new byte[4];
+			//
+			//Array.Copy(bytes, 0, bCount, 0, bCount.Length);
+			//var count = BitConverter.ToInt32(bCount);
+			//
+			//var xs = new int[count];
+			//var ys = new int[count];
+			//var ws = new int[count];
+			//var hs = new int[count];
+			//var bXs = new byte[xs.Length * Marshal.SizeOf(typeof(int))];
+			//var bYs = new byte[ys.Length * Marshal.SizeOf(typeof(int))];
+			//var bWs = new byte[ws.Length * Marshal.SizeOf(typeof(int))];
+			//var bHs = new byte[hs.Length * Marshal.SizeOf(typeof(int))];
+			//
+			//Array.Copy(bytes, bCount.Length, bXs, 0, bXs.Length);
+			//Array.Copy(bytes, bCount.Length + bXs.Length, bYs, 0, bYs.Length);
+			//Array.Copy(bytes, bCount.Length + bXs.Length + bYs.Length, bWs, 0, bWs.Length);
+			//Array.Copy(bytes, bCount.Length + bXs.Length + bYs.Length + bWs.Length, bHs, 0, bHs.Length);
+			//
+			//FromBytes(xs, bXs);
+			//FromBytes(ys, bYs);
+			//FromBytes(ws, bWs);
+			//FromBytes(hs, bHs);
 		}
 		catch (Exception)
 		{
@@ -109,24 +109,36 @@ public class Hitbox
 	/// <param name="path">The path to save the hitbox to.</param>
 	public void Save(string path)
 	{
-		var c = rectangles.Count;
-		var bCount = BitConverter.GetBytes(c);
-		var xs = new int[c];
-		var ys = new int[c];
-		var ws = new int[c];
-		var hs = new int[c];
-		var bXs = ToBytes(xs);
-		var bYs = ToBytes(ys);
-		var bWs = ToBytes(ws);
-		var bHs = ToBytes(hs);
-		var result = new byte[bCount.Length + bXs.Length + bYs.Length + bWs.Length + bHs.Length];
-
-		Array.Copy(bXs, 0, result, 0, bXs.Length);
-		Array.Copy(bYs, 0, result, bXs.Length, bYs.Length);
-		Array.Copy(bWs, 0, result, bXs.Length + bYs.Length, bWs.Length);
-		Array.Copy(bHs, 0, result, bXs.Length + bYs.Length + bWs.Length, bHs.Length);
-
-		File.WriteAllBytes(path, Compress(result));
+		//var c = rectangles.Count;
+		//var bCount = BitConverter.GetBytes(c);
+		//var xs = new int[c];
+		//var ys = new int[c];
+		//var ws = new int[c];
+		//var hs = new int[c];
+		//var bcolors = new int[c];
+		//var bXs = ToBytes(xs);
+		//var bYs = ToBytes(ys);
+		//var bWs = ToBytes(ws);
+		//var bHs = ToBytes(hs);
+		//var bColors = ToBytes(bcolors);
+		//var result = new byte[bCount.Length + bXs.Length + bYs.Length + bWs.Length + bHs.Length];
+		//var offset = 0;
+		//
+		//Add(bXs); Add(bYs);
+		//Add(bWs); Add(bHs);
+		//Add(bXs);
+		//Array.Copy(bXs, 0, result, 0, bXs.Length);
+		//Array.Copy(bYs, 0, result, bXs.Length, bYs.Length);
+		//Array.Copy(bWs, 0, result, bXs.Length + bYs.Length, bWs.Length);
+		//Array.Copy(bHs, 0, result, bXs.Length + bYs.Length + bWs.Length, bHs.Length);
+		//
+		//File.WriteAllBytes(path, Compress(result));
+		//
+		//void Add(Array array)
+		//{
+		//	Array.Copy(array, 0, result, offset, array.Length);
+		//	offset += array.Length;
+		//}
 	}
 
 	/// <summary>
@@ -237,20 +249,6 @@ public class Hitbox
 	// [count * 4]			- Ys
 	// [count * 4]			- Widths
 	// [count * 4]			- Heights
-
-	private static byte[] ToBytes<T>(T[] array) where T : struct
-	{
-		var size = array.Length * Marshal.SizeOf(typeof(T));
-		var buffer = new byte[size];
-		Buffer.BlockCopy(array, 0, buffer, 0, buffer.Length);
-		return buffer;
-	}
-	private static void FromBytes<T>(T[] array, byte[] buffer) where T : struct
-	{
-		var size = array.Length;
-		var len = Math.Min(size * Marshal.SizeOf(typeof(T)), buffer.Length);
-		Buffer.BlockCopy(buffer, 0, array, 0, len);
-	}
 
 	private static byte[] Compress(byte[] data)
 	{

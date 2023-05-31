@@ -22,27 +22,23 @@ public class Program
 		var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
 		var background = new Tilemap(tilemap.Size);
 
-		var collisionMap = new Map();
-		collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE); // lake
-		collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE_DOUBLE); // lake
-		collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE); // house roof
-		collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE_RIGHT); // house wall
-		collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
-		collisionMap.AddRectangle(new((1, 1)), Tile.PATTERN_33); // tree top
+		var collisionMap = new Map("map.collision");
+		//collisionMap.AddRectangle(new((1, 1), (0, 0), Color.Red), Tile.ICON_WAVE); // lake
+		//collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE_DOUBLE); // lake
+		//collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE); // house roof
+		//collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE_RIGHT); // house wall
+		//collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
+		//collisionMap.AddRectangle(new((1, 1)), Tile.PATTERN_33); // tree top
 
 		// icon tiles are 7x7, not 8x8, cut one row & column,
 		// hitbox and tile on screen might mismatch since the tile is pixel perfect
 		// and the hitbox is not
 		var hitbox = new Hitbox((0, 0), 1f - 1f / 8f, new Rectangle((1f, 1f)));
 
-		var t = 0f;
-
 		while (Window.IsOpen)
 		{
 			Window.Activate(true);
 			Time.Update();
-
-			t += Time.Delta;
 
 			FillWithRandomGrass();
 			SetLake((0, 0), (14, 9));
@@ -59,6 +55,7 @@ public class Program
 			collisionMap.Update(tilemap.IDs);
 
 			Window.DrawTiles(background);
+			Window.DrawRectangles(collisionMap);
 			Window.DrawTiles(tilemap);
 
 			var mousePosition = tilemap.PointFrom(Mouse.CursorPosition, Window.Size);
@@ -68,9 +65,13 @@ public class Program
 			var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_SMILING;
 			var tint = isOverlapping ? Color.Red : Color.Green;
 			var tile = new Tile(id, tint);
+			var line = new Line(mousePosition, (15, 15), Color.Red);
+			var crossPoints = line.CrossPoints(collisionMap);
+			line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
 
+			Window.DrawLines(line);
+			Window.DrawPoints(crossPoints);
 			Window.DrawTile(hitbox.Position, tile);
-			Window.DrawRectangles(collisionMap);
 			Window.Activate(false);
 		}
 
@@ -92,7 +93,7 @@ public class Program
 		void SetLake((int x, int y) position, (int width, int height) radius)
 		{
 			// every sec slight mutation times 3
-			var seed = (0, 0, (int)t * 3);
+			var seed = (0, 0, (int)Time.RuntimeClock * 3);
 			tilemap.SetEllipse(position, radius, Tile.MATH_APPROXIMATE);
 			tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE, seed,
 				new Tile(Tile.ICON_WAVE, Color.Blue, 0),

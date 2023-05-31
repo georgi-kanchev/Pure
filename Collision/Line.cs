@@ -86,7 +86,7 @@ public struct Line
 	/// <returns>True if the lines cross, false otherwise.</returns>
 	public bool IsCrossing(Line line)
 	{
-		var (x, y) = CrossPoint(line);
+		var (x, y, color) = CrossPoint(line);
 		return float.IsNaN(x) == false && float.IsNaN(y) == false;
 	}
 	/// <param name="point">
@@ -99,6 +99,11 @@ public struct Line
 		var sum = Distance(A, point) + Distance(B, point);
 		return IsBetween(sum, length - 0.01f, length + 0.01f);
 	}
+	/// <param name="point">
+	/// The point to check for crossing.</param>
+	/// <returns>True if this line is crossing with the specified 
+	/// rectangle, otherwise false.</returns>
+	public bool IsCrossing((float x, float y, uint color) point) => IsCrossing((point.x, point.y));
 
 	/// <summary>
 	/// Calculates all points of intersection between this line and the rectangles of the
@@ -107,7 +112,7 @@ public struct Line
 	/// <param name="map">The map to calculate the intersection points with.</param>
 	/// <returns>An array of all points of intersection between this line and the specified 
 	/// map.</returns>
-	public (float x, float y)[] CrossPoints(Map map)
+	public (float x, float y, uint color)[] CrossPoints(Map map)
 	{
 		var (x0, y0) = ((int)A.Item1, (int)A.Item2);
 		var (x1, y1) = ((int)B.Item1, (int)B.Item2);
@@ -124,24 +129,10 @@ public struct Line
 			var ix = (int)x0;
 			var iy = (int)y0;
 
-			var neighbourCells = new List<Rectangle[]>()
-				{
-					map.GetRectangles((ix - 1, iy - 1)),
-					map.GetRectangles((ix - 0, iy - 1)),
-					map.GetRectangles((ix + 1, iy - 1)),
-
-					map.GetRectangles((ix - 1, iy - 0)),
-					map.GetRectangles((ix - 0, iy - 0)),
-					map.GetRectangles((ix + 1, iy - 0)),
-
-					map.GetRectangles((ix - 1, iy + 1)),
-					map.GetRectangles((ix - 0, iy + 1)),
-					map.GetRectangles((ix + 1, iy + 1)),
-				};
+			var neighbourCells = map.GetNeighborRects(new((1, 1), (ix, iy)));
 			for (int i = 0; i < neighbourCells.Count; i++)
-				for (int j = 0; j < neighbourCells[i].Length; j++)
-					if (rects.Contains(neighbourCells[i][j]) == false)
-						rects.Add(neighbourCells[i][j]);
+				if (rects.Contains(neighbourCells[i]) == false)
+					rects.Add(neighbourCells[i]);
 
 			if (x0 == x1 && y0 == y1)
 				break;
@@ -160,16 +151,16 @@ public struct Line
 			}
 		}
 
-		var result = new List<(float, float)>();
+		var result = new List<(float, float, uint)>();
 		for (int i = 0; i < rects.Count; i++)
 		{
 			var crossPoints = CrossPoints(rects[i]);
 			for (int j = 0; j < crossPoints.Length; j++)
 			{
-				var (x, y) = crossPoints[j];
+				var (x, y, color) = crossPoints[j];
 				if (float.IsNaN(x) == false && float.IsNaN(y) == false &&
-					result.Contains((x, y)) == false)
-					result.Add((x, y));
+					result.Contains((x, y, uint.MaxValue)) == false)
+					result.Add((x, y, uint.MaxValue));
 			}
 		}
 
@@ -182,9 +173,9 @@ public struct Line
 	/// <param name="hitbox">The hitbox to calculate the intersection points with.</param>
 	/// <returns>An array of all points of intersection between this line and the specified 
 	/// hitbox.</returns>
-	public (float x, float y)[] CrossPoints(Hitbox hitbox)
+	public (float x, float y, uint color)[] CrossPoints(Hitbox hitbox)
 	{
-		var result = new List<(float, float)>();
+		var result = new List<(float, float, uint)>();
 		for (int i = 0; i < hitbox.RectangleCount; i++)
 			result.AddRange(CrossPoints(hitbox[i]));
 
@@ -194,7 +185,7 @@ public struct Line
 	/// The rectangle to calculate the intersection points with.</param>
 	/// <returns>An array of all points of intersection between this line and the specified 
 	/// rectangle.</returns>
-	public (float x, float y)[] CrossPoints(Rectangle rectangle)
+	public (float x, float y, uint color)[] CrossPoints(Rectangle rectangle)
 	{
 		var (x, y) = rectangle.Position;
 		var (w, h) = rectangle.Size;
@@ -207,8 +198,8 @@ public struct Line
 		var right = new Line(tr, br);
 		var down = new Line(br, bl);
 		var left = new Line(bl, tl);
-		var result = new List<(float, float)>();
-		var points = new List<(float, float)>()
+		var result = new List<(float, float, uint)>();
+		var points = new List<(float, float, uint)>()
 			{ CrossPoint(up), CrossPoint(right), CrossPoint(down), CrossPoint(left) };
 
 		for (int i = 0; i < points.Count; i++)
@@ -222,16 +213,16 @@ public struct Line
 	/// <returns>The point of intersection between this line and the specified 
 	/// line, or (<see cref="float.NaN, <see cref="float.NaN) if 
 	/// the two lines do not intersect.</returns>
-	public (float x, float y) CrossPoint(Line line)
+	public (float x, float y, uint color) CrossPoint(Line line)
 	{
 		var p = CrossPoint(A, B, line.A, line.B);
-		return IsCrossing(p) && line.IsCrossing(p) ? p : (float.NaN, float.NaN);
+		return IsCrossing(p) && line.IsCrossing(p) ? p : (float.NaN, float.NaN, uint.MaxValue);
 	}
 	/// <param name="point">
 	/// The point to find the closest point on the line to.</param>
 	/// <returns>The point on the line that is closest to the given 
 	/// line.</returns>
-	public (float x, float y) ClosestPoint((float x, float y) point)
+	public (float x, float y, uint color) ClosestPoint((float x, float y) point)
 	{
 		var AP = (point.Item1 - A.Item1, point.Item2 - A.Item2);
 		var AB = (B.Item1 - A.Item1, B.Item2 - A.Item2);
@@ -241,8 +232,9 @@ public struct Line
 		var distance = ABAPproduct / magnitudeAB;
 
 		return distance < 0 ?
-			A : distance > 1 ?
-			B : (A.Item1 + AB.Item1 * distance, A.Item2 + AB.Item2 * distance);
+			(A.x, A.y, uint.MaxValue) : distance > 1 ?
+				(B.x, A.y, uint.MaxValue) :
+				(A.Item1 + AB.Item1 * distance, A.Item2 + AB.Item2 * distance, uint.MaxValue);
 	}
 
 	/// <returns>
@@ -273,7 +265,7 @@ public struct Line
 	#region Backend
 	private const int MAX_ITERATIONS = 1000;
 
-	private static (float, float) CrossPoint(
+	private static (float, float, uint) CrossPoint(
 		(float, float) A, (float, float) B, (float, float) C, (float, float) D)
 	{
 		var a1 = B.Item2 - A.Item2;
@@ -285,11 +277,11 @@ public struct Line
 		var determinant = a1 * b2 - a2 * b1;
 
 		if (determinant == 0)
-			return (float.NaN, float.NaN);
+			return (float.NaN, float.NaN, uint.MaxValue);
 
 		var x = (b2 * c1 - b1 * c2) / determinant;
 		var y = (a1 * c2 - a2 * c1) / determinant;
-		return (x, y);
+		return (x, y, uint.MaxValue);
 	}
 	private static float ToAngle((float, float) direction)
 	{

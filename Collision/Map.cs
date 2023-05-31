@@ -24,58 +24,58 @@ public class Map
 	/// <param name="path">The path to the file that contains the map hitbox data.</param>
 	public Map(string path)
 	{
-		//var bytes = Decompress(File.ReadAllBytes(path));
-		//// count (4) | xs * 4, ys * 4, ws * 4, hs * 4
-		//var baseOffset = 4 + rectangles.Count * 4 * 4;
-		//var bSectorCount = new byte[4];
+		var bytes = Decompress(File.ReadAllBytes(path));
+		var bSectorCount = new byte[4];
+		var offset = 0;
 
-		//Array.Copy(bytes, baseOffset, bSectorCount, 0, bSectorCount.Length);
+		Add(bSectorCount);
+		var sectorCount = BitConverter.ToInt32(bSectorCount);
 
-		//var sectorCount = BitConverter.ToInt32(bSectorCount);
+		for (int i = 0; i < sectorCount; i++)
+		{
+			var bTile = new byte[4];
+			var bRectAmount = new byte[4];
 
-		//var off = baseOffset + bSectorCount.Length;
-		//for (int i = 0; i < sectorCount; i++)
-		//{
-		//	var bTile = new byte[4];
-		//	var bRectAmount = new byte[4];
+			Add(bTile);
+			Add(bRectAmount);
 
-		//	Array.Copy(bytes, off, bTile, 0, bTile.Length);
-		//	Array.Copy(bytes, off + bTile.Length, bRectAmount, 0, bRectAmount.Length);
+			var tile = BitConverter.ToInt32(bTile);
+			var rectAmount = BitConverter.ToInt32(bRectAmount);
+			var bXs = new byte[rectAmount * 4];
+			var bYs = new byte[rectAmount * 4];
+			var bWs = new byte[rectAmount * 4];
+			var bHs = new byte[rectAmount * 4];
+			var bColors = new byte[rectAmount * 4];
 
-		//	off += bTile.Length + bRectAmount.Length;
-		//	var tile = BitConverter.ToInt32(bTile);
-		//	var rectAmount = BitConverter.ToInt32(bRectAmount);
-		//	var bXs = new byte[rectAmount * 4];
-		//	var bYs = new byte[rectAmount * 4];
-		//	var bWs = new byte[rectAmount * 4];
-		//	var bHs = new byte[rectAmount * 4];
+			Add(bXs); Add(bYs);
+			Add(bWs); Add(bHs);
+			Add(bColors);
 
-		//	Array.Copy(bytes, off, bXs, 0, bXs.Length);
-		//	Array.Copy(bytes, off + bXs.Length, bYs, 0, bYs.Length);
-		//	Array.Copy(bytes, off + bXs.Length + bYs.Length, bWs, 0, bWs.Length);
-		//	Array.Copy(bytes, off + bXs.Length + bYs.Length + bWs.Length, bHs, 0, bHs.Length);
+			var localOffset = 0;
+			for (int j = 0; j < rectAmount; j++)
+			{
+				var bX = new byte[4];
+				var bY = new byte[4];
+				var bW = new byte[4];
+				var bH = new byte[4];
+				var bColor = new byte[4];
 
-		//	for (int j = 0; j < rectAmount; j++)
-		//{
-		//	var bX = new byte[4];
-		//	var bY = new byte[4];
-		//	var bW = new byte[4];
-		//	var bH = new byte[4];
+				var x = BitConverter.ToInt32(bXs[localOffset..(localOffset + 4)]);
+				var y = BitConverter.ToInt32(bYs[localOffset..(localOffset + 4)]);
+				var w = BitConverter.ToSingle(bWs[localOffset..(localOffset + 4)]);
+				var h = BitConverter.ToSingle(bHs[localOffset..(localOffset + 4)]);
+				var color = BitConverter.ToUInt32(bColors[localOffset..(localOffset + 4)]);
 
-		//	Array.Copy(bytes, off, bX, 0, bX.Length);
-		//	Array.Copy(bytes, off + bX.Length, bY, 0, bY.Length);
-		//	Array.Copy(bytes, off + bX.Length + bY.Length, bW, 0, bW.Length);
-		//	Array.Copy(bytes, off + bX.Length + bW.Length, bH, 0, bH.Length);
+				AddRectangle(new((w, h), (x, y), color), tile);
+				localOffset += 4;
+			}
+		}
 
-		//	var x = BitConverter.ToInt32(bX);
-		//	var y = BitConverter.ToInt32(bY);
-		//	var w = BitConverter.ToSingle(bW);
-		//	var h = BitConverter.ToSingle(bH);
-		//	AddRectangle(new((w, h), (x, y)), tile);
-
-		//	off += bX.Length + bY.Length + bW.Length + bH.Length;
-		//}
-		//}
+		void Add(Array array)
+		{
+			Array.Copy(bytes, offset, array, 0, array.Length);
+			offset += array.Length;
+		}
 	}
 
 	/// <summary>
@@ -84,12 +84,10 @@ public class Map
 	/// <param name="path">The path to save the file to.</param>
 	public void Save(string path)
 	{
-		var baseSavedBytes = Decompress(File.ReadAllBytes(path));
 		var sectorCount = cellRects.Count;
 		var bSectorCount = BitConverter.GetBytes(sectorCount);
 
 		var result = new List<byte>();
-		result.AddRange(baseSavedBytes);
 		result.AddRange(bSectorCount);
 
 		foreach (var kvp in cellRects)
@@ -102,6 +100,7 @@ public class Map
 			var bYs = new List<byte>();
 			var bWs = new List<byte>();
 			var bHs = new List<byte>();
+			var bColors = new List<byte>();
 
 			for (int i = 0; i < rects.Count; i++)
 			{
@@ -110,6 +109,7 @@ public class Map
 				bYs.AddRange(BitConverter.GetBytes(r.Position.Item2));
 				bWs.AddRange(BitConverter.GetBytes(r.Size.Item1));
 				bHs.AddRange(BitConverter.GetBytes(r.Size.Item2));
+				bColors.AddRange(BitConverter.GetBytes(r.Color));
 			}
 			result.AddRange(bTile);
 			result.AddRange(bRectAmount);
@@ -117,6 +117,7 @@ public class Map
 			result.AddRange(bYs);
 			result.AddRange(bWs);
 			result.AddRange(bHs);
+			result.AddRange(bColors);
 		}
 
 		File.WriteAllBytes(path, Compress(result.ToArray()));
@@ -168,9 +169,33 @@ public class Map
 	{
 		var result = new List<Rectangle>();
 		foreach (var kvp in tileIndices)
-			result.AddRange(cellRects[kvp.Value]);
+		{
+			var rects = cellRects[kvp.Value];
+			var (cellX, cellY) = kvp.Key;
+			for (int i = 0; i < rects.Count; i++)
+			{
+				var rect = rects[i];
+				var (x, y) = rect.Position;
+				rect.Position = (cellX + x, cellY + y);
+				result.Add(rect);
+			}
+		}
 
 		return result.ToArray();
+	}
+
+	public void ClearRectangles()
+	{
+		count = 0;
+		cellRects.Clear();
+	}
+	public void ClearRectangles(int tile)
+	{
+		if (cellRects.ContainsKey(tile) == false)
+			return;
+
+		count -= cellRects[tile].Count;
+		cellRects.Remove(tile);
 	}
 
 	/// <summary>
@@ -277,6 +302,7 @@ public class Map
 	// [rect amount * 4]		- ys
 	// [rect amount * 4]		- widths
 	// [rect amount * 4]		- heights
+	// [rect amount * 4]		- colors
 	// = = = = = = (sector 2)
 	// [4]						- tile
 	// [4]						- rect amount
@@ -284,6 +310,7 @@ public class Map
 	// [rect amount * 4]		- ys
 	// [rect amount * 4]		- widths
 	// [rect amount * 4]		- heights
+	// [rect amount * 4]		- colors
 	// = = = = = = (sector 3)
 	// ...
 	private int count;
@@ -312,7 +339,12 @@ public class Map
 				var id = tileIndices[cell];
 				var rects = cellRects[id];
 				for (int r = 0; r < rects.Count; r++)
-					result.Add(rects[r]);
+				{
+					var curRect = rects[r];
+					var (rx, ry) = curRect.Position;
+					curRect.Position = (cell.Item1 + rx, cell.Item2 + ry);
+					result.Add(curRect);
+				}
 			}
 		return result;
 	}
