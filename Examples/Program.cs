@@ -22,20 +22,24 @@ public class Program
 		var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
 		var background = new Tilemap(tilemap.Size);
 
-		var collisionMap = new Map("map.collision");
-		//collisionMap.AddRectangle(new((1, 1), (0, 0), Color.Red), Tile.ICON_WAVE); // lake
-		//collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE_DOUBLE); // lake
-		//collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE); // house roof
-		//collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE_RIGHT); // house wall
-		//collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
-		//collisionMap.AddRectangle(new((1, 1)), Tile.PATTERN_33); // tree top
+		var collisionMap = new Map();
+		collisionMap.AddRectangle(new((1, 1), (0, 0), Color.Red), Tile.ICON_WAVE); // lake
+		collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE_DOUBLE); // lake
+		collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE); // house roof
+		collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE_RIGHT); // house wall
+		collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
+		collisionMap.AddRectangle(new((1, 1)), Tile.PATTERN_33); // tree top
 
 		// icon tiles are 7x7, not 8x8, cut one row & column,
 		// hitbox and tile on screen might mismatch since the tile is pixel perfect
 		// and the hitbox is not
-		var hitbox = new Hitbox((0, 0), 1f - 1f / 8f, new Rectangle((1f, 1f)));
+		var scale = 1f - 1f / 8f;
+		//var hitbox = new Hitbox("test.hitbox");
+		var hitbox = new Hitbox((0, 0), (scale, scale), new Rectangle((1f, 1f)), new Rectangle((1f, 1f), (1f, 1f), Color.Blue));
 
-		while (Window.IsOpen)
+		hitbox.Save("test.hitbox");
+
+		while(Window.IsOpen)
 		{
 			Window.Activate(true);
 			Time.Update();
@@ -71,7 +75,7 @@ public class Program
 
 			Window.DrawLines(line);
 			Window.DrawPoints(crossPoints);
-			Window.DrawTile(hitbox.Position, tile);
+			Window.DrawRectangles(hitbox);
 			Window.Activate(false);
 		}
 
@@ -103,7 +107,7 @@ public class Program
 		}
 		void SetHouses(params (int x, int y)[] positions)
 		{
-			for (int i = 0; i < positions?.Length; i++)
+			for(int i = 0; i < positions?.Length; i++)
 			{
 				var (x, y) = positions[i];
 				var roof = new Tile(Tile.GEOMETRY_ANGLE, Color.Red.ToDark());
@@ -129,7 +133,7 @@ public class Program
 		}
 		void SetTrees(params (int x, int y)[] positions)
 		{
-			for (int i = 0; i < positions?.Length; i++)
+			for(int i = 0; i < positions?.Length; i++)
 			{
 				var (x, y) = positions[i];
 				tilemap.SetEllipse((x, y - 1), (1, 1), new(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
@@ -138,8 +142,8 @@ public class Program
 		}
 		void SetBackgrounds()
 		{
-			for (int i = 0; i < tilemap.Size.height; i++)
-				for (int j = 0; j < tilemap.Size.width; j++)
+			for(int i = 0; i < tilemap.Size.height; i++)
+				for(int j = 0; j < tilemap.Size.width; j++)
 				{
 					var color = (Color)tilemap.TileAt((j, i)).Tint;
 					background.SetTile((j, i), new(Tile.SHADE_OPAQUE, color.ToDark()));

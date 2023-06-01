@@ -1,7 +1,6 @@
 ﻿namespace Pure.Collision;
 
 using System.IO.Compression;
-using System.Runtime.InteropServices;
 
 /// <summary>
 /// A collection of rectangles representing an area in 2D space that defines a collision zone.
@@ -9,18 +8,13 @@ using System.Runtime.InteropServices;
 public class Hitbox
 {
 	/// <summary>
-	/// Stores the individual rectangles that make up the hitbox.
-	/// </summary>
-	protected readonly List<Rectangle> rectangles = new();
-
-	/// <summary>
 	/// Gets or sets the position of the hitbox.
 	/// </summary>
 	public (float x, float y) Position { get; set; }
 	/// <summary>
 	/// Gets or sets the scale of the hitbox.
 	/// </summary>
-	public float Scale { get; set; } = 1f;
+	public (float width, float height) Scale { get; set; } = (1f, 1f);
 	/// <summary>
 	/// Gets the number of rectangles that make up the hitbox.
 	/// </summary>
@@ -43,37 +37,54 @@ public class Hitbox
 	/// <param name="path">The path to the file to load the hitbox from.</param>
 	/// <param name="position">The position of the hitbox.</param>
 	/// <param name="scale">The scale of the hitbox.</param>
-	public Hitbox(string path, (float x, float y) position, float scale = 1f)
-		: this(position, scale)
+	public Hitbox(string path) : this((0, 0), (0, 0))
 	{
 		try
 		{
-			//var bytes = Decompress(File.ReadAllBytes(path));
-			//var bCount = new byte[4];
-			//
-			//Array.Copy(bytes, 0, bCount, 0, bCount.Length);
-			//var count = BitConverter.ToInt32(bCount);
-			//
-			//var xs = new int[count];
-			//var ys = new int[count];
-			//var ws = new int[count];
-			//var hs = new int[count];
-			//var bXs = new byte[xs.Length * Marshal.SizeOf(typeof(int))];
-			//var bYs = new byte[ys.Length * Marshal.SizeOf(typeof(int))];
-			//var bWs = new byte[ws.Length * Marshal.SizeOf(typeof(int))];
-			//var bHs = new byte[hs.Length * Marshal.SizeOf(typeof(int))];
-			//
-			//Array.Copy(bytes, bCount.Length, bXs, 0, bXs.Length);
-			//Array.Copy(bytes, bCount.Length + bXs.Length, bYs, 0, bYs.Length);
-			//Array.Copy(bytes, bCount.Length + bXs.Length + bYs.Length, bWs, 0, bWs.Length);
-			//Array.Copy(bytes, bCount.Length + bXs.Length + bYs.Length + bWs.Length, bHs, 0, bHs.Length);
-			//
-			//FromBytes(xs, bXs);
-			//FromBytes(ys, bYs);
-			//FromBytes(ws, bWs);
-			//FromBytes(hs, bHs);
+			var bytes = Decompress(File.ReadAllBytes(path));
+			var bX = new byte[4];
+			var bY = new byte[4];
+			var bScW = new byte[4];
+			var bScH = new byte[4];
+			var bCount = new byte[4];
+			var offset = 0;
+
+			Add(bX); Add(bY);
+			Add(bScW); Add(bScH);
+			Add(bCount);
+			var count = BitConverter.ToInt32(bCount);
+
+			Position = (BitConverter.ToSingle(bX), BitConverter.ToSingle(bY));
+			Scale = (BitConverter.ToSingle(bScW), BitConverter.ToSingle(bScH));
+
+			for(int i = 0; i < count; i++)
+			{
+				var bXs = new byte[4];
+				var bYs = new byte[4];
+				var bWs = new byte[4];
+				var bHs = new byte[4];
+				var bColors = new byte[4];
+
+				Add(bXs); Add(bYs);
+				Add(bWs); Add(bHs);
+				Add(bColors);
+
+				var x = BitConverter.ToSingle(bXs);
+				var y = BitConverter.ToSingle(bYs);
+				var w = BitConverter.ToSingle(bWs);
+				var h = BitConverter.ToSingle(bHs);
+				var color = BitConverter.ToUInt32(bColors);
+
+				AddRectangle(new((w, h), (x, y), color));
+			}
+
+			void Add(Array array)
+			{
+				Array.Copy(bytes, offset, array, 0, array.Length);
+				offset += array.Length;
+			}
 		}
-		catch (Exception)
+		catch(Exception)
 		{
 			throw new Exception($"Could not load {nameof(Hitbox)} from '{path}'.");
 		}
@@ -84,8 +95,10 @@ public class Hitbox
 	/// </summary>
 	/// <param name="position">The position of the hitbox.</param>
 	/// <param name="scale">The scale of the hitbox.</param>
-	public Hitbox((float x, float y) position, float scale = 1f)
+	public Hitbox((float x, float y) position, (float width, float height) scale = default)
 	{
+		scale = scale == default ? (1f, 1f) : scale;
+
 		Position = position;
 		Scale = scale;
 	}
@@ -96,10 +109,10 @@ public class Hitbox
 	/// <param name="position">The position of the hitbox.</param>
 	/// <param name="scale">The scale of the hitbox.</param>
 	/// <param name="rectangles">The rectangles to add to the hitbox.</param>
-	public Hitbox((float x, float y) position, float scale = 1f, params Rectangle[] rectangles)
+	public Hitbox((float x, float y) position, (float width, float height) scale = default, params Rectangle[] rectangles)
 		: this(position, scale)
 	{
-		for (int i = 0; i < rectangles?.Length; i++)
+		for(int i = 0; i < rectangles?.Length; i++)
 			AddRectangle(rectangles[i]);
 	}
 
@@ -109,36 +122,30 @@ public class Hitbox
 	/// <param name="path">The path to save the hitbox to.</param>
 	public void Save(string path)
 	{
-		//var c = rectangles.Count;
-		//var bCount = BitConverter.GetBytes(c);
-		//var xs = new int[c];
-		//var ys = new int[c];
-		//var ws = new int[c];
-		//var hs = new int[c];
-		//var bcolors = new int[c];
-		//var bXs = ToBytes(xs);
-		//var bYs = ToBytes(ys);
-		//var bWs = ToBytes(ws);
-		//var bHs = ToBytes(hs);
-		//var bColors = ToBytes(bcolors);
-		//var result = new byte[bCount.Length + bXs.Length + bYs.Length + bWs.Length + bHs.Length];
-		//var offset = 0;
-		//
-		//Add(bXs); Add(bYs);
-		//Add(bWs); Add(bHs);
-		//Add(bXs);
-		//Array.Copy(bXs, 0, result, 0, bXs.Length);
-		//Array.Copy(bYs, 0, result, bXs.Length, bYs.Length);
-		//Array.Copy(bWs, 0, result, bXs.Length + bYs.Length, bWs.Length);
-		//Array.Copy(bHs, 0, result, bXs.Length + bYs.Length + bWs.Length, bHs.Length);
-		//
-		//File.WriteAllBytes(path, Compress(result));
-		//
-		//void Add(Array array)
-		//{
-		//	Array.Copy(array, 0, result, offset, array.Length);
-		//	offset += array.Length;
-		//}
+		var c = rectangles.Count;
+		var bX = BitConverter.GetBytes(Position.x);
+		var bY = BitConverter.GetBytes(Position.y);
+		var bScW = BitConverter.GetBytes(Scale.width);
+		var bScH = BitConverter.GetBytes(Scale.height);
+		var bCount = BitConverter.GetBytes(c);
+		var result = new List<byte>();
+
+		result.AddRange(bX);
+		result.AddRange(bY);
+		result.AddRange(bScW);
+		result.AddRange(bScH);
+		result.AddRange(bCount);
+		for(int i = 0; i < rectangles.Count; i++)
+		{
+			var r = rectangles[i];
+			result.AddRange(BitConverter.GetBytes(r.Position.x));
+			result.AddRange(BitConverter.GetBytes(r.Position.y));
+			result.AddRange(BitConverter.GetBytes(r.Size.width));
+			result.AddRange(BitConverter.GetBytes(r.Size.height));
+			result.AddRange(BitConverter.GetBytes(r.Color));
+		}
+
+		File.WriteAllBytes(path, Compress(result.ToArray()));
 	}
 
 	/// <summary>
@@ -147,7 +154,7 @@ public class Hitbox
 	/// <param name="rectangle">The rectangle to add.</param>
 	public void AddRectangle(Rectangle rectangle)
 	{
-		rectangles.Add(LocalToGlobalRectangle(rectangle));
+		rectangles.Add(rectangle);
 	}
 
 	/// <summary>
@@ -157,8 +164,8 @@ public class Hitbox
 	/// <returns>True if the hitboxes overlap, false otherwise.</returns>
 	public bool IsOverlapping(Hitbox hitbox)
 	{
-		for (int i = 0; i < RectangleCount; i++)
-			if (hitbox.IsOverlapping(this[i]))
+		for(int i = 0; i < RectangleCount; i++)
+			if(hitbox.IsOverlapping(this[i]))
 				return true;
 
 		return false;
@@ -169,8 +176,8 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping(Rectangle rectangle)
 	{
-		for (int i = 0; i < RectangleCount; i++)
-			if (this[i].IsOverlapping(rectangle))
+		for(int i = 0; i < RectangleCount; i++)
+			if(this[i].IsOverlapping(rectangle))
 				return true;
 
 		return false;
@@ -181,8 +188,8 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping(Line line)
 	{
-		for (int i = 0; i < rectangles.Count; i++)
-			if (rectangles[i].IsOverlapping(line))
+		for(int i = 0; i < rectangles.Count; i++)
+			if(this[i].IsOverlapping(line))
 				return true;
 
 		return false;
@@ -193,8 +200,8 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping((float x, float y) point)
 	{
-		for (int i = 0; i < RectangleCount; i++)
-			if (this[i].IsOverlapping(point))
+		for(int i = 0; i < RectangleCount; i++)
+			if(this[i].IsOverlapping(point))
 				return true;
 
 		return false;
@@ -224,7 +231,7 @@ public class Hitbox
 	public static implicit operator (float x, float y, float width, float height, uint color)[](Hitbox hitbox)
 	{
 		var result = new (float x, float y, float width, float height, uint color)[hitbox.rectangles.Count];
-		for (int i = 0; i < result.Length; i++)
+		for(int i = 0; i < result.Length; i++)
 			result[i] = hitbox[i];
 		return result;
 	}
@@ -235,7 +242,7 @@ public class Hitbox
 	public static implicit operator Hitbox((float x, float y, float width, float height, uint color)[] rectangles)
 	{
 		var result = new Rectangle[rectangles.Length];
-		for (int i = 0; i < result.Length; i++)
+		for(int i = 0; i < result.Length; i++)
 			result[i] = rectangles[i];
 		return result;
 	}
@@ -244,16 +251,23 @@ public class Hitbox
 	// save format
 	// [amount of bytes]	- data
 	// --------------------------------
+	// [4]					- x
+	// [4]					- y
+	// [4]					- scale width
+	// [4]					- scale height
 	// [4]					- count
-	// [count * 4]			- Xs
-	// [count * 4]			- Ys
-	// [count * 4]			- Widths
-	// [count * 4]			- Heights
+	// [count * 4]			- xs
+	// [count * 4]			- ys
+	// [count * 4]			- widths
+	// [count * 4]			- heights
+	// [count * 4]			- colors
+
+	private readonly List<Rectangle> rectangles = new();
 
 	private static byte[] Compress(byte[] data)
 	{
 		var output = new MemoryStream();
-		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+		using(var stream = new DeflateStream(output, CompressionLevel.Optimal))
 			stream.Write(data, 0, data.Length);
 
 		return output.ToArray();
@@ -262,7 +276,7 @@ public class Hitbox
 	{
 		var input = new MemoryStream(data);
 		var output = new MemoryStream();
-		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+		using(var stream = new DeflateStream(input, CompressionMode.Decompress))
 			stream.CopyTo(output);
 
 		return output.ToArray();
@@ -272,8 +286,8 @@ public class Hitbox
 	{
 		var (x, y) = localRect.Position;
 		var (w, h) = localRect.Size;
-		localRect.Position = (Position.x + x * Scale, Position.y + y * Scale);
-		localRect.Size = (w * Scale, h * Scale);
+		localRect.Position = (Position.x + x * Scale.width, Position.y + y * Scale.height);
+		localRect.Size = (w * Scale.width, h * Scale.height);
 		return localRect;
 	}
 	#endregion
