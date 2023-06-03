@@ -116,7 +116,7 @@ public class Grid
 		if (Size.Item1 < 1 || Size.Item2 < 1)
 			return Array.Empty<(int, int)>();
 
-		return pathfind.FindPath(cellA, cellB);
+		return pathfind.FindPath(start, goal);
 	}
 
 	#region Backend
