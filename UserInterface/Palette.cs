@@ -137,7 +137,8 @@ public class Palette : Element
 	private uint GetColor(int index)
 	{
 		var color = ToOpacity(palette[index], Opacity.Progress);
-		color = ToBrightness(color, (float)Brightness.CurrentPage / (float)Brightness.Count);
+		var value = Map((float)Brightness.CurrentPage, 1, (float)Brightness.Count, 0, 1);
+		color = ToBrightness(color, value);
 		return color;
 	}
 

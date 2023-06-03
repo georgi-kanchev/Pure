@@ -39,7 +39,7 @@ public class Program
 
 		hitbox.Save("test.hitbox");
 
-		while(Window.IsOpen)
+		while (Window.IsOpen)
 		{
 			Window.Activate(true);
 			Time.Update();
@@ -107,7 +107,7 @@ public class Program
 		}
 		void SetHouses(params (int x, int y)[] positions)
 		{
-			for(int i = 0; i < positions?.Length; i++)
+			for (int i = 0; i < positions?.Length; i++)
 			{
 				var (x, y) = positions[i];
 				var roof = new Tile(Tile.GEOMETRY_ANGLE, Color.Red.ToDark());
@@ -133,7 +133,7 @@ public class Program
 		}
 		void SetTrees(params (int x, int y)[] positions)
 		{
-			for(int i = 0; i < positions?.Length; i++)
+			for (int i = 0; i < positions?.Length; i++)
 			{
 				var (x, y) = positions[i];
 				tilemap.SetEllipse((x, y - 1), (1, 1), new(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
@@ -142,8 +142,8 @@ public class Program
 		}
 		void SetBackgrounds()
 		{
-			for(int i = 0; i < tilemap.Size.height; i++)
-				for(int j = 0; j < tilemap.Size.width; j++)
+			for (int i = 0; i < tilemap.Size.height; i++)
+				for (int j = 0; j < tilemap.Size.width; j++)
 				{
 					var color = (Color)tilemap.TileAt((j, i)).Tint;
 					background.SetTile((j, i), new(Tile.SHADE_OPAQUE, color.ToDark()));
