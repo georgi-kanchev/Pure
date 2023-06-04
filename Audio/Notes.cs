@@ -15,6 +15,7 @@ public enum Wave { Sine, Square, Triangle, Sawtooth, Noise }
 /// <typeparam name="T">The type of identifier used to reference cached sounds.</typeparam>
 public static class Notes<T> where T : notnull
 {
+	/*
 	/// <summary>
 	/// The volume of generated sounds, between 0 and 1.
 	/// </summary>
@@ -27,7 +28,7 @@ public static class Notes<T> where T : notnull
 	/// <param name="id">
 	/// The identifier of the sound to check for.</param>
 	/// <returns>True if a sound with the given identifier exists in the cache, otherwise false.</returns>
-	public static bool Hasidentifier(T id)
+	public static bool HasID(T id)
 	{
 		return i.cachedSounds.ContainsKey(id);
 	}
@@ -127,7 +128,7 @@ public static class Notes<T> where T : notnull
 	public static void Stop() => i.StopAll();
 
 	#region Backend
-	private static readonly AudioInstance<T> i = new();
+	private static readonly Sound i = new();
 	private static readonly Random rand = new();
 
 	// this avoids switch or if chain to determine the wave, results in generating the sounds a bit faster
@@ -228,5 +229,5 @@ public static class Notes<T> where T : notnull
 	{
 		return 2f * PI * freq;
 	}
-	#endregion
+	#endregion*/
 }

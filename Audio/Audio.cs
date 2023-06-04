@@ -2,150 +2,165 @@
 
 using SFML.Audio;
 
-/// <summary>
-/// Provides methods for loading, playing, pausing, and stopping audio files by a key of type
-/// <typeparamref name="T"/>.
-/// </summary>
-/// <typeparam name="T">The type of the audio file identifier.</typeparam>
-/// <remarks>
-/// This class uses the SFML.NET library for audio playback and caching.
-/// </remarks>
-public static class Audio<T> where T : notnull
+public class Audio
 {
-	/// <summary>
-	/// Loads an audio file from the specified path and assigns it 
-	/// the specified identifier.
-	/// </summary>
-	/// <param name="path">The path to the audio file.</param>
-	/// <param name="id">The identifier to assign to the audio file.</param>
-	/// <param name="isStreaming">Whether to stream the audio file or load it into memory.</param>
-	/// <exception cref="ArgumentNullException">Thrown if either path or 
-	/// id is null.</exception>
-	/// <exception cref="ArgumentException">Thrown if the file at the specified 
-	/// path does not exist.</exception>
-	public static void Load(string path, T id, bool isStreaming = false)
+	public static float GlobalVolume
 	{
-		if (id == null)
-			throw new ArgumentNullException(nameof(id));
+		get => Listener.GlobalVolume / 100f;
+		set => Listener.GlobalVolume = value * 100f;
+	}
+	public static (float x, float y) ListenerPosition
+	{
+		get => (Listener.Position.X, Listener.Position.Y);
+		set => Listener.Position = new(value.x, value.y, 0);
+	}
+	public static float ListenerAngle
+	{
+		get => MathF.Atan2(Listener.UpVector.Y, Listener.UpVector.X) * (180f / MathF.PI);
+		set
+		{
+			var rad = MathF.PI / 180 * value;
+			Listener.UpVector = new(MathF.Cos(rad), MathF.Sin(rad), 0);
+		}
+	}
 
-		if (path == null)
-			throw new ArgumentNullException(nameof(path));
+	public (float x, float y) Position
+	{
+		get => Get().pos;
+		set { var g = Get(); Set(value, g.vol, g.pch, g.att, g.minDist, g.loop, g.gl); }
+	}
+	public float Volume
+	{
+		get => Get().vol;
+		set { var g = Get(); Set(g.pos, value, g.pch, g.att, g.minDist, g.loop, g.gl); }
+	}
+	public float Pitch
+	{
+		get => Get().pch;
+		set { var g = Get(); Set(g.pos, g.vol, value, g.att, g.minDist, g.loop, g.gl); }
+	}
+	public float Attenuation
+	{
+		get => Get().att;
+		set { var g = Get(); Set(g.pos, g.vol, g.pch, value, g.minDist, g.loop, g.gl); }
+	}
+	public float MinimumDistance
+	{
+		get => Get().minDist;
+		set { var g = Get(); Set(g.pos, g.vol, g.pch, g.att, value, g.loop, g.gl); }
+	}
+	public float Progress
+	{
+		get => Get().pr;
+		set
+		{
+			var seconds = value * Duration;
+			if (sound != null)
+				sound.PlayingOffset = SFML.System.Time.FromSeconds(seconds);
+			else if (music != null)
+				music.PlayingOffset = SFML.System.Time.FromSeconds(seconds);
+		}
+	}
+	public float Duration
+	{
+		get => Get().dur;
+	}
 
-		if (File.Exists(path) == false)
-			throw new ArgumentException($"No file exists at the provided {nameof(path)}.");
+	public bool IsLooping
+	{
+		get => Get().loop;
+		set { var g = Get(); Set(g.pos, g.vol, g.pch, g.att, g.minDist, value, g.gl); }
+	}
+	public bool IsGlobal
+	{
+		get => Get().gl;
+		set { var g = Get(); Set(g.pos, g.vol, g.pch, g.att, g.minDist, g.loop, value); }
+	}
 
+	public bool IsPlaying => Get().pl;
+
+	public Audio(string path, bool isStreaming)
+	{
 		if (isStreaming)
-		{
-			if (cachedMusic.ContainsKey(id))
-			{
-				cachedMusic[id]?.Stop();
-				cachedMusic[id]?.Dispose();
-			}
-
-			cachedMusic[id] = new Music(path);
-			return;
-		}
-
-		if (i.cachedSounds.ContainsKey(id))
-		{
-			i.cachedSounds[id]?.Stop();
-			i.cachedSounds[id]?.Dispose();
-		}
-
-		i.cachedSounds[id] = new(new SoundBuffer(path));
-	}
-
-	/// <param name="id">
-	/// The identifier to check.</param>
-	/// <returns>True if the specified audio file identifier is currently loaded and 
-	/// available for playback, false otherwise.</returns>
-	public static bool HasID(T id)
-	{
-		return i.cachedSounds.ContainsKey(id) || cachedMusic.ContainsKey(id);
-	}
-
-	/// <summary>
-	/// Plays the audio file with the specified identifier at the specified volume 
-	/// and with looping enabled or disabled. Those settings remain.
-	/// </summary>
-	/// <param name="id">The identifier of the audio file to play.</param>
-	/// <param name="volume">The volume at which to play the audio file (ranged 0 to 1).</param>
-	/// <param name="isLooping">Whether to loop the audio file or play it once.</param>
-	/// <exception cref="ArgumentException">Thrown if the specified audio file at that identifier 
-	/// is not currently loaded.</exception>
-	public static void Play(T id, float volume, bool isLooping)
-	{
-		i.TryError(id);
-
-		if (cachedMusic.ContainsKey(id))
-		{
-			var music = cachedMusic[id];
-			music.Loop = isLooping;
-			music.Volume = volume * 100f;
-			music.Play();
-			return;
-		}
-		else if (i.cachedSounds.ContainsKey(id))
-		{
-			i.Play(id, volume, isLooping);
-			return;
-		}
+			music = new(path);
 		else
-			i.ThrowMissingID();
+			sound = new(new SoundBuffer(path));
 	}
-	/// <summary>
-	/// Plays the audio file with the specified identifier without changing any settings.
-	/// </summary>
-	/// <param name="id">The identifier of the audio file to play.</param>
-	/// <exception cref="ArgumentException">Thrown if the specified audio 
-	/// file identifier is not currently loaded.</exception>
-	public static void Play(T id)
-	{
-		i.TryError(id);
 
-		if (cachedMusic.ContainsKey(id))
-		{
-			cachedMusic[id].Play();
-			return;
-		}
-		else if (i.cachedSounds.ContainsKey(id))
-		{
-			i.Play(id);
-			return;
-		}
-		else
-			i.ThrowMissingID();
-	}
-	/// <summary>
-	/// Pauses playback of the audio file with the specified identifier.
-	/// </summary>
-	/// <param name="id">The identifier of the audio file to pause.</param>
-	public static void Pause(T id)
+	public void Play()
 	{
-		i.Pause(id);
-		cachedMusic[id]?.Pause();
+		music?.Play();
+		sound?.Play();
 	}
-	/// <summary>
-	/// Stops playback of the audio file with the specified identifier.
-	/// </summary>
-	/// <param name="id">The identifier of the audio file to stop.</param>
-	public static void Stop(T id)
+	public void Pause()
 	{
-		i.Stop(id);
-		cachedMusic[id]?.Stop();
+		music?.Pause();
+		sound?.Pause();
 	}
-	/// <summary>
-	/// Stops playback of all loaded audio files.
-	/// </summary>
-	public static void Stop()
+	public void Stop()
 	{
-		i.StopAll();
-		foreach (var kvp in cachedMusic)
-			kvp.Value.Stop();
+		music?.Stop();
+		sound?.Stop();
 	}
 
 	#region Backend
-	private static readonly AudioInstance<T> i = new();
-	private static readonly Dictionary<T, Music> cachedMusic = new();
+	private readonly Music? music;
+	private readonly Sound? sound;
+
+	private void Set((float x, float y) pos, float vol, float pch, float att, float minDist, bool loop, bool gl)
+	{
+		if (music != null)
+		{
+			music.Position = new(pos.x, pos.y, 0);
+			music.Volume = vol * 100f;
+			music.Pitch = pch;
+			music.Attenuation = att * 100f;
+			music.MinDistance = minDist;
+			music.Loop = loop;
+			music.RelativeToListener = gl;
+		}
+		else if (sound != null)
+		{
+			sound.Position = new(pos.x, pos.y, 0);
+			sound.Volume = vol * 100f;
+			sound.Pitch = pch;
+			sound.Attenuation = att * 100f;
+			sound.MinDistance = minDist;
+			sound.Loop = loop;
+			sound.RelativeToListener = gl;
+		}
+	}
+	private ((float x, float y) pos, float vol, float pch, float att, float minDist, bool loop, bool gl, bool pl, float dur, float pr) Get()
+	{
+		((float x, float y) pos, float vol, float pch, float att, float minDist, bool loop, bool gl, bool pl, float dur, float pr) result = default;
+
+		if (music != null)
+		{
+			result.pos = (music.Position.X, music.Position.Y);
+			result.vol = music.Volume / 100f;
+			result.pch = music.Pitch;
+			result.att = music.Attenuation / 100f;
+			result.minDist = music.MinDistance;
+			result.loop = music.Loop;
+			result.gl = music.RelativeToListener;
+			result.pl = music.Status == SoundStatus.Playing;
+			result.dur = music.Duration.AsSeconds();
+			result.pr = music.PlayingOffset.AsSeconds() / result.dur;
+		}
+		else if (sound != null)
+		{
+			result.pos = (sound.Position.X, sound.Position.Y);
+			result.vol = sound.Volume / 100f;
+			result.pch = sound.Pitch;
+			result.att = sound.Attenuation / 100f;
+			result.minDist = sound.MinDistance;
+			result.loop = sound.Loop;
+			result.gl = sound.RelativeToListener;
+			result.pl = sound.Status == SoundStatus.Playing;
+			result.dur = sound.SoundBuffer.Duration.AsSeconds();
+			result.pr = sound.PlayingOffset.AsSeconds() / result.dur;
+		}
+		return result;
+	}
 	#endregion
 }
