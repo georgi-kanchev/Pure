@@ -4,24 +4,10 @@ using SFML.Audio;
 
 public class Audio
 {
-	public static float GlobalVolume
+	public float GlobalVolume
 	{
 		get => Listener.GlobalVolume / 100f;
 		set => Listener.GlobalVolume = value * 100f;
-	}
-	public static (float x, float y) ListenerPosition
-	{
-		get => (Listener.Position.X, Listener.Position.Y);
-		set => Listener.Position = new(value.x, value.y, 0);
-	}
-	public static float ListenerAngle
-	{
-		get => MathF.Atan2(Listener.UpVector.Y, Listener.UpVector.X) * (180f / MathF.PI);
-		set
-		{
-			var rad = MathF.PI / 180 * value;
-			Listener.UpVector = new(MathF.Cos(rad), MathF.Sin(rad), 0);
-		}
 	}
 
 	public (float x, float y) Position
@@ -29,6 +15,7 @@ public class Audio
 		get => Get().pos;
 		set { var g = Get(); Set(value, g.vol, g.pch, g.att, g.minDist, g.loop, g.gl); }
 	}
+
 	public float Volume
 	{
 		get => Get().vol;
@@ -49,6 +36,7 @@ public class Audio
 		get => Get().minDist;
 		set { var g = Get(); Set(g.pos, g.vol, g.pch, g.att, value, g.loop, g.gl); }
 	}
+
 	public float Progress
 	{
 		get => Get().pr;
@@ -76,7 +64,6 @@ public class Audio
 		get => Get().gl;
 		set { var g = Get(); Set(g.pos, g.vol, g.pch, g.att, g.minDist, g.loop, value); }
 	}
-
 	public bool IsPlaying => Get().pl;
 
 	public Audio(string path, bool isStreaming)
