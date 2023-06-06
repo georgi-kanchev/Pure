@@ -4,24 +4,8 @@ namespace Pure.Audio;
 
 public class Playlist
 {
-	public (float x, float y) ListenerPosition
-	{
-		get => (Listener.Position.X, Listener.Position.Y);
-		set => Listener.Position = new(value.x, value.y, 0);
-	}
-	public float ListenerAngle
-	{
-		get => MathF.Atan2(Listener.UpVector.Y, Listener.UpVector.X) * (180f / MathF.PI);
-		set
-		{
-			var rad = MathF.PI / 180 * value;
-			Listener.UpVector = new(MathF.Cos(rad), MathF.Sin(rad), 0);
-		}
-	}
-
-	public float Volume { get; set; } // to do
-	public bool IsGlobal { get; set; } // to do
-	public bool IsLooping { get; set; } // to do
+	public bool IsLooping { get; set; }
+	public float TrackDelay { get; set; } = 0.5f;
 
 	public Audio this[int index] => audios[index];
 	public Audio this[string tag]
@@ -36,17 +20,20 @@ public class Playlist
 		}
 	}
 
-	public void Add(Audio audio, string? tag = null)
+	public void AddTrack(string? tag, params Audio[] tracks)
 	{
-		audios.Add(audio);
+		for (int i = 0; i < tracks?.Length; i++)
+		{
+			audios.Add(tracks[i]);
 
-		if (tag == null)
-			return;
+			if (tag == null)
+				return;
 
-		if (tags.ContainsKey(tag) == false)
-			tags[tag] = new();
+			if (tags.ContainsKey(tag) == false)
+				tags[tag] = new();
 
-		tags[tag].Add(audio);
+			tags[tag].Add(tracks[i]);
+		}
 	}
 	public void Shuffle(string? tag = null)
 	{
@@ -98,7 +85,8 @@ public class Playlist
 		time += deltaTime;
 
 		var audio = audios[currentIndex];
-		if (time >= audio.Duration)
+		var delay = currentIndex == audios.Count - 1 ? 0 : TrackDelay; // no delay on last track
+		if (time >= audio.Duration + delay)
 		{
 			var tag = default(string);
 			foreach (var kvp in tags)
@@ -108,13 +96,18 @@ public class Playlist
 					break;
 				}
 
-			time = 0;
 			OnAudioEnd(currentIndex, tag);
-			PlayCurrent();
+			Skip();
 		}
-
 		if (currentIndex == audios.Count)
+		{
 			OnListEnd();
+
+			if (IsLooping)
+				Restart();
+			else
+				Stop();
+		}
 	}
 
 	public virtual void OnAudioEnd(int index, string? tag) { }

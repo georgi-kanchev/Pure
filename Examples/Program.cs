@@ -6,7 +6,8 @@ public class Program
 	{
 		//Systems.DefaultGraphics.Run();
 		//Systems.UserInterface.Run();
-		Systems.Collision.Run();
+		//Systems.Collision.Run();
+		Systems.Audio.Run();
 		//Systems.ChatLAN.Run();
 
 		//Games.FlappyBird.Run();

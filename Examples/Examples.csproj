@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Collision\Collision.csproj" />
     <ProjectReference Include="..\Storage\Storage.csproj" />
     <ProjectReference Include="..\UserInterface\UserInterface.csproj" />
+    <ProjectReference Include="..\Audio\Audio.csproj" />
   </ItemGroup>
 
 </Project>

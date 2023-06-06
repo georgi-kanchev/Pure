@@ -4,7 +4,7 @@ using SFML.Audio;
 
 public class Audio
 {
-	public float GlobalVolume
+	public static float GlobalVolume
 	{
 		get => Listener.GlobalVolume / 100f;
 		set => Listener.GlobalVolume = value * 100f;
@@ -51,7 +51,7 @@ public class Audio
 	}
 	public float Duration
 	{
-		get => Get().dur;
+		get => Get().dur / Get().pch;
 	}
 
 	public bool IsLooping
@@ -66,12 +66,16 @@ public class Audio
 	}
 	public bool IsPlaying => Get().pl;
 
+	static Audio() => GlobalVolume = 0.5f;
+	protected Audio() { }
 	public Audio(string path, bool isStreaming)
 	{
 		if (isStreaming)
 			music = new(path);
 		else
 			sound = new(new SoundBuffer(path));
+
+		Volume = 0.5f;
 	}
 
 	public void Play()
@@ -92,7 +96,13 @@ public class Audio
 
 	#region Backend
 	private readonly Music? music;
-	private readonly Sound? sound;
+	private Sound? sound;
+
+	protected void Initialize(Sound sound)
+	{
+		this.sound = sound;
+		Volume = 0.5f;
+	}
 
 	private void Set((float x, float y) pos, float vol, float pch, float att, float minDist, bool loop, bool gl)
 	{
