@@ -13,6 +13,7 @@ public class Palette : Element
 		Size = (13, 3);
 		var (x, y) = Position;
 		var (w, h) = Size;
+		brightnessLevels = Math.Clamp(brightnessLevels, 1, 99);
 
 		Opacity = new((x, y), w) { Progress = 1f, hasParent = true };
 		Brightness = new ChildPagination((x, y + 2), brightnessLevels, this)
@@ -23,9 +24,9 @@ public class Palette : Element
 		};
 		Pick = new((x + w - 1, y + h - 1)) { hasParent = true };
 
-		Pick.SubscribeToUserEvent(UserEvent.Trigger, () => isPicking = true);
+		Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
 
-		for (int i = 0; i < 13; i++)
+		for(int i = 0; i < 13; i++)
 		{
 			var btn = new Button((x + i, y + 1)) { Size = (1, 1), hasParent = true };
 			colorButtons.Add(btn);
@@ -36,30 +37,35 @@ public class Palette : Element
 	{
 		Size = (13, 3);
 
-		if (IsDisabled)
+		if(IsDisabled)
 			return;
 
 		Opacity.Update();
 		Brightness.Update();
 		Pick.Update();
 
-		if (isPicking)
+		if(isPicking)
 			MouseCursorResult = MouseCursor.Crosshair;
 
-		if (Input.Current.IsJustPressed && isPicking && IsHovered == false)
+		if(Input.Current.IsJustPressed && isPicking && IsHovered == false)
 		{
 			isPicking = false;
-			SelectedColor = OnPick(Input.Current.Position);
+
+			// ui callback first, then child callback (child is with priority - will overwrite the value if possible)
+			var uiColor = pickCallback?.Invoke(Input.Current.Position);
+			var childColor = OnPick(Input.Current.Position);
+			SelectedColor = childColor == default && uiColor != null ? (uint)uiColor : childColor;
 		}
 
 		SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
 
-		for (int i = 0; i < colorButtons.Count; i++)
+		for(int i = 0; i < colorButtons.Count; i++)
 		{
-			if (colorButtons[i].IsPressed)
+			if(colorButtons[i].IsPressed)
 				SelectedColor = GetColor(colorButtons.IndexOf(colorButtons[i]));
 
 			OnSampleUpdate(colorButtons[i], GetColor(i));
+			sampleUpdateCallback?.Invoke(colorButtons[i], GetColor(i));
 			colorButtons[i].Update();
 		}
 	}
@@ -71,11 +77,15 @@ public class Palette : Element
 	private class ChildPagination : Pages
 	{
 		// custom class for receiving events
-		private Palette parent;
+		private readonly Palette parent;
 
 		public ChildPagination((int x, int y) position, int count, Palette parent) :
 			base(position, count) => this.parent = parent;
-		protected override void OnPageUpdate(Button page) => this.parent.OnPageUpdate(page);
+		protected override void OnPageUpdate(Button page)
+		{
+			parent.OnPageUpdate(page);
+			parent.pageUpdateCallback?.Invoke(page);
+		}
 	}
 
 	private readonly List<Button> colorButtons = new();
@@ -97,6 +107,11 @@ public class Palette : Element
 	};
 	private bool isPicking;
 
+	// used in the UI class to receive callbacks
+	internal Action<Button>? pageUpdateCallback;
+	internal Action<Button, uint>? sampleUpdateCallback;
+	internal Func<(float, float), uint>? pickCallback;
+
 	private static uint ToOpacity(uint color, float unit)
 	{
 		var (r, g, b, a) = GetColor(color);
@@ -107,7 +122,7 @@ public class Palette : Element
 	{
 		var (r, g, b, a) = GetColor(color);
 
-		if (unit < 0.5f)
+		if(unit < 0.5f)
 		{
 			r = (byte)Map(unit, 0, 0.5f, 0, r);
 			g = (byte)Map(unit, 0, 0.5f, 0, g);

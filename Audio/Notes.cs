@@ -11,21 +11,30 @@ public enum Wave { Sine, Square, Triangle, Sawtooth, Noise }
 
 public class Notes : Audio
 {
-	public static char SymbolSeparator { get; set; } = '_';
-	public static char SymbolPause { get; set; } = '.';
-	public static char SymbolRepeat { get; set; } = '~';
+	public static (char separator, char pause, char repeat) Symbols { get; set; } = ('_', '.', '~');
 
-	public Notes(string notes, int tempoBPM = 120, Wave wave = Wave.Square) : base()
+	public Notes(string notes, float duration = 0.2f, Wave wave = Wave.Square, (float start, float end) fade = default) : base()
 	{
 		var validChords = GetValidNotes(notes);
-		if (validChords.Count == 0)
+		if(validChords.Count == 0)
 			return;
 
-		var samples = GetSamplesFromNotes(validChords, tempoBPM, wave);
-		Initialize(new(new SoundBuffer(samples, 1, SAMPLE_RATE)));
+		fade.start = Math.Clamp(fade.start, 0, 1);
+		fade.end = Math.Clamp(fade.end, 0, 1);
+
+		this.fade = fade;
+
+		var samples = GetSamplesFromNotes(validChords, duration, wave);
+		var sound = new Sound(new SoundBuffer(samples, 1, SAMPLE_RATE));
+		Initialize(sound);
+		buffer = sound.SoundBuffer;
 	}
 
+	public void ToFile(string path) => buffer?.SaveToFile(path);
+
 	#region Backend
+	private readonly SoundBuffer? buffer;
+	private (float start, float end) fade;
 	private static readonly Random rand = new();
 
 	// this avoids switch or if chain to determine the wave, results in generating the sounds a bit faster
@@ -45,7 +54,7 @@ public class Notes : Audio
 	{
 		chord = chord.Trim();
 
-		if ((chord.Length > 0 && chord[0] == SymbolPause) || // pause
+		if((chord.Length > 0 && chord[0] == Symbols.pause) || // pause
 			(chord.Length != 2 && chord.Length != 3)) // invalid
 			return 0; // pause
 
@@ -57,7 +66,7 @@ public class Notes : Audio
 		var hasOctave = int.TryParse((chord.Length == 3 ? chord[2] : chord[1]).ToString(), out var octave);
 		var keyNumber = notes.IndexOf(chord[0..^1]);
 
-		if (hasOctave == false || keyNumber == -1)
+		if(hasOctave == false || keyNumber == -1)
 			return float.NaN;
 
 		keyNumber = keyNumber < 3 ?
@@ -71,52 +80,66 @@ public class Notes : Audio
 	{
 		return (short)(AMPLITUDE * waveFuncs[wave].Invoke(i, frequency / SAMPLE_RATE));
 	}
-	private static short[] GetSamplesFromNotes(List<string> notes, int tempoBPM, Wave wave)
+	private short[] GetSamplesFromNotes(List<string> notes, float noteDuration, Wave wave)
 	{
-		var duration = 60f / (tempoBPM * 3f);
-		var time = Ceiling(SAMPLE_RATE * duration);
+		var time = Ceiling(SAMPLE_RATE * noteDuration);
 		var samples = new short[(int)(time * notes.Count)];
 		var sampleIndex = 0;
-		for (int i = 0; i < notes.Count; i++)
+		var noteA = fade.start / 2f;
+		var noteB = 1f - fade.end / 2f;
+
+		for(int i = 0; i < notes.Count; i++)
 		{
 			var frequency = GetFrequency(notes[i]);
-			for (int j = 0; j < time; j++)
+			var previousNote = i > 0 ? notes[i - 1] : "";
+			var nextNote = i < notes.Count - 1 ? notes[i + 1] : "";
+			var isStarting = notes[i] != previousNote;
+			var isStopping = notes[i] != nextNote;
+
+			for(int j = 0; j < time; j++)
 			{
-				samples[sampleIndex] = GetWaveSample(sampleIndex, frequency, wave);
+				var noteProgress = Map(j, (0f, time), (0f, 1f));
+				var fadeValue = 1f;
+
+				fadeValue *= isStarting && noteProgress <= noteA ? Map(noteProgress, (0f, noteA), (0f, 1f)) : 1f;
+				fadeValue *= isStopping && noteProgress > noteB ? Map(noteProgress, (noteB, 1f), (1f, 0f)) : 1f;
+
+				samples[sampleIndex] = (short)(frequency == 0 ? 0 : GetWaveSample(sampleIndex, frequency, wave) * fadeValue);
 				sampleIndex++;
 			}
 		}
+
 		return samples;
 	}
 	private static List<string> GetValidNotes(string notes)
 	{
-		var chordsSplit = notes.Split(SymbolSeparator, StringSplitOptions.RemoveEmptyEntries);
+		var chordsSplit = notes.Split(Symbols.separator, StringSplitOptions.RemoveEmptyEntries);
 		var validChords = new List<string>();
 
-		for (int i = 0; i < chordsSplit?.Length; i++)
+		for(int i = 0; i < chordsSplit?.Length; i++)
 		{
 			var note = chordsSplit[i];
-			var prolongs = note.Split(SymbolRepeat);
+			var prolongs = note.Split(Symbols.repeat);
 			var prolongCount = 1;
 
-			if (prolongs.Length == 2)
+			if(prolongs.Length == 2)
 				_ = int.TryParse(prolongs[1], out prolongCount);
 
 			note = prolongs[0];
 
 			var frequency = GetFrequency(note);
 
-			if (float.IsNaN(frequency))
+			if(float.IsNaN(frequency))
 				continue;
-			else if (frequency == 0) // pause
+			else if(frequency == 0) // pause
 			{
-				var pauses = note.Split(SymbolPause);
-				if (note != SymbolPause.ToString() && pauses.Length == 2)
+				var pauses = note.Split(Symbols.pause);
+				if(note != Symbols.pause.ToString() && pauses.Length == 2)
 					_ = int.TryParse(pauses[1], out prolongCount);
-				note = SymbolPause.ToString();
+				note = Symbols.pause.ToString();
 			}
 
-			for (int j = 0; j < prolongCount; j++)
+			for(int j = 0; j < prolongCount; j++)
 				validChords.Add(note);
 		}
 		return validChords;
@@ -124,6 +147,11 @@ public class Notes : Audio
 	private static float A(float freq)
 	{
 		return 2f * PI * freq;
+	}
+	private static float Map(float number, (float a, float b) range, (float a, float b) targetRange)
+	{
+		var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) + targetRange.a;
+		return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
 	}
 	#endregion
 }

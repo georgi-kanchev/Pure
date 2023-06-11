@@ -1,6 +1,7 @@
 ﻿namespace Pure.Collision;
 
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 
 /// <summary>
 /// A collection of rectangles representing an area in 2D space that defines a collision zone.
@@ -31,63 +32,28 @@ public class Hitbox
 		set => rectangles[index] = value;
 	}
 
-	/// <summary>
-	/// Initializes a new hitbox instance from a file.
-	/// </summary>
-	/// <param name="path">The path to the file to load the hitbox from.</param>
-	/// <param name="position">The position of the hitbox.</param>
-	/// <param name="scale">The scale of the hitbox.</param>
-	public Hitbox(string path) : this((0, 0), (0, 0))
+	public Hitbox(byte[] bytes) : this((0, 0), (0, 0))
 	{
-		try
+		var b = Decompress(bytes);
+		var offset = 0;
+
+		var count = BitConverter.ToInt32(Get<int>());
+
+		Position = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+		Scale = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+
+		for(int i = 0; i < count; i++)
 		{
-			var bytes = Decompress(File.ReadAllBytes(path));
-			var bX = new byte[4];
-			var bY = new byte[4];
-			var bScW = new byte[4];
-			var bScH = new byte[4];
-			var bCount = new byte[4];
-			var offset = 0;
+			var x = BitConverter.ToSingle(Get<float>());
+			var y = BitConverter.ToSingle(Get<float>());
+			var w = BitConverter.ToSingle(Get<float>());
+			var h = BitConverter.ToSingle(Get<float>());
+			var color = BitConverter.ToUInt32(Get<uint>());
 
-			Add(bX); Add(bY);
-			Add(bScW); Add(bScH);
-			Add(bCount);
-			var count = BitConverter.ToInt32(bCount);
-
-			Position = (BitConverter.ToSingle(bX), BitConverter.ToSingle(bY));
-			Scale = (BitConverter.ToSingle(bScW), BitConverter.ToSingle(bScH));
-
-			for (int i = 0; i < count; i++)
-			{
-				var bXs = new byte[4];
-				var bYs = new byte[4];
-				var bWs = new byte[4];
-				var bHs = new byte[4];
-				var bColors = new byte[4];
-
-				Add(bXs); Add(bYs);
-				Add(bWs); Add(bHs);
-				Add(bColors);
-
-				var x = BitConverter.ToSingle(bXs);
-				var y = BitConverter.ToSingle(bYs);
-				var w = BitConverter.ToSingle(bWs);
-				var h = BitConverter.ToSingle(bHs);
-				var color = BitConverter.ToUInt32(bColors);
-
-				AddRectangle(new((w, h), (x, y), color));
-			}
-
-			void Add(Array array)
-			{
-				Array.Copy(bytes, offset, array, 0, array.Length);
-				offset += array.Length;
-			}
+			AddRectangle(new((w, h), (x, y), color));
 		}
-		catch (Exception)
-		{
-			throw new Exception($"Could not load {nameof(Hitbox)} from '{path}'.");
-		}
+
+		byte[] Get<T>() => GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
 	}
 	/// <summary>
 	/// Initializes a new empty hitbox instance (with no rectangles in it) with the specified 
@@ -112,15 +78,11 @@ public class Hitbox
 	public Hitbox((float x, float y) position, (float width, float height) scale = default, params Rectangle[] rectangles)
 		: this(position, scale)
 	{
-		for (int i = 0; i < rectangles?.Length; i++)
+		for(int i = 0; i < rectangles?.Length; i++)
 			AddRectangle(rectangles[i]);
 	}
 
-	/// <summary>
-	/// Saves the hitbox as a compressed binary file to the specified path.
-	/// </summary>
-	/// <param name="path">The path to save the hitbox to.</param>
-	public void Save(string path)
+	public byte[] ToBytes()
 	{
 		var c = rectangles.Count;
 		var bX = BitConverter.GetBytes(Position.x);
@@ -135,7 +97,7 @@ public class Hitbox
 		result.AddRange(bScW);
 		result.AddRange(bScH);
 		result.AddRange(bCount);
-		for (int i = 0; i < rectangles.Count; i++)
+		for(int i = 0; i < rectangles.Count; i++)
 		{
 			var r = rectangles[i];
 			result.AddRange(BitConverter.GetBytes(r.Position.x));
@@ -145,7 +107,7 @@ public class Hitbox
 			result.AddRange(BitConverter.GetBytes(r.Color));
 		}
 
-		File.WriteAllBytes(path, Compress(result.ToArray()));
+		return Compress(result.ToArray());
 	}
 
 	/// <summary>
@@ -164,8 +126,8 @@ public class Hitbox
 	/// <returns>True if the hitboxes overlap, false otherwise.</returns>
 	public bool IsOverlapping(Hitbox hitbox)
 	{
-		for (int i = 0; i < RectangleCount; i++)
-			if (hitbox.IsOverlapping(this[i]))
+		for(int i = 0; i < RectangleCount; i++)
+			if(hitbox.IsOverlapping(this[i]))
 				return true;
 
 		return false;
@@ -176,8 +138,8 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping(Rectangle rectangle)
 	{
-		for (int i = 0; i < RectangleCount; i++)
-			if (this[i].IsOverlapping(rectangle))
+		for(int i = 0; i < RectangleCount; i++)
+			if(this[i].IsOverlapping(rectangle))
 				return true;
 
 		return false;
@@ -188,8 +150,8 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping(Line line)
 	{
-		for (int i = 0; i < rectangles.Count; i++)
-			if (this[i].IsOverlapping(line))
+		for(int i = 0; i < rectangles.Count; i++)
+			if(this[i].IsOverlapping(line))
 				return true;
 
 		return false;
@@ -200,8 +162,8 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping((float x, float y) point)
 	{
-		for (int i = 0; i < RectangleCount; i++)
-			if (this[i].IsOverlapping(point))
+		for(int i = 0; i < RectangleCount; i++)
+			if(this[i].IsOverlapping(point))
 				return true;
 
 		return false;
@@ -231,7 +193,7 @@ public class Hitbox
 	public static implicit operator (float x, float y, float width, float height, uint color)[](Hitbox hitbox)
 	{
 		var result = new (float x, float y, float width, float height, uint color)[hitbox.rectangles.Count];
-		for (int i = 0; i < result.Length; i++)
+		for(int i = 0; i < result.Length; i++)
 			result[i] = hitbox[i];
 		return result;
 	}
@@ -242,13 +204,13 @@ public class Hitbox
 	public static implicit operator Hitbox((float x, float y, float width, float height, uint color)[] rectangles)
 	{
 		var result = new Rectangle[rectangles.Length];
-		for (int i = 0; i < result.Length; i++)
+		for(int i = 0; i < result.Length; i++)
 			result[i] = rectangles[i];
 		return result;
 	}
 
 	#region Backend
-	// save format
+	// save format in sectors
 	// [amount of bytes]	- data
 	// --------------------------------
 	// [4]					- x
@@ -256,18 +218,27 @@ public class Hitbox
 	// [4]					- scale width
 	// [4]					- scale height
 	// [4]					- count
-	// [count * 4]			- xs
-	// [count * 4]			- ys
-	// [count * 4]			- widths
-	// [count * 4]			- heights
-	// [count * 4]			- colors
+	// = = = = = = (sector 1)
+	// [4]					- x
+	// [4]					- y
+	// [4]					- width
+	// [4]					- height
+	// [4]					- color
+	// = = = = = = (sector 2)
+	// [4]					- x
+	// [4]					- y
+	// [4]					- width
+	// [4]					- height
+	// [4]					- color
+	// = = = = = = (sector 3)
+	// ... up to sector [count]
 
 	private readonly List<Rectangle> rectangles = new();
 
 	private static byte[] Compress(byte[] data)
 	{
 		var output = new MemoryStream();
-		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+		using(var stream = new DeflateStream(output, CompressionLevel.Optimal))
 			stream.Write(data, 0, data.Length);
 
 		return output.ToArray();
@@ -276,10 +247,16 @@ public class Hitbox
 	{
 		var input = new MemoryStream(data);
 		var output = new MemoryStream();
-		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+		using(var stream = new DeflateStream(input, CompressionMode.Decompress))
 			stream.CopyTo(output);
 
 		return output.ToArray();
+	}
+	private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+	{
+		var result = fromBytes[offset..(offset + amount)];
+		offset += amount;
+		return result;
 	}
 
 	internal Rectangle LocalToGlobalRectangle(Rectangle localRect)

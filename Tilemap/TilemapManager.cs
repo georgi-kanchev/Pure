@@ -1,35 +1,33 @@
+using System.Runtime.InteropServices;
+
 namespace Pure.Tilemap;
 
 public class TilemapManager
 {
 	public int Count => tilemaps.Length;
 	public (int width, int height) Size { get; private set; }
-	public (int x, int y) CameraPosition { get; set; }
-	public (int width, int height) CameraSize { get; set; }
+	public (int x, int y, int width, int height) Camera { get; set; }
 
 	public Tilemap this[int index] => tilemaps[index];
 
-	public TilemapManager(string path)
+	public TilemapManager(byte[] bytes)
 	{
-		try
+		var b = Tilemap.Decompress(bytes);
+		var offset = 0;
+		tilemaps = new Tilemap[BitConverter.ToInt32(Get<int>())];
+		Size = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+		Camera = (BitConverter.ToInt32(Get<int>()),
+			BitConverter.ToInt32(Get<int>()),
+			BitConverter.ToInt32(Get<int>()),
+			BitConverter.ToInt32(Get<int>()));
+
+		for(int i = 0; i < tilemaps.Length; i++)
 		{
-			var bytes = Tilemap.Decompress(File.ReadAllBytes(path));
-			var tilemapList = new List<Tilemap>();
-			tilemaps = Array.Empty<Tilemap>();
-
-			while (true)
-			{
-				var currentTilemap = Tilemap.FromBytes(bytes, out var remainingBytes);
-				if (remainingBytes == null || remainingBytes.Length == 0)
-					break;
-
-				tilemapList.Add(currentTilemap);
-				bytes = remainingBytes;
-			}
-			tilemaps = tilemapList.ToArray();
+			var tmapByteCount = BitConverter.ToInt32(Get<int>());
+			tilemaps[i] = new Tilemap(GetBytesFrom(b, tmapByteCount, ref offset));
 		}
-		catch (Exception)
-		{ throw new Exception($"Could not load {nameof(Tilemap)} from '{path}'."); }
+
+		byte[] Get<T>() => GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
 	}
 	public TilemapManager(int count, (int width, int height) size)
 	{
@@ -38,55 +36,38 @@ public class TilemapManager
 		count = Math.Max(count, 1);
 
 		tilemaps = new Tilemap[count];
-		for (int i = 0; i < count; i++)
+		for(int i = 0; i < count; i++)
 			tilemaps[i] = new(size);
-	}
-
-	public void Save(string path)
-	{
-		try
-		{
-			var result = new List<byte>();
-			for (int i = 0; i < tilemaps.Length; i++)
-				result.AddRange(Tilemap.ToBytes(tilemaps[i]));
-
-			File.WriteAllBytes(path, Tilemap.Compress(result.ToArray()));
-		}
-		catch (Exception)
-		{ throw new Exception($"Could not save {nameof(TilemapManager)} at '{path}'."); }
 	}
 
 	public Tilemap[] CameraUpdate()
 	{
 		var result = new Tilemap[Count];
-		for (int i = 0; i < Count; i++)
+		for(int i = 0; i < Count; i++)
 		{
 			var tmap = tilemaps[i];
 
 			// keep the original tilemap camera props, use the manager ones
-			var prevPos = tmap.CameraPosition;
-			var prevSz = tmap.CameraSize;
-			tmap.CameraPosition = CameraPosition;
-			tmap.CameraSize = CameraSize;
+			var prevCam = tmap.Camera;
+			tmap.Camera = Camera;
 
 			result[i] = tmap.CameraUpdate();
 
 			// and revert
-			tmap.CameraPosition = prevPos;
-			tmap.CameraSize = prevSz;
+			tmap.Camera = prevCam;
 		}
 		return result;
 	}
 	public void Fill(Tile withTile = default)
 	{
-		for (int i = 0; i < tilemaps.Length; i++)
+		for(int i = 0; i < tilemaps.Length; i++)
 			tilemaps[i].Fill(withTile);
 	}
 
 	public Tile[] TilesAt((int x, int y) position)
 	{
 		var result = new Tile[Count];
-		for (int i = 0; i < tilemaps.Length; i++)
+		for(int i = 0; i < tilemaps.Length; i++)
 			result[i] = tilemaps[i].TileAt(position);
 
 		return result;
@@ -98,10 +79,10 @@ public class TilemapManager
 		var x = Map(pixelPosition.x, 0, windowSize.width, 0, Size.width);
 		var y = Map(pixelPosition.y, 0, windowSize.height, 0, Size.height);
 
-		if (isAccountingForCamera)
+		if(isAccountingForCamera)
 		{
-			x += CameraPosition.x;
-			y += CameraPosition.y;
+			x += Camera.x;
+			y += Camera.y;
 		}
 
 		return (x, y);
@@ -109,18 +90,18 @@ public class TilemapManager
 
 	public void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A, int numbers = Tile.NUMBER_0)
 	{
-		for (int i = 0; i < Count; i++)
+		for(int i = 0; i < Count; i++)
 			tilemaps[i].ConfigureText(lowercase, uppercase, numbers);
 	}
 	public void ConfigureText(string symbols, int startId)
 	{
-		for (int i = 0; i < symbols?.Length; i++)
+		for(int i = 0; i < symbols?.Length; i++)
 			tilemaps[i].ConfigureText(symbols, startId);
 	}
 
 	public bool IsInside((int x, int y) position, (int width, int height) outsideMargin = default)
 	{
-		return tilemaps[0].IsInside(position, outsideMargin);
+		return tilemaps[0].IsContaining(position, outsideMargin);
 	}
 
 	public int TileIDFrom(char symbol)
@@ -138,19 +119,55 @@ public class TilemapManager
 		return tilemaps[0].TileIDsFrom(text);
 	}
 
+	public byte[] ToBytes()
+	{
+		var result = new List<byte>();
+		result.AddRange(BitConverter.GetBytes(Count));
+		result.AddRange(BitConverter.GetBytes(Size.width));
+		result.AddRange(BitConverter.GetBytes(Size.height));
+		result.AddRange(BitConverter.GetBytes(Camera.x));
+		result.AddRange(BitConverter.GetBytes(Camera.y));
+		result.AddRange(BitConverter.GetBytes(Camera.width));
+		result.AddRange(BitConverter.GetBytes(Camera.height));
+
+		for(int i = 0; i < tilemaps.Length; i++)
+		{
+			var bytes = tilemaps[i].ToBytes();
+			result.AddRange(BitConverter.GetBytes(bytes.Length));
+			result.AddRange(bytes);
+		}
+
+		return Tilemap.Compress(result.ToArray());
+	}
+
 	#region Backend
-	// save format
+	// save format in sectors
 	// [amount of bytes]		- data
 	// --------------------------------
 	// [4]						- tilemaps count
+	// [4]						- width
+	// [4]						- height
 	// [4]						- camera x
 	// [4]						- camera y
 	// [4]						- camera width
 	// [4]						- camera height
-	// [width * height]			- tile bundles array
+	// = = = = = = (sector 1)
+	// [4]						- tile bundles size
+	// [tile bundles size]		- tile bundles array
+	// = = = = = = (sector 2)
+	// [4]						- tile bundles size
+	// [tile bundles size]		- tile bundles array
+	// = = = = = = (sector 3)
+	// ... up to sector [tilemaps count]
 
 	private readonly Tilemap[] tilemaps;
 
+	private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+	{
+		var result = fromBytes[offset..(offset + amount)];
+		offset += amount;
+		return result;
+	}
 	private static float Map(float number, float a1, float a2, float b1, float b2)
 	{
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;

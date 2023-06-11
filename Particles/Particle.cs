@@ -10,13 +10,9 @@ public class Particle
 	/// </summary>
 	public (float x, float y) Position { get; set; }
 	/// <summary>
-	/// Gets or sets the movement angle of the particle.
+	/// Gets or sets the movement (angle and speed) of the particle.
 	/// </summary>
-	public float MovementAngle { get; set; }
-	/// <summary>
-	/// Gets or sets the movement speed of the particle.
-	/// </summary>
-	public float MovementSpeed { get; set; }
+	public (float angle, float speed) Movement { get; set; }
 
 	/// <summary>
 	/// Gets or sets the age of the particle, in seconds.
@@ -33,28 +29,32 @@ public class Particle
 	/// age and color.
 	/// </summary>
 	/// <param name="position">The position of the particle.</param>
-	/// <param name="movementAngle">The movement angle of the particle.</param>
-	/// <param name="movementSpeed">The movement speed of the particle.</param>
+	/// <param name="movement">The movement (angle and speed) of the particle.</param>
 	/// <param name="age">The age of the particle.</param>
 	/// <param name="color">The color of the particle.</param>
-	public Particle((float x, float y) position, float movementAngle, float movementSpeed = 0.005f, float age = 1f, uint color = uint.MaxValue)
+	public Particle((float x, float y) position, (float angle, float speed) movement, float age = 1f, uint color = uint.MaxValue)
 	{
 		Position = position;
-		MovementAngle = movementAngle;
-		MovementSpeed = movementSpeed;
+		Movement = movement;
 		Age = age;
 		Color = color;
 	}
 
 	/// <returns>
-	/// A bundle tuple containing the position and color of the particle.</returns>
-	public (float x, float y, uint color) ToBundle() => this;
+	/// A point bundle tuple containing the position and color of the particle.</returns>
+	public (float x, float y, uint color) ToPointBundle() => this;
+	/// <returns>
+	/// A bundle tuple containing the position, color, movement (angle and speed) and age of the particle.</returns>
+	public (float x, float y, uint color, float angle, float speed, float age) ToBundle() => this;
 
-	/// <summary>
-	/// Implicitly converts a particle to a bundle tuple of its position and color.
-	/// </summary>
-	/// <param name="particle">The particle to convert.</param>
-	/// <returns>A bundle tuple containing the position and color of the particle.</returns>
+	/// <param name="particle">
+	/// The particle to convert.</param>
+	/// <returns>A point bundle tuple containing the position and color of the particle.</returns>
 	public static implicit operator (float x, float y, uint color)(Particle particle)
 		=> (particle.Position.x, particle.Position.y, particle.Color);
+	/// <param name="particle">
+	/// The particle to convert.</param>
+	/// <returns>A bundle tuple containing the position, color, movement (angle and speed) and age of the particle.</returns>
+	public static implicit operator (float x, float y, uint color, float angle, float speed, float age)(Particle particle)
+	=> (particle.Position.x, particle.Position.y, particle.Color, particle.Movement.angle, particle.Movement.speed, particle.Age);
 }

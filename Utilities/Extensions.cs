@@ -46,24 +46,24 @@ public static class Extensions
 	/// or if the condition is true and the number of entries is less than the maximum allowed. False otherwise.</returns>
 	public static bool Once(this bool condition, string uniqueID, uint maximum = uint.MaxValue)
 	{
-		if (gates.ContainsKey(uniqueID) == false && condition == false)
+		if(gates.ContainsKey(uniqueID) == false && condition == false)
 			return false;
-		else if (gates.ContainsKey(uniqueID) == false && condition)
+		else if(gates.ContainsKey(uniqueID) == false && condition)
 		{
 			gates[uniqueID] = new Gate() { value = true, entries = 1 };
 			return true;
 		}
 		else
 		{
-			if (gates[uniqueID].value && condition)
+			if(gates[uniqueID].value && condition)
 				return false;
-			else if (gates[uniqueID].value == false && condition)
+			else if(gates[uniqueID].value == false && condition)
 			{
 				gates[uniqueID].value = true;
 				gates[uniqueID].entries++;
 				return true;
 			}
-			else if (gates[uniqueID].entries < maximum)
+			else if(gates[uniqueID].entries < maximum)
 				gates[uniqueID].value = false;
 		}
 		return false;
@@ -81,13 +81,13 @@ public static class Extensions
 	/// <param name="frequency">The frequency in seconds at which the result is true while held.</param>
 	public static bool PressAndHold(this bool condition, string uniqueID, float delay = 0.5f, float frequency = 0.06f)
 	{
-		if (condition.Once(uniqueID))
+		if(condition.Once(uniqueID))
 		{
 			holdDelay.Restart();
 			return true;
 		}
 
-		if (condition &&
+		if(condition &&
 			holdDelay.Elapsed.TotalSeconds > delay &&
 			holdFrequency.Elapsed.TotalSeconds > frequency)
 		{
@@ -106,7 +106,7 @@ public static class Extensions
 	public static void Shuffle<T>(this IList<T> collection)
 	{
 		var rand = new Random();
-		for (int i = collection.Count - 1; i > 0; i--)
+		for(int i = collection.Count - 1; i > 0; i--)
 		{
 			int j = rand.Next(i + 1);
 			var temp = collection[i];
@@ -120,7 +120,7 @@ public static class Extensions
 	/// <returns>A randomly selected value from the collection.</returns>
 	public static T ChooseOne<T>(this IList<T> collection)
 	{
-		return collection[Random(0, collection.Count - 1)];
+		return collection[Random((0, collection.Count - 1))];
 	}
 	/// <typeparam name="T">
 	/// The type of objects in the choices.</typeparam>
@@ -141,7 +141,7 @@ public static class Extensions
 	public static float Average(this IList<float> collection)
 	{
 		var sum = 0f;
-		for (int i = 0; i < collection.Count; i++)
+		for(int i = 0; i < collection.Count; i++)
 			sum += collection[i];
 		return sum / collection.Count;
 	}
@@ -158,7 +158,7 @@ public static class Extensions
 	public static string ToString<T>(this IList<T> collection, string separator)
 	{
 		var sb = new StringBuilder();
-		for (int i = 0; i < collection.Count; i++)
+		for(int i = 0; i < collection.Count; i++)
 		{
 			var sep = i != 0 ? separator : "";
 			sb.Append(sep).Append(collection[i]);
@@ -179,34 +179,34 @@ public static class Extensions
 	/// </remarks>
 	public static void Shift<T>(this IList<T> collection, int offset)
 	{
-		if (offset == default)
+		if(offset == default)
 			return;
 
-		if (offset < 0)
+		if(offset < 0)
 		{
 			offset = Math.Abs(offset);
-			for (int j = 0; j < offset; j++)
+			for(int j = 0; j < offset; j++)
 			{
 				var temp = new T[collection.Count];
-				for (int i = 0; i < collection.Count - 1; i++)
+				for(int i = 0; i < collection.Count - 1; i++)
 					temp[i] = collection[i + 1];
 				temp[temp.Length - 1] = collection[0];
 
-				for (int i = 0; i < temp.Length; i++)
+				for(int i = 0; i < temp.Length; i++)
 					collection[i] = temp[i];
 			}
 			return;
 		}
 
 		offset = Math.Abs(offset);
-		for (int j = 0; j < offset; j++)
+		for(int j = 0; j < offset; j++)
 		{
 			var tempp = new T[collection.Count];
-			for (int i = 1; i < collection.Count; i++)
+			for(int i = 1; i < collection.Count; i++)
 				tempp[i] = collection[i - 1];
 			tempp[0] = collection[tempp.Length - 1];
 
-			for (int i = 0; i < tempp.Length; i++)
+			for(int i = 0; i < tempp.Length; i++)
 				collection[i] = tempp[i];
 		}
 	}
@@ -237,7 +237,7 @@ public static class Extensions
 		start = start.Wrap(collection.Count);
 		end = end.Wrap(collection.Count);
 
-		if (start > end)
+		if(start > end)
 			(start, end) = (end, start);
 
 		var length = end - start;
@@ -254,7 +254,7 @@ public static class Extensions
 	{
 		var left = 0;
 		var right = collection.Count - 1;
-		for (int i = 0; i < collection.Count / 2; i++)
+		for(int i = 0; i < collection.Count / 2; i++)
 		{
 			var temp = collection[left];
 			collection[left] = collection[right];
@@ -271,8 +271,8 @@ public static class Extensions
 	public static bool HasDuplicates<T>(this IList<T> collection)
 	{
 		var set = new HashSet<T>();
-		for (int i = 0; i < collection.Count; i++)
-			if (set.Add(collection[i]) == false)
+		for(int i = 0; i < collection.Count; i++)
+			if(set.Add(collection[i]) == false)
 				return true;
 
 		return false;
@@ -289,13 +289,13 @@ public static class Extensions
 		var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
 		var result = new StringBuilder();
 
-		for (int i = 0; i < m; i++)
+		for(int i = 0; i < m; i++)
 		{
-			for (int j = 0; j < n; j++)
+			for(int j = 0; j < n; j++)
 			{
 				result.Append(matrix[i, j]);
 
-				if (j < n - 1)
+				if(j < n - 1)
 					result.Append(separatorColumn);
 			}
 			result.Append(separatorRow);
@@ -313,24 +313,24 @@ public static class Extensions
 	public static T[,] Rotate<T>(this T[,] matrix, int direction)
 	{
 		var dir = Math.Abs(direction).Wrap(4);
-		if (dir == 0)
+		if(dir == 0)
 			return matrix;
 
 		var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
 		var rotated = new T[n, m];
 
-		if (direction > 0)
+		if(direction > 0)
 		{
-			for (int i = 0; i < n; i++)
-				for (int j = 0; j < m; j++)
+			for(int i = 0; i < n; i++)
+				for(int j = 0; j < m; j++)
 					rotated[i, j] = matrix[m - j - 1, i];
 
 			direction--;
 			return Rotate(rotated, direction);
 		}
 
-		for (int i = 0; i < n; i++)
-			for (int j = 0; j < m; j++)
+		for(int i = 0; i < n; i++)
+			for(int j = 0; j < m; j++)
 				rotated[i, j] = matrix[j, n - i - 1];
 
 		direction++;
@@ -347,10 +347,10 @@ public static class Extensions
 		var rows = matrix.GetLength(0);
 		var cols = matrix.GetLength(1);
 
-		if (flips.isFlippedHorizontally)
+		if(flips.isFlippedHorizontally)
 		{
-			for (int i = 0; i < rows; i++)
-				for (int j = 0; j < cols / 2; j++)
+			for(int i = 0; i < rows; i++)
+				for(int j = 0; j < cols / 2; j++)
 				{
 					T temp = matrix[i, j];
 					matrix[i, j] = matrix[i, cols - j - 1];
@@ -358,10 +358,10 @@ public static class Extensions
 				}
 		}
 
-		if (flips.isFlippedVertically)
+		if(flips.isFlippedVertically)
 		{
-			for (int i = 0; i < rows / 2; i++)
-				for (int j = 0; j < cols; j++)
+			for(int i = 0; i < rows / 2; i++)
+				for(int j = 0; j < cols; j++)
 				{
 					T temp = matrix[i, j];
 					matrix[i, j] = matrix[rows - i - 1, j];
@@ -382,10 +382,10 @@ public static class Extensions
 	/// <returns>True if the input string consists of a valid number only; otherwise, false.</returns>
 	public static bool IsLetters(this string text)
 	{
-		for (int i = 0; i < text.Length; i++)
+		for(int i = 0; i < text.Length; i++)
 		{
 			var isLetter = (text[i] >= 'A' && text[i] <= 'Z') || (text[i] >= 'a' && text[i] <= 'z');
-			if (isLetter == false)
+			if(isLetter == false)
 				return false;
 		}
 		return true;
@@ -399,8 +399,8 @@ public static class Extensions
 	public static string Repeat(this string text, int times)
 	{
 		var sb = new StringBuilder();
-		times = times.Limit(0, 999_999);
-		for (int i = 0; i < times; i++)
+		times = times.Limit((0, 999_999));
+		for(int i = 0; i < times; i++)
 			sb.Append(text);
 		return sb.ToString();
 	}
@@ -413,10 +413,10 @@ public static class Extensions
 	{
 		byte[] compressedBytes;
 
-		using (var uncompressedStream = new MemoryStream(Encoding.UTF8.GetBytes(text)))
+		using(var uncompressedStream = new MemoryStream(Encoding.UTF8.GetBytes(text)))
 		{
 			using var compressedStream = new MemoryStream();
-			using (var compressorStream = new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
+			using(var compressorStream = new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
 			{
 				uncompressedStream.CopyTo(compressorStream);
 			}
@@ -437,7 +437,7 @@ public static class Extensions
 
 		var compressedStream = new MemoryStream(Convert.FromBase64String(compressedText));
 
-		using (var decompressorStream = new DeflateStream(compressedStream, CompressionMode.Decompress))
+		using(var decompressorStream = new DeflateStream(compressedStream, CompressionMode.Decompress))
 		{
 			using var decompressedStream = new MemoryStream();
 			decompressorStream.CopyTo(decompressedStream);
@@ -470,14 +470,14 @@ public static class Extensions
 		try { Process.Start(url); }
 		catch
 		{
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 			{
 				url = url.Replace("&", "^&");
 				Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
 			}
-			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+			else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 				Process.Start("xdg-open", url);
-			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			else if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 				Process.Start("open", url);
 			else
 				Console.WriteLine($"Could not load URL '{url}'.");
@@ -516,7 +516,7 @@ public static class Extensions
 	/// <returns>The nearest multiple of the specified interval.</returns>
 	public static float Snap(this float number, float interval)
 	{
-		if (interval == default)
+		if(interval == default)
 			return number;
 
 		// this prevents -0
@@ -556,14 +556,14 @@ public static class Extensions
 	/// <returns>The animated value based on the given parameters.</returns>
 	public static float Animate(this float unit, Animation animation, AnimationCurve curve, bool isRepeated = false)
 	{
-		var x = unit.Limit(0, 1, isRepeated);
-		switch (animation)
+		var x = unit.Limit((0, 1), isRepeated);
+		switch(animation)
 		{
 			case Animation.Line:
 				{
 					return curve == AnimationCurve.Backward ? 1f - unit :
 						curve == AnimationCurve.Forward ? unit :
-						unit < 0.5f ? unit.Map(0, 0.5f, 1f, 0) : unit.Map(0.5f, 1f, 0, 1f);
+						unit < 0.5f ? unit.Map((0, 0.5f), (1f, 0)) : unit.Map((0.5f, 1f), (0, 1f));
 				}
 			case Animation.BendWeak:
 				{
@@ -625,27 +625,26 @@ public static class Extensions
 	/// Limits a float number to a specified range.
 	/// </summary>
 	/// <param name="number">The number to limit.</param>
-	/// <param name="rangeA">The first range value.</param>
-	/// <param name="rangeB">The second range value.</param>
+	/// <param name="range">The range value.</param>
 	/// <param name="isOverflowing">Indicates whether the range is treated as circular, 
 	/// allowing overflow.</param>
 	/// <returns>The limited float number.</returns>
-	public static float Limit(this float number, float rangeA, float rangeB, bool isOverflowing = false)
+	public static float Limit(this float number, (float a, float b) range, bool isOverflowing = false)
 	{
-		if (rangeA > rangeB)
-			(rangeA, rangeB) = (rangeB, rangeA);
+		if(range.a > range.b)
+			(range.a, range.b) = (range.b, range.a);
 
-		if (isOverflowing)
+		if(isOverflowing)
 		{
-			var d = rangeB - rangeA;
-			return ((number - rangeA) % d + d) % d + rangeA;
+			var d = range.b - range.a;
+			return ((number - range.a) % d + d) % d + range.a;
 		}
 		else
 		{
-			if (number < rangeA)
-				return rangeA;
-			else if (number > rangeB)
-				return rangeB;
+			if(number < range.a)
+				return range.a;
+			else if(number > range.b)
+				return range.b;
 			return number;
 		}
 	}
@@ -653,14 +652,13 @@ public static class Extensions
 	/// Limits an int number to a specified range.
 	/// </summary>
 	/// <param name="number">The number to limit.</param>
-	/// <param name="rangeA">The first range value.</param>
-	/// <param name="rangeB">The second range value.</param>
+	/// <param name="range">The range value.</param>
 	/// <param name="isOverflowing">Indicates whether the range is treated as circular, 
 	/// allowing overflow.</param>
 	/// <returns>The limited int number.</returns>
-	public static int Limit(this int number, int rangeA, int rangeB, bool isOverflowing = false)
+	public static int Limit(this int number, (int a, int b) range, bool isOverflowing = false)
 	{
-		return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
+		return (int)Limit((float)number, range, isOverflowing);
 	}
 	/// <param name="number">
 	/// The number whose sign to adjust.</param>
@@ -697,13 +695,13 @@ public static class Extensions
 	/// <param name="inclusiveB">If true, the upper bound is included in the range.</param>
 	/// <returns>True if the given float number is within the given range, 
 	/// false otherwise.</returns>
-	public static bool IsBetween(this float number, float rangeA, float rangeB, bool inclusiveA = false, bool inclusiveB = false)
+	public static bool IsBetween(this float number, (float a, float b) range, bool inclusiveA = false, bool inclusiveB = false)
 	{
-		if (rangeA > rangeB)
-			(rangeA, rangeB) = (rangeB, rangeA);
+		if(range.a > range.b)
+			(range.a, range.b) = (range.b, range.a);
 
-		var l = inclusiveA ? rangeA <= number : rangeA < number;
-		var u = inclusiveB ? rangeB >= number : rangeB > number;
+		var l = inclusiveA ? range.a <= number : range.a < number;
+		var u = inclusiveB ? range.b >= number : range.b > number;
 		return l && u;
 	}
 	/// <param name="number">
@@ -714,8 +712,8 @@ public static class Extensions
 	/// <param name="inclusiveB">If true, the upper bound is included in the range.</param>
 	/// <returns>True if the given int number is within the given range, 
 	/// false otherwise.</returns>
-	public static bool IsBetween(this int number, int rangeA, int rangeB, bool inclusiveA = false, bool inclusiveB = false)
-		=> IsBetween((float)number, rangeA, rangeB, inclusiveA, inclusiveB);
+	public static bool IsBetween(this int number, (int a, int b) range, bool inclusiveA = false, bool inclusiveB = false)
+		=> IsBetween((float)number, range, inclusiveA, inclusiveB);
 	/// <summary>
 	/// Checks whether the given float number is within the range defined by a 
 	/// targetNumber and a range value.
@@ -727,7 +725,7 @@ public static class Extensions
 	/// the range value, false otherwise.</returns>
 	public static bool IsWithin(this float number, float targetNumber, float range)
 	{
-		return IsBetween(number, targetNumber - range, targetNumber + range, true, true);
+		return IsBetween(number, (targetNumber - range, targetNumber + range), true, true);
 	}
 	/// <summary>
 	/// Checks whether the given int number is within the range defined by a 
@@ -740,7 +738,7 @@ public static class Extensions
 	/// the range value, false otherwise.</returns>
 	public static bool IsWithin(this int number, int targetNumber, int range)
 	{
-		return IsBetween(number, targetNumber - range, targetNumber + range, true, true);
+		return IsBetween(number, (targetNumber - range, targetNumber + range), true, true);
 	}
 	/// <summary>
 	/// Moves the given float number by a certain speed 
@@ -768,9 +766,9 @@ public static class Extensions
 		var goingPos = number < targetNumber;
 		var result = Move(number, goingPos ? Sign(speed, false) : Sign(speed, true), deltaTime);
 
-		if (goingPos && result > targetNumber)
+		if(goingPos && result > targetNumber)
 			return targetNumber;
-		else if (goingPos == false && result < targetNumber)
+		else if(goingPos == false && result < targetNumber)
 			return targetNumber;
 		return result;
 	}
@@ -778,27 +776,23 @@ public static class Extensions
 	/// Maps a float number from one range of values to another range of values.
 	/// </summary>
 	/// <param name="number">The number to map.</param>
-	/// <param name="a1">The first bound of the input range.</param>
-	/// <param name="a2">The second bound of the input range.</param>
-	/// <param name="b1">The first bound of the output range.</param>
-	/// <param name="b2">The second bound of the output range.</param>
+	/// <param name="range">The first input range.</param>
+	/// <param name="targetRange">The second input range.</param>
 	/// <returns>The mapped number.</returns>
-	public static float Map(this float number, float a1, float a2, float b1, float b2)
+	public static float Map(this float number, (float a, float b) range, (float a, float b) targetRange)
 	{
-		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
-		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+		var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) + targetRange.a;
+		return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
 	}
 	/// <summary>
 	/// Maps a int number from one range of values to another range of values.
 	/// </summary>
 	/// <param name="number">The number to map.</param>
-	/// <param name="a1">The first bound of the input range.</param>
-	/// <param name="a2">The second bound of the input range.</param>
-	/// <param name="b1">The first bound of the output range.</param>
-	/// <param name="b2">The second bound of the output range.</param>
+	/// <param name="range">The first input range.</param>
+	/// <param name="targetRange">The second input range.</param>
 	/// <returns>The mapped number.</returns>
-	public static int Map(this int number, int a1, int a2, int b1, int b2) =>
-		(int)Map((float)number, a1, a2, b1, b2);
+	public static int Map(this int number, (int a, int b) range, (int a, int b) targetRange) =>
+		(int)Map((float)number, range, targetRange);
 	/// <summary>
 	/// Returns a random float value between the given inclusive range of values.
 	/// </summary>
@@ -808,19 +802,19 @@ public static class Extensions
 	/// <param name="seed">The seed to use for the random generator (default is NaN, 
 	/// meaning randomly chosen).</param>
 	/// <returns>A random float value between the specified range of values.</returns>
-	public static float Random(this float rangeA, float rangeB, float precision = 0, float seed = float.NaN)
+	public static float Random(this (float a, float b) range, float precision = 0, float seed = float.NaN)
 	{
-		if (rangeA > rangeB)
-			(rangeA, rangeB) = (rangeB, rangeA);
+		if(range.a > range.b)
+			(range.a, range.b) = (range.b, range.a);
 
-		precision = (int)precision.Limit(0, 5);
+		precision = (int)precision.Limit((0, 5));
 		precision = MathF.Pow(10, precision);
 
-		rangeA *= precision;
-		rangeB *= precision;
+		range.a *= precision;
+		range.b *= precision;
 
 		var s = new Random(float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed);
-		var randInt = s.Next((int)rangeA, (int)rangeB + 1).Limit((int)rangeA, (int)rangeB + 1);
+		var randInt = s.Next((int)range.a, (int)range.b + 1).Limit(((int)range.a, (int)range.b + 1));
 
 		return randInt / (precision);
 	}
@@ -833,9 +827,9 @@ public static class Extensions
 	/// <param name="seed">The seed to use for the random generator (default is NaN, 
 	/// meaning randomly chosen).</param>
 	/// <returns>A random int value between the specified range of values.</returns>
-	public static int Random(this int rangeA, int rangeB, float seed = float.NaN)
+	public static int Random(this (int a, int b) range, float seed = float.NaN)
 	{
-		return (int)Random(rangeA, rangeB, 0, seed);
+		return (int)Random(range, 0, seed);
 	}
 	/// <summary>
 	/// Determines if a random float value between 1 and 100 is less than or equal to the 
@@ -848,8 +842,8 @@ public static class Extensions
 	/// false otherwise.</returns>
 	public static bool HasChance(this float percent, float seed = float.NaN)
 	{
-		percent = percent.Limit(0, 100);
-		var n = Random(1f, 100f, seed); // should not roll 0 so it doesn't return true with 0% (outside of roll)
+		percent = percent.Limit((0, 100));
+		var n = Random((1f, 100f), seed); // should not roll 0 so it doesn't return true with 0% (outside of roll)
 		return n <= percent;
 	}
 	/// <summary>

@@ -24,7 +24,7 @@ public class List : Element
 		{
 			isSingleSelecting = value;
 
-			if (Type == Types.Dropdown)
+			if(Type == Types.Dropdown)
 				isSingleSelecting = true;
 
 			TrySingleSelectOneItem();
@@ -54,11 +54,7 @@ public class List : Element
 		set => itemGap = (Math.Max(value.width, 0), Math.Max(value.height, 0));
 	}
 
-	/// <summary>
-	/// Gets the button item at the specified index, or null if the index is out of range.
-	/// </summary>
-	/// <param name="index">The index of the button to get.</param>
-	public Button? this[int index] => HasIndex(index) ? items[index] : default;
+	public Button this[int index] => items[index];
 
 	/// <summary>
 	/// Initializes a new list instance with the specified position, size and number of items.
@@ -71,22 +67,41 @@ public class List : Element
 	{
 		Size = (12, 8);
 		Type = type;
-		var (x, y) = Position;
-		var (w, h) = Size;
 
-		var isVertical = type == Types.Horizontal == false;
-		Scroll = new((0, 0), 0, isVertical) { hasParent = true };
+		var isVertical = type != Types.Horizontal;
+		Scroll = new((0, 0), Size.height, isVertical) { hasParent = true };
 
 		Add(itemCount);
 
-		if (type != Types.Dropdown)
+		if(type != Types.Dropdown)
 			UpdateParts();
 		UpdateItems();
 
 		isInitialized = true;
 
-		if (type == Types.Dropdown)
+		if(type == Types.Dropdown)
 			IsSingleSelecting = true;
+	}
+	public List(byte[] bytes) : base(bytes)
+	{
+		Type = (Types)GetBytes(bytes, 1)[0];
+		IsSingleSelecting = BitConverter.ToBoolean(GetBytes(bytes, 1));
+		ItemGap = (BitConverter.ToInt32(GetBytes(bytes, 4)), BitConverter.ToInt32(GetBytes(bytes, 4)));
+		ItemMaximumSize = (BitConverter.ToInt32(GetBytes(bytes, 4)), BitConverter.ToInt32(GetBytes(bytes, 4)));
+		var scrollProgress = BitConverter.ToSingle(GetBytes(bytes, 4));
+		Add(BitConverter.ToInt32(GetBytes(bytes, 4)));
+
+		Scroll = new((0, 0), Size.height, Type != Types.Horizontal) { hasParent = true };
+		if(Type != Types.Dropdown)
+			UpdateParts();
+		UpdateItems();
+
+		var bItemsSelected = GetBytes(bytes, Count);
+		for(int i = 0; i < Count; i++)
+			Select(i, BitConverter.ToBoolean(new byte[] { bItemsSelected[i] }));
+
+		Scroll.Slider.Progress = scrollProgress;
+		isInitialized = true;
 	}
 
 	/// <summary>
@@ -96,12 +111,12 @@ public class List : Element
 	public void Add(int count = 1) => Insert(items.Count, count);
 	public void Insert(int index = 0, int count = 1)
 	{
-		if (index < 0 || index > items.Count)
+		if(index < 0 || index > items.Count)
 			return;
 
-		for (int i = index; i < count; i++)
+		for(int i = index; i < count; i++)
 		{
-			var item = new Button(default) { Text = $"Item{i}" };
+			var item = new Button((0, 0)) { Text = $"Item{i}" };
 			item.size = (Type == Types.Horizontal ? item.Text.Length : Size.width, 1);
 			item.hasParent = true;
 			items.Insert(i, item);
@@ -114,14 +129,14 @@ public class List : Element
 	/// <param name="index">The index of the item to remove.</param>
 	public void Remove(int index = 0)
 	{
-		if (HasIndex(index) == false)
+		if(HasIndex(index) == false)
 			return;
 
 		items.RemoveAt(index);
 
-		if (index == singleSelectedIndex && index != items.Count)
+		if(index == singleSelectedIndex && index != items.Count)
 			return;
-		else if (index <= singleSelectedIndex)
+		else if(index <= singleSelectedIndex)
 			singleSelectedIndex--;
 
 		TrySingleSelectOneItem();
@@ -159,16 +174,30 @@ public class List : Element
 
 	public void Select(int index, bool isSelected = true)
 	{
-		if (HasIndex(index) == false)
+		if(HasIndex(index) == false)
 			return;
 
-		singleSelectedIndex = index;
+		singleSelectedIndex = isSelected ? index : singleSelectedIndex;
 
-		var item = this[index];
-		if (item != null)
-			item.IsSelected = isSelected;
+		this[index].IsSelected = isSelected;
 	}
 	public void Select(Button item, bool isSelected = true) => Select(IndexOf(item), isSelected);
+
+	public override byte[] ToBytes()
+	{
+		var result = base.ToBytes().ToList();
+		result.Add((byte)Type);
+		result.AddRange(BitConverter.GetBytes(IsSingleSelecting));
+		result.AddRange(BitConverter.GetBytes(ItemGap.width));
+		result.AddRange(BitConverter.GetBytes(ItemGap.height));
+		result.AddRange(BitConverter.GetBytes(ItemMaximumSize.width));
+		result.AddRange(BitConverter.GetBytes(ItemMaximumSize.height));
+		result.AddRange(BitConverter.GetBytes(Scroll.Slider.Progress));
+		result.AddRange(BitConverter.GetBytes(Count));
+		for(int i = 0; i < Count; i++)
+			result.AddRange(BitConverter.GetBytes(this[i].IsSelected));
+		return result.ToArray();
+	}
 
 	/// <summary>
 	/// Called when the list and its scroll need to be updated. This handles all of the user input
@@ -179,11 +208,11 @@ public class List : Element
 	{
 		ItemMaximumSize = itemMaxSize; // reclamp value
 
-		if (Type == Types.Dropdown)
+		if(Type == Types.Dropdown)
 		{
 			IsSingleSelecting = true;
 
-			if (isExpanded == false)
+			if(isExpanded == false)
 			{
 				Scroll.position = (int.MaxValue, int.MaxValue);
 				Scroll.Slider.Handle.position = (int.MaxValue, int.MaxValue);
@@ -192,21 +221,18 @@ public class List : Element
 			}
 		}
 
-		if (IsDisabled)
+		if(IsDisabled)
 			return;
 
 		TrySingleSelect();
 
-		if (IsHovered && Input.Current.ScrollDelta != 0 &&
+		if(IsHovered && Input.Current.ScrollDelta != 0 &&
 			(isExpanded || Type != Types.Dropdown))
 			Scroll.Slider.Move(Input.Current.ScrollDelta);
 
-		if (Type == Types.Dropdown && isInitialized && isExpanded == false)
+		if(Type == Types.Dropdown && isInitialized && isExpanded == false)
 		{
 			var selectedItem = this[singleSelectedIndex];
-			if (selectedItem == null)
-				return;
-
 			selectedItem.position = Position;
 			TryTrimItem(selectedItem);
 			// after trim
@@ -214,6 +240,7 @@ public class List : Element
 
 			selectedItem.Update();
 			OnItemUpdate(selectedItem);
+			itemUpdateCallback?.Invoke(selectedItem);
 			selectedItem.IsSelected = true;
 			return;
 		}
@@ -237,7 +264,7 @@ public class List : Element
 	public static implicit operator List(Button[] items)
 	{
 		var result = new List((0, 0), 0);
-		for (int i = 0; i < items?.Length; i++)
+		for(int i = 0; i < items?.Length; i++)
 			result.items[i] = items[i];
 
 		return result;
@@ -256,9 +283,11 @@ public class List : Element
 	private readonly bool isInitialized;
 	private (int width, int height) itemMaxSize = (5, 1), itemGap = (1, 0);
 
+	internal Action<Button>? itemUpdateCallback; // used in the UI class to receive callbacks
+
 	internal void TrySingleSelectOneItem()
 	{
-		if (IsSingleSelecting == false || items.Count == 0)
+		if(IsSingleSelecting == false || items.Count == 0)
 		{
 			singleSelectedIndex = -1;
 			return;
@@ -266,7 +295,7 @@ public class List : Element
 
 		var isOneSelected = HasIndex(singleSelectedIndex);
 
-		if (isOneSelected)
+		if(isOneSelected)
 			return;
 
 		singleSelectedIndex = 0;
@@ -276,25 +305,25 @@ public class List : Element
 	{
 		var isHoveringItems = IsHovered && Scroll.IsHovered == false;
 
-		if (Input.Current.IsJustPressed && IsHovered == false)
+		if(Input.Current.IsJustPressed && IsHovered == false)
 		{
 			isExpanded = false;
 			return;
 		}
 
-		if (Input.Current.IsJustReleased == false ||
+		if(Input.Current.IsJustReleased == false ||
 			IsSingleSelecting == false || isHoveringItems == false)
 			return;
 
 		var hoveredIndex = GetHoveredIndex();
-		if (HasIndex(hoveredIndex) == false)
+		if(HasIndex(hoveredIndex) == false)
 			return;
 
-		if (items[hoveredIndex].IsPressedAndHeld)
+		if(items[hoveredIndex].IsPressedAndHeld)
 		{
 			singleSelectedIndex = hoveredIndex;
 
-			if (Type == Types.Dropdown)
+			if(Type == Types.Dropdown)
 				isExpanded = isExpanded == false;
 		}
 	}
@@ -306,9 +335,9 @@ public class List : Element
 
 		Scroll.Update();
 
-		if (Type == Types.Horizontal)
+		if(Type == Types.Horizontal)
 		{
-			if (HasScroll().horizontal == false)
+			if(HasScroll().horizontal == false)
 			{
 				Scroll.position = (int.MaxValue, int.MaxValue);
 				return;
@@ -319,7 +348,7 @@ public class List : Element
 		}
 		else
 		{
-			if (HasScroll().vertical == false)
+			if(HasScroll().vertical == false)
 			{
 				Scroll.position = (int.MaxValue, int.MaxValue);
 				return;
@@ -334,14 +363,11 @@ public class List : Element
 		var (x, y) = Position;
 		var (w, h) = Size;
 
-		for (int i = 0; i < items.Count; i++)
+		for(int i = 0; i < items.Count; i++)
 		{
 			var item = items[i];
 
-			if (item == null)
-				continue;
-
-			if (Type == List.Types.Horizontal)
+			if(Type == Types.Horizontal)
 			{
 				var totalWidth = items.Count * (ItemMaximumSize.width + ItemGap.width);
 				var offsetX = (int)Map(Scroll.Slider.Progress, 0, 1, 0, totalWidth - w - ItemGap.width);
@@ -358,36 +384,30 @@ public class List : Element
 
 			var (ix, iy) = item.position;
 			var (offW, offH) = item.listSizeTrimOffset;
-			var botEdgeTrim = Type == List.Types.Horizontal && HasScroll().horizontal ? 1 : 0;
-			var rightEdgeTrim = Type == List.Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
+			var botEdgeTrim = Type == Types.Horizontal && HasScroll().horizontal ? 1 : 0;
+			var rightEdgeTrim = Type == Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
 			var (iw, ih) = (item.Size.width + offW, item.Size.height + offH);
-			if (ix + iw <= x || ix >= x + w ||
+			if(ix + iw <= x || ix >= x + w ||
 				iy + ih <= y || iy >= y + h - botEdgeTrim)
 				item.position = (int.MaxValue, int.MaxValue);
 
 			TryTrimItem(item);
 			item.Update();
 
-			if (isInitialized)
+			if(isInitialized)
+			{
 				OnItemUpdate(item);
+				itemUpdateCallback?.Invoke(item);
+			}
 
-			if (IsSingleSelecting)
+			if(IsSingleSelecting)
 				item.IsSelected = false;
 		}
 
-		if (IsSingleSelecting && HasIndex(singleSelectedIndex))
+		if(IsSingleSelecting && HasIndex(singleSelectedIndex))
 			items[singleSelectedIndex].IsSelected = true;
 	}
 
-	private int GetScrollIndex()
-	{
-		var end = Math.Max(0, items.Count - Scroll.Size.height - 2);
-
-		if (Type == List.Types.Horizontal)
-			end = items.Count;
-
-		return (int)MathF.Round(Map(Scroll.Slider.Progress, 0, 1, 0, end));
-	}
 	private bool HasIndex(int index)
 	{
 		return index >= 0 && index < items.Count;
@@ -408,18 +428,18 @@ public class List : Element
 
 		item.listSizeTrimOffset = (0, 0);
 
-		if (ix <= x + w && ix + iw >= x + w) // on right edge
+		if(ix <= x + w && ix + iw >= x + w) // on right edge
 			newWidth = Math.Min(ItemMaximumSize.width, x + w - rightEdgeTrim - ix);
-		if (ix < x && ix + iw > x) // on left edge
+		if(ix < x && ix + iw > x) // on left edge
 		{
 			newWidth = ix + iw - x;
 			item.position = (x, item.position.Item2);
 			item.listSizeTrimOffset = (ItemMaximumSize.width - newWidth, item.listSizeTrimOffset.Item2);
 		}
 
-		if (iy <= y + h && iy + ih >= y + h - botEdgeTrim) // on bottom edge
+		if(iy <= y + h && iy + ih >= y + h - botEdgeTrim) // on bottom edge
 			newHeight = Math.Min(ItemMaximumSize.height, y + h - botEdgeTrim - iy);
-		if (iy < y && iy + ih > y) // on top edge
+		if(iy < y && iy + ih > y) // on top edge
 		{
 			newHeight = iy + ih - y;
 			item.position = (item.position.Item1, y);
@@ -431,8 +451,8 @@ public class List : Element
 	private int GetHoveredIndex()
 	{
 		var (x, y) = Input.Current.Position;
-		for (int i = 0; i < items.Count; i++)
-			if (items[i].IsHovered)
+		for(int i = 0; i < items.Count; i++)
+			if(items[i].IsHovered)
 				return i;
 
 		return -1;

@@ -17,7 +17,7 @@ public class Slider : Element
 		get => progress;
 		set
 		{
-			var size = IsVertical ? Size.Item2 : Size.Item1;
+			var size = IsVertical ? Size.height : Size.width;
 
 			progress = value;
 			index = (int)MathF.Round(Map(progress, 0, 1, 0, size - 1));
@@ -49,7 +49,7 @@ public class Slider : Element
 	public void Move(int delta)
 	{
 		var size = IsVertical ? Size.height : Size.width;
-		index += delta * (IsVertical ? -1 : 1);
+		index -= delta;
 		index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(size - 1, 0));
 
 		UpdateHandle();
@@ -61,7 +61,7 @@ public class Slider : Element
 	/// <param name="position">The position to try move the handle to.</param>
 	public void MoveTo((int x, int y) position)
 	{
-		var size = IsVertical ? Size.Item2 : Size.Item1;
+		var size = IsVertical ? Size.height : Size.width;
 		var (x, y) = Position;
 		var (px, py) = position;
 		index = IsVertical ? py - y : px - x;
@@ -79,23 +79,23 @@ public class Slider : Element
 	{
 		UpdateHandle();
 
-		if (IsDisabled)
+		if(IsDisabled)
 			return;
 
-		if (IsHovered)
+		if(IsHovered)
 		{
-			if (IsDisabled == false)
+			if(IsDisabled == false)
 				MouseCursorResult = MouseCursor.Hand;
 
-			if (Input.Current.ScrollDelta != 0)
+			if(Input.Current.ScrollDelta != 0)
 				Move(Input.Current.ScrollDelta);
 		}
 
-		if (IsPressedAndHeld)
+		if(IsPressedAndHeld)
 		{
 			var p = Input.Current.Position;
-			MoveTo(((int)p.Item1, (int)p.Item2));
-			TriggerUserEvent(UserEvent.Drag);
+			MoveTo(((int)p.x, (int)p.y));
+			TriggerUserAction(UserAction.Drag);
 		}
 	}
 
@@ -112,7 +112,7 @@ public class Slider : Element
 		index = Math.Clamp(index, 0, sz);
 		progress = Map(index, 0, size - 1, 0, 1);
 
-		if (IsVertical)
+		if(IsVertical)
 		{
 			Handle.position = (x, y + index);
 			Handle.size = (w, 1);

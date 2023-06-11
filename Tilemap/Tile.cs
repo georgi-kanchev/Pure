@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-namespace Pure.Tilemap;
+﻿namespace Pure.Tilemap;
 
 /// <summary>
 /// Represents a tile in a tilemap.
@@ -44,6 +42,17 @@ public struct Tile
 		Angle = angle;
 		Flips = flips;
 	}
+	public Tile(byte[] bytes)
+	{
+		var offset = 0;
+
+		ID = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
+		Tint = BitConverter.ToUInt32(GetBytesFrom(bytes, 4, ref offset));
+		Angle = (sbyte)GetBytesFrom(bytes, 1, ref offset)[0];
+		Flips = (
+			BitConverter.ToBoolean(GetBytesFrom(bytes, 1, ref offset)),
+			BitConverter.ToBoolean(GetBytesFrom(bytes, 1, ref offset)));
+	}
 
 	/// <returns>
 	/// A bundle tuple containing the identifier, tint, angle and flips of the tile.</returns>
@@ -53,6 +62,18 @@ public struct Tile
 	public override string ToString()
 	{
 		return $"ID({ID}) Tint({Tint}) Angle({Angle}) Flips{Flips}";
+	}
+	public byte[] ToBytes()
+	{
+		var result = new List<byte>();
+
+		result.AddRange(BitConverter.GetBytes(ID));
+		result.AddRange(BitConverter.GetBytes(Tint));
+		result.Add((byte)Angle);
+		result.AddRange(BitConverter.GetBytes(Flips.isHorizontal));
+		result.AddRange(BitConverter.GetBytes(Flips.isVertical));
+
+		return result.ToArray();
 	}
 
 	public override int GetHashCode() => base.GetHashCode();
@@ -485,53 +506,12 @@ public struct Tile
 
 	#region Backend
 	internal const int BYTE_SIZE = 14;
-	internal byte[] ToBytes()
+
+	private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
 	{
-		var offset = 0;
-		var result = new byte[BYTE_SIZE];
-
-		Add(BitConverter.GetBytes(ID));
-		Add(BitConverter.GetBytes(Tint));
-		Add(BitConverter.GetBytes(Angle));
-		Add(BitConverter.GetBytes(Flips.isHorizontal));
-		Add(BitConverter.GetBytes(Flips.isVertical));
-
+		var result = fromBytes[offset..(offset + amount)];
+		offset += amount;
 		return result;
-
-		void Add(Array array)
-		{
-			Array.Copy(array, 0, result, offset, array.Length);
-			offset += array.Length;
-		}
-	}
-	internal static Tile FromBytes(byte[] bytes)
-	{
-		var offset = 0;
-		var bID = new byte[4];
-		var bTint = new byte[4];
-		var bAngle = new byte[2];
-		var bFlipHor = new byte[1];
-		var bFlipVer = new byte[1];
-
-		Add(bID);
-		Add(bTint);
-		Add(bAngle);
-		Add(bFlipHor);
-		Add(bFlipVer);
-
-		var id = BitConverter.ToInt32(bID);
-		var tint = BitConverter.ToUInt32(bTint);
-		var angle = (sbyte)BitConverter.ToInt16(bAngle);
-		var flipHor = BitConverter.ToBoolean(bFlipHor);
-		var flipVer = BitConverter.ToBoolean(bFlipVer);
-
-		return new(id, tint, angle, (flipHor, flipVer));
-
-		void Add(Array array)
-		{
-			Array.Copy(bytes, offset, array, 0, array.Length);
-			offset += array.Length;
-		}
 	}
 	#endregion
 }

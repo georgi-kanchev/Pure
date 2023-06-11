@@ -33,7 +33,7 @@ public struct Point
 
 	public Point ToGrid(Point gridSize)
 	{
-		if (gridSize == default)
+		if(gridSize == default)
 			return this;
 
 		// this prevents -0 cells
@@ -85,7 +85,7 @@ public struct Point
 		noise.SetNoiseType((FastNoiseLite.NoiseType)type);
 		noise.SetFrequency(1f / scale);
 
-		return noise.GetNoise(X, Y).Map(-1, 1, 0, 1);
+		return noise.GetNoise(X, Y).Map((-1, 1), (0, 1));
 	}
 	public float Distance(Point targetPoint)
 	{

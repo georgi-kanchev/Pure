@@ -1,11 +1,11 @@
 namespace Pure.Examples.Games;
 
-using Pure.Window;
-using Pure.Tilemap;
-using Pure.Utilities;
 using Pure.Animation;
-using Pure.Tracker;
 using Pure.Collision;
+using Pure.Tilemap;
+using Pure.Tracker;
+using Pure.Utilities;
+using Pure.Window;
 
 public static class FlappyBird
 {
@@ -42,7 +42,7 @@ public static class FlappyBird
 			birdVelocity = -0.006f;
 			birdAnimation.CurrentProgress = 0;
 
-			if (isGameOver) // restart game in case it's over
+			if(isGameOver) // restart game in case it's over
 			{
 				birdY = 5f;
 				birdVelocity = 0f;
@@ -52,7 +52,7 @@ public static class FlappyBird
 			}
 		});
 
-		while (Window.IsOpen) // the default game loop
+		while(Window.IsOpen) // the default game loop
 		{
 			Window.Activate(true);
 
@@ -68,32 +68,32 @@ public static class FlappyBird
 			foreground.Fill();
 
 			// apply gravity, unless game over
-			if (isGameOver == false)
+			if(isGameOver == false)
 			{
 				birdVelocity += Time.Delta * 0.01f;
 				birdY += birdVelocity;
 			}
 
 			// prevent jumping "over" pipes and going offscreen
-			if (birdY < 0)
+			if(birdY < 0)
 			{
 				birdY = 0;
 				birdVelocity = 0;
 			}
 
 			// update pipes
-			for (int i = 0; i < pipes?.Count; i++)
+			for(int i = 0; i < pipes?.Count; i++)
 			{
 				var (pipeX, pipeY, holeSize) = pipes[i];
 
-				if (isGameOver == false) // move pipe, unless game over
+				if(isGameOver == false) // move pipe, unless game over
 					pipeX -= Time.Delta * SCROLL_SPEED;
 
-				if (pipeX < -2) // "wrap" pipes around and reuse them
+				if(pipeX < -2) // "wrap" pipes around and reuse them
 				{
 					pipeX = width + 2;
-					pipeY = (-15).Random(-1);
-					holeSize = 3.Random(10);
+					pipeY = (-15, -1).Random();
+					holeSize = (3, 10).Random();
 					score++;
 				}
 
@@ -111,7 +111,7 @@ public static class FlappyBird
 
 			// whether the bird fell out of the map or bonked into a pipe
 			var birdRect = new Rectangle((1, 1), (BIRD_X, birdY));
-			if (birdY + 1 >= height || collisionMap.IsOverlapping(birdRect))
+			if(birdY + 1 >= height || collisionMap.IsOverlapping(birdRect))
 				isGameOver = true;
 
 			// finish by drawing everything
@@ -120,7 +120,7 @@ public static class FlappyBird
 			var scoreText = $"Score: {score}";
 			foreground.SetTextLine((width / 2 - scoreText.Length / 2, 1), scoreText);
 
-			if (isGameOver)
+			if(isGameOver)
 				foreground.SetTextLine((width / 2 - GAME_OVER.Length / 2, height / 2), GAME_OVER);
 
 			Window.DrawTiles(background.ToBundle());
@@ -135,11 +135,11 @@ public static class FlappyBird
 		{
 			pipes = new(){
 			// pairs of (x, y, holeSize) - some initial offscreen, later they will be reused
-				(width + 00, (-15).Random(-3), 3.Random(10)),
-				(width + 10, (-15).Random(-3), 3.Random(10)),
-				(width + 20, (-15).Random(-3), 3.Random(10)),
-				(width + 30, (-15).Random(-3), 3.Random(10)),
-				(width + 40, (-15).Random(-3), 3.Random(10)),
+				(width + 00, (-15, -3).Random(), (3, 10).Random()),
+				(width + 10, (-15, -3).Random(), (3, 10).Random()),
+				(width + 20, (-15, -3).Random(), (3, 10).Random()),
+				(width + 30, (-15, -3).Random(), (3, 10).Random()),
+				(width + 40, (-15, -3).Random(), (3, 10).Random()),
 			};
 		}
 	}

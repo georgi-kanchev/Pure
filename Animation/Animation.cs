@@ -5,7 +5,7 @@
 /// <typeparamref name="T"/> over time.
 /// </summary>
 /// <typeparam name="T">The type of the values in the animation.</typeparam>
-public class Animation<T>
+public class Animation<T> where T : notnull
 {
 	/// <summary>
 	/// Gets the current value of the animation.
@@ -65,7 +65,7 @@ public class Animation<T>
 	/// <param name="values">The values of the animation.</param>
 	public Animation(float duration, bool isRepeating, params T[] values)
 	{
-		if (values == null)
+		if(values == null)
 			throw new ArgumentNullException(nameof(values));
 
 		this.values = Copy(values);
@@ -101,11 +101,11 @@ public class Animation<T>
 	/// <param name="deltaTime">The amount of time that has passed since the last update.</param>
 	public void Update(float deltaTime)
 	{
-		if (values == default || IsPaused)
+		if(values == default || IsPaused)
 			return;
 
 		RawIndex += deltaTime / Speed;
-		if ((int)MathF.Round(RawIndex) >= values.Length)
+		if((int)MathF.Round(RawIndex) >= values.Length)
 			RawIndex = IsRepeating ? LOWER_BOUND : values.Length - 1;
 	}
 

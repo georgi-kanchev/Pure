@@ -26,12 +26,12 @@ public class Map
 
 		var sectorCount = BitConverter.ToInt32(Get<int>());
 
-		for (int i = 0; i < sectorCount; i++)
+		for(int i = 0; i < sectorCount; i++)
 		{
 			var tile = BitConverter.ToInt32(Get<int>());
 			var rectAmount = BitConverter.ToInt32(Get<int>());
 
-			for (int j = 0; j < rectAmount; j++)
+			for(int j = 0; j < rectAmount; j++)
 			{
 				var x = BitConverter.ToSingle(Get<float>());
 				var y = BitConverter.ToSingle(Get<float>());
@@ -55,7 +55,7 @@ public class Map
 	/// rectangle to.</param>
 	public void AddRectangle(Rectangle rectangle, int tileID)
 	{
-		if (cellRects.ContainsKey(tileID) == false)
+		if(cellRects.ContainsKey(tileID) == false)
 			cellRects[tileID] = new List<Rectangle>();
 
 		cellRects[tileID].Add(rectangle);
@@ -68,14 +68,14 @@ public class Map
 	/// <returns>An array of rectangles at the cell.</returns>
 	public Rectangle[] GetRectangles((int x, int y) cell)
 	{
-		if (tileIndices.ContainsKey(cell) == false)
+		if(tileIndices.ContainsKey(cell) == false)
 			return Array.Empty<Rectangle>();
 
 		var id = tileIndices[cell];
 		var rects = cellRects[id];
 		var result = new List<Rectangle>();
 
-		for (int r = 0; r < rects.Count; r++)
+		for(int r = 0; r < rects.Count; r++)
 			result.Add(rects[r]);
 
 		return result.ToArray();
@@ -87,11 +87,11 @@ public class Map
 	public Rectangle[] GetRectangles()
 	{
 		var result = new List<Rectangle>();
-		foreach (var kvp in tileIndices)
+		foreach(var kvp in tileIndices)
 		{
 			var rects = cellRects[kvp.Value];
 			var (cellX, cellY) = kvp.Key;
-			for (int i = 0; i < rects.Count; i++)
+			for(int i = 0; i < rects.Count; i++)
 			{
 				var rect = rects[i];
 				var (x, y) = rect.Position;
@@ -110,7 +110,7 @@ public class Map
 	}
 	public void ClearRectangles(int tile)
 	{
-		if (cellRects.ContainsKey(tile) == false)
+		if(cellRects.ContainsKey(tile) == false)
 			return;
 
 		count -= cellRects[tile].Count;
@@ -124,16 +124,16 @@ public class Map
 	/// <exception cref="ArgumentNullException">Thrown if tiles is null.</exception>
 	public void Update(int[,] tileIDs)
 	{
-		if (tileIDs == null)
+		if(tileIDs == null)
 			throw new ArgumentNullException(nameof(tileIDs));
 
 		tileIndices.Clear();
 
-		for (int y = 0; y < tileIDs.GetLength(1); y++)
-			for (int x = 0; x < tileIDs.GetLength(0); x++)
+		for(int y = 0; y < tileIDs.GetLength(1); y++)
+			for(int x = 0; x < tileIDs.GetLength(0); x++)
 			{
 				var tile = tileIDs[x, y];
-				if (cellRects.ContainsKey(tile) == false)
+				if(cellRects.ContainsKey(tile) == false)
 					continue;
 
 				tileIndices[(x, y)] = tile;
@@ -146,8 +146,8 @@ public class Map
 	/// false otherwise.</returns>
 	public bool IsOverlapping(Hitbox hitbox)
 	{
-		for (int i = 0; i < hitbox.RectangleCount; i++)
-			if (IsOverlapping(hitbox[i]))
+		for(int i = 0; i < hitbox.RectangleCount; i++)
+			if(IsOverlapping(hitbox[i]))
 				return true;
 
 		return false;
@@ -167,8 +167,8 @@ public class Map
 	public bool IsOverlapping(Rectangle rectangle)
 	{
 		var neighborRects = GetNeighborRects(rectangle);
-		for (int i = 0; i < neighborRects.Count; i++)
-			if (neighborRects[i].IsOverlapping(rectangle))
+		for(int i = 0; i < neighborRects.Count; i++)
+			if(neighborRects[i].IsOverlapping(rectangle))
 				return true;
 
 		return false;
@@ -180,8 +180,8 @@ public class Map
 	public bool IsOverlapping((float x, float y) point)
 	{
 		var neighborRects = GetNeighborRects(new(point, (1, 1)));
-		for (int i = 0; i < neighborRects.Count; i++)
-			if (neighborRects[i].IsOverlapping(point))
+		for(int i = 0; i < neighborRects.Count; i++)
+			if(neighborRects[i].IsOverlapping(point))
 				return true;
 
 		return false;
@@ -195,12 +195,12 @@ public class Map
 		var result = new List<byte>();
 		result.AddRange(BitConverter.GetBytes(cellRects.Count));
 
-		foreach (var kvp in cellRects)
+		foreach(var kvp in cellRects)
 		{
 			result.AddRange(BitConverter.GetBytes(kvp.Key));
 			result.AddRange(BitConverter.GetBytes(kvp.Value.Count));
 
-			for (int i = 0; i < kvp.Value.Count; i++)
+			for(int i = 0; i < kvp.Value.Count; i++)
 			{
 				var r = kvp.Value[i];
 				result.AddRange(BitConverter.GetBytes(r.Position.x));
@@ -227,7 +227,7 @@ public class Map
 	{
 		var rectangles = map.GetRectangles();
 		var result = new (float x, float y, float width, float height, uint color)[rectangles.Length];
-		for (int i = 0; i < rectangles.Length; i++)
+		for(int i = 0; i < rectangles.Length; i++)
 			result[i] = rectangles[i];
 		return result;
 	}
@@ -269,17 +269,17 @@ public class Map
 		var (x, y) = rect.Position;
 		var (chW, chH) = GetChunkSizeForRect(rect);
 
-		for (int j = -chW; j < chW; j++)
-			for (int i = -chH; i < chH; i++)
+		for(int j = -chW; j < chW; j++)
+			for(int i = -chH; i < chH; i++)
 			{
 				var cell = ((int)x + i, (int)y + j);
 
-				if (tileIndices.ContainsKey(cell) == false)
+				if(tileIndices.ContainsKey(cell) == false)
 					continue;
 
 				var id = tileIndices[cell];
 				var rects = cellRects[id];
-				for (int r = 0; r < rects.Count; r++)
+				for(int r = 0; r < rects.Count; r++)
 				{
 					var curRect = rects[r];
 					var (rx, ry) = curRect.Position;
@@ -300,7 +300,7 @@ public class Map
 	private static byte[] Compress(byte[] data)
 	{
 		var output = new MemoryStream();
-		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+		using(var stream = new DeflateStream(output, CompressionLevel.Optimal))
 			stream.Write(data, 0, data.Length);
 
 		return output.ToArray();
@@ -309,12 +309,11 @@ public class Map
 	{
 		var input = new MemoryStream(data);
 		var output = new MemoryStream();
-		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+		using(var stream = new DeflateStream(input, CompressionMode.Decompress))
 			stream.CopyTo(output);
 
 		return output.ToArray();
 	}
-
 	private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
 	{
 		var result = fromBytes[offset..(offset + amount)];

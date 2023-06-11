@@ -38,6 +38,22 @@ public class Panel : Element
 		Text = "Panel";
 		Size = (12, 8);
 	}
+	public Panel(byte[] bytes) : base(bytes)
+	{
+		MinimumSize = (BitConverter.ToInt32(GetBytes(bytes, 4)), BitConverter.ToInt32(GetBytes(bytes, 4)));
+		IsResizable = BitConverter.ToBoolean(GetBytes(bytes, 1));
+		IsMovable = BitConverter.ToBoolean(GetBytes(bytes, 1));
+	}
+
+	public override byte[] ToBytes()
+	{
+		var result = base.ToBytes().ToList();
+		result.AddRange(BitConverter.GetBytes(MinimumSize.width));
+		result.AddRange(BitConverter.GetBytes(MinimumSize.height));
+		result.AddRange(BitConverter.GetBytes(IsResizable));
+		result.AddRange(BitConverter.GetBytes(IsMovable));
+		return result.ToArray();
+	}
 
 	/// <summary>
 	/// Called when the panel needs to be updated. This handles all of the user input
@@ -46,12 +62,12 @@ public class Panel : Element
 	/// </summary>
 	protected override void OnUpdate()
 	{
-		if (MinimumSize.width > Size.width)
+		if(MinimumSize.width > Size.width)
 			Size = (MinimumSize.width, Size.height);
-		if (MinimumSize.height > Size.height)
+		if(MinimumSize.height > Size.height)
 			Size = (Size.width, MinimumSize.height);
 
-		if (IsDisabled || IsResizable == false && IsMovable == false)
+		if(IsDisabled || IsResizable == false && IsMovable == false)
 			return;
 
 		var (x, y) = Position;
@@ -74,10 +90,10 @@ public class Panel : Element
 		var isHoveringRight = inputX == x + w - 1 && IsBetween(inputY, y, y + h - 1);
 		var isHoveringBottom = IsBetween(inputX, x, x + w - 1) && inputY == y + h - 1;
 
-		if (IsDisabled == false && IsHovered)
+		if(IsDisabled == false && IsHovered)
 			MouseCursorResult = MouseCursor.Arrow;
 
-		if (wasClicked)
+		if(wasClicked)
 		{
 			isDragging = false;
 			isResizingL = false;
@@ -88,17 +104,17 @@ public class Panel : Element
 
 		var isHoveringSides = isHoveringTop || ((isHoveringLeft || isHoveringRight || isHoveringBottom) &&
 			IsResizable == false);
-		if (IsMovable && isHoveringSides)
+		if(IsMovable && isHoveringSides)
 			Process(ref isDragging, MouseCursor.Move);
-		else if (IsResizable)
+		else if(IsResizable)
 		{
-			if (isHoveringLeft)
+			if(isHoveringLeft)
 				Process(ref isResizingL, MouseCursor.ResizeHorizontal);
-			if (isHoveringRight)
+			if(isHoveringRight)
 				Process(ref isResizingR, MouseCursor.ResizeHorizontal);
-			if (isHoveringBottom)
+			if(isHoveringBottom)
 				Process(ref isResizingD, MouseCursor.ResizeVertical);
-			if (isHoveringTopCorners || (IsMovable == false && isHoveringTop))
+			if(isHoveringTopCorners || (IsMovable == false && isHoveringTop))
 				Process(ref isResizingU, MouseCursor.ResizeVertical);
 
 			var tl = isHoveringLeft && isHoveringTopCorners;
@@ -106,13 +122,13 @@ public class Panel : Element
 			var br = isHoveringBottom && isHoveringRight;
 			var bl = isHoveringBottom && isHoveringLeft;
 
-			if (IsDisabled == false && (tl || br))
+			if(IsDisabled == false && (tl || br))
 				MouseCursorResult = MouseCursor.ResizeDiagonal1;
-			if (IsDisabled == false && (tr || bl))
+			if(IsDisabled == false && (tr || bl))
 				MouseCursorResult = MouseCursor.ResizeDiagonal2;
 		}
 
-		if (IsFocused && Input.Current.IsPressed &&
+		if(IsFocused && Input.Current.IsPressed &&
 			Input.Current.Position != Input.Current.PositionPrevious)
 		{
 			var (deltaX, deltaY) = ((int)inputX - (int)prevX, (int)inputY - (int)prevY);
@@ -120,15 +136,15 @@ public class Panel : Element
 			var (newW, newH) = (w, h);
 			var (maxX, maxY) = MinimumSize;
 
-			if (isDragging)
+			if(isDragging)
 			{
 				newX += deltaX;
 				newY += deltaY;
 			}
-			if (isResizingL && inputX == x + deltaX) { newX += deltaX; newW -= deltaX; }
-			if (isResizingR && inputX == x + w - 1 + deltaX) newW += deltaX;
-			if (isResizingD && inputY == y + h - 1 + deltaY) newH += deltaY;
-			if (isResizingU && inputY == y + deltaY) { newY += deltaY; newH -= deltaY; }
+			if(isResizingL && inputX == x + deltaX) { newX += deltaX; newW -= deltaX; }
+			if(isResizingR && inputX == x + w - 1 + deltaX) newW += deltaX;
+			if(isResizingD && inputY == y + h - 1 + deltaY) newH += deltaY;
+			if(isResizingU && inputY == y + deltaY) { newY += deltaY; newH -= deltaY; }
 
 			var isOutsideScreen =
 				newX + newW > TilemapSize.width ||
@@ -137,7 +153,7 @@ public class Panel : Element
 				newY < 0;
 			var isBelowMinimumSize = newW < Math.Abs(maxX) || newH < Math.Abs(maxY);
 
-			if (isOutsideScreen || isBelowMinimumSize)
+			if(isOutsideScreen || isBelowMinimumSize)
 				return;
 
 			Size = (newW, newH);
@@ -146,10 +162,10 @@ public class Panel : Element
 
 		void Process(ref bool condition, MouseCursor cursor)
 		{
-			if (isClicked)
+			if(isClicked)
 				condition = true;
 
-			if (IsDisabled == false)
+			if(IsDisabled == false)
 				MouseCursorResult = cursor;
 		}
 	}
@@ -160,7 +176,7 @@ public class Panel : Element
 
 	private static bool IsBetween(float number, float rangeA, float rangeB)
 	{
-		if (rangeA > rangeB)
+		if(rangeA > rangeB)
 			(rangeA, rangeB) = (rangeB, rangeA);
 
 		var l = rangeA <= number;

@@ -5,9 +5,9 @@ public class Program
 	static void Main()
 	{
 		//Systems.DefaultGraphics.Run();
-		//Systems.UserInterface.Run();
+		Systems.UserInterface.Run();
 		//Systems.Collision.Run();
-		Systems.Audio.Run();
+		//Systems.Audio.Run();
 		//Systems.ChatLAN.Run();
 
 		//Games.FlappyBird.Run();

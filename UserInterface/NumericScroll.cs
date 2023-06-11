@@ -15,7 +15,7 @@ public class NumericScroll : Element
 		get => range;
 		set
 		{
-			if (value.minimum > value.maximum)
+			if(value.minimum > value.maximum)
 				(value.minimum, value.maximum) = (value.maximum, value.minimum);
 
 			range = value;
@@ -33,11 +33,11 @@ public class NumericScroll : Element
 		Down = new((Position.x, Position.y + Size.height - 1)) { Size = (1, 1), hasParent = true };
 		Up = new(Position) { Size = (1, 1), hasParent = true };
 
-		Down.SubscribeToUserEvent(UserEvent.Press, () => Value--);
-		Up.SubscribeToUserEvent(UserEvent.Press, () => Value++);
+		Down.SubscribeToUserAction(UserAction.Press, () => Value--);
+		Up.SubscribeToUserAction(UserAction.Press, () => Value++);
 
-		Down.SubscribeToUserEvent(UserEvent.PressAndHold, () => Value--);
-		Up.SubscribeToUserEvent(UserEvent.PressAndHold, () => Value++);
+		Down.SubscribeToUserAction(UserAction.PressAndHold, () => Value--);
+		Up.SubscribeToUserAction(UserAction.PressAndHold, () => Value++);
 	}
 
 	protected override void OnUpdate()

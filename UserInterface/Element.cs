@@ -1,11 +1,13 @@
 ﻿namespace Pure.UserInterface;
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
 
 /// <summary>
-/// The various user interface events that can be triggered by user input.
+/// The various user interface actions that can be triggered by user input.
 /// </summary>
-public enum UserEvent
+public enum UserAction
 {
 	Focus, Unfocus, Hover, Unhover, Press, Release, Trigger, Drag, Dragged, PressAndHold, Scroll
 }
@@ -36,6 +38,12 @@ public enum Key
 public abstract partial class Element
 {
 	/// <summary>
+	/// Gets or sets the mouse cursor graphics result. Usually set by each user interface element
+	/// when the user interacts with that specific element.
+	/// </summary>
+	public static MouseCursor MouseCursorResult { get; protected set; }
+
+	/// <summary>
 	/// The currently focused user interface element.
 	/// </summary>
 	protected static Element? Focused { get; private set; }
@@ -43,6 +51,11 @@ public abstract partial class Element
 	/// The size of the tilemap being used by the user interface.
 	/// </summary>
 	protected static (int width, int height) TilemapSize { get; private set; }
+	/// <summary>
+	/// The amount of bytes used by <see cref="Element(byte[])"/>. The remaining bytes may be used by subclasses
+	/// to continue reading their data down the constructor chain using <see cref="GetBytes(byte[], int)"/>.
+	/// </summary>
+	protected int BytesOffset { get; private set; }
 
 	/// <summary>
 	/// Gets or sets the position of the user interface element.
@@ -50,7 +63,7 @@ public abstract partial class Element
 	public (int x, int y) Position
 	{
 		get => position;
-		set { if (hasParent == false) position = value; }
+		set { if(hasParent == false) position = value; }
 	}
 	/// <summary>
 	/// Gets or sets the size of the user interface element.
@@ -58,7 +71,7 @@ public abstract partial class Element
 	public (int width, int height) Size
 	{
 		get => size;
-		set { if (hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1)); }
+		set { if(hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1)); }
 	}
 	/// <summary>
 	/// Gets or sets the text displayed (if any) by the user interface element.
@@ -100,11 +113,6 @@ public abstract partial class Element
 	/// regardless of being hovered or not.
 	/// </summary>
 	public bool IsPressedAndHeld { get; private set; }
-	/// <summary>
-	/// Gets or sets the mouse cursor graphics result. Usually set by each user interface element
-	/// when the user interacts with that specific element.
-	/// </summary>
-	public static MouseCursor MouseCursorResult { get; protected set; }
 
 	/// <summary>
 	/// Initializes a new user interface element instance class with the specified 
@@ -119,6 +127,21 @@ public abstract partial class Element
 
 		hold.Start();
 		holdTrigger.Start();
+		typeName = GetType().Name;
+	}
+	public Element(byte[] bytes)
+	{
+		Position = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+		Size = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+		var textBytesLength = BitConverter.ToInt32(Get<int>());
+		var bText = GetBytes(bytes, textBytesLength);
+		Text = Encoding.UTF8.GetString(bText);
+		IsHidden = BitConverter.ToBoolean(GetBytes(bytes, 1));
+		IsDisabled = BitConverter.ToBoolean(GetBytes(bytes, 1));
+		var typeNameLength = BitConverter.ToInt32(Get<int>());
+		typeName = Encoding.UTF8.GetString(GetBytes(bytes, typeNameLength));
+
+		byte[] Get<T>() => GetBytes(bytes, Marshal.SizeOf(typeof(T)));
 	}
 
 	/// <summary>
@@ -133,39 +156,39 @@ public abstract partial class Element
 
 		UpdateHovered();
 
-		if (IsDisabled)
+		if(IsDisabled)
 		{
-			if (IsHovered)
+			if(IsHovered)
 				MouseCursorResult = MouseCursor.Disable;
 
 			OnUpdate();
 			return;
 		}
 
-		if (Input.Current.wasPressed == false && Input.Current.IsPressed && IsHovered)
+		if(Input.Current.wasPressed == false && Input.Current.IsPressed && IsHovered)
 			IsFocused = true;
 
-		if (Input.Current.IsKeyJustPressed(Key.Escape))
+		if(Input.Current.IsKeyJustPressed(Key.Escape))
 			IsFocused = false;
 
 		TryTrigger();
 
-		if (IsFocused && wasFocused == false)
-			TriggerUserEvent(UserEvent.Focus);
-		if (IsFocused == false && wasFocused)
-			TriggerUserEvent(UserEvent.Unfocus);
-		if (IsHovered && wasHovered == false)
-			TriggerUserEvent(UserEvent.Hover);
-		if (IsHovered == false && wasHovered)
-			TriggerUserEvent(UserEvent.Unhover);
-		if (IsPressed && Input.Current.wasPressed == false)
-			TriggerUserEvent(UserEvent.Press);
-		if (IsPressed == false && Input.Current.wasPressed)
-			TriggerUserEvent(UserEvent.Release);
-		if (IsPressedAndHeld && Input.Current.IsJustHeld)
-			TriggerUserEvent(UserEvent.PressAndHold);
-		if (Input.Current.ScrollDelta != 0)
-			TriggerUserEvent(UserEvent.Scroll);
+		if(IsFocused && wasFocused == false)
+			TriggerUserAction(UserAction.Focus);
+		if(IsFocused == false && wasFocused)
+			TriggerUserAction(UserAction.Unfocus);
+		if(IsHovered && wasHovered == false)
+			TriggerUserAction(UserAction.Hover);
+		if(IsHovered == false && wasHovered)
+			TriggerUserAction(UserAction.Unhover);
+		if(IsPressed && Input.Current.wasPressed == false)
+			TriggerUserAction(UserAction.Press);
+		if(IsPressed == false && Input.Current.wasPressed)
+			TriggerUserAction(UserAction.Release);
+		if(IsPressedAndHeld && Input.Current.IsJustHeld)
+			TriggerUserAction(UserAction.PressAndHold);
+		if(Input.Current.ScrollDelta != 0)
+			TriggerUserAction(UserAction.Scroll);
 
 		OnUpdate();
 	}
@@ -174,7 +197,7 @@ public abstract partial class Element
 	/// </summary>
 	public void Trigger()
 	{
-		TriggerUserEvent(UserEvent.Trigger);
+		TriggerUserAction(UserAction.Trigger);
 	}
 
 	public bool Contains((float x, float y) point)
@@ -191,49 +214,6 @@ public abstract partial class Element
 
 		return (x + w <= ex || x >= ex + ew || y + h <= ey || y >= ey + eh) == false;
 	}
-
-	/// <summary>
-	/// Triggers the specified user event, invoking all the registered
-	/// methods associated with it.
-	/// Used internally by the user interface elements to notify subscribers of
-	/// user interactions and state changes.
-	/// </summary>
-	/// <param name="userEvent">The identifier of the user event to trigger.</param>
-	protected internal void TriggerUserEvent(UserEvent userEvent)
-	{
-		OnUserEvent(userEvent);
-
-		if (userEvents.ContainsKey(userEvent) == false)
-			return;
-
-		for (int i = 0; i < userEvents[userEvent].Count; i++)
-			userEvents[userEvent][i].Invoke();
-	}
-	/// <summary>
-	/// Subscribes the specified method to the specified user event, 
-	/// so that it will be invoked every time the event is triggered. Multiple methods can be 
-	/// associated with the same event.
-	/// </summary>
-	/// <param name="userEvent">The identifier of the user event to subscribe to.</param>
-	/// <param name="method">The method to subscribe.</param>
-	protected internal void SubscribeToUserEvent(UserEvent userEvent, Action method)
-	{
-		if (userEvents.ContainsKey(userEvent) == false)
-			userEvents[userEvent] = new();
-
-		userEvents[userEvent].Add(method);
-	}
-
-	/// <summary>
-	/// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
-	/// Subclasses should override this method to implement their own behavior.
-	/// </summary>
-	protected virtual void OnUserEvent(UserEvent userEvent) { }
-	/// <summary>
-	/// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
-	/// Subclasses should override this method to implement their own behavior.
-	/// </summary>
-	protected virtual void OnUpdate() { }
 
 	/// <summary>
 	/// Applies input to the user interface element, updating its state accordingly.
@@ -262,7 +242,7 @@ public abstract partial class Element
 		Input.Current.Position = position;
 
 		var keys = new Key[keysPressed.Length];
-		for (int i = 0; i < keysPressed.Length; i++)
+		for(int i = 0; i < keysPressed.Length; i++)
 			keys[i] = (Key)keysPressed[i];
 
 		Input.Current.PressedKeys = keys;
@@ -272,29 +252,113 @@ public abstract partial class Element
 			.Replace("\r", "");
 		Input.Current.ScrollDelta = scrollDelta;
 
-		if (Input.Current.IsJustPressed)
+		if(Input.Current.IsJustPressed)
 			hold.Restart();
 
 		Input.Current.IsJustHeld = false;
-		if (hold.Elapsed.TotalSeconds > HOLD_DELAY && holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
+		if(hold.Elapsed.TotalSeconds > HOLD_DELAY && holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
 		{
 			holdTrigger.Restart();
 			Input.Current.IsJustHeld = true;
 		}
 
-		if (Input.Current.wasPressed == false && Input.Current.IsPressed)
+		if(Input.Current.wasPressed == false && Input.Current.IsPressed)
 			Focused = null;
 	}
 
+	public virtual byte[] ToBytes()
+	{
+		var result = new List<byte>();
+		var bText = Encoding.UTF8.GetBytes(Text);
+		var bType = Encoding.UTF8.GetBytes(typeName);
+
+		result.AddRange(BitConverter.GetBytes(Position.x));
+		result.AddRange(BitConverter.GetBytes(Position.y));
+		result.AddRange(BitConverter.GetBytes(Size.width));
+		result.AddRange(BitConverter.GetBytes(Size.height));
+		result.AddRange(BitConverter.GetBytes(bText.Length));
+		result.AddRange(bText);
+		result.AddRange(BitConverter.GetBytes(IsHidden));
+		result.AddRange(BitConverter.GetBytes(IsDisabled));
+		result.AddRange(BitConverter.GetBytes(bType.Length));
+		result.AddRange(bType);
+
+		return result.ToArray();
+	}
+
+	/// <summary>
+	/// Invokes all the registered methods associated with the specified user action.
+	/// Used internally by the user interface elements to notify subscribers of
+	/// user interactions and state changes.
+	/// </summary>
+	/// <param name="userAction">The identifier of the user action to trigger.</param>
+	protected internal void TriggerUserAction(UserAction userAction)
+	{
+		OnUserAction(userAction);
+
+		if(userActions.ContainsKey(userAction) == false)
+			return;
+
+		for(int i = 0; i < userActions[userAction].Count; i++)
+			userActions[userAction][i].Invoke();
+	}
+	/// <summary>
+	/// Subscribes the specified method to the specified user action, 
+	/// so that it will be invoked every time the action is triggered. Multiple methods can be 
+	/// associated with the same action.
+	/// </summary>
+	/// <param name="userAction">The identifier of the user action to subscribe to.</param>
+	/// <param name="method">The method to subscribe.</param>
+	protected internal void SubscribeToUserAction(UserAction userAction, Action method)
+	{
+		if(userActions.ContainsKey(userAction) == false)
+			userActions[userAction] = new();
+
+		userActions[userAction].Add(method);
+	}
+
+	/// <summary>
+	/// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
+	/// Subclasses should override this method to implement their own behavior.
+	/// </summary>
+	protected virtual void OnUserAction(UserAction userAction) { }
+	/// <summary>
+	/// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
+	/// Subclasses should override this method to implement their own behavior.
+	/// </summary>
+	protected virtual void OnUpdate() { }
+
+	protected byte[] GetBytes(byte[] fromBytes, int amount)
+	{
+		var result = fromBytes[BytesOffset..(BytesOffset + amount)];
+		BytesOffset += amount;
+		return result;
+	}
+
 	#region Backend
+	// save format
+	// [amount of bytes]	- data
+	// --------------------------------
+	// [4]					- x
+	// [4]					- y
+	// [4]					- width
+	// [4]					- height
+	// [4]					- text length
+	// [text length]		- text (base 64-ed)
+	// [1]					- is hidden
+	// [1]					- is disabled
+	// [4]					- type name length
+	// [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
+
 	private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
 	internal (int, int) position, size, listSizeTrimOffset;
 	internal bool hasParent;
+	internal readonly string typeName;
 	private static readonly Stopwatch hold = new(), holdTrigger = new();
 
 	private bool wasFocused, wasHovered;
 
-	private readonly Dictionary<UserEvent, List<Action>> userEvents = new();
+	private readonly Dictionary<UserAction, List<Action>> userActions = new();
 
 	public override string ToString()
 	{
@@ -308,32 +372,33 @@ public abstract partial class Element
 		var (w, h) = Size;
 		var isHoveredX = ix >= x && ix < x + w;
 		var isHoveredY = iy >= y && iy < y + h;
-		if (w < 0)
+		if(w < 0)
 			isHoveredX = ix > x + w && ix <= x;
-		if (h < 0)
+		if(h < 0)
 			isHoveredY = iy > y + h && iy <= y;
 
 		IsHovered = isHoveredX && isHoveredY;
 	}
 	private void TryTrigger()
 	{
-		if (IsFocused == false || IsDisabled)
+		if(IsFocused == false || IsDisabled)
 		{
 			IsPressedAndHeld = false;
 			return;
 		}
 
-		if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
+		if(IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
 		{
 			IsPressedAndHeld = false;
-			TriggerUserEvent(UserEvent.Trigger);
+			TriggerUserAction(UserAction.Trigger);
 		}
 
-		if (IsHovered && Input.Current.IsJustPressed)
+		if(IsHovered && Input.Current.IsJustPressed)
 			IsPressedAndHeld = true;
 
-		if (Input.Current.IsJustReleased)
+		if(Input.Current.IsJustReleased)
 			IsPressedAndHeld = false;
 	}
+
 	#endregion
 }

@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Audio\Audio.csproj" />
     <ProjectReference Include="..\LAN\LAN.csproj" />
     <ProjectReference Include="..\Tilemap\Tilemap.csproj" />
     <ProjectReference Include="..\Window\Window.csproj" />
@@ -17,7 +18,6 @@
     <ProjectReference Include="..\Collision\Collision.csproj" />
     <ProjectReference Include="..\Storage\Storage.csproj" />
     <ProjectReference Include="..\UserInterface\UserInterface.csproj" />
-    <ProjectReference Include="..\Audio\Audio.csproj" />
   </ItemGroup>
 
 </Project>

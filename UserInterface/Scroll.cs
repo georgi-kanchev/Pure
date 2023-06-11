@@ -22,14 +22,14 @@ public class Scroll : Element
 		IsVertical = isVertical;
 		Size = (IsVertical ? 1 : size, IsVertical ? size : 1);
 
-		Slider = new(default, size, isVertical) { hasParent = true };
-		Up = new(default) { Size = (1, 1), hasParent = true };
-		Down = new(default) { Size = (1, 1), hasParent = true };
+		Slider = new((0, 0), size, isVertical) { hasParent = true };
+		Up = new((0, 0)) { Size = (1, 1), hasParent = true };
+		Down = new((0, 0)) { Size = (1, 1), hasParent = true };
 
-		Up.SubscribeToUserEvent(UserEvent.Press, () => Slider.Move(1));
-		Up.SubscribeToUserEvent(UserEvent.PressAndHold, () => Slider.Move(1));
-		Down.SubscribeToUserEvent(UserEvent.Press, () => Slider.Move(-1));
-		Down.SubscribeToUserEvent(UserEvent.PressAndHold, () => Slider.Move(-1));
+		Up.SubscribeToUserAction(UserAction.Press, () => Slider.Move(1));
+		Up.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(1));
+		Down.SubscribeToUserAction(UserAction.Press, () => Slider.Move(-1));
+		Down.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(-1));
 	}
 
 	protected override void OnUpdate()
@@ -39,7 +39,7 @@ public class Scroll : Element
 		var (x, y) = Position;
 		var (w, h) = Size;
 
-		if (IsVertical)
+		if(IsVertical)
 		{
 			Up.position = (x, y);
 			Down.position = (x, y + h - 1);
@@ -58,8 +58,4 @@ public class Scroll : Element
 		Up.Update();
 		Down.Update();
 	}
-
-	#region Backend
-
-	#endregion
 }

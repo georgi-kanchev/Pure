@@ -10,19 +10,19 @@ public class StorageRaw
 		get => key == null ? Array.Empty<byte>() : data[key];
 		set
 		{
-			if (key == null)
+			if(key == null)
 				return;
 
 			data[key] = value;
 		}
 	}
 
-	public void Save(string path)
+	public void ToFile(string path)
 	{
 		var result = new List<byte>();
 		result.AddRange(BitConverter.GetBytes(data.Count));
 
-		foreach (var kvp in data)
+		foreach(var kvp in data)
 		{
 			var bKey = BytesFromText(kvp.Key);
 			result.AddRange(BitConverter.GetBytes(bKey.Length));
@@ -32,13 +32,13 @@ public class StorageRaw
 		}
 		File.WriteAllBytes(path, Compress(result.ToArray()));
 	}
-	public void Load(string path)
+	public void FromFile(string path)
 	{
 		var bytes = Decompress(File.ReadAllBytes(path));
 		var offset = 0;
 		var sectorCount = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
 
-		for (int i = 0; i < sectorCount; i++)
+		for(int i = 0; i < sectorCount; i++)
 		{
 			var keyLength = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
 			var key = BytesToText(GetBytesFrom(bytes, keyLength, ref offset));
@@ -79,7 +79,7 @@ public class StorageRaw
 	private static byte[] Compress(byte[] data)
 	{
 		var output = new MemoryStream();
-		using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+		using(var stream = new DeflateStream(output, CompressionLevel.Optimal))
 			stream.Write(data, 0, data.Length);
 
 		return output.ToArray();
@@ -88,7 +88,7 @@ public class StorageRaw
 	{
 		var input = new MemoryStream(data);
 		var output = new MemoryStream();
-		using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+		using(var stream = new DeflateStream(input, CompressionMode.Decompress))
 			stream.CopyTo(output);
 
 		return output.ToArray();

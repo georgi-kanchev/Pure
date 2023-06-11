@@ -21,7 +21,7 @@ public class ParticleManager
 	/// <param name="amount">The number of particles to spawn.</param>
 	public void Spawn(int amount)
 	{
-		for (int i = 0; i < amount; i++)
+		for(int i = 0; i < amount; i++)
 		{
 			var p = new Particle(default, default);
 			particles.Add(p);
@@ -34,21 +34,21 @@ public class ParticleManager
 	/// <param name="deltaTime">The time since the last update.</param>
 	public void Update(float deltaTime)
 	{
-		if (IsPaused)
+		if(IsPaused)
 			return;
 
 		var toRemove = new List<Particle>();
-		for (int i = 0; i < particles.Count; i++)
+		for(int i = 0; i < particles.Count; i++)
 		{
 			var p = particles[i];
-			var rad = MathF.PI / 180 * p.MovementAngle;
+			var rad = MathF.PI / 180 * p.Movement.angle;
 			var (dirX, dirY) = (MathF.Cos(rad), MathF.Sin(rad));
 			var (x, y) = p.Position;
 
 			p.Age -= deltaTime;
-			p.Position = (x + dirX * p.MovementSpeed, y + dirY * p.MovementSpeed);
+			p.Position = (x + dirX * p.Movement.speed, y + dirY * p.Movement.speed);
 
-			if (p.Age <= 0)
+			if(p.Age <= 0)
 			{
 				toRemove.Add(p);
 				continue;
@@ -56,7 +56,7 @@ public class ParticleManager
 
 			OnUpdate(p);
 		}
-		for (int i = 0; i < toRemove.Count; i++)
+		for(int i = 0; i < toRemove.Count; i++)
 			particles.Remove(toRemove[i]);
 	}
 
@@ -71,13 +71,15 @@ public class ParticleManager
 	/// <param name="particle">The particle that was updated.</param>
 	public virtual void OnUpdate(Particle particle) { }
 
-	/// <returns>An array of particles in the particle manager.</returns>
+	/// <returns>
+	/// An array of particles in the particle manager.</returns>
 	public Particle[] ToArray() => this;
-	/// <returns>An array of particle bundle tuples in the particle manager.</returns>
-	public (float x, float y, uint color)[] ToBundle()
+	/// <returns>
+	/// An array of particle bundle tuples in the particle manager.</returns>
+	public (float x, float y, uint color)[] ToPointsBundle()
 	{
 		var result = new (float x, float y, uint color)[particles.Count];
-		for (int i = 0; i < particles.Count; i++)
+		for(int i = 0; i < particles.Count; i++)
 			result[i] = particles[i];
 
 		return result;
@@ -92,7 +94,7 @@ public class ParticleManager
 	public static implicit operator ParticleManager(Particle[] particles)
 	{
 		var manager = new ParticleManager();
-		for (int i = 0; i < particles.Length; i++)
+		for(int i = 0; i < particles.Length; i++)
 			manager.particles.Add(particles[i]);
 		return manager;
 	}
