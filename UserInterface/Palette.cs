@@ -1,53 +1,66 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Pure.UserInterface;
 
 public class Palette : Element
 {
-	public Slider Opacity { get; }
-	public Pages Brightness { get; }
-	public Button Pick { get; }
+	public Slider Opacity { get; private set; }
+	public Pages Brightness { get; private set; }
+	public Button Pick { get; private set; }
 
-	public uint SelectedColor { get; set; } = uint.MaxValue;
+	public uint SelectedColor
+	{
+		get => selectedColor;
+		set
+		{
+			var prev = selectedColor;
+			selectedColor = value;
+
+			if (prev != selectedColor)
+				TriggerUserAction(UserAction.Select);
+		}
+	}
 
 	public Palette((int x, int y) position, int brightnessLevels) : base(position)
 	{
 		Size = (13, 3);
-		var (x, y) = Position;
-		var (w, h) = Size;
-		brightnessLevels = Math.Clamp(brightnessLevels, 1, 99);
 
-		Opacity = new((x, y), w) { Progress = 1f, hasParent = true };
-		Brightness = new ChildPagination((x, y + 2), brightnessLevels, this)
-		{
-			Size = (w - 1, 1),
-			CurrentPage = brightnessLevels / 2,
-			hasParent = true
-		};
-		Pick = new((x + w - 1, y + h - 1)) { hasParent = true };
+		Init(brightnessLevels, brightnessLevels / 2, 1f);
+	}
+	public Palette(byte[] bytes) : base(bytes)
+	{
+		SelectedColor = GrabUInt(bytes);
+		var opacity = GrabFloat(bytes);
+		var count = GrabInt(bytes);
+		var page = GrabInt(bytes);
+		Init(count, page, opacity);
+	}
 
-		Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
-
-		for(int i = 0; i < 13; i++)
-		{
-			var btn = new Button((x + i, y + 1)) { Size = (1, 1), hasParent = true };
-			colorButtons.Add(btn);
-		}
+	public override byte[] ToBytes()
+	{
+		var result = base.ToBytes().ToList();
+		PutUInt(result, SelectedColor);
+		PutFloat(result, Opacity.Progress);
+		PutInt(result, Brightness.Count);
+		PutInt(result, Brightness.CurrentPage);
+		return result.ToArray();
 	}
 
 	protected override void OnUpdate()
 	{
 		Size = (13, 3);
 
-		if(IsDisabled)
+		if (IsDisabled)
 			return;
 
 		Opacity.Update();
 		Brightness.Update();
 		Pick.Update();
 
-		if(isPicking)
+		if (isPicking)
 			MouseCursorResult = MouseCursor.Crosshair;
 
-		if(Input.Current.IsJustPressed && isPicking && IsHovered == false)
+		if (Input.Current.IsJustPressed && isPicking && IsHovered == false)
 		{
 			isPicking = false;
 
@@ -59,9 +72,9 @@ public class Palette : Element
 
 		SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
 
-		for(int i = 0; i < colorButtons.Count; i++)
+		for (int i = 0; i < colorButtons.Count; i++)
 		{
-			if(colorButtons[i].IsPressed)
+			if (colorButtons[i].IsPressed)
 				SelectedColor = GetColor(colorButtons.IndexOf(colorButtons[i]));
 
 			OnSampleUpdate(colorButtons[i], GetColor(i));
@@ -106,23 +119,51 @@ public class Palette : Element
 		0x_FF_00_7F_FF, // Red Magenta
 	};
 	private bool isPicking;
+	private uint selectedColor = uint.MaxValue;
 
 	// used in the UI class to receive callbacks
 	internal Action<Button>? pageUpdateCallback;
 	internal Action<Button, uint>? sampleUpdateCallback;
 	internal Func<(float, float), uint>? pickCallback;
 
+	[MemberNotNull(nameof(Opacity))]
+	[MemberNotNull(nameof(Brightness))]
+	[MemberNotNull(nameof(Pick))]
+	private void Init(int brightnessPageCount, int brightnessCurrentPage, float opacityProgress)
+	{
+		var (x, y) = Position;
+		var (w, h) = Size;
+		brightnessPageCount = Math.Clamp(brightnessPageCount, 1, 99);
+
+		Opacity = new((x, y), w) { Progress = opacityProgress, hasParent = true };
+		Brightness = new ChildPagination((x, y + 2), brightnessPageCount, this)
+		{
+			Size = (w - 1, 1),
+			CurrentPage = brightnessCurrentPage,
+			hasParent = true
+		};
+		Pick = new((x + w - 1, y + h - 1)) { hasParent = true };
+
+		Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
+
+		for (int i = 0; i < 13; i++)
+		{
+			var btn = new Button((x + i, y + 1)) { Size = (1, 1), hasParent = true };
+			colorButtons.Add(btn);
+		}
+	}
+
 	private static uint ToOpacity(uint color, float unit)
 	{
-		var (r, g, b, a) = GetColor(color);
-		a = (byte)Map(unit, 0, 1, 0, 255);
+		var (r, g, b, _) = GetColor(color);
+		var a = (byte)Map(unit, 0, 1, 0, 255);
 		return GetColor(r, g, b, a);
 	}
 	private static uint ToBrightness(uint color, float unit)
 	{
 		var (r, g, b, a) = GetColor(color);
 
-		if(unit < 0.5f)
+		if (unit < 0.5f)
 		{
 			r = (byte)Map(unit, 0, 0.5f, 0, r);
 			g = (byte)Map(unit, 0, 0.5f, 0, g);
@@ -152,7 +193,7 @@ public class Palette : Element
 	private uint GetColor(int index)
 	{
 		var color = ToOpacity(palette[index], Opacity.Progress);
-		var value = Map((float)Brightness.CurrentPage, 1, (float)Brightness.Count, 0, 1);
+		var value = Map(Brightness.CurrentPage, 1, Brightness.Count, 0, 1);
 		color = ToBrightness(color, value);
 		return color;
 	}

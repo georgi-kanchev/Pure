@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Pure.UserInterface;
 
 public class Scroll : Element
@@ -5,41 +7,55 @@ public class Scroll : Element
 	/// <summary>
 	/// Gets the slider part of the scroll.
 	/// </summary>
-	public Slider Slider { get; }
+	public Slider Slider { get; private set; }
 	/// <summary>
 	/// Gets the button used to scroll up.
 	/// </summary>
-	public Button Up { get; }
+	public Button Up { get; private set; }
 	/// <summary>
 	/// Gets the button used to scroll down.
 	/// </summary>
-	public Button Down { get; }
+	public Button Down { get; private set; }
 
-	public bool IsVertical { get; private set; }
+	public bool IsVertical
+	{
+		get => isVertical;
+		set { if (hasParent == false) isVertical = value; }
+	}
 
 	public Scroll((int x, int y) position, int size = 5, bool isVertical = true) : base(position)
 	{
 		IsVertical = isVertical;
-		Size = (IsVertical ? 1 : size, IsVertical ? size : 1);
+		Size = IsVertical ? (1, size) : (size, 1);
 
-		Slider = new((0, 0), size, isVertical) { hasParent = true };
-		Up = new((0, 0)) { Size = (1, 1), hasParent = true };
-		Down = new((0, 0)) { Size = (1, 1), hasParent = true };
+		Init();
+	}
+	public Scroll(byte[] bytes) : base(bytes)
+	{
+		IsVertical = GrabBool(bytes);
+		Size = IsVertical ? (1, Size.height) : (Size.width, 1);
 
-		Up.SubscribeToUserAction(UserAction.Press, () => Slider.Move(1));
-		Up.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(1));
-		Down.SubscribeToUserAction(UserAction.Press, () => Slider.Move(-1));
-		Down.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(-1));
+		Init();
+		Slider.Progress = GrabFloat(bytes);
+	}
+
+	public override byte[] ToBytes()
+	{
+		var result = base.ToBytes().ToList();
+		PutBool(result, IsVertical);
+		PutFloat(result, Slider.Progress);
+		return result.ToArray();
 	}
 
 	protected override void OnUpdate()
 	{
 		Size = (IsVertical ? 1 : Size.width, IsVertical ? Size.height : 1);
+		Slider.isVertical = IsVertical;
 
 		var (x, y) = Position;
 		var (w, h) = Size;
 
-		if(IsVertical)
+		if (IsVertical)
 		{
 			Up.position = (x, y);
 			Down.position = (x, y + h - 1);
@@ -58,4 +74,24 @@ public class Scroll : Element
 		Up.Update();
 		Down.Update();
 	}
+
+	#region Backend
+	internal bool isVertical;
+
+	[MemberNotNull(nameof(Slider))]
+	[MemberNotNull(nameof(Up))]
+	[MemberNotNull(nameof(Down))]
+	private void Init()
+	{
+		Slider = new((0, 0), IsVertical ? Size.height : Size.width, IsVertical) { hasParent = true };
+		Up = new((0, 0)) { Size = (1, 1), hasParent = true };
+		Down = new((0, 0)) { Size = (1, 1), hasParent = true };
+		var dir = IsVertical ? 1 : -1;
+
+		Up.SubscribeToUserAction(UserAction.Press, () => Slider.Move(1 * dir));
+		Up.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(1 * dir));
+		Down.SubscribeToUserAction(UserAction.Press, () => Slider.Move(-1 * dir));
+		Down.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(-1 * dir));
+	}
+	#endregion
 }

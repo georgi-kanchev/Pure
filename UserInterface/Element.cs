@@ -9,7 +9,7 @@ using System.Text;
 /// </summary>
 public enum UserAction
 {
-	Focus, Unfocus, Hover, Unhover, Press, Release, Trigger, Drag, Dragged, PressAndHold, Scroll
+	Focus, Unfocus, Hover, Unhover, Press, Release, Trigger, Drag, Dragged, PressAndHold, Scroll, Select
 }
 /// <summary>
 /// The type of mouse cursor result from a user interaction with the user interface.
@@ -51,11 +51,6 @@ public abstract partial class Element
 	/// The size of the tilemap being used by the user interface.
 	/// </summary>
 	protected static (int width, int height) TilemapSize { get; private set; }
-	/// <summary>
-	/// The amount of bytes used by <see cref="Element(byte[])"/>. The remaining bytes may be used by subclasses
-	/// to continue reading their data down the constructor chain using <see cref="GetBytes(byte[], int)"/>.
-	/// </summary>
-	protected int BytesOffset { get; private set; }
 
 	/// <summary>
 	/// Gets or sets the position of the user interface element.
@@ -63,7 +58,7 @@ public abstract partial class Element
 	public (int x, int y) Position
 	{
 		get => position;
-		set { if(hasParent == false) position = value; }
+		set { if (hasParent == false) position = value; }
 	}
 	/// <summary>
 	/// Gets or sets the size of the user interface element.
@@ -71,7 +66,7 @@ public abstract partial class Element
 	public (int width, int height) Size
 	{
 		get => size;
-		set { if(hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1)); }
+		set { if (hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1)); }
 	}
 	/// <summary>
 	/// Gets or sets the text displayed (if any) by the user interface element.
@@ -131,17 +126,12 @@ public abstract partial class Element
 	}
 	public Element(byte[] bytes)
 	{
-		Position = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-		Size = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-		var textBytesLength = BitConverter.ToInt32(Get<int>());
-		var bText = GetBytes(bytes, textBytesLength);
-		Text = Encoding.UTF8.GetString(bText);
-		IsHidden = BitConverter.ToBoolean(GetBytes(bytes, 1));
-		IsDisabled = BitConverter.ToBoolean(GetBytes(bytes, 1));
-		var typeNameLength = BitConverter.ToInt32(Get<int>());
-		typeName = Encoding.UTF8.GetString(GetBytes(bytes, typeNameLength));
-
-		byte[] Get<T>() => GetBytes(bytes, Marshal.SizeOf(typeof(T)));
+		Position = (GrabInt(bytes), GrabInt(bytes));
+		Size = (GrabInt(bytes), GrabInt(bytes));
+		Text = GrabString(bytes);
+		IsHidden = GrabBool(bytes);
+		IsDisabled = GrabBool(bytes);
+		typeName = GrabString(bytes);
 	}
 
 	/// <summary>
@@ -156,38 +146,38 @@ public abstract partial class Element
 
 		UpdateHovered();
 
-		if(IsDisabled)
+		if (IsDisabled)
 		{
-			if(IsHovered)
+			if (IsHovered)
 				MouseCursorResult = MouseCursor.Disable;
 
 			OnUpdate();
 			return;
 		}
 
-		if(Input.Current.wasPressed == false && Input.Current.IsPressed && IsHovered)
+		if (Input.Current.wasPressed == false && Input.Current.IsPressed && IsHovered)
 			IsFocused = true;
 
-		if(Input.Current.IsKeyJustPressed(Key.Escape))
+		if (Input.Current.IsKeyJustPressed(Key.Escape))
 			IsFocused = false;
 
 		TryTrigger();
 
-		if(IsFocused && wasFocused == false)
+		if (IsFocused && wasFocused == false)
 			TriggerUserAction(UserAction.Focus);
-		if(IsFocused == false && wasFocused)
+		if (IsFocused == false && wasFocused)
 			TriggerUserAction(UserAction.Unfocus);
-		if(IsHovered && wasHovered == false)
+		if (IsHovered && wasHovered == false)
 			TriggerUserAction(UserAction.Hover);
-		if(IsHovered == false && wasHovered)
+		if (IsHovered == false && wasHovered)
 			TriggerUserAction(UserAction.Unhover);
-		if(IsPressed && Input.Current.wasPressed == false)
+		if (IsPressed && Input.Current.wasPressed == false)
 			TriggerUserAction(UserAction.Press);
-		if(IsPressed == false && Input.Current.wasPressed)
+		if (IsPressed == false && Input.Current.wasPressed)
 			TriggerUserAction(UserAction.Release);
-		if(IsPressedAndHeld && Input.Current.IsJustHeld)
+		if (IsPressedAndHeld && Input.Current.IsJustHeld)
 			TriggerUserAction(UserAction.PressAndHold);
-		if(Input.Current.ScrollDelta != 0)
+		if (Input.Current.ScrollDelta != 0)
 			TriggerUserAction(UserAction.Scroll);
 
 		OnUpdate();
@@ -230,7 +220,7 @@ public abstract partial class Element
 		Input.IsCanceled = false;
 
 		MouseCursorResult = MouseCursor.Arrow;
-		TilemapSize = (Math.Abs(tilemapSize.Item1), Math.Abs(tilemapSize.Item2));
+		TilemapSize = (Math.Abs(tilemapSize.width), Math.Abs(tilemapSize.height));
 
 		Input.Current.wasPressed = Input.Current.IsPressed;
 		Input.Current.TypedPrevious = Input.Current.Typed;
@@ -242,7 +232,7 @@ public abstract partial class Element
 		Input.Current.Position = position;
 
 		var keys = new Key[keysPressed.Length];
-		for(int i = 0; i < keysPressed.Length; i++)
+		for (int i = 0; i < keysPressed.Length; i++)
 			keys[i] = (Key)keysPressed[i];
 
 		Input.Current.PressedKeys = keys;
@@ -252,36 +242,32 @@ public abstract partial class Element
 			.Replace("\r", "");
 		Input.Current.ScrollDelta = scrollDelta;
 
-		if(Input.Current.IsJustPressed)
+		if (Input.Current.IsJustPressed)
 			hold.Restart();
 
 		Input.Current.IsJustHeld = false;
-		if(hold.Elapsed.TotalSeconds > HOLD_DELAY && holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
+		if (hold.Elapsed.TotalSeconds > HOLD_DELAY && holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
 		{
 			holdTrigger.Restart();
 			Input.Current.IsJustHeld = true;
 		}
 
-		if(Input.Current.wasPressed == false && Input.Current.IsPressed)
+		if (Input.Current.wasPressed == false && Input.Current.IsPressed)
 			Focused = null;
 	}
 
 	public virtual byte[] ToBytes()
 	{
 		var result = new List<byte>();
-		var bText = Encoding.UTF8.GetBytes(Text);
-		var bType = Encoding.UTF8.GetBytes(typeName);
 
-		result.AddRange(BitConverter.GetBytes(Position.x));
-		result.AddRange(BitConverter.GetBytes(Position.y));
-		result.AddRange(BitConverter.GetBytes(Size.width));
-		result.AddRange(BitConverter.GetBytes(Size.height));
-		result.AddRange(BitConverter.GetBytes(bText.Length));
-		result.AddRange(bText);
-		result.AddRange(BitConverter.GetBytes(IsHidden));
-		result.AddRange(BitConverter.GetBytes(IsDisabled));
-		result.AddRange(BitConverter.GetBytes(bType.Length));
-		result.AddRange(bType);
+		PutInt(result, Position.x);
+		PutInt(result, Position.y);
+		PutInt(result, Size.width);
+		PutInt(result, Size.height);
+		PutString(result, Text);
+		PutBool(result, IsHidden);
+		PutBool(result, IsDisabled);
+		PutString(result, typeName);
 
 		return result.ToArray();
 	}
@@ -296,10 +282,10 @@ public abstract partial class Element
 	{
 		OnUserAction(userAction);
 
-		if(userActions.ContainsKey(userAction) == false)
+		if (userActions.ContainsKey(userAction) == false)
 			return;
 
-		for(int i = 0; i < userActions[userAction].Count; i++)
+		for (int i = 0; i < userActions[userAction].Count; i++)
 			userActions[userAction][i].Invoke();
 	}
 	/// <summary>
@@ -311,7 +297,7 @@ public abstract partial class Element
 	/// <param name="method">The method to subscribe.</param>
 	protected internal void SubscribeToUserAction(UserAction userAction, Action method)
 	{
-		if(userActions.ContainsKey(userAction) == false)
+		if (userActions.ContainsKey(userAction) == false)
 			userActions[userAction] = new();
 
 		userActions[userAction].Add(method);
@@ -328,11 +314,28 @@ public abstract partial class Element
 	/// </summary>
 	protected virtual void OnUpdate() { }
 
-	protected byte[] GetBytes(byte[] fromBytes, int amount)
+	protected void PutBool(List<byte> intoBytes, bool value) => intoBytes.AddRange(BitConverter.GetBytes(value));
+	protected void PutByte(List<byte> intoBytes, byte value) => intoBytes.Add(value);
+	protected void PutInt(List<byte> intoBytes, int value) => intoBytes.AddRange(BitConverter.GetBytes(value));
+	protected void PutUInt(List<byte> intoBytes, uint value) => intoBytes.AddRange(BitConverter.GetBytes(value));
+	protected void PutFloat(List<byte> intoBytes, float value) => intoBytes.AddRange(BitConverter.GetBytes(value));
+	protected void PutString(List<byte> intoBytes, string value)
 	{
-		var result = fromBytes[BytesOffset..(BytesOffset + amount)];
-		BytesOffset += amount;
-		return result;
+		var bytes = Encoding.UTF8.GetBytes(value);
+		PutInt(intoBytes, bytes.Length);
+		intoBytes.AddRange(bytes);
+	}
+
+	protected bool GrabBool(byte[] fromBytes) => BitConverter.ToBoolean(GetBytes(fromBytes, 1));
+	protected byte GrabByte(byte[] fromBytes) => GetBytes(fromBytes, 1)[0];
+	protected int GrabInt(byte[] fromBytes) => BitConverter.ToInt32(GetBytes(fromBytes, 4));
+	protected uint GrabUInt(byte[] fromBytes) => BitConverter.ToUInt32(GetBytes(fromBytes, 4));
+	protected float GrabFloat(byte[] fromBytes) => BitConverter.ToSingle(GetBytes(fromBytes, 4));
+	protected string GrabString(byte[] fromBytes)
+	{
+		var textBytesLength = GrabInt(fromBytes);
+		var bText = GetBytes(fromBytes, textBytesLength);
+		return Encoding.UTF8.GetString(bText);
 	}
 
 	#region Backend
@@ -355,7 +358,7 @@ public abstract partial class Element
 	internal bool hasParent;
 	internal readonly string typeName;
 	private static readonly Stopwatch hold = new(), holdTrigger = new();
-
+	private int byteOffset;
 	private bool wasFocused, wasHovered;
 
 	private readonly Dictionary<UserAction, List<Action>> userActions = new();
@@ -372,33 +375,39 @@ public abstract partial class Element
 		var (w, h) = Size;
 		var isHoveredX = ix >= x && ix < x + w;
 		var isHoveredY = iy >= y && iy < y + h;
-		if(w < 0)
+		if (w < 0)
 			isHoveredX = ix > x + w && ix <= x;
-		if(h < 0)
+		if (h < 0)
 			isHoveredY = iy > y + h && iy <= y;
 
 		IsHovered = isHoveredX && isHoveredY;
 	}
 	private void TryTrigger()
 	{
-		if(IsFocused == false || IsDisabled)
+		if (IsFocused == false || IsDisabled)
 		{
 			IsPressedAndHeld = false;
 			return;
 		}
 
-		if(IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
+		if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
 		{
 			IsPressedAndHeld = false;
 			TriggerUserAction(UserAction.Trigger);
 		}
 
-		if(IsHovered && Input.Current.IsJustPressed)
+		if (IsHovered && Input.Current.IsJustPressed)
 			IsPressedAndHeld = true;
 
-		if(Input.Current.IsJustReleased)
+		if (Input.Current.IsJustReleased)
 			IsPressedAndHeld = false;
 	}
 
+	private byte[] GetBytes(byte[] fromBytes, int amount)
+	{
+		var result = fromBytes[byteOffset..(byteOffset + amount)];
+		byteOffset += amount;
+		return result;
+	}
 	#endregion
 }

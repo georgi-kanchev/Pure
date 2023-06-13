@@ -1,11 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Pure.UserInterface;
 
 public class Pages : Element
 {
-	public Button First { get; }
-	public Button Previous { get; }
-	public Button Next { get; }
-	public Button Last { get; }
+	public Button First { get; private set; }
+	public Button Previous { get; private set; }
+	public Button Next { get; private set; }
+	public Button Last { get; private set; }
 
 	public int Count
 	{
@@ -22,10 +24,14 @@ public class Pages : Element
 		get => currentPage;
 		set
 		{
+			var prev = currentPage;
 			currentPage = Math.Clamp(value, 1, Count);
 			var pageCount = GetVisiblePageCount();
 			scrollIndex = Math.Clamp(currentPage - pageCount / 2, 1, Math.Max(Count - pageCount + 1, 1));
 			RenumberAndSelectPages();
+
+			if (prev != currentPage)
+				TriggerUserAction(UserAction.Select);
 		}
 	}
 
@@ -34,23 +40,27 @@ public class Pages : Element
 		Size = (13, 1);
 		Count = count;
 
-		First = new((0, 0)) { hasParent = true };
-		Previous = new((0, 0)) { hasParent = true };
-		Next = new((0, 0)) { hasParent = true };
-		Last = new((0, 0)) { hasParent = true };
+		Init();
+	}
+	public Pages(byte[] bytes) : base(bytes)
+	{
+		Count = GrabInt(bytes);
+		CurrentPage = GrabInt(bytes);
 
-		First.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = 0);
-		Previous.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage--);
-		Next.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage++);
-		Last.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = Count);
+		Init();
+	}
 
-		Previous.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage--);
-		Next.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage++);
+	public override byte[] ToBytes()
+	{
+		var result = base.ToBytes().ToList();
+		PutInt(result, Count);
+		PutInt(result, CurrentPage);
+		return result.ToArray();
 	}
 
 	protected override void OnUpdate()
 	{
-		if(IsDisabled)
+		if (IsDisabled)
 			return;
 
 		var (x, y) = Position;
@@ -71,13 +81,13 @@ public class Pages : Element
 		Next.Update();
 		Last.Update();
 
-		if(Size != prevSize)
+		if (Size != prevSize)
 		{
 			RecreatePages();
 			RenumberAndSelectPages();
 		}
 
-		for(int i = 0; i < visiblePages.Count; i++)
+		for (int i = 0; i < visiblePages.Count; i++)
 		{
 			var page = visiblePages[i];
 
@@ -99,18 +109,38 @@ public class Pages : Element
 
 	internal Action<Button>? pageUpdateCallback; // used in the UI class to receive callbacks
 
+	[MemberNotNull(nameof(First))]
+	[MemberNotNull(nameof(Previous))]
+	[MemberNotNull(nameof(Next))]
+	[MemberNotNull(nameof(Last))]
+	private void Init()
+	{
+		First = new((0, 0)) { hasParent = true };
+		Previous = new((0, 0)) { hasParent = true };
+		Next = new((0, 0)) { hasParent = true };
+		Last = new((0, 0)) { hasParent = true };
+
+		First.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = 0);
+		Previous.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage--);
+		Next.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage++);
+		Last.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = Count);
+
+		Previous.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage--);
+		Next.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage++);
+	}
+
 	private int GetVisibleWidth() => Size.width - 4;
 	private int GetVisiblePageCount()
 	{
 		var visibleWidth = GetVisibleWidth();
 		var result = 0;
 		var width = 0;
-		while(width + PAGE_WIDTH <= visibleWidth)
+		while (width + PAGE_WIDTH <= visibleWidth)
 		{
 			width += PAGE_WIDTH + PAGE_GAP;
 			result++;
 
-			if(result > Count)
+			if (result > Count)
 				return Count;
 		}
 		return result;
@@ -121,7 +151,7 @@ public class Pages : Element
 		var pageCount = GetVisiblePageCount();
 
 		visiblePages.Clear();
-		for(int i = 0; i < pageCount; i++)
+		for (int i = 0; i < pageCount; i++)
 		{
 			var page = new Button((0, 0)) { size = (2, Size.height), hasParent = true };
 			visiblePages.Add(page);
@@ -130,8 +160,8 @@ public class Pages : Element
 	}
 	private void RenumberAndSelectPages()
 	{
-		var pageCount = GetVisiblePageCount();
-		for(int i = 0; i < visiblePages.Count; i++)
+		//var pageCount = GetVisiblePageCount();
+		for (int i = 0; i < visiblePages.Count; i++)
 		{
 			var pageNumber = i + scrollIndex;
 			visiblePages[i].Text = $"{pageNumber:D2}";

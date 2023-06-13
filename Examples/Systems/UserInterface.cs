@@ -25,14 +25,14 @@ public static class UserInterface
 
 		protected override void OnUserActionButton(string key, Button button, UserAction userAction)
 		{
-			if(userAction == UserAction.Trigger)
+			if (userAction == UserAction.Trigger)
 				buttonClickCount++;
 		}
 
 		protected override void OnUpdateButton(string key, Button button)
 		{
 			var e = button;
-			if(key == "button")
+			if (key == "button")
 			{
 				e.Size = (e.Text.Length + 2, 3);
 
@@ -41,7 +41,7 @@ public static class UserInterface
 				middle.SetTextLine((e.Position.x + 1, e.Position.y + 1), e.Text, GetColor(e, Color.Yellow));
 				middle.SetTextLine((e.Position.x + 1 + e.Size.width, e.Position.y + 1), $"{buttonClickCount}", Color.White);
 			}
-			else if(key == "checkbox")
+			else if (key == "checkbox")
 			{
 				e.Size = (e.Text.Length + 2, 1);
 
@@ -58,10 +58,10 @@ public static class UserInterface
 			back.SetTextRectangle(e.Position, e.Size, e.Selection, e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
 			middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
 
-			if(string.IsNullOrWhiteSpace(e.Text) && e.CursorIndex == 0)
+			if (string.IsNullOrWhiteSpace(e.Text) && e.CursorIndex == 0)
 				middle.SetTextRectangle(e.Position, e.Size, e.Placeholder, Color.Gray.ToBright(), false);
 
-			if(e.IsCursorVisible)
+			if (e.IsCursorVisible)
 				front.SetTile(e.CursorPosition, new(Tile.SHAPE_LINE, Color.White, 2));
 		}
 		protected override void OnUpdateSlider(string key, Slider slider)
@@ -86,7 +86,7 @@ public static class UserInterface
 			var color = item.IsSelected ? Color.Green : Color.Red;
 
 			var text = item.Text;
-			if(item.Size.width < text.Length)
+			if (item.Size.width < text.Length)
 			{
 				text = text[..Math.Max(item.Size.width - 1, 0)];
 				var tile = new Tile(Tile.PUNCTUATION_ELLIPSIS, color);
@@ -97,7 +97,7 @@ public static class UserInterface
 
 			var (itemX, itemY) = item.Position;
 			var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(item, color), 1);
-			if(list.IsExpanded == false)
+			if (list.IsExpanded == false)
 				middle.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
 		}
 		protected override void OnUpdatePanel(string key, Panel panel)
@@ -176,12 +176,16 @@ public static class UserInterface
 		{
 			return middle.TileAt(((int)position.x, (int)position.y)).Tint;
 		}
+		protected override void OnListItemSelect(string key, List list, Button item)
+		{
+			Console.WriteLine(item);
+		}
 
 		// simple "animation" for hovering and pressing buttons
 		private static Color GetColor(Element element, Color baseColor)
 		{
-			if(element.IsPressedAndHeld) return baseColor.ToDark();
-			else if(element.IsHovered) return baseColor.ToBright();
+			if (element.IsPressedAndHeld) return baseColor.ToDark();
+			else if (element.IsHovered) return baseColor.ToBright();
 
 			return baseColor;
 		}
@@ -191,8 +195,8 @@ public static class UserInterface
 	{
 		Window.Create(3);
 
-		var aspectRatio = Window.MonitorAspectRatio;
-		var tilemaps = new TilemapManager(3, (aspectRatio.width * 3, aspectRatio.height * 3));
+		var (width, height) = Window.MonitorAspectRatio;
+		var tilemaps = new TilemapManager(3, (width * 3, height * 3));
 		var back = tilemaps[0];
 		var middle = tilemaps[1];
 		var front = tilemaps[2];
@@ -228,7 +232,7 @@ public static class UserInterface
 		};
 		userInterface["palette"] = new Palette((34, 20), brightnessLevels: 30);
 
-		while(Window.IsOpen)
+		while (Window.IsOpen)
 		{
 			Window.Activate(true);
 
@@ -251,13 +255,13 @@ public static class UserInterface
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 
-			for(int i = 0; i < tilemaps.Count; i++)
+			for (int i = 0; i < tilemaps.Count; i++)
 				Window.DrawTiles(tilemaps[i].ToBundle());
 
 			Window.Activate(false);
 		}
 
-		void StickListToPanel(Element panel, Element list)
+		static void StickListToPanel(Element panel, Element list)
 		{
 			list.Position = (panel.Position.x + 1, panel.Position.y + 1);
 			list.Size = (panel.Size.width - 2, panel.Size.height - 2);

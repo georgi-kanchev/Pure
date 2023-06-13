@@ -226,7 +226,7 @@ public static class Window
 		Vertices.graphicsPath = graphicsPath;
 		Vertices.tileSize = tileSize;
 		Vertices.tileGap = tileGap;
-		Vertices.mapCellCount = ((uint)cellCount.Item1, (uint)cellCount.Item2);
+		Vertices.mapCellCount = ((uint)cellCount.horizontal, (uint)cellCount.vertical);
 		Vertices.tileIdEmpty = tileIdEmpty;
 		Vertices.tileIdFull = tileIdFull;
 
@@ -273,8 +273,8 @@ public static class Window
 
 		for (int i = 0; i < rectangles?.Length; i++)
 		{
-			var r = rectangles[i];
-			Vertices.QueueRectangle((r.x, r.y), (r.width, r.height), r.color);
+			var (x, y, width, height, color) = rectangles[i];
+			Vertices.QueueRectangle((x, y), (width, height), color);
 		}
 	}
 	/// <summary>
@@ -344,8 +344,8 @@ public static class Window
 	}
 	internal static (float, float) PointFrom((int, int) screenPixel)
 	{
-		var x = Map(screenPixel.Item1, 0, Size.Item1, 0, Vertices.mapCellCount.Item1);
-		var y = Map(screenPixel.Item2, 0, Size.Item2, 0, Vertices.mapCellCount.Item2);
+		var x = Map(screenPixel.Item1, 0, Size.width, 0, Vertices.mapCellCount.Item1);
+		var y = Map(screenPixel.Item2, 0, Size.height, 0, Vertices.mapCellCount.Item2);
 
 		return (x, y);
 	}
