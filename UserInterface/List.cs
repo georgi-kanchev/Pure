@@ -119,6 +119,7 @@ public class List : Element
 			item.size = (Type == Types.Horizontal ? item.Text.Length : Size.width, 1);
 			item.hasParent = true;
 			items.Insert(i, item);
+			item.SubscribeToUserAction(UserAction.Select, () => TriggerSelectActions(item));
 		}
 		TrySingleSelectOneItem();
 	}
@@ -224,7 +225,6 @@ public class List : Element
 			return;
 
 		TrySingleSelect();
-		TryTriggerSelectAction();
 
 		if (IsHovered && Input.Current.ScrollDelta != 0 &&
 			(isExpanded || Type != Types.Dropdown))
@@ -241,7 +241,8 @@ public class List : Element
 			selectedItem.Update();
 			OnItemUpdate(selectedItem);
 			itemUpdateCallback?.Invoke(selectedItem);
-			selectedItem.isSelected = true;
+
+			Select(selectedItem, true);
 			return;
 		}
 
@@ -288,6 +289,13 @@ public class List : Element
 	internal Action<Button>? itemUpdateCallback;
 	internal Action<Button>? itemSelectCallback;
 
+	private void TriggerSelectActions(Button item)
+	{
+		TriggerUserAction(UserAction.Select);
+		OnItemSelect(item);
+		itemSelectCallback?.Invoke(item);
+	}
+
 	internal void TrySingleSelectOneItem()
 	{
 		if (IsSingleSelecting == false || items.Count == 0)
@@ -302,7 +310,7 @@ public class List : Element
 			return;
 
 		singleSelectedIndex = 0;
-		items[singleSelectedIndex].isSelected = true;
+		Select(items[singleSelectedIndex], true);
 	}
 	internal void TrySingleSelect()
 	{
@@ -324,30 +332,17 @@ public class List : Element
 
 		if (items[hoveredIndex].IsPressedAndHeld)
 		{
+			var prev = singleSelectedIndex;
 			singleSelectedIndex = hoveredIndex;
 
 			if (Type == Types.Dropdown)
+			{
 				isExpanded = isExpanded == false;
+
+				if (prev != hoveredIndex)
+					TriggerSelectActions(items[hoveredIndex]);
+			}
 		}
-	}
-	private void TryTriggerSelectAction()
-	{
-		var isHoveringItems = IsHovered && Scroll.IsHovered == false;
-
-		if (Input.Current.IsJustReleased == false || isHoveringItems == false)
-			return;
-
-		var hoveredIndex = GetHoveredIndex();
-		if (HasIndex(hoveredIndex) == false)
-			return;
-
-		var item = items[hoveredIndex];
-		if (item.IsPressedAndHeld == false)
-			return;
-
-		TriggerUserAction(UserAction.Select);
-		OnItemSelect(item);
-		itemSelectCallback?.Invoke(item);
 	}
 
 	private void UpdateParts()
@@ -423,11 +418,11 @@ public class List : Element
 			}
 
 			if (IsSingleSelecting)
-				item.isSelected = false;
+				Select(item, false);
 		}
 
 		if (IsSingleSelecting && HasIndex(singleSelectedIndex))
-			items[singleSelectedIndex].isSelected = true;
+			Select(items[singleSelectedIndex], true);
 
 	}
 

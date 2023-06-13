@@ -165,7 +165,7 @@ public class Pages : Element
 		{
 			var pageNumber = i + scrollIndex;
 			visiblePages[i].Text = $"{pageNumber:D2}";
-			visiblePages[i].IsSelected = pageNumber == currentPage;
+			visiblePages[i].isSelected = pageNumber == currentPage;
 		}
 	}
 

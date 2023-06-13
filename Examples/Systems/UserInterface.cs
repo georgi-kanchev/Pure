@@ -176,10 +176,6 @@ public static class UserInterface
 		{
 			return middle.TileAt(((int)position.x, (int)position.y)).Tint;
 		}
-		protected override void OnListItemSelect(string key, List list, Button item)
-		{
-			Console.WriteLine(item);
-		}
 
 		// simple "animation" for hovering and pressing buttons
 		private static Color GetColor(Element element, Color baseColor)
