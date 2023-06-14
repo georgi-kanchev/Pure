@@ -11,7 +11,7 @@ public class Playlist
 		get
 		{
 			var collection = audios;
-			if(tag != null)
+			if (tag != null)
 				collection = tags[tag];
 
 			return collection[new Random().Next(0, collection.Count)];
@@ -26,14 +26,14 @@ public class Playlist
 
 	public void AddTrack(string? tag, params Audio[] tracks)
 	{
-		for(int i = 0; i < tracks?.Length; i++)
+		for (int i = 0; i < tracks?.Length; i++)
 		{
 			audios.Add(tracks[i]);
 
-			if(tag == null)
+			if (tag == null)
 				continue;
 
-			if(tags.ContainsKey(tag) == false)
+			if (tags.ContainsKey(tag) == false)
 				tags[tag] = new();
 
 			tags[tag].Add(tracks[i]);
@@ -41,7 +41,7 @@ public class Playlist
 	}
 	public void Shuffle(string? tag = null)
 	{
-		if(tag != null)
+		if (tag != null)
 		{
 			Shuffle(tags[tag]);
 			return;
@@ -82,18 +82,18 @@ public class Playlist
 
 	public void Update(float deltaTime)
 	{
-		if(audios.Count == 0 || isPlaying == false)
+		if (audios.Count == 0 || isPlaying == false)
 			return;
 
 		time += deltaTime;
 
 		var audio = audios[currentIndex];
 		var delay = currentIndex == audios.Count - 1 ? 0 : TrackDelay; // no delay on last track
-		if(time >= audio.Duration + delay)
+		if (time >= audio.Duration + delay)
 		{
 			var tag = default(string);
-			foreach(var kvp in tags)
-				if(kvp.Value.Contains(audio))
+			foreach (var kvp in tags)
+				if (kvp.Value.Contains(audio))
 				{
 					tag = kvp.Key;
 					break;
@@ -102,11 +102,11 @@ public class Playlist
 			OnAudioEnd(currentIndex, tag);
 			Skip();
 		}
-		if(currentIndex == audios.Count)
+		if (currentIndex == audios.Count)
 		{
 			OnListEnd();
 
-			if(IsLooping)
+			if (IsLooping)
 				Restart();
 			else
 				Stop();
@@ -128,21 +128,21 @@ public class Playlist
 
 	private void PlayCurrent()
 	{
-		if(IsInvalid)
+		if (IsInvalid)
 			return;
 
 		audios[currentIndex].Play();
 	}
 	private void PauseCurrent()
 	{
-		if(IsInvalid)
+		if (IsInvalid)
 			return;
 
 		audios[currentIndex].Pause();
 	}
 	private void StopCurrent()
 	{
-		if(IsInvalid)
+		if (IsInvalid)
 			return;
 
 		audios[currentIndex].Stop();
@@ -151,12 +151,10 @@ public class Playlist
 	private static void Shuffle<T>(IList<T> collection)
 	{
 		var rand = new Random();
-		for(int i = collection.Count - 1; i > 0; i--)
+		for (int i = collection.Count - 1; i > 0; i--)
 		{
 			int j = rand.Next(i + 1);
-			var temp = collection[i];
-			collection[i] = collection[j];
-			collection[j] = temp;
+			(collection[j], collection[i]) = (collection[i], collection[j]);
 		}
 	}
 	#endregion

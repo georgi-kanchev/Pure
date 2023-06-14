@@ -1,8 +1,10 @@
-﻿namespace Pure.UserInterface;
+﻿using System.Text;
 
-public class UserInterface<T> where T : notnull
+namespace Pure.UserInterface;
+
+public class UserInterface
 {
-	public Element this[T key]
+	public Element this[string key]
 	{
 		get => elements[key];
 		set
@@ -22,6 +24,42 @@ public class UserInterface<T> where T : notnull
 				else if (value is Panel p) value.SubscribeToUserAction(act, () => OnUserActionPanel(key, p, act));
 				else if (value is Scroll r) value.SubscribeToUserAction(act, () => OnUserActionScroll(key, r, act));
 				else if (value is Slider s) value.SubscribeToUserAction(act, () => OnUserActionSlider(key, s, act));
+			}
+		}
+	}
+
+	public UserInterface() { }
+	public UserInterface(byte[] bytes)
+	{
+		var offset = 0;
+		var count = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+
+		for (int i = 0; i < count; i++)
+		{
+			var keyByteLength = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+			var key = Encoding.UTF8.GetString(GetBytes(bytes, keyByteLength, ref offset));
+
+			var byteCount = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+
+			// elementType string gets saved first for each element
+			var typeStrBytesLength = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+			var typeStr = Encoding.UTF8.GetString(GetBytes(bytes, typeStrBytesLength, ref offset));
+
+			// return the offset to where it was so the element can get loaded properly
+			offset -= typeStrBytesLength + 4;
+			var bElement = GetBytes(bytes, byteCount, ref offset);
+
+			switch (typeStr)
+			{
+				case nameof(Button): this[key] = new Button(bElement); break;
+				case nameof(InputBox): this[key] = new InputBox(bElement); break;
+				case nameof(List): this[key] = new List(bElement); break;
+				case nameof(NumericScroll): this[key] = new NumericScroll(bElement); break;
+				case nameof(Pages): this[key] = new Pages(bElement); break;
+				case nameof(Palette): this[key] = new Palette(bElement); break;
+				case nameof(Panel): this[key] = new Panel(bElement); break;
+				case nameof(Scroll): this[key] = new Scroll(bElement); break;
+				case nameof(Slider): this[key] = new Slider(bElement); break;
 			}
 		}
 	}
@@ -58,34 +96,59 @@ public class UserInterface<T> where T : notnull
 		}
 	}
 
-	protected virtual void OnUserActionButton(T key, Button button, UserAction userAction) { }
-	protected virtual void OnUserActionInputBox(T key, InputBox inputBox, UserAction userAction) { }
-	protected virtual void OnUserActionList(T key, List list, UserAction userAction) { }
-	protected virtual void OnUserActionNumericScroll(T key, NumericScroll numericScroll, UserAction userAction) { }
-	protected virtual void OnUserActionPages(T key, Pages pages, UserAction userAction) { }
-	protected virtual void OnUserActionPalette(T key, Palette palette, UserAction userAction) { }
-	protected virtual void OnUserActionPanel(T key, Panel panel, UserAction userAction) { }
-	protected virtual void OnUserActionScroll(T key, Scroll scroll, UserAction userAction) { }
-	protected virtual void OnUserActionSlider(T key, Slider slider, UserAction userAction) { }
+	public byte[] ToBytes()
+	{
+		var result = new List<byte>();
+		result.AddRange(BitConverter.GetBytes(elements.Count));
 
-	protected virtual void OnUpdateButton(T key, Button button) { }
-	protected virtual void OnUpdateInputBox(T key, InputBox inputBox) { }
-	protected virtual void OnUpdateList(T key, List list) { }
-	protected virtual void OnUpdateListItem(T key, List list, Button item) { }
-	protected virtual void OnUpdateNumericScroll(T key, NumericScroll numericScroll) { }
-	protected virtual void OnUpdatePages(T key, Pages pages) { }
-	protected virtual void OnUpdatePagesPage(T key, Pages pages, Button page) { }
-	protected virtual void OnUpdatePalette(T key, Palette palette) { }
-	protected virtual void OnUpdatePalettePage(T key, Palette palette, Button page) { }
-	protected virtual void OnUpdatePaletteSample(T key, Palette palette, Button sample, uint color) { }
-	protected virtual void OnUpdatePanel(T key, Panel panel) { }
-	protected virtual void OnUpdateScroll(T key, Scroll scroll) { }
-	protected virtual void OnUpdateSlider(T key, Slider slider) { }
+		foreach (var kvp in elements)
+		{
+			var bKey = Encoding.UTF8.GetBytes(kvp.Key);
+			result.AddRange(BitConverter.GetBytes(bKey.Length));
+			result.AddRange(bKey);
 
-	protected virtual uint OnPalettePick(T key, Palette palette, (float x, float y) position) => default;
-	protected virtual void OnListItemSelect(T key, List list, Button item) { }
+			var bytes = kvp.Value.ToBytes();
+			result.AddRange(BitConverter.GetBytes(bytes.Length));
+			result.AddRange(bytes);
+		}
+		return result.ToArray();
+	}
+
+	protected virtual void OnUserActionButton(string key, Button button, UserAction userAction) { }
+	protected virtual void OnUserActionInputBox(string key, InputBox inputBox, UserAction userAction) { }
+	protected virtual void OnUserActionList(string key, List list, UserAction userAction) { }
+	protected virtual void OnUserActionNumericScroll(string key, NumericScroll numericScroll, UserAction userAction) { }
+	protected virtual void OnUserActionPages(string key, Pages pages, UserAction userAction) { }
+	protected virtual void OnUserActionPalette(string key, Palette palette, UserAction userAction) { }
+	protected virtual void OnUserActionPanel(string key, Panel panel, UserAction userAction) { }
+	protected virtual void OnUserActionScroll(string key, Scroll scroll, UserAction userAction) { }
+	protected virtual void OnUserActionSlider(string key, Slider slider, UserAction userAction) { }
+
+	protected virtual void OnUpdateButton(string key, Button button) { }
+	protected virtual void OnUpdateInputBox(string key, InputBox inputBox) { }
+	protected virtual void OnUpdateList(string key, List list) { }
+	protected virtual void OnUpdateListItem(string key, List list, Button item) { }
+	protected virtual void OnUpdateNumericScroll(string key, NumericScroll numericScroll) { }
+	protected virtual void OnUpdatePages(string key, Pages pages) { }
+	protected virtual void OnUpdatePagesPage(string key, Pages pages, Button page) { }
+	protected virtual void OnUpdatePalette(string key, Palette palette) { }
+	protected virtual void OnUpdatePalettePage(string key, Palette palette, Button page) { }
+	protected virtual void OnUpdatePaletteSample(string key, Palette palette, Button sample, uint color) { }
+	protected virtual void OnUpdatePanel(string key, Panel panel) { }
+	protected virtual void OnUpdateScroll(string key, Scroll scroll) { }
+	protected virtual void OnUpdateSlider(string key, Slider slider) { }
+
+	protected virtual uint OnPalettePick(string key, Palette palette, (float x, float y) position) => default;
+	protected virtual void OnListItemSelect(string key, List list, Button item) { }
 
 	#region Backend
-	private readonly Dictionary<T, Element> elements = new();
+	private readonly Dictionary<string, Element> elements = new();
+
+	private byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
+	{
+		var result = fromBytes[offset..(offset + amount)];
+		offset += amount;
+		return result;
+	}
 	#endregion
 }

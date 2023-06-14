@@ -91,6 +91,8 @@ public class Panel : Element
 		var isHoveringLeft = inputX == x && IsBetween(inputY, y, y + h - 1);
 		var isHoveringRight = inputX == x + w - 1 && IsBetween(inputY, y, y + h - 1);
 		var isHoveringBottom = IsBetween(inputX, x, x + w - 1) && inputY == y + h - 1;
+		var isHoveringInside = IsHovered && isHoveringTop == false &&
+			isHoveringLeft == false && isHoveringRight == false && isHoveringBottom == false;
 
 		if (IsDisabled == false && IsHovered)
 			MouseCursorResult = MouseCursor.Arrow;
@@ -104,8 +106,8 @@ public class Panel : Element
 			isResizingD = false;
 		}
 
-		var isHoveringSides = isHoveringTop || ((isHoveringLeft || isHoveringRight || isHoveringBottom) &&
-			IsResizable == false);
+		var isHoveringSides = isHoveringInside || isHoveringTop || ((isHoveringLeft || isHoveringRight ||
+			isHoveringBottom) && IsResizable == false);
 		if (IsMovable && isHoveringSides)
 			Process(ref isDragging, MouseCursor.Move);
 		else if (IsResizable)

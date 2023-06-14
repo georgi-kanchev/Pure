@@ -85,7 +85,6 @@ public class InputBox : Element
 	/// <param name="position">The position of the input box.</param>
 	public InputBox((int x, int y) position) : base(position)
 	{
-		lines.Add("");
 		Size = (12, 1);
 	}
 	public InputBox(byte[] bytes) : base(bytes)
@@ -225,7 +224,7 @@ public class InputBox : Element
 	}
 
 	#region Backend
-	private readonly List<string> lines = new();
+	private readonly List<string> lines = new() { "" };
 
 	private const char SELECTION = '█', SPACE = ' ';
 	private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;

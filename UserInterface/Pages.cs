@@ -63,6 +63,9 @@ public class Pages : Element
 		if (IsDisabled)
 			return;
 
+		if (IsHovered) // for in between pages, overwrite mouse cursor (don't give it to the element bellow)
+			MouseCursorResult = MouseCursor.Arrow;
+
 		var (x, y) = Position;
 		var visibleWidth = GetVisibleWidth();
 

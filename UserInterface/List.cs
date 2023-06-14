@@ -69,7 +69,7 @@ public class List : Element
 		Type = type;
 
 		var isVertical = type != Types.Horizontal;
-		Scroll = new((0, 0), Size.height, isVertical) { hasParent = true };
+		Scroll = new((0, 0), isVertical ? Size.height : Size.width, isVertical) { hasParent = true };
 
 		Add(itemCount);
 
@@ -91,7 +91,8 @@ public class List : Element
 		var scrollProgress = GrabFloat(bytes);
 		Add(GrabInt(bytes));
 
-		Scroll = new((0, 0), Size.height, Type != Types.Horizontal) { hasParent = true };
+		var isVertical = Type != Types.Horizontal;
+		Scroll = new((0, 0), isVertical ? Size.height : Size.width, isVertical) { hasParent = true };
 		if (Type != Types.Dropdown)
 			UpdateParts();
 		UpdateItems();
@@ -223,6 +224,9 @@ public class List : Element
 
 		if (IsDisabled)
 			return;
+
+		if (IsHovered) // for in between items, overwrite mouse cursor (don't give it to the element bellow)
+			MouseCursorResult = MouseCursor.Arrow;
 
 		TrySingleSelect();
 

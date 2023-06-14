@@ -44,9 +44,10 @@ public abstract partial class Element
 	public static MouseCursor MouseCursorResult { get; protected set; }
 
 	/// <summary>
-	/// The currently focused user interface element.
+	/// The currently focused user interface element hash.
 	/// </summary>
-	protected static Element? Focused { get; private set; }
+	protected static int FocusedHash { get; private set; }
+	protected static int FocusedHashPrevious { get; private set; }
 	/// <summary>
 	/// The size of the tilemap being used by the user interface.
 	/// </summary>
@@ -90,9 +91,14 @@ public abstract partial class Element
 	/// </summary>
 	public bool IsFocused
 	{
-		get => Focused == this;
-		protected set => Focused = value ? this : null;
+		get => FocusedHash == GetHashCode();
+		protected set => FocusedHash = value ? GetHashCode() : default;
 	}
+	/// <summary>
+	/// Gets a value indicating whether the user interface element was focused by
+	/// the user input during the previous update.
+	/// </summary>
+	public bool WasFocused => FocusedHashPrevious == GetHashCode();
 	/// <summary>
 	/// Gets a value indicating whether the input position is currently hovering 
 	/// over the user interface element.
@@ -126,12 +132,12 @@ public abstract partial class Element
 	}
 	public Element(byte[] bytes)
 	{
+		typeName = GrabString(bytes);
 		Position = (GrabInt(bytes), GrabInt(bytes));
 		Size = (GrabInt(bytes), GrabInt(bytes));
 		Text = GrabString(bytes);
 		IsHidden = GrabBool(bytes);
 		IsDisabled = GrabBool(bytes);
-		typeName = GrabString(bytes);
 	}
 
 	/// <summary>
@@ -253,13 +259,16 @@ public abstract partial class Element
 		}
 
 		if (Input.Current.wasPressed == false && Input.Current.IsPressed)
-			Focused = null;
+			FocusedHash = default;
+
+		FocusedHashPrevious = FocusedHash;
 	}
 
 	public virtual byte[] ToBytes()
 	{
 		var result = new List<byte>();
 
+		PutString(result, typeName);
 		PutInt(result, Position.x);
 		PutInt(result, Position.y);
 		PutInt(result, Size.width);
@@ -267,7 +276,6 @@ public abstract partial class Element
 		PutString(result, Text);
 		PutBool(result, IsHidden);
 		PutBool(result, IsDisabled);
-		PutString(result, typeName);
 
 		return result.ToArray();
 	}

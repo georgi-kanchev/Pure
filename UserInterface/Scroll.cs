@@ -36,7 +36,8 @@ public class Scroll : Element
 		Size = IsVertical ? (1, Size.height) : (Size.width, 1);
 
 		Init();
-		Slider.Progress = GrabFloat(bytes);
+		Slider.progress = GrabFloat(bytes);
+		Slider.index = GrabInt(bytes);
 	}
 
 	public override byte[] ToBytes()
@@ -44,6 +45,7 @@ public class Scroll : Element
 		var result = base.ToBytes().ToList();
 		PutBool(result, IsVertical);
 		PutFloat(result, Slider.Progress);
+		PutInt(result, Slider.index);
 		return result.ToArray();
 	}
 

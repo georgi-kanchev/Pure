@@ -11,7 +11,10 @@ using static Pure.UserInterface.List;
 
 public static class UserInterface
 {
-	class UI : UserInterface<string>
+	// to do: implement action callback that tells an element when it was unfocused because
+	// of another element above it gaining priority to fix slider receiving input behind elements
+
+	class UI : Pure.UserInterface.UserInterface
 	{
 		private readonly Tilemap back, middle, front;
 		private int buttonClickCount = 0;
@@ -25,7 +28,7 @@ public static class UserInterface
 
 		protected override void OnUserActionButton(string key, Button button, UserAction userAction)
 		{
-			if (userAction == UserAction.Trigger)
+			if (key == "button" && userAction == UserAction.Trigger)
 				buttonClickCount++;
 		}
 
@@ -197,13 +200,12 @@ public static class UserInterface
 		var middle = tilemaps[1];
 		var front = tilemaps[2];
 
-		// keys can be any type since UserInterface<T> is generic - may be enum for example
 		var userInterface = new UI(back, middle, front);
 		userInterface["button"] = new Button((2, 2));
 		userInterface["checkbox"] = new Button((2, 7)) { Text = "Checkbox" };
 		userInterface["inputbox"] = new InputBox((2, 10)) { Size = (12, 4) };
 		userInterface["slider"] = new Slider((2, 17), 7);
-		userInterface["pages"] = new Pages((27, 2)) { Size = (18, 2) };
+
 		userInterface["numeric-scroll"] = new NumericScroll((34, 6)) { Range = (-9, 13) };
 		userInterface["list-dropdown"] = new List((27, 5), 15, Types.Dropdown) { Size = (6, 9) };
 		userInterface["scroll-vertical"] = new Scroll((37, 6), 9);
@@ -218,7 +220,7 @@ public static class UserInterface
 		userInterface["panel-vertical"] = new Panel((16, 2))
 		{
 			Size = (9, 16),
-			MinimumSize = (5, 5)
+			MinimumSize = (5, 5),
 		};
 		userInterface["list-vertical"] = new List(default, 15, Types.Vertical)
 		{
@@ -227,6 +229,7 @@ public static class UserInterface
 			ItemMaximumSize = (7, 1)
 		};
 		userInterface["palette"] = new Palette((34, 20), brightnessLevels: 30);
+		userInterface["pages"] = new Pages((27, 2)) { Size = (18, 2) };
 
 		while (Window.IsOpen)
 		{

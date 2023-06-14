@@ -26,7 +26,8 @@ public class Slider : Element
 			var size = IsVertical ? Size.height : Size.width;
 
 			progress = value;
-			index = (int)MathF.Round(Map(progress, 0, 1, 0, size - 1));
+			index = (int)Map(progress, 0, 1, 0, size);
+			UpdateHandle();
 		}
 	}
 
@@ -51,9 +52,12 @@ public class Slider : Element
 	public Slider(byte[] bytes) : base(bytes)
 	{
 		IsVertical = GrabBool(bytes);
-		Progress = GrabFloat(bytes);
 
 		Init();
+		progress = GrabFloat(bytes);
+		index = GrabInt(bytes);
+
+		UpdateHandle();
 	}
 
 	/// <summary>
@@ -89,6 +93,7 @@ public class Slider : Element
 		var result = base.ToBytes().ToList();
 		PutBool(result, IsVertical);
 		PutFloat(result, Progress);
+		PutInt(result, index);
 		return result.ToArray();
 	}
 
@@ -105,25 +110,35 @@ public class Slider : Element
 			return;
 
 		if (IsHovered)
-		{
-			if (IsDisabled == false)
-				MouseCursorResult = MouseCursor.Hand;
+			MouseCursorResult = MouseCursor.Hand;
 
-			if (Input.Current.ScrollDelta != 0)
-				Move(Input.Current.ScrollDelta);
-		}
+		if (IsHovered && Input.Current.ScrollDelta != 0)
+			Move(Input.Current.ScrollDelta);
 
-		if (IsPressedAndHeld)
-		{
-			var (x, y) = Input.Current.Position;
+		if (IsFocused == false)
+			return;
+
+		var isDragging = IsPressedAndHeld && Input.Current.Position != Input.Current.PositionPrevious;
+		var isContinuouslyFocused = WasFocused && IsFocused;
+		var isJustPressed = Input.Current.IsPressed && IsHovered && isContinuouslyFocused;
+		var (x, y) = Input.Current.Position;
+
+		if (isJustPressed)
 			MoveTo(((int)x, (int)y));
-			TriggerUserAction(UserAction.Drag);
+
+		if (isDragging)
+		{
+			var prev = Position;
+			MoveTo(((int)x, (int)y));
+
+			if (Position != prev)
+				TriggerUserAction(UserAction.Drag);
 		}
 	}
 
 	#region Backend
-	private float progress;
-	private int index;
+	internal float progress;
+	internal int index;
 	internal bool isVertical;
 
 	[MemberNotNull(nameof(Handle))]

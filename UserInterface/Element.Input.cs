@@ -64,7 +64,7 @@ public abstract partial class Element
 			{
 				pressedKeys.Clear();
 
-				if(value != null && value.Length != 0)
+				if (value != null && value.Length != 0)
 					pressedKeys.AddRange(value);
 			}
 		}
