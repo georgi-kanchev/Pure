@@ -112,28 +112,24 @@ public class Slider : Element
 		if (IsHovered)
 			MouseCursorResult = MouseCursor.Hand;
 
-		if (IsHovered && Input.Current.ScrollDelta != 0)
+		if (IsHovered && Input.Current.ScrollDelta != 0 && IsFocused && FocusedPrevious == this)
 			Move(Input.Current.ScrollDelta);
-
-		if (IsFocused == false)
+	}
+	protected override void OnUserAction(UserAction userAction)
+	{
+		if (IsDisabled || userAction != UserAction.Trigger)
 			return;
 
-		var isDragging = IsPressedAndHeld && Input.Current.Position != Input.Current.PositionPrevious;
-		var isContinuouslyFocused = WasFocused && IsFocused;
-		var isJustPressed = Input.Current.IsPressed && IsHovered && isContinuouslyFocused;
 		var (x, y) = Input.Current.Position;
+		MoveTo(((int)x, (int)y));
+	}
+	protected override void OnDrag((int x, int y) delta)
+	{
+		if (IsDisabled || FocusedPrevious != this)
+			return;
 
-		if (isJustPressed)
-			MoveTo(((int)x, (int)y));
-
-		if (isDragging)
-		{
-			var prev = Position;
-			MoveTo(((int)x, (int)y));
-
-			if (Position != prev)
-				TriggerUserAction(UserAction.Drag);
-		}
+		var (x, y) = Input.Current.Position;
+		MoveTo(((int)x, (int)y));
 	}
 
 	#region Backend

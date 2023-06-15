@@ -11,9 +11,6 @@ using static Pure.UserInterface.List;
 
 public static class UserInterface
 {
-	// to do: implement action callback that tells an element when it was unfocused because
-	// of another element above it gaining priority to fix slider receiving input behind elements
-
 	class UI : Pure.UserInterface.UserInterface
 	{
 		private readonly Tilemap back, middle, front;
@@ -210,6 +207,8 @@ public static class UserInterface
 		userInterface["list-dropdown"] = new List((27, 5), 15, Types.Dropdown) { Size = (6, 9) };
 		userInterface["scroll-vertical"] = new Scroll((37, 6), 9);
 		userInterface["scroll-horizontal"] = new Scroll((38, 15), 9, false);
+		userInterface["palette"] = new Palette((34, 20), brightnessLevels: 30);
+		userInterface["pages"] = new Pages((27, 2)) { Size = (18, 2) };
 		userInterface["panel-horizontal"] = new Panel((2, 20))
 		{
 			Size = (25, 4),
@@ -228,8 +227,6 @@ public static class UserInterface
 			ItemGap = (0, 1),
 			ItemMaximumSize = (7, 1)
 		};
-		userInterface["palette"] = new Palette((34, 20), brightnessLevels: 30);
-		userInterface["pages"] = new Pages((27, 2)) { Size = (18, 2) };
 
 		while (Window.IsOpen)
 		{

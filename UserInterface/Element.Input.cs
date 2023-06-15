@@ -17,17 +17,21 @@ public abstract partial class Element
 		public static bool IsCanceled { get; set; }
 
 		/// <summary>
+		/// Gets a value indicating whether the input was pressed during the previous update.
+		/// </summary>
+		public bool WasPressed { get; internal set; }
+		/// <summary>
 		/// Gets a value indicating whether the input is currently pressed.
 		/// </summary>
 		public bool IsPressed { get; internal set; }
 		/// <summary>
 		/// Gets a value indicating whether the input has just been pressed.
 		/// </summary>
-		public bool IsJustPressed => wasPressed == false && IsPressed;
+		public bool IsJustPressed => WasPressed == false && IsPressed;
 		/// <summary>
 		/// Gets a value indicating whether the input has just been released.
 		/// </summary>
-		public bool IsJustReleased => wasPressed && IsPressed == false;
+		public bool IsJustReleased => WasPressed && IsPressed == false;
 		/// <summary>
 		/// Gets a value indicating whether the input has just been held.
 		/// </summary>
@@ -95,7 +99,6 @@ public abstract partial class Element
 
 		#region Backend
 		internal readonly List<Key> pressedKeys = new(), prevPressedKeys = new();
-		internal bool wasPressed;
 		#endregion
 	}
 }

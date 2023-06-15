@@ -9,7 +9,7 @@ using System.Text;
 /// </summary>
 public enum UserAction
 {
-	Focus, Unfocus, Hover, Unhover, Press, Release, Trigger, Drag, Dragged, PressAndHold, Scroll, Select
+	Focus, Unfocus, Hover, Unhover, Press, Release, Trigger, PressAndHold, Scroll, Select
 }
 /// <summary>
 /// The type of mouse cursor result from a user interaction with the user interface.
@@ -25,7 +25,7 @@ public enum MouseCursor
 public enum Key
 {
 	Escape = 36, ControlLeft = 37, ShiftLeft = 38, AltLeft = 39,
-	ControlRight = 41, ShiftRight = 42, AltRight = 43, Enter = 58, Return = 58,
+	ControlRight = 41, ShiftRight = 42, AltRight = 43, Enter = 58,
 	Backspace = 59, Tab = 60, PageUp = 61, PageDown = 62,
 	End = 63, Home = 64, Insert = 65, Delete = 66,
 	ArrowLeft = 71, ArrowRight = 72, ArrowUp = 73, ArrowDown = 74
@@ -44,10 +44,13 @@ public abstract partial class Element
 	public static MouseCursor MouseCursorResult { get; protected set; }
 
 	/// <summary>
-	/// The currently focused user interface element hash.
+	/// The currently focused user interface element.
 	/// </summary>
-	protected static int FocusedHash { get; private set; }
-	protected static int FocusedHashPrevious { get; private set; }
+	protected static Element? Focused { get; private set; }
+	/// <summary>
+	/// The user interface element that was focused during the previous update.
+	/// </summary>
+	protected static Element? FocusedPrevious { get; private set; }
 	/// <summary>
 	/// The size of the tilemap being used by the user interface.
 	/// </summary>
@@ -91,14 +94,9 @@ public abstract partial class Element
 	/// </summary>
 	public bool IsFocused
 	{
-		get => FocusedHash == GetHashCode();
-		protected set => FocusedHash = value ? GetHashCode() : default;
+		get => Focused == this;
+		protected set => Focused = value ? this : default;
 	}
-	/// <summary>
-	/// Gets a value indicating whether the user interface element was focused by
-	/// the user input during the previous update.
-	/// </summary>
-	public bool WasFocused => FocusedHashPrevious == GetHashCode();
 	/// <summary>
 	/// Gets a value indicating whether the input position is currently hovering 
 	/// over the user interface element.
@@ -114,6 +112,8 @@ public abstract partial class Element
 	/// regardless of being hovered or not.
 	/// </summary>
 	public bool IsPressedAndHeld { get; private set; }
+
+	public bool IsDragged { get; private set; }
 
 	/// <summary>
 	/// Initializes a new user interface element instance class with the specified 
@@ -161,7 +161,9 @@ public abstract partial class Element
 			return;
 		}
 
-		if (Input.Current.wasPressed == false && Input.Current.IsPressed && IsHovered)
+		var isJustPressed = Input.Current.WasPressed == false && IsPressed;
+		var isJustScrolled = Input.Current.ScrollDelta != 0 && IsHovered;
+		if (isJustPressed || isJustScrolled)
 			IsFocused = true;
 
 		if (Input.Current.IsKeyJustPressed(Key.Escape))
@@ -177,14 +179,24 @@ public abstract partial class Element
 			TriggerUserAction(UserAction.Hover);
 		if (IsHovered == false && wasHovered)
 			TriggerUserAction(UserAction.Unhover);
-		if (IsPressed && Input.Current.wasPressed == false)
+		if (IsPressed && Input.Current.WasPressed == false)
 			TriggerUserAction(UserAction.Press);
-		if (IsPressed == false && Input.Current.wasPressed)
+		if (IsPressed == false && Input.Current.WasPressed)
 			TriggerUserAction(UserAction.Release);
 		if (IsPressedAndHeld && Input.Current.IsJustHeld)
 			TriggerUserAction(UserAction.PressAndHold);
 		if (Input.Current.ScrollDelta != 0)
 			TriggerUserAction(UserAction.Scroll);
+
+		var p = Input.Current.Position;
+		var pp = Input.Current.PositionPrevious;
+		var px = (int)Math.Floor(p.x);
+		var py = (int)Math.Floor(p.y);
+		var ppx = (int)Math.Floor(pp.x);
+		var ppy = (int)Math.Floor(pp.y);
+
+		if (p != pp && IsPressedAndHeld)
+			OnDrag((px - ppx, py - ppy));
 
 		OnUpdate();
 	}
@@ -228,7 +240,7 @@ public abstract partial class Element
 		MouseCursorResult = MouseCursor.Arrow;
 		TilemapSize = (Math.Abs(tilemapSize.width), Math.Abs(tilemapSize.height));
 
-		Input.Current.wasPressed = Input.Current.IsPressed;
+		Input.Current.WasPressed = Input.Current.IsPressed;
 		Input.Current.TypedPrevious = Input.Current.Typed;
 		Input.Current.PositionPrevious = Input.Current.Position;
 		Input.Current.prevPressedKeys.Clear();
@@ -258,10 +270,9 @@ public abstract partial class Element
 			Input.Current.IsJustHeld = true;
 		}
 
-		if (Input.Current.wasPressed == false && Input.Current.IsPressed)
-			FocusedHash = default;
-
-		FocusedHashPrevious = FocusedHash;
+		FocusedPrevious = Focused;
+		if (Input.Current.WasPressed == false && Input.Current.IsPressed)
+			Focused = default;
 	}
 
 	public virtual byte[] ToBytes()
@@ -322,12 +333,17 @@ public abstract partial class Element
 	/// </summary>
 	protected virtual void OnUpdate() { }
 
-	protected void PutBool(List<byte> intoBytes, bool value) => intoBytes.AddRange(BitConverter.GetBytes(value));
-	protected void PutByte(List<byte> intoBytes, byte value) => intoBytes.Add(value);
-	protected void PutInt(List<byte> intoBytes, int value) => intoBytes.AddRange(BitConverter.GetBytes(value));
-	protected void PutUInt(List<byte> intoBytes, uint value) => intoBytes.AddRange(BitConverter.GetBytes(value));
-	protected void PutFloat(List<byte> intoBytes, float value) => intoBytes.AddRange(BitConverter.GetBytes(value));
-	protected void PutString(List<byte> intoBytes, string value)
+	protected virtual void OnDrag((int x, int y) delta)
+	{
+
+	}
+
+	protected static void PutBool(List<byte> intoBytes, bool value) => intoBytes.AddRange(BitConverter.GetBytes(value));
+	protected static void PutByte(List<byte> intoBytes, byte value) => intoBytes.Add(value);
+	protected static void PutInt(List<byte> intoBytes, int value) => intoBytes.AddRange(BitConverter.GetBytes(value));
+	protected static void PutUInt(List<byte> intoBytes, uint value) => intoBytes.AddRange(BitConverter.GetBytes(value));
+	protected static void PutFloat(List<byte> intoBytes, float value) => intoBytes.AddRange(BitConverter.GetBytes(value));
+	protected static void PutString(List<byte> intoBytes, string value)
 	{
 		var bytes = Encoding.UTF8.GetBytes(value);
 		PutInt(intoBytes, bytes.Length);

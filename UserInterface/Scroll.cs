@@ -51,6 +51,9 @@ public class Scroll : Element
 
 	protected override void OnUpdate()
 	{
+		if (IsDisabled)
+			return;
+
 		Size = (IsVertical ? 1 : Size.width, IsVertical ? Size.height : 1);
 		Slider.isVertical = IsVertical;
 
@@ -90,9 +93,9 @@ public class Scroll : Element
 		Down = new((0, 0)) { Size = (1, 1), hasParent = true };
 		var dir = IsVertical ? 1 : -1;
 
-		Up.SubscribeToUserAction(UserAction.Press, () => Slider.Move(1 * dir));
+		Up.SubscribeToUserAction(UserAction.Trigger, () => Slider.Move(1 * dir));
 		Up.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(1 * dir));
-		Down.SubscribeToUserAction(UserAction.Press, () => Slider.Move(-1 * dir));
+		Down.SubscribeToUserAction(UserAction.Trigger, () => Slider.Move(-1 * dir));
 		Down.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(-1 * dir));
 	}
 	#endregion

@@ -1,6 +1,4 @@
-﻿using System.Xml.Serialization;
-
-namespace Pure.UserInterface;
+﻿namespace Pure.UserInterface;
 
 /// <summary>
 /// Represents a user input panel element that can be moved and resized by the user (like a window).
@@ -15,6 +13,11 @@ public class Panel : Element
 	/// Gets or sets a value indicating whether this panel can be moved by the user.
 	/// </summary>
 	public bool IsMovable { get; set; } = true;
+	/// <summary>
+	/// Gets or sets a value indicating whether this panel can be moved or resized by the user 
+	/// outside of the tilemap.
+	/// </summary>
+	public bool IsRestricted { get; set; } = false;
 	/// <summary>
 	/// Gets or sets the minimum additional size that this panel can have beyond its current size.
 	/// </summary>
@@ -69,15 +72,15 @@ public class Panel : Element
 		if (MinimumSize.height > Size.height)
 			Size = (Size.width, MinimumSize.height);
 
-		if (IsDisabled || IsResizable == false && IsMovable == false)
+		if (IsDisabled || (IsResizable == false && IsMovable == false))
 			return;
 
 		var (x, y) = Position;
 		var (w, h) = Size;
 		var (inputX, inputY) = Input.Current.Position;
 		var (prevX, prevY) = Input.Current.PositionPrevious;
-		var isClicked = Input.Current.IsPressed && Input.Current.wasPressed == false;
-		var wasClicked = Input.Current.IsPressed == false && Input.Current.wasPressed;
+		var isClicked = Input.Current.IsPressed && Input.Current.WasPressed == false;
+		var wasClicked = Input.Current.IsPressed == false && Input.Current.WasPressed;
 
 		inputX = MathF.Floor(inputX);
 		inputY = MathF.Floor(inputY);
@@ -140,11 +143,10 @@ public class Panel : Element
 			var (newW, newH) = (w, h);
 			var (maxX, maxY) = MinimumSize;
 
-			if (isDragging)
-			{
-				newX += deltaX;
-				newY += deltaY;
-			}
+			if (deltaX == 0 && deltaY == 0 || FocusedPrevious != this)
+				return;
+
+			if (isDragging) { newX += deltaX; newY += deltaY; }
 			if (isResizingL && inputX == x + deltaX) { newX += deltaX; newW -= deltaX; }
 			if (isResizingR && inputX == x + w - 1 + deltaX) newW += deltaX;
 			if (isResizingD && inputY == y + h - 1 + deltaY) newH += deltaY;
@@ -157,7 +159,7 @@ public class Panel : Element
 				newY < 0;
 			var isBelowMinimumSize = newW < Math.Abs(maxX) || newH < Math.Abs(maxY);
 
-			if (isOutsideScreen || isBelowMinimumSize)
+			if (isBelowMinimumSize || (isOutsideScreen && IsRestricted))
 				return;
 
 			Size = (newW, newH);
@@ -166,7 +168,7 @@ public class Panel : Element
 
 		void Process(ref bool condition, MouseCursor cursor)
 		{
-			if (isClicked)
+			if (isClicked && IsFocused)
 				condition = true;
 
 			if (IsDisabled == false)
