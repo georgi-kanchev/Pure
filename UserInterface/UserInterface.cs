@@ -4,6 +4,8 @@ namespace Pure.UserInterface;
 
 public class UserInterface
 {
+	public int Count => elements.Count;
+
 	public Element this[string key]
 	{
 		get => elements[key];
@@ -144,7 +146,7 @@ public class UserInterface
 	#region Backend
 	private readonly Dictionary<string, Element> elements = new();
 
-	private byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
+	private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
 	{
 		var result = fromBytes[offset..(offset + amount)];
 		offset += amount;

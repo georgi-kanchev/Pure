@@ -1,7 +1,5 @@
 namespace Pure.Examples.Systems;
 
-using System;
-
 using Pure.Tilemap;
 using Pure.UserInterface;
 using Pure.Utilities;
@@ -71,29 +69,12 @@ public static class UserInterface
 			middle.SetTile(e.Handle.Position, new(Tile.SHADE_OPAQUE, GetColor(e, Color.Yellow)));
 			middle.SetTextLine((e.Position.x + e.Size.width + 1, e.Position.y), $"{e.Progress:F2}");
 		}
-		protected override void OnUpdateList(string key, List list)
-		{
-			var e = list;
-			var scorllUpAng = (sbyte)(e.Type == Types.Horizontal ? 0 : 3);
-			var scorllDownAng = (sbyte)(e.Type == Types.Horizontal ? 2 : 1);
-			var scrollColor = Color.Gray.ToBright();
-			middle.SetTile(e.Scroll.Up.Position, new(Tile.ARROW, GetColor(e.Scroll.Up, scrollColor), scorllUpAng));
-			middle.SetTile(e.Scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, GetColor(e.Scroll.Slider, scrollColor)));
-			middle.SetTile(e.Scroll.Down.Position, new(Tile.ARROW, GetColor(e.Scroll.Down, scrollColor), scorllDownAng));
-		}
+		protected override void OnUpdateList(string key, List list) => OnUpdateScroll(key, list.Scroll);
 		protected override void OnUpdateListItem(string key, List list, Button item)
 		{
 			var color = item.IsSelected ? Color.Green : Color.Red;
 
-			var text = item.Text;
-			if (item.Size.width < text.Length)
-			{
-				text = text[..Math.Max(item.Size.width - 1, 0)];
-				var tile = new Tile(Tile.PUNCTUATION_ELLIPSIS, color);
-				middle.SetTile((item.Position.x + item.Size.width - 1, item.Position.y), tile);
-			}
-
-			middle.SetTextLine(item.Position, text, GetColor(item, color));
+			middle.SetTextLine(item.Position, item.Text, GetColor(item, color), item.Size.width);
 
 			var (itemX, itemY) = item.Position;
 			var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(item, color), 1);

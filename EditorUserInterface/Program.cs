@@ -1,5 +1,6 @@
 ﻿namespace Pure.EditorUserInterface;
 
+using System.Diagnostics.CodeAnalysis;
 using Pure.Tilemap;
 using Pure.Tracker;
 using Pure.UserInterface;
@@ -8,90 +9,64 @@ using Pure.Window;
 
 public partial class Program
 {
-	enum Layer
+	private enum Layer
 	{
-		Scene_Back, Scene_Middle, Scene_Front,
 		UI_Back, UI_Middle, UI_Front,
+		Edit_Back, Edit_Middle, Edit_Front,
 		Count
 	}
+	private static RightClickMenu? rightClickMenu;
+	private static TilemapManager? tilemaps;
+	private static RendererUI? ui;
+	private static RendererEdit? edit;
 
 	private static void Main()
 	{
-		Window.Create(3, Window.Mode.Windowed);
+		Init();
 
-		var aspectRatio = Window.MonitorAspectRatio;
-		var tilemaps = new TilemapManager((int)Layer.Count, (aspectRatio.width * 3, aspectRatio.height * 3));
-
-		const int ON_MENU_EXPAND = 0;
-		var rightClickMenuTexts = new string[]
-		{
-			"Add ",
-			"  Button",
-			"  Input Box",
-			"  Pages",
-			"  Panel",
-			"  Color Palette",
-			"  Slider ",
-			"    Vertical",
-			"    Horizontal",
-			"  Scroll ",
-			"    Vertical",
-			"    Horizontal",
-			"    Numeric",
-			"  List ",
-			"    Vertical",
-			"    Horizontal",
-			"    Dropdown",
-		};
-		var rightClickMenu = new RightClickMenu(
-			tilemaps[(int)Layer.UI_Back],
-			tilemaps[(int)Layer.UI_Middle], rightClickMenuTexts.Length)
-		{ Size = (16, 12) };
-
-		for(int i = 0; i < rightClickMenuTexts.Length; i++)
-			SetText(rightClickMenu, i, rightClickMenuTexts[i]);
-
-		Tracker<int>.When(ON_MENU_EXPAND, () => rightClickMenu.Position = (int.MaxValue, int.MaxValue));
-
-		while(Window.IsOpen)
+		while (Window.IsOpen)
 		{
 			Window.Activate(true);
-
 			tilemaps.Fill();
 
-			var mousePos = tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
-
-			if(Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRmb"))
-			{
-				rightClickMenu.Position = ((int)mousePos.x, (int)mousePos.y);
-				rightClickMenu.IsExpanded = true;
-			}
-			Element.ApplyInput(
-				Mouse.IsButtonPressed(Mouse.Button.Left),
-				mousePos,
-				Mouse.ScrollDelta,
-				Keyboard.KeyIDsPressed,
-				Keyboard.KeyTyped,
-				tilemaps.Size);
-
-			rightClickMenu.Update();
-			Tracker<int>.Track(ON_MENU_EXPAND, rightClickMenu.IsExpanded == false);
+			Update();
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
-
-			for(int i = 0; i < tilemaps.Count; i++)
+			for (int i = 0; i < tilemaps.Count; i++)
 				Window.DrawTiles(tilemaps[i].ToBundle());
-
 			Window.Activate(false);
 		}
 	}
 
-	private static void SetText(List list, int index, string text)
+	[MemberNotNull(nameof(tilemaps), nameof(rightClickMenu))]
+	private static void Init()
 	{
-		var item = list[index];
-		if(item == null)
+		Window.Create(3, Window.Mode.Windowed);
+
+		var (width, height) = Window.MonitorAspectRatio;
+		tilemaps = new TilemapManager((int)Layer.Count, (width * 3, height * 3));
+		ui = new(tilemaps);
+		edit = new(tilemaps, ui);
+
+		rightClickMenu = new RightClickMenu(
+			tilemaps[(int)Layer.Edit_Back], tilemaps[(int)Layer.Edit_Middle], ui, edit);
+	}
+	private static void Update()
+	{
+		if (tilemaps == null)
 			return;
 
-		item.Text = text;
+		var mousePos = tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
+		Element.ApplyInput(
+			Mouse.IsButtonPressed(Mouse.Button.Left),
+			mousePos,
+			Mouse.ScrollDelta,
+			Keyboard.KeyIDsPressed,
+			Keyboard.KeyTyped,
+			tilemaps.Size);
+
+		ui?.Update();
+		edit?.Update();
+		rightClickMenu?.Update();
 	}
 }

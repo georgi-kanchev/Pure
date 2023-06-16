@@ -17,7 +17,7 @@ public class Panel : Element
 	/// Gets or sets a value indicating whether this panel can be moved or resized by the user 
 	/// outside of the tilemap.
 	/// </summary>
-	public bool IsRestricted { get; set; } = false;
+	public bool IsRestricted { get; set; } = true;
 	/// <summary>
 	/// Gets or sets the minimum additional size that this panel can have beyond its current size.
 	/// </summary>
@@ -40,7 +40,6 @@ public class Panel : Element
 	/// <param name="size">The size of the panel.</param>
 	public Panel((int x, int y) position) : base(position)
 	{
-		Text = "Panel";
 		Size = (12, 8);
 	}
 	public Panel(byte[] bytes) : base(bytes)

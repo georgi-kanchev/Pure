@@ -24,7 +24,6 @@ public class Button : Element
 	/// <param name="position">The position of the button.</param>
 	public Button((int x, int y) position) : base(position)
 	{
-		Text = "Button";
 		Size = (10, 1);
 	}
 

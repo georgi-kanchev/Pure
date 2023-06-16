@@ -126,12 +126,13 @@ public abstract partial class Element
 		Size = (1, 1);
 		Position = position;
 
-		hold.Start();
-		holdTrigger.Start();
 		typeName = GetType().Name;
+		Init();
 	}
 	public Element(byte[] bytes)
 	{
+		Init(); // should be before
+
 		typeName = GrabString(bytes);
 		Position = (GrabInt(bytes), GrabInt(bytes));
 		Size = (GrabInt(bytes), GrabInt(bytes));
@@ -291,6 +292,8 @@ public abstract partial class Element
 		return result.ToArray();
 	}
 
+	public override string ToString() => $"{GetType().Name} \"{Text}\"";
+
 	/// <summary>
 	/// Invokes all the registered methods associated with the specified user action.
 	/// Used internally by the user interface elements to notify subscribers of
@@ -333,10 +336,7 @@ public abstract partial class Element
 	/// </summary>
 	protected virtual void OnUpdate() { }
 
-	protected virtual void OnDrag((int x, int y) delta)
-	{
-
-	}
+	protected virtual void OnDrag((int x, int y) delta) { }
 
 	protected static void PutBool(List<byte> intoBytes, bool value) => intoBytes.AddRange(BitConverter.GetBytes(value));
 	protected static void PutByte(List<byte> intoBytes, byte value) => intoBytes.Add(value);
@@ -387,10 +387,13 @@ public abstract partial class Element
 
 	private readonly Dictionary<UserAction, List<Action>> userActions = new();
 
-	public override string ToString()
+	private void Init()
 	{
-		return $"{GetType().Name} \"{Text}\"";
+		hold.Start();
+		holdTrigger.Start();
+		Text = GetType().Name;
 	}
+
 
 	private void UpdateHovered()
 	{

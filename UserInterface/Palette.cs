@@ -74,12 +74,14 @@ public class Palette : Element
 
 		for (int i = 0; i < colorButtons.Count; i++)
 		{
-			if (colorButtons[i].IsPressed)
-				SelectedColor = GetColor(colorButtons.IndexOf(colorButtons[i]));
+			var btn = colorButtons[i];
 
-			OnSampleUpdate(colorButtons[i], GetColor(i));
-			sampleUpdateCallback?.Invoke(colorButtons[i], GetColor(i));
-			colorButtons[i].Update();
+			if (Input.Current.IsJustReleased && btn.IsPressedAndHeld && btn.IsHovered)
+				SelectedColor = GetColor(colorButtons.IndexOf(btn));
+
+			OnSampleUpdate(btn, GetColor(i));
+			sampleUpdateCallback?.Invoke(btn, GetColor(i));
+			btn.Update();
 		}
 	}
 	protected virtual void OnSampleUpdate(Button sample, uint color) { }
@@ -147,10 +149,7 @@ public class Palette : Element
 		Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
 
 		for (int i = 0; i < 13; i++)
-		{
-			var btn = new Button((x + i, y + 1)) { Size = (1, 1), hasParent = true };
-			colorButtons.Add(btn);
-		}
+			colorButtons.Add(new Button((x + i, y + 1)) { Size = (1, 1), hasParent = true });
 	}
 
 	private static uint ToOpacity(uint color, float unit)
