@@ -21,7 +21,7 @@ public class ParticleManager
 	/// <param name="amount">The number of particles to spawn.</param>
 	public void Spawn(int amount)
 	{
-		for(int i = 0; i < amount; i++)
+		for (var i = 0; i < amount; i++)
 		{
 			var p = new Particle(default, default);
 			particles.Add(p);
@@ -38,9 +38,8 @@ public class ParticleManager
 			return;
 
 		var toRemove = new List<Particle>();
-		for(int i = 0; i < particles.Count; i++)
+		foreach (var p in particles)
 		{
-			var p = particles[i];
 			var rad = MathF.PI / 180 * p.Movement.angle;
 			var (dirX, dirY) = (MathF.Cos(rad), MathF.Sin(rad));
 			var (x, y) = p.Position;
@@ -56,20 +55,25 @@ public class ParticleManager
 
 			OnUpdate(p);
 		}
-		for(int i = 0; i < toRemove.Count; i++)
-			particles.Remove(toRemove[i]);
+
+		foreach (var p in toRemove)
+			particles.Remove(p);
 	}
 
 	/// <summary>
 	/// Called when a particle is spawned into the particle manager.
 	/// </summary>
 	/// <param name="particle">The particle that was spawned.</param>
-	public virtual void OnSpawn(Particle particle) { }
+	protected virtual void OnSpawn(Particle particle)
+	{
+	}
 	/// <summary>
 	/// Called when a particle is updated in the particle manager.
 	/// </summary>
 	/// <param name="particle">The particle that was updated.</param>
-	public virtual void OnUpdate(Particle particle) { }
+	protected virtual void OnUpdate(Particle particle)
+	{
+	}
 
 	/// <returns>
 	/// An array of particles in the particle manager.</returns>
@@ -79,7 +83,7 @@ public class ParticleManager
 	public (float x, float y, uint color)[] ToPointsBundle()
 	{
 		var result = new (float x, float y, uint color)[particles.Count];
-		for(int i = 0; i < particles.Count; i++)
+		for (var i = 0; i < particles.Count; i++)
 			result[i] = particles[i];
 
 		return result;
@@ -94,8 +98,9 @@ public class ParticleManager
 	public static implicit operator ParticleManager(Particle[] particles)
 	{
 		var manager = new ParticleManager();
-		for(int i = 0; i < particles.Length; i++)
-			manager.particles.Add(particles[i]);
+		foreach (var p in particles)
+			manager.particles.Add(p);
+
 		return manager;
 	}
 	/// <summary>

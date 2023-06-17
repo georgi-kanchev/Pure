@@ -6,7 +6,7 @@ public class Playlist
 	public bool IsLooping { get; set; }
 
 	public Audio this[int index] => audios[index];
-	public Audio this[string tag]
+	public Audio this[string? tag]
 	{
 		get
 		{
@@ -26,9 +26,9 @@ public class Playlist
 
 	public void AddTrack(string? tag, params Audio[] tracks)
 	{
-		for (int i = 0; i < tracks?.Length; i++)
+		foreach (var track in tracks)
 		{
-			audios.Add(tracks[i]);
+			audios.Add(track);
 
 			if (tag == null)
 				continue;
@@ -36,7 +36,7 @@ public class Playlist
 			if (tags.ContainsKey(tag) == false)
 				tags[tag] = new();
 
-			tags[tag].Add(tracks[i]);
+			tags[tag].Add(track);
 		}
 	}
 	public void Shuffle(string? tag = null)
@@ -113,8 +113,8 @@ public class Playlist
 		}
 	}
 
-	public virtual void OnAudioEnd(int index, string? tag) { }
-	public virtual void OnListEnd() { }
+	protected virtual void OnAudioEnd(int index, string? tag) { }
+	protected virtual void OnListEnd() { }
 
 	#region Backend
 	private bool isPlaying;
@@ -151,9 +151,9 @@ public class Playlist
 	private static void Shuffle<T>(IList<T> collection)
 	{
 		var rand = new Random();
-		for (int i = collection.Count - 1; i > 0; i--)
+		for (var i = collection.Count - 1; i > 0; i--)
 		{
-			int j = rand.Next(i + 1);
+			var j = rand.Next(i + 1);
 			(collection[j], collection[i]) = (collection[i], collection[j]);
 		}
 	}

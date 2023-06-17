@@ -284,7 +284,7 @@ internal class TcpSession : IDisposable
 			return 0;
 
 		// Sent data to the client
-		long sent = Socket.Send(buffer, SocketFlags.None, out SocketError ec);
+		long sent = Socket.Send(buffer, SocketFlags.None, out var ec);
 		if (sent > 0)
 		{
 			// Update statistic
@@ -413,7 +413,7 @@ internal class TcpSession : IDisposable
 			return 0;
 
 		// Receive data from the client
-		long received = Socket.Receive(buffer, (int)offset, (int)size, SocketFlags.None, out SocketError ec);
+		long received = Socket.Receive(buffer, (int)offset, (int)size, SocketFlags.None, out var ec);
 		if (received > 0)
 		{
 			// Update statistic
@@ -466,7 +466,7 @@ internal class TcpSession : IDisposable
 		if (!IsConnected)
 			return;
 
-		bool process = true;
+		var process = true;
 
 		while (process)
 		{
@@ -492,8 +492,8 @@ internal class TcpSession : IDisposable
 		if (!IsConnected)
 			return;
 
-		bool empty = false;
-		bool process = true;
+		var empty = false;
+		var process = true;
 
 		while (process)
 		{

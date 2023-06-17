@@ -101,7 +101,7 @@ public class Animation<T> where T : notnull
 	/// <param name="deltaTime">The amount of time that has passed since the last update.</param>
 	public void Update(float deltaTime)
 	{
-		if(values == default || IsPaused)
+		if(IsPaused)
 			return;
 
 		RawIndex += deltaTime / Speed;
@@ -140,10 +140,6 @@ public class Animation<T> where T : notnull
 	{
 		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
 		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-	}
-	private static int Wrap(int number, int targetNumber)
-	{
-		return ((number % targetNumber) + targetNumber) % targetNumber;
 	}
 	private static T[] Copy(T[] array)
 	{

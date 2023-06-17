@@ -58,7 +58,7 @@ public class Script
 				{
 					var array = value.Tuple;
 					var result = new object?[array.Length];
-					for (int i = 0; i < array.Length; i++)
+					for (var i = 0; i < array.Length; i++)
 						result[i] = GetPrimitive(array[i]);
 
 					return result;

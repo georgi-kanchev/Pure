@@ -13,7 +13,7 @@ public class Notes : Audio
 {
 	public static (char separator, char pause, char repeat) Symbols { get; set; } = ('_', '.', '~');
 
-	public Notes(string notes, float duration = 0.2f, Wave wave = Wave.Square, (float start, float end) fade = default) : base()
+	public Notes(string notes, float duration = 0.2f, Wave wave = Wave.Square, (float start, float end) fade = default)
 	{
 		var validChords = GetValidNotes(notes);
 		if(validChords.Count == 0)
@@ -34,7 +34,7 @@ public class Notes : Audio
 
 	#region Backend
 	private readonly SoundBuffer? buffer;
-	private (float start, float end) fade;
+	private readonly (float start, float end) fade;
 	private static readonly Random rand = new();
 
 	// this avoids switch or if chain to determine the wave, results in generating the sounds a bit faster
@@ -44,7 +44,7 @@ public class Notes : Audio
 			{ Wave.Square, (i, f) => (Sin(A(f) * i) > 0 ? 1f : -1f) * 0.5f },
 			{ Wave.Triangle, (i, f) => Asin(Sin(A(f) * i)) * 2f / PI },
 			{ Wave.Sawtooth, (i, f) => 2f * f * i % (1f / f) - 1f },
-			{ Wave.Noise, (i, f) => 2f * (rand.Next(1000) / 1000f) - 1f },
+			{ Wave.Noise, (_, _) => 2f * (rand.Next(1000) / 1000f) - 1f },
 		};
 
 	private const uint SAMPLE_RATE = 11025;
@@ -72,7 +72,7 @@ public class Notes : Audio
 		keyNumber = keyNumber < 3 ?
 			keyNumber + 12 + ((octave - 1) * 12) + 1 :
 			keyNumber + ((octave - 1) * 12) + 1;
-		var result = 440f * Pow(2f, (float)(keyNumber - 49f) / 12f);
+		var result = 440f * Pow(2f, (keyNumber - 49f) / 12f);
 
 		return result;
 	}
@@ -88,7 +88,7 @@ public class Notes : Audio
 		var noteA = fade.start / 2f;
 		var noteB = 1f - fade.end / 2f;
 
-		for(int i = 0; i < notes.Count; i++)
+		for(var i = 0; i < notes.Count; i++)
 		{
 			var frequency = GetFrequency(notes[i]);
 			var previousNote = i > 0 ? notes[i - 1] : "";
@@ -96,7 +96,7 @@ public class Notes : Audio
 			var isStarting = notes[i] != previousNote;
 			var isStopping = notes[i] != nextNote;
 
-			for(int j = 0; j < time; j++)
+			for(var j = 0; j < time; j++)
 			{
 				var noteProgress = Map(j, (0f, time), (0f, 1f));
 				var fadeValue = 1f;
@@ -116,9 +116,9 @@ public class Notes : Audio
 		var chordsSplit = notes.Split(Symbols.separator, StringSplitOptions.RemoveEmptyEntries);
 		var validChords = new List<string>();
 
-		for(int i = 0; i < chordsSplit?.Length; i++)
+		foreach (var t in chordsSplit)
 		{
-			var note = chordsSplit[i];
+			var note = t;
 			var prolongs = note.Split(Symbols.repeat);
 			var prolongCount = 1;
 
@@ -139,7 +139,7 @@ public class Notes : Audio
 				note = Symbols.pause.ToString();
 			}
 
-			for(int j = 0; j < prolongCount; j++)
+			for(var j = 0; j < prolongCount; j++)
 				validChords.Add(note);
 		}
 		return validChords;

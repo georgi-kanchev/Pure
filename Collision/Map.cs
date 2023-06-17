@@ -12,7 +12,7 @@ public class Map
 	/// <summary>
 	/// Gets the total number of rectangles at all cells.
 	/// </summary>
-	public int RectangleCount => count;
+	public int RectangleCount { get; private set; }
 
 	/// <summary>
 	/// Initializes a new empty map instance.
@@ -26,12 +26,12 @@ public class Map
 
 		var sectorCount = BitConverter.ToInt32(Get<int>());
 
-		for(int i = 0; i < sectorCount; i++)
+		for (var i = 0; i < sectorCount; i++)
 		{
 			var tile = BitConverter.ToInt32(Get<int>());
 			var rectAmount = BitConverter.ToInt32(Get<int>());
 
-			for(int j = 0; j < rectAmount; j++)
+			for (var j = 0; j < rectAmount; j++)
 			{
 				var x = BitConverter.ToSingle(Get<float>());
 				var y = BitConverter.ToSingle(Get<float>());
@@ -51,15 +51,15 @@ public class Map
 	/// specified tile identifier.
 	/// </summary>
 	/// <param name="rectangle">The rectangle to add.</param>
-	/// <param name="tileID">The tile identifier corresponding to the cell to add the 
+	/// <param name="tileId">The tile identifier corresponding to the cell to add the 
 	/// rectangle to.</param>
-	public void AddRectangle(Rectangle rectangle, int tileID)
+	public void AddRectangle(Rectangle rectangle, int tileId)
 	{
-		if(cellRects.ContainsKey(tileID) == false)
-			cellRects[tileID] = new List<Rectangle>();
+		if (cellRects.ContainsKey(tileId) == false)
+			cellRects[tileId] = new List<Rectangle>();
 
-		cellRects[tileID].Add(rectangle);
-		count++;
+		cellRects[tileId].Add(rectangle);
+		RectangleCount++;
 	}
 	/// <summary>
 	/// Gets an array of rectangles at the specified cell.
@@ -75,8 +75,8 @@ public class Map
 		var rects = cellRects[id];
 		var result = new List<Rectangle>();
 
-		for(int r = 0; r < rects.Count; r++)
-			result.Add(rects[r]);
+		foreach (var r in rects)
+			result.Add(r);
 
 		return result.ToArray();
 	}
@@ -91,12 +91,12 @@ public class Map
 		{
 			var rects = cellRects[kvp.Value];
 			var (cellX, cellY) = kvp.Key;
-			for(int i = 0; i < rects.Count; i++)
+			foreach (var rect in rects)
 			{
-				var rect = rects[i];
-				var (x, y) = rect.Position;
-				rect.Position = (cellX + x, cellY + y);
-				result.Add(rect);
+				var rectangle = rect;
+				var (x, y) = rectangle.Position;
+				rectangle.Position = (cellX + x, cellY + y);
+				result.Add(rectangle);
 			}
 		}
 
@@ -105,7 +105,7 @@ public class Map
 
 	public void ClearRectangles()
 	{
-		count = 0;
+		RectangleCount = 0;
 		cellRects.Clear();
 	}
 	public void ClearRectangles(int tile)
@@ -113,7 +113,7 @@ public class Map
 		if(cellRects.ContainsKey(tile) == false)
 			return;
 
-		count -= cellRects[tile].Count;
+		RectangleCount -= cellRects[tile].Count;
 		cellRects.Remove(tile);
 	}
 
@@ -129,8 +129,8 @@ public class Map
 
 		tileIndices.Clear();
 
-		for(int y = 0; y < tileIDs.GetLength(1); y++)
-			for(int x = 0; x < tileIDs.GetLength(0); x++)
+		for (var y = 0; y < tileIDs.GetLength(1); y++)
+			for (var x = 0; x < tileIDs.GetLength(0); x++)
 			{
 				var tile = tileIDs[x, y];
 				if(cellRects.ContainsKey(tile) == false)
@@ -146,7 +146,7 @@ public class Map
 	/// false otherwise.</returns>
 	public bool IsOverlapping(Hitbox hitbox)
 	{
-		for(int i = 0; i < hitbox.RectangleCount; i++)
+		for (var i = 0; i < hitbox.RectangleCount; i++)
 			if(IsOverlapping(hitbox[i]))
 				return true;
 
@@ -167,7 +167,7 @@ public class Map
 	public bool IsOverlapping(Rectangle rectangle)
 	{
 		var neighborRects = GetNeighborRects(rectangle);
-		for(int i = 0; i < neighborRects.Count; i++)
+		for (var i = 0; i < neighborRects.Count; i++)
 			if(neighborRects[i].IsOverlapping(rectangle))
 				return true;
 
@@ -180,7 +180,7 @@ public class Map
 	public bool IsOverlapping((float x, float y) point)
 	{
 		var neighborRects = GetNeighborRects(new(point, (1, 1)));
-		for(int i = 0; i < neighborRects.Count; i++)
+		for (var i = 0; i < neighborRects.Count; i++)
 			if(neighborRects[i].IsOverlapping(point))
 				return true;
 
@@ -200,9 +200,8 @@ public class Map
 			result.AddRange(BitConverter.GetBytes(kvp.Key));
 			result.AddRange(BitConverter.GetBytes(kvp.Value.Count));
 
-			for(int i = 0; i < kvp.Value.Count; i++)
+			foreach (var r in kvp.Value)
 			{
-				var r = kvp.Value[i];
 				result.AddRange(BitConverter.GetBytes(r.Position.x));
 				result.AddRange(BitConverter.GetBytes(r.Position.y));
 				result.AddRange(BitConverter.GetBytes(r.Size.width));
@@ -227,7 +226,7 @@ public class Map
 	{
 		var rectangles = map.GetRectangles();
 		var result = new (float x, float y, float width, float height, uint color)[rectangles.Length];
-		for(int i = 0; i < rectangles.Length; i++)
+		for (var i = 0; i < rectangles.Length; i++)
 			result[i] = rectangles[i];
 		return result;
 	}
@@ -255,11 +254,11 @@ public class Map
 	// [rect amount * 4]		- colors
 	// = = = = = = (sector 3)
 	// ...
-	private int count;
 
 	// to not repeat rectangles for each tile
 	// saving map of tiles [(x, y), tile]
 	// and rectangles for each tile [tile, list of rectangles]
+	
 	private readonly Dictionary<(int, int), int> tileIndices = new();
 	private readonly Dictionary<int, List<Rectangle>> cellRects = new();
 
@@ -269,8 +268,8 @@ public class Map
 		var (x, y) = rect.Position;
 		var (chW, chH) = GetChunkSizeForRect(rect);
 
-		for(int j = -chW; j < chW; j++)
-			for(int i = -chH; i < chH; i++)
+		for (var j = -chW; j < chW; j++)
+			for (var i = -chH; i < chH; i++)
 			{
 				var cell = ((int)x + i, (int)y + j);
 
@@ -279,12 +278,12 @@ public class Map
 
 				var id = tileIndices[cell];
 				var rects = cellRects[id];
-				for(int r = 0; r < rects.Count; r++)
+				foreach (var curRect in rects)
 				{
-					var curRect = rects[r];
-					var (rx, ry) = curRect.Position;
-					curRect.Position = (cell.Item1 + rx, cell.Item2 + ry);
-					result.Add(curRect);
+					var rectangle = curRect;
+					var (rx, ry) = rectangle.Position;
+					rectangle.Position = (cell.Item1 + rx, cell.Item2 + ry);
+					result.Add(rectangle);
 				}
 			}
 		return result;

@@ -8,7 +8,7 @@
 /// <typeparam name="T">The type of the animations managed by the manager.</typeparam>
 public class AnimationManager<TKey, T>
 	where TKey : notnull
-	where T : notnull, Animation<T>
+	where T : Animation<T>
 {
 	/// <summary>
 	/// Gets an array of the keys used to index the animations in the manager.

@@ -425,7 +425,7 @@ internal class TcpServer : IDisposable
 	public TcpSession FindSession(Guid id)
 	{
 		// Try to find the required session
-		return Sessions.TryGetValue(id, out TcpSession result) ? result : null;
+		return Sessions.TryGetValue(id, out var result) ? result : null;
 	}
 
 	/// <summary>
@@ -445,7 +445,7 @@ internal class TcpServer : IDisposable
 	internal void UnregisterSession(Guid id)
 	{
 		// Unregister session by Id
-		Sessions.TryRemove(id, out TcpSession _);
+		Sessions.TryRemove(id, out var _);
 	}
 
 	#endregion

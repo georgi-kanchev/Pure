@@ -48,7 +48,7 @@ public class RightClickMenu : List
 		Tracker<Action>.When(Action.MenuExpand, () => Position = (int.MaxValue, int.MaxValue));
 		Size = (15, 15);
 
-		for (int i = 0; i < rightClickMenuTexts.Length; i++)
+		for (var i = 0; i < rightClickMenuTexts.Length; i++)
 		{
 			var item = this[i];
 			if (item == null)

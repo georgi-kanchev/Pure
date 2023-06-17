@@ -110,9 +110,6 @@ public class Storage
 	/// <param name="typeId">The type identifier of the object instance.</param>
 	public void Set(string key, object? instance, int typeId = default)
 	{
-		if(key == null)
-			return;
-
 		data[key] = (typeId, TextFromObject(typeId, instance));
 	}
 	/// <summary>
@@ -121,8 +118,7 @@ public class Storage
 	/// <param name="key">The key of the object to be removed.</param>
 	public void Remove(string key)
 	{
-		if(key != null)
-			data.Remove(key);
+		data.Remove(key);
 	}
 
 	/// <summary>
@@ -130,13 +126,13 @@ public class Storage
 	/// </summary>
 	/// <param name="key">The key of the object instance.</param>
 	/// <returns>The type ID of the object instance.</returns>
-	public int GetTypeID(string key) => key != null && data.ContainsKey(key) ? data[key].typeId : default;
+	public int GetTypeID(string key) => data.ContainsKey(key) ? data[key].typeId : default;
 	/// <summary>
 	/// Gets the object instance with the specified key as text.
 	/// </summary>
 	/// <param name="key">The key of the object instance.</param>
 	/// <returns>The object instance as text.</returns>
-	public string? GetAsText(string key) => key != null && data.ContainsKey(key) ? data[key].data : default;
+	public string? GetAsText(string key) => data.ContainsKey(key) ? data[key].data : default;
 	/// <summary>
 	/// Gets the object instance with the specified key as an object of type <typeparamref name="T"/>.
 	/// </summary>
@@ -145,7 +141,7 @@ public class Storage
 	/// <returns>The object instance as an object of type <typeparamref name="T"/>.</returns>
 	public T? GetAsObject<T>(string key)
 	{
-		if(key == null || data.ContainsKey(key) == false)
+		if (data.ContainsKey(key) == false)
 			return default;
 
 		var obj = TextToObject<T>(data[key].typeId, data[key].data);
@@ -207,11 +203,11 @@ public class Storage
 		var key = string.Empty;
 		var typeId = 0;
 
-		for(int i = 0; i < split.Length; i++)
+		foreach (var s in split)
 		{
 			var curIndex = index;
 			index++;
-			var cur = split[i];
+			var cur = s;
 			if(curIndex == 0)
 			{
 				key = cur;
@@ -229,42 +225,31 @@ public class Storage
 	}
 
 	/// <summary>
-	/// Called when text data is required to be turned into an object of a given type.
-	/// Subclasses should override this method to implement their own behavior.
-	/// </summary>
-	/// <param name="typeId">The identifier of the object's type.</param>
-	/// <param name="instance">The object instance to serialize.</param>
-	/// <returns>The serialized object data as text.</returns>
-	protected virtual object? OnObjectFromText(int typeId, string dataAsText)
-	{
-		return default;
-	}
-	/// <summary>
 	/// Called when an object of a given type is required to be turned into text data.
 	/// Subclasses should override this method to implement their own behavior.
 	/// </summary>
 	/// <param name="typeId">The identifier of the object's type.</param>
 	/// <param name="dataAsText">The object data as text.</param>
 	/// <returns>The deserialized object.</returns>
+	protected virtual object? OnObjectFromText(int typeId, string dataAsText)
+	{
+		return default;
+	}
+	/// <summary>
+	/// Called when text data is required to be turned into an object of a given type.
+	/// Subclasses should override this method to implement their own behavior.
+	/// </summary>
+	/// <param name="typeId">The identifier of the object's type.</param>
+	/// <param name="instance">The object instance to serialize.</param>
+	/// <returns>The serialized object data as text.</returns>
 	protected virtual string OnObjectToText(int typeId, object? instance)
 	{
 		return string.Empty;
 	}
 
 	#region Backend
-	private static readonly HashSet<Type> ValueTupleTypes = new(new Type[]
-	{
-		typeof(ValueTuple<>),
-		typeof(ValueTuple<,>),
-		typeof(ValueTuple<,,>),
-		typeof(ValueTuple<,,,>),
-		typeof(ValueTuple<,,,,>),
-		typeof(ValueTuple<,,,,,>),
-		typeof(ValueTuple<,,,,,,>),
-		typeof(ValueTuple<,,,,,,,>)
-	});
 	private string? sep1D, sep2D, sepTuple, sepDict, sepFile;
-	private Dictionary<string, (int typeId, string data)> data = new();
+	private readonly Dictionary<string, (int typeId, string data)> data = new();
 
 	private string TextFromObject(int typeId, object? instance)
 	{
@@ -344,7 +329,7 @@ public class Storage
 
 		var kvpStrings = dataAsText.Split(SeparatorDictionary);
 		var lastKey = default(object);
-		for(int i = 0; i < kvpStrings.Length; i++)
+		for (var i = 0; i < kvpStrings.Length; i++)
 		{
 			var isKey = i % 2 == 0;
 			var curType = isKey ? keyType : valueType;
@@ -365,7 +350,7 @@ public class Storage
 		var result = string.Empty;
 
 		var items = GetTupleItems(tuple);
-		for(int i = 0; i < items.Count; i++)
+		for (var i = 0; i < items.Count; i++)
 			result += (i != 0 ? SeparatorTuple : string.Empty) + $"{items[i]}";
 
 		return result;
@@ -376,7 +361,7 @@ public class Storage
 		var items = dataAsText.Split(SeparatorTuple);
 		var genTypes = type.GenericTypeArguments;
 		var minLength = Math.Min(items.Length, genTypes.Length);
-		for(int i = 0; i < minLength; i++)
+		for (var i = 0; i < minLength; i++)
 		{
 			var item = TextToPrimitive(items[i], genTypes[i]);
 			var field = type.GetField($"Item{i + 1}");
@@ -408,7 +393,7 @@ public class Storage
 		if(isArray == false) // is list
 		{
 			var list = (IList)collection;
-			for(int i = 0; i < list.Count; i++)
+			for (var i = 0; i < list.Count; i++)
 			{
 				var sep = i == 0 ? string.Empty : SeparatorCollection1D;
 				result.Append(sep + TextFromPrimitiveOrTuple(list[i]));
@@ -419,18 +404,18 @@ public class Storage
 
 		var array = (Array)collection;
 		if(array.Rank == 1)
-			for(int i = 0; i < array.GetLength(0); i++)
+			for (var i = 0; i < array.GetLength(0); i++)
 			{
 				var sep = i == 0 ? string.Empty : SeparatorCollection1D;
 				result.Append(sep + TextFromPrimitiveOrTuple(array.GetValue(i)));
 			}
 		else if(array.Rank == 2)
 		{
-			for(int i = 0; i < array.GetLength(0); i++)
+			for (var i = 0; i < array.GetLength(0); i++)
 			{
 				result.Append(SeparatorCollection2D);
 
-				for(int j = 0; j < array.GetLength(1); j++)
+				for (var j = 0; j < array.GetLength(1); j++)
 				{
 					var sep = j == 0 ? string.Empty : SeparatorCollection1D;
 					result.Append(sep + TextFromPrimitiveOrTuple(array.GetValue(i, j)));
@@ -440,15 +425,15 @@ public class Storage
 		}
 		else if(array.Rank == 3)
 		{
-			for(int i = 0; i < array.GetLength(0); i++)
+			for (var i = 0; i < array.GetLength(0); i++)
 			{
 				result.Append(SeparatorCollection2D);
 
-				for(int j = 0; j < array.GetLength(1); j++)
+				for (var j = 0; j < array.GetLength(1); j++)
 				{
 					result.Append(SeparatorCollection2D);
 
-					for(int k = 0; k < array.GetLength(2); k++)
+					for (var k = 0; k < array.GetLength(2); k++)
 					{
 						var sep = k == 0 ? string.Empty : SeparatorCollection1D;
 						result.Append(sep + TextFromPrimitiveOrTuple(array.GetValue(i, j, k)));
@@ -459,25 +444,24 @@ public class Storage
 		}
 		return result.ToString();
 	}
-	private object TextToPrimitive(string dataAsText, Type type)
+	private static object TextToPrimitive(string dataAsText, Type type)
 	{
-		var t = type;
-		if(t == typeof(bool) && bool.TryParse(dataAsText, out _)) return Convert.ToBoolean(dataAsText);
-		else if(t == typeof(char) && char.TryParse(dataAsText, out _)) return Convert.ToChar(dataAsText);
+		if (type == typeof(bool) && bool.TryParse(dataAsText, out _)) return Convert.ToBoolean(dataAsText);
+		if (type == typeof(char) && char.TryParse(dataAsText, out _)) return Convert.ToChar(dataAsText);
 
 		decimal.TryParse(dataAsText, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
 
-		if(t == typeof(sbyte)) return Wrap<sbyte>(number, sbyte.MinValue, sbyte.MaxValue);
-		else if(t == typeof(byte)) return Wrap<byte>(number, byte.MinValue, byte.MaxValue);
-		else if(t == typeof(short)) return Wrap<short>(number, short.MinValue, short.MaxValue);
-		else if(t == typeof(ushort)) return Wrap<ushort>(number, ushort.MinValue, ushort.MaxValue);
-		else if(t == typeof(int)) return Wrap<int>(number, int.MinValue, int.MaxValue);
-		else if(t == typeof(uint)) return Wrap<uint>(number, uint.MinValue, uint.MaxValue);
-		else if(t == typeof(long)) return Wrap<long>(number, long.MinValue, long.MaxValue);
-		else if(t == typeof(ulong)) return Wrap<ulong>(number, ulong.MinValue, ulong.MaxValue);
-		else if(t == typeof(float)) return Wrap<float>(number, float.MinValue, float.MaxValue);
-		else if(t == typeof(double)) return Wrap<double>(number, double.MinValue, double.MaxValue);
-		else if(t == typeof(decimal)) return number;
+		if (type == typeof(sbyte)) return Wrap(number, sbyte.MinValue, sbyte.MaxValue);
+		if (type == typeof(byte)) return Wrap(number, byte.MinValue, byte.MaxValue);
+		if (type == typeof(short)) return Wrap(number, short.MinValue, short.MaxValue);
+		if (type == typeof(ushort)) return Wrap(number, ushort.MinValue, ushort.MaxValue);
+		if (type == typeof(int)) return Wrap(number, int.MinValue, int.MaxValue);
+		if (type == typeof(uint)) return Wrap(number, uint.MinValue, uint.MaxValue);
+		if (type == typeof(long)) return Wrap(number, long.MinValue, long.MaxValue);
+		if (type == typeof(ulong)) return Wrap(number, ulong.MinValue, ulong.MaxValue);
+		if (type == typeof(float)) return Wrap(number, float.MinValue, float.MaxValue);
+		if (type == typeof(double)) return Wrap(number, double.MinValue, double.MaxValue);
+		if (type == typeof(decimal)) return number;
 
 		return dataAsText;
 	}
@@ -496,13 +480,13 @@ public class Storage
 		var sep3D = SeparatorCollection2D + SeparatorCollection2D;
 		var array3D = dataAsText.Split(sep3D);
 
-		for(int i = 0; i < array3D.Length; i++)
+		foreach (var str3D in array3D)
 		{
-			var array2D = array3D[i].Split(SeparatorCollection2D);
+			var array2D = str3D.Split(SeparatorCollection2D);
 			resultArrays2D.Add(array2D);
-			for(int j = 0; j < array2D.Length; j++)
+			foreach (var str2D in array2D)
 			{
-				var array1D = array2D[j].Split(SeparatorCollection1D);
+				var array1D = str2D.Split(SeparatorCollection1D);
 				resultArrays1D.Add(array1D);
 			}
 		}
@@ -512,13 +496,13 @@ public class Storage
 		var resultArray3D = Array.CreateInstance(arrayType, length3D, length2D, length1D);
 		var resultArray2D = Array.CreateInstance(arrayType, length2D, length1D);
 		var resultArray1D = Array.CreateInstance(arrayType, length1D);
-		for(int i = 0; i < array3D.Length; i++)
+		for (var i = 0; i < array3D.Length; i++)
 		{
 			var array2D = array3D[i].Split(SeparatorCollection2D);
-			for(int j = 0; j < array2D.Length; j++)
+			for (var j = 0; j < array2D.Length; j++)
 			{
 				var array1D = array2D[j].Split(SeparatorCollection1D);
-				for(int k = 0; k < array1D.Length; k++)
+				for (var k = 0; k < array1D.Length; k++)
 				{
 					var item = Convert.ChangeType(TextToPrimitiveOrTuple(array1D[k], arrayType), arrayType);
 					resultArray1D.SetValue(item, k);
@@ -536,7 +520,7 @@ public class Storage
 				return default;
 
 			var list = (IList)instance;
-			for(int i = 0; i < resultArray1D.Length; i++)
+			for (var i = 0; i < resultArray1D.Length; i++)
 				list.Add(resultArray1D.GetValue(i));
 
 			return list;
@@ -608,19 +592,18 @@ public class Storage
 		if(gen.Length == 0)
 			return false;
 
-		for(int i = 0; i < gen.Length; i++)
-			if(gen[i].IsPrimitive == false && gen[i] != typeof(string))
+		foreach (var t in gen)
+			if (t.IsPrimitive == false && t != typeof(string))
 				return false;
 
 		return true;
 	}
 	private static bool IsPrimitiveOrTupleDictionary(Type type)
 	{
-		var isDict = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+		//var isDict = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
 		var types = type.GenericTypeArguments;
-		for(int i = 0; i < types.Length; i++)
-			if(IsPrimitiveTuple(types[i]) == false && types[i].IsPrimitive == false &&
-				types[i] != typeof(string))
+		foreach (var t in types)
+			if (IsPrimitiveTuple(t) == false && t.IsPrimitive == false && t != typeof(string))
 				return false;
 
 		return true;
@@ -653,7 +636,7 @@ public class Storage
 		var items = new List<FieldInfo>();
 
 		FieldInfo? field;
-		int nth = 1;
+		var nth = 1;
 		while((field = tupleType.GetRuntimeField($"Item{nth}")) != null)
 		{
 			nth++;

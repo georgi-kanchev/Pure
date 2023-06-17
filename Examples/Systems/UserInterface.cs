@@ -232,7 +232,7 @@ public static class UserInterface
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 
-			for (int i = 0; i < tilemaps.Count; i++)
+			for (var i = 0; i < tilemaps.Count; i++)
 				Window.DrawTiles(tilemaps[i].ToBundle());
 
 			Window.Activate(false);

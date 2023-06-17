@@ -7,7 +7,7 @@ namespace Pure.LAN
 	/// <summary>
 	/// A base class for a LAN server.
 	/// </summary>
-	public class BaseServer : Base
+	public abstract class BaseServer : Base
 	{
 		/// <summary>
 		/// Gets an array of nicknames of all connected clients.
@@ -88,9 +88,9 @@ namespace Pure.LAN
 		}
 
 		#region Backend
-		private class _Server : TcpServer
+		private class Server : TcpServer
 		{
-			public _Server(BaseServer parent, IPAddress address, int port) : base(address, port)
+			public Server(BaseServer parent, IPAddress address, int port) : base(address, port)
 			{
 				this.parent = parent;
 			}
@@ -99,12 +99,12 @@ namespace Pure.LAN
 			protected override void OnError(SocketError error) => parent.OnError(error.ToString());
 
 			#region Backend
-			internal BaseServer parent;
+			internal readonly BaseServer parent;
 			#endregion
 		}
 		private class _Session : TcpSession
 		{
-			public _Session(_Server parent) : base(parent) => this.parent = parent;
+			public _Session(Server parent) : base(parent) => this.parent = parent;
 
 			protected override void OnConnected()
 			{
@@ -129,7 +129,7 @@ namespace Pure.LAN
 			}
 			protected override void OnReceived(byte[] buffer, long offset, long size)
 			{
-				var msg = System.Text.Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+				//var msgStr = System.Text.Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
 				var bytes = buffer[(int)offset..((int)offset + (int)size)];
 				Parse(bytes);
 
@@ -150,11 +150,11 @@ namespace Pure.LAN
 			}
 
 			#region Backend
-			private _Server parent;
+			private readonly Server parent;
 			#endregion
 		}
 
-		private _Server server;
+		private Server server;
 		private readonly ConcurrentDictionary<Guid, (byte, string)> clients = new();
 
 		internal bool HasNickname(string nickname)
@@ -180,7 +180,7 @@ namespace Pure.LAN
 
 		internal string GetNickname(Guid guid)
 		{
-			return clients.ContainsKey(guid) ? clients[guid].Item2 : null;
+			return clients.TryGetValue(guid, out var client) ? client.Item2 : null;
 		}
 		internal byte GetID(string nickname)
 		{
@@ -192,7 +192,7 @@ namespace Pure.LAN
 		}
 		internal byte GetID(Guid guid)
 		{
-			return clients.ContainsKey(guid) ? clients[guid].Item1 : default;
+			return clients.TryGetValue(guid, out var client) ? client.Item1 : default;
 		}
 		internal Guid GetGuid(byte id)
 		{
@@ -213,8 +213,7 @@ namespace Pure.LAN
 		}
 		private string GetFreeNickname(string nickname)
 		{
-			if (nickname == null)
-				nickname = "Player";
+			nickname ??= "Player";
 
 			for (byte i = 0; i < byte.MaxValue; i++)
 			{
@@ -222,7 +221,7 @@ namespace Pure.LAN
 					return nickname;
 
 				var number = "";
-				for (int j = nickname.Length - 1; j >= 0; j--)
+				for (var j = nickname.Length - 1; j >= 0; j--)
 					if (char.IsNumber(nickname[j]))
 						number = number.Insert(0, nickname[j].ToString());
 

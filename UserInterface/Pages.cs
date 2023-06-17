@@ -90,7 +90,7 @@ public class Pages : Element
 			RenumberAndSelectPages();
 		}
 
-		for (int i = 0; i < visiblePages.Count; i++)
+		for (var i = 0; i < visiblePages.Count; i++)
 		{
 			var page = visiblePages[i];
 
@@ -154,7 +154,7 @@ public class Pages : Element
 		var pageCount = GetVisiblePageCount();
 
 		visiblePages.Clear();
-		for (int i = 0; i < pageCount; i++)
+		for (var i = 0; i < pageCount; i++)
 		{
 			var page = new Button((0, 0)) { size = (2, Size.height), hasParent = true };
 			visiblePages.Add(page);
@@ -164,7 +164,7 @@ public class Pages : Element
 	private void RenumberAndSelectPages()
 	{
 		//var pageCount = GetVisiblePageCount();
-		for (int i = 0; i < visiblePages.Count; i++)
+		for (var i = 0; i < visiblePages.Count; i++)
 		{
 			var pageNumber = i + scrollIndex;
 			visiblePages[i].Text = $"{pageNumber:D2}";

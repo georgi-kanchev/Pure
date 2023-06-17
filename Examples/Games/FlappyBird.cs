@@ -82,7 +82,7 @@ public static class FlappyBird
 			}
 
 			// update pipes
-			for(int i = 0; i < pipes?.Count; i++)
+			for(var i = 0; i < pipes?.Count; i++)
 			{
 				var (pipeX, pipeY, holeSize) = pipes[i];
 

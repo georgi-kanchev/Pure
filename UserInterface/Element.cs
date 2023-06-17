@@ -1,7 +1,6 @@
 ﻿namespace Pure.UserInterface;
 
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text;
 
 /// <summary>
@@ -9,26 +8,64 @@ using System.Text;
 /// </summary>
 public enum UserAction
 {
-	Focus, Unfocus, Hover, Unhover, Press, Release, Trigger, PressAndHold, Scroll, Select
+    Focus,
+    Unfocus,
+    Hover,
+    Unhover,
+    Press,
+    Release,
+    Trigger,
+    PressAndHold,
+    Scroll,
+    Select
 }
+
 /// <summary>
 /// The type of mouse cursor result from a user interaction with the user interface.
 /// </summary>
 public enum MouseCursor
 {
-	None = -1, Arrow, ArrowWait, Wait, Text, Hand, ResizeHorizontal, ResizeVertical,
-	ResizeDiagonal1, ResizeDiagonal2, Move, Crosshair, Help, Disable
+    None = -1,
+    Arrow,
+    ArrowWait,
+    Wait,
+    Text,
+    Hand,
+    ResizeHorizontal,
+    ResizeVertical,
+    ResizeDiagonal1,
+    ResizeDiagonal2,
+    Move,
+    Crosshair,
+    Help,
+    Disable
 }
+
 /// <summary>
 /// Represents the keyboard keys used for input by the user interface.
 /// </summary>
 public enum Key
 {
-	Escape = 36, ControlLeft = 37, ShiftLeft = 38, AltLeft = 39,
-	ControlRight = 41, ShiftRight = 42, AltRight = 43, Enter = 58,
-	Backspace = 59, Tab = 60, PageUp = 61, PageDown = 62,
-	End = 63, Home = 64, Insert = 65, Delete = 66,
-	ArrowLeft = 71, ArrowRight = 72, ArrowUp = 73, ArrowDown = 74
+    Escape = 36,
+    ControlLeft = 37,
+    ShiftLeft = 38,
+    AltLeft = 39,
+    ControlRight = 41,
+    ShiftRight = 42,
+    AltRight = 43,
+    Enter = 58,
+    Backspace = 59,
+    Tab = 60,
+    PageUp = 61,
+    PageDown = 62,
+    End = 63,
+    Home = 64,
+    Insert = 65,
+    Delete = 66,
+    ArrowLeft = 71,
+    ArrowRight = 72,
+    ArrowUp = 73,
+    ArrowDown = 74
 }
 
 /// <summary>
@@ -37,404 +74,416 @@ public enum Key
 /// </summary>
 public abstract partial class Element
 {
-	/// <summary>
-	/// Gets or sets the mouse cursor graphics result. Usually set by each user interface element
-	/// when the user interacts with that specific element.
-	/// </summary>
-	public static MouseCursor MouseCursorResult { get; protected set; }
+    /// <summary>
+    /// Gets or sets the mouse cursor graphics result. Usually set by each user interface element
+    /// when the user interacts with that specific element.
+    /// </summary>
+    public static MouseCursor MouseCursorResult { get; protected set; }
 
-	/// <summary>
-	/// The currently focused user interface element.
-	/// </summary>
-	protected static Element? Focused { get; private set; }
-	/// <summary>
-	/// The user interface element that was focused during the previous update.
-	/// </summary>
-	protected static Element? FocusedPrevious { get; private set; }
-	/// <summary>
-	/// The size of the tilemap being used by the user interface.
-	/// </summary>
-	protected static (int width, int height) TilemapSize { get; private set; }
+    /// <summary>
+    /// The currently focused user interface element.
+    /// </summary>
+    protected static Element? Focused { get; private set; }
+    /// <summary>
+    /// The user interface element that was focused during the previous update.
+    /// </summary>
+    protected static Element? FocusedPrevious { get; private set; }
+    /// <summary>
+    /// The size of the tilemap being used by the user interface.
+    /// </summary>
+    protected static (int width, int height) TilemapSize { get; private set; }
 
-	/// <summary>
-	/// Gets or sets the position of the user interface element.
-	/// </summary>
-	public (int x, int y) Position
-	{
-		get => position;
-		set { if (hasParent == false) position = value; }
-	}
-	/// <summary>
-	/// Gets or sets the size of the user interface element.
-	/// </summary>
-	public (int width, int height) Size
-	{
-		get => size;
-		set { if (hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1)); }
-	}
-	/// <summary>
-	/// Gets or sets the text displayed (if any) by the user interface element.
-	/// </summary>
-	public string Text { get; set; } = "";
-	/// <summary>
-	/// Gets or sets the text that has been copied to the user interface clipboard.
-	/// </summary>
-	public static string? TextCopied { get; set; } = "";
-	/// <summary>
-	/// Gets or sets a value indicating whether the user interface element is hidden.
-	/// </summary>
-	public bool IsHidden { get; set; }
-	/// <summary>
-	/// Gets or sets a value indicating whether the user interface element is disabled.
-	/// </summary>
-	public bool IsDisabled { get; set; }
-	/// <summary>
-	/// Gets a value indicating whether the user interface element is currently focused by
-	/// the user input.
-	/// </summary>
-	public bool IsFocused
-	{
-		get => Focused == this;
-		protected set => Focused = value ? this : default;
-	}
-	/// <summary>
-	/// Gets a value indicating whether the input position is currently hovering 
-	/// over the user interface element.
-	/// </summary>
-	public bool IsHovered { get; private set; }
-	/// <summary>
-	/// Gets a value indicating whether the user interface element is currently 
-	/// being pressed and hovered by the input.
-	/// </summary>
-	public bool IsPressed => IsHovered && Input.Current.IsPressed;
-	/// <summary>
-	/// Gets a value indicating whether the user interface element is currently held by the input,
-	/// regardless of being hovered or not.
-	/// </summary>
-	public bool IsPressedAndHeld { get; private set; }
+    /// <summary>
+    /// Gets or sets the position of the user interface element.
+    /// </summary>
+    public (int x, int y) Position
+    {
+        get => position;
+        set
+        {
+            if (hasParent == false) position = value;
+        }
+    }
+    /// <summary>
+    /// Gets or sets the size of the user interface element.
+    /// </summary>
+    public (int width, int height) Size
+    {
+        get => size;
+        set
+        {
+            if (hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1));
+        }
+    }
+    /// <summary>
+    /// Gets or sets the text displayed (if any) by the user interface element.
+    /// </summary>
+    public string Text { get; set; } = "";
+    /// <summary>
+    /// Gets or sets the text that has been copied to the user interface clipboard.
+    /// </summary>
+    public static string? TextCopied { get; set; } = "";
+    /// <summary>
+    /// Gets or sets a value indicating whether the user interface element is hidden.
+    /// </summary>
+    public bool IsHidden { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether the user interface element is disabled.
+    /// </summary>
+    public bool IsDisabled { get; set; }
+    /// <summary>
+    /// Gets a value indicating whether the user interface element is currently focused by
+    /// the user input.
+    /// </summary>
+    public bool IsFocused
+    {
+        get => Focused == this;
+        protected set => Focused = value ? this : default;
+    }
+    /// <summary>
+    /// Gets a value indicating whether the input position is currently hovering 
+    /// over the user interface element.
+    /// </summary>
+    public bool IsHovered { get; private set; }
+    /// <summary>
+    /// Gets a value indicating whether the user interface element is currently 
+    /// being pressed and hovered by the input.
+    /// </summary>
+    public bool IsPressed => IsHovered && Input.Current.IsPressed;
+    /// <summary>
+    /// Gets a value indicating whether the user interface element is currently held by the input,
+    /// regardless of being hovered or not.
+    /// </summary>
+    public bool IsPressedAndHeld { get; private set; }
 
-	public bool IsDragged { get; private set; }
+    /// <summary>
+    /// Initializes a new user interface element instance class with the specified 
+    /// position.
+    /// </summary>
+    /// <param name="position">The position of the user interface element.</param>
+    protected Element((int x, int y) position)
+    {
+        Size = (1, 1);
+        Position = position;
 
-	/// <summary>
-	/// Initializes a new user interface element instance class with the specified 
-	/// position and size.
-	/// </summary>
-	/// <param name="position">The position of the user interface element.</param>
-	/// <param name="size">The size of the ser interface element.</param>
-	public Element((int x, int y) position)
-	{
-		Size = (1, 1);
-		Position = position;
+        typeName = GetType().Name;
+        Init();
+    }
+    protected Element(byte[] bytes)
+    {
+        Init(); // should be before
 
-		typeName = GetType().Name;
-		Init();
-	}
-	public Element(byte[] bytes)
-	{
-		Init(); // should be before
+        typeName = GrabString(bytes);
+        Position = (GrabInt(bytes), GrabInt(bytes));
+        Size = (GrabInt(bytes), GrabInt(bytes));
+        Text = GrabString(bytes);
+        IsHidden = GrabBool(bytes);
+        IsDisabled = GrabBool(bytes);
+    }
 
-		typeName = GrabString(bytes);
-		Position = (GrabInt(bytes), GrabInt(bytes));
-		Size = (GrabInt(bytes), GrabInt(bytes));
-		Text = GrabString(bytes);
-		IsHidden = GrabBool(bytes);
-		IsDisabled = GrabBool(bytes);
-	}
+    /// <summary>
+    /// Updates the user interface element, detecting changes in focus, hover, and user input,
+    /// and storing the results. This method should be called
+    /// once per application update cycle for each user interface element.
+    /// </summary>
+    public void Update()
+    {
+        wasFocused = IsFocused;
+        wasHovered = IsHovered;
 
-	/// <summary>
-	/// Updates the user interface element, detecting changes in focus, hover, and user input,
-	/// and storing the results. This method should be called
-	/// once per application update cycle for each user interface element.
-	/// </summary>
-	public void Update()
-	{
-		wasFocused = IsFocused;
-		wasHovered = IsHovered;
+        UpdateHovered();
 
-		UpdateHovered();
+        if (IsDisabled)
+        {
+            if (IsHovered)
+                MouseCursorResult = MouseCursor.Disable;
 
-		if (IsDisabled)
-		{
-			if (IsHovered)
-				MouseCursorResult = MouseCursor.Disable;
+            OnUpdate();
+            return;
+        }
 
-			OnUpdate();
-			return;
-		}
+        var isJustPressed = Input.Current.WasPressed == false && IsPressed;
+        var isJustScrolled = Input.Current.ScrollDelta != 0 && IsHovered;
+        if (isJustPressed || isJustScrolled)
+            IsFocused = true;
 
-		var isJustPressed = Input.Current.WasPressed == false && IsPressed;
-		var isJustScrolled = Input.Current.ScrollDelta != 0 && IsHovered;
-		if (isJustPressed || isJustScrolled)
-			IsFocused = true;
+        if (Input.Current.IsKeyJustPressed(Key.Escape))
+            IsFocused = false;
 
-		if (Input.Current.IsKeyJustPressed(Key.Escape))
-			IsFocused = false;
+        TryTrigger();
 
-		TryTrigger();
+        if (IsFocused && wasFocused == false)
+            TriggerUserAction(UserAction.Focus);
+        if (IsFocused == false && wasFocused)
+            TriggerUserAction(UserAction.Unfocus);
+        if (IsHovered && wasHovered == false)
+            TriggerUserAction(UserAction.Hover);
+        if (IsHovered == false && wasHovered)
+            TriggerUserAction(UserAction.Unhover);
+        if (IsPressed && Input.Current.WasPressed == false)
+            TriggerUserAction(UserAction.Press);
+        if (IsPressed == false && Input.Current.WasPressed)
+            TriggerUserAction(UserAction.Release);
+        if (IsPressedAndHeld && Input.Current.IsJustHeld)
+            TriggerUserAction(UserAction.PressAndHold);
+        if (Input.Current.ScrollDelta != 0)
+            TriggerUserAction(UserAction.Scroll);
 
-		if (IsFocused && wasFocused == false)
-			TriggerUserAction(UserAction.Focus);
-		if (IsFocused == false && wasFocused)
-			TriggerUserAction(UserAction.Unfocus);
-		if (IsHovered && wasHovered == false)
-			TriggerUserAction(UserAction.Hover);
-		if (IsHovered == false && wasHovered)
-			TriggerUserAction(UserAction.Unhover);
-		if (IsPressed && Input.Current.WasPressed == false)
-			TriggerUserAction(UserAction.Press);
-		if (IsPressed == false && Input.Current.WasPressed)
-			TriggerUserAction(UserAction.Release);
-		if (IsPressedAndHeld && Input.Current.IsJustHeld)
-			TriggerUserAction(UserAction.PressAndHold);
-		if (Input.Current.ScrollDelta != 0)
-			TriggerUserAction(UserAction.Scroll);
+        var p = Input.Current.Position;
+        var pp = Input.Current.PositionPrevious;
+        var px = (int)Math.Floor(p.x);
+        var py = (int)Math.Floor(p.y);
+        var ppx = (int)Math.Floor(pp.x);
+        var ppy = (int)Math.Floor(pp.y);
 
-		var p = Input.Current.Position;
-		var pp = Input.Current.PositionPrevious;
-		var px = (int)Math.Floor(p.x);
-		var py = (int)Math.Floor(p.y);
-		var ppx = (int)Math.Floor(pp.x);
-		var ppy = (int)Math.Floor(pp.y);
+        if (p != pp && IsPressedAndHeld)
+            OnDrag((px - ppx, py - ppy));
 
-		if (p != pp && IsPressedAndHeld)
-			OnDrag((px - ppx, py - ppy));
+        OnUpdate();
+    }
+    /// <summary>
+    /// Simulates a user click over this user interface element.
+    /// </summary>
+    public void Trigger()
+    {
+        TriggerUserAction(UserAction.Trigger);
+    }
 
-		OnUpdate();
-	}
-	/// <summary>
-	/// Simulates a user click over this user interface element.
-	/// </summary>
-	public void Trigger()
-	{
-		TriggerUserAction(UserAction.Trigger);
-	}
+    public bool Contains((float x, float y) point)
+    {
+        return point.x >= Position.x && point.x <= Position.x + Size.width &&
+               point.y >= Position.y && point.y <= Position.y + Size.height;
+    }
+    public bool Overlaps(Element element)
+    {
+        var (x, y) = Position;
+        var (w, h) = Size;
+        var (ex, ey) = element.Position;
+        var (ew, eh) = element.Size;
 
-	public bool Contains((float x, float y) point)
-	{
-		return point.x >= Position.x && point.x <= Position.x + Size.width &&
-			point.y >= Position.y && point.y <= Position.y + Size.height;
-	}
-	public bool Overlaps(Element element)
-	{
-		var (x, y) = Position;
-		var (w, h) = Size;
-		var (ex, ey) = element.Position;
-		var (ew, eh) = element.Size;
+        return (x + w <= ex || x >= ex + ew || y + h <= ey || y >= ey + eh) == false;
+    }
 
-		return (x + w <= ex || x >= ex + ew || y + h <= ey || y >= ey + eh) == false;
-	}
+    /// <summary>
+    /// Applies input to the user interface element, updating its state accordingly.
+    /// </summary>
+    /// <param name="isPressed">Whether an input is currently pressed.</param>
+    /// <param name="position">The current position of the input.</param>
+    /// <param name="scrollDelta">The amount the mouse wheel has been scrolled.</param>
+    /// <param name="keysPressed">An array of currently pressed keys on the keyboard.</param>
+    /// <param name="keysTyped">A string containing characters typed on the keyboard.</param>
+    /// <param name="tilemapSize">The size of the tilemap used by the user interface element.</param>
+    public static void ApplyInput(bool isPressed, (float x, float y) position, int scrollDelta,
+        int[] keysPressed, string keysTyped, (int width, int height) tilemapSize)
+    {
+        Input.IsCanceled = false;
 
-	/// <summary>
-	/// Applies input to the user interface element, updating its state accordingly.
-	/// </summary>
-	/// <param name="isPressed">Whether an input is currently pressed.</param>
-	/// <param name="position">The current position of the input.</param>
-	/// <param name="scrollDelta">The amount the mouse wheel has been scrolled.</param>
-	/// <param name="keysPressed">An array of currently pressed keys on the keyboard.</param>
-	/// <param name="keysTyped">A string containing characters typed on the keyboard.</param>
-	/// <param name="tilemapSize">The size of the tilemap used by the user interface element.</param>
-	public static void ApplyInput(bool isPressed, (float x, float y) position, int scrollDelta,
-		int[] keysPressed, string keysTyped, (int width, int height) tilemapSize)
-	{
-		Input.IsCanceled = false;
+        MouseCursorResult = MouseCursor.Arrow;
+        TilemapSize = (Math.Abs(tilemapSize.width), Math.Abs(tilemapSize.height));
 
-		MouseCursorResult = MouseCursor.Arrow;
-		TilemapSize = (Math.Abs(tilemapSize.width), Math.Abs(tilemapSize.height));
+        Input.Current.WasPressed = Input.Current.IsPressed;
+        Input.Current.TypedPrevious = Input.Current.Typed;
+        Input.Current.PositionPrevious = Input.Current.Position;
+        Input.Current.prevPressedKeys.Clear();
+        Input.Current.prevPressedKeys.AddRange(Input.Current.pressedKeys);
 
-		Input.Current.WasPressed = Input.Current.IsPressed;
-		Input.Current.TypedPrevious = Input.Current.Typed;
-		Input.Current.PositionPrevious = Input.Current.Position;
-		Input.Current.prevPressedKeys.Clear();
-		Input.Current.prevPressedKeys.AddRange(Input.Current.pressedKeys);
+        Input.Current.IsPressed = isPressed;
+        Input.Current.Position = position;
 
-		Input.Current.IsPressed = isPressed;
-		Input.Current.Position = position;
+        var keys = new Key[keysPressed.Length];
+        for (var i = 0; i < keysPressed.Length; i++)
+            keys[i] = (Key)keysPressed[i];
 
-		var keys = new Key[keysPressed.Length];
-		for (int i = 0; i < keysPressed.Length; i++)
-			keys[i] = (Key)keysPressed[i];
+        Input.Current.PressedKeys = keys;
+        Input.Current.Typed = keysTyped
+            .Replace("\n", "")
+            .Replace("\t", "")
+            .Replace("\r", "");
+        Input.Current.ScrollDelta = scrollDelta;
 
-		Input.Current.PressedKeys = keys;
-		Input.Current.Typed = keysTyped
-			.Replace("\n", "")
-			.Replace("\t", "")
-			.Replace("\r", "");
-		Input.Current.ScrollDelta = scrollDelta;
+        if (Input.Current.IsJustPressed)
+            hold.Restart();
 
-		if (Input.Current.IsJustPressed)
-			hold.Restart();
+        Input.Current.IsJustHeld = false;
+        if (hold.Elapsed.TotalSeconds > HOLD_DELAY && holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
+        {
+            holdTrigger.Restart();
+            Input.Current.IsJustHeld = true;
+        }
 
-		Input.Current.IsJustHeld = false;
-		if (hold.Elapsed.TotalSeconds > HOLD_DELAY && holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
-		{
-			holdTrigger.Restart();
-			Input.Current.IsJustHeld = true;
-		}
+        FocusedPrevious = Focused;
+        if (Input.Current.WasPressed == false && Input.Current.IsPressed)
+            Focused = default;
+    }
 
-		FocusedPrevious = Focused;
-		if (Input.Current.WasPressed == false && Input.Current.IsPressed)
-			Focused = default;
-	}
+    public virtual byte[] ToBytes()
+    {
+        var result = new List<byte>();
 
-	public virtual byte[] ToBytes()
-	{
-		var result = new List<byte>();
+        PutString(result, typeName);
+        PutInt(result, Position.x);
+        PutInt(result, Position.y);
+        PutInt(result, Size.width);
+        PutInt(result, Size.height);
+        PutString(result, Text);
+        PutBool(result, IsHidden);
+        PutBool(result, IsDisabled);
 
-		PutString(result, typeName);
-		PutInt(result, Position.x);
-		PutInt(result, Position.y);
-		PutInt(result, Size.width);
-		PutInt(result, Size.height);
-		PutString(result, Text);
-		PutBool(result, IsHidden);
-		PutBool(result, IsDisabled);
+        return result.ToArray();
+    }
 
-		return result.ToArray();
-	}
+    public override string ToString() => $"{GetType().Name} \"{Text}\"";
 
-	public override string ToString() => $"{GetType().Name} \"{Text}\"";
+    /// <summary>
+    /// Invokes all the registered methods associated with the specified user action.
+    /// Used internally by the user interface elements to notify subscribers of
+    /// user interactions and state changes.
+    /// </summary>
+    /// <param name="userAction">The identifier of the user action to trigger.</param>
+    protected internal void TriggerUserAction(UserAction userAction)
+    {
+        OnUserAction(userAction);
 
-	/// <summary>
-	/// Invokes all the registered methods associated with the specified user action.
-	/// Used internally by the user interface elements to notify subscribers of
-	/// user interactions and state changes.
-	/// </summary>
-	/// <param name="userAction">The identifier of the user action to trigger.</param>
-	protected internal void TriggerUserAction(UserAction userAction)
-	{
-		OnUserAction(userAction);
+        if (userActions.ContainsKey(userAction) == false)
+            return;
 
-		if (userActions.ContainsKey(userAction) == false)
-			return;
+        for (var i = 0; i < userActions[userAction].Count; i++)
+            userActions[userAction][i].Invoke();
+    }
+    /// <summary>
+    /// Subscribes the specified method to the specified user action, 
+    /// so that it will be invoked every time the action is triggered. Multiple methods can be 
+    /// associated with the same action.
+    /// </summary>
+    /// <param name="userAction">The identifier of the user action to subscribe to.</param>
+    /// <param name="method">The method to subscribe.</param>
+    protected internal void SubscribeToUserAction(UserAction userAction, Action method)
+    {
+        if (userActions.ContainsKey(userAction) == false)
+            userActions[userAction] = new();
 
-		for (int i = 0; i < userActions[userAction].Count; i++)
-			userActions[userAction][i].Invoke();
-	}
-	/// <summary>
-	/// Subscribes the specified method to the specified user action, 
-	/// so that it will be invoked every time the action is triggered. Multiple methods can be 
-	/// associated with the same action.
-	/// </summary>
-	/// <param name="userAction">The identifier of the user action to subscribe to.</param>
-	/// <param name="method">The method to subscribe.</param>
-	protected internal void SubscribeToUserAction(UserAction userAction, Action method)
-	{
-		if (userActions.ContainsKey(userAction) == false)
-			userActions[userAction] = new();
+        userActions[userAction].Add(method);
+    }
 
-		userActions[userAction].Add(method);
-	}
+    /// <summary>
+    /// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
+    /// Subclasses should override this method to implement their own behavior.
+    /// </summary>
+    protected virtual void OnUserAction(UserAction userAction)
+    {
+    }
+    /// <summary>
+    /// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
+    /// Subclasses should override this method to implement their own behavior.
+    /// </summary>
+    protected virtual void OnUpdate()
+    {
+    }
 
-	/// <summary>
-	/// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
-	/// Subclasses should override this method to implement their own behavior.
-	/// </summary>
-	protected virtual void OnUserAction(UserAction userAction) { }
-	/// <summary>
-	/// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
-	/// Subclasses should override this method to implement their own behavior.
-	/// </summary>
-	protected virtual void OnUpdate() { }
+    protected virtual void OnDrag((int x, int y) delta)
+    {
+    }
 
-	protected virtual void OnDrag((int x, int y) delta) { }
+    protected static void PutBool(List<byte> intoBytes, bool value) =>
+        intoBytes.AddRange(BitConverter.GetBytes(value));
+    protected static void PutByte(List<byte> intoBytes, byte value) => intoBytes.Add(value);
+    protected static void PutInt(List<byte> intoBytes, int value) =>
+        intoBytes.AddRange(BitConverter.GetBytes(value));
+    protected static void PutUInt(List<byte> intoBytes, uint value) =>
+        intoBytes.AddRange(BitConverter.GetBytes(value));
+    protected static void PutFloat(List<byte> intoBytes, float value) =>
+        intoBytes.AddRange(BitConverter.GetBytes(value));
+    protected static void PutString(List<byte> intoBytes, string value)
+    {
+        var bytes = Encoding.UTF8.GetBytes(value);
+        PutInt(intoBytes, bytes.Length);
+        intoBytes.AddRange(bytes);
+    }
 
-	protected static void PutBool(List<byte> intoBytes, bool value) => intoBytes.AddRange(BitConverter.GetBytes(value));
-	protected static void PutByte(List<byte> intoBytes, byte value) => intoBytes.Add(value);
-	protected static void PutInt(List<byte> intoBytes, int value) => intoBytes.AddRange(BitConverter.GetBytes(value));
-	protected static void PutUInt(List<byte> intoBytes, uint value) => intoBytes.AddRange(BitConverter.GetBytes(value));
-	protected static void PutFloat(List<byte> intoBytes, float value) => intoBytes.AddRange(BitConverter.GetBytes(value));
-	protected static void PutString(List<byte> intoBytes, string value)
-	{
-		var bytes = Encoding.UTF8.GetBytes(value);
-		PutInt(intoBytes, bytes.Length);
-		intoBytes.AddRange(bytes);
-	}
+    protected bool GrabBool(byte[] fromBytes) => BitConverter.ToBoolean(GetBytes(fromBytes, 1));
+    protected byte GrabByte(byte[] fromBytes) => GetBytes(fromBytes, 1)[0];
+    protected int GrabInt(byte[] fromBytes) => BitConverter.ToInt32(GetBytes(fromBytes, 4));
+    protected uint GrabUInt(byte[] fromBytes) => BitConverter.ToUInt32(GetBytes(fromBytes, 4));
+    protected float GrabFloat(byte[] fromBytes) => BitConverter.ToSingle(GetBytes(fromBytes, 4));
+    protected string GrabString(byte[] fromBytes)
+    {
+        var textBytesLength = GrabInt(fromBytes);
+        var bText = GetBytes(fromBytes, textBytesLength);
+        return Encoding.UTF8.GetString(bText);
+    }
 
-	protected bool GrabBool(byte[] fromBytes) => BitConverter.ToBoolean(GetBytes(fromBytes, 1));
-	protected byte GrabByte(byte[] fromBytes) => GetBytes(fromBytes, 1)[0];
-	protected int GrabInt(byte[] fromBytes) => BitConverter.ToInt32(GetBytes(fromBytes, 4));
-	protected uint GrabUInt(byte[] fromBytes) => BitConverter.ToUInt32(GetBytes(fromBytes, 4));
-	protected float GrabFloat(byte[] fromBytes) => BitConverter.ToSingle(GetBytes(fromBytes, 4));
-	protected string GrabString(byte[] fromBytes)
-	{
-		var textBytesLength = GrabInt(fromBytes);
-		var bText = GetBytes(fromBytes, textBytesLength);
-		return Encoding.UTF8.GetString(bText);
-	}
+    #region Backend
+    // save format
+    // [amount of bytes]	- data
+    // --------------------------------
+    // [4]					- x
+    // [4]					- y
+    // [4]					- width
+    // [4]					- height
+    // [4]					- text length
+    // [text length]		- text (base 64-ed)
+    // [1]					- is hidden
+    // [1]					- is disabled
+    // [4]					- type name length
+    // [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
 
-	#region Backend
-	// save format
-	// [amount of bytes]	- data
-	// --------------------------------
-	// [4]					- x
-	// [4]					- y
-	// [4]					- width
-	// [4]					- height
-	// [4]					- text length
-	// [text length]		- text (base 64-ed)
-	// [1]					- is hidden
-	// [1]					- is disabled
-	// [4]					- type name length
-	// [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
+    private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
+    internal (int, int) position, size, listSizeTrimOffset;
+    internal bool hasParent;
+    internal readonly string typeName;
+    private static readonly Stopwatch hold = new(), holdTrigger = new();
+    private int byteOffset;
+    private bool wasFocused, wasHovered;
 
-	private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
-	internal (int, int) position, size, listSizeTrimOffset;
-	internal bool hasParent;
-	internal readonly string typeName;
-	private static readonly Stopwatch hold = new(), holdTrigger = new();
-	private int byteOffset;
-	private bool wasFocused, wasHovered;
+    private readonly Dictionary<UserAction, List<Action>> userActions = new();
 
-	private readonly Dictionary<UserAction, List<Action>> userActions = new();
+    private void Init()
+    {
+        hold.Start();
+        holdTrigger.Start();
+        Text = GetType().Name;
+    }
 
-	private void Init()
-	{
-		hold.Start();
-		holdTrigger.Start();
-		Text = GetType().Name;
-	}
+    private void UpdateHovered()
+    {
+        var (ix, iy) = Input.Current.Position;
+        var (x, y) = Position;
+        var (w, h) = Size;
+        var isHoveredX = ix >= x && ix < x + w;
+        var isHoveredY = iy >= y && iy < y + h;
+        if (w < 0)
+            isHoveredX = ix > x + w && ix <= x;
+        if (h < 0)
+            isHoveredY = iy > y + h && iy <= y;
 
+        IsHovered = isHoveredX && isHoveredY;
+    }
+    private void TryTrigger()
+    {
+        if (IsFocused == false || IsDisabled)
+        {
+            IsPressedAndHeld = false;
+            return;
+        }
 
-	private void UpdateHovered()
-	{
-		var (ix, iy) = Input.Current.Position;
-		var (x, y) = Position;
-		var (w, h) = Size;
-		var isHoveredX = ix >= x && ix < x + w;
-		var isHoveredY = iy >= y && iy < y + h;
-		if (w < 0)
-			isHoveredX = ix > x + w && ix <= x;
-		if (h < 0)
-			isHoveredY = iy > y + h && iy <= y;
+        if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
+        {
+            IsPressedAndHeld = false;
+            TriggerUserAction(UserAction.Trigger);
+        }
 
-		IsHovered = isHoveredX && isHoveredY;
-	}
-	private void TryTrigger()
-	{
-		if (IsFocused == false || IsDisabled)
-		{
-			IsPressedAndHeld = false;
-			return;
-		}
+        if (IsHovered && Input.Current.IsJustPressed)
+            IsPressedAndHeld = true;
 
-		if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
-		{
-			IsPressedAndHeld = false;
-			TriggerUserAction(UserAction.Trigger);
-		}
+        if (Input.Current.IsJustReleased)
+            IsPressedAndHeld = false;
+    }
 
-		if (IsHovered && Input.Current.IsJustPressed)
-			IsPressedAndHeld = true;
-
-		if (Input.Current.IsJustReleased)
-			IsPressedAndHeld = false;
-	}
-
-	private byte[] GetBytes(byte[] fromBytes, int amount)
-	{
-		var result = fromBytes[byteOffset..(byteOffset + amount)];
-		byteOffset += amount;
-		return result;
-	}
-	#endregion
+    private byte[] GetBytes(byte[] fromBytes, int amount)
+    {
+        var result = fromBytes[byteOffset..(byteOffset + amount)];
+        byteOffset += amount;
+        return result;
+    }
+    #endregion
 }

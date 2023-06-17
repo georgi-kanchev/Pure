@@ -91,7 +91,7 @@ public struct Rectangle
 	/// <param name="line">
 	/// The line to check.</param>
 	/// <returns>True if the line is contained within this
-	/// rectangle; otherwise, false<.</returns>
+	/// rectangle; otherwise, false.</returns>
 	public bool IsContaining(Line line)
 	{
 		return IsOverlapping(line.A) || IsOverlapping(line.B);
@@ -121,7 +121,7 @@ public struct Rectangle
 	/// <summary>
 	/// Implicitly converts a rectangle into a bundle tuple of position, size and color.
 	/// </summary>
-	/// <param name="line">The rectangle to convert.</param>
+	/// <param name="rectangle">The rectangle to convert.</param>
 	/// <returns>A bundle tuple containing the position, size and color of the rectangle.</returns>
 	public static implicit operator (float x, float y, float width, float height, uint color)(Rectangle rectangle)
 		=> (rectangle.Position.x, rectangle.Position.y, rectangle.Size.width, rectangle.Size.height, rectangle.Color);

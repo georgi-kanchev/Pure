@@ -16,8 +16,8 @@ public static class DefaultGraphics
 			Window.Activate(true);
 
 			tilemap.Fill();
-			for (int i = 0; i < 26; i++)
-				for (int j = 0; j < 26; j++)
+			for (var i = 0; i < 26; i++)
+				for (var j = 0; j < 26; j++)
 					tilemap.SetTile((j, i), new Indices(i, j).ToIndex(26));
 
 			var (x, y) = tilemap.PointFrom(Mouse.CursorPosition, Window.Size);

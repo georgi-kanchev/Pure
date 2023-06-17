@@ -7,73 +7,72 @@
 /// <typeparam name="T">The type of the unique identifier.</typeparam>
 public static class Tracker<T> where T : notnull
 {
-	/// <summary>
-	/// Subscribes a method to continuously get called
-	/// when triggered by the unique identifier.
-	/// </summary>
-	/// <param name="uniqueID">The unique identifier associated with the method.</param>
-	/// <param name="method">The method to subscribe.</param>
-	public static void While(T uniqueID, Action method)
-	{
-		Subscribe(uniqueID, method, continuous);
-	}
-	/// <summary>
-	/// Subscribes a method to get called
-	/// once when triggered by the unique identifier.
-	/// </summary>
-	/// <param name="uniqueID">The unique identifier associated with the method.</param>
-	/// <param name="method">The method to subscribe.</param>
-	public static void When(T uniqueID, Action method)
-	{
-		Subscribe(uniqueID, method, once);
-	}
+    /// <summary>
+    /// Subscribes a method to continuously get called
+    /// when triggered by the unique identifier.
+    /// </summary>
+    /// <param name="uniqueID">The unique identifier associated with the method.</param>
+    /// <param name="method">The method to subscribe.</param>
+    public static void While(T uniqueID, Action method)
+    {
+        Subscribe(uniqueID, method, continuous);
+    }
+    /// <summary>
+    /// Subscribes a method to get called
+    /// once when triggered by the unique identifier.
+    /// </summary>
+    /// <param name="uniqueId">The unique identifier associated with the method.</param>
+    /// <param name="method">The method to subscribe.</param>
+    public static void When(T uniqueId, Action method)
+    {
+        Subscribe(uniqueId, method, once);
+    }
 
-	/// <summary>
-	/// Tracks the method of the unique identifier and 
-	/// triggers any subscribed methods accordingly.
-	/// </summary>
-	/// <param name="uniqueID">The unique identifier to track.</param>
-	/// <param name="condition">The condition to track.</param>
-	public static void Track(T uniqueID, bool condition)
-	{
-		var isContinuous = continuous.ContainsKey(uniqueID);
-		var isOnce = once.ContainsKey(uniqueID);
+    /// <summary>
+    /// Tracks the method of the unique identifier and 
+    /// triggers any subscribed methods accordingly.
+    /// </summary>
+    /// <param name="uniqueID">The unique identifier to track.</param>
+    /// <param name="condition">The condition to track.</param>
+    public static void Track(T uniqueID, bool condition)
+    {
+        var isContinuous = continuous.ContainsKey(uniqueID);
+        var isOnce = once.ContainsKey(uniqueID);
 
-		if (isContinuous == false && isOnce == false)
-			return;
+        if (isContinuous == false && isOnce == false)
+            return;
 
-		if (isContinuous && condition)
-			continuous[uniqueID].Trigger();
+        if (isContinuous && condition)
+            continuous[uniqueID].Trigger();
 
-		var instance = once[uniqueID];
-		var prev = instance.condition;
-		instance.condition = condition;
+        var instance = once[uniqueID];
+        var prev = instance.condition;
+        instance.condition = condition;
 
-		if (isOnce && condition && prev == false)
-			instance.Trigger();
-	}
+        if (isOnce && condition && prev == false)
+            instance.Trigger();
+    }
 
-	#region Backend
-	private class Instance
-	{
-		public readonly List<Action> methods = new();
-		public bool condition;
+    #region Backend
+    private class Instance
+    {
+        public readonly List<Action> methods = new();
+        public bool condition;
 
-		public void Trigger()
-		{
-			for (int i = 0; i < methods.Count; i++)
-				methods[i].Invoke();
-		}
-	}
+        public void Trigger()
+        {
+            foreach (var t in methods)
+                t.Invoke();
+        }
+    }
 
-	private static readonly Dictionary<T, Instance> continuous = new(), once = new();
+    private static readonly Dictionary<T, Instance> continuous = new(), once = new();
 
-	private static void Subscribe(T uniqueID, Action method, Dictionary<T, Instance> collection)
-	{
-		if (collection.ContainsKey(uniqueID) == false)
-			collection[uniqueID] = new();
+    private static void Subscribe(T uniqueID, Action method, Dictionary<T, Instance> collection)
+    {
+        collection.TryAdd(uniqueID, new());
 
-		collection[uniqueID].methods.Add(method);
-	}
-	#endregion
+        collection[uniqueID].methods.Add(method);
+    }
+    #endregion
 }

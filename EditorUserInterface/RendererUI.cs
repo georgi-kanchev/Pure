@@ -3,7 +3,6 @@ namespace Pure.EditorUserInterface;
 using Pure.Tilemap;
 using Pure.UserInterface;
 using Pure.Utilities;
-using static Pure.UserInterface.List;
 
 public class RendererUI : UserInterface
 {
@@ -63,11 +62,10 @@ public class RendererUI : UserInterface
 	}
 	protected override void OnUpdatePages(string key, Pages pages)
 	{
-		var e = pages;
-		tilemaps[1].SetTile(e.First.Position, new(Tile.MATH_MUCH_LESS, Color.Gray));
-		tilemaps[1].SetTile(e.Previous.Position, new(Tile.MATH_LESS, Color.Gray));
-		tilemaps[1].SetTile(e.Next.Position, new(Tile.MATH_GREATER, Color.Gray));
-		tilemaps[1].SetTile(e.Last.Position, new(Tile.MATH_MUCH_GREATER, Color.Gray));
+		tilemaps[1].SetTile(pages.First.Position, new(Tile.MATH_MUCH_LESS, Color.Gray));
+		tilemaps[1].SetTile(pages.Previous.Position, new(Tile.MATH_LESS, Color.Gray));
+		tilemaps[1].SetTile(pages.Next.Position, new(Tile.MATH_GREATER, Color.Gray));
+		tilemaps[1].SetTile(pages.Last.Position, new(Tile.MATH_MUCH_GREATER, Color.Gray));
 	}
 	protected override void OnUpdatePagesPage(string key, Pages pages, Button page)
 	{
@@ -113,13 +111,12 @@ public class RendererUI : UserInterface
 	}
 	protected override void OnUpdateScroll(string key, Scroll scroll)
 	{
-		var e = scroll;
-		var scorllUpAng = (sbyte)(e.IsVertical ? 3 : 0);
-		var scorllDownAng = (sbyte)(e.IsVertical ? 1 : 2);
+		var scrollUpAng = (sbyte)(scroll.IsVertical ? 3 : 0);
+		var scrollDownAng = (sbyte)(scroll.IsVertical ? 1 : 2);
 		var scrollColor = Color.Gray.ToBright();
-		tilemaps[1].SetTile(e.Up.Position, new(Tile.ARROW, scrollColor, scorllUpAng));
-		tilemaps[1].SetTile(e.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, scrollColor));
-		tilemaps[1].SetTile(e.Down.Position, new(Tile.ARROW, scrollColor, scorllDownAng));
+		tilemaps[1].SetTile(scroll.Up.Position, new(Tile.ARROW, scrollColor, scrollUpAng));
+		tilemaps[1].SetTile(scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, scrollColor));
+		tilemaps[1].SetTile(scroll.Down.Position, new(Tile.ARROW, scrollColor, scrollDownAng));
 	}
 
 }

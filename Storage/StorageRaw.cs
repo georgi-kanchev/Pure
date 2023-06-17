@@ -7,14 +7,8 @@ public class StorageRaw
 {
 	public byte[] this[string key]
 	{
-		get => key == null ? Array.Empty<byte>() : data[key];
-		set
-		{
-			if (key == null)
-				return;
-
-			data[key] = value;
-		}
+		get => data[key];
+		set => data[key] = value;
 	}
 
 	public void ToFile(string path)
@@ -38,14 +32,14 @@ public class StorageRaw
 		var offset = 0;
 		var sectorCount = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
 
-		for (int i = 0; i < sectorCount; i++)
+		for (var i = 0; i < sectorCount; i++)
 		{
 			var keyLength = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
 			var key = BytesToText(GetBytesFrom(bytes, keyLength, ref offset));
 			var dataLength = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-			var data = GetBytesFrom(bytes, dataLength, ref offset);
+			var dataBytes = GetBytesFrom(bytes, dataLength, ref offset);
 
-			this.data[key] = data;
+			this.data[key] = dataBytes;
 		}
 	}
 
@@ -67,7 +61,7 @@ public class StorageRaw
 	// = = = = = = (sector 3)
 	// ...
 
-	private Dictionary<string, byte[]> data = new();
+	private readonly Dictionary<string, byte[]> data = new();
 
 	private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
 	{

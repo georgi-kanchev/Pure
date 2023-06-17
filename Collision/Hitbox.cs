@@ -42,7 +42,7 @@ public class Hitbox
 		Position = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
 		Scale = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
 
-		for(int i = 0; i < count; i++)
+		for(var i = 0; i < count; i++)
 		{
 			var x = BitConverter.ToSingle(Get<float>());
 			var y = BitConverter.ToSingle(Get<float>());
@@ -78,8 +78,8 @@ public class Hitbox
 	public Hitbox((float x, float y) position, (float width, float height) scale = default, params Rectangle[] rectangles)
 		: this(position, scale)
 	{
-		for(int i = 0; i < rectangles?.Length; i++)
-			AddRectangle(rectangles[i]);
+		foreach (var r in rectangles)
+			AddRectangle(r);
 	}
 
 	public byte[] ToBytes()
@@ -97,9 +97,8 @@ public class Hitbox
 		result.AddRange(bScW);
 		result.AddRange(bScH);
 		result.AddRange(bCount);
-		for(int i = 0; i < rectangles.Count; i++)
+		foreach (var r in rectangles)
 		{
-			var r = rectangles[i];
 			result.AddRange(BitConverter.GetBytes(r.Position.x));
 			result.AddRange(BitConverter.GetBytes(r.Position.y));
 			result.AddRange(BitConverter.GetBytes(r.Size.width));
@@ -126,7 +125,7 @@ public class Hitbox
 	/// <returns>True if the hitboxes overlap, false otherwise.</returns>
 	public bool IsOverlapping(Hitbox hitbox)
 	{
-		for(int i = 0; i < RectangleCount; i++)
+		for(var i = 0; i < RectangleCount; i++)
 			if(hitbox.IsOverlapping(this[i]))
 				return true;
 
@@ -138,7 +137,7 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping(Rectangle rectangle)
 	{
-		for(int i = 0; i < RectangleCount; i++)
+		for(var i = 0; i < RectangleCount; i++)
 			if(this[i].IsOverlapping(rectangle))
 				return true;
 
@@ -150,7 +149,7 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping(Line line)
 	{
-		for(int i = 0; i < rectangles.Count; i++)
+		for(var i = 0; i < rectangles.Count; i++)
 			if(this[i].IsOverlapping(line))
 				return true;
 
@@ -162,7 +161,7 @@ public class Hitbox
 	/// false otherwise.</returns>
 	public bool IsOverlapping((float x, float y) point)
 	{
-		for(int i = 0; i < RectangleCount; i++)
+		for(var i = 0; i < RectangleCount; i++)
 			if(this[i].IsOverlapping(point))
 				return true;
 
@@ -193,7 +192,7 @@ public class Hitbox
 	public static implicit operator (float x, float y, float width, float height, uint color)[](Hitbox hitbox)
 	{
 		var result = new (float x, float y, float width, float height, uint color)[hitbox.rectangles.Count];
-		for(int i = 0; i < result.Length; i++)
+		for(var i = 0; i < result.Length; i++)
 			result[i] = hitbox[i];
 		return result;
 	}
@@ -204,7 +203,7 @@ public class Hitbox
 	public static implicit operator Hitbox((float x, float y, float width, float height, uint color)[] rectangles)
 	{
 		var result = new Rectangle[rectangles.Length];
-		for(int i = 0; i < result.Length; i++)
+		for(var i = 0; i < result.Length; i++)
 			result[i] = rectangles[i];
 		return result;
 	}

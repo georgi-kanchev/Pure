@@ -7,287 +7,303 @@ using System.Diagnostics;
 /// </summary>
 public static class Time
 {
-	/// <summary>
-	/// Defines the different types of time conversions used by <see cref="TimeFrom"/>.
-	/// </summary>
-	public enum Convertion
-	{
+    /// <summary>
+    /// Defines the different types of time conversions used by <see cref="TimeFrom"/>.
+    /// </summary>
+    public enum Conversion
+    {
 #pragma warning disable CS1591
-		MillisecondsToSeconds, MillisecondsToMinutes,
-		SecondsToMilliseconds, SecondsToMinutes, SecondsToHours,
-		MinutesToMilliseconds, MinutesToSeconds, MinutesToHours, MinutesToDays,
-		HoursToSeconds, HoursToMinutes, HoursToDays, HoursToWeeks,
-		DaysToMinutes, DaysToHours, DaysToWeeks,
-		WeeksToHours, WeeksToDays
+        MillisecondsToSeconds,
+        MillisecondsToMinutes,
+        SecondsToMilliseconds,
+        SecondsToMinutes,
+        SecondsToHours,
+        MinutesToMilliseconds,
+        MinutesToSeconds,
+        MinutesToHours,
+        MinutesToDays,
+        HoursToSeconds,
+        HoursToMinutes,
+        HoursToDays,
+        HoursToWeeks,
+        DaysToMinutes,
+        DaysToHours,
+        DaysToWeeks,
+        WeeksToHours,
+        WeeksToDays
 #pragma warning restore CS1591
-	}
+    }
 
-	/// <summary>
-	/// Defines the different units of time that can be used in calculations and display by
-	/// <see cref="ClockFrom"/>.
-	/// </summary>
-	[Flags]
-	public enum Unit
-	{
+    /// <summary>
+    /// Defines the different units of time that can be used in calculations and display by
+    /// <see cref="ClockFrom"/>.
+    /// </summary>
+    [Flags]
+    public enum Unit
+    {
 #pragma warning disable CS1591
-		Day = 1,
-		Hour = 2,
-		Minute = 4,
-		Second = 8,
-		Millisecond = 16,
-		AM_PM = 32,
-		DisplayAM_PM = 64,
+        Day = 1,
+        Hour = 2,
+        Minute = 4,
+        Second = 8,
+        Millisecond = 16,
+        AM_PM = 32,
+        DisplayAM_PM = 64,
 #pragma warning restore CS1591
-	}
+    }
 
-	/// <summary>
-	/// Gets the real time clock taken from <see cref="DateTime.Now"/> in seconds ranged
-	/// 0 to 86399)<br></br>or in clock hours ranged 12 AM/00:00/24:00 to 11:59:59 AM/23:59:59.
-	/// </summary>
-	public static float Clock { get; private set; }
+    /// <summary>
+    /// Gets the real time clock taken from <see cref="DateTime.Now"/> in seconds ranged
+    /// 0 to 86399)<br></br>or in clock hours ranged 12 AM/00:00/24:00 to 11:59:59 AM/23:59:59.
+    /// </summary>
+    public static float Clock { get; private set; }
 
-	/// <summary>
-	/// Gets or sets the maximum delta time between updates.
-	/// </summary>
-	public static float DeltaMax { get; set; } = 0.1f;
-	/// <summary>
-	/// Gets the delta time since the last update capped at <see cref="DeltaMax"/>.
-	/// </summary>
-	public static float Delta { get; private set; }
-	/// <summary>
-	/// Gets the raw delta time since the last update.
-	/// </summary>
-	public static float DeltaRaw { get; private set; }
-	/// <summary>
-	/// Gets the number of updates per second.
-	/// </summary>
-	public static float UpdatesPerSecond { get; private set; }
-	/// <summary>
-	/// Gets the average number of updates per second.
-	/// </summary>
-	public static float UpdatesPerSecondAverage { get; private set; }
-	/// <summary>
-	/// Gets the runtime clock in seconds.
-	/// </summary>
-	public static float RuntimeClock { get; private set; }
-	/// <summary>
-	/// Gets the number of updates that have occurred.
-	/// </summary>
-	public static uint UpdateCount { get; private set; }
+    /// <summary>
+    /// Gets or sets the maximum delta time between updates.
+    /// </summary>
+    public static float DeltaMax { get; set; } = 0.1f;
+    /// <summary>
+    /// Gets the delta time since the last update capped at <see cref="DeltaMax"/>.
+    /// </summary>
+    public static float Delta { get; private set; }
+    /// <summary>
+    /// Gets the raw delta time since the last update.
+    /// </summary>
+    public static float DeltaRaw { get; private set; }
+    /// <summary>
+    /// Gets the number of updates per second.
+    /// </summary>
+    public static float UpdatesPerSecond { get; private set; }
+    /// <summary>
+    /// Gets the average number of updates per second.
+    /// </summary>
+    public static float UpdatesPerSecondAverage { get; private set; }
+    /// <summary>
+    /// Gets the runtime clock in seconds.
+    /// </summary>
+    public static float RuntimeClock { get; private set; }
+    /// <summary>
+    /// Gets the number of updates that have occurred.
+    /// </summary>
+    public static uint UpdateCount { get; private set; }
 
-	/// <summary>
-	/// Updates the clock and timers. Should be called once per frame.
-	/// </summary>
-	public static void Update()
-	{
-		var delta = (float)dt.Elapsed.TotalSeconds;
-		DeltaRaw = delta;
-		Delta = Math.Clamp(delta, 0, MathF.Max(0, DeltaMax));
-		dt.Restart();
+    /// <summary>
+    /// Updates the clock and timers. Should be called once per frame.
+    /// </summary>
+    public static void Update()
+    {
+        var delta = (float)dt.Elapsed.TotalSeconds;
+        DeltaRaw = delta;
+        Delta = Math.Clamp(delta, 0, MathF.Max(0, DeltaMax));
+        dt.Restart();
 
-		Clock = Now;
-		RuntimeClock += Delta;
-		UpdatesPerSecond = 1f / Delta;
-		UpdatesPerSecondAverage = UpdateCount / RuntimeClock;
-		UpdateCount++;
+        Clock = Now;
+        RuntimeClock += Delta;
+        UpdatesPerSecond = 1f / Delta;
+        UpdatesPerSecondAverage = UpdateCount / RuntimeClock;
+        UpdateCount++;
 
-		var toBeRemoved = new List<Timer>();
-		for (int i = 0; i < timers.Count; i++)
-		{
-			var timer = timers[i];
+        var toBeRemoved = new List<Timer>();
+        foreach (var timer in timers)
+        {
+            timer.TryTrigger(delta);
 
-			timer.TryTrigger(delta);
+            if (timer.IsDisposed)
+                toBeRemoved.Add(timer);
+        }
 
-			if (timer.IsDisposed)
-				toBeRemoved.Add(timer);
-		}
-		for (int i = 0; i < toBeRemoved.Count; i++)
-		{
-			var timer = toBeRemoved[i];
-			timers.Remove(timer);
-		}
+        foreach (var timer in toBeRemoved)
+            timers.Remove(timer);
+    }
+    /// <summary>
+    /// Converts a duration in seconds to a formatted clock string.
+    /// </summary>
+    /// <param name="seconds">The duration in seconds.</param>
+    /// <param name="separator">The separator string to use between clock elements.</param>
+    /// <param name="units">The units to include in the formatted string.</param>
+    /// <returns>A formatted clock string.</returns>
+    public static string ClockFrom(this float seconds, string separator = ":",
+        Unit units = Unit.Hour | Unit.Minute | Unit.Second)
+    {
+        var ts = TimeSpan.FromSeconds(seconds);
+        var result = "";
+        var counter = 0;
 
-	}
-	/// <summary>
-	/// Converts a duration in seconds to a formatted clock string.
-	/// </summary>
-	/// <param name="seconds">The duration in seconds.</param>
-	/// <param name="separator">The separator string to use between clock elements.</param>
-	/// <param name="units">The units to include in the formatted string.</param>
-	/// <returns>A formatted clock string.</returns>
-	public static string ClockFrom(this float seconds, string separator = ":", Unit units = Unit.Hour | Unit.Minute | Unit.Second)
-	{
-		var ts = TimeSpan.FromSeconds(seconds);
-		var result = "";
-		var counter = 0;
+        if (units.HasFlag(Unit.Day))
+        {
+            var val = (int)ts.TotalDays;
+            result += $"{val:D2}";
+            counter++;
+        }
 
-		if (units.HasFlag(Unit.Day))
-		{
-			var val = (int)ts.TotalDays;
-			result += $"{val:D2}";
-			counter++;
-		}
-		if (units.HasFlag(Unit.Hour))
-		{
-			var sep = counter > 0 ? separator : "";
-			var val = counter == 0 ? (int)ts.TotalHours :
-				(units.HasFlag(Unit.AM_PM) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
-			//val = val == 0 ? 12 : val;
-			result += $"{sep}{val:D2}";
-			counter++;
-		}
-		if (units.HasFlag(Unit.Minute))
-		{
-			var sep = counter > 0 ? separator : "";
-			var val = counter == 0 ? (int)ts.TotalMinutes : ts.Minutes;
-			result += $"{sep}{val:D2}";
-			counter++;
-		}
-		if (units.HasFlag(Unit.Second))
-		{
-			var sep = counter > 0 ? separator : "";
-			var val = counter == 0 ? (int)ts.TotalSeconds : ts.Seconds;
-			result += $"{sep}{val:D2}";
-			counter++;
-		}
-		if (units.HasFlag(Unit.Millisecond))
-		{
-			var val = counter == 0 ? (int)ts.TotalMilliseconds : ts.Milliseconds;
-			var dot = units.HasFlag(Unit.Second) ? "." : "";
-			var sep = dot == "" && counter > 0 ? separator : "";
-			result += $"{sep}{dot}{val:D3}";
-			counter++;
-		}
-		if (units.HasFlag(Unit.DisplayAM_PM))
-		{
-			var sep = counter > 0 ? " " : "";
-			var str = ts.Hours >= 12 ? "PM" : "AM";
-			result += $"{sep}{str}";
-		}
-		return result;
+        if (units.HasFlag(Unit.Hour))
+        {
+            var sep = counter > 0 ? separator : "";
+            var val = counter == 0
+                ? (int)ts.TotalHours
+                : (units.HasFlag(Unit.AM_PM) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
+            //val = val == 0 ? 12 : val;
+            result += $"{sep}{val:D2}";
+            counter++;
+        }
 
-		float Wrap(float number, float range)
-		{
-			return ((number % range) + range) % range;
-		}
-	}
-	/// <summary>
-	/// Converts a duration in time units to a different time unit.
-	/// </summary>
-	/// <param name="time">The duration to convert.</param>
-	/// <param name="convertType">The type of conversion to perform.</param>
-	/// <returns>The converted duration.</returns>
-	public static float TimeFrom(this float time, Convertion convertType)
-	{
-		return convertType switch
-		{
-			Convertion.MillisecondsToSeconds => time / 1000,
-			Convertion.MillisecondsToMinutes => time / 1000 / 60,
-			Convertion.SecondsToMilliseconds => time * 1000,
-			Convertion.SecondsToMinutes => time / 60,
-			Convertion.SecondsToHours => time / 3600,
-			Convertion.MinutesToMilliseconds => time * 60000,
-			Convertion.MinutesToSeconds => time * 60,
-			Convertion.MinutesToHours => time / 60,
-			Convertion.MinutesToDays => time / 1440,
-			Convertion.HoursToSeconds => time * 3600,
-			Convertion.HoursToMinutes => time * 60,
-			Convertion.HoursToDays => time / 24,
-			Convertion.HoursToWeeks => time / 168,
-			Convertion.DaysToMinutes => time * 1440,
-			Convertion.DaysToHours => time * 24,
-			Convertion.DaysToWeeks => time / 7,
-			Convertion.WeeksToHours => time * 168,
-			Convertion.WeeksToDays => time * 7,
-			_ => 0,
-		};
-	}
+        if (units.HasFlag(Unit.Minute))
+        {
+            var sep = counter > 0 ? separator : "";
+            var val = counter == 0 ? (int)ts.TotalMinutes : ts.Minutes;
+            result += $"{sep}{val:D2}";
+            counter++;
+        }
 
-	/// <summary>
-	/// Calls a method after a specified number of seconds.
-	/// </summary>
-	/// <param name="seconds">The number of seconds to wait before calling the method.</param>
-	/// <param name="method">The method to call.</param>
-	/// <param name="isRepeating">Whether to repeat the call at the specified interval.</param>
-	public static void CallAfter(float seconds, Action method, bool isRepeating = false)
-	{
-		timers.Add(new Timer(seconds, isRepeating, method));
-	}
-	/// <summary>
-	/// Cancels a scheduled method call.
-	/// </summary>
-	/// <param name="method">The method to cancel.</param>
-	public static void CancelCall(Action method)
-	{
-		var timersToRemove = new List<Timer>();
-		for (int i = 0; i < timers.Count; i++)
-			if (timers[i].method == method)
-				timersToRemove.Add(timers[i]);
+        if (units.HasFlag(Unit.Second))
+        {
+            var sep = counter > 0 ? separator : "";
+            var val = counter == 0 ? (int)ts.TotalSeconds : ts.Seconds;
+            result += $"{sep}{val:D2}";
+            counter++;
+        }
 
-		for (int i = 0; i < timersToRemove.Count; i++)
-			timers.Remove(timersToRemove[i]);
-	}
-	/// <summary>
-	/// Offsets the scheduled call time of a method.
-	/// </summary>
-	/// <param name="seconds">The number of seconds to offset the call time by.</param>
-	/// <param name="method">The method to offset the call time for.</param>
-	public static void OffsetCall(float seconds, Action method)
-	{
-		for (int i = 0; i < timers.Count; i++)
-			if (timers[i].method == method)
-				timers[i].delay += seconds;
-	}
+        if (units.HasFlag(Unit.Millisecond))
+        {
+            var val = counter == 0 ? (int)ts.TotalMilliseconds : ts.Milliseconds;
+            var dot = units.HasFlag(Unit.Second) ? "." : "";
+            var sep = dot == "" && counter > 0 ? separator : "";
+            result += $"{sep}{dot}{val:D3}";
+            counter++;
+        }
 
-	#region Backend
-	private class Timer
-	{
-		public Action? method;
-		public float time;
-		public bool isLooping;
-		public float delay;
-		public bool IsDisposed => method == null;
+        if (units.HasFlag(Unit.DisplayAM_PM))
+        {
+            var sep = counter > 0 ? " " : "";
+            var str = ts.Hours >= 12 ? "PM" : "AM";
+            result += $"{sep}{str}";
+        }
 
-		public Timer(float seconds, bool isLooping, Action method)
-		{
-			delay = seconds;
-			this.isLooping = isLooping;
-			this.method = method;
-		}
+        return result;
 
-		public void TryTrigger(float delta)
-		{
-			time += delta;
+        float Wrap(float number, float range)
+        {
+            return ((number % range) + range) % range;
+        }
+    }
+    /// <summary>
+    /// Converts a duration in time units to a different time unit.
+    /// </summary>
+    /// <param name="time">The duration to convert.</param>
+    /// <param name="convertType">The type of conversion to perform.</param>
+    /// <returns>The converted duration.</returns>
+    public static float TimeFrom(this float time, Conversion convertType)
+    {
+        return convertType switch
+        {
+            Conversion.MillisecondsToSeconds => time / 1000,
+            Conversion.MillisecondsToMinutes => time / 1000 / 60,
+            Conversion.SecondsToMilliseconds => time * 1000,
+            Conversion.SecondsToMinutes => time / 60,
+            Conversion.SecondsToHours => time / 3600,
+            Conversion.MinutesToMilliseconds => time * 60000,
+            Conversion.MinutesToSeconds => time * 60,
+            Conversion.MinutesToHours => time / 60,
+            Conversion.MinutesToDays => time / 1440,
+            Conversion.HoursToSeconds => time * 3600,
+            Conversion.HoursToMinutes => time * 60,
+            Conversion.HoursToDays => time / 24,
+            Conversion.HoursToWeeks => time / 168,
+            Conversion.DaysToMinutes => time * 1440,
+            Conversion.DaysToHours => time * 24,
+            Conversion.DaysToWeeks => time / 7,
+            Conversion.WeeksToHours => time * 168,
+            Conversion.WeeksToDays => time * 7,
+            _ => 0,
+        };
+    }
 
-			if (time < delay)
-				return;
+    /// <summary>
+    /// Calls a method after a specified number of seconds.
+    /// </summary>
+    /// <param name="seconds">The number of seconds to wait before calling the method.</param>
+    /// <param name="method">The method to call.</param>
+    /// <param name="isRepeating">Whether to repeat the call at the specified interval.</param>
+    public static void CallAfter(float seconds, Action method, bool isRepeating = false)
+    {
+        timers.Add(new Timer(seconds, isRepeating, method));
+    }
+    /// <summary>
+    /// Cancels a scheduled method call.
+    /// </summary>
+    /// <param name="method">The method to cancel.</param>
+    public static void CancelCall(Action method)
+    {
+        var timersToRemove = new List<Timer>();
+        foreach (var t in timers)
+            if (t.method == method)
+                timersToRemove.Add(t);
 
-			Trigger(true);
+        foreach (var t in timersToRemove)
+            timers.Remove(t);
+    }
+    /// <summary>
+    /// Offsets the scheduled call time of a method.
+    /// </summary>
+    /// <param name="seconds">The number of seconds to offset the call time by.</param>
+    /// <param name="method">The method to offset the call time for.</param>
+    public static void OffsetCall(float seconds, Action method)
+    {
+        foreach (var t in timers)
+            if (t.method == method)
+                t.delay += seconds;
+    }
 
-			if (isLooping == false)
-				Dispose();
-		}
-		public void Restart()
-		{
-			time = 0;
-		}
-		public void Trigger(bool reset)
-		{
-			method?.Invoke();
+    #region Backend
+    private class Timer
+    {
+        private float time;
+        private readonly bool isLooping;
 
-			if (reset)
-				Restart();
-		}
+        public Action? method;
+        public float delay;
+        public bool IsDisposed => method == null;
 
-		private void Dispose()
-		{
-			method = null;
-		}
-	}
+        public Timer(float seconds, bool isLooping, Action method)
+        {
+            delay = seconds;
+            this.isLooping = isLooping;
+            this.method = method;
+        }
 
-	private static readonly List<Timer> timers = new();
-	private static readonly Stopwatch dt = new();
+        public void TryTrigger(float delta)
+        {
+            time += delta;
 
-	private static float Now => (float)DateTime.Now.TimeOfDay.TotalSeconds;
-	#endregion
+            if (time < delay)
+                return;
+
+            Trigger(true);
+
+            if (isLooping == false)
+                Dispose();
+        }
+        private void Restart()
+        {
+            time = 0;
+        }
+        private void Trigger(bool reset)
+        {
+            method?.Invoke();
+
+            if (reset)
+                Restart();
+        }
+
+        private void Dispose()
+        {
+            method = null;
+        }
+    }
+
+    private static readonly List<Timer> timers = new();
+    private static readonly Stopwatch dt = new();
+
+    private static float Now => (float)DateTime.Now.TimeOfDay.TotalSeconds;
+    #endregion
 }

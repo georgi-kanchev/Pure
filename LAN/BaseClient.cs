@@ -6,7 +6,7 @@ using System.Net.Sockets;
 /// <summary>
 /// Represents a base class for LAN client communication.
 /// </summary>
-public class BaseClient : Base
+public abstract class BaseClient : Base
 {
 	/// <summary>
 	/// Gets an array of nicknames of all connected clients.
@@ -35,7 +35,7 @@ public class BaseClient : Base
 	/// </summary>
 	/// <param name="nickname">The nickname of the client. If null or whitespace, 
 	/// the default value "Player" will be used.</param>
-	public BaseClient(string nickname)
+	protected BaseClient(string nickname)
 	{
 		Nickname = string.IsNullOrWhiteSpace(nickname) ? "Player" : nickname.Trim();
 	}
@@ -179,13 +179,21 @@ public class BaseClient : Base
 
 			void Parse(byte[] bytes)
 			{
-				var msg = new Message(bytes, out var remaining);
-				parent.ParseMessage(msg);
+				while (true)
+				{
+					var msg = new Message(bytes, out var remaining);
+					parent.ParseMessage(msg);
 
-				// some messages are received merged back to back;
-				// keep reading since there are more messages
-				if (remaining.Length > 0)
-					Parse(remaining);
+					// some messages are received merged back to back;
+					// keep reading since there are more messages
+					if (remaining.Length > 0)
+					{
+						bytes = remaining;
+						continue;
+					}
+
+					break;
+				}
 			}
 		}
 		protected override void OnError(SocketError error)
@@ -194,7 +202,7 @@ public class BaseClient : Base
 		}
 
 		#region Backend
-		private BaseClient parent;
+		private readonly BaseClient parent;
 		private bool shouldDisconnect;
 
 		#endregion

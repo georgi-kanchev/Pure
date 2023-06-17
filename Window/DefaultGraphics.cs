@@ -32,7 +32,7 @@ internal static class DefaultGraphics
 				Convert.ToByte(h[BYTE_BITS_COUNT..^0], BINARY),
 			};
 
-		for (int i = 0; i < rawBits.Length; i++)
+		for (var i = 0; i < rawBits.Length; i++)
 		{
 			var bit = rawBits[i];
 			var hasProcessed = false;
@@ -116,7 +116,7 @@ internal static class DefaultGraphics
 		var decodedBits = "";
 		var img = new Image(width, height);
 
-		for (int i = 4; i < bytes.Length; i++)
+		for (var i = 4; i < bytes.Length; i++)
 		{
 			var curByte = bytes[i];
 			var bits = Convert.ToString(curByte, BINARY);

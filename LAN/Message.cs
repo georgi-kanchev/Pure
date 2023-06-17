@@ -79,34 +79,26 @@ internal class Message
 
 	private static byte[] Compress(byte[] bytes)
 	{
-		byte[] compressedBytes;
-
-		using (var uncompressedStream = new MemoryStream(bytes))
+		using var uncompressedStream = new MemoryStream(bytes);
+		using var compressedStream = new MemoryStream();
+		using (var compressorStream = new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
 		{
-			using var compressedStream = new MemoryStream();
-			using (var compressorStream = new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
-			{
-				uncompressedStream.CopyTo(compressorStream);
-			}
-
-			compressedBytes = compressedStream.ToArray();
+			uncompressedStream.CopyTo(compressorStream);
 		}
+
+		var compressedBytes = compressedStream.ToArray();
 
 		return compressedBytes;
 	}
 	private static byte[] Decompress(byte[] compressedStringBytes)
 	{
-		byte[] decompressedBytes;
-
 		var compressedStream = new MemoryStream(compressedStringBytes);
 
-		using (var decompressorStream = new DeflateStream(compressedStream, CompressionMode.Decompress))
-		{
-			using var decompressedStream = new MemoryStream();
-			decompressorStream.CopyTo(decompressedStream);
+		using var decompressorStream = new DeflateStream(compressedStream, CompressionMode.Decompress);
+		using var decompressedStream = new MemoryStream();
+		decompressorStream.CopyTo(decompressedStream);
 
-			decompressedBytes = decompressedStream.ToArray();
-		}
+		var decompressedBytes = decompressedStream.ToArray();
 
 		return decompressedBytes;
 	}

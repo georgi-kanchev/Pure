@@ -1,18 +1,16 @@
 ﻿namespace Pure.EditorUserInterface;
 
 using System.Diagnostics.CodeAnalysis;
-using Pure.Tilemap;
-using Pure.Tracker;
-using Pure.UserInterface;
-using Pure.Utilities;
-using Pure.Window;
+using Tilemap;
+using UserInterface;
+using Window;
 
-public partial class Program
+public static class Program
 {
 	private enum Layer
 	{
-		UI_Back, UI_Middle, UI_Front,
-		Edit_Back, Edit_Middle, Edit_Front,
+		UiBack, UiMiddle, UiFront,
+		EditBack, EditMiddle, EditFront,
 		Count
 	}
 	private static RightClickMenu? rightClickMenu;
@@ -32,7 +30,7 @@ public partial class Program
 			Update();
 
 			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
-			for (int i = 0; i < tilemaps.Count; i++)
+			for (var i = 0; i < tilemaps.Count; i++)
 				Window.DrawTiles(tilemaps[i].ToBundle());
 			Window.Activate(false);
 		}
@@ -41,15 +39,14 @@ public partial class Program
 	[MemberNotNull(nameof(tilemaps), nameof(rightClickMenu))]
 	private static void Init()
 	{
-		Window.Create(3, Window.Mode.Windowed);
+		Window.Create(3);
 
 		var (width, height) = Window.MonitorAspectRatio;
-		tilemaps = new TilemapManager((int)Layer.Count, (width * 3, height * 3));
+		tilemaps = new((int)Layer.Count, (width * 3, height * 3));
 		ui = new(tilemaps);
 		edit = new(tilemaps, ui);
 
-		rightClickMenu = new RightClickMenu(
-			tilemaps[(int)Layer.Edit_Back], tilemaps[(int)Layer.Edit_Middle], ui, edit);
+		rightClickMenu = new(tilemaps[(int)Layer.EditBack], tilemaps[(int)Layer.EditMiddle], ui, edit);
 	}
 	private static void Update()
 	{

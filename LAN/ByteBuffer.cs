@@ -121,7 +121,7 @@ public class Buffer
 
 		if (capacity > Capacity)
 		{
-			byte[] data = new byte[Math.Max(capacity, 2 * Capacity)];
+			var data = new byte[Math.Max(capacity, 2 * Capacity)];
 			Array.Copy(_data, 0, data, 0, _size);
 			_data = data;
 		}
@@ -213,7 +213,7 @@ public class Buffer
 	/// <returns>Count of append bytes</returns>
 	public long Append(string text)
 	{
-		int length = Encoding.UTF8.GetMaxByteCount(text.Length);
+		var length = Encoding.UTF8.GetMaxByteCount(text.Length);
 		Reserve(_size + length);
 		long result = Encoding.UTF8.GetBytes(text, 0, text.Length, _data, (int)_size);
 		_size += result;
@@ -227,7 +227,7 @@ public class Buffer
 	/// <returns>Count of append bytes</returns>
 	public long Append(ReadOnlySpan<char> text)
 	{
-		int length = Encoding.UTF8.GetMaxByteCount(text.Length);
+		var length = Encoding.UTF8.GetMaxByteCount(text.Length);
 		Reserve(_size + length);
 		long result = Encoding.UTF8.GetBytes(text, new Span<byte>(_data, (int)_size, length));
 		_size += result;
