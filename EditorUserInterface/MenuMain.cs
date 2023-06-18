@@ -45,9 +45,13 @@ public class MenuMain : Menu
             menuAdd.Position = Position;
             menuAdd.IsExpanded = true;
         }
-        else if (index == 2)
+        else if (index == 2 && Program.Selected != null)
         {
-            Program.editPanel.Position = (item.Position.x + item.Size.width, item.Position.y - 1);
+            var (x, _) = Program.Selected.Position;
+            var (w, _) = Program.Selected.Size;
+            var (tw, _) = TilemapSize;
+            var pos = (x + w / 2 > tw / 2 ? 0 : tw - Program.editPanel.Size.width, 0);
+            Program.editPanel.Position = pos;
         }
     }
 

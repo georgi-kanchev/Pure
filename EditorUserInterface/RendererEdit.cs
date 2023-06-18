@@ -8,7 +8,7 @@ using Pure.Utilities;
 
 public class RendererEdit : UserInterface
 {
-    public void CreateElement(int index, (int x, int y) position)
+    public void ElementCreate(int index, (int x, int y) position)
     {
         var count = Count.ToString();
         var element = default(Element);
@@ -57,7 +57,7 @@ public class RendererEdit : UserInterface
 
         Element.Focused = null;
     }
-    public void RemoveElement(Element element)
+    public void ElementRemove(Element element)
     {
         var key = Program.ui.KeyOf(element);
         if (key == null)
@@ -65,6 +65,12 @@ public class RendererEdit : UserInterface
 
         Program.ui.Remove(key);
         Remove(key);
+
+        if (Program.Selected == element)
+            Program.Selected = null;
+    }
+    public void ElementToTop(Element element)
+    {
     }
 
     protected override void OnUpdatePanel(string key, Panel panel)
@@ -72,7 +78,18 @@ public class RendererEdit : UserInterface
         var e = Program.ui[key];
 
         if (panel is { IsPressedAndHeld: true, IsHovered: true })
-            Program.Selected = e;
+        {
+            var isHoveringMenu = false;
+            foreach (var kvp in Program.menus)
+                if (kvp.Value.IsHovered)
+                {
+                    isHoveringMenu = true;
+                    break;
+                }
+
+            if (isHoveringMenu == false)
+                Program.Selected = e;
+        }
 
         e.Position = (panel.Position.x + 1, panel.Position.y + 1);
         e.Size = (panel.Size.width - 2, panel.Size.height - 2);

@@ -41,9 +41,9 @@ public static class Program
 
         var (width, height) = Window.MonitorAspectRatio;
         tilemaps = new((int)Layer.Count, (width * 3, height * 3));
-        ui = new(tilemaps);
+        ui = new();
         editUI = new();
-        editPanel = new((int.MaxValue, int.MaxValue), tilemaps);
+        editPanel = new((int.MaxValue, int.MaxValue));
 
         menus[MenuType.Add] = new MenuAdd();
         menus[MenuType.Main] = new MenuMain();
@@ -83,8 +83,9 @@ public static class Program
         foreach (var kvp in menus)
             kvp.Value.Update();
 
-        var onLmb = Mouse.IsButtonPressed(Mouse.Button.Left).Once("on-lmb-deselect");
-        if (onLmb && GetHovered() == null)
+        var editPanelIsHidden = editPanel.Position == (int.MaxValue, int.MaxValue);
+        var onLmb = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("on-lmb-deselect");
+        if (onLmb && GetHovered() == null && editPanelIsHidden)
             Selected = null;
     }
 

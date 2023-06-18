@@ -7,13 +7,15 @@ namespace Pure.EditorUserInterface;
 
 public class EditPanel : Panel
 {
-    public EditPanel((int x, int y) position, TilemapManager tilemaps) : base(position)
+    public EditPanel((int x, int y) position) : base(position)
     {
-        Text = "Edit Element";
+        Text = "Edit";
     }
 
     protected override void OnUpdate()
     {
+        Size = (10, TilemapSize.height);
+
         var onLmb = Mouse.IsButtonPressed(Mouse.Button.Left).Once("edit-panel-lmb");
         if (onLmb && IsHovered == false)
             Position = (int.MaxValue, int.MaxValue);
@@ -21,14 +23,56 @@ public class EditPanel : Panel
         var offset = (Size.width - Text.Length) / 2;
         offset = Math.Max(offset, 0);
         var textPos = (Position.x + offset, Position.y);
-        const int corner = Tile.BORDER_GRID_CORNER;
-        const int straight = Tile.BORDER_GRID_STRAIGHT;
+        const int corner = Tile.BORDER_HOLLOW_CORNER;
+        const int straight = Tile.BORDER_HOLLOW_STRAIGHT;
 
-        var back = Program.tilemaps[(int)Program.Layer.EditFront];
-        back.SetBorder(Position, Size, corner, straight, Color.Cyan);
-        back.SetTextLine(textPos, Text, Color.Cyan);
+        var front = Program.tilemaps[(int)Program.Layer.EditFront];
+        front.SetBorder(Position, Size, corner, straight, Color.Yellow);
+        front.SetTextLine(textPos, Text, Color.Yellow);
+
+        UpdateButton(remove, (Position.x + 1, Position.y + Size.height - 2), (Size.width - 2, 1));
     }
 
     #region Backend
+    private class EditButton : Button
+    {
+        public EditButton((int x, int y) position) : base(position)
+        {
+        }
+
+        protected override void OnUserAction(UserAction userAction)
+        {
+            if (userAction != UserAction.Trigger)
+                return;
+
+            if (Text == "Remove" && Program.Selected != null)
+            {
+                Program.editUI.ElementRemove(Program.Selected);
+                Program.editPanel.Position = (int.MaxValue, int.MaxValue);
+            }
+        }
+    }
+
+    private readonly EditButton remove = new((0, 0)) { Text = "Remove" },
+        surface = new((0, 0)) { Text = "To Top" },
+        pin = new((0, 0)) { Text = "Pin" };
+
+    private static void UpdateButton(Element btn, (int x, int y) position, (int w, int h) size)
+    {
+        var front = Program.tilemaps[(int)Program.Layer.EditFront];
+        btn.Position = position;
+        btn.Size = size;
+        btn.Update();
+        front.SetTextRectangle(btn.Position, btn.Size, btn.Text, GetColor(btn, Color.Yellow.ToDark()),
+            alignment: Tilemap.Tilemap.Alignment.Center);
+    }
+
+    private static Color GetColor(Element element, Color baseColor)
+    {
+        if (element.IsPressedAndHeld) return baseColor.ToDark();
+        else if (element.IsHovered) return baseColor.ToBright();
+
+        return baseColor;
+    }
     #endregion
 }

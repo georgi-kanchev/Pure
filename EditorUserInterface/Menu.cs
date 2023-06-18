@@ -25,13 +25,13 @@ public abstract class Menu : List
         ItemMaximumSize = (Size.width - 1, 1);
 
         var scrollColor = Color.Gray;
-        var back = Program.tilemaps[(int)Program.Layer.EditBack];
         var middle = Program.tilemaps[(int)Program.Layer.EditMiddle];
-        back.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
-        middle.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), 3));
-        middle.SetTile(Scroll.Slider.Handle.Position,
+        var front = Program.tilemaps[(int)Program.Layer.EditFront];
+        middle.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
+        front.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), 3));
+        front.SetTile(Scroll.Slider.Handle.Position,
             new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
-        middle.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
+        front.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
 
         if (IsExpanded == false)
             Position = (int.MaxValue, int.MaxValue);
@@ -41,7 +41,7 @@ public abstract class Menu : List
         item.IsDisabled = item.Text.EndsWith(" ");
 
         var color = item.IsDisabled ? Color.Gray : Color.Gray.ToBright();
-        var front = Program.tilemaps[(int)Program.Layer.EditMiddle];
+        var front = Program.tilemaps[(int)Program.Layer.EditFront];
 
         front.SetTextLine(item.Position, item.Text, GetColor(item, color));
 

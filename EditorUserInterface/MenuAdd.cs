@@ -21,7 +21,7 @@ public class MenuAdd : Menu
 
     protected override void OnItemTrigger(Button item)
     {
-        Program.editUI.CreateElement(IndexOf(item), Position);
+        Program.editUI.ElementCreate(IndexOf(item), Position);
     }
 
     #region Backend
