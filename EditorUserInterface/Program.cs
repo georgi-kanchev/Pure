@@ -7,63 +7,79 @@ using Window;
 
 public static class Program
 {
-	private enum Layer
-	{
-		UiBack, UiMiddle, UiFront,
-		EditBack, EditMiddle, EditFront,
-		Count
-	}
-	private static RightClickMenu? rightClickMenu;
-	private static TilemapManager? tilemaps;
-	private static RendererUI? ui;
-	private static RendererEdit? edit;
+    private enum Layer
+    {
+        UiBack,
+        UiMiddle,
+        UiFront,
+        EditBack,
+        EditMiddle,
+        EditFront,
+        Count
+    }
 
-	private static void Main()
-	{
-		Init();
+    private enum Menus
+    {
+        Main,
+        Add,
+    }
 
-		while (Window.IsOpen)
-		{
-			Window.Activate(true);
-			tilemaps.Fill();
+    private static readonly Dictionary<Menus, Menu> menus = new();
+    private static TilemapManager? tilemaps;
+    private static RendererUI? ui;
+    private static RendererEdit? edit;
 
-			Update();
+    private static void Main()
+    {
+        Init();
 
-			Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
-			for (var i = 0; i < tilemaps.Count; i++)
-				Window.DrawTiles(tilemaps[i].ToBundle());
-			Window.Activate(false);
-		}
-	}
+        while (Window.IsOpen)
+        {
+            Window.Activate(true);
+            tilemaps.Fill();
 
-	[MemberNotNull(nameof(tilemaps), nameof(rightClickMenu))]
-	private static void Init()
-	{
-		Window.Create(3);
+            Update();
 
-		var (width, height) = Window.MonitorAspectRatio;
-		tilemaps = new((int)Layer.Count, (width * 3, height * 3));
-		ui = new(tilemaps);
-		edit = new(tilemaps, ui);
+            Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
+            for (var i = 0; i < tilemaps.Count; i++)
+                Window.DrawTiles(tilemaps[i].ToBundle());
+            Window.Activate(false);
+        }
+    }
 
-		rightClickMenu = new(tilemaps[(int)Layer.EditBack], tilemaps[(int)Layer.EditMiddle], ui, edit);
-	}
-	private static void Update()
-	{
-		if (tilemaps == null)
-			return;
+    [MemberNotNull(nameof(tilemaps))]
+    private static void Init()
+    {
+        Window.Create(3);
 
-		var mousePos = tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
-		Element.ApplyInput(
-			Mouse.IsButtonPressed(Mouse.Button.Left),
-			mousePos,
-			Mouse.ScrollDelta,
-			Keyboard.KeyIDsPressed,
-			Keyboard.KeyTyped,
-			tilemaps.Size);
+        var (width, height) = Window.MonitorAspectRatio;
+        tilemaps = new((int)Layer.Count, (width * 3, height * 3));
+        ui = new(tilemaps);
+        edit = new(tilemaps, ui);
 
-		ui?.Update();
-		edit?.Update();
-		rightClickMenu?.Update();
-	}
+        var back = tilemaps[(int)Layer.EditBack];
+        var middle = tilemaps[(int)Layer.EditMiddle];
+        menus[Menus.Add] = new MenuAdd(back, middle, edit);
+        menus[Menus.Main] = new MenuMain(back, middle, (MenuAdd)menus[Menus.Add], ui);
+    }
+    private static void Update()
+    {
+        if (tilemaps == null)
+            return;
+
+        var mousePos = tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
+        Element.ApplyInput(
+            Mouse.IsButtonPressed(Mouse.Button.Left),
+            mousePos,
+            Mouse.ScrollDelta,
+            Keyboard.KeyIDsPressed,
+            Keyboard.KeyTyped,
+            tilemaps.Size);
+
+        ui?.Update();
+        edit?.Update();
+
+        foreach (var kvp in menus)
+            kvp.Value.Update();
+    }
 }

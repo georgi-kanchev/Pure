@@ -112,7 +112,53 @@ public abstract partial class Element
         get => size;
         set
         {
-            if (hasParent == false) size = (Math.Max(value.width, 1), Math.Max(value.height, 1));
+            if (hasParent)
+                return;
+
+            value.width = Math.Clamp(value.width, SizeMinimum.width, SizeMaximum.width);
+            value.height = Math.Clamp(value.height, SizeMinimum.height, SizeMaximum.height);
+
+            size = value;
+        }
+    }
+    /// <summary>
+    /// Gets or sets the minimum size that this element can have.
+    /// </summary>
+    public (int width, int height) SizeMinimum
+    {
+        get => sizeMinimum;
+        set
+        {
+            value.width = Math.Max(value.width, 1);
+            value.height = Math.Max(value.height, 1);
+
+            if (value.width > SizeMaximum.width)
+                value.width = SizeMaximum.width;
+            if (value.height > SizeMaximum.height)
+                value.height = SizeMaximum.height;
+
+            sizeMinimum = value;
+            Size = size;
+        }
+    }
+    /// <summary>
+    /// Gets or sets the maximum size that this element can have.
+    /// </summary>
+    public (int width, int height) SizeMaximum
+    {
+        get => sizeMaximum;
+        set
+        {
+            value.width = Math.Max(value.width, 1);
+            value.height = Math.Max(value.height, 1);
+
+            if (value.width < SizeMinimum.width)
+                value.width = SizeMinimum.width;
+            if (value.height < SizeMinimum.height)
+                value.height = SizeMinimum.height;
+
+            sizeMaximum = value;
+            Size = size;
         }
     }
     /// <summary>
@@ -246,15 +292,16 @@ public abstract partial class Element
     /// </summary>
     public void Trigger()
     {
+        IsPressedAndHeld = false;
         TriggerUserAction(UserAction.Trigger);
     }
 
-    public bool Contains((float x, float y) point)
+    public bool IsOverlapping((float x, float y) point)
     {
         return point.x >= Position.x && point.x <= Position.x + Size.width &&
                point.y >= Position.y && point.y <= Position.y + Size.height;
     }
-    public bool Overlaps(Element element)
+    public bool IsOverlapping(Element element)
     {
         var (x, y) = Position;
         var (w, h) = Size;
@@ -429,6 +476,7 @@ public abstract partial class Element
 
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     internal (int, int) position, size, listSizeTrimOffset;
+    private (int, int) sizeMinimum = (1, 1), sizeMaximum = (int.MaxValue, int.MaxValue);
     internal bool hasParent;
     internal readonly string typeName;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
@@ -442,6 +490,20 @@ public abstract partial class Element
         hold.Start();
         holdTrigger.Start();
         Text = GetType().Name;
+    }
+    internal void LimitSizeMin((int width, int height) minimumSize)
+    {
+        if (Size.width < minimumSize.width)
+            size = (minimumSize.width, Size.height);
+        if (Size.height < minimumSize.height)
+            size = (Size.width, minimumSize.height);
+    }
+    internal void LimitSizeMax((int width, int height) maximumSize)
+    {
+        if (Size.width > maximumSize.width)
+            size = (maximumSize.width, Size.height);
+        if (Size.height > maximumSize.height)
+            size = (Size.width, maximumSize.height);
     }
 
     private void UpdateHovered()
@@ -467,16 +529,10 @@ public abstract partial class Element
         }
 
         if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
-        {
-            IsPressedAndHeld = false;
-            TriggerUserAction(UserAction.Trigger);
-        }
+            Trigger();
 
         if (IsHovered && Input.Current.IsJustPressed)
             IsPressedAndHeld = true;
-
-        if (Input.Current.IsJustReleased)
-            IsPressedAndHeld = false;
     }
 
     private byte[] GetBytes(byte[] fromBytes, int amount)

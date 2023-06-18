@@ -5,6 +5,7 @@ namespace Pure.UserInterface;
 public class UserInterface
 {
     public int Count => elements.Count;
+    public string[] Keys => elements.Keys.ToArray();
 
     public Element this[string key]
     {
@@ -102,7 +103,7 @@ public class UserInterface
             if (kvp.Value is List list)
             {
                 list.itemUpdateCallback = (b) => OnUpdateListItem(kvp.Key, list, b);
-                list.itemSelectCallback = (i) => OnListItemSelect(kvp.Key, list, i);
+                list.itemTriggerCallback = (i) => OnListItemTrigger(kvp.Key, list, i);
             }
             else if (kvp.Value is Pages pages)
                 pages.pageUpdateCallback = (b) => OnUpdatePagesPage(kvp.Key, pages, b);
@@ -217,7 +218,7 @@ public class UserInterface
 
     protected virtual uint OnPalettePick(string key, Palette palette, (float x, float y) position) =>
         default;
-    protected virtual void OnListItemSelect(string key, List list, Button item)
+    protected virtual void OnListItemTrigger(string key, List list, Button item)
     {
     }
 

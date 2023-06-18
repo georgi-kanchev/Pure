@@ -107,6 +107,8 @@ public class Slider : Element
     /// </summary>
     protected override void OnUpdate()
     {
+        LimitSizeMin(IsVertical ? (1, 2) : (2, 1));
+
         UpdateHandle();
 
         if (IsDisabled)

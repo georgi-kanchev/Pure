@@ -117,11 +117,18 @@ public class List : Element
 
         for (var i = index; i < count; i++)
         {
-            var item = new Button((0, 0)) { Text = $"Item{i}" };
-            item.size = (Type == Types.Horizontal ? item.Text.Length : Size.width, 1);
-            item.hasParent = true;
+            var item = new Button((0, 0))
+            {
+                Text = $"Item{i}",
+                size = (Type == Types.Horizontal ? Text.Length : Size.width, 1),
+                hasParent = true
+            };
             items.Insert(i, item);
-            item.SubscribeToUserAction(UserAction.Select, () => TriggerSelectActions(item));
+            item.SubscribeToUserAction(UserAction.Trigger, () =>
+            {
+                OnItemTrigger(item);
+                itemTriggerCallback?.Invoke(item);
+            });
         }
 
         TrySingleSelectOneItem();
@@ -248,7 +255,7 @@ public class List : Element
             OnItemUpdate(selectedItem);
             itemUpdateCallback?.Invoke(selectedItem);
 
-            Select(selectedItem, true);
+            Select(selectedItem);
             return;
         }
 
@@ -264,7 +271,7 @@ public class List : Element
     protected virtual void OnItemUpdate(Button item)
     {
     }
-    protected virtual void OnItemSelect(Button item)
+    protected virtual void OnItemTrigger(Button item)
     {
     }
 
@@ -297,14 +304,7 @@ public class List : Element
 
     // used in the UI class to receive callbacks
     internal Action<Button>? itemUpdateCallback;
-    internal Action<Button>? itemSelectCallback;
-
-    private void TriggerSelectActions(Button item)
-    {
-        TriggerUserAction(UserAction.Select);
-        OnItemSelect(item);
-        itemSelectCallback?.Invoke(item);
-    }
+    internal Action<Button>? itemTriggerCallback;
 
     internal void TrySingleSelectOneItem()
     {
@@ -340,19 +340,16 @@ public class List : Element
         if (HasIndex(hoveredIndex) == false)
             return;
 
-        if (items[hoveredIndex].IsPressedAndHeld)
-        {
-            var prev = singleSelectedIndex;
-            singleSelectedIndex = hoveredIndex;
+        if (items[hoveredIndex].IsPressedAndHeld == false)
+            return;
 
-            if (Type == Types.Dropdown)
-            {
-                isExpanded = isExpanded == false;
+        singleSelectedIndex = hoveredIndex;
+        items[hoveredIndex].Trigger();
 
-                if (prev != hoveredIndex)
-                    TriggerSelectActions(items[hoveredIndex]);
-            }
-        }
+        if (Type != Types.Dropdown)
+            return;
+
+        isExpanded = isExpanded == false;
     }
 
     private void UpdateParts()
@@ -433,7 +430,7 @@ public class List : Element
         }
 
         if (IsSingleSelecting && HasIndex(singleSelectedIndex))
-            Select(items[singleSelectedIndex], true);
+            Select(items[singleSelectedIndex]);
     }
 
     private bool HasIndex(int index)

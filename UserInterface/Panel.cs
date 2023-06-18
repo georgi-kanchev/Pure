@@ -18,20 +18,6 @@ public class Panel : Element
     /// outside of the tilemap.
     /// </summary>
     public bool IsRestricted { get; set; } = true;
-    /// <summary>
-    /// Gets or sets the minimum additional size that this panel can have beyond its current size.
-    /// </summary>
-    public (int width, int height) MinimumSize
-    {
-        get => minimumSize;
-        set
-        {
-            value.width = Math.Max(value.width, 3);
-            value.height = Math.Max(value.height, 3);
-
-            minimumSize = value;
-        }
-    }
 
     /// <summary>
     /// Initializes a new panel instance with the specified position.
@@ -43,7 +29,7 @@ public class Panel : Element
     }
     public Panel(byte[] bytes) : base(bytes)
     {
-        MinimumSize = (GrabInt(bytes), GrabInt(bytes));
+        SizeMinimum = (GrabInt(bytes), GrabInt(bytes));
         IsResizable = GrabBool(bytes);
         IsMovable = GrabBool(bytes);
     }
@@ -51,8 +37,8 @@ public class Panel : Element
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
-        PutInt(result, MinimumSize.width);
-        PutInt(result, MinimumSize.height);
+        PutInt(result, SizeMinimum.width);
+        PutInt(result, SizeMinimum.height);
         PutBool(result, IsResizable);
         PutBool(result, IsMovable);
         return result.ToArray();
@@ -65,10 +51,7 @@ public class Panel : Element
     /// </summary>
     protected override void OnUpdate()
     {
-        if (MinimumSize.width > Size.width)
-            Size = (MinimumSize.width, Size.height);
-        if (MinimumSize.height > Size.height)
-            Size = (Size.width, MinimumSize.height);
+        LimitSizeMin((2, 2));
 
         if (IsDisabled || (IsResizable == false && IsMovable == false))
             return;
@@ -142,7 +125,7 @@ public class Panel : Element
             var (deltaX, deltaY) = ((int)inputX - (int)prevX, (int)inputY - (int)prevY);
             var (newX, newY) = (x, y);
             var (newW, newH) = (w, h);
-            var (maxX, maxY) = MinimumSize;
+            var (maxX, maxY) = SizeMinimum;
 
             if (deltaX == 0 && deltaY == 0 || FocusedPrevious != this)
                 return;
@@ -173,12 +156,21 @@ public class Panel : Element
                 newX < 0 ||
                 newY < 0;
             var isBelowMinimumSize = newW < Math.Abs(maxX) || newH < Math.Abs(maxY);
+            var moveNoResize = isDragging == false &&
+                               (isResizingD || isResizingL || isResizingR || isResizingU);
 
             if (isBelowMinimumSize || (isOutsideScreen && IsRestricted))
                 return;
 
+            var prevSz = Size;
+            var prevPos = Position;
             Size = (newW, newH);
             Position = (newX, newY);
+
+            // sometimes resizing causes only drag because of the nature of
+            // limited size for example - so prevent it
+            if (moveNoResize && prevSz == Size && prevPos != Position)
+                Position = (x, y);
         }
 
         void Process(ref bool condition, MouseCursor cursor)
@@ -193,7 +185,6 @@ public class Panel : Element
 
     #region Backend
     private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
-    private (int, int) minimumSize = (2, 2);
 
     private static bool IsBetween(float number, float rangeA, float rangeB)
     {

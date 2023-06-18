@@ -21,7 +21,7 @@ public class Palette : Element
         }
     }
 
-    public Palette((int x, int y) position, int brightnessLevels) : base(position)
+    public Palette((int x, int y) position, int brightnessLevels = 30) : base(position)
     {
         Size = (13, 3);
 
@@ -48,7 +48,8 @@ public class Palette : Element
 
     protected override void OnUpdate()
     {
-        Size = (13, 3);
+        SizeMinimum = (13, 3);
+        SizeMaximum = (13, 3);
 
         if (IsDisabled)
             return;
@@ -64,7 +65,8 @@ public class Palette : Element
         {
             isPicking = false;
 
-            // ui callback first, then child callback (child is with priority - will overwrite the value if possible)
+            // ui callback first, then child callback (child is with priority
+            // - will overwrite the value if possible)
             var uiColor = pickCallback?.Invoke(Input.Current.Position);
             var childColor = OnPick(Input.Current.Position);
             SelectedColor = childColor == default && uiColor != null ? (uint)uiColor : childColor;
@@ -83,6 +85,8 @@ public class Palette : Element
             sampleUpdateCallback?.Invoke(btn, GetColor(i));
             btn.Update();
         }
+
+        UpdateParts();
     }
     protected virtual void OnSampleUpdate(Button sample, uint color)
     {
@@ -145,7 +149,7 @@ public class Palette : Element
         Opacity = new((x, y), w) { Progress = opacityProgress, hasParent = true };
         Brightness = new ChildPagination((x, y + 2), brightnessPageCount, this)
         {
-            Size = (w - 1, 1),
+            size = (w - 1, 1),
             CurrentPage = brightnessCurrentPage,
             hasParent = true
         };
@@ -154,7 +158,26 @@ public class Palette : Element
         Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
 
         for (var i = 0; i < 13; i++)
-            colorButtons.Add(new Button((x + i, y + 1)) { Size = (1, 1), hasParent = true });
+            colorButtons.Add(new((x + i, y + 1)) { size = (1, 1), hasParent = true });
+    }
+    private void UpdateParts()
+    {
+        var (x, y) = Position;
+        var (w, h) = Size;
+
+        Opacity.position = (x, y);
+        Opacity.size = (w, 1);
+        Pick.position = (x + w - 1, y + h - 1);
+        Pick.size = (1, 1);
+        Brightness.position = (x, y + 2);
+        Brightness.size = (w - 1, 1);
+
+        for (var i = 0; i < colorButtons.Count; i++)
+        {
+            var btn = colorButtons[i];
+            btn.position = (x + i, y + 1);
+            btn.size = (1, 1);
+        }
     }
 
     private static uint ToOpacity(uint color, float unit)
