@@ -96,6 +96,17 @@ public class UserInterface
         }
     }
 
+    public string? KeyOf(Element element)
+    {
+        foreach (var kvp in elements)
+            if (kvp.Value == element)
+                return kvp.Key;
+
+        return null;
+    }
+    public bool ContainsKey(string key) => elements.ContainsKey(key);
+    public bool ContainsElement(Element element) => elements.ContainsValue(element);
+    public void Remove(string key) => elements.Remove(key);
     public void Update()
     {
         foreach (var kvp in elements)

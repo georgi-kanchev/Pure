@@ -4,25 +4,20 @@ using Pure.Utilities;
 namespace Pure.EditorUserInterface;
 
 using Pure.Window;
-using Pure.Tracker;
 
 public class MenuMain : Menu
 {
-    public MenuMain(Tilemap.Tilemap background, Tilemap.Tilemap tilemap, MenuAdd menuAdd, RendererUI ui)
-        : base(background, tilemap,
+    public MenuMain()
+        : base(
             "Element… ",
             "  Add",
             "  Edit",
-            "  Pin Contained",
             "-------- ",
             "Scene… ",
             "  Save",
             "  Load")
     {
-        this.menuAdd = menuAdd;
-        this.ui = ui;
-
-        Size = (16, 7);
+        Size = (9, 7);
     }
 
     protected override void OnUpdate()
@@ -32,44 +27,43 @@ public class MenuMain : Menu
             var (x, y) = GetInputPosition();
             Position = ((int)x + 1, (int)y + 1);
             IsExpanded = true;
-            menuAdd.IsExpanded = false;
-
-            var hoveredElement = GetHoveredElement();
-            selectedElement = hoveredElement;
-
-            // disable edit if not hovering any elements upon bringing the menu
-            var hoveredStr = hoveredElement != null ? "" : " ";
-            this[2].Text = "  Edit" + hoveredStr;
-            this[3].Text = "  Pin Contained" + hoveredStr;
+            Program.menus[Program.MenuType.Add].IsExpanded = false;
         }
+
+        // disable edit if no elements are selected
+        var hoveredStr = Program.Selected != null ? "" : " ";
+        this[2].Text = "  Edit" + hoveredStr;
 
         base.OnUpdate();
     }
     protected override void OnItemTrigger(Button item)
     {
-        if (IndexOf(item) == 1)
+        var index = IndexOf(item);
+        if (index == 1)
         {
+            var menuAdd = Program.menus[Program.MenuType.Add];
             menuAdd.Position = Position;
             menuAdd.IsExpanded = true;
+        }
+        else if (index == 2)
+        {
+            Program.editPanel.Position = (item.Position.x + item.Size.width, item.Position.y - 1);
         }
     }
 
     #region Backend
-    private readonly MenuAdd menuAdd;
-    private readonly RendererUI ui;
-    private Element? selectedElement;
-
     private (float, float) GetInputPosition()
     {
-        return tilemap.PointFrom(Mouse.CursorPosition, Window.Size);
+        return Program.tilemaps[(int)Program.Layer.UiMiddle]
+            .PointFrom(Mouse.CursorPosition, Window.Size);
     }
     private Element? GetHoveredElement()
     {
-        var keys = ui.Keys;
+        var keys = Program.ui.Keys;
         for (var i = keys.Length - 1; i >= 0; i--)
         {
-            if (ui[keys[i]].IsOverlapping(GetInputPosition()))
-                return ui[keys[i]];
+            if (Program.ui[keys[i]].IsOverlapping(GetInputPosition()))
+                return Program.ui[keys[i]];
         }
 
         return null;

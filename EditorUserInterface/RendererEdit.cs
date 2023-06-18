@@ -1,3 +1,5 @@
+using Pure.Window;
+
 namespace Pure.EditorUserInterface;
 
 using Pure.Tilemap;
@@ -6,67 +8,43 @@ using Pure.Utilities;
 
 public class RendererEdit : UserInterface
 {
-    private readonly TilemapManager tilemaps;
-    private readonly RendererUI ui;
-
-    public RendererEdit(TilemapManager tilemaps, RendererUI ui)
-    {
-        this.tilemaps = tilemaps;
-        this.ui = ui;
-    }
-
     public void CreateElement(int index, (int x, int y) position)
     {
         var count = Count.ToString();
         var element = default(Element);
         var panel = new Panel(position) { IsRestricted = false, SizeMinimum = (3, 3) };
-        switch (index)
+        if (index == 1) element = new Button(position);
+        else if (index == 2) element = new InputBox(position);
+        else if (index == 3)
         {
-            case 1:
-                element = new Button(position);
-                break;
-            case 2:
-                element = new InputBox(position);
-                break;
-            case 3:
-            {
-                element = new Pages(position);
-                panel.SizeMinimum = (8, 3);
-                panel.SizeMaximum = (int.MaxValue, 3);
-                break;
-            }
-            case 4:
-            {
-                element = new Panel(position);
-                panel.SizeMinimum = (5, 5);
-                break;
-            }
-            case 5:
-            {
-                element = new Palette(position);
-                panel.IsResizable = false;
-                break;
-            }
-            case 6:
-            {
-                element = new Slider(position);
-                panel.SizeMinimum = (4, 3);
-                panel.SizeMaximum = (int.MaxValue, 3);
-                break;
-            }
-            case 7:
-            {
-                element = new Scroll(position);
-                panel.SizeMinimum = (3, 6);
-                panel.SizeMaximum = (3, int.MaxValue);
-                break;
-            }
-            case 8:
-            {
-                element = new List(position);
-                break;
-            }
+            element = new Pages(position);
+            panel.SizeMinimum = (8, 3);
+            panel.SizeMaximum = (int.MaxValue, 3);
         }
+        else if (index == 4)
+        {
+            element = new Panel(position);
+            panel.SizeMinimum = (5, 5);
+        }
+        else if (index == 5)
+        {
+            element = new Palette(position);
+            panel.IsResizable = false;
+        }
+        else if (index == 6)
+        {
+            element = new Slider(position);
+            panel.SizeMinimum = (4, 3);
+            panel.SizeMaximum = (int.MaxValue, 3);
+        }
+        else if (index == 7)
+        {
+            element = new Scroll(position);
+            panel.SizeMinimum = (3, 6);
+            panel.SizeMaximum = (3, int.MaxValue);
+        }
+        else if (index == 8)
+            element = new List(position);
 
         if (element == null)
             return;
@@ -74,29 +52,58 @@ public class RendererEdit : UserInterface
         panel.Size = (element.Size.width + 2, element.Size.height + 2);
         panel.Text = element.Text;
 
-        ui[count] = element;
+        Program.ui[count] = element;
         this[count] = panel;
+
+        Element.Focused = null;
+    }
+    public void RemoveElement(Element element)
+    {
+        var key = Program.ui.KeyOf(element);
+        if (key == null)
+            return;
+
+        Program.ui.Remove(key);
+        Remove(key);
     }
 
     protected override void OnUpdatePanel(string key, Panel panel)
     {
-        var p = panel;
-        var e = ui[key];
+        var e = Program.ui[key];
 
-        e.Position = (p.Position.x + 1, p.Position.y + 1);
-        e.Size = (p.Size.width - 2, p.Size.height - 2);
+        if (panel is { IsPressedAndHeld: true, IsHovered: true })
+            Program.Selected = e;
 
-        var offset = (p.Size.width - p.Text.Length) / 2;
+        e.Position = (panel.Position.x + 1, panel.Position.y + 1);
+        e.Size = (panel.Size.width - 2, panel.Size.height - 2);
+
+        var offset = (panel.Size.width - panel.Text.Length) / 2;
         offset = Math.Max(offset, 0);
-        var textPos = (p.Position.x + offset, p.Position.y);
+        var textPos = (panel.Position.x + offset, panel.Position.y);
         const int corner = Tile.BORDER_GRID_CORNER;
         const int straight = Tile.BORDER_GRID_STRAIGHT;
 
-        if (panel.IsHovered == false)
+        if (Program.Selected != e)
             return;
 
-        tilemaps[3].SetBorder(p.Position, p.Size, corner, straight, Color.Cyan);
-        tilemaps[3].SetRectangle(textPos, (p.Text.Length, 1), default);
-        tilemaps[4].SetTextLine(textPos, p.Text, Color.White);
+        var back = Program.tilemaps[(int)Program.Layer.EditBack];
+        var middle = Program.tilemaps[(int)Program.Layer.EditMiddle];
+        back.SetBorder(panel.Position, panel.Size, corner, straight, Color.Cyan);
+        back.SetRectangle(textPos, (panel.Text.Length, 1), default);
+        middle.SetTextLine(textPos, panel.Text, Color.Cyan);
     }
+
+    #region Backend
+    private readonly Dictionary<string, List<(string, (int offX, int offY))>> pins = new();
+
+    private void PinOverlapping(string parentKey)
+    {
+        var panel = this[parentKey];
+        var element = Program.ui[parentKey];
+        var offset = (panel.Position.x - element.Position.x, panel.Position.y - element.Position.y);
+
+        if (pins.ContainsKey(parentKey) == false)
+            pins[parentKey] = new();
+    }
+    #endregion
 }

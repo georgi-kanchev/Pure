@@ -83,7 +83,7 @@ public abstract partial class Element
     /// <summary>
     /// The currently focused user interface element.
     /// </summary>
-    protected static Element? Focused { get; private set; }
+    public static Element? Focused { get; set; }
     /// <summary>
     /// The user interface element that was focused during the previous update.
     /// </summary>
@@ -184,7 +184,7 @@ public abstract partial class Element
     public bool IsFocused
     {
         get => Focused == this;
-        protected set => Focused = value ? this : default;
+        set => Focused = value ? this : default;
     }
     /// <summary>
     /// Gets a value indicating whether the input position is currently hovering 

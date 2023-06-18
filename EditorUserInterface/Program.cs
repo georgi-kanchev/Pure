@@ -1,4 +1,7 @@
-﻿namespace Pure.EditorUserInterface;
+﻿using System.Dynamic;
+using Pure.Utilities;
+
+namespace Pure.EditorUserInterface;
 
 using System.Diagnostics.CodeAnalysis;
 using Tilemap;
@@ -7,7 +10,7 @@ using Window;
 
 public static class Program
 {
-    private enum Layer
+    public enum Layer
     {
         UiBack,
         UiMiddle,
@@ -18,21 +21,36 @@ public static class Program
         Count
     }
 
-    private enum Menus
+    public enum MenuType
     {
         Main,
         Add,
     }
 
-    private static readonly Dictionary<Menus, Menu> menus = new();
-    private static TilemapManager? tilemaps;
-    private static RendererUI? ui;
-    private static RendererEdit? edit;
+    public static Element? Selected;
+
+    public static readonly Dictionary<MenuType, Menu> menus = new();
+    public static readonly TilemapManager tilemaps;
+    public static readonly RendererUI ui;
+    public static readonly RendererEdit editUI;
+    public static readonly EditPanel editPanel;
+
+    static Program()
+    {
+        Window.Create(3);
+
+        var (width, height) = Window.MonitorAspectRatio;
+        tilemaps = new((int)Layer.Count, (width * 3, height * 3));
+        ui = new(tilemaps);
+        editUI = new();
+        editPanel = new((int.MaxValue, int.MaxValue), tilemaps);
+
+        menus[MenuType.Add] = new MenuAdd();
+        menus[MenuType.Main] = new MenuMain();
+    }
 
     private static void Main()
     {
-        Init();
-
         while (Window.IsOpen)
         {
             Window.Activate(true);
@@ -47,26 +65,8 @@ public static class Program
         }
     }
 
-    [MemberNotNull(nameof(tilemaps))]
-    private static void Init()
-    {
-        Window.Create(3);
-
-        var (width, height) = Window.MonitorAspectRatio;
-        tilemaps = new((int)Layer.Count, (width * 3, height * 3));
-        ui = new(tilemaps);
-        edit = new(tilemaps, ui);
-
-        var back = tilemaps[(int)Layer.EditBack];
-        var middle = tilemaps[(int)Layer.EditMiddle];
-        menus[Menus.Add] = new MenuAdd(back, middle, edit);
-        menus[Menus.Main] = new MenuMain(back, middle, (MenuAdd)menus[Menus.Add], ui);
-    }
     private static void Update()
     {
-        if (tilemaps == null)
-            return;
-
         var mousePos = tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
         Element.ApplyInput(
             Mouse.IsButtonPressed(Mouse.Button.Left),
@@ -77,9 +77,28 @@ public static class Program
             tilemaps.Size);
 
         ui?.Update();
-        edit?.Update();
+        editUI?.Update();
+        editPanel.Update();
 
         foreach (var kvp in menus)
             kvp.Value.Update();
+
+        var onLmb = Mouse.IsButtonPressed(Mouse.Button.Left).Once("on-lmb-deselect");
+        if (onLmb && GetHovered() == null)
+            Selected = null;
+    }
+
+    private static Element? GetHovered()
+    {
+        var keys = editUI.Keys;
+        var inputPos = tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
+
+        for (var i = keys.Length - 1; i >= 0; i--)
+        {
+            if (editUI[keys[i]].IsOverlapping(inputPos))
+                return editUI[keys[i]];
+        }
+
+        return null;
     }
 }

@@ -239,10 +239,6 @@ public class List : Element
 
         TrySingleSelect();
 
-        if (IsHovered && Input.Current.ScrollDelta != 0 &&
-            (isExpanded || Type != Types.Dropdown))
-            Scroll.Slider.Move(Input.Current.ScrollDelta);
-
         if (Type == Types.Dropdown && isInitialized && isExpanded == false)
         {
             var selectedItem = this[singleSelectedIndex];
@@ -261,6 +257,14 @@ public class List : Element
 
         UpdateParts();
         UpdateItems();
+
+        // in case the user hovers in between items - try scroll
+        if (IsHovered && Input.Current.ScrollDelta != 0 &&
+            (isExpanded || Type != Types.Dropdown) && IsFocused && FocusedPrevious == this)
+            Scroll.Slider.Move(Input.Current.ScrollDelta);
+        // and in case the user hovers the items themselves - also try scroll
+        foreach (var item in items)
+            TryScrollWhileHoverButton(item);
     }
 
     /// <summary>
@@ -488,6 +492,12 @@ public class List : Element
         var totalH = items.Count * (maxH + ItemGap.height) - ItemGap.height;
 
         return (totalW > Size.width, totalH > Size.height);
+    }
+    private void TryScrollWhileHoverButton(Element btn)
+    {
+        if (btn.IsHovered && Input.Current.ScrollDelta != 0 && btn.IsFocused &&
+            FocusedPrevious == btn)
+            Scroll.Slider.Move(Input.Current.ScrollDelta);
     }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)

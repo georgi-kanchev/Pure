@@ -9,13 +9,9 @@ using Pure.Utilities;
 
 public abstract class Menu : List
 {
-    protected Menu(Tilemap background, Tilemap tilemap,
-        params string[] options) :
+    protected Menu(params string[] options) :
         base((int.MaxValue, int.MaxValue), options.Length, Types.Dropdown)
     {
-        this.background = background;
-        this.tilemap = tilemap;
-
         Size = (15, 15);
 
         for (var i = 0; i < options.Length; i++)
@@ -29,11 +25,13 @@ public abstract class Menu : List
         ItemMaximumSize = (Size.width - 1, 1);
 
         var scrollColor = Color.Gray;
-        background.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
-        tilemap.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), 3));
-        tilemap.SetTile(Scroll.Slider.Handle.Position,
+        var back = Program.tilemaps[(int)Program.Layer.EditBack];
+        var middle = Program.tilemaps[(int)Program.Layer.EditMiddle];
+        back.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
+        middle.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), 3));
+        middle.SetTile(Scroll.Slider.Handle.Position,
             new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
-        tilemap.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
+        middle.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
 
         if (IsExpanded == false)
             Position = (int.MaxValue, int.MaxValue);
@@ -43,18 +41,17 @@ public abstract class Menu : List
         item.IsDisabled = item.Text.EndsWith(" ");
 
         var color = item.IsDisabled ? Color.Gray : Color.Gray.ToBright();
+        var front = Program.tilemaps[(int)Program.Layer.EditMiddle];
 
-        tilemap.SetTextLine(item.Position, item.Text, GetColor(item, color));
+        front.SetTextLine(item.Position, item.Text, GetColor(item, color));
 
         var (itemX, itemY) = item.Position;
         var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(item, color), 1);
         if (IsExpanded == false)
-            tilemap.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
+            front.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
     }
 
     #region Backend
-    protected readonly Tilemap background, tilemap;
-
     private static Color GetColor(Element element, Color baseColor)
     {
         if (element.IsDisabled) return baseColor;

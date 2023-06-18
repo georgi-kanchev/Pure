@@ -82,6 +82,11 @@ public class Scroll : Element
         Slider.Update();
         Up.Update();
         Down.Update();
+
+        // buttons gain focus priority over the slider so
+        // retrigger the scrolling behavior when scrolling over them
+        TryScrollWhileHoverButton(Up);
+        TryScrollWhileHoverButton(Down);
     }
 
     #region Backend
@@ -101,6 +106,12 @@ public class Scroll : Element
         Up.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(1 * dir));
         Down.SubscribeToUserAction(UserAction.Trigger, () => Slider.Move(-1 * dir));
         Down.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(-1 * dir));
+    }
+    private void TryScrollWhileHoverButton(Element btn)
+    {
+        if (btn.IsHovered && Input.Current.ScrollDelta != 0 && btn.IsFocused &&
+            FocusedPrevious == btn)
+            Slider.Move(Input.Current.ScrollDelta);
     }
     #endregion
 }

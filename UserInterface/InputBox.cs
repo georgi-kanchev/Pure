@@ -1,4 +1,6 @@
-﻿namespace Pure.UserInterface;
+﻿using Microsoft.VisualBasic;
+
+namespace Pure.UserInterface;
 
 using System.Diagnostics;
 using System.Text;
@@ -11,7 +13,7 @@ public class InputBox : Element
     /// <summary>
     /// The text displayed in the input box when it is empty.
     /// </summary>
-    public string Placeholder { get; set; } = "Type...";
+    public string Placeholder { get; set; } = "Type…";
 
     public string Selection
     {
@@ -86,10 +88,12 @@ public class InputBox : Element
     /// <param name="position">The position of the input box.</param>
     public InputBox((int x, int y) position) : base(position)
     {
+        lines[0] = Text;
         Size = (12, 1);
     }
     public InputBox(byte[] bytes) : base(bytes)
     {
+        lines[0] = Text;
         Placeholder = GrabString(bytes);
     }
 
@@ -225,7 +229,7 @@ public class InputBox : Element
     }
 
     #region Backend
-    private readonly List<string> lines = new() { "" };
+    private readonly List<string> lines = new() { " " };
 
     private const char SELECTION = '█', SPACE = ' ';
     private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
