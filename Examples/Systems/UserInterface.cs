@@ -20,42 +20,42 @@ public static class UserInterface
             this.front = front;
         }
 
-        protected override void OnUserActionButton(string key, Button button, UserAction userAction)
+        protected override void OnUserActionButton(Button button, UserAction userAction)
         {
-            if (key == "button" && userAction == UserAction.Trigger)
+            if (button.Text == "Button" && userAction == UserAction.Trigger)
                 buttonClickCount++;
         }
 
-        protected override void OnUpdateButton(string key, Button button)
+        protected override void OnUpdateButton(Button button)
         {
             var e = button;
-            if (key == "button")
+            if (button.Text == "Button")
             {
                 e.Size = (e.Text.Length + 2, 3);
-
                 middle.SetBorder(e.Position, e.Size,
                     Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT,
                     GetColor(e, Color.Yellow).ToDark());
                 middle.SetTextLine((e.Position.x + 1, e.Position.y + 1), e.Text,
-                    GetColor(e, Color.Yellow));
+                    GetColor(e, Color.Yellow.ToDark()));
                 middle.SetTextLine((e.Position.x + 1 + e.Size.width, e.Position.y + 1),
                     $"{buttonClickCount}", Color.White);
             }
-            else if (key == "checkbox")
+            else if (button.Text == "Checkbox")
             {
                 e.Size = (e.Text.Length + 2, 1);
 
                 var color = e.IsSelected ? Color.Green : Color.Red;
                 var tile = new Tile(e.IsSelected ? Tile.ICON_TICK : Tile.UPPERCASE_X,
                     GetColor(button, color));
+                SetBackground(e);
                 middle.SetTile(e.Position, tile);
                 middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text, GetColor(button, color));
             }
         }
-        protected override void OnUpdateInputBox(string key, InputBox inputBox)
+        protected override void OnUpdateInputBox(InputBox inputBox)
         {
             var e = inputBox;
-            back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray));
+            SetBackground(e);
             back.SetTextRectangle(e.Position, e.Size, e.Selection,
                 e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
             middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
@@ -66,7 +66,7 @@ public static class UserInterface
             if (e.IsCursorVisible)
                 front.SetTile(e.CursorPosition, new(Tile.SHAPE_LINE, Color.White, 2));
         }
-        protected override void OnUpdateSlider(string key, Slider slider)
+        protected override void OnUpdateSlider(Slider slider)
         {
             var e = slider;
             middle.SetBar(e.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, Color.Gray,
@@ -74,8 +74,12 @@ public static class UserInterface
             middle.SetTile(e.Handle.Position, new(Tile.SHADE_OPAQUE, GetColor(e, Color.Yellow)));
             middle.SetTextLine((e.Position.x + e.Size.width + 1, e.Position.y), $"{e.Progress:F2}");
         }
-        protected override void OnUpdateList(string key, List list) => OnUpdateScroll(key, list.Scroll);
-        protected override void OnUpdateListItem(string key, List list, Button item)
+        protected override void OnUpdateList(List list)
+        {
+            SetBackground(list);
+            OnUpdateScroll(list.Scroll);
+        }
+        protected override void OnUpdateListItem(List list, Button item)
         {
             var color = item.IsSelected ? Color.Green : Color.Red;
 
@@ -86,10 +90,10 @@ public static class UserInterface
             if (list.IsExpanded == false)
                 middle.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
         }
-        protected override void OnUpdatePanel(string key, Panel panel)
+        protected override void OnUpdatePanel(Panel panel)
         {
             var e = panel;
-            back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
+            SetBackground(e);
             front.SetBorder(e.Position, e.Size, Tile.BORDER_GRID_CORNER, Tile.BORDER_GRID_STRAIGHT,
                 Color.Blue);
             back.SetRectangle((e.Position.x + 1, e.Position.y), (e.Size.width - 2, 1),
@@ -97,20 +101,37 @@ public static class UserInterface
             front.SetTextRectangle((e.Position.x, e.Position.y), (e.Size.width, 1), e.Text,
                 alignment: Tilemap.Alignment.Center);
         }
-        protected override void OnUpdatePages(string key, Pages pages)
+        protected override void OnUpdatePages(Pages pages)
         {
             var e = pages;
-            middle.SetTile(e.First.Position, new(Tile.MATH_MUCH_LESS, GetColor(e.First, Color.Gray)));
-            middle.SetTile(e.Previous.Position, new(Tile.MATH_LESS, GetColor(e.Previous, Color.Gray)));
-            middle.SetTile(e.Next.Position, new(Tile.MATH_GREATER, GetColor(e.Next, Color.Gray)));
-            middle.SetTile(e.Last.Position, new(Tile.MATH_MUCH_GREATER, GetColor(e.Last, Color.Gray)));
+            SetBackground(e);
+            var colorFirst = GetColor(e.First, Color.Gray);
+            var colorPrevious = GetColor(e.Previous, Color.Gray);
+            var colorNext = GetColor(e.Next, Color.Gray);
+            var colorLast = GetColor(e.Last, Color.Gray);
+            middle.SetTile(e.First.Position, new(Tile.MATH_MUCH_LESS, colorFirst));
+            middle.SetTile((e.First.Position.x, e.First.Position.y + 1),
+                new(Tile.PUNCTUATION_PIPE, colorFirst));
+            middle.SetTile(e.Previous.Position, new(Tile.MATH_LESS, colorPrevious));
+            middle.SetTile((e.Previous.Position.x, e.Previous.Position.y + 1),
+                new(Tile.PUNCTUATION_PIPE, colorPrevious));
+            middle.SetTile(e.Next.Position, new(Tile.MATH_GREATER, colorNext));
+            middle.SetTile((e.Next.Position.x, e.Next.Position.y + 1),
+                new(Tile.PUNCTUATION_PIPE, colorNext));
+            middle.SetTile(e.Last.Position, new(Tile.MATH_MUCH_GREATER, colorLast));
+            middle.SetTile((e.Last.Position.x, e.Last.Position.y + 1),
+                new(Tile.PUNCTUATION_PIPE, colorLast));
         }
-        protected override void OnUpdatePagesPage(string key, Pages pages, Button page)
+        protected override void OnUpdatePagesPage(Pages pages, Button page)
         {
             var color = page.IsSelected ? Color.Green : Color.Gray;
             middle.SetTextLine(page.Position, page.Text, GetColor(page, color));
+
+            if (pages.Count == 10)
+                middle.SetTile((page.Position.x, page.Position.y + 1),
+                    new(Tile.ICON_HOME + int.Parse(page.Text), GetColor(page, color)));
         }
-        protected override void OnUpdatePalette(string key, Palette palette)
+        protected override void OnUpdatePalette(Palette palette)
         {
             var e = palette;
             var (x, y) = e.Position;
@@ -124,6 +145,7 @@ public static class UserInterface
             var previous = e.Brightness.Previous;
             var next = e.Brightness.Next;
             var last = e.Brightness.Last;
+
             middle.SetTile(first.Position, new(Tile.MATH_MUCH_LESS, GetColor(first, Color.Gray)));
             middle.SetTile(previous.Position, new(Tile.MATH_LESS, GetColor(previous, Color.Gray)));
             middle.SetTile(next.Position, new(Tile.MATH_GREATER, GetColor(next, Color.Gray)));
@@ -133,28 +155,31 @@ public static class UserInterface
 
             middle.SetRectangle((x, y - 3), (e.Size.width, 3), new(Tile.SHADE_OPAQUE, e.SelectedColor));
         }
-        protected override void OnUpdatePalettePage(string key, Palette palette, Button page)
+        protected override void OnUpdatePalettePage(Palette palette, Button page)
         {
-            OnUpdatePagesPage(key, palette.Brightness, page); // display the same kind of pages
+            OnUpdatePagesPage(palette.Brightness, page); // display the same kind of pages
         }
-        protected override void OnUpdatePaletteSample(string key, Palette palette, Button sample,
+        protected override void OnUpdatePaletteSample(Palette palette, Button sample,
             uint color)
         {
             middle.SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color));
         }
-        protected override void OnUpdateNumericScroll(string key, NumericScroll numericScroll)
+        protected override void OnUpdateStepper(Stepper stepper)
         {
-            var e = numericScroll;
+            var e = stepper;
+            SetBackground(e);
             middle.SetTile(e.Down.Position, new(Tile.ARROW, GetColor(e.Down, Color.Gray), 1));
             middle.SetTextLine((e.Position.x, e.Position.y + 1), $"{e.Value}");
             middle.SetTile(e.Up.Position, new(Tile.ARROW, GetColor(e.Up, Color.Gray), 3));
         }
-        protected override void OnUpdateScroll(string key, Scroll scroll)
+        protected override void OnUpdateScroll(Scroll scroll)
         {
             var e = scroll;
             var scrollUpAng = (sbyte)(e.IsVertical ? 3 : 0);
             var scrollDownAng = (sbyte)(e.IsVertical ? 1 : 2);
             var scrollColor = Color.Gray.ToBright();
+
+            SetBackground(e);
             middle.SetTile(e.Up.Position, new(Tile.ARROW, GetColor(e.Up, scrollColor), scrollUpAng));
             middle.SetTile(e.Slider.Handle.Position,
                 new(Tile.SHAPE_CIRCLE, GetColor(e.Slider, scrollColor)));
@@ -165,7 +190,7 @@ public static class UserInterface
         // a special kind of action - the palette needs the tile color at a certain position
         // and we happen to have it in the tilemap
         // potentially inheriting Palette and receiving the action there would take priority over this one
-        protected override uint OnPalettePick(string key, Palette palette, (float x, float y) position)
+        protected override uint OnPalettePick(Palette palette, (float x, float y) position)
         {
             return middle.TileAt(((int)position.x, (int)position.y)).Tint;
         }
@@ -178,6 +203,11 @@ public static class UserInterface
 
             return baseColor;
         }
+        private void SetBackground(Element element)
+        {
+            var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark());
+            back.SetRectangle(element.Position, element.Size, tile);
+        }
     }
 
     public static void Run()
@@ -189,38 +219,42 @@ public static class UserInterface
         var back = tilemaps[0];
         var middle = tilemaps[1];
         var front = tilemaps[2];
-
-        var userInterface = new UI(back, middle, front)
+        var dropdown = new List((27, 5), 15, Types.Dropdown)
         {
-            ["button"] = new Button((2, 2)),
-            ["checkbox"] = new Button((2, 7)) { Text = "Checkbox" },
-            ["inputbox"] = new InputBox((2, 10)) { Size = (12, 4) },
-            ["slider"] = new Slider((2, 17), 7),
-            ["numeric-scroll"] = new NumericScroll((34, 6)) { Range = (-9, 13) },
-            ["list-dropdown"] = new List((27, 5), 15, Types.Dropdown) { Size = (6, 9) },
-            ["scroll-vertical"] = new Scroll((37, 6), 9),
-            ["scroll-horizontal"] = new Scroll((38, 15), 9, false),
-            ["palette"] = new Palette((34, 20), brightnessLevels: 30),
-            ["pages"] = new Pages((27, 2)) { Size = (18, 2) },
-            ["panel-horizontal"] = new Panel((2, 20))
-            {
-                Size = (25, 4),
-                IsResizable = false,
-                IsMovable = false,
-            },
-            ["list-horizontal"] = new List((2, 20), 10, Types.Horizontal),
-            ["panel-vertical"] = new Panel((16, 2))
-            {
-                Size = (9, 16),
-                SizeMinimum = (5, 5),
-            },
-            ["list-vertical"] = new List(default, 15)
-            {
-                IsSingleSelecting = true,
-                ItemGap = (0, 1),
-                ItemMaximumSize = (7, 1)
-            }
+            IsExpanded = true,
+            Size = (6, 6)
         };
+        dropdown.IsExpanded = false;
+
+        var userInterface = new UI(back, middle, front);
+        userInterface.Add(new Button((2, 2)));
+        userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
+        userInterface.Add(new InputBox((2, 10)) { Size = (12, 4) });
+        userInterface.Add(new Slider((2, 17), 7));
+        userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
+        userInterface.Add(dropdown);
+        userInterface.Add(new Scroll((37, 6), 9));
+        userInterface.Add(new Scroll((38, 15), 9, false));
+        userInterface.Add(new Palette((34, 20), brightnessLevels: 30));
+        userInterface.Add(new Pages((27, 2)) { Size = (18, 2) });
+        var panelVertical = userInterface.Add(new Panel((2, 20))
+        {
+            Size = (25, 4),
+            IsResizable = false,
+            IsMovable = false,
+        });
+        var listVertical = userInterface.Add(new List((2, 20), 10, Types.Horizontal));
+        var panelHorizontal = userInterface.Add(new Panel((16, 2))
+        {
+            Size = (9, 16),
+            SizeMinimum = (5, 5),
+        });
+        var listHorizontal = userInterface.Add(new List(default, 15)
+        {
+            IsSingleSelecting = true,
+            ItemGap = (0, 1),
+            ItemMaximumSize = (7, 1)
+        });
 
         while (Window.IsOpen)
         {
@@ -236,8 +270,8 @@ public static class UserInterface
                 keysTyped: Keyboard.KeyTyped,
                 tilemapSize: tilemaps.Size);
 
-            StickListToPanel(userInterface["panel-vertical"], userInterface["list-vertical"]);
-            StickListToPanel(userInterface["panel-horizontal"], userInterface["list-horizontal"]);
+            StickListToPanel(userInterface[panelVertical], userInterface[listVertical]);
+            StickListToPanel(userInterface[panelHorizontal], userInterface[listHorizontal]);
 
             back.SetRectangle((34, 17), (13, 6), new(Tile.SHADE_5, Color.Gray.ToDark()));
 

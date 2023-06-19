@@ -2,6 +2,7 @@ using Pure.Tilemap;
 using Pure.UserInterface;
 using Pure.Utilities;
 using Pure.Window;
+using static Pure.EditorUserInterface.Program;
 
 namespace Pure.EditorUserInterface;
 
@@ -26,40 +27,44 @@ public class EditPanel : Panel
         const int corner = Tile.BORDER_HOLLOW_CORNER;
         const int straight = Tile.BORDER_HOLLOW_STRAIGHT;
 
-        var front = Program.tilemaps[(int)Program.Layer.EditFront];
+        var front = tilemaps[(int)Layer.EditFront];
         front.SetBorder(Position, Size, corner, straight, Color.Yellow);
         front.SetTextLine(textPos, Text, Color.Yellow);
 
-        UpdateButton(remove, (Position.x + 1, Position.y + Size.height - 2), (Size.width - 2, 1));
+        var size = (Size.width - 2, 1);
+        var (bottomX, bottomY) = (Position.x + 1, Position.y + Size.height - 2);
+        var (topX, topY) = (Position.x + 1, Position.y + 1);
+        UpdateButton(remove, (bottomX, bottomY), size);
+        UpdateButton(toTop, (topX, topY), size);
     }
 
     #region Backend
     private class EditButton : Button
     {
-        public EditButton((int x, int y) position) : base(position)
-        {
-        }
+        public EditButton((int x, int y) position) : base(position) { }
 
         protected override void OnUserAction(UserAction userAction)
         {
-            if (userAction != UserAction.Trigger)
+            if (userAction != UserAction.Trigger || Selected == null)
                 return;
 
-            if (Text == "Remove" && Program.Selected != null)
+            if (Text == "Remove")
             {
-                Program.editUI.ElementRemove(Program.Selected);
-                Program.editPanel.Position = (int.MaxValue, int.MaxValue);
+                editUI.ElementRemove(Selected);
+                editPanel.Position = (int.MaxValue, int.MaxValue);
             }
+            else if (Text == "To Top")
+                editUI.ElementToTop(Selected);
         }
     }
 
     private readonly EditButton remove = new((0, 0)) { Text = "Remove" },
-        surface = new((0, 0)) { Text = "To Top" },
+        toTop = new((0, 0)) { Text = "To Top" },
         pin = new((0, 0)) { Text = "Pin" };
 
     private static void UpdateButton(Element btn, (int x, int y) position, (int w, int h) size)
     {
-        var front = Program.tilemaps[(int)Program.Layer.EditFront];
+        var front = tilemaps[(int)Layer.EditFront];
         btn.Position = position;
         btn.Size = size;
         btn.Update();

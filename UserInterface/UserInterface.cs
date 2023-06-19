@@ -5,44 +5,10 @@ namespace Pure.UserInterface;
 public class UserInterface
 {
     public int Count => elements.Count;
-    public string[] Keys => elements.Keys.ToArray();
 
-    public Element this[string key]
-    {
-        get => elements[key];
-        set
-        {
-            elements[key] = value;
+    public Element this[int index] => elements[index];
 
-            var userActionCount = Enum.GetNames(typeof(UserAction)).Length;
-            for (var i = 0; i < userActionCount; i++)
-            {
-                var act = (UserAction)i;
-                if (value is Button b)
-                    value.SubscribeToUserAction(act, () => OnUserActionButton(key, b, act));
-                else if (value is InputBox e)
-                    value.SubscribeToUserAction(act, () => OnUserActionInputBox(key, e, act));
-                else if (value is List l)
-                    value.SubscribeToUserAction(act, () => OnUserActionList(key, l, act));
-                else if (value is NumericScroll n)
-                    value.SubscribeToUserAction(act, () => OnUserActionNumericScroll(key, n, act));
-                else if (value is Pages g)
-                    value.SubscribeToUserAction(act, () => OnUserActionPages(key, g, act));
-                else if (value is Palette t)
-                    value.SubscribeToUserAction(act, () => OnUserActionPalette(key, t, act));
-                else if (value is Panel p)
-                    value.SubscribeToUserAction(act, () => OnUserActionPanel(key, p, act));
-                else if (value is Scroll r)
-                    value.SubscribeToUserAction(act, () => OnUserActionScroll(key, r, act));
-                else if (value is Slider s)
-                    value.SubscribeToUserAction(act, () => OnUserActionSlider(key, s, act));
-            }
-        }
-    }
-
-    public UserInterface()
-    {
-    }
+    public UserInterface() { }
     public UserInterface(byte[] bytes)
     {
         var offset = 0;
@@ -50,9 +16,6 @@ public class UserInterface
 
         for (var i = 0; i < count; i++)
         {
-            var keyByteLength = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
-            var key = Encoding.UTF8.GetString(GetBytes(bytes, keyByteLength, ref offset));
-
             var byteCount = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
 
             // elementType string gets saved first for each element
@@ -63,79 +26,87 @@ public class UserInterface
             offset -= typeStrBytesLength + 4;
             var bElement = GetBytes(bytes, byteCount, ref offset);
 
-            switch (typeStr)
-            {
-                case nameof(Button):
-                    this[key] = new Button(bElement);
-                    break;
-                case nameof(InputBox):
-                    this[key] = new InputBox(bElement);
-                    break;
-                case nameof(List):
-                    this[key] = new List(bElement);
-                    break;
-                case nameof(NumericScroll):
-                    this[key] = new NumericScroll(bElement);
-                    break;
-                case nameof(Pages):
-                    this[key] = new Pages(bElement);
-                    break;
-                case nameof(Palette):
-                    this[key] = new Palette(bElement);
-                    break;
-                case nameof(Panel):
-                    this[key] = new Panel(bElement);
-                    break;
-                case nameof(Scroll):
-                    this[key] = new Scroll(bElement);
-                    break;
-                case nameof(Slider):
-                    this[key] = new Slider(bElement);
-                    break;
-            }
+            if (typeStr == nameof(Button)) Add(new Button(bElement));
+            else if (typeStr == nameof(InputBox)) Add(new InputBox(bElement));
+            else if (typeStr == nameof(List)) Add(new List(bElement));
+            else if (typeStr == nameof(Stepper)) Add(new Stepper(bElement));
+            else if (typeStr == nameof(Pages)) Add(new Pages(bElement));
+            else if (typeStr == nameof(Palette)) Add(new Palette(bElement));
+            else if (typeStr == nameof(Panel)) Add(new Panel(bElement));
+            else if (typeStr == nameof(Scroll)) Add(new Scroll(bElement));
+            else if (typeStr == nameof(Slider)) Add(new Slider(bElement));
         }
     }
 
-    public string? KeyOf(Element element)
+    public int Add(Element element)
     {
-        foreach (var kvp in elements)
-            if (kvp.Value == element)
-                return kvp.Key;
+        var e = element;
+        elements.Add(e);
 
-        return null;
+        var userActionCount = Enum.GetNames(typeof(UserAction)).Length;
+
+        for (var i = 0; i < userActionCount; i++)
+        {
+            var act = (UserAction)i;
+            if (e is Button b) e.SubscribeToUserAction(act, () => OnUserActionButton(b, act));
+            else if (e is InputBox u)
+                e.SubscribeToUserAction(act, () => OnUserActionInputBox(u, act));
+            else if (e is List l) e.SubscribeToUserAction(act, () => OnUserActionList(l, act));
+            else if (e is Stepper n)
+                e.SubscribeToUserAction(act, () => OnUserActionStepper(n, act));
+            else if (e is Pages g) e.SubscribeToUserAction(act, () => OnUserActionPages(g, act));
+            else if (e is Palette t) e.SubscribeToUserAction(act, () => OnUserActionPalette(t, act));
+            else if (e is Panel p) e.SubscribeToUserAction(act, () => OnUserActionPanel(p, act));
+            else if (e is Scroll r) e.SubscribeToUserAction(act, () => OnUserActionScroll(r, act));
+            else if (e is Slider s) e.SubscribeToUserAction(act, () => OnUserActionSlider(s, act));
+        }
+
+        return elements.Count - 1;
     }
-    public bool ContainsKey(string key) => elements.ContainsKey(key);
-    public bool ContainsElement(Element element) => elements.ContainsValue(element);
-    public void Remove(string key) => elements.Remove(key);
+    public void BringToTop(Element element)
+    {
+        Remove(element);
+        Add(element);
+    }
+    public int IndexOf(Element element) => elements.IndexOf(element);
+    public bool IsContaining(Element element) => elements.Contains(element);
+    public void Remove(Element element)
+    {
+        element.UnsubscribeAll();
+        var contains = elements.Contains(element);
+        elements.Remove(element);
+    }
+
     public void Update()
     {
-        foreach (var kvp in elements)
+        foreach (var element in elements)
         {
-            if (kvp.Value is List list)
+            if (element is List list)
             {
-                list.itemUpdateCallback = (b) => OnUpdateListItem(kvp.Key, list, b);
-                list.itemTriggerCallback = (i) => OnListItemTrigger(kvp.Key, list, i);
+                list.itemUpdateCallback = (b) => OnUpdateListItem(list, b);
+                list.itemTriggerCallback = (b) => OnListItemTrigger(list, b);
             }
-            else if (kvp.Value is Pages pages)
-                pages.pageUpdateCallback = (b) => OnUpdatePagesPage(kvp.Key, pages, b);
-            else if (kvp.Value is Palette palette)
+            else if (element is Pages pages)
+                pages.pageUpdateCallback = (b) => OnUpdatePagesPage(pages, b);
+            else if (element is Palette palette)
             {
-                palette.pageUpdateCallback = (b) => OnUpdatePalettePage(kvp.Key, palette, b);
-                palette.sampleUpdateCallback = (b, c) => OnUpdatePaletteSample(kvp.Key, palette, b, c);
-                palette.pickCallback = (p) => OnPalettePick(kvp.Key, palette, p);
+                palette.pageUpdateCallback = (b) => OnUpdatePalettePage(palette, b);
+                palette.sampleUpdateCallback =
+                    (b, c) => OnUpdatePaletteSample(palette, b, c);
+                palette.pickCallback = (p) => OnPalettePick(palette, p);
             }
 
-            kvp.Value.Update();
+            element.Update();
 
-            if (kvp.Value is Button b) OnUpdateButton(kvp.Key, b);
-            else if (kvp.Value is InputBox i) OnUpdateInputBox(kvp.Key, i);
-            else if (kvp.Value is List l) OnUpdateList(kvp.Key, l);
-            else if (kvp.Value is NumericScroll n) OnUpdateNumericScroll(kvp.Key, n);
-            else if (kvp.Value is Pages g) OnUpdatePages(kvp.Key, g);
-            else if (kvp.Value is Palette t) OnUpdatePalette(kvp.Key, t);
-            else if (kvp.Value is Panel p) OnUpdatePanel(kvp.Key, p);
-            else if (kvp.Value is Scroll r) OnUpdateScroll(kvp.Key, r);
-            else if (kvp.Value is Slider s) OnUpdateSlider(kvp.Key, s);
+            if (element is Button b) OnUpdateButton(b);
+            else if (element is InputBox u) OnUpdateInputBox(u);
+            else if (element is List l) OnUpdateList(l);
+            else if (element is Stepper n) OnUpdateStepper(n);
+            else if (element is Pages g) OnUpdatePages(g);
+            else if (element is Palette t) OnUpdatePalette(t);
+            else if (element is Panel p) OnUpdatePanel(p);
+            else if (element is Scroll r) OnUpdateScroll(r);
+            else if (element is Slider s) OnUpdateSlider(s);
         }
     }
 
@@ -144,13 +115,9 @@ public class UserInterface
         var result = new List<byte>();
         result.AddRange(BitConverter.GetBytes(elements.Count));
 
-        foreach (var kvp in elements)
+        foreach (var element in elements)
         {
-            var bKey = Encoding.UTF8.GetBytes(kvp.Key);
-            result.AddRange(BitConverter.GetBytes(bKey.Length));
-            result.AddRange(bKey);
-
-            var bytes = kvp.Value.ToBytes();
+            var bytes = element.ToBytes();
             result.AddRange(BitConverter.GetBytes(bytes.Length));
             result.AddRange(bytes);
         }
@@ -158,83 +125,37 @@ public class UserInterface
         return result.ToArray();
     }
 
-    protected virtual void OnUserActionButton(string key, Button button, UserAction userAction)
-    {
-    }
-    protected virtual void OnUserActionInputBox(string key, InputBox inputBox, UserAction userAction)
-    {
-    }
-    protected virtual void OnUserActionList(string key, List list, UserAction userAction)
-    {
-    }
-    protected virtual void OnUserActionNumericScroll(string key, NumericScroll numericScroll,
-        UserAction userAction)
-    {
-    }
-    protected virtual void OnUserActionPages(string key, Pages pages, UserAction userAction)
-    {
-    }
-    protected virtual void OnUserActionPalette(string key, Palette palette, UserAction userAction)
-    {
-    }
-    protected virtual void OnUserActionPanel(string key, Panel panel, UserAction userAction)
-    {
-    }
-    protected virtual void OnUserActionScroll(string key, Scroll scroll, UserAction userAction)
-    {
-    }
-    protected virtual void OnUserActionSlider(string key, Slider slider, UserAction userAction)
-    {
-    }
+    protected virtual void OnUserActionButton(Button button, UserAction userAction) { }
+    protected virtual void OnUserActionInputBox(InputBox inputBox, UserAction userAction) { }
+    protected virtual void OnUserActionList(List list, UserAction userAction) { }
+    protected virtual void OnUserActionStepper(Stepper stepper,
+        UserAction userAction) { }
+    protected virtual void OnUserActionPages(Pages pages, UserAction userAction) { }
+    protected virtual void OnUserActionPalette(Palette palette, UserAction userAction) { }
+    protected virtual void OnUserActionPanel(Panel panel, UserAction userAction) { }
+    protected virtual void OnUserActionScroll(Scroll scroll, UserAction userAction) { }
+    protected virtual void OnUserActionSlider(Slider slider, UserAction userAction) { }
 
-    protected virtual void OnUpdateButton(string key, Button button)
-    {
-    }
-    protected virtual void OnUpdateInputBox(string key, InputBox inputBox)
-    {
-    }
-    protected virtual void OnUpdateList(string key, List list)
-    {
-    }
-    protected virtual void OnUpdateListItem(string key, List list, Button item)
-    {
-    }
-    protected virtual void OnUpdateNumericScroll(string key, NumericScroll numericScroll)
-    {
-    }
-    protected virtual void OnUpdatePages(string key, Pages pages)
-    {
-    }
-    protected virtual void OnUpdatePagesPage(string key, Pages pages, Button page)
-    {
-    }
-    protected virtual void OnUpdatePalette(string key, Palette palette)
-    {
-    }
-    protected virtual void OnUpdatePalettePage(string key, Palette palette, Button page)
-    {
-    }
-    protected virtual void OnUpdatePaletteSample(string key, Palette palette, Button sample, uint color)
-    {
-    }
-    protected virtual void OnUpdatePanel(string key, Panel panel)
-    {
-    }
-    protected virtual void OnUpdateScroll(string key, Scroll scroll)
-    {
-    }
-    protected virtual void OnUpdateSlider(string key, Slider slider)
-    {
-    }
+    protected virtual void OnUpdateButton(Button button) { }
+    protected virtual void OnUpdateInputBox(InputBox inputBox) { }
+    protected virtual void OnUpdateList(List list) { }
+    protected virtual void OnUpdateListItem(List list, Button item) { }
+    protected virtual void OnUpdateStepper(Stepper stepper) { }
+    protected virtual void OnUpdatePages(Pages pages) { }
+    protected virtual void OnUpdatePagesPage(Pages pages, Button page) { }
+    protected virtual void OnUpdatePalette(Palette palette) { }
+    protected virtual void OnUpdatePalettePage(Palette palette, Button page) { }
+    protected virtual void
+        OnUpdatePaletteSample(Palette palette, Button sample, uint color) { }
+    protected virtual void OnUpdatePanel(Panel panel) { }
+    protected virtual void OnUpdateScroll(Scroll scroll) { }
+    protected virtual void OnUpdateSlider(Slider slider) { }
 
-    protected virtual uint OnPalettePick(string key, Palette palette, (float x, float y) position) =>
-        default;
-    protected virtual void OnListItemTrigger(string key, List list, Button item)
-    {
-    }
+    protected virtual uint OnPalettePick(Palette palette, (float x, float y) position) => default;
+    protected virtual void OnListItemTrigger(List list, Button item) { }
 
     #region Backend
-    private readonly Dictionary<string, Element> elements = new();
+    private readonly List<Element> elements = new();
 
     private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
     {

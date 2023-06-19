@@ -411,25 +411,19 @@ public abstract partial class Element
 
         userActions[userAction].Add(method);
     }
+    protected internal void UnsubscribeAll() => userActions.Clear();
 
     /// <summary>
     /// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
     /// Subclasses should override this method to implement their own behavior.
     /// </summary>
-    protected virtual void OnUserAction(UserAction userAction)
-    {
-    }
+    protected virtual void OnUserAction(UserAction userAction) { }
     /// <summary>
     /// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
     /// Subclasses should override this method to implement their own behavior.
     /// </summary>
-    protected virtual void OnUpdate()
-    {
-    }
-
-    protected virtual void OnDrag((int x, int y) delta)
-    {
-    }
+    protected virtual void OnUpdate() { }
+    protected virtual void OnDrag((int x, int y) delta) { }
 
     protected static void PutBool(List<byte> intoBytes, bool value) =>
         intoBytes.AddRange(BitConverter.GetBytes(value));
@@ -460,20 +454,19 @@ public abstract partial class Element
     }
 
     #region Backend
-    // save format
-    // [amount of bytes]	- data
-    // --------------------------------
-    // [4]					- x
-    // [4]					- y
-    // [4]					- width
-    // [4]					- height
-    // [4]					- text length
-    // [text length]		- text (base 64-ed)
-    // [1]					- is hidden
-    // [1]					- is disabled
-    // [4]					- type name length
-    // [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
-
+// save format
+// [amount of bytes]	- data
+// --------------------------------
+// [4]					- x
+// [4]					- y
+// [4]					- width
+// [4]					- height
+// [4]					- text length
+// [text length]		- text (base 64-ed)
+// [1]					- is hidden
+// [1]					- is disabled
+// [4]					- type name length
+// [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     internal (int, int) position, size, listSizeTrimOffset;
     private (int, int) sizeMinimum = (1, 1), sizeMaximum = (int.MaxValue, int.MaxValue);
@@ -482,7 +475,6 @@ public abstract partial class Element
     private static readonly Stopwatch hold = new(), holdTrigger = new();
     private int byteOffset;
     private bool wasFocused, wasHovered;
-
     private readonly Dictionary<UserAction, List<Action>> userActions = new();
 
     private void Init()
@@ -533,6 +525,9 @@ public abstract partial class Element
 
         if (IsHovered && Input.Current.IsJustPressed)
             IsPressedAndHeld = true;
+
+        if (IsHovered == false && Input.Current.IsJustReleased)
+            IsPressedAndHeld = false;
     }
 
     private byte[] GetBytes(byte[] fromBytes, int amount)

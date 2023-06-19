@@ -34,7 +34,18 @@ public class List : Element
     public bool IsExpanded
     {
         get => isExpanded || Type != Types.Dropdown;
-        set => isExpanded = Type == Types.Dropdown && value;
+        set
+        {
+            if (Type != Types.Dropdown)
+                return;
+
+            if (value)
+                Size = (Size.width, originalHeight);
+            else if (isExpanded)
+                originalHeight = Size.height;
+
+            isExpanded = Type == Types.Dropdown && value;
+        }
     }
 
     /// <summary>
@@ -67,6 +78,7 @@ public class List : Element
         : base(position)
     {
         Size = (12, 8);
+        originalHeight = Size.height;
         Type = type;
 
         var isVertical = type != Types.Horizontal;
@@ -103,6 +115,8 @@ public class List : Element
 
         Scroll.Slider.Progress = scrollProgress;
         isInitialized = true;
+
+        originalHeight = Size.height;
     }
 
     /// <summary>
@@ -228,6 +242,7 @@ public class List : Element
                 Scroll.Slider.Handle.position = (int.MaxValue, int.MaxValue);
                 Scroll.Down.position = (int.MaxValue, int.MaxValue);
                 Scroll.Up.position = (int.MaxValue, int.MaxValue);
+                Size = (Size.width, 1);
             }
         }
 
@@ -272,12 +287,8 @@ public class List : Element
     /// for the items in the list need for their behavior. Subclasses should override this 
     /// method to implement their own behavior.
     /// </summary>
-    protected virtual void OnItemUpdate(Button item)
-    {
-    }
-    protected virtual void OnItemTrigger(Button item)
-    {
-    }
+    protected virtual void OnItemUpdate(Button item) { }
+    protected virtual void OnItemTrigger(Button item) { }
 
     /// <summary>
     /// Implicitly converts an array of button objects to a list object.
@@ -300,7 +311,7 @@ public class List : Element
     public static implicit operator Button[](List list) => list.items.ToArray();
 
     #region Backend
-    private int singleSelectedIndex = -1;
+    private int singleSelectedIndex = -1, originalHeight;
     private readonly List<Button> items = new();
     private bool isSingleSelecting, isExpanded;
     private readonly bool isInitialized;
@@ -324,7 +335,7 @@ public class List : Element
             return;
 
         singleSelectedIndex = 0;
-        Select(items[singleSelectedIndex], true);
+        Select(items[singleSelectedIndex]);
     }
     internal void TrySingleSelect()
     {
@@ -332,7 +343,7 @@ public class List : Element
 
         if (Input.Current.IsJustPressed && IsHovered == false)
         {
-            isExpanded = false;
+            IsExpanded = false;
             return;
         }
 
@@ -353,7 +364,7 @@ public class List : Element
         if (Type != Types.Dropdown)
             return;
 
-        isExpanded = isExpanded == false;
+        IsExpanded = isExpanded == false;
     }
 
     private void UpdateParts()

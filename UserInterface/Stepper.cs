@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Pure.UserInterface;
 
-public class NumericScroll : Element
+public class Stepper : Element
 {
     public Button Up { get; private set; }
     public Button Down { get; private set; }
@@ -26,15 +26,14 @@ public class NumericScroll : Element
     }
     public float Step { get; set; } = 1f;
 
-    public NumericScroll((int x, int y) position, float value = 0) : base(position)
+    public Stepper((int x, int y) position, float value = 0) : base(position)
     {
         Size = (1, 3);
-
         Value = value;
 
         Init();
     }
-    public NumericScroll(byte[] bytes) : base(bytes)
+    public Stepper(byte[] bytes) : base(bytes)
     {
         Range = (GrabFloat(bytes), GrabFloat(bytes));
         Value = GrabFloat(bytes);
@@ -46,6 +45,9 @@ public class NumericScroll : Element
     protected override void OnUpdate()
     {
         LimitSizeMin((1, 3));
+
+        Down.position = (Position.x, Position.y + Size.height - 1);
+        Up.position = Position;
 
         Down.Update();
         Up.Update();
@@ -69,8 +71,8 @@ public class NumericScroll : Element
     [MemberNotNull(nameof(Down))]
     private void Init()
     {
-        Down = new((Position.x, Position.y + Size.height - 1)) { Size = (1, 1), hasParent = true };
-        Up = new(Position) { Size = (1, 1), hasParent = true };
+        Down = new((0, 0)) { size = (1, 1), hasParent = true };
+        Up = new((0, 0)) { size = (1, 1), hasParent = true };
 
         Down.SubscribeToUserAction(UserAction.Press, () => Value--);
         Up.SubscribeToUserAction(UserAction.Press, () => Value++);

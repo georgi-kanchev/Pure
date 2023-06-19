@@ -1,16 +1,15 @@
-using Pure.Window;
+using static Pure.EditorUserInterface.Program;
 
 namespace Pure.EditorUserInterface;
 
-using Pure.Tilemap;
-using Pure.UserInterface;
-using Pure.Utilities;
+using Tilemap;
+using UserInterface;
+using Utilities;
 
 public class RendererEdit : UserInterface
 {
     public void ElementCreate(int index, (int x, int y) position)
     {
-        var count = Count.ToString();
         var element = default(Element);
         var panel = new Panel(position) { IsRestricted = false, SizeMinimum = (3, 3) };
         if (index == 1) element = new Button(position);
@@ -44,6 +43,11 @@ public class RendererEdit : UserInterface
             panel.SizeMaximum = (3, int.MaxValue);
         }
         else if (index == 8)
+        {
+            element = new Stepper(position);
+            panel.IsResizable = false;
+        }
+        else if (index == 9)
             element = new List(position);
 
         if (element == null)
@@ -52,35 +56,37 @@ public class RendererEdit : UserInterface
         panel.Size = (element.Size.width + 2, element.Size.height + 2);
         panel.Text = element.Text;
 
-        Program.ui[count] = element;
-        this[count] = panel;
+        ui.Add(element);
+        Add(panel);
 
         Element.Focused = null;
     }
     public void ElementRemove(Element element)
     {
-        var key = Program.ui.KeyOf(element);
-        if (key == null)
-            return;
+        var panel = this[ui.IndexOf(element)];
+        Remove(panel);
+        ui.Remove(element);
 
-        Program.ui.Remove(key);
-        Remove(key);
-
-        if (Program.Selected == element)
-            Program.Selected = null;
+        if (Selected == element)
+            Selected = null;
     }
     public void ElementToTop(Element element)
     {
+        var panel = this[ui.IndexOf(element)];
+        editUI.BringToTop(panel);
+        ui.BringToTop(element);
+        Selected = element;
     }
 
-    protected override void OnUpdatePanel(string key, Panel panel)
+    protected override void OnUpdatePanel(Panel panel)
     {
-        var e = Program.ui[key];
+        var index = IndexOf(panel);
+        var e = ui[index];
 
         if (panel is { IsPressedAndHeld: true, IsHovered: true })
         {
             var isHoveringMenu = false;
-            foreach (var kvp in Program.menus)
+            foreach (var kvp in menus)
                 if (kvp.Value.IsHovered)
                 {
                     isHoveringMenu = true;
@@ -88,7 +94,7 @@ public class RendererEdit : UserInterface
                 }
 
             if (isHoveringMenu == false)
-                Program.Selected = e;
+                Selected = e;
         }
 
         e.Position = (panel.Position.x + 1, panel.Position.y + 1);
@@ -100,11 +106,11 @@ public class RendererEdit : UserInterface
         const int corner = Tile.BORDER_GRID_CORNER;
         const int straight = Tile.BORDER_GRID_STRAIGHT;
 
-        if (Program.Selected != e)
+        if (Selected != e)
             return;
 
-        var back = Program.tilemaps[(int)Program.Layer.EditBack];
-        var middle = Program.tilemaps[(int)Program.Layer.EditMiddle];
+        var back = tilemaps[(int)Layer.EditBack];
+        var middle = tilemaps[(int)Layer.EditMiddle];
         back.SetBorder(panel.Position, panel.Size, corner, straight, Color.Cyan);
         back.SetRectangle(textPos, (panel.Text.Length, 1), default);
         middle.SetTextLine(textPos, panel.Text, Color.Cyan);
@@ -113,14 +119,14 @@ public class RendererEdit : UserInterface
     #region Backend
     private readonly Dictionary<string, List<(string, (int offX, int offY))>> pins = new();
 
-    private void PinOverlapping(string parentKey)
+    /*private void PinOverlapping(string parentKey)
     {
         var panel = this[parentKey];
-        var element = Program.ui[parentKey];
+        var element = ui[parentKey];
         var offset = (panel.Position.x - element.Position.x, panel.Position.y - element.Position.y);
 
         if (pins.ContainsKey(parentKey) == false)
             pins[parentKey] = new();
-    }
+    }*/
     #endregion
 }

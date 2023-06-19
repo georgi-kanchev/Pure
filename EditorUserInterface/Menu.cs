@@ -3,14 +3,13 @@ using Pure.Window;
 namespace Pure.EditorUserInterface;
 
 using Pure.Tilemap;
-using Pure.Tracker;
 using Pure.UserInterface;
 using Pure.Utilities;
 
 public abstract class Menu : List
 {
     protected Menu(params string[] options) :
-        base((int.MaxValue, int.MaxValue), options.Length, Types.Dropdown)
+        base((int.MaxValue, int.MaxValue), options.Length)
     {
         Size = (15, 15);
 
@@ -21,6 +20,11 @@ public abstract class Menu : List
     protected override void OnUpdate()
     {
         base.OnUpdate();
+
+        var key = "on-lmb-deselect" + GetHashCode();
+        var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once(key);
+        if (onLmbRelease && IsHovered == false)
+            IsHidden = true;
 
         ItemMaximumSize = (Size.width - 1, 1);
 
@@ -33,22 +37,20 @@ public abstract class Menu : List
             new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
         front.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
 
-        if (IsExpanded == false)
+        if (IsHidden)
             Position = (int.MaxValue, int.MaxValue);
     }
     protected override void OnItemUpdate(Button item)
     {
+        if (IsHidden)
+            return;
+
         item.IsDisabled = item.Text.EndsWith(" ");
 
         var color = item.IsDisabled ? Color.Gray : Color.Gray.ToBright();
         var front = Program.tilemaps[(int)Program.Layer.EditFront];
 
         front.SetTextLine(item.Position, item.Text, GetColor(item, color));
-
-        var (itemX, itemY) = item.Position;
-        var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(item, color), 1);
-        if (IsExpanded == false)
-            front.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
     }
 
     #region Backend

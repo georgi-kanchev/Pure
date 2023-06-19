@@ -1,3 +1,7 @@
+using Pure.Utilities;
+using Pure.Window;
+using static Pure.EditorUserInterface.Program;
+
 namespace Pure.EditorUserInterface;
 
 using UserInterface;
@@ -14,16 +18,15 @@ public class MenuAdd : Menu
             $"  {nameof(Palette)}",
             $"  {nameof(Slider)}",
             $"  {nameof(Pure.UserInterface.Scroll)}",
+            $"  {nameof(Stepper)}",
             $"  {nameof(List)}")
     {
-        Size = (10, 9);
+        Size = (10, 10);
     }
 
     protected override void OnItemTrigger(Button item)
     {
-        Program.editUI.ElementCreate(IndexOf(item), Position);
+        IsHidden = true;
+        editUI.ElementCreate(IndexOf(item), Position);
     }
-
-    #region Backend
-    #endregion
 }

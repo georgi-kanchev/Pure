@@ -1,9 +1,7 @@
-﻿using System.Dynamic;
-using Pure.Utilities;
+﻿using Pure.Utilities;
 
 namespace Pure.EditorUserInterface;
 
-using System.Diagnostics.CodeAnalysis;
 using Tilemap;
 using UserInterface;
 using Window;
@@ -34,6 +32,7 @@ public static class Program
     public static readonly RendererUI ui;
     public static readonly RendererEdit editUI;
     public static readonly EditPanel editPanel;
+    public static (float, float) InputPosition => tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
 
     static Program()
     {
@@ -76,28 +75,27 @@ public static class Program
             Keyboard.KeyTyped,
             tilemaps.Size);
 
-        ui?.Update();
-        editUI?.Update();
+        ui.Update();
+        editUI.Update();
         editPanel.Update();
 
         foreach (var kvp in menus)
             kvp.Value.Update();
 
         var editPanelIsHidden = editPanel.Position == (int.MaxValue, int.MaxValue);
-        var onLmb = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("on-lmb-deselect");
-        if (onLmb && GetHovered() == null && editPanelIsHidden)
+        var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("on-lmb-deselect");
+        if (onLmbRelease && GetHovered() == null && editPanelIsHidden)
             Selected = null;
     }
 
     private static Element? GetHovered()
     {
-        var keys = editUI.Keys;
         var inputPos = tilemaps.PointFrom(Mouse.CursorPosition, Window.Size);
 
-        for (var i = keys.Length - 1; i >= 0; i--)
+        for (var i = editUI.Count - 1; i >= 0; i--)
         {
-            if (editUI[keys[i]].IsOverlapping(inputPos))
-                return editUI[keys[i]];
+            if (editUI[i].IsOverlapping(inputPos))
+                return editUI[i];
         }
 
         return null;
