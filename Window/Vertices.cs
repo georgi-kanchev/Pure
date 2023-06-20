@@ -190,7 +190,7 @@ internal static class Vertices
         Window.TryNoWindowException();
 
         Window.renderTexture.Clear();
-        foreach (var kvp in Vertices.vertexQueue)
+        foreach (var kvp in vertexQueue)
         {
             var tex = Window.graphics[kvp.Key.Item2];
             Window.renderTexture.Draw(kvp.Value, new(tex));
@@ -203,12 +203,16 @@ internal static class Vertices
         var shader = Window.IsRetro ? retroScreen : null;
         var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, Window.renderTexture.Texture,
             shader);
+        var p = Window.pixelScale;
+        var (width, height) = Window.MonitorAspectRatio;
+        var (targetWidth, targetHeight) = (width * p, height * p);
+        var (zx, zy) = (targetWidth / mapCellCount.Item1, targetHeight / mapCellCount.Item2);
         var verts = new Vertex[]
         {
-            new(new(0, 0), Color.White, new(00, 00)),
-            new(new(w, 0), Color.White, new(tw, 00)),
-            new(new(w, h), Color.White, new(tw, th)),
-            new(new(0, h), Color.White, new(00, th)),
+            new(new(0, 0), Color.White, new(0, 0)),
+            new(new(w * zx, 0), Color.White, new(tw, 0)),
+            new(new(w * zx, h * zy), Color.White, new(tw, th)),
+            new(new(0, h * zy), Color.White, new(0, th)),
         };
 
         if (Window.IsRetro)

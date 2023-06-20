@@ -2,9 +2,9 @@ using Pure.Window;
 
 namespace Pure.EditorUserInterface;
 
-using Pure.Tilemap;
-using Pure.UserInterface;
-using Pure.Utilities;
+using Tilemap;
+using UserInterface;
+using Utilities;
 
 public abstract class Menu : List
 {
@@ -20,6 +20,11 @@ public abstract class Menu : List
     protected override void OnUpdate()
     {
         base.OnUpdate();
+
+        if (Position.x + Size.width > TilemapSize.width)
+            Position = (TilemapSize.width - Size.width, Position.y);
+        if (Position.y + Size.height > TilemapSize.height)
+            Position = (Position.x, TilemapSize.height - Size.height);
 
         var key = "on-lmb-deselect" + GetHashCode();
         var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once(key);

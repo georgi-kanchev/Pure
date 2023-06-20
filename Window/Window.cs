@@ -143,7 +143,6 @@ public static class Window
         Window.pixelScale = pixelScale;
         var style = Styles.Default;
         var (x, y, w, h) = Monitor.posSizes[(int)monitor];
-        monitorSize = (w, h);
         aspectRatio = Monitor.GetAspectRatio(w, h);
         var (aw, ah) = aspectRatio;
         renderTexture = new((uint)(aw * pixelScale * tw), (uint)(ah * pixelScale * th));
@@ -158,7 +157,7 @@ public static class Window
             y += h / 2;
         }
 
-        window = new(new VideoMode((uint)w, (uint)h), title, style) { Position = new(x, y) };
+        window = new(new((uint)w, (uint)h), title, style) { Position = new(x, y) };
 
         window.Closed += (_, _) => Close();
         window.Resized += (_, _) => Resize();
@@ -329,7 +328,6 @@ public static class Window
     }
 
     #region Backend
-    internal static (int, int) monitorSize;
     internal static bool isRetro, isClosing;
     internal static float pixelScale;
     private static string title = "Game";

@@ -112,7 +112,7 @@ public class Tilemap
     /// <returns>The updated tilemap view.</returns>
     public Tilemap CameraUpdate()
     {
-        var (w, h, cx, cy) = Camera;
+        var (cx, cy, w, h) = Camera;
         var newData = new Tile[Math.Abs(w), Math.Abs(h)];
         var xStep = w < 0 ? -1 : 1;
         var yStep = h < 0 ? -1 : 1;

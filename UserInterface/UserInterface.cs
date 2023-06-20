@@ -81,30 +81,46 @@ public class UserInterface
     {
         foreach (var element in elements)
         {
+            if (element is Button button) button.dragCallback = d => OnDragButton(button, d);
+            else if (element is InputBox input)
+                input.dragCallback = d => OnDragInputBox(input, d);
             if (element is List list)
             {
-                list.itemUpdateCallback = (b) => OnUpdateListItem(list, b);
-                list.itemTriggerCallback = (b) => OnListItemTrigger(list, b);
+                list.dragCallback = d => OnDragList(list, d);
+                list.itemUpdateCallback = b => OnUpdateListItem(list, b);
+                list.itemTriggerCallback = b => OnListItemTrigger(list, b);
             }
             else if (element is Pages pages)
-                pages.pageUpdateCallback = (b) => OnUpdatePagesPage(pages, b);
+            {
+                pages.dragCallback = d => OnDragPages(pages, d);
+                pages.pageUpdateCallback = b => OnUpdatePagesPage(pages, b);
+            }
             else if (element is Palette palette)
             {
-                palette.pageUpdateCallback = (b) => OnUpdatePalettePage(palette, b);
+                palette.dragCallback = d => OnDragPalette(palette, d);
+                palette.pageUpdateCallback = b => OnUpdatePalettePage(palette, b);
                 palette.sampleUpdateCallback =
                     (b, c) => OnUpdatePaletteSample(palette, b, c);
-                palette.pickCallback = (p) => OnPalettePick(palette, p);
+                palette.pickCallback = p => OnPalettePick(palette, p);
             }
+            else if (element is Panel panel)
+            {
+                panel.dragCallback = d => OnDragPanel(panel, d);
+                panel.resizeCallback = d => OnPanelResize(panel, d);
+            }
+            else if (element is Stepper stepper) stepper.dragCallback = d => OnDragStepper(stepper, d);
+            else if (element is Scroll scroll) scroll.dragCallback = d => OnDragScroll(scroll, d);
+            else if (element is Slider slider) slider.dragCallback = d => OnDragSlider(slider, d);
 
             element.Update();
 
             if (element is Button b) OnUpdateButton(b);
             else if (element is InputBox u) OnUpdateInputBox(u);
             else if (element is List l) OnUpdateList(l);
-            else if (element is Stepper n) OnUpdateStepper(n);
             else if (element is Pages g) OnUpdatePages(g);
             else if (element is Palette t) OnUpdatePalette(t);
             else if (element is Panel p) OnUpdatePanel(p);
+            else if (element is Stepper n) OnUpdateStepper(n);
             else if (element is Scroll r) OnUpdateScroll(r);
             else if (element is Slider s) OnUpdateSlider(s);
         }
@@ -136,6 +152,17 @@ public class UserInterface
     protected virtual void OnUserActionScroll(Scroll scroll, UserAction userAction) { }
     protected virtual void OnUserActionSlider(Slider slider, UserAction userAction) { }
 
+    protected virtual void OnDragButton(Button button, (int width, int height) delta) { }
+    protected virtual void OnDragInputBox(InputBox inputBox, (int width, int height) delta) { }
+    protected virtual void OnDragList(List list, (int width, int height) delta) { }
+    protected virtual void OnDragStepper(Stepper stepper,
+        (int width, int height) delta) { }
+    protected virtual void OnDragPages(Pages pages, (int width, int height) delta) { }
+    protected virtual void OnDragPalette(Palette palette, (int width, int height) delta) { }
+    protected virtual void OnDragPanel(Panel panel, (int width, int height) delta) { }
+    protected virtual void OnDragScroll(Scroll scroll, (int width, int height) delta) { }
+    protected virtual void OnDragSlider(Slider slider, (int width, int height) delta) { }
+
     protected virtual void OnUpdateButton(Button button) { }
     protected virtual void OnUpdateInputBox(InputBox inputBox) { }
     protected virtual void OnUpdateList(List list) { }
@@ -153,6 +180,7 @@ public class UserInterface
 
     protected virtual uint OnPalettePick(Palette palette, (float x, float y) position) => default;
     protected virtual void OnListItemTrigger(List list, Button item) { }
+    protected virtual void OnPanelResize(Panel panel, (int width, int height) delta) { }
 
     #region Backend
     private readonly List<Element> elements = new();

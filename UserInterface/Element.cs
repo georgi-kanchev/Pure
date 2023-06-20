@@ -282,8 +282,12 @@ public abstract partial class Element
         var ppx = (int)Math.Floor(pp.x);
         var ppy = (int)Math.Floor(pp.y);
 
-        if (p != pp && IsPressedAndHeld)
-            OnDrag((px - ppx, py - ppy));
+        if ((px != ppx || py != ppy) && IsPressedAndHeld)
+        {
+            var delta = (px - ppx, py - ppy);
+            OnDrag(delta);
+            dragCallback?.Invoke(delta);
+        }
 
         OnUpdate();
     }
@@ -476,6 +480,9 @@ public abstract partial class Element
     private int byteOffset;
     private bool wasFocused, wasHovered;
     private readonly Dictionary<UserAction, List<Action>> userActions = new();
+
+    // used in the UI class to receive callbacks
+    internal Action<(int width, int height)>? dragCallback;
 
     private void Init()
     {

@@ -115,6 +115,14 @@ public class RendererEdit : UserInterface
         back.SetRectangle(textPos, (panel.Text.Length, 1), default);
         middle.SetTextLine(textPos, panel.Text, Color.Cyan);
     }
+    protected override void OnPanelResize(Panel panel, (int width, int height) delta)
+    {
+        SetInfoText($"{panel.Size.width}x{panel.Size.height}");
+    }
+    protected override void OnDragPanel(Panel panel, (int width, int height) delta)
+    {
+        SetInfoText($"{panel.Position.x}, {panel.Position.y}");
+    }
 
     #region Backend
     private readonly Dictionary<string, List<(string, (int offX, int offY))>> pins = new();

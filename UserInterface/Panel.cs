@@ -1,7 +1,7 @@
 ﻿namespace Pure.UserInterface;
 
 /// <summary>
-/// Represents a user input panel element that can be moved and resized by the user (like a window).
+/// Represents a panel element that can be moved and resized by the user (like a window).
 /// </summary>
 public class Panel : Element
 {
@@ -171,6 +171,13 @@ public class Panel : Element
             // limited size for example - so prevent it
             if (moveNoResize && prevSz == Size && prevPos != Position)
                 Position = (x, y);
+
+            if (prevSz != Size)
+            {
+                var delta = (Size.width - prevSz.width, Size.height - prevSz.height);
+                OnResize(delta);
+                resizeCallback?.Invoke(delta);
+            }
         }
 
         void Process(ref bool condition, MouseCursor cursor)
@@ -183,8 +190,13 @@ public class Panel : Element
         }
     }
 
+    protected virtual void OnResize((int width, int height) delta) { }
+
     #region Backend
     private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
+
+    // used in the UI class to receive callbacks
+    internal Action<(int width, int height)>? resizeCallback;
 
     private static bool IsBetween(float number, float rangeA, float rangeB)
     {
