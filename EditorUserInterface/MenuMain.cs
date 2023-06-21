@@ -4,7 +4,7 @@ using static Pure.EditorUserInterface.Program;
 
 namespace Pure.EditorUserInterface;
 
-using Pure.Window;
+using Window;
 
 public class MenuMain : Menu
 {
@@ -25,7 +25,7 @@ public class MenuMain : Menu
     {
         if (Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRMB"))
         {
-            var (x, y) = InputPosition;
+            var (x, y) = MousePosition;
             Position = ((int)x + 1, (int)y + 1);
             IsHidden = false;
             menus[MenuType.Add].IsHidden = true;
@@ -48,13 +48,7 @@ public class MenuMain : Menu
             menuAdd.Position = Position;
             menuAdd.IsHidden = false;
         }
-        else if (index == 2 && Selected != null)
-        {
-            var (x, _) = Selected.Position;
-            var (w, _) = Selected.Size;
-            var (tw, _) = TilemapSize;
-            var pos = (x + w / 2 > tw / 2 ? 0 : tw - editPanel.Size.width, 0);
-            editPanel.Position = pos;
-        }
+        else if (index == 2 && Selected != null && editPanel.IsHidden)
+            editPanel.IsHidden = false;
     }
 }

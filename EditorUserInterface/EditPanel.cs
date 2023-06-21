@@ -11,24 +11,36 @@ public class EditPanel : Panel
     public EditPanel((int x, int y) position) : base(position)
     {
         Text = "Edit";
+        IsHidden = true;
     }
 
     protected override void OnUpdate()
     {
-        Size = (10, TilemapSize.height);
-
         var onLmb = Mouse.IsButtonPressed(Mouse.Button.Left).Once("edit-panel-lmb");
-        if (onLmb && IsHovered == false)
-            Position = (int.MaxValue, int.MaxValue);
+        if (onLmb && IsHovered == false && IsHidden == false)
+            IsHidden = true;
+
+        if (Selected == null)
+            return;
+
+        var x = Selected.Position.x + Selected.Size.width / 2;
+        var cx = CameraPosition.x + CameraSize.w / 2;
+
+        Size = (10, CameraSize.h);
+        Position = (x > cx ? CameraPosition.x : CameraPosition.x + CameraSize.w - Size.width,
+            CameraPosition.y);
+
+        if (IsHidden)
+            return;
 
         var offset = (Size.width - Text.Length) / 2;
         offset = Math.Max(offset, 0);
         var textPos = (Position.x + offset, Position.y);
-        const int corner = Tile.BORDER_HOLLOW_CORNER;
-        const int straight = Tile.BORDER_HOLLOW_STRAIGHT;
+        const int CORNER = Tile.BORDER_HOLLOW_CORNER;
+        const int STRAIGHT = Tile.BORDER_HOLLOW_STRAIGHT;
 
         var front = tilemaps[(int)Layer.EditFront];
-        front.SetBorder(Position, Size, corner, straight, Color.Yellow);
+        front.SetBorder(Position, Size, CORNER, STRAIGHT, Color.Yellow);
         front.SetTextLine(textPos, Text, Color.Yellow);
 
         var size = (Size.width - 2, 1);
@@ -50,11 +62,20 @@ public class EditPanel : Panel
 
             if (Text == "Remove")
             {
+                var name = Selected.GetType().Name;
+
                 editUI.ElementRemove(Selected);
                 editPanel.Position = (int.MaxValue, int.MaxValue);
+
+                DisplayInfoText(name + " removed");
             }
             else if (Text == "To Top")
+            {
+                var name = Selected.GetType().Name;
+
                 editUI.ElementToTop(Selected);
+                DisplayInfoText(name + " surfaced");
+            }
         }
     }
 

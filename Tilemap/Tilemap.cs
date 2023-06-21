@@ -14,7 +14,7 @@ public class Tilemap
     public enum Alignment
     {
         TopLeft,
-        TopUp,
+        Top,
         TopRight,
         Left,
         Center,
@@ -378,7 +378,7 @@ public class Tilemap
 
             if (alignment is Alignment.TopRight or Alignment.Right or Alignment.BottomRight)
                 line = line.PadLeft(size.width);
-            else if (alignment is Alignment.TopUp or Alignment.Center or Alignment.Bottom)
+            else if (alignment is Alignment.Top or Alignment.Center or Alignment.Bottom)
                 line = PadLeftAndRight(line, size.width);
 
             SetTextLine((x, y), line, tint);
@@ -642,11 +642,11 @@ public class Tilemap
         var x = Map(pixelPosition.x, 0, windowSize.width, 0, Size.width);
         var y = Map(pixelPosition.y, 0, windowSize.height, 0, Size.height);
 
-        if (isAccountingForCamera)
-        {
-            x += Camera.x;
-            y += Camera.y;
-        }
+        if (isAccountingForCamera == false)
+            return (x, y);
+
+        x += Camera.x;
+        y += Camera.y;
 
         return (x, y);
     }

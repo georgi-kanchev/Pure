@@ -78,6 +78,17 @@ public class RendererEdit : UserInterface
         Selected = element;
     }
 
+    public static void DrawGrid()
+    {
+        var tmapSz = tilemaps.Size;
+        var color = Color.Gray.ToDark(0.75f);
+        const int LAYER = (int)Layer.Grid;
+        for (var i = 0; i < tmapSz.width; i += 10)
+            tilemaps[LAYER].SetLine((i, 0), (i, tmapSz.height), new(Tile.SHADE_1, color));
+        for (var i = 0; i < tmapSz.height; i += 10)
+            tilemaps[LAYER].SetLine((0, i), (tmapSz.width, i), new(Tile.SHADE_1, color, 1));
+    }
+
     protected override void OnUpdatePanel(Panel panel)
     {
         var index = IndexOf(panel);
@@ -103,25 +114,25 @@ public class RendererEdit : UserInterface
         var offset = (panel.Size.width - panel.Text.Length) / 2;
         offset = Math.Max(offset, 0);
         var textPos = (panel.Position.x + offset, panel.Position.y);
-        const int corner = Tile.BORDER_GRID_CORNER;
-        const int straight = Tile.BORDER_GRID_STRAIGHT;
+        const int CORNER = Tile.BORDER_GRID_CORNER;
+        const int STRAIGHT = Tile.BORDER_GRID_STRAIGHT;
 
         if (Selected != e)
             return;
 
         var back = tilemaps[(int)Layer.EditBack];
         var middle = tilemaps[(int)Layer.EditMiddle];
-        back.SetBorder(panel.Position, panel.Size, corner, straight, Color.Cyan);
+        back.SetBorder(panel.Position, panel.Size, CORNER, STRAIGHT, Color.Cyan);
         back.SetRectangle(textPos, (panel.Text.Length, 1), default);
         middle.SetTextLine(textPos, panel.Text, Color.Cyan);
     }
     protected override void OnPanelResize(Panel panel, (int width, int height) delta)
     {
-        SetInfoText($"{panel.Size.width}x{panel.Size.height}");
+        DisplayInfoText($"{panel.Text} {panel.Size.width - 2}x{panel.Size.height - 2}");
     }
     protected override void OnDragPanel(Panel panel, (int width, int height) delta)
     {
-        SetInfoText($"{panel.Position.x}, {panel.Position.y}");
+        DisplayInfoText($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
     }
 
     #region Backend

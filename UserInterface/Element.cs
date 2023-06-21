@@ -275,21 +275,23 @@ public abstract partial class Element
         if (Input.Current.ScrollDelta != 0)
             TriggerUserAction(UserAction.Scroll);
 
+        OnUpdate();
+
         var p = Input.Current.Position;
         var pp = Input.Current.PositionPrevious;
         var px = (int)Math.Floor(p.x);
         var py = (int)Math.Floor(p.y);
         var ppx = (int)Math.Floor(pp.x);
         var ppy = (int)Math.Floor(pp.y);
+        var hasMoved = prevPos != Position;
+        prevPos = Position;
 
-        if ((px != ppx || py != ppy) && IsPressedAndHeld)
-        {
-            var delta = (px - ppx, py - ppy);
-            OnDrag(delta);
-            dragCallback?.Invoke(delta);
-        }
+        if ((px == ppx && py == ppy) || IsPressedAndHeld == false || hasMoved == false)
+            return;
 
-        OnUpdate();
+        var delta = (px - ppx, py - ppy);
+        OnDrag(delta);
+        dragCallback?.Invoke(delta);
     }
     /// <summary>
     /// Simulates a user click over this user interface element.
@@ -472,7 +474,7 @@ public abstract partial class Element
 // [4]					- type name length
 // [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
-    internal (int, int) position, size, listSizeTrimOffset;
+    internal (int, int) position, prevPos, size, listSizeTrimOffset;
     private (int, int) sizeMinimum = (1, 1), sizeMaximum = (int.MaxValue, int.MaxValue);
     internal bool hasParent;
     internal readonly string typeName;
