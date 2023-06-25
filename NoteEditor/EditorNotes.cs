@@ -1,26 +1,20 @@
-﻿namespace Pure.EditorNotes;
+﻿namespace Test;
 
-using Pure.Tilemap;
-using Pure.Window;
+using SFML.Graphics;
 
-public class EditorNotes
+public static class Test
 {
-	static void Main()
-	{
-		Window.Create(1f);
+    private static void Main()
+    {
+        var window = new RenderWindow(new(800, 600), "Test");
+        window.SetActive();
 
-		var (aw, ah) = Window.MonitorAspectRatio;
-		var tilemap = new Tilemap((aw * 3, ah * 3));
-		var (w, h) = tilemap.Size;
+        while (window.IsOpen)
+        {
+            window.DispatchEvents();
 
-		tilemap.SetBorder((w - 5, 0), (5, h), Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT);
-		while(Window.IsOpen)
-		{
-			Window.Activate(true);
-
-			Window.DrawTiles(tilemap.ToBundle());
-
-			Window.Activate(false);
-		}
-	}
+            window.Clear();
+            window.Display();
+        }
+    }
 }
