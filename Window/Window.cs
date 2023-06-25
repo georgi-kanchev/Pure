@@ -345,14 +345,14 @@ public static class Window
         graphics[path] = new(path) { Repeated = true };
     }
 
-    private static int RoundToMultipleOfTwo(int n)
-    {
-        var rem = n % 2;
-        var result = n - rem;
-        if (rem >= 1)
-            result += 2;
-        return result;
-    }
+    //private static int RoundToMultipleOfTwo(int n)
+    //{
+    //    var rem = n % 2;
+    //    var result = n - rem;
+    //    if (rem >= 1)
+    //        result += 2;
+    //    return result;
+    //}
     internal static (float, float) PointFrom((int, int) screenPixel)
     {
         var x = Map(screenPixel.Item1, 0, Size.width, 0, Vertices.mapCellCount.Item1);

@@ -101,7 +101,10 @@ public abstract partial class Element
         get => position;
         set
         {
-            if (hasParent == false) position = value;
+            if (hasParent)
+                return;
+
+            position = value;
         }
     }
     /// <summary>
@@ -112,11 +115,11 @@ public abstract partial class Element
         get => size;
         set
         {
-            if (hasParent)
-                return;
-
             value.width = Math.Clamp(value.width, SizeMinimum.width, SizeMaximum.width);
             value.height = Math.Clamp(value.height, SizeMinimum.height, SizeMaximum.height);
+
+            if (hasParent)
+                return;
 
             size = value;
         }
@@ -129,6 +132,9 @@ public abstract partial class Element
         get => sizeMinimum;
         set
         {
+            if (hasParent)
+                return;
+
             value.width = Math.Max(value.width, 1);
             value.height = Math.Max(value.height, 1);
 
@@ -149,6 +155,9 @@ public abstract partial class Element
         get => sizeMaximum;
         set
         {
+            if (hasParent)
+                return;
+
             value.width = Math.Max(value.width, 1);
             value.height = Math.Max(value.height, 1);
 
@@ -221,10 +230,14 @@ public abstract partial class Element
 
         typeName = GrabString(bytes);
         Position = (GrabInt(bytes), GrabInt(bytes));
+        SizeMinimum = (GrabInt(bytes), GrabInt(bytes));
+        SizeMaximum = (GrabInt(bytes), GrabInt(bytes));
         Size = (GrabInt(bytes), GrabInt(bytes));
         Text = GrabString(bytes);
         IsHidden = GrabBool(bytes);
         IsDisabled = GrabBool(bytes);
+        hasParent = GrabBool(bytes);
+        isPinned = GrabBool(bytes);
     }
 
     /// <summary>
@@ -234,6 +247,8 @@ public abstract partial class Element
     /// </summary>
     public void Update()
     {
+        LimitSizeMin((1, 1));
+
         wasFocused = IsFocused;
         wasHovered = IsHovered;
 
@@ -376,11 +391,17 @@ public abstract partial class Element
         PutString(result, typeName);
         PutInt(result, Position.x);
         PutInt(result, Position.y);
+        PutInt(result, SizeMinimum.width);
+        PutInt(result, SizeMinimum.height);
+        PutInt(result, SizeMaximum.width);
+        PutInt(result, SizeMaximum.height);
         PutInt(result, Size.width);
         PutInt(result, Size.height);
         PutString(result, Text);
         PutBool(result, IsHidden);
         PutBool(result, IsDisabled);
+        PutBool(result, hasParent);
+        PutBool(result, isPinned);
 
         return result.ToArray();
     }
@@ -474,9 +495,13 @@ public abstract partial class Element
 // [4]					- type name length
 // [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
-    internal (int, int) position, prevPos, size, listSizeTrimOffset;
-    private (int, int) sizeMinimum = (1, 1), sizeMaximum = (int.MaxValue, int.MaxValue);
-    internal bool hasParent;
+    internal (int, int) position,
+        prevPos,
+        size,
+        listSizeTrimOffset,
+        sizeMinimum = (1, 1),
+        sizeMaximum = (int.MaxValue, int.MaxValue);
+    internal bool hasParent, isPinned;
     internal readonly string typeName;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
     private int byteOffset;

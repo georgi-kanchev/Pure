@@ -12,14 +12,14 @@ public class UserInterface
     public UserInterface(byte[] bytes)
     {
         var offset = 0;
-        var count = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+        var count = GetInt();
 
         for (var i = 0; i < count; i++)
         {
-            var byteCount = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+            var byteCount = GetInt();
 
             // elementType string gets saved first for each element
-            var typeStrBytesLength = BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+            var typeStrBytesLength = GetInt();
             var typeStr = Encoding.UTF8.GetString(GetBytes(bytes, typeStrBytesLength, ref offset));
 
             // return the offset to where it was so the element can get loaded properly
@@ -36,6 +36,8 @@ public class UserInterface
             else if (typeStr == nameof(Scroll)) Add(new Scroll(bElement));
             else if (typeStr == nameof(Slider)) Add(new Slider(bElement));
         }
+
+        int GetInt() => BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
     }
 
     public int Add(Element element)
@@ -73,7 +75,7 @@ public class UserInterface
     public void Remove(Element element)
     {
         element.UnsubscribeAll();
-        var contains = elements.Contains(element);
+
         elements.Remove(element);
     }
 

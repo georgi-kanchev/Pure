@@ -48,8 +48,8 @@ public class Palette : Element
 
     protected override void OnUpdate()
     {
-        SizeMinimum = (13, 3);
-        SizeMaximum = (13, 3);
+        sizeMinimum = (13, 3);
+        sizeMaximum = (13, 3);
 
         if (IsDisabled)
             return;
@@ -88,12 +88,8 @@ public class Palette : Element
 
         UpdateParts();
     }
-    protected virtual void OnSampleUpdate(Button sample, uint color)
-    {
-    }
-    protected virtual void OnPageUpdate(Button page)
-    {
-    }
+    protected virtual void OnSampleUpdate(Button sample, uint color) { }
+    protected virtual void OnPageUpdate(Button page) { }
     protected virtual uint OnPick((float x, float y) position) => default;
 
     #region Backend

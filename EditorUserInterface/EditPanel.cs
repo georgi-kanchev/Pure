@@ -60,10 +60,9 @@ public class EditPanel : Panel
             if (userAction != UserAction.Trigger || Selected == null)
                 return;
 
+            var name = Selected.GetType().Name;
             if (Text == "Remove")
             {
-                var name = Selected.GetType().Name;
-
                 editUI.ElementRemove(Selected);
                 editPanel.Position = (int.MaxValue, int.MaxValue);
 
@@ -71,8 +70,6 @@ public class EditPanel : Panel
             }
             else if (Text == "To Top")
             {
-                var name = Selected.GetType().Name;
-
                 editUI.ElementToTop(Selected);
                 DisplayInfoText(name + " surfaced");
             }
@@ -80,8 +77,7 @@ public class EditPanel : Panel
     }
 
     private readonly EditButton remove = new((0, 0)) { Text = "Remove" },
-        toTop = new((0, 0)) { Text = "To Top" },
-        pin = new((0, 0)) { Text = "Pin" };
+        toTop = new((0, 0)) { Text = "To Top" };
 
     private static void UpdateButton(Element btn, (int x, int y) position, (int w, int h) size)
     {

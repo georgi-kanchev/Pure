@@ -137,7 +137,7 @@ public class RendererUI : UserInterface
     }
 
     #region Backend
-    private void SetBackground(Element element)
+    private static void SetBackground(Element element)
     {
         var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark());
         tilemaps[(int)Layer.UiBack].SetRectangle(element.Position, element.Size, tile);

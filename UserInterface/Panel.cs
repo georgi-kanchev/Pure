@@ -29,7 +29,7 @@ public class Panel : Element
     }
     public Panel(byte[] bytes) : base(bytes)
     {
-        SizeMinimum = (GrabInt(bytes), GrabInt(bytes));
+        sizeMinimum = (GrabInt(bytes), GrabInt(bytes));
         IsResizable = GrabBool(bytes);
         IsMovable = GrabBool(bytes);
     }

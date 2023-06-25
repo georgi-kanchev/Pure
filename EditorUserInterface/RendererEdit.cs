@@ -81,7 +81,7 @@ public class RendererEdit : UserInterface
     public static void DrawGrid()
     {
         var tmapSz = tilemaps.Size;
-        var color = Color.Gray.ToDark(0.75f);
+        var color = Color.Gray.ToDark(0.66f);
         const int LAYER = (int)Layer.Grid;
         for (var i = 0; i < tmapSz.width; i += 10)
             tilemaps[LAYER].SetLine((i, 0), (i, tmapSz.height), new(Tile.SHADE_1, color));
@@ -134,18 +134,4 @@ public class RendererEdit : UserInterface
     {
         DisplayInfoText($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
     }
-
-    #region Backend
-    private readonly Dictionary<string, List<(string, (int offX, int offY))>> pins = new();
-
-    /*private void PinOverlapping(string parentKey)
-    {
-        var panel = this[parentKey];
-        var element = ui[parentKey];
-        var offset = (panel.Position.x - element.Position.x, panel.Position.y - element.Position.y);
-
-        if (pins.ContainsKey(parentKey) == false)
-            pins[parentKey] = new();
-    }*/
-    #endregion
 }

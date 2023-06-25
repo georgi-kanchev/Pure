@@ -55,7 +55,7 @@ public static class UserInterface
         protected override void OnUpdateInputBox(InputBox inputBox)
         {
             var e = inputBox;
-            SetBackground(e);
+            back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.3f)));
             back.SetTextRectangle(e.Position, e.Size, e.Selection,
                 e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
             middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
@@ -229,7 +229,6 @@ public static class UserInterface
         var userInterface = new UI(back, middle, front);
         userInterface.Add(new Button((2, 2)));
         userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
-        userInterface.Add(new InputBox((2, 10)) { Size = (12, 4) });
         userInterface.Add(new Slider((2, 17), 7));
         userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
         userInterface.Add(dropdown);
@@ -237,24 +236,30 @@ public static class UserInterface
         userInterface.Add(new Scroll((38, 15), 9, false));
         userInterface.Add(new Palette((34, 20), brightnessLevels: 30));
         userInterface.Add(new Pages((27, 2)) { Size = (18, 2) });
-        var panelVertical = userInterface.Add(new Panel((2, 20))
+        userInterface.Add(new Panel((2, 20))
         {
             Size = (25, 4),
             IsResizable = false,
             IsMovable = false,
         });
-        var listVertical = userInterface.Add(new List((2, 20), 10, Types.Horizontal));
-        var panelHorizontal = userInterface.Add(new Panel((16, 2))
+        userInterface.Add(new List((3, 21), 10, Types.Horizontal)
+        {
+            Size = (23, 2)
+        });
+
+        userInterface.Add(new Panel((16, 2))
         {
             Size = (9, 16),
-            SizeMinimum = (5, 5),
+            SizeMinimum = (5, 6),
         });
-        var listHorizontal = userInterface.Add(new List(default, 15)
+        userInterface.Add(new List((17, 3), 15)
         {
+            Size = (7, 9),
             IsSingleSelecting = true,
             ItemGap = (0, 1),
             ItemMaximumSize = (7, 1)
         });
+        userInterface.Add(new InputBox((17, 13)) { Size = (7, 4) });
 
         while (Window.IsOpen)
         {
@@ -270,9 +275,6 @@ public static class UserInterface
                 keysTyped: Keyboard.KeyTyped,
                 tilemapSize: tilemaps.Size);
 
-            StickListToPanel(userInterface[panelVertical], userInterface[listVertical]);
-            StickListToPanel(userInterface[panelHorizontal], userInterface[listHorizontal]);
-
             back.SetRectangle((34, 17), (13, 6), new(Tile.SHADE_5, Color.Gray.ToDark()));
 
             userInterface.Update();
@@ -283,12 +285,6 @@ public static class UserInterface
                 Window.DrawTiles(tilemaps[i].ToBundle());
 
             Window.Activate(false);
-        }
-
-        static void StickListToPanel(Element panel, Element list)
-        {
-            list.Position = (panel.Position.x + 1, panel.Position.y + 1);
-            list.Size = (panel.Size.width - 2, panel.Size.height - 2);
         }
     }
 }

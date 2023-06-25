@@ -22,7 +22,7 @@ public class Tilemap
         BottomLeft,
         Bottom,
         BottomRight
-    };
+    }
 
     /// <summary>
     /// Gets the size of the tilemap in tiles.
