@@ -87,6 +87,8 @@ public class Scroll : Element
         // retrigger the scrolling behavior when scrolling over them
         TryScrollWhileHoverButton(Up);
         TryScrollWhileHoverButton(Down);
+
+        // resize the slider handle to appear as real scroll handle non-(1, 1) size
     }
 
     #region Backend

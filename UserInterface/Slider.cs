@@ -152,10 +152,10 @@ public class Slider : Element
     {
         var (x, y) = Position;
         var (w, h) = Size;
-        var size = IsVertical ? Size.height : Size.width;
-        var sz = Math.Max(0, size - 1);
+        var curSz = IsVertical ? Size.height : Size.width;
+        var sz = Math.Max(0, curSz - 1);
         index = Math.Clamp(index, 0, sz);
-        progress = Map(index, 0, size - 1, 0, 1);
+        progress = Map(index, 0, curSz - 1, 0, 1);
 
         if (IsVertical)
         {

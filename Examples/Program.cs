@@ -1,15 +1,15 @@
 namespace Pure.Examples;
 
-public class Program
+public abstract class Program
 {
-	static void Main()
-	{
-		//Systems.DefaultGraphics.Run();
-		Systems.UserInterface.Run();
-		//Systems.Collision.Run();
-		//Systems.Audio.Run();
-		//Systems.ChatLAN.Run();
+    private static void Main()
+    {
+        //Systems.DefaultGraphics.Run();
+        Systems.UserInterface.Run();
+        //Systems.Collision.Run();
+        //Systems.Audio.Run();
+        //Systems.ChatLAN.Run();
 
-		//Games.FlappyBird.Run();
-	}
+        //Games.FlappyBird.Run();
+    }
 }

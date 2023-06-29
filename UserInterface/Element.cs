@@ -298,10 +298,8 @@ public abstract partial class Element
         var py = (int)Math.Floor(p.y);
         var ppx = (int)Math.Floor(pp.x);
         var ppy = (int)Math.Floor(pp.y);
-        var hasMoved = prevPos != Position;
-        prevPos = Position;
 
-        if ((px == ppx && py == ppy) || IsPressedAndHeld == false || hasMoved == false)
+        if ((px == ppx && py == ppy) || IsPressedAndHeld == false)
             return;
 
         var delta = (px - ppx, py - ppy);
@@ -496,7 +494,6 @@ public abstract partial class Element
 // [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     internal (int, int) position,
-        prevPos,
         size,
         listSizeTrimOffset,
         sizeMinimum = (1, 1),

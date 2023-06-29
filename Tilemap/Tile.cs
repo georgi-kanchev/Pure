@@ -129,7 +129,7 @@ public struct Tile
                a.Flips.isVertical != b.Flips.isVertical;
     }
 
-    #region Shade
+#region Shade
     public const int SHADE_TRANSPARENT = 0,
         SHADE_1 = 1,
         SHADE_2 = 2,
@@ -141,9 +141,9 @@ public struct Tile
         SHADE_8 = 8,
         SHADE_9 = 9,
         SHADE_OPAQUE = 10,
-        #endregion
+#endregion
 
-        #region Pattern
+#region Pattern
         PATTERN_1 = 11,
         PATTERN_2 = 12,
         PATTERN_3 = 13,
@@ -211,9 +211,9 @@ public struct Tile
         PATTERN_65 = 75,
         PATTERN_66 = 76,
         PATTERN_67 = 77,
-        #endregion
+#endregion
 
-        #region Uppercase
+#region Uppercase
         UPPERCASE_A = 78,
         UPPERCASE_B = 79,
         UPPERCASE_C = 80,
@@ -240,9 +240,9 @@ public struct Tile
         UPPERCASE_X = 101,
         UPPERCASE_Y = 102,
         UPPERCASE_Z = 103,
-        #endregion
+#endregion
 
-        #region Lowercase
+#region Lowercase
         LOWERCASE_A = 104,
         LOWERCASE_B = 105,
         LOWERCASE_C = 106,
@@ -269,9 +269,9 @@ public struct Tile
         LOWERCASE_X = 127,
         LOWERCASE_Y = 128,
         LOWERCASE_Z = 129,
-        #endregion
+#endregion
 
-        #region Number
+#region Number
         NUMBER_0 = 130,
         NUMBER_1 = 131,
         NUMBER_2 = 132,
@@ -282,9 +282,9 @@ public struct Tile
         NUMBER_7 = 137,
         NUMBER_8 = 138,
         NUMBER_9 = 139,
-        #endregion
+#endregion
 
-        #region Fragments
+#region Fragments
         FRACTION_ONE_EIGHT = 140,
         FRACTION_ONE_SEVENTH = 141,
         FRACTION_ONE_SIXTH = 142,
@@ -301,9 +301,9 @@ public struct Tile
         FRACTION_FOUR_FIFTHS = 153,
         FRACTION_FIVE_SIXTHS = 154,
         FRACTION_SEVEN_EIGHTS = 155,
-        #endregion
+#endregion
 
-        #region Subscript
+#region Subscript
         SUBSCRIPT_0 = 156,
         SUBSCRIPT_1st = 157,
         SUBSCRIPT_2nd = 158,
@@ -317,25 +317,25 @@ public struct Tile
         SUBSCRIPT_10th = 166,
         SUBSCRIPT_11th = 167,
         SUBSCRIPT_12th = 168,
-        #endregion
+#endregion
 
-        #region Superscript
-        SUPERSCRIPT_0 = 169,
-        SUPERSCRIPT_1st = 170,
-        SUPERSCRIPT_2nd = 171,
-        SUPERSCRIPT_3rd = 172,
-        SUPERSCRIPT_4th = 173,
-        SUPERSCRIPT_5th = 174,
-        SUPERSCRIPT_6th = 175,
-        SUPERSCRIPT_7th = 176,
-        SUPERSCRIPT_8th = 177,
-        SUPERSCRIPT_9th = 178,
-        SUPERSCRIPT_10th = 179,
-        SUPERSCRIPT_11th = 180,
-        SUPERSCRIPT_12th = 181,
-        #endregion
+#region Superscript
+        SUPERSCRIPT_0_TH = 169,
+        SUPERSCRIPT_1_ST = 170,
+        SUPERSCRIPT_2_ND = 171,
+        SUPERSCRIPT_3_RD = 172,
+        SUPERSCRIPT_4_TH = 173,
+        SUPERSCRIPT_5_TH = 174,
+        SUPERSCRIPT_6_TH = 175,
+        SUPERSCRIPT_7_TH = 176,
+        SUPERSCRIPT_8_TH = 177,
+        SUPERSCRIPT_9_TH = 178,
+        SUPERSCRIPT_10_TH = 179,
+        SUPERSCRIPT_11_TH = 180,
+        SUPERSCRIPT_12_TH = 181,
+#endregion
 
-        #region Math
+#region Math
         MATH_PLUS = 182,
         MATH_MINUS = 183,
         MATH_MULTIPLICATION = 184,
@@ -361,9 +361,9 @@ public struct Tile
         MATH_GREATER_EQUAL = 207,
         MATH_LESS = 208,
         MATH_GREATER = 209,
-        #endregion
+#endregion
 
-        #region Brackets
+#region Brackets
         BRACKET_ROUND_LEFT = 210,
         BRACKET_ROUND_RIGHT = 211,
         BRACKET_SQUARE_LEFT = 212,
@@ -372,18 +372,18 @@ public struct Tile
         BRACKET_CURLY_RIGHT = 215,
         BRACKET_ANGLE_LEFT = 208,
         BRACKET_ANGLE_RIGHT = 209,
-        #endregion
+#endregion
 
-        #region Geometry
+#region Geometry
         GEOMETRY_PERPENDICULAR = 216,
         GEOMETRY_PARALLEL = 217,
         GEOMETRY_ANGLE = 218,
         GEOMETRY_ANGLE_RIGHT = 219,
         GEOMETRY_SIMILAR = 220,
         GEOMETRY_DEGREE = 221,
-        #endregion
+#endregion
 
-        #region TextSymbols
+#region TextSymbols
         SYMBOL_CELCIUS = 222,
         SYMBOL_FAHRENHEIT = 223,
         SYMBOL_ASTERISK = 224,
@@ -400,9 +400,9 @@ public struct Tile
         SYMBOL_COPYRIGHT_AUDIO = 252,
         SYMBOL_COPYRIGHT = 253,
         SYMBOL_TRADE_MARK = 254,
-        #endregion
+#endregion
 
-        #region Punctuation
+#region Punctuation
         PUNCTUATION_TILDE = 220,
         PUNCTUATION_EXCLAMATION_MARK = 234,
         PUNCTUATION_QUESTION_MARK = 235,
@@ -421,36 +421,37 @@ public struct Tile
         PUNCTUATION_BACKSLASH = 248,
         PUNCTUATION_AT = 249,
         PUNCTUATION_AMPERSAND = 250,
-        #endregion
+#endregion
 
-        #region Border
-        BORDER_DEFAULT_STRAIGHT = 260,
-        BORDER_DEFAULT_CORNER = 261,
-        BORDER_DEFAULT_T_SHAPED = 262,
-        BORDER_DEFAULT_CROSS = 263,
-        BORDER_GRID_STRAIGHT = 264,
-        BORDER_GRID_CORNER = 265,
-        BORDER_GRID_T_SHAPED = 266,
-        BORDER_GRID_CROSS = 267,
-        BORDER_PIPE_STRAIGHT = 268,
-        BORDER_PIPE_CORNER = 269,
-        BORDER_PIPE_T_SHAPED = 270,
-        BORDER_PIPE_CROSS = 271,
-        BORDER_HOLLOW_STRAIGHT = 272,
-        BORDER_HOLLOW_CORNER = 273,
-        BORDER_HOLLOW_T_SHAPED = 274,
-        BORDER_HOLLOW_CROSS = 275,
-        BORDER_SOLID_STRAIGHT = 276,
-        BORDER_SOLID_CORNER = 277,
-        BORDER_SOLID_T_SHAPED = 278,
-        BORDER_SOLID_CROSS = 279,
-        BORDER_PIPE_BIG_STRAIGHT = 280,
-        BORDER_PIPE_BIG_CORNER = 281,
-        BORDER_PIPE_BIG_T_SHAPED = 282,
-        BORDER_PIPE_BIG_CROSS = 283,
-        #endregion
+#region Box
+        BOX_DEFAULT_STRAIGHT = 260,
+        BOX_DEFAULT_CORNER = 261,
+        BOX_DEFAULT_T_SHAPED = 262,
+        BOX_DEFAULT_CROSS = 263,
+        BOX_GRID_STRAIGHT = 264,
+        BOX_GRID_CORNER = 265,
+        BOX_GRID_T_SHAPED = 266,
+        BOX_GRID_CROSS = 267,
+        BOX_PIPE_STRAIGHT = 268,
+        BOX_PIPE_CORNER = 269,
+        BOX_PIPE_T_SHAPED = 270,
+        BOX_PIPE_CROSS = 271,
+        BOX_HOLLOW_STRAIGHT = 272,
+        BOX_HOLLOW_CORNER = 273,
+        BOX_HOLLOW_T_SHAPED = 274,
+        BOX_HOLLOW_CROSS = 275,
+        BOX_SOLID_STRAIGHT = 276,
+        BOX_SOLID_CORNER = 277,
+        BOX_SOLID_T_SHAPED = 278,
+        BOX_SOLID_CROSS = 279,
+        BOX_PIPE_BIG_STRAIGHT = 280,
+        BOX_PIPE_BIG_CORNER = 281,
+        BOX_PIPE_BIG_T_SHAPED = 282,
+        BOX_PIPE_BIG_CROSS = 283,
+        BOX_CORNER_ROUND = 285,
+#endregion
 
-        #region Bar
+#region Bar
         BAR_DEFAULT_EDGE = 286,
         BAR_DEFAULT_STRAIGHT = 287,
         BAR_HOLLOW_EDGE = 288,
@@ -469,9 +470,9 @@ public struct Tile
         BAR_GRID_BIG_STRAIGHT = 301,
         BAR_SPIKE_EDGE = 302,
         BAR_SPIKE_STRAIGHT = 303,
-        #endregion
+#endregion
 
-        #region Arrows
+#region Arrows
         ARROW = 304,
         ARROW_THIN = 305,
         ARROW_BIG = 306,
@@ -480,9 +481,9 @@ public struct Tile
         ARROW_DIAGONAL_THIN = 309,
         ARROW_DIAGONAL_BIG = 310,
         ARROW_DIAGONAL_HOLLOW = 311,
-        #endregion
+#endregion
 
-        #region Icon
+#region Icon
         ICON_WAVE = 220,
         ICON_WAVE_DOUBLE = 190,
         ICON_HOME = 312,
@@ -537,9 +538,9 @@ public struct Tile
         ICON_MUSIC_SIGN_FLAT = 361,
         ICON_MUSIC_SIGN_NATURAL = 362,
         ICON_MUSIC_SIGN_SHARP = 363,
-        #endregion
+#endregion
 
-        #region Face
+#region Face
         FACE_SMILING = 364,
         FACE_LAUGHING = 365,
         FACE_SAD = 366,
@@ -567,9 +568,9 @@ public struct Tile
         FACE_CONFIDENT = 387,
         FACE_SUSPICIOUS = 388,
         FACE_DISGUISED = 389,
-        #endregion
+#endregion
 
-        #region Game
+#region Game
         GAME_DICE_1 = 390,
         GAME_DICE_2 = 391,
         GAME_DICE_3 = 392,
@@ -596,9 +597,9 @@ public struct Tile
         GAME_CHESS_BISHOP_HOLLOW = 413,
         GAME_CHESS_QUEEN_HOLLOW = 414,
         GAME_CHESS_KING_HOLLOW = 415,
-        #endregion
+#endregion
 
-        #region Shape
+#region Shape
         SHAPE_SQUARE_SMALL = 416,
         SHAPE_SQUARE = 417,
         SHAPE_SQUARE_BIG = 418,
@@ -616,9 +617,9 @@ public struct Tile
         SHAPE_TRIANGLE_HOLLOW = 430,
         SHAPE_TRIANGLE_BIG_HOLLOW = 431,
         SHAPE_LINE = 432,
-        #endregion
+#endregion
 
-        #region Cursor
+#region Cursor
         CURSOR_ARROW = 442,
         CURSOR_ARROW_WAIT = 443,
         CURSOR_WAIT = 444,
@@ -630,9 +631,9 @@ public struct Tile
         CURSOR_CROSSHAIR = 450,
         CURSOR_HELP = 451,
         CURSOR_DISABLE = 452;
-    #endregion
+#endregion
 
-    #region Backend
+#region Backend
     internal const int BYTE_SIZE = 14;
 
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
@@ -641,5 +642,5 @@ public struct Tile
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

@@ -114,15 +114,15 @@ public class RendererEdit : UserInterface
         var offset = (panel.Size.width - panel.Text.Length) / 2;
         offset = Math.Max(offset, 0);
         var textPos = (panel.Position.x + offset, panel.Position.y);
-        const int CORNER = Tile.BORDER_GRID_CORNER;
-        const int STRAIGHT = Tile.BORDER_GRID_STRAIGHT;
+        const int CORNER = Tile.BOX_GRID_CORNER;
+        const int STRAIGHT = Tile.BOX_GRID_STRAIGHT;
 
         if (Selected != e)
             return;
 
         var back = tilemaps[(int)Layer.EditBack];
         var middle = tilemaps[(int)Layer.EditMiddle];
-        back.SetBorder(panel.Position, panel.Size, CORNER, STRAIGHT, Color.Cyan);
+        back.SetBox(panel.Position, panel.Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
         back.SetRectangle(textPos, (panel.Text.Length, 1), default);
         middle.SetTextLine(textPos, panel.Text, Color.Cyan);
     }

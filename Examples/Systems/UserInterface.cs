@@ -32,8 +32,8 @@ public static class UserInterface
             if (button.Text == "Button")
             {
                 e.Size = (e.Text.Length + 2, 3);
-                middle.SetBorder(e.Position, e.Size,
-                    Tile.BORDER_DEFAULT_CORNER, Tile.BORDER_DEFAULT_STRAIGHT,
+                middle.SetBox(e.Position, e.Size, Tile.SHADE_TRANSPARENT,
+                    Tile.BOX_DEFAULT_CORNER, Tile.BOX_DEFAULT_STRAIGHT,
                     GetColor(e, Color.Yellow).ToDark());
                 middle.SetTextLine((e.Position.x + 1, e.Position.y + 1), e.Text,
                     GetColor(e, Color.Yellow.ToDark()));
@@ -69,10 +69,11 @@ public static class UserInterface
         protected override void OnUpdateSlider(Slider slider)
         {
             var e = slider;
-            middle.SetBar(e.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, Color.Gray,
-                e.Size.width);
-            middle.SetTile(e.Handle.Position, new(Tile.SHADE_OPAQUE, GetColor(e, Color.Yellow)));
-            middle.SetTextLine((e.Position.x + e.Size.width + 1, e.Position.y), $"{e.Progress:F2}");
+            back.SetBox(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray), Tile.BOX_CORNER_ROUND,
+                Tile.SHADE_OPAQUE, Color.Gray);
+            middle.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
+                GetColor(e, Color.Magenta), e.Size.height, true);
+            middle.SetTextLine((e.Position.x + e.Size.width + 1, e.Position.y + 1), $"{e.Progress:F2}");
         }
         protected override void OnUpdateList(List list)
         {
@@ -94,8 +95,8 @@ public static class UserInterface
         {
             var e = panel;
             SetBackground(e);
-            front.SetBorder(e.Position, e.Size, Tile.BORDER_GRID_CORNER, Tile.BORDER_GRID_STRAIGHT,
-                Color.Blue);
+            front.SetBox(e.Position, e.Size, Tile.SHADE_TRANSPARENT, Tile.BOX_GRID_CORNER,
+                Tile.BOX_GRID_STRAIGHT, Color.Blue);
             back.SetRectangle((e.Position.x + 1, e.Position.y), (e.Size.width - 2, 1),
                 new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.2f)));
             front.SetTextRectangle((e.Position.x, e.Position.y), (e.Size.width, 1), e.Text,
@@ -229,7 +230,7 @@ public static class UserInterface
         var userInterface = new UI(back, middle, front);
         userInterface.Add(new Button((2, 2)));
         userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
-        userInterface.Add(new Slider((2, 17), 7));
+        userInterface.Add(new Slider((2, 15), 7) { Size = (7, 3) });
         userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
         userInterface.Add(dropdown);
         userInterface.Add(new Scroll((37, 6), 9));

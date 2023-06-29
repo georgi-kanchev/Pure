@@ -37,7 +37,7 @@ public class Tilemap
     /// <summary>
     /// Gets the identifiers of the tiles in the tilemap.
     /// </summary>
-    public int[,] IDs
+    public int[,] Ids
     {
         get
         {
@@ -272,7 +272,7 @@ public class Tilemap
         for (var i = 0; i < text?.Length; i++)
         {
             var symbol = text[i];
-            var index = TileIDFrom(symbol);
+            var index = TileIdFrom(symbol);
 
             if (index == default && symbol != ' ')
             {
@@ -418,7 +418,7 @@ public class Tilemap
 
         var xStep = size.width < 0 ? -1 : 1;
         var yStep = size.height < 0 ? -1 : 1;
-        var tileList = TileIDsFrom(text).ToList();
+        var tileList = TileIdsFrom(text).ToList();
 
         for (var x = position.x; x != position.x + size.width; x += xStep)
             for (var y = position.y; y != position.y + size.height; y += yStep)
@@ -573,32 +573,34 @@ public class Tilemap
     }
 
     /// <summary>
-    /// Sets the tiles in a rectangular area of the tilemap to create a border.
+    /// Sets the tiles in a rectangular area of the tilemap to create a box with corners, borders
+    /// and filling.
     /// </summary>
     /// <param name="position">The position of the top-left corner of the rectangular 
-    /// area to create the border.</param>
-    /// <param name="size">The size of the rectangular area to create the border.</param>
-    /// <param name="tileIdCorner">The identifier of the tile to use for the corners of the border.</param>
-    /// <param name="tileIdStraight">The identifier of the tile to use for the 
-    /// straight edges of the border.</param>
-    /// <param name="tint">The color to tint the border tiles.</param>
-    public void SetBorder((int x, int y) position, (int width, int height) size, int tileIdCorner,
-        int tileIdStraight, uint tint = uint.MaxValue)
+    /// area to create the box.</param>
+    /// <param name="size">The size of the rectangular area to create the box.</param>
+    /// <param name="tileFill">The tile to use for the filling of the box</param>
+    /// <param name="borderTileId">The identifier of the tile to use for the 
+    /// straight edges of the box.</param>
+    /// <param name="cornerTileId">The identifier of the tile to use for the corners of the box.</param>
+    /// <param name="borderTint">The color to tint the border tiles.</param>
+    public void SetBox((int x, int y) position, (int width, int height) size, Tile tileFill,
+        int cornerTileId, int borderTileId, uint borderTint = uint.MaxValue)
     {
         var (x, y) = position;
         var (w, h) = size;
 
-        SetTile(position, new(tileIdCorner, tint));
-        SetRectangle((x + 1, y), (w - 2, 1), new(tileIdStraight, tint));
-        SetTile((x + w - 1, y), new(tileIdCorner, tint, 1));
+        SetTile(position, new(cornerTileId, borderTint));
+        SetRectangle((x + 1, y), (w - 2, 1), new(borderTileId, borderTint));
+        SetTile((x + w - 1, y), new(cornerTileId, borderTint, 1));
 
-        SetRectangle((x, y + 1), (1, h - 2), new(tileIdStraight, tint, 3));
-        SetRectangle((x + 1, y + 1), (w - 2, h - 2), new(0, 0));
-        SetRectangle((x + w - 1, y + 1), (1, h - 2), new(tileIdStraight, tint, 1));
+        SetRectangle((x, y + 1), (1, h - 2), new(borderTileId, borderTint, 3));
+        SetRectangle((x + 1, y + 1), (w - 2, h - 2), tileFill);
+        SetRectangle((x + w - 1, y + 1), (1, h - 2), new(borderTileId, borderTint, 1));
 
-        SetTile((x, y + h - 1), new(tileIdCorner, tint, 3));
-        SetRectangle((x + 1, y + h - 1), (w - 2, 1), new(tileIdStraight, tint, 2));
-        SetTile((x + w - 1, y + h - 1), new(tileIdCorner, tint, 2));
+        SetTile((x, y + h - 1), new(cornerTileId, borderTint, 3));
+        SetRectangle((x + 1, y + h - 1), (w - 2, 1), new(borderTileId, borderTint, 2));
+        SetTile((x + w - 1, y + h - 1), new(cornerTileId, borderTint, 2));
     }
     /// <summary>
     /// Sets the tiles in a rectangular area of the tilemap to create a vertical or horizontal bar.
@@ -606,25 +608,25 @@ public class Tilemap
     /// <param name="position">The position of the top-left corner of the rectangular area 
     /// to create the bar.</param>
     /// <param name="tileIdEdge">The identifier of the tile to use for the edges of the bar.</param>
-    /// <param name="tileIdStraight">The identifier of the tile to use for the 
+    /// <param name="tileId">The identifier of the tile to use for the 
     /// straight part of the bar.</param>
     /// <param name="tint">The color to tint the bar tiles.</param>
     /// <param name="size">The length of the bar in tiles.</param>
     /// <param name="isVertical">Whether the bar should be vertical or horizontal.</param>
-    public void SetBar((int x, int y) position, int tileIdEdge, int tileIdStraight,
+    public void SetBar((int x, int y) position, int tileIdEdge, int tileId,
         uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
     {
         var (x, y) = position;
         if (isVertical)
         {
             SetTile(position, new(tileIdEdge, tint, 1));
-            SetRectangle((x, y + 1), (1, size - 2), new(tileIdStraight, tint, 1));
+            SetRectangle((x, y + 1), (1, size - 2), new(tileId, tint, 1));
             SetTile((x, y + size - 1), new(tileIdEdge, tint, 3));
             return;
         }
 
         SetTile(position, new(tileIdEdge, tint));
-        SetRectangle((x + 1, y), (size - 2, 1), new(tileIdStraight, tint));
+        SetRectangle((x + 1, y), (size - 2, 1), new(tileId, tint));
         SetTile((x + size - 1, y), new(tileIdEdge, tint, 2));
     }
 
@@ -677,7 +679,7 @@ public class Tilemap
     /// </summary>
     /// <param name="symbol">The symbol to convert.</param>
     /// <returns>The tile identifier corresponding to the given symbol.</returns>
-    public int TileIDFrom(char symbol)
+    public int TileIdFrom(char symbol)
     {
         var id = default(int);
         if (symbol is >= 'A' and <= 'Z')
@@ -696,14 +698,14 @@ public class Tilemap
     /// </summary>
     /// <param name="text">The text to convert.</param>
     /// <returns>An array of tile identifiers corresponding to the given symbols.</returns>
-    public int[] TileIDsFrom(string? text)
+    public int[] TileIdsFrom(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return Array.Empty<int>();
 
         var result = new int[text.Length];
         for (var i = 0; i < text.Length; i++)
-            result[i] = TileIDFrom(text[i]);
+            result[i] = TileIdFrom(text[i]);
 
         return result;
     }
@@ -760,7 +762,7 @@ public class Tilemap
         return Compress(result.ToArray());
     }
 
-    #region Backend
+#region Backend
     // save format
     // [amount of bytes]		- data
     // --------------------------------
@@ -925,5 +927,5 @@ public class Tilemap
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

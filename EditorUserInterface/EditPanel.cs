@@ -36,11 +36,11 @@ public class EditPanel : Panel
         var offset = (Size.width - Text.Length) / 2;
         offset = Math.Max(offset, 0);
         var textPos = (Position.x + offset, Position.y);
-        const int CORNER = Tile.BORDER_HOLLOW_CORNER;
-        const int STRAIGHT = Tile.BORDER_HOLLOW_STRAIGHT;
+        const int CORNER = Tile.BOX_HOLLOW_CORNER;
+        const int STRAIGHT = Tile.BOX_HOLLOW_STRAIGHT;
 
         var front = tilemaps[(int)Layer.EditFront];
-        front.SetBorder(Position, Size, CORNER, STRAIGHT, Color.Yellow);
+        front.SetBox(Position, Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
         front.SetTextLine(textPos, Text, Color.Yellow);
 
         var size = (Size.width - 2, 1);
@@ -50,7 +50,7 @@ public class EditPanel : Panel
         UpdateButton(toTop, (topX, topY), size);
     }
 
-    #region Backend
+#region Backend
     private class EditButton : Button
     {
         public EditButton((int x, int y) position) : base(position) { }
@@ -96,5 +96,5 @@ public class EditPanel : Panel
 
         return baseColor;
     }
-    #endregion
+#endregion
 }

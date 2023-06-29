@@ -112,14 +112,14 @@ public class TilemapManager
         // not very reliable method since the user might configure text on each
         // tilemap individually but the idea of the tilemap manager is to bundle
         // multiple tilemaps with COMMON properties, therefore same text configuration
-        return tilemaps[0].TileIDFrom(symbol);
+        return tilemaps[0].TileIdFrom(symbol);
     }
     public int[] TileIDsFrom(string text)
     {
         // not very reliable method since the user might configure text on each
         // tilemap individually but the idea of the tilemap manager is to bundle
         // multiple tilemaps with COMMON properties, therefore same text configuration
-        return tilemaps[0].TileIDsFrom(text);
+        return tilemaps[0].TileIdsFrom(text);
     }
 
     public byte[] ToBytes()
@@ -143,7 +143,7 @@ public class TilemapManager
         return Tilemap.Compress(result.ToArray());
     }
 
-    #region Backend
+#region Backend
     // save format in sectors
     // [amount of bytes]		- data
     // --------------------------------
@@ -176,5 +176,5 @@ public class TilemapManager
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }

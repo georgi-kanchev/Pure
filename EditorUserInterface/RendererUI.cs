@@ -61,14 +61,12 @@ public class RendererUI : UserInterface
         var offset = (e.Size.width - e.Text.Length) / 2;
         offset = Math.Max(offset, 0);
         SetBackground(e);
-        tilemaps[(int)Layer.UiMiddle].SetBorder(e.Position, e.Size, Tile.BORDER_GRID_CORNER,
-            Tile.BORDER_GRID_STRAIGHT,
-            Color.Gray);
+        tilemaps[(int)Layer.UiMiddle].SetBox(e.Position, e.Size, Tile.SHADE_TRANSPARENT,
+            Tile.BOX_GRID_CORNER, Tile.BOX_GRID_STRAIGHT, Color.Gray);
         tilemaps[(int)Layer.UiBack].SetRectangle((e.Position.x + 1, e.Position.y), (e.Size.width - 2, 1),
             new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.2f)));
         tilemaps[(int)Layer.UiMiddle].SetTextLine((e.Position.x + offset, e.Position.y), e.Text,
-            Color.White,
-            e.Size.width);
+            Color.White, e.Size.width);
     }
     protected override void OnUpdatePages(Pages pages)
     {
@@ -136,11 +134,11 @@ public class RendererUI : UserInterface
             .SetTile(scroll.Down.Position, new(Tile.ARROW, scrollColor, scrollDownAng));
     }
 
-    #region Backend
+#region Backend
     private static void SetBackground(Element element)
     {
         var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark());
         tilemaps[(int)Layer.UiBack].SetRectangle(element.Position, element.Size, tile);
     }
-    #endregion
+#endregion
 }

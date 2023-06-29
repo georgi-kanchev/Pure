@@ -180,8 +180,8 @@ public static class Window
 
         Resize();
 
-        //var str = DefaultGraphics.PNGToBase64String(
-        //	"/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
+        //var str = DefaultGraphics.PngToBase64String(
+        //    "/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
         //var str = DefaultGraphics.PNGToBase64String("graphics.png");
 
         graphics["default"] = DefaultGraphics.CreateTexture();
