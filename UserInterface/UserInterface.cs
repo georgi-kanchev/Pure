@@ -40,44 +40,50 @@ public class UserInterface
         int GetInt() => BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
     }
 
-    public int Add(Element element)
+    public void Add(Element element)
     {
-        var e = element;
-        elements.Add(e);
+        elements.Add(element);
+
+        if (element is Layout layout)
+            layout.ui = this;
 
         var userActionCount = Enum.GetNames(typeof(UserAction)).Length;
-
         for (var i = 0; i < userActionCount; i++)
         {
             var act = (UserAction)i;
-            if (e is Button b) e.SubscribeToUserAction(act, () => OnUserActionButton(b, act));
-            else if (e is InputBox u)
-                e.SubscribeToUserAction(act, () => OnUserActionInputBox(u, act));
-            else if (e is List l) e.SubscribeToUserAction(act, () => OnUserActionList(l, act));
-            else if (e is Stepper n)
-                e.SubscribeToUserAction(act, () => OnUserActionStepper(n, act));
-            else if (e is Pages g) e.SubscribeToUserAction(act, () => OnUserActionPages(g, act));
-            else if (e is Palette t) e.SubscribeToUserAction(act, () => OnUserActionPalette(t, act));
-            else if (e is Panel p) e.SubscribeToUserAction(act, () => OnUserActionPanel(p, act));
-            else if (e is Scroll r) e.SubscribeToUserAction(act, () => OnUserActionScroll(r, act));
-            else if (e is Slider s) e.SubscribeToUserAction(act, () => OnUserActionSlider(s, act));
+            if (element is Button b)
+                element.SubscribeToUserAction(act, () => OnUserActionButton(b, act));
+            else if (element is InputBox u)
+                element.SubscribeToUserAction(act, () => OnUserActionInputBox(u, act));
+            else if (element is List l)
+                element.SubscribeToUserAction(act, () => OnUserActionList(l, act));
+            else if (element is Stepper n)
+                element.SubscribeToUserAction(act, () => OnUserActionStepper(n, act));
+            else if (element is Pages g)
+                element.SubscribeToUserAction(act, () => OnUserActionPages(g, act));
+            else if (element is Palette t)
+                element.SubscribeToUserAction(act, () => OnUserActionPalette(t, act));
+            else if (element is Panel p)
+                element.SubscribeToUserAction(act, () => OnUserActionPanel(p, act));
+            else if (element is Scroll r)
+                element.SubscribeToUserAction(act, () => OnUserActionScroll(r, act));
+            else if (element is Slider s)
+                element.SubscribeToUserAction(act, () => OnUserActionSlider(s, act));
         }
-
-        return elements.Count - 1;
+    }
+    public void Remove(Element element)
+    {
+        element.UnsubscribeAll();
+        elements.Remove(element);
     }
     public void BringToTop(Element element)
     {
         Remove(element);
         Add(element);
     }
-    public int IndexOf(Element element) => elements.IndexOf(element);
-    public bool IsContaining(Element element) => elements.Contains(element);
-    public void Remove(Element element)
-    {
-        element.UnsubscribeAll();
 
-        elements.Remove(element);
-    }
+    public int IndexOf(Element? element) => element == null ? -1 : elements.IndexOf(element);
+    public bool IsContaining(Element? element) => element != null && elements.Contains(element);
 
     public void Update()
     {
@@ -184,7 +190,7 @@ public class UserInterface
     protected virtual void OnListItemTrigger(List list, Button item) { }
     protected virtual void OnPanelResize(Panel panel, (int width, int height) delta) { }
 
-    #region Backend
+#region Backend
     private readonly List<Element> elements = new();
 
     private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
@@ -193,5 +199,5 @@ public class UserInterface
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }
