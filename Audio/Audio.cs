@@ -14,6 +14,7 @@ public class Audio
         else
             sound = new(new SoundBuffer(path));
         Volume = 0.5f;
+        Pitch = 1;
     }
 
     public static float GlobalVolume
@@ -21,31 +22,51 @@ public class Audio
         get => Listener.GlobalVolume / 100f;
         set => Listener.GlobalVolume = value * 100f;
     }
-    
+
     public (float x, float y) Position
     {
         get => Get().pos;
-        set { settings.pos = value; Set(); }
+        set
+        {
+            settings.pos = value;
+            Set();
+        }
     }
     public float Volume
     {
         get => Get().vol;
-        set { settings.vol = value; Set(); }
+        set
+        {
+            settings.vol = value;
+            Set();
+        }
     }
     public float Pitch
     {
         get => Get().pch;
-        set { settings.pch = value; Set(); }
+        set
+        {
+            settings.pch = value;
+            Set();
+        }
     }
     public float Attenuation
     {
         get => Get().att;
-        set { settings.att = value; Set(); }
+        set
+        {
+            settings.att = value;
+            Set();
+        }
     }
     public float MinimumDistance
     {
         get => Get().minDist;
-        set { settings.minDist = value; Set(); }
+        set
+        {
+            settings.minDist = value;
+            Set();
+        }
     }
     public float Progress
     {
@@ -63,12 +84,20 @@ public class Audio
     public bool IsLooping
     {
         get => Get().loop;
-        set { settings.loop = value; Set(); }
+        set
+        {
+            settings.loop = value;
+            Set();
+        }
     }
     public bool IsGlobal
     {
         get => Get().gl;
-        set { settings.gl = value; Set(); }
+        set
+        {
+            settings.gl = value;
+            Set();
+        }
     }
     public bool IsPlaying => Get().pl;
 
@@ -88,8 +117,7 @@ public class Audio
         sound?.Stop();
     }
 
-    #region Backend
-
+#region Backend
     private class Settings
     {
         public bool loop, gl, pl;
@@ -105,6 +133,7 @@ public class Audio
     {
         this.sound = sound;
         Volume = 0.5f;
+        Pitch = 1f;
     }
 
     private void Set()
@@ -164,6 +193,5 @@ public class Audio
         settings = result;
         return result;
     }
-
-    #endregion
+#endregion
 }
