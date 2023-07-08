@@ -33,8 +33,6 @@ public static class Audio
         playlist.AddTrack(null, track1, track2);
         playlist.Play();
 
-        //track2.Play();
-
         while (Window.IsOpen)
         {
             Window.Activate(true);

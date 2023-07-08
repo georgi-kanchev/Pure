@@ -136,8 +136,11 @@ public static class UserInterface
         {
             var e = palette;
             var (x, y) = e.Position;
+            var (w, h) = e.Size;
             var tile = new Tile(Tile.SHADE_OPAQUE, GetColor(e.Opacity, Color.Gray.ToBright()));
             var alpha = e.Opacity;
+
+            back.SetRectangle((x, y - 3), (w, h + 3), new(Tile.SHADE_5, Color.Gray.ToDark()));
             middle.SetBar(alpha.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, Color.Gray,
                 alpha.Size.width);
             middle.SetTile(alpha.Handle.Position, tile);
@@ -235,17 +238,17 @@ public static class UserInterface
         userInterface.Add(dropdown);
         userInterface.Add(new Scroll((37, 6), 9));
         userInterface.Add(new Scroll((38, 15), 9, false));
-        userInterface.Add(new Palette((34, 20), brightnessLevels: 30));
+        userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
         userInterface.Add(new Pages((27, 2)) { Size = (18, 2) });
-        userInterface.Add(new Panel((2, 20))
+        userInterface.Add(new Panel((18, 22))
         {
-            Size = (25, 4),
+            Size = (15, 4),
             IsResizable = false,
             IsMovable = false,
         });
-        userInterface.Add(new List((3, 21), 10, Types.Horizontal)
+        userInterface.Add(new List((19, 23), 10, Types.Horizontal)
         {
-            Size = (23, 2)
+            Size = (13, 2)
         });
 
         userInterface.Add(new Panel((16, 2))
@@ -275,8 +278,6 @@ public static class UserInterface
                 keysPressed: Keyboard.KeyIDsPressed,
                 keysTyped: Keyboard.KeyTyped,
                 tilemapSize: tilemaps.Size);
-
-            back.SetRectangle((34, 17), (13, 6), new(Tile.SHADE_5, Color.Gray.ToDark()));
 
             userInterface.Update();
 

@@ -88,12 +88,12 @@ public class InputBox : Element
     /// <param name="position">The position of the input box.</param>
     public InputBox((int x, int y) position) : base(position)
     {
-        lines[0] = Text;
+        SetLine(0, Text);
         Size = (12, 1);
     }
     public InputBox(byte[] bytes) : base(bytes)
     {
-        lines[0] = Text;
+        SetLine(0, Text);
         Placeholder = GrabString(bytes);
     }
 
@@ -228,7 +228,7 @@ public class InputBox : Element
         UpdateText();
     }
 
-    #region Backend
+#region Backend
     private readonly List<string> lines = new() { " " };
 
     private const char SELECTION = '█', SPACE = ' ';
@@ -445,12 +445,15 @@ public class InputBox : Element
 
     private void TryType(bool isAllowedType, bool isPasting)
     {
-        var (w, h) = Size;
-
-        if (!isAllowedType)
+        if (isAllowedType == false)
             return;
 
         var symbols = Input.Current.Typed ?? "";
+        Type(symbols, isPasting);
+    }
+    private void Type(string symbols, bool isPasting)
+    {
+        var (w, h) = Size;
 
         if (isPasting && string.IsNullOrWhiteSpace(TextCopied) == false)
         {
@@ -682,5 +685,5 @@ public class InputBox : Element
         else
             isHolding = false;
     }
-    #endregion
+#endregion
 }
