@@ -10,16 +10,16 @@ public struct Indices
 	/// </summary>
 	public int X
 	{
-		get => val.Item1;
-		set => val = (value, val.Item2);
+		get => val.x;
+		set => val = (value, val.y);
 	}
 	/// <summary>
 	/// Gets or sets the Y component of this coordinate.
 	/// </summary>
 	public int Y
 	{
-		get => val.Item2;
-		set => val = (val.Item1, value);
+		get => val.y;
+		set => val = (val.x, value);
 	}
 
 	/// <summary>
@@ -63,9 +63,9 @@ public struct Indices
 	public static Indices FromIndex(int index, (int width, int height) size)
 	{
 		index = index < 0 ? 0 : index;
-		index = index > size.Item1 * size.Item2 - 1 ? size.Item1 * size.Item2 - 1 : index;
+		index = index > size.width * size.height - 1 ? size.width * size.height - 1 : index;
 
-		return (index % size.Item1, index / size.Item1);
+		return (index % size.width, index / size.width);
 	}
 
 	/// <returns>
@@ -85,7 +85,7 @@ public struct Indices
 	/// <returns>A new indices instance with the same X and Y components as the bundle tuple.</returns>
 	public static implicit operator Indices((int x, int y) bundle)
 	{
-		return new Indices(bundle.Item1, bundle.Item2);
+		return new Indices(bundle.x, bundle.y);
 	}
 	/// <summary>
 	/// Implicitly converts an indices instance to a bundle tuple of two integers.
@@ -95,7 +95,7 @@ public struct Indices
 	/// components of the indices instance.</returns>
 	public static implicit operator (int x, int y)(Indices vector)
 	{
-		return (vector.val.Item1, vector.val.Item2);
+		return (vector.val.x, vector.val.y);
 	}
 	/// <summary>
 	/// Implicitly converts a bundle tuple of two floats to an indices instance.
@@ -104,7 +104,7 @@ public struct Indices
 	/// <returns>A new indices instance with the same X and Y components as the bundle tuple.</returns>
 	public static implicit operator Indices((float x, float y) bundle)
 	{
-		return new Indices((int)bundle.Item1, (int)bundle.Item2);
+		return new Indices((int)bundle.x, (int)bundle.y);
 	}
 	/// <summary>
 	/// Implicitly converts an indices instance to a bundle tuple of two floats.
@@ -192,6 +192,6 @@ public struct Indices
 	public static bool operator !=(Indices a, Indices b) => a.val != b.val;
 
 	#region Backend
-	private (int, int) val;
+	private (int x, int y) val;
 	#endregion
 }
