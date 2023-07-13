@@ -44,7 +44,13 @@ public class InputBox : Element
     public int SelectionIndex
     {
         get => selectionIndex;
-        set => selectionIndex = Math.Clamp(value, 0, GetMaxLineWidth() * lines.Count);
+        set
+        {
+            var (sx, sy) = FromIndex(value);
+            sx = Math.Clamp(sx, 0, lines[cy].Length);
+            sy = Math.Clamp(sy, 0, lines.Count - 1);
+            selectionIndex = ToIndex((sx, sy));
+        }
     }
     /// <summary>
     /// Gets the currently selected text in the input box.
@@ -56,9 +62,27 @@ public class InputBox : Element
             if (SelectionIndex == CursorIndex)
                 return "";
 
+            var sb = new StringBuilder();
+
             var a = CursorIndex < SelectionIndex ? CursorIndex : SelectionIndex;
             var b = CursorIndex > SelectionIndex ? CursorIndex : SelectionIndex;
-            return Text[a..b];
+
+            for (var i = a; i < b; i++)
+            {
+                var symbol = GetSymbol(i);
+                var (ix, iy) = FromIndex(i);
+
+                if (symbol == default && ix == lines[iy].Length)
+                {
+                    sb.Append(Environment.NewLine);
+                    continue;
+                }
+
+                if (symbol != default)
+                    sb.Append(symbol);
+            }
+
+            return sb.ToString();
         }
     }
 
@@ -86,7 +110,7 @@ public class InputBox : Element
         get => (scrX, scrY);
         set
         {
-            scrX = Math.Clamp(value.x, 0, Math.Max(0, lines[cy].Length - Size.width));
+            scrX = Math.Clamp(value.x, 0, Math.Max(0, lines[cy].Length - Size.width + 1));
             scrY = Math.Clamp(value.y, 0, Math.Max(0, lines.Count - Size.height));
         }
     }
@@ -174,19 +198,24 @@ public class InputBox : Element
 
     public (int indexSymbol, int indexLine) FromIndex(int index)
     {
-        var (w, h) = (GetMaxLineWidth(), lines.Count);
+        var maxLineLength = GetMaxLineWidth();
+        var (w, h) = (maxLineLength, lines.Count);
+        index = Math.Clamp(index, 0, w * h);
+        var result = (index % w, index / w);
 
-        index = index < 0 ? 0 : index;
-        index = index > w * h - 1 ? w * h - 1 : index;
+        // fixes weird issues when index is == to maxLineLength on non-first lines
+        var next = ((index + 1) % w, (index + 1) / w);
+        if (index == w * h) return (maxLineLength, lines.Count);
+        else if (ToIndex(result) == ToIndex(next)) return (maxLineLength, result.Item2 - 1);
 
-        return (index % w, index / w);
+        return result;
     }
     public int ToIndex((int symbol, int line) indices)
     {
         return indices.line * GetMaxLineWidth() + indices.symbol;
     }
 
-    public void MoveCursor((int x, int y) delta, bool isSelecting = false, bool isScrolling = true)
+    public void CursorMove((int x, int y) delta, bool isSelecting = false, bool isScrolling = true)
     {
         var shift = Input.Current.IsKeyPressed(Key.ShiftLeft) ||
                     Input.Current.IsKeyPressed(Key.ShiftRight);
@@ -194,45 +223,73 @@ public class InputBox : Element
         cursorBlink.Restart();
 
         var cxPrev = cx;
+        var cyPrev = cy;
 
         cy += delta.y;
         cx += delta.x;
         ClampCursor();
 
-        if (delta.x < 0 && // cursor tried to move left?
-            cx == 0 && cxPrev == 0 && // but line ended?
-            cy != 0) // not first line?
+        if (delta.x > 0 && // trying to move right
+            cxPrev + delta.x > lines[cy].Length) // but line ended
+        {
+            var x = cx;
+            cx = 0;
+            CursorMove((cxPrev + delta.x - x, 1)); // keep going with the remaining delta
+        }
+
+        if (delta.x < 0 && // trying to move left
+            cxPrev + delta.x < 0) // but line ended
+        {
+            var x = cx;
+            cx = lines[cy].Length;
+            CursorMove((cxPrev + delta.x - x, -1)); // keep going with the remaining delta
+        }
+
+        if (delta.x < 0 && // trying to move left
+            cx == 0 && cxPrev == 0 && // but line ended
+            cy != 0) // not first line
         {
             cy -= 1;
             cx = lines[cy].Length;
-            MoveCursor((0, 0), isSelecting, isScrolling);
+            CursorMove((0, 0), isSelecting, isScrolling);
         }
-
-        if (delta.x > 0 && // cursor tried to move right?
-            cx == lines[cy].Length && cxPrev == lines[cy].Length && // but line ended?
-            cy != lines.Count - 1) // not last line?
+        else if (delta.x > 0 && // trying to move right
+                 cx == lines[cy].Length && cxPrev == lines[cy].Length && // but line ended
+                 cy != lines.Count - 1) // not last line
         {
             cx = 0;
             cy += 1;
-            MoveCursor((0, 0), isSelecting, isScrolling);
+            CursorMove((0, 0), isSelecting, isScrolling);
         }
 
+        if (delta.y > 0 && // trying to move down
+            cy == lines.Count - 1 && cyPrev == lines.Count - 1) // last line
+            cx = lines[cy].Length;
+        else if (delta.y < 0 && // trying to move up
+                 cy == 0 && cyPrev == 0) // first line
+            cx = 0;
+
+        if (isScrolling)
+            CursorScroll();
+
+        SelectionIndex = shift && isSelecting ? SelectionIndex : CursorIndex;
+    }
+    public void CursorScroll()
+    {
         var (cpx, cpy) = PositionFromIndex(CursorIndex);
-        while (isScrolling && IsOverlapping((cpx, cpy)) == false)
+        while (IsOverlapping((cpx, cpy)) == false)
         {
             var (sx, sy) = (0, 0);
 
             if (cpx < Position.x) sx = -1;
-            else if (cpx > Position.x + Size.width) sx = 1;
+            else if (cpx >= Position.x + Size.width) sx = 1;
 
             if (cpy < Position.y) sy = -1;
-            else if (cpy > Position.y + Size.height) sy = 1;
+            else if (cpy >= Position.y + Size.height) sy = 1;
 
             ScrollIndices = (ScrollIndices.x + sx, ScrollIndices.y + sy);
             (cpx, cpy) = PositionFromIndex(CursorIndex); // update
         }
-
-        SelectionIndex = shift && isSelecting ? SelectionIndex : CursorIndex;
     }
 
     /// <summary>
@@ -300,11 +357,12 @@ public class InputBox : Element
         var sb = new StringBuilder();
         var maxW = Size.width - 1;
 
-        foreach (var line in lines)
+        var maxY = Math.Min(scrY + Size.height, lines.Count);
+        for (var i = scrY; i < maxY; i++)
         {
+            var line = lines[i];
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
-            var l = line.Length >= maxW ? line[scrX..secondIndex] : line;
-            sb.Append(l + Environment.NewLine);
+            sb.Append((scrX >= secondIndex ? "" : line[scrX..secondIndex]) + Environment.NewLine);
         }
 
         Text = sb.ToString();
@@ -329,7 +387,7 @@ public class InputBox : Element
     private char GetSymbol(int index)
     {
         var (x, y) = FromIndex(index);
-        return x < 0 || x >= lines[y].Length ? default : lines[y][x];
+        return y < 0 || y >= lines.Count || x < 0 || x >= lines[y].Length ? default : lines[y][x];
     }
     private int GetWordEndOffset(int step)
     {
@@ -340,6 +398,12 @@ public class InputBox : Element
         for (var i = 0; i < lines[cy].Length; i++)
         {
             var j = CursorIndex + index;
+            var (jx, _) = FromIndex(j);
+
+            if (jx == 0 && step < 0)
+                return index;
+            if (jx == lines[cy].Length - 1 && step > 0)
+                return index + 1;
 
             if (char.IsLetterOrDigit(GetSymbol(j)) == false ^ targetIsWord)
                 return index + (step < 0 ? 1 : 0);
@@ -354,8 +418,8 @@ public class InputBox : Element
     {
         var isSamePosClick = false;
         var (hx, hy) = Input.Current.Position;
-        var ix = (int)Math.Round(hx - Position.x);
-        var iy = (int)Math.Clamp(hy - Position.y, 0, lines.Count - 1);
+        var ix = (int)Math.Round(scrX + hx - Position.x);
+        var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
 
         if (Input.Current.IsPressed)
         {
@@ -380,6 +444,7 @@ public class InputBox : Element
                 cy = iy;
                 cx = ix;
                 ClampCursor();
+                CursorScroll();
             }
 
             if (Input.Current.IsJustPressed)
@@ -404,26 +469,30 @@ public class InputBox : Element
             cy = indexY;
             cx = indexX;
             ClampCursor();
+            CursorScroll();
             SelectionIndex = PositionToIndex((hx, hy));
         }
         else if (clicks == 2)
         {
             var i = PositionToIndex((hx, hy));
-            SelectionIndex = i + GetWordEndOffset(1);
             cx += GetWordEndOffset(-1);
             ClampCursor();
+            CursorScroll();
+            SelectionIndex = i + GetWordEndOffset(1);
         }
         else if (clicks == 3)
         {
             var p = PositionToIndex((x + lines[cy].Length, y + cy));
-            SelectionIndex = p;
             cx = 0;
+            CursorScroll();
+            SelectionIndex = p;
         }
         else if (clicks == 4)
         {
-            SelectionIndex = w * h;
             cy = 0;
             cx = 0;
+            CursorScroll();
+            SelectionIndex = w * h;
         }
     }
     private bool TrySelectAll()
@@ -434,9 +503,10 @@ public class InputBox : Element
             return false;
 
         var (w, h) = Size;
-        SelectionIndex = w * h;
         cx = 0;
         cy = 0;
+        CursorScroll();
+        SelectionIndex = w * h;
         return true;
     }
 
@@ -469,7 +539,7 @@ public class InputBox : Element
         for (var j = 0; j < hotkeys.Length; j++)
             if (hotkeys[j].Item1)
             {
-                MoveCursor(hotkeys[j].Item2, true);
+                CursorMove(hotkeys[j].Item2, true);
                 return;
             }
     }
@@ -486,14 +556,38 @@ public class InputBox : Element
     {
         if (isPasting && string.IsNullOrWhiteSpace(TextCopied) == false)
         {
-            lines[cy] = lines[cy].Insert(cx, TextCopied);
-            MoveCursor((TextCopied.Length, 0));
+            var pastedLines = TextCopied.Split(Environment.NewLine);
+            var carry = string.Empty;
+
+            for (var i = 0; i < pastedLines.Length; i++)
+            {
+                var line = pastedLines[i];
+                if (i == 0) // first line
+                {
+                    if (pastedLines.Length > 1)
+                        carry = lines[cy + i][cx..];
+
+                    lines[cy + i] = lines[cy + i][..cx];
+                    lines[cy + i] = lines[cy + i].Insert(cx, line);
+
+                    continue;
+                }
+
+                lines.Insert(cy + i, line);
+
+                if (i == pastedLines.Length - 1 && // last line
+                    string.IsNullOrEmpty(carry) == false) // has carry 
+                    lines[cy + i] += carry;
+            }
+
+            var copied = TextCopied.Replace(Environment.NewLine, string.Empty);
+            CursorMove((copied.Length, 0));
             return;
         }
 
         var text = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
         lines[cy] = lines[cy].Insert(cx, text);
-        MoveCursor((1, 0));
+        CursorMove((1, 0));
         SelectionIndex = CursorIndex;
     }
     private void TryBackspaceDeleteEnter(bool isHolding, bool justDeletedSelection)
@@ -506,7 +600,7 @@ public class InputBox : Element
             if (cx == 0)
             {
                 lines.Insert(cy, "");
-                MoveCursor((0, 1));
+                CursorMove((0, 1));
                 return;
             }
 
@@ -518,6 +612,7 @@ public class InputBox : Element
             cy++;
             cx = 0;
             SelectionIndex = CursorIndex;
+            CursorScroll();
         }
         else if (Allowed(Key.Backspace, isHolding) && justDeletedSelection == false)
         {
@@ -530,17 +625,18 @@ public class InputBox : Element
 
                 cy -= 1;
                 cx = lines[cy].Length;
+                ClampCursor();
                 TryMergeBottomLine(cy);
                 SelectionIndex = CursorIndex;
+                CursorScroll();
                 return;
             }
 
             var off = GetWordEndOffset(-1);
             var ctrl = Pressed(Key.ControlLeft);
             var count = ctrl ? Math.Abs(off) : 1;
-            lines[cy] = lines[cy].Remove(
-                ctrl ? cx + off : cx - 1, count);
-            MoveCursor((ctrl ? off : -1, 0));
+            lines[cy] = lines[cy].Remove(ctrl ? cx + off : cx - 1, count);
+            CursorMove((ctrl ? off : -1, 0));
             SelectionIndex = CursorIndex;
         }
         else if (Allowed(Key.Delete, isHolding) && justDeletedSelection == false)
@@ -578,39 +674,36 @@ public class InputBox : Element
         var pb = PositionFromIndex(b);
         var (ixa, iya) = (pa.x - x, Math.Clamp(pa.y - y, 0, lines.Count - 1));
         var (ixb, iyb) = (pb.x - x, Math.Clamp(pb.y - y, 0, lines.Count - 1));
-        var (w, _) = Size;
 
         for (var i = iya; i <= iyb; i++)
         {
-            // single line selected
-            if (iya == iyb)
+            if (iya == iyb) // single line selected
             {
                 lines[i] = lines[i][..ixa] + lines[i][ixb..];
                 break;
             }
 
             // multiline selected...
-            // first selected line
-            if (i == iya)
+            if (i == iya) // first selected line
                 lines[i] = lines[i][..ixa];
-            // last selected line
-            else if (i == iyb)
+            else if (i == iyb) // last selected line
             {
-                lines[i] = lines[i][ixb..];
-
-                // try to fit last line onto first line, leave the rest
-                var firstLineFreeSpace = Math.Min(w - lines[iya].Length - 1, lines[i].Length);
-                lines[iya] += lines[i][..firstLineFreeSpace];
-                lines[i] = lines[i][firstLineFreeSpace..];
+                var min = Math.Min(ixb, lines[i].Length);
+                lines[i] = lines[i][min..];
+                lines[iya] += lines[i];
+                lines.RemoveAt(i);
             }
-            // line between first & last
-            else
-                lines[i] = "";
+            else if (i < iyb) // line between first & last
+            {
+                lines.RemoveAt(i);
+                i--;
+                iyb--;
+            }
         }
 
-        // y first cuz x uses it
-        cy = iya;
         cx = ixa;
+        cy = iya;
+        CursorScroll(); // update scrolling
         SelectionIndex = CursorIndex;
         justDeletedSelection = true;
     }
@@ -628,7 +721,7 @@ public class InputBox : Element
             return;
 
         lines[lineIndex] += lines[nextLineIndex];
-        lines.Remove(lines[nextLineIndex]);
+        lines.RemoveAt(nextLineIndex);
     }
     private void TrySetMouseCursor()
     {
@@ -668,7 +761,7 @@ public class InputBox : Element
 
     private int GetMaxLineWidth()
     {
-        var max = 0;
+        var max = 1;
         foreach (var t in lines)
         {
             if (t.Length <= max)

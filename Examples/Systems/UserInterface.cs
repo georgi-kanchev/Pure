@@ -254,7 +254,7 @@ public static class UserInterface
         userInterface.Add(new Panel((0, 0))
         {
             Size = (9, 16),
-            SizeMinimum = (5, 6),
+            SizeMinimum = (5, 3),
         });
         //userInterface.Add(new List((17, 3), 15)
         //{

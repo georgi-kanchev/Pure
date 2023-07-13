@@ -317,8 +317,8 @@ public abstract partial class Element
 
     public bool IsOverlapping((float x, float y) point)
     {
-        return point.x >= Position.x && point.x <= Position.x + Size.width &&
-               point.y >= Position.y && point.y <= Position.y + Size.height;
+        return point.x >= Position.x && point.x < Position.x + Size.width &&
+               point.y >= Position.y && point.y < Position.y + Size.height;
     }
     public bool IsOverlapping(Element element)
     {
@@ -478,7 +478,7 @@ public abstract partial class Element
         return Encoding.UTF8.GetString(bText);
     }
 
-    #region Backend
+#region Backend
 // save format
 // [amount of bytes]	- data
 // --------------------------------
@@ -567,5 +567,5 @@ public abstract partial class Element
         byteOffset += amount;
         return result;
     }
-    #endregion
+#endregion
 }
