@@ -308,7 +308,7 @@ public class Tilemap
 
         var x = position.x;
         var y = position.y;
-        var lineList = text.Split("\n", StringSplitOptions.RemoveEmptyEntries).ToList();
+        var lineList = text.Split("\n").ToList();
 
         if (lineList.Count == 0)
             return;
@@ -372,9 +372,6 @@ public class Tilemap
         for (var i = startIndex; i < end; i++)
         {
             var line = lineList[i].Replace('\n', ' ');
-
-            if (isWordWrapping == false && i > size.width)
-                NewLine();
 
             if (alignment is Alignment.TopRight or Alignment.Right or Alignment.BottomRight)
                 line = line.PadLeft(size.width);
