@@ -336,7 +336,8 @@ public class InputBox : Element
     private static readonly Stopwatch holdDelay = new(),
         hold = new(),
         clickDelay = new(),
-        cursorBlink = new();
+        cursorBlink = new(),
+        scrollHold = new();
     private int selectionIndex, cx, cy, clicks, scrX, scrY;
     private (int, int) lastClickIndices = (-1, -1);
 
@@ -344,6 +345,7 @@ public class InputBox : Element
     {
         holdDelay.Start();
         hold.Start();
+        scrollHold.Start();
     }
 
     protected override void OnUserAction(UserAction userEvent)
@@ -420,6 +422,7 @@ public class InputBox : Element
         var (hx, hy) = Input.Current.Position;
         var ix = (int)Math.Round(scrX + hx - Position.x);
         var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
+        var hasMoved = Input.Current.PositionPrevious != Input.Current.Position;
 
         if (Input.Current.IsPressed)
         {
@@ -439,17 +442,44 @@ public class InputBox : Element
 
         if (isSamePosClick == false)
         {
-            if (Input.Current.IsPressed)
+            // hold & drag inside
+            if (IsPressedAndHeld && hasMoved)
+                MoveCursor();
+
+            if (Input.Current.IsJustPressed == false)
+                return;
+
+            // click
+            MoveCursor();
+            SelectionIndex = CursorIndex;
+
+            return;
+
+            void MoveCursor()
             {
                 cy = iy;
                 cx = ix;
                 ClampCursor();
                 CursorScroll();
             }
+        }
 
-            if (Input.Current.IsJustPressed)
-                SelectionIndex = CursorIndex;
+        // hold & drag outside
+        if (hasMoved == false && IsPressedAndHeld && IsHovered == false &&
+            scrollHold.Elapsed.TotalSeconds > 0.12f)
+        {
+            var (px, py) = Input.Current.Position;
+            var (x, y) = Position;
+            var (w, h) = Size;
 
+            if (px > x + w) cx += 1;
+            else if (px < x) cx -= 1;
+            if (py > y + h) cy += 1;
+            else if (py < y) cy -= 1;
+
+            ClampCursor();
+            CursorScroll();
+            scrollHold.Restart();
             return;
         }
 
@@ -672,8 +702,12 @@ public class InputBox : Element
         var b = SelectionIndex > CursorIndex ? SelectionIndex : CursorIndex;
         var pa = PositionFromIndex(a);
         var pb = PositionFromIndex(b);
-        var (ixa, iya) = (pa.x - x, Math.Clamp(pa.y - y, 0, lines.Count - 1));
-        var (ixb, iyb) = (pb.x - x, Math.Clamp(pb.y - y, 0, lines.Count - 1));
+        var (_, ay) = FromIndex(a);
+        var (_, by) = FromIndex(b);
+        var ixa = Math.Clamp(pa.x - x, 0, lines[ay].Length);
+        var iya = Math.Clamp(pa.y - y, 0, lines.Count - 1);
+        var ixb = Math.Clamp(pb.x - x, 0, lines[by].Length);
+        var iyb = Math.Clamp(pb.y - y, 0, lines.Count - 1);
 
         for (var i = iya; i <= iyb; i++)
         {
