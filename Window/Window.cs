@@ -177,6 +177,7 @@ public static class Window
         window.DispatchEvents();
         window.Clear();
         window.Display();
+        window.SetVerticalSyncEnabled(true);
 
         Resize();
 
@@ -327,7 +328,7 @@ public static class Window
         Vertices.QueueTilemap(tiles);
     }
 
-    #region Backend
+#region Backend
     internal static bool isRetro, isClosing;
     internal static float pixelScale;
     private static string title = "Game";
@@ -395,5 +396,5 @@ public static class Window
                     "All the provided arrays should be non-null and with equal sizes.");
         }
     }
-    #endregion
+#endregion
 }

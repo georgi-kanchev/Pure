@@ -44,7 +44,7 @@ public static class UserInterface
             {
                 e.Size = (e.Text.Length + 2, 1);
 
-                var color = e.IsSelected ? Color.Green : Color.Red;
+                var color = e.IsSelected ? Color.Orange : Color.Red;
                 var tile = new Tile(e.IsSelected ? Tile.ICON_TICK : Tile.UPPERCASE_X,
                     GetColor(button, color));
                 SetBackground(e);
@@ -233,6 +233,11 @@ public static class UserInterface
 
     public static void Run()
     {
+        // inputbox ctrl + a not working
+        // inputbox select + delete crash
+        // flappy bird collision not working
+        // tilemap window sizes not working
+
         Window.Create(3);
 
         var (width, height) = Window.MonitorAspectRatio;
@@ -248,48 +253,50 @@ public static class UserInterface
         dropdown.IsExpanded = false;
 
         var userInterface = new UI(back, middle, front);
-        var layout = new Layout((0, 0));
-        userInterface.Add(layout);
+        //var layout = new Layout((0, 0));
+        //userInterface.Add(layout);
 
-        layout.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.2f);
-        layout.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.1f);
-        layout.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.2f);
-        layout.Cut(index: 3, side: Layout.CutSide.Left, rate: 0.2f);
-        layout.Cut(index: 3, side: Layout.CutSide.Bottom, rate: 0.2f);
+        //layout.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.2f);
+        //layout.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.1f);
+        //layout.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.2f);
+        //layout.Cut(index: 3, side: Layout.CutSide.Left, rate: 0.2f);
+        //layout.Cut(index: 3, side: Layout.CutSide.Bottom, rate: 0.2f);
 
-        //userInterface.Add(new Button((2, 2)));
-        //userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
-        //userInterface.Add(new Slider((2, 15), 7) { Size = (7, 3) });
-        //userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
-        //userInterface.Add(dropdown);
-        //userInterface.Add(new Scroll((37, 6), 9));
-        //userInterface.Add(new Scroll((38, 15), 9, false));
-        //userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
-        //userInterface.Add(new Pages((27, 2)) { Size = (18, 2) });
-        //userInterface.Add(new Panel((18, 22))
-        //{
-        //	Size = (15, 4),
-        //	IsResizable = false,
-        //	IsMovable = false,
-        //});
-        //userInterface.Add(new List((19, 23), 10, Types.Horizontal)
-        //{
-        //	Size = (13, 2)
-        //});
+        userInterface.Add(new Button((2, 2)));
+        userInterface.Add(new Button((2, 20)));
+        userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
+        userInterface.Add(new Slider((2, 15), 7) { Size = (7, 3) });
+        userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
+        userInterface.Add(dropdown);
+        userInterface.Add(new Scroll((37, 6), 9));
+        userInterface.Add(new Scroll((38, 15), 9, false));
+        userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
+        userInterface.Add(new Pages((27, 2)) { Size = (18, 2) });
+        userInterface.Add(new Panel((18, 22))
+        {
+            Size = (15, 4),
+            IsResizable = true,
+            IsMovable = true,
+        });
+        userInterface.Add(new List((19, 23), 10, Types.Horizontal)
+        {
+            Size = (13, 2)
+        });
         var panelIndex = userInterface.Count;
         userInterface.Add(new Panel((0, 0))
         {
             Size = (9, 16),
             SizeMinimum = (5, 3),
         });
-        //userInterface.Add(new List((17, 3), 15)
-        //{
-        //	Size = (7, 9),
-        //	IsSingleSelecting = true,
-        //	ItemGap = (0, 1),
-        //	ItemMaximumSize = (7, 1)
-        //});
-        //userInterface.Add(new InputBox((0, 0)));
+        userInterface.Add(new List((17, 3), 15)
+        {
+            Size = (7, 9),
+            IsSingleSelecting = true,
+            ItemGap = (0, 2),
+            ItemMaximumSize = (7, 1)
+        });
+        var inputbox = userInterface.Count;
+        userInterface.Add(new InputBox((0, 0)));
 
         while (Window.IsOpen)
         {
@@ -307,7 +314,7 @@ public static class UserInterface
 
             userInterface.Update();
 
-            var b = userInterface[0];
+            var b = userInterface[inputbox];
             var p = userInterface[panelIndex];
             b.Size = (p.Size.width - 2, p.Size.height - 2);
             b.Position = (p.Position.x + 1, p.Position.y + 1);
