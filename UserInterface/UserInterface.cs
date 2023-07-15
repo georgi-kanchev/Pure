@@ -89,7 +89,8 @@ public class UserInterface
     {
         foreach (var element in elements)
         {
-            if (element is Button button) button.dragCallback = d => OnDragButton(button, d);
+            if (element is Button button)
+                button.dragCallback = d => OnDragButton(button, d);
             else if (element is InputBox input)
                 input.dragCallback = d => OnDragInputBox(input, d);
             if (element is List list)
@@ -116,9 +117,14 @@ public class UserInterface
                 panel.dragCallback = d => OnDragPanel(panel, d);
                 panel.resizeCallback = d => OnPanelResize(panel, d);
             }
-            else if (element is Stepper stepper) stepper.dragCallback = d => OnDragStepper(stepper, d);
-            else if (element is Scroll scroll) scroll.dragCallback = d => OnDragScroll(scroll, d);
-            else if (element is Slider slider) slider.dragCallback = d => OnDragSlider(slider, d);
+            else if (element is Stepper stepper)
+                stepper.dragCallback = d => OnDragStepper(stepper, d);
+            else if (element is Scroll scroll)
+                scroll.dragCallback = d => OnDragScroll(scroll, d);
+            else if (element is Slider slider)
+                slider.dragCallback = d => OnDragSlider(slider, d);
+            else if (element is Layout layout)
+                layout.segmentUpdateCallback = (seg, i) => OnUpdateLayoutSegment(layout, seg, i);
 
             element.Update();
 
@@ -131,6 +137,7 @@ public class UserInterface
             else if (element is Stepper n) OnUpdateStepper(n);
             else if (element is Scroll r) OnUpdateScroll(r);
             else if (element is Slider s) OnUpdateSlider(s);
+            else if (element is Layout o) OnUpdateLayout(o);
         }
     }
 
@@ -159,6 +166,7 @@ public class UserInterface
     protected virtual void OnUserActionPanel(Panel panel, UserAction userAction) { }
     protected virtual void OnUserActionScroll(Scroll scroll, UserAction userAction) { }
     protected virtual void OnUserActionSlider(Slider slider, UserAction userAction) { }
+    protected virtual void OnUserActionLayout(Layout layout, UserAction userAction) { }
 
     protected virtual void OnDragButton(Button button, (int width, int height) delta) { }
     protected virtual void OnDragInputBox(InputBox inputBox, (int width, int height) delta) { }
@@ -170,6 +178,7 @@ public class UserInterface
     protected virtual void OnDragPanel(Panel panel, (int width, int height) delta) { }
     protected virtual void OnDragScroll(Scroll scroll, (int width, int height) delta) { }
     protected virtual void OnDragSlider(Slider slider, (int width, int height) delta) { }
+    protected virtual void OnDragLayout(Layout layout, (int width, int height) delta) { }
 
     protected virtual void OnUpdateButton(Button button) { }
     protected virtual void OnUpdateInputBox(InputBox inputBox) { }
@@ -185,6 +194,9 @@ public class UserInterface
     protected virtual void OnUpdatePanel(Panel panel) { }
     protected virtual void OnUpdateScroll(Scroll scroll) { }
     protected virtual void OnUpdateSlider(Slider slider) { }
+    protected virtual void OnUpdateLayout(Layout layout) { }
+    protected virtual void OnUpdateLayoutSegment(Layout layout,
+        (int x, int y, int width, int height) segment, int index) { }
 
     protected virtual uint OnPalettePick(Palette palette, (float x, float y) position) => default;
     protected virtual void OnListItemTrigger(List list, Button item) { }

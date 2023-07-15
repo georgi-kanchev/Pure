@@ -8,7 +8,7 @@ using static Pure.UserInterface.List;
 
 public static class UserInterface
 {
-    class UI : Pure.UserInterface.UserInterface
+    private class UI : Pure.UserInterface.UserInterface
     {
         private readonly Tilemap back, middle, front;
         private int buttonClickCount;
@@ -190,6 +190,23 @@ public static class UserInterface
             middle.SetTile(e.Down.Position,
                 new(Tile.ARROW, GetColor(e.Down, scrollColor), scrollDownAng));
         }
+        protected override void OnUpdateLayout(Layout layout)
+        {
+            SetBackground(layout);
+        }
+        protected override void OnUpdateLayoutSegment(Layout layout,
+            (int x, int y, int width, int height) segment, int index)
+        {
+            var colors = new uint[]
+            {
+                Color.Red, Color.Blue, Color.Green, Color.Yellow, Color.Gray,
+                Color.Orange, Color.Cyan, Color.Black, Color.Azure, Color.Brown,
+                Color.Magenta, Color.Purple, Color.Pink, Color.Violet
+            };
+            var pos = (segment.x, segment.y);
+            var size = (segment.width, segment.height);
+            middle.SetRectangle(pos, size, new(Tile.SHADE_OPAQUE, colors[index]));
+        }
 
         // a special kind of action - the palette needs the tile color at a certain position
         // and we happen to have it in the tilemap
@@ -231,6 +248,15 @@ public static class UserInterface
         dropdown.IsExpanded = false;
 
         var userInterface = new UI(back, middle, front);
+        var layout = new Layout((0, 0));
+        userInterface.Add(layout);
+
+        layout.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.2f);
+        layout.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.1f);
+        layout.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.2f);
+        layout.Cut(index: 3, side: Layout.CutSide.Left, rate: 0.2f);
+        layout.Cut(index: 3, side: Layout.CutSide.Bottom, rate: 0.2f);
+
         //userInterface.Add(new Button((2, 2)));
         //userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
         //userInterface.Add(new Slider((2, 15), 7) { Size = (7, 3) });
@@ -263,8 +289,7 @@ public static class UserInterface
         //	ItemGap = (0, 1),
         //	ItemMaximumSize = (7, 1)
         //});
-        var inputIndex = userInterface.Count;
-        userInterface.Add(new InputBox((0, 0)));
+        //userInterface.Add(new InputBox((0, 0)));
 
         while (Window.IsOpen)
         {
@@ -282,12 +307,12 @@ public static class UserInterface
 
             userInterface.Update();
 
-            Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
-
-            var b = userInterface[inputIndex];
+            var b = userInterface[0];
             var p = userInterface[panelIndex];
             b.Size = (p.Size.width - 2, p.Size.height - 2);
             b.Position = (p.Position.x + 1, p.Position.y + 1);
+
+            Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 
             for (var i = 0; i < tilemaps.Count; i++)
                 Window.DrawTiles(tilemaps[i].ToBundle());
