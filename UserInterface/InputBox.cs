@@ -19,14 +19,14 @@ public class InputBox : Element
         {
             var sb = new StringBuilder();
 
-            var a = CursorIndex < SelectionIndex ? CursorIndex : SelectionIndex;
-            var b = CursorIndex > SelectionIndex ? CursorIndex : SelectionIndex;
+            var a = CursorIndices < SelectionIndices ? CursorIndices : SelectionIndices;
+            var b = CursorIndices > SelectionIndices ? CursorIndices : SelectionIndices;
 
             for (var i = scrY; i < scrY + Size.height; i++)
             {
                 for (var j = scrX; j < scrX + Size.width; j++)
                 {
-                    var index = ToIndex((j, i));
+                    var index = IndicesToIndex((j, i));
                     var isSelected = index >= a && index < b && j < lines[i].Length;
                     sb.Append(isSelected ? SELECTION : SPACE);
                 }
@@ -37,19 +37,14 @@ public class InputBox : Element
             return sb.ToString();
         }
     }
-    /// <summary>
-    /// Gets or sets the zero-based index of the first character in the current 
-    /// selection of the input box's text.
-    /// </summary>
-    public int SelectionIndex
+    public (int symbol, int line) SelectionIndices
     {
-        get => selectionIndex;
+        get => (sx, sy);
         set
         {
-            var (sx, sy) = FromIndex(value);
-            sx = Math.Clamp(sx, 0, lines[cy].Length);
-            sy = Math.Clamp(sy, 0, lines.Count - 1);
-            selectionIndex = ToIndex((sx, sy));
+            var (x, y) = value;
+            sy = Math.Clamp(y, 0, lines.Count - 1);
+            sx = Math.Clamp(x, 0, lines[sy].Length);
         }
     }
     /// <summary>
@@ -59,18 +54,18 @@ public class InputBox : Element
     {
         get
         {
-            if (SelectionIndex == CursorIndex)
+            if (SelectionIndices == CursorIndices)
                 return "";
 
             var sb = new StringBuilder();
 
-            var a = CursorIndex < SelectionIndex ? CursorIndex : SelectionIndex;
-            var b = CursorIndex > SelectionIndex ? CursorIndex : SelectionIndex;
+            var a = CursorIndices < SelectionIndices ? CursorIndices : SelectionIndices;
+            var b = CursorIndices > SelectionIndices ? CursorIndices : SelectionIndices;
 
             for (var i = a; i < b; i++)
             {
                 var symbol = GetSymbol(i);
-                var (ix, iy) = FromIndex(i);
+                var (ix, iy) = IndicesFromIndex(i);
 
                 if (symbol == default && ix == lines[iy].Length)
                 {
@@ -89,19 +84,16 @@ public class InputBox : Element
     public bool IsCursorVisible =>
         IsFocused &&
         cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
-        IsOverlapping(PositionFromIndex(CursorIndex));
+        IsOverlapping(PositionFromIndices(CursorIndices));
 
-    /// <summary>
-    /// Gets the zero-based index of the character at the cursor's position in the input box's text.
-    /// </summary>
-    public int CursorIndex
+    public (int symbol, int line) CursorIndices
     {
-        get => ToIndex((cx, cy));
+        get => (cx, cy);
         set
         {
-            var (x, y) = FromIndex(value);
-            cx = Math.Clamp(x, 0, lines[cy].Length);
+            var (x, y) = value;
             cy = Math.Clamp(y, 0, lines.Count - 1);
+            cx = Math.Clamp(x, 0, lines[cy].Length);
         }
     }
 
@@ -112,6 +104,23 @@ public class InputBox : Element
         {
             scrX = Math.Clamp(value.x, 0, Math.Max(0, lines[cy].Length - Size.width + 1));
             scrY = Math.Clamp(value.y, 0, Math.Max(0, lines.Count - Size.height));
+        }
+    }
+
+    public string? this[int lineIndex]
+    {
+        get => lineIndex < 0 || lineIndex >= lines.Count ? default : lines[lineIndex];
+        set
+        {
+            if (lineIndex < 0 || lineIndex >= lines.Count)
+                return;
+
+            if (value == null)
+                lines.RemoveAt(lineIndex);
+            else
+                lines[lineIndex] = value;
+
+            UpdateText();
         }
     }
 
@@ -130,32 +139,6 @@ public class InputBox : Element
         Placeholder = GrabString(bytes);
     }
 
-    public void Append(int cursorIndex, string? text)
-    {
-        var prevX = cx;
-        var prevY = cy;
-        text ??= "";
-        var (x, y) = FromIndex(cursorIndex);
-        cx = x;
-        cy = y;
-
-        foreach (var t in text)
-            Type(t.ToString(), false);
-
-        cx = prevX;
-        cy = prevY;
-        SelectionIndex = CursorIndex;
-    }
-    /// <summary>
-    /// Gets the text of a specific line in the input box.
-    /// </summary>
-    /// <param name="lineIndex">The zero-based index of the line to get the text of.</param>
-    /// <returns>The text of the specified line.</returns>
-    public string LineAt(int lineIndex)
-    {
-        return lineIndex < 0 && lineIndex >= lines.Count ? "" : lines[lineIndex];
-    }
-
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -163,56 +146,25 @@ public class InputBox : Element
         return result.ToArray();
     }
 
-    /// <summary>
-    /// Converts a world position to the closest zero-based index in the input box's text.
-    /// </summary>
-    /// <param name="position">The position to convert.</param>
-    /// <returns>The closest zero-based index to
-    /// the given position in the input box's text.</returns>
-    public int PositionToIndex((float, float) position)
-    {
-        var (ppx, ppy) = position;
-        var (px, py) = Position;
-        var (w, h) = Size;
-        var (x, y) = (MathF.Round(ppx) - px, MathF.Floor(ppy) - py);
-        y = Math.Clamp(y, 0, lines.Count - 1);
-        var index = Math.Clamp(y, 0, h) * w + Math.Clamp(x, 0, lines[(int)y].Length);
-
-        return (int)Math.Clamp(index, 0, w * h);
-    }
-    /// <summary>
-    /// Converts a text index to a world position.
-    /// </summary>
-    /// <param name="index">The index to convert.</param>
-    /// <returns>The position corresponding to the given index.</returns>
-    public (int x, int y) PositionFromIndex(int index)
+    public (int symbol, int line) PositionToIndices((int x, int y) position)
     {
         var (px, py) = Position;
         var (w, h) = (GetMaxLineWidth(), lines.Count - 1);
-        var (x, y) = FromIndex(index);
+        var (x, y) = position;
+        var newX = Math.Clamp(px - scrX + x, 0, w);
+        var newY = Math.Clamp(py - scrY + y, 0, h);
+
+        return (newX, newY);
+    }
+    public (int x, int y) PositionFromIndices((int symbol, int line) indices)
+    {
+        var (px, py) = Position;
+        var (w, h) = (GetMaxLineWidth(), lines.Count - 1);
+        var (x, y) = indices;
         var newX = Math.Clamp(x, 0, w);
         var newY = Math.Clamp(y, 0, h);
 
         return (px - scrX + newX, py - scrY + newY);
-    }
-
-    public (int indexSymbol, int indexLine) FromIndex(int index)
-    {
-        var maxLineLength = GetMaxLineWidth();
-        var (w, h) = (maxLineLength, lines.Count);
-        index = Math.Clamp(index, 0, w * h);
-        var result = (index % w, index / w);
-
-        // fixes weird issues when index is == to maxLineLength on non-first lines
-        var next = ((index + 1) % w, (index + 1) / w);
-        if (index == w * h) return (maxLineLength, lines.Count);
-        else if (ToIndex(result) == ToIndex(next)) return (maxLineLength, result.Item2 - 1);
-
-        return result;
-    }
-    public int ToIndex((int symbol, int line) indices)
-    {
-        return indices.line * GetMaxLineWidth() + indices.symbol;
     }
 
     public void CursorMove((int x, int y) delta, bool isSelecting = false, bool isScrolling = true)
@@ -272,11 +224,11 @@ public class InputBox : Element
         if (isScrolling)
             CursorScroll();
 
-        SelectionIndex = shift && isSelecting ? SelectionIndex : CursorIndex;
+        SelectionIndices = shift && isSelecting ? SelectionIndices : CursorIndices;
     }
     public void CursorScroll()
     {
-        var (cpx, cpy) = PositionFromIndex(CursorIndex);
+        var (cpx, cpy) = PositionFromIndices(CursorIndices);
         while (IsOverlapping((cpx, cpy)) == false)
         {
             var (sx, sy) = (0, 0);
@@ -288,8 +240,10 @@ public class InputBox : Element
             else if (cpy >= Position.y + Size.height) sy = 1;
 
             ScrollIndices = (ScrollIndices.x + sx, ScrollIndices.y + sy);
-            (cpx, cpy) = PositionFromIndex(CursorIndex); // update
+            (cpx, cpy) = PositionFromIndices(CursorIndices); // update
         }
+
+        UpdateText();
     }
 
     /// <summary>
@@ -302,8 +256,11 @@ public class InputBox : Element
         // reclamp despite scrolling or not cuz maybe the text changed
         ScrollIndices = (scrX, scrY);
 
+        if (prevSize != Size)
+            UpdateText();
+        prevSize = Size;
+
         TrySetMouseCursor();
-        UpdateText();
 
         if (IsDisabled || IsFocused == false || TrySelectAll() || JustPressed(Key.Tab))
             return;
@@ -338,8 +295,8 @@ public class InputBox : Element
         clickDelay = new(),
         cursorBlink = new(),
         scrollHold = new();
-    private int selectionIndex, cx, cy, clicks, scrX, scrY;
-    private (int, int) lastClickIndices = (-1, -1);
+    private int cx, cy, sx, sy, clicks, scrX, scrY;
+    private (int, int) lastClickIndices = (-1, -1), prevSize;
 
     static InputBox()
     {
@@ -358,7 +315,6 @@ public class InputBox : Element
     {
         var sb = new StringBuilder();
         var maxW = Size.width - 1;
-
         var maxY = Math.Min(scrY + Size.height, lines.Count);
         for (var i = scrY; i < maxY; i++)
         {
@@ -386,21 +342,21 @@ public class InputBox : Element
         return false;
     }
 
-    private char GetSymbol(int index)
+    private char GetSymbol((int symbol, int line) indices)
     {
-        var (x, y) = FromIndex(index);
+        var (x, y) = indices;
         return y < 0 || y >= lines.Count || x < 0 || x >= lines[y].Length ? default : lines[y][x];
     }
     private int GetWordEndOffset(int step)
     {
         var index = step < 0 ? -1 : 0;
-        var symbol = GetSymbol(CursorIndex + (step < 0 ? -1 : 0));
+        var symbol = GetSymbol(CursorIndices + (step < 0 ? -1 : 0));
         var targetIsWord = char.IsLetterOrDigit(symbol) == false;
 
         for (var i = 0; i < lines[cy].Length; i++)
         {
-            var j = CursorIndex + index;
-            var (jx, _) = FromIndex(j);
+            var j = CursorIndices + index;
+            var (jx, _) = IndicesFromIndex(j);
 
             if (jx == 0 && step < 0)
                 return index;
@@ -413,7 +369,7 @@ public class InputBox : Element
             index += step;
         }
 
-        return step < 0 ? ToIndex((0, cy)) : ToIndex((lines[cy].Length, cy));
+        return step < 0 ? IndicesToIndex((0, cy)) : IndicesToIndex((lines[cy].Length, cy));
     }
 
     private void TrySelect()
@@ -451,7 +407,7 @@ public class InputBox : Element
 
             // click
             MoveCursor();
-            SelectionIndex = CursorIndex;
+            SelectionIndices = CursorIndices;
 
             return;
 
@@ -491,6 +447,7 @@ public class InputBox : Element
         var (x, y) = Position;
         var (w, h) = Size;
         var (hx, hy) = Input.Current.Position;
+        var selectionIndices = PositionToIndices(((int)hx, (int)hy));
 
         clicks = clicks == 4 ? 1 : clicks + 1;
 
@@ -500,29 +457,28 @@ public class InputBox : Element
             cx = indexX;
             ClampCursor();
             CursorScroll();
-            SelectionIndex = PositionToIndex((hx, hy));
+            SelectionIndices = selectionIndices;
         }
         else if (clicks == 2)
         {
-            var i = PositionToIndex((hx, hy));
             cx += GetWordEndOffset(-1);
             ClampCursor();
             CursorScroll();
-            SelectionIndex = i + GetWordEndOffset(1);
+            SelectionIndices = selectionIndices + GetWordEndOffset(1);
         }
         else if (clicks == 3)
         {
-            var p = PositionToIndex((x + lines[cy].Length, y + cy));
+            var p = PositionToIndices((x + lines[cy].Length, y + cy));
             cx = 0;
             CursorScroll();
-            SelectionIndex = p;
+            SelectionIndices = p;
         }
         else if (clicks == 4)
         {
             cy = 0;
             cx = 0;
             CursorScroll();
-            SelectionIndex = w * h;
+            SelectionIndices = (int.MaxValue, int.MaxValue);
         }
     }
     private bool TrySelectAll()
@@ -532,11 +488,10 @@ public class InputBox : Element
         if (ctrl == false || Input.Current.Typed != "a")
             return false;
 
-        var (w, h) = Size;
         cx = 0;
         cy = 0;
         CursorScroll();
-        SelectionIndex = w * h;
+        SelectionIndices = (int.MaxValue, int.MaxValue);
         return true;
     }
 
@@ -544,13 +499,13 @@ public class InputBox : Element
     {
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
         var shift = Pressed(Key.ShiftLeft) || Pressed(Key.ShiftRight);
-        var i = CursorIndex;
-        var s = SelectionIndex;
+        var i = CursorIndices;
+        var s = SelectionIndices;
         var hasSel = shift == false && i != s;
         var justL = JustPressed(Key.ArrowLeft);
         var justR = JustPressed(Key.ArrowRight);
-        var (ix, iy) = PositionFromIndex(i);
-        var (sx, sy) = PositionFromIndex(s);
+        var (ix, iy) = PositionFromIndices(i);
+        var (sx, sy) = PositionFromIndices(s);
 
         var hotkeys = new[]
         {
@@ -612,13 +567,15 @@ public class InputBox : Element
 
             var copied = TextCopied.Replace(Environment.NewLine, string.Empty);
             CursorMove((copied.Length, 0));
+            UpdateText();
             return;
         }
 
         var text = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
         lines[cy] = lines[cy].Insert(cx, text);
+        UpdateText();
         CursorMove((1, 0));
-        SelectionIndex = CursorIndex;
+        SelectionIndices = CursorIndices;
     }
     private void TryBackspaceDeleteEnter(bool isHolding, bool justDeletedSelection)
     {
@@ -630,7 +587,11 @@ public class InputBox : Element
             if (cx == 0)
             {
                 lines.Insert(cy, "");
-                CursorMove((0, 1));
+                cy++;
+                cursorBlink.Restart();
+                ClampCursor();
+                CursorScroll();
+                UpdateText();
                 return;
             }
 
@@ -638,11 +599,13 @@ public class InputBox : Element
 
             lines[cy] = lines[cy][..cx];
             lines.Insert(cy + 1, textForNewLine);
-
             cy++;
             cx = 0;
-            SelectionIndex = CursorIndex;
+            cursorBlink.Restart();
+            ClampCursor();
+            SelectionIndices = CursorIndices;
             CursorScroll();
+            UpdateText();
         }
         else if (Allowed(Key.Backspace, isHolding) && justDeletedSelection == false)
         {
@@ -657,7 +620,7 @@ public class InputBox : Element
                 cx = lines[cy].Length;
                 ClampCursor();
                 TryMergeBottomLine(cy);
-                SelectionIndex = CursorIndex;
+                SelectionIndices = CursorIndices;
                 CursorScroll();
                 return;
             }
@@ -666,8 +629,9 @@ public class InputBox : Element
             var ctrl = Pressed(Key.ControlLeft);
             var count = ctrl ? Math.Abs(off) : 1;
             lines[cy] = lines[cy].Remove(ctrl ? cx + off : cx - 1, count);
+            UpdateText();
             CursorMove((ctrl ? off : -1, 0));
-            SelectionIndex = CursorIndex;
+            SelectionIndices = CursorIndices;
         }
         else if (Allowed(Key.Delete, isHolding) && justDeletedSelection == false)
         {
@@ -679,7 +643,7 @@ public class InputBox : Element
                     return;
 
                 TryMergeBottomLine(cy);
-                SelectionIndex = CursorIndex;
+                SelectionIndices = CursorIndices;
                 return;
             }
 
@@ -687,23 +651,24 @@ public class InputBox : Element
             var ctrl = Pressed(Key.ControlLeft);
             var count = ctrl ? Math.Abs(off) : 1;
             lines[cy] = lines[cy].Remove(cx, count);
-            SelectionIndex = CursorIndex;
+            SelectionIndices = CursorIndices;
+            UpdateText();
         }
     }
     private void TryDeleteSelected(ref bool justDeletedSelection, bool shouldDelete)
     {
         var (x, y) = Position;
-        var isSelected = SelectionIndex != CursorIndex;
+        var isSelected = SelectionIndices != CursorIndices;
 
         if (shouldDelete == false || isSelected == false)
             return;
 
-        var a = SelectionIndex < CursorIndex ? SelectionIndex : CursorIndex;
-        var b = SelectionIndex > CursorIndex ? SelectionIndex : CursorIndex;
-        var pa = PositionFromIndex(a);
-        var pb = PositionFromIndex(b);
-        var (_, ay) = FromIndex(a);
-        var (_, by) = FromIndex(b);
+        var a = SelectionIndices < CursorIndices ? SelectionIndices : CursorIndices;
+        var b = SelectionIndices > CursorIndices ? SelectionIndices : CursorIndices;
+        var pa = PositionFromIndices(a);
+        var pb = PositionFromIndices(b);
+        var (_, ay) = IndicesFromIndex(a);
+        var (_, by) = IndicesFromIndex(b);
         var ixa = Math.Clamp(pa.x - x, 0, lines[ay].Length);
         var iya = Math.Clamp(pa.y - y, 0, lines.Count - 1);
         var ixb = Math.Clamp(pb.x - x, 0, lines[by].Length);
@@ -738,7 +703,8 @@ public class InputBox : Element
         cx = ixa;
         cy = iya;
         CursorScroll(); // update scrolling
-        SelectionIndex = CursorIndex;
+        UpdateText();
+        SelectionIndices = CursorIndices;
         justDeletedSelection = true;
     }
 
@@ -756,6 +722,7 @@ public class InputBox : Element
 
         lines[lineIndex] += lines[nextLineIndex];
         lines.RemoveAt(nextLineIndex);
+        UpdateText();
     }
     private void TrySetMouseCursor()
     {
@@ -766,7 +733,7 @@ public class InputBox : Element
         out bool isPasting)
     {
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
-        var hasSelection = CursorIndex != SelectionIndex;
+        var hasSelection = CursorIndices != SelectionIndices;
 
         isPasting = false;
 
@@ -808,6 +775,16 @@ public class InputBox : Element
         }
 
         return max;
+    }
+    private static ((int symbol, int line) a, (int symbol, int line) b) OrderIndices(
+        (int symbol, int line) a, (int symbol, int line) b)
+    {
+        if (a.line < b.line)
+            return (a, b);
+        else if (a.line > b.line)
+            return (b, a);
+
+        return a.symbol <= b.symbol ? (a, b) : (b, a);
     }
 
     private static void TryResetHoldTimers(out bool isHolding, bool isJustTyped)

@@ -237,7 +237,6 @@ public abstract partial class Element
         IsHidden = GrabBool(bytes);
         IsDisabled = GrabBool(bytes);
         hasParent = GrabBool(bytes);
-        isPinned = GrabBool(bytes);
     }
 
     /// <summary>
@@ -399,7 +398,6 @@ public abstract partial class Element
         PutBool(result, IsHidden);
         PutBool(result, IsDisabled);
         PutBool(result, hasParent);
-        PutBool(result, isPinned);
 
         return result.ToArray();
     }
@@ -498,7 +496,7 @@ public abstract partial class Element
         listSizeTrimOffset,
         sizeMinimum = (1, 1),
         sizeMaximum = (int.MaxValue, int.MaxValue);
-    internal bool hasParent, isPinned;
+    internal bool hasParent;
     internal readonly string typeName;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
     private int byteOffset;

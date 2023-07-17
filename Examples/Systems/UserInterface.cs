@@ -60,11 +60,12 @@ public static class UserInterface
                 e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
             middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
 
-            if (string.IsNullOrWhiteSpace(e.Text) && e.CursorIndex == 0)
+            if (string.IsNullOrWhiteSpace(e.Text) && e.CursorIndices == 0)
                 middle.SetTextRectangle(e.Position, e.Size, e.Placeholder, Color.Gray.ToBright(), false);
 
             if (e.IsCursorVisible)
-                front.SetTile(e.PositionFromIndex(e.CursorIndex), new(Tile.SHAPE_LINE, Color.White, 2));
+                front.SetTile(e.PositionFromIndices(e.CursorIndices),
+                    new(Tile.SHAPE_LINE, Color.White, 2));
         }
         protected override void OnUpdateSlider(Slider slider)
         {
@@ -233,11 +234,7 @@ public static class UserInterface
 
     public static void Run()
     {
-        // inputbox ctrl + a not working
         // inputbox select + delete crash
-        // flappy bird collision not working
-        // tilemap window sizes not working
-        // tile not casting properly to bundle?
 
         Window.Create(3);
 
@@ -263,41 +260,44 @@ public static class UserInterface
         //layout.Cut(index: 3, side: Layout.CutSide.Left, rate: 0.2f);
         //layout.Cut(index: 3, side: Layout.CutSide.Bottom, rate: 0.2f);
 
-        userInterface.Add(new Button((2, 2)));
-        userInterface.Add(new Button((2, 20)));
-        userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
-        userInterface.Add(new Slider((2, 15), 7) { Size = (7, 3) });
-        userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
-        userInterface.Add(dropdown);
-        userInterface.Add(new Scroll((37, 6), 9));
-        userInterface.Add(new Scroll((38, 15), 9, false));
-        userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
-        userInterface.Add(new Pages((27, 2)) { Size = (18, 2) });
-        userInterface.Add(new Panel((18, 22))
-        {
-            Size = (15, 4),
-            IsResizable = true,
-            IsMovable = true,
-        });
-        userInterface.Add(new List((19, 23), 10, Types.Horizontal)
-        {
-            Size = (13, 2)
-        });
+        //userInterface.Add(new Button((2, 2)));
+        //userInterface.Add(new Button((2, 20)));
+        //userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
+        //userInterface.Add(new Slider((2, 15), 7) { Size = (7, 3) });
+        //userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
+        //userInterface.Add(dropdown);
+        //userInterface.Add(new Scroll((37, 6), 9));
+        //userInterface.Add(new Scroll((38, 15), 9, false));
+        //userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
+        //userInterface.Add(new Pages((27, 2)) { Size = (18, 2) });
+        //userInterface.Add(new Panel((18, 22))
+        //{
+        //    Size = (15, 4),
+        //    IsResizable = false,
+        //    IsMovable = false,
+        //});
+        //userInterface.Add(new List((19, 23), 10, Types.Horizontal)
+        //{
+        //    Size = (13, 2)
+        //});
         var panelIndex = userInterface.Count;
         userInterface.Add(new Panel((0, 0))
         {
             Size = (9, 16),
             SizeMinimum = (5, 3),
         });
-        userInterface.Add(new List((17, 3), 15)
-        {
-            Size = (7, 9),
-            IsSingleSelecting = true,
-            ItemGap = (0, 2),
-            ItemMaximumSize = (7, 1)
-        });
+        //userInterface.Add(new List((17, 3), 15)
+        //{
+        //    Size = (7, 9),
+        //    IsSingleSelecting = true,
+        //    ItemGap = (0, 2),
+        //    ItemMaximumSize = (7, 1)
+        //});
         var inputbox = userInterface.Count;
         userInterface.Add(new InputBox((0, 0)));
+
+        var ib = (InputBox)userInterface[inputbox];
+        ib[0] = "hello, world";
 
         while (Window.IsOpen)
         {

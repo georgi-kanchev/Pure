@@ -1,11 +1,11 @@
 namespace Pure.Examples.Games;
 
-using Pure.Animation;
-using Pure.Collision;
-using Pure.Tilemap;
-using Pure.Tracker;
-using Pure.Utilities;
-using Pure.Window;
+using Animation;
+using Collision;
+using Tilemap;
+using Tracker;
+using Utilities;
+using Window;
 
 public static class FlappyBird
 {
@@ -33,23 +33,23 @@ public static class FlappyBird
         collisionMap.AddRectangle(new((1, 1)), Tile.BOX_DEFAULT_STRAIGHT);
 
         Window.Create(3);
-        Window.IsRetro = true;
+        //Window.IsRetro = true;
 
         InitializePipes();
 
         Tracker<string>.When("space-down", () =>
         {
-            birdVelocity = -0.006f;
+            birdVelocity = -0.08f;
             birdAnimation.CurrentProgress = 0;
 
-            if (isGameOver) // restart game in case it's over
-            {
-                birdY = 5f;
-                birdVelocity = 0f;
-                isGameOver = false;
-                score = 0;
-                InitializePipes();
-            }
+            if (isGameOver == false)
+                return; // restart game in case it's over
+
+            birdY = 5f;
+            birdVelocity = 0f;
+            isGameOver = false;
+            score = 0;
+            InitializePipes();
         });
 
         while (Window.IsOpen) // the default game loop
@@ -64,13 +64,13 @@ public static class FlappyBird
             birdAnimation.Update(Time.Delta);
 
             // clear the tilemaps from the previous frame
-            background.Fill(new(Tile.SHADE_OPAQUE, ((Color)Color.Blue).ToDark()));
+            background.Fill(new(Tile.SHADE_OPAQUE, Color.Blue.ToDark()));
             foreground.Fill();
 
             // apply gravity, unless game over
             if (isGameOver == false)
             {
-                birdVelocity += Time.Delta * 0.01f;
+                birdVelocity += Time.Delta * 0.1f;
                 birdY += birdVelocity;
             }
 
@@ -116,7 +116,7 @@ public static class FlappyBird
             collisionMap.Update(foreground.Ids);
 
             // whether the bird fell out of the map or bonked into a pipe
-            var birdRect = new Rectangle((1, 1), (BIRD_X, birdY));
+            var birdRect = new Rectangle((1, 1), (BIRD_X, birdY), Color.Red);
             if (birdY + 1 >= height || collisionMap.IsOverlapping(birdRect))
                 isGameOver = true;
 
@@ -133,6 +133,9 @@ public static class FlappyBird
             Window.DrawTiles(foreground.ToBundle());
             var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
             Window.DrawTile((BIRD_X, birdY), tile);
+
+            Window.DrawRectangles(collisionMap);
+            Window.DrawRectangles(birdRect);
 
             Window.Activate(false);
         }
