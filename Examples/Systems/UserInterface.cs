@@ -60,7 +60,7 @@ public static class UserInterface
                 e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
             middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
 
-            if (string.IsNullOrWhiteSpace(e.Text) && e.CursorIndices == 0)
+            if (string.IsNullOrWhiteSpace(e.Text))
                 middle.SetTextRectangle(e.Position, e.Size, e.Placeholder, Color.Gray.ToBright(), false);
 
             if (e.IsCursorVisible)
