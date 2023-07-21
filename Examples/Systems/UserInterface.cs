@@ -29,25 +29,29 @@ public static class UserInterface
         protected override void OnUpdateButton(Button button)
         {
             var e = button;
-            if (button.Text == "Button")
+            var (w, h) = e.Size;
+            if (e.Text == "Button")
             {
-                e.Size = (e.Text.Length + 2, 3);
-                middle.SetBox(e.Position, e.Size, Tile.SHADE_TRANSPARENT,
+                var offW = w / 2 - Math.Min(e.Text.Length, w - 2) / 2;
+                middle.SetBox(e.Position, e.Size, Tile.EMPTY,
                     Tile.BOX_DEFAULT_CORNER, Tile.BOX_DEFAULT_STRAIGHT,
                     GetColor(e, Color.Yellow).ToDark());
-                middle.SetTextLine((e.Position.x + 1, e.Position.y + 1), e.Text,
-                    GetColor(e, Color.Yellow.ToDark()));
+                middle.SetTextLine(
+                    (e.Position.x + offW, e.Position.y + h / 2),
+                    e.Text,
+                    GetColor(e, Color.Yellow.ToDark()),
+                    e.Size.width - 2);
                 middle.SetTextLine((e.Position.x + 1 + e.Size.width, e.Position.y + 1),
                     $"{buttonClickCount}", Color.White);
             }
-            else if (button.Text == "Checkbox")
+            else if (e.Text == "Checkbox")
             {
                 e.Size = (e.Text.Length + 2, 1);
 
                 var color = e.IsSelected ? Color.Orange : Color.Red;
                 var tile = new Tile(e.IsSelected ? Tile.ICON_TICK : Tile.UPPERCASE_X,
-                    GetColor(button, color));
-                SetBackground(e);
+                    GetColor(e, color));
+                SetBackground(back, e);
                 middle.SetTile(e.Position, tile);
                 middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text, GetColor(button, color));
             }
@@ -55,6 +59,7 @@ public static class UserInterface
         protected override void OnUpdateInputBox(InputBox inputBox)
         {
             var e = inputBox;
+
             back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.3f)));
             back.SetTextRectangle(e.Position, e.Size, e.Selection,
                 e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
@@ -70,15 +75,17 @@ public static class UserInterface
         protected override void OnUpdateSlider(Slider slider)
         {
             var e = slider;
-            back.SetBox(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray), Tile.BOX_CORNER_ROUND,
+            var (w, h) = e.Size;
+            var text = $"{e.Progress:F2}";
+            middle.SetBox(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray), Tile.BOX_CORNER_ROUND,
                 Tile.SHADE_OPAQUE, Color.Gray);
-            middle.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
+            front.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
                 GetColor(e, Color.Magenta), e.Size.height, true);
-            middle.SetTextLine((e.Position.x + e.Size.width + 1, e.Position.y + 1), $"{e.Progress:F2}");
+            front.SetTextLine((e.Position.x + w / 2 - text.Length / 2, e.Position.y + h / 2), text);
         }
         protected override void OnUpdateList(List list)
         {
-            SetBackground(list);
+            SetBackground(back, list);
             OnUpdateScroll(list.Scroll);
         }
         protected override void OnUpdateListItem(List list, Button item)
@@ -95,8 +102,11 @@ public static class UserInterface
         protected override void OnUpdatePanel(Panel panel)
         {
             var e = panel;
-            SetBackground(e);
-            front.SetBox(e.Position, e.Size, Tile.SHADE_TRANSPARENT, Tile.BOX_GRID_CORNER,
+            SetBackground(back, e);
+            middle.SetRectangle(e.Position, e.Size, Tile.EMPTY);
+            front.SetRectangle(e.Position, e.Size, Tile.EMPTY);
+
+            front.SetBox(e.Position, e.Size, Tile.EMPTY, Tile.BOX_GRID_CORNER,
                 Tile.BOX_GRID_STRAIGHT, Color.Blue);
             back.SetRectangle((e.Position.x + 1, e.Position.y), (e.Size.width - 2, 1),
                 new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.2f)));
@@ -106,7 +116,7 @@ public static class UserInterface
         protected override void OnUpdatePages(Pages pages)
         {
             var e = pages;
-            SetBackground(e);
+            SetBackground(back, e);
             var colorFirst = GetColor(e.First, Color.Gray);
             var colorPrevious = GetColor(e.Previous, Color.Gray);
             var colorNext = GetColor(e.Next, Color.Gray);
@@ -172,7 +182,7 @@ public static class UserInterface
         protected override void OnUpdateStepper(Stepper stepper)
         {
             var e = stepper;
-            SetBackground(e);
+            SetBackground(back, e);
             middle.SetTile(e.Down.Position, new(Tile.ARROW, GetColor(e.Down, Color.Gray), 1));
             middle.SetTextLine((e.Position.x, e.Position.y + 1), $"{e.Value}");
             middle.SetTile(e.Up.Position, new(Tile.ARROW, GetColor(e.Up, Color.Gray), 3));
@@ -184,29 +194,43 @@ public static class UserInterface
             var scrollDownAng = (sbyte)(e.IsVertical ? 1 : 2);
             var scrollColor = Color.Gray.ToBright();
 
-            SetBackground(e);
+            SetBackground(back, e);
             middle.SetTile(e.Up.Position, new(Tile.ARROW, GetColor(e.Up, scrollColor), scrollUpAng));
             middle.SetTile(e.Slider.Handle.Position,
                 new(Tile.SHAPE_CIRCLE, GetColor(e.Slider, scrollColor)));
             middle.SetTile(e.Down.Position,
                 new(Tile.ARROW, GetColor(e.Down, scrollColor), scrollDownAng));
         }
-        protected override void OnUpdateLayout(Layout layout)
-        {
-            SetBackground(layout);
-        }
+        protected override void OnUpdateLayout(Layout layout) { }
         protected override void OnUpdateLayoutSegment(Layout layout,
             (int x, int y, int width, int height) segment, int index)
         {
-            var colors = new uint[]
+            //var colors = new uint[]
+            //{
+            //    Color.Red, Color.Blue, Color.Green, Color.Yellow, Color.Gray,
+            //    Color.Orange, Color.Cyan, Color.Black, Color.Azure, Color.Brown,
+            //    Color.Magenta, Color.Purple, Color.Pink, Color.Violet
+            //};
+            //var pos = (segment.x, segment.y);
+            //var size = (segment.width, segment.height);
+            //middle.SetRectangle(pos, size, new(Tile.SHADE_OPAQUE, colors[index]));
+
+            var (sx, sy) = (segment.x, segment.y);
+            var (sw, sh) = (segment.width, segment.height);
+            var (w, h) = (0, 0);
+
+            if (index == 1)
+                w = 3;
+            else if (index == 3)
             {
-                Color.Red, Color.Blue, Color.Green, Color.Yellow, Color.Gray,
-                Color.Orange, Color.Cyan, Color.Black, Color.Azure, Color.Brown,
-                Color.Magenta, Color.Purple, Color.Pink, Color.Violet
-            };
-            var pos = (segment.x, segment.y);
-            var size = (segment.width, segment.height);
-            middle.SetRectangle(pos, size, new(Tile.SHADE_OPAQUE, colors[index]));
+                middle.SetTextRectangle((sx, sy), (sw, sh),
+                    "I am a text rectangle with some meaningful text inside.");
+                return;
+            }
+
+            var element = this[index + 10];
+            element.Position = (sx, sy);
+            element.Size = (sw - w, sh - h);
         }
 
         // a special kind of action - the palette needs the tile color at a certain position
@@ -214,7 +238,15 @@ public static class UserInterface
         // potentially inheriting Palette and receiving the action there would take priority over this one
         protected override uint OnPalettePick(Palette palette, (float x, float y) position)
         {
-            return middle.TileAt(((int)position.x, (int)position.y)).Tint;
+            var p = ((int)position.x, (int)position.y);
+            var color = front.TileAt(p).Tint;
+
+            if (color == default || color == Color.Black)
+                color = middle.TileAt(p).Tint;
+            if (color == default || color == Color.Black)
+                color = back.TileAt(p).Tint;
+
+            return color;
         }
 
         // simple "animation" for hovering and pressing buttons
@@ -225,17 +257,15 @@ public static class UserInterface
 
             return baseColor;
         }
-        private void SetBackground(Element element)
+        private void SetBackground(Tilemap map, Element element)
         {
             var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark());
-            back.SetRectangle(element.Position, element.Size, tile);
+            map.SetRectangle(element.Position, element.Size, tile);
         }
     }
 
     public static void Run()
     {
-        // inputbox select + delete crash
-
         Window.Create(3);
 
         var (width, height) = Window.MonitorAspectRatio;
@@ -243,61 +273,53 @@ public static class UserInterface
         var back = tilemaps[0];
         var middle = tilemaps[1];
         var front = tilemaps[2];
-        var dropdown = new List((27, 5), 15, Types.Dropdown)
-        {
-            IsExpanded = true,
-            Size = (6, 6)
-        };
-        dropdown.IsExpanded = false;
 
         var userInterface = new UI(back, middle, front);
-        //var layout = new Layout((0, 0));
-        //userInterface.Add(layout);
+        userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
+        userInterface.Add(new List((37, 5), 15, Types.Dropdown) { Size = (6, 6) });
+        userInterface.Add(new Scroll((46, 6), 9));
+        // should be last so that it can color pick what's been already "drawn"
+        userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
+        userInterface.Add(new Scroll((37, 15), 9, false));
+        userInterface.Add(new Pages((29, 1)) { Size = (18, 2) });
+        userInterface.Add(new Panel((18, 22))
+        {
+            Size = (15, 4),
+            IsResizable = false,
+            IsMovable = false,
+        });
+        userInterface.Add(new List((19, 23), 10, Types.Horizontal)
+        {
+            Size = (13, 2)
+        });
 
-        //layout.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.2f);
-        //layout.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.1f);
-        //layout.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.2f);
-        //layout.Cut(index: 3, side: Layout.CutSide.Left, rate: 0.2f);
-        //layout.Cut(index: 3, side: Layout.CutSide.Bottom, rate: 0.2f);
+        // -------
 
-        //userInterface.Add(new Button((2, 2)));
-        //userInterface.Add(new Button((2, 20)));
-        //userInterface.Add(new Button((2, 7)) { Text = "Checkbox" });
-        //userInterface.Add(new Slider((2, 15), 7) { Size = (7, 3) });
-        //userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
-        //userInterface.Add(dropdown);
-        //userInterface.Add(new Scroll((37, 6), 9));
-        //userInterface.Add(new Scroll((38, 15), 9, false));
-        //userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
-        //userInterface.Add(new Pages((27, 2)) { Size = (18, 2) });
-        //userInterface.Add(new Panel((18, 22))
-        //{
-        //    Size = (15, 4),
-        //    IsResizable = false,
-        //    IsMovable = false,
-        //});
-        //userInterface.Add(new List((19, 23), 10, Types.Horizontal)
-        //{
-        //    Size = (13, 2)
-        //});
         var panelIndex = userInterface.Count;
         userInterface.Add(new Panel((0, 0))
         {
-            Size = (9, 16),
-            SizeMinimum = (5, 3),
+            Size = (15, 15),
+            SizeMinimum = (15, 8),
         });
-        //userInterface.Add(new List((17, 3), 15)
-        //{
-        //    Size = (7, 9),
-        //    IsSingleSelecting = true,
-        //    ItemGap = (0, 2),
-        //    ItemMaximumSize = (7, 1)
-        //});
-        var inputbox = userInterface.Count;
-        userInterface.Add(new InputBox((0, 0)));
+        var layout = new Layout((0, 0));
+        userInterface.Add(layout);
 
-        var ib = (InputBox)userInterface[inputbox];
-        ib[0] = "hello, world";
+        layout.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.4f);
+        layout.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.4f);
+        layout.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.25f);
+        layout.Cut(index: 1, side: Layout.CutSide.Bottom, rate: 0.4f);
+
+        userInterface.Add(new List((0, 0), 15)
+        {
+            Size = (8, 9),
+            IsSingleSelecting = true,
+            ItemGap = (0, 1),
+            ItemMaximumSize = (7, 1)
+        });
+        userInterface.Add(new Button((0, 0)));
+        userInterface.Add(new InputBox((0, 0)));
+        userInterface.Add(new Button((35, 18)) { Text = "Checkbox" });
+        userInterface.Add(new Slider((0, 0), 7));
 
         while (Window.IsOpen)
         {
@@ -315,10 +337,9 @@ public static class UserInterface
 
             userInterface.Update();
 
-            var b = userInterface[inputbox];
             var p = userInterface[panelIndex];
-            b.Size = (p.Size.width - 2, p.Size.height - 2);
-            b.Position = (p.Position.x + 1, p.Position.y + 1);
+            layout.Size = (p.Size.width - 2, p.Size.height - 2);
+            layout.Position = (p.Position.x + 1, p.Position.y + 1);
 
             Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 

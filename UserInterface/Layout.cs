@@ -62,6 +62,9 @@ public class Layout : Element
         if (ui == null)
             return;
 
+        // updates should be first since it's a hierarchy
+        // and then callbacks (after everything is done)
+
         for (var i = 0; i < segments.Count; i++)
         {
             var seg = segments[i];
@@ -73,7 +76,11 @@ public class Layout : Element
             }
             else
                 UpdateSegment(seg);
+        }
 
+        for (var i = 0; i < segments.Count; i++)
+        {
+            var seg = segments[i];
             OnSegmentUpdate((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
             segmentUpdateCallback?.Invoke((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
         }

@@ -91,7 +91,7 @@ public class Scroll : Element
         // resize the slider handle to appear as real scroll handle non-(1, 1) size
     }
 
-    #region Backend
+#region Backend
     internal bool isVertical;
 
     [MemberNotNull(nameof(Slider))]
@@ -105,9 +105,17 @@ public class Scroll : Element
         var dir = IsVertical ? 1 : -1;
 
         Up.SubscribeToUserAction(UserAction.Trigger, () => Slider.Move(1 * dir));
-        Up.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(1 * dir));
+        Up.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Up.IsHovered)
+                Slider.Move(1 * dir);
+        });
         Down.SubscribeToUserAction(UserAction.Trigger, () => Slider.Move(-1 * dir));
-        Down.SubscribeToUserAction(UserAction.PressAndHold, () => Slider.Move(-1 * dir));
+        Down.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Down.IsHovered)
+                Slider.Move(-1 * dir);
+        });
     }
     private void TryScrollWhileHoverButton(Element btn)
     {
@@ -115,5 +123,5 @@ public class Scroll : Element
             FocusedPrevious == btn)
             Slider.Move(Input.Current.ScrollDelta);
     }
-    #endregion
+#endregion
 }

@@ -27,7 +27,7 @@ public class RendererUI : UserInterface
         tilemaps[(int)Layer.UiMiddle]
             .SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
 
-        if (string.IsNullOrWhiteSpace(e.Text) && e.CursorIndices == 0)
+        if (string.IsNullOrWhiteSpace(e.Text))
             tilemaps[(int)Layer.UiMiddle]
                 .SetTextRectangle(e.Position, e.Size, e.Placeholder, Color.Gray.ToBright(), false);
     }

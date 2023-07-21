@@ -198,37 +198,43 @@ public class InputBox : Element
         ClampCursor();
 
         if (delta.x > 0 && // trying to move right
-            cxPrev + delta.x > lines[cy].Length) // but line ended
+            cxPrev + delta.x > lines[cy].Length && // but line ended
+            cy != lines.Count - 1) // not last line
         {
             var x = cx;
             cx = 0;
-            CursorMove((cxPrev + delta.x - x, 1)); // keep going with the remaining delta
+
+            // keep going with the remaining delta
+            CursorMove((cxPrev + delta.x - x - 1, 1), isScrolling);
         }
 
         if (delta.x < 0 && // trying to move left
-            cxPrev + delta.x < 0) // but line ended
-        {
-            var x = cx;
-            cx = lines[cy].Length;
-            CursorMove((cxPrev + delta.x - x, -1)); // keep going with the remaining delta
-        }
-
-        if (delta.x < 0 && // trying to move left
-            cx == 0 && cxPrev == 0 && // but line ended
+            cxPrev + delta.x < 0 && // but line ended
             cy != 0) // not first line
         {
-            cy -= 1;
-            cx = lines[cy].Length;
-            CursorMove((0, 0), isSelecting, isScrolling);
+            var x = cx;
+            cx = lines[cy - 1].Length;
+
+            // keep going with the remaining delta
+            CursorMove((cxPrev + delta.x - x - 1, -1), isScrolling);
         }
-        else if (delta.x > 0 && // trying to move right
-                 cx == lines[cy].Length && cxPrev == lines[cy].Length && // but line ended
-                 cy != lines.Count - 1) // not last line
-        {
-            cx = 0;
-            cy += 1;
-            CursorMove((0, 0), isSelecting, isScrolling);
-        }
+
+        //if (delta.x < 0 && // trying to move left
+        //    cx == 0 && cxPrev == 0 && // but line ended
+        //    cy != 0) // not first line
+        //{
+        //    cy -= 1;
+        //    cx = lines[cy].Length;
+        //    CursorMove((0, 0), isSelecting, isScrolling);
+        //}
+        //else if (delta.x > 0 && // trying to move right
+        //         cx == lines[cy].Length && cxPrev == lines[cy].Length && // but line ended
+        //         cy != lines.Count - 1) // not last line
+        //{
+        //    cx = 0;
+        //    cy += 1;
+        //    CursorMove((0, 0), isSelecting, isScrolling);
+        //}
 
         if (delta.y > 0 && // trying to move down
             cy == lines.Count - 1 && cyPrev == lines.Count - 1) // last line
@@ -369,13 +375,18 @@ public class InputBox : Element
         var symbol = GetSymbol((cx + (step < 0 ? -1 : 0), cy));
         var targetIsWord = char.IsLetterOrDigit(symbol) == false;
 
+        if (Input.Current.IsKeyPressed(Key.ControlLeft) && Input.Current.IsKeyPressed(Key.ArrowLeft))
+        {
+            ;
+        }
+
         for (var i = 0; i < lines[cy].Length; i++)
         {
             var j = cx + index;
 
-            if (j == 0 && step < 0)
+            if (j <= 0 && step < 0)
                 return index;
-            if (j == lines[cy].Length - 1 && step > 0)
+            if (j >= lines[cy].Length - 1 && step > 0)
                 return index + 1;
 
             if (char.IsLetterOrDigit(GetSymbol((j, cy))) == false ^ targetIsWord)
@@ -437,7 +448,7 @@ public class InputBox : Element
 
         // hold & drag outside
         if (hasMoved == false && IsPressedAndHeld && IsHovered == false &&
-            scrollHold.Elapsed.TotalSeconds > 0.12f)
+            scrollHold.Elapsed.TotalSeconds > 0.15f)
         {
             var (px, py) = Input.Current.Position;
             var (x, y) = Position;
@@ -628,19 +639,25 @@ public class InputBox : Element
                 cy -= 1;
                 cx = lines[cy].Length;
                 ClampCursor();
+
                 TryMergeBottomLine(cy);
                 SelectionIndices = CursorIndices;
                 CursorScroll();
+                UpdateText();
                 return;
             }
 
             var off = GetWordEndOffset(-1);
             var ctrl = Pressed(Key.ControlLeft);
             var count = ctrl ? Math.Abs(off) : 1;
+
             lines[cy] = lines[cy].Remove(ctrl ? cx + off : cx - 1, count);
-            UpdateText();
+
+            scrX -= Math.Abs(off);
+            ScrollIndices = (scrX, scrY);
+
             CursorMove((ctrl ? off : -1, 0));
-            SelectionIndices = CursorIndices;
+            UpdateText();
         }
         else if (Allowed(Key.Delete, isHolding) && justDeletedSelection == false)
         {

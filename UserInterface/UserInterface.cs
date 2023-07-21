@@ -89,6 +89,19 @@ public class UserInterface
     {
         foreach (var element in elements)
         {
+            element.Update();
+
+            if (element is Button b) OnUpdateButton(b);
+            else if (element is InputBox u) OnUpdateInputBox(u);
+            else if (element is List l) OnUpdateList(l);
+            else if (element is Pages g) OnUpdatePages(g);
+            else if (element is Palette t) OnUpdatePalette(t);
+            else if (element is Panel p) OnUpdatePanel(p);
+            else if (element is Stepper n) OnUpdateStepper(n);
+            else if (element is Scroll r) OnUpdateScroll(r);
+            else if (element is Slider s) OnUpdateSlider(s);
+            else if (element is Layout o) OnUpdateLayout(o);
+
             if (element is Button button)
                 button.dragCallback = d => OnDragButton(button, d);
             else if (element is InputBox input)
@@ -125,19 +138,6 @@ public class UserInterface
                 slider.dragCallback = d => OnDragSlider(slider, d);
             else if (element is Layout layout)
                 layout.segmentUpdateCallback = (seg, i) => OnUpdateLayoutSegment(layout, seg, i);
-
-            element.Update();
-
-            if (element is Button b) OnUpdateButton(b);
-            else if (element is InputBox u) OnUpdateInputBox(u);
-            else if (element is List l) OnUpdateList(l);
-            else if (element is Pages g) OnUpdatePages(g);
-            else if (element is Palette t) OnUpdatePalette(t);
-            else if (element is Panel p) OnUpdatePanel(p);
-            else if (element is Stepper n) OnUpdateStepper(n);
-            else if (element is Scroll r) OnUpdateScroll(r);
-            else if (element is Slider s) OnUpdateSlider(s);
-            else if (element is Layout o) OnUpdateLayout(o);
         }
     }
 

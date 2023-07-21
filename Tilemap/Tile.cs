@@ -129,8 +129,13 @@ public struct Tile
                a.Flips.isVertical != b.Flips.isVertical;
     }
 
+#region General
+    public const int EMPTY = 0,
+        FULL = 10,
+#endregion
+
 #region Shade
-    public const int SHADE_TRANSPARENT = 0,
+        SHADE_TRANSPARENT = 0,
         SHADE_1 = 1,
         SHADE_2 = 2,
         SHADE_3 = 3,
