@@ -58,14 +58,47 @@ public class Pages : Element
         return result.ToArray();
     }
 
-    protected override void OnUpdate()
+    protected virtual void OnPageDisplay(Button page) { }
+
+#region Backend
+    private (int, int) prevSize;
+    private const int PAGE_GAP = 1, PAGE_WIDTH = 2;
+    private int count, currentPage = 1, scrollIndex = 1;
+    private readonly List<Button> visiblePages = new();
+
+    internal Action<Button>? pageDisplayCallback; // used in the UI class to receive callbacks
+
+    [MemberNotNull(nameof(First))]
+    [MemberNotNull(nameof(Previous))]
+    [MemberNotNull(nameof(Next))]
+    [MemberNotNull(nameof(Last))]
+    private void Init()
+    {
+        isParent = true;
+
+        First = new((0, 0)) { hasParent = true };
+        Previous = new((0, 0)) { hasParent = true };
+        Next = new((0, 0)) { hasParent = true };
+        Last = new((0, 0)) { hasParent = true };
+
+        First.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = 0);
+        Previous.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage--);
+        Next.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage++);
+        Last.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = Count);
+
+        Previous.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage--);
+        Next.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage++);
+    }
+
+    internal override void OnUpdate()
     {
         LimitSizeMin((6, 1));
 
         if (IsDisabled)
             return;
 
-        if (IsHovered) // for in between pages, overwrite mouse cursor (don't give it to the element bellow)
+        // for in between pages, overwrite mouse cursor (don't give it to the element bellow)
+        if (IsHovered)
             MouseCursorResult = MouseCursor.Arrow;
 
         var (x, y) = Position;
@@ -98,42 +131,17 @@ public class Pages : Element
 
             page.position = (x + 2 + (PAGE_WIDTH + PAGE_GAP) * i, y);
             page.Update();
-            OnPageUpdate(page);
-            pageUpdateCallback?.Invoke(page);
         }
 
         prevSize = Size;
     }
-    protected virtual void OnPageUpdate(Button page)
+    internal override void OnDisplayChildren()
     {
-    }
-
-    #region Backend
-    private (int, int) prevSize;
-    const int PAGE_GAP = 1, PAGE_WIDTH = 2;
-    private int count, currentPage = 1, scrollIndex = 1;
-    private readonly List<Button> visiblePages = new();
-
-    internal Action<Button>? pageUpdateCallback; // used in the UI class to receive callbacks
-
-    [MemberNotNull(nameof(First))]
-    [MemberNotNull(nameof(Previous))]
-    [MemberNotNull(nameof(Next))]
-    [MemberNotNull(nameof(Last))]
-    private void Init()
-    {
-        First = new((0, 0)) { hasParent = true };
-        Previous = new((0, 0)) { hasParent = true };
-        Next = new((0, 0)) { hasParent = true };
-        Last = new((0, 0)) { hasParent = true };
-
-        First.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = 0);
-        Previous.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage--);
-        Next.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage++);
-        Last.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = Count);
-
-        Previous.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage--);
-        Next.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage++);
+        foreach (var page in visiblePages)
+        {
+            OnPageDisplay(page);
+            pageDisplayCallback?.Invoke(page);
+        }
     }
 
     private int GetVisibleWidth() => Size.width - 4;
@@ -168,7 +176,6 @@ public class Pages : Element
     }
     private void RenumberAndSelectPages()
     {
-        //var pageCount = GetVisiblePageCount();
         for (var i = 0; i < visiblePages.Count; i++)
         {
             var pageNumber = i + scrollIndex;
@@ -176,5 +183,5 @@ public class Pages : Element
             visiblePages[i].isSelected = pageNumber == currentPage;
         }
     }
-    #endregion
+#endregion
 }

@@ -21,7 +21,7 @@ public class MenuMain : Menu
         Size = (8, 7);
     }
 
-    protected override void OnUpdate()
+    protected override void OnDisplay()
     {
         if (Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRMB"))
         {
@@ -35,7 +35,7 @@ public class MenuMain : Menu
         var hoveredStr = Selected != null ? "" : " ";
         this[2].Text = "  Edit" + hoveredStr;
 
-        base.OnUpdate();
+        base.OnDisplay();
     }
     protected override void OnItemTrigger(Button item)
     {

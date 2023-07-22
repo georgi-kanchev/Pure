@@ -26,10 +26,7 @@ public class Slider : Element
         get => progress;
         set
         {
-            var sz = IsVertical ? Size.height : Size.width;
-
-            progress = value;
-            index = (int)Map(progress, 0, 1, 0, sz);
+            progress = Math.Clamp(value, 0, 1);
             UpdateHandle();
         }
     }
@@ -57,7 +54,7 @@ public class Slider : Element
         IsVertical = GrabBool(bytes);
 
         Init();
-        progress = GrabFloat(bytes);
+        Progress = GrabFloat(bytes);
         index = GrabInt(bytes);
 
         UpdateHandle();
@@ -72,6 +69,7 @@ public class Slider : Element
         var sz = IsVertical ? Size.height : Size.width;
         index -= delta;
         index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
+        Progress = Map(index, 0, sz - 1, 0, 1);
 
         UpdateHandle();
     }
@@ -87,6 +85,7 @@ public class Slider : Element
         var (px, py) = position;
         index = IsVertical ? py - y : px - x;
         index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
+        Progress = Map(index, 0, sz - 1, 0, 1);
 
         UpdateHandle();
     }
@@ -100,26 +99,6 @@ public class Slider : Element
         return result.ToArray();
     }
 
-    /// <summary>
-    /// Called when the slider needs to be updated. This handles all of the user input
-    /// the slider needs for its behavior. Subclasses should override this 
-    /// method to implement their own behavior.
-    /// </summary>
-    protected override void OnUpdate()
-    {
-        LimitSizeMin(IsVertical ? (1, 2) : (2, 1));
-
-        UpdateHandle();
-
-        if (IsDisabled)
-            return;
-
-        if (IsHovered)
-            MouseCursorResult = MouseCursor.Hand;
-
-        if (IsHovered && Input.Current.ScrollDelta != 0 && IsFocused && FocusedPrevious == this)
-            Move(Input.Current.ScrollDelta);
-    }
     protected override void OnUserAction(UserAction userAction)
     {
         if (IsDisabled || userAction != UserAction.Trigger)
@@ -137,7 +116,7 @@ public class Slider : Element
         MoveTo(((int)x, (int)y));
     }
 
-    #region Backend
+#region Backend
     internal float progress;
     internal int index;
     internal bool isVertical;
@@ -145,7 +124,24 @@ public class Slider : Element
     [MemberNotNull(nameof(Handle))]
     private void Init()
     {
+        isParent = true;
         Handle = new(position) { Size = (1, 1), hasParent = true };
+    }
+
+    internal override void OnUpdate()
+    {
+        LimitSizeMin(IsVertical ? (1, 1) : (1, 1));
+
+        UpdateHandle();
+
+        if (IsDisabled)
+            return;
+
+        if (IsHovered)
+            MouseCursorResult = MouseCursor.Hand;
+
+        if (IsHovered && Input.Current.ScrollDelta != 0 && IsFocused && FocusedPrevious == this)
+            Move(Input.Current.ScrollDelta);
     }
 
     private void UpdateHandle()
@@ -154,8 +150,7 @@ public class Slider : Element
         var (w, h) = Size;
         var curSz = IsVertical ? Size.height : Size.width;
         var sz = Math.Max(0, curSz - 1);
-        index = Math.Clamp(index, 0, sz);
-        progress = Map(index, 0, curSz - 1, 0, 1);
+        index = (int)Map(progress, 0, 1, 0, sz);
 
         if (IsVertical)
         {
@@ -173,5 +168,5 @@ public class Slider : Element
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }

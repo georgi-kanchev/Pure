@@ -44,12 +44,15 @@ public class Panel : Element
         return result.ToArray();
     }
 
-    /// <summary>
-    /// Called when the panel needs to be updated. This handles all of the user input
-    /// the panel needs for its behavior. Subclasses should override this 
-    /// method to implement their own behavior.
-    /// </summary>
-    protected override void OnUpdate()
+    protected virtual void OnResize((int width, int height) delta) { }
+
+#region Backend
+    private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
+
+    // used in the UI class to receive callbacks
+    internal Action<(int width, int height)>? resizeCallback;
+
+    internal override void OnUpdate()
     {
         LimitSizeMin((2, 2));
 
@@ -190,14 +193,6 @@ public class Panel : Element
         }
     }
 
-    protected virtual void OnResize((int width, int height) delta) { }
-
-    #region Backend
-    private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
-
-    // used in the UI class to receive callbacks
-    internal Action<(int width, int height)>? resizeCallback;
-
     private static bool IsBetween(float number, float rangeA, float rangeB)
     {
         if (rangeA > rangeB)
@@ -207,5 +202,5 @@ public class Panel : Element
         var u = rangeB >= number;
         return l && u;
     }
-    #endregion
+#endregion
 }

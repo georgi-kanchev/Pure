@@ -239,12 +239,7 @@ public abstract partial class Element
         hasParent = GrabBool(bytes);
     }
 
-    /// <summary>
-    /// Updates the user interface element, detecting changes in focus, hover, and user input,
-    /// and storing the results. This method should be called
-    /// once per application update cycle for each user interface element.
-    /// </summary>
-    public void Update()
+    public virtual void Update()
     {
         LimitSizeMin((1, 1));
 
@@ -289,8 +284,6 @@ public abstract partial class Element
         if (Input.Current.ScrollDelta != 0)
             TriggerUserAction(UserAction.Scroll);
 
-        OnUpdate();
-
         var p = Input.Current.Position;
         var pp = Input.Current.PositionPrevious;
         var px = (int)Math.Floor(p.x);
@@ -298,12 +291,19 @@ public abstract partial class Element
         var ppx = (int)Math.Floor(pp.x);
         var ppy = (int)Math.Floor(pp.y);
 
-        if ((px == ppx && py == ppy) || IsPressedAndHeld == false)
-            return;
+        if ((px != ppx || py != ppy) && IsPressedAndHeld)
+        {
+            var delta = (px - ppx, py - ppy);
+            OnDrag(delta);
+            dragCallback?.Invoke(delta);
+        }
 
-        var delta = (px - ppx, py - ppy);
-        OnDrag(delta);
-        dragCallback?.Invoke(delta);
+        OnUpdate();
+        OnDisplay();
+        displayCallback?.Invoke();
+
+        // parents call OnDisplay on children and themselves to ensure order if needed
+        OnDisplayChildren();
     }
     /// <summary>
     /// Simulates a user click over this user interface element.
@@ -441,11 +441,7 @@ public abstract partial class Element
     /// Subclasses should override this method to implement their own behavior.
     /// </summary>
     protected virtual void OnUserAction(UserAction userAction) { }
-    /// <summary>
-    /// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
-    /// Subclasses should override this method to implement their own behavior.
-    /// </summary>
-    protected virtual void OnUpdate() { }
+    protected internal virtual void OnDisplay() { }
     protected virtual void OnDrag((int x, int y) delta) { }
 
     protected static void PutBool(List<byte> intoBytes, bool value) =>
@@ -496,7 +492,7 @@ public abstract partial class Element
         listSizeTrimOffset,
         sizeMinimum = (1, 1),
         sizeMaximum = (int.MaxValue, int.MaxValue);
-    internal bool hasParent;
+    internal bool hasParent, isParent;
     internal readonly string typeName;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
     private int byteOffset;
@@ -505,6 +501,7 @@ public abstract partial class Element
 
     // used in the UI class to receive callbacks
     internal Action<(int width, int height)>? dragCallback;
+    internal Action? displayCallback;
 
     private void Init()
     {
@@ -526,6 +523,9 @@ public abstract partial class Element
         if (Size.height > maximumSize.height)
             size = (Size.width, maximumSize.height);
     }
+
+    internal virtual void OnDisplayChildren() { }
+    internal virtual void OnUpdate() { }
 
     private void UpdateHovered()
     {

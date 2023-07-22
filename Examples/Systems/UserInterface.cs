@@ -1,9 +1,9 @@
 namespace Pure.Examples.Systems;
 
-using Pure.Tilemap;
+using Tilemap;
 using Pure.UserInterface;
-using Pure.Utilities;
-using Pure.Window;
+using Utilities;
+using Window;
 using static Pure.UserInterface.List;
 
 public static class UserInterface
@@ -26,7 +26,7 @@ public static class UserInterface
                 buttonClickCount++;
         }
 
-        protected override void OnUpdateButton(Button button)
+        protected override void OnDisplayButton(Button button)
         {
             var e = button;
             var (w, h) = e.Size;
@@ -56,7 +56,7 @@ public static class UserInterface
                 middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text, GetColor(button, color));
             }
         }
-        protected override void OnUpdateInputBox(InputBox inputBox)
+        protected override void OnDisplayInputBox(InputBox inputBox)
         {
             var e = inputBox;
 
@@ -72,7 +72,7 @@ public static class UserInterface
                 front.SetTile(e.PositionFromIndices(e.CursorIndices),
                     new(Tile.SHAPE_LINE, Color.White, 2));
         }
-        protected override void OnUpdateSlider(Slider slider)
+        protected override void OnDisplaySlider(Slider slider)
         {
             var e = slider;
             var (w, h) = e.Size;
@@ -83,12 +83,12 @@ public static class UserInterface
                 GetColor(e, Color.Magenta), e.Size.height, true);
             front.SetTextLine((e.Position.x + w / 2 - text.Length / 2, e.Position.y + h / 2), text);
         }
-        protected override void OnUpdateList(List list)
+        protected override void OnDisplayList(List list)
         {
             SetBackground(back, list);
-            OnUpdateScroll(list.Scroll);
+            OnDisplayScroll(list.Scroll);
         }
-        protected override void OnUpdateListItem(List list, Button item)
+        protected override void OnDisplayListItem(List list, Button item)
         {
             var color = item.IsSelected ? Color.Green : Color.Red;
 
@@ -99,7 +99,7 @@ public static class UserInterface
             if (list.IsExpanded == false)
                 middle.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
         }
-        protected override void OnUpdatePanel(Panel panel)
+        protected override void OnDisplayPanel(Panel panel)
         {
             var e = panel;
             SetBackground(back, e);
@@ -113,7 +113,7 @@ public static class UserInterface
             front.SetTextRectangle((e.Position.x, e.Position.y), (e.Size.width, 1), e.Text,
                 alignment: Tilemap.Alignment.Center);
         }
-        protected override void OnUpdatePages(Pages pages)
+        protected override void OnDisplayPages(Pages pages)
         {
             var e = pages;
             SetBackground(back, e);
@@ -134,7 +134,7 @@ public static class UserInterface
             middle.SetTile((e.Last.Position.x, e.Last.Position.y + 1),
                 new(Tile.PUNCTUATION_PIPE, colorLast));
         }
-        protected override void OnUpdatePagesPage(Pages pages, Button page)
+        protected override void OnDisplayPagesPage(Pages pages, Button page)
         {
             var color = page.IsSelected ? Color.Green : Color.Gray;
             middle.SetTextLine(page.Position, page.Text, GetColor(page, color));
@@ -143,7 +143,7 @@ public static class UserInterface
                 middle.SetTile((page.Position.x, page.Position.y + 1),
                     new(Tile.ICON_HOME + int.Parse(page.Text), GetColor(page, color)));
         }
-        protected override void OnUpdatePalette(Palette palette)
+        protected override void OnDisplayPalette(Palette palette)
         {
             var e = palette;
             var (x, y) = e.Position;
@@ -170,24 +170,26 @@ public static class UserInterface
 
             middle.SetRectangle((x, y - 3), (e.Size.width, 3), new(Tile.SHADE_OPAQUE, e.SelectedColor));
         }
-        protected override void OnUpdatePalettePage(Palette palette, Button page)
+        protected override void OnDisplayPalettePage(Palette palette, Button page)
         {
-            OnUpdatePagesPage(palette.Brightness, page); // display the same kind of pages
+            OnDisplayPagesPage(palette.Brightness, page); // display the same kind of pages
         }
         protected override void OnUpdatePaletteSample(Palette palette, Button sample,
             uint color)
         {
             middle.SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color));
         }
-        protected override void OnUpdateStepper(Stepper stepper)
+        protected override void OnDisplayStepper(Stepper stepper)
         {
             var e = stepper;
+            var color = Color.Gray.ToBright();
+
             SetBackground(back, e);
-            middle.SetTile(e.Down.Position, new(Tile.ARROW, GetColor(e.Down, Color.Gray), 1));
+            middle.SetTile(e.Decrease.Position, new(Tile.ARROW, GetColor(e.Decrease, color), 1));
             middle.SetTextLine((e.Position.x, e.Position.y + 1), $"{e.Value}");
-            middle.SetTile(e.Up.Position, new(Tile.ARROW, GetColor(e.Up, Color.Gray), 3));
+            middle.SetTile(e.Increase.Position, new(Tile.ARROW, GetColor(e.Increase, color), 3));
         }
-        protected override void OnUpdateScroll(Scroll scroll)
+        protected override void OnDisplayScroll(Scroll scroll)
         {
             var e = scroll;
             var scrollUpAng = (sbyte)(e.IsVertical ? 3 : 0);
@@ -195,14 +197,15 @@ public static class UserInterface
             var scrollColor = Color.Gray.ToBright();
 
             SetBackground(back, e);
-            middle.SetTile(e.Up.Position, new(Tile.ARROW, GetColor(e.Up, scrollColor), scrollUpAng));
+            middle.SetTile(e.Increase.Position,
+                new(Tile.ARROW, GetColor(e.Increase, scrollColor), scrollUpAng));
             middle.SetTile(e.Slider.Handle.Position,
                 new(Tile.SHAPE_CIRCLE, GetColor(e.Slider, scrollColor)));
-            middle.SetTile(e.Down.Position,
-                new(Tile.ARROW, GetColor(e.Down, scrollColor), scrollDownAng));
+            middle.SetTile(e.Decrease.Position,
+                new(Tile.ARROW, GetColor(e.Decrease, scrollColor), scrollDownAng));
         }
-        protected override void OnUpdateLayout(Layout layout) { }
-        protected override void OnUpdateLayoutSegment(Layout layout,
+        protected override void OnDisplayLayout(Layout layout) { }
+        protected override void OnDisplayLayoutSegment(Layout layout,
             (int x, int y, int width, int height) segment, int index)
         {
             //var colors = new uint[]
@@ -215,8 +218,7 @@ public static class UserInterface
             //var size = (segment.width, segment.height);
             //middle.SetRectangle(pos, size, new(Tile.SHADE_OPAQUE, colors[index]));
 
-            var (sx, sy) = (segment.x, segment.y);
-            var (sw, sh) = (segment.width, segment.height);
+            var (sx, sy, sw, sh) = segment;
             var (w, h) = (0, 0);
 
             if (index == 1)
@@ -257,7 +259,7 @@ public static class UserInterface
 
             return baseColor;
         }
-        private void SetBackground(Tilemap map, Element element)
+        private static void SetBackground(Tilemap map, Element element)
         {
             var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark());
             map.SetRectangle(element.Position, element.Size, tile);
@@ -299,7 +301,7 @@ public static class UserInterface
         userInterface.Add(new Panel((0, 0))
         {
             Size = (15, 15),
-            SizeMinimum = (15, 8),
+            SizeMinimum = (15, 6),
         });
         var layout = new Layout((0, 0));
         userInterface.Add(layout);
@@ -319,7 +321,7 @@ public static class UserInterface
         userInterface.Add(new Button((0, 0)));
         userInterface.Add(new InputBox((0, 0)));
         userInterface.Add(new Button((35, 18)) { Text = "Checkbox" });
-        userInterface.Add(new Slider((0, 0), 7));
+        userInterface.Add(new Slider((0, 0), 7) { Progress = 0.05f });
 
         while (Window.IsOpen)
         {

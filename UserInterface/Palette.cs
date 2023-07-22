@@ -46,7 +46,78 @@ public class Palette : Element
         return result.ToArray();
     }
 
-    protected override void OnUpdate()
+    protected virtual void OnSampleDisplay(Button sample, uint color) { }
+    protected virtual void OnPageDisplay(Button page) { }
+    protected virtual uint OnPick((float x, float y) position) => default;
+
+#region Backend
+    private class ChildPagination : Pages
+    {
+        // custom class for receiving events
+        private readonly Palette parent;
+
+        public ChildPagination((int x, int y) position, int count, Palette parent) :
+            base(position, count) =>
+            this.parent = parent;
+        protected override void OnPageDisplay(Button page)
+        {
+            parent.OnPageDisplay(page);
+            parent.pageDisplayCallback?.Invoke(page);
+        }
+    }
+
+    private readonly List<Button> colorButtons = new();
+    private readonly uint[] palette =
+    {
+        0x_7F_7F_7F_FF, // Gray
+        0x_FF_00_00_FF, // Red
+        0x_FF_7F_00_FF, // Orange
+        0x_FF_FF_00_FF, // Yellow
+        0x_7F_FF_00_FF, // Green Yellow
+        0x_00_FF_00_FF, // Green
+        0x_00_FF_7F_FF, // Green Cyan
+        0x_00_FF_FF_FF, // Cyan
+        0x_00_7F_FF_FF, // Blue Cyan
+        0x_00_00_FF_FF, // Blue
+        0x_7F_00_FF_FF, // Blue Magenta
+        0x_FF_00_FF_FF, // Magenta
+        0x_FF_00_7F_FF, // Red Magenta
+    };
+    private bool isPicking;
+    private uint selectedColor = uint.MaxValue;
+
+    // used in the UI class to receive callbacks
+    internal Action<Button>? pageDisplayCallback;
+    internal Action<Button, uint>? sampleDisplayCallback;
+    internal Func<(float, float), uint>? pickCallback;
+
+    [MemberNotNull(nameof(Opacity))]
+    [MemberNotNull(nameof(Brightness))]
+    [MemberNotNull(nameof(Pick))]
+    private void Init(int brightnessPageCount, int brightnessCurrentPage, float opacityProgress)
+    {
+        isParent = true;
+
+        var (x, y) = Position;
+        var (w, h) = Size;
+        brightnessPageCount = Math.Clamp(brightnessPageCount, 1, 99);
+
+        Opacity = new((x, y), w) { Progress = opacityProgress, hasParent = true };
+        Brightness = new ChildPagination((x, y + 2), brightnessPageCount, this)
+        {
+            size = (w - 1, 1),
+            CurrentPage = brightnessCurrentPage,
+            hasParent = true
+        };
+        Pick = new((x + w - 1, y + h - 1)) { hasParent = true };
+
+        Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
+
+        for (var i = 0; i < 13; i++)
+            colorButtons.Add(new((x + i, y + 1)) { size = (1, 1), hasParent = true });
+    }
+
+    internal override void OnUpdate()
     {
         sizeMinimum = (13, 3);
         sizeMaximum = (13, 3);
@@ -74,88 +145,25 @@ public class Palette : Element
 
         SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
 
-        for (var i = 0; i < colorButtons.Count; i++)
+        foreach (var btn in colorButtons)
         {
-            var btn = colorButtons[i];
-
             if (Input.Current.IsJustReleased && btn is { IsPressedAndHeld: true, IsHovered: true })
                 SelectedColor = GetColor(colorButtons.IndexOf(btn));
 
-            OnSampleUpdate(btn, GetColor(i));
-            sampleUpdateCallback?.Invoke(btn, GetColor(i));
             btn.Update();
         }
 
         UpdateParts();
     }
-    protected virtual void OnSampleUpdate(Button sample, uint color) { }
-    protected virtual void OnPageUpdate(Button page) { }
-    protected virtual uint OnPick((float x, float y) position) => default;
-
-    #region Backend
-    private class ChildPagination : Pages
+    internal override void OnDisplayChildren()
     {
-        // custom class for receiving events
-        private readonly Palette parent;
-
-        public ChildPagination((int x, int y) position, int count, Palette parent) :
-            base(position, count) =>
-            this.parent = parent;
-        protected override void OnPageUpdate(Button page)
+        for (var i = 0; i < colorButtons.Count; i++)
         {
-            parent.OnPageUpdate(page);
-            parent.pageUpdateCallback?.Invoke(page);
+            OnSampleDisplay(colorButtons[i], GetColor(i));
+            sampleDisplayCallback?.Invoke(colorButtons[i], GetColor(i));
         }
     }
 
-    private readonly List<Button> colorButtons = new();
-    private readonly uint[] palette = new uint[]
-    {
-        0x_7F_7F_7F_FF, // Gray
-        0x_FF_00_00_FF, // Red
-        0x_FF_7F_00_FF, // Orange
-        0x_FF_FF_00_FF, // Yellow
-        0x_7F_FF_00_FF, // Green Yellow
-        0x_00_FF_00_FF, // Green
-        0x_00_FF_7F_FF, // Green Cyan
-        0x_00_FF_FF_FF, // Cyan
-        0x_00_7F_FF_FF, // Blue Cyan
-        0x_00_00_FF_FF, // Blue
-        0x_7F_00_FF_FF, // Blue Magenta
-        0x_FF_00_FF_FF, // Magenta
-        0x_FF_00_7F_FF, // Red Magenta
-    };
-    private bool isPicking;
-    private uint selectedColor = uint.MaxValue;
-
-    // used in the UI class to receive callbacks
-    internal Action<Button>? pageUpdateCallback;
-    internal Action<Button, uint>? sampleUpdateCallback;
-    internal Func<(float, float), uint>? pickCallback;
-
-    [MemberNotNull(nameof(Opacity))]
-    [MemberNotNull(nameof(Brightness))]
-    [MemberNotNull(nameof(Pick))]
-    private void Init(int brightnessPageCount, int brightnessCurrentPage, float opacityProgress)
-    {
-        var (x, y) = Position;
-        var (w, h) = Size;
-        brightnessPageCount = Math.Clamp(brightnessPageCount, 1, 99);
-
-        Opacity = new((x, y), w) { Progress = opacityProgress, hasParent = true };
-        Brightness = new ChildPagination((x, y + 2), brightnessPageCount, this)
-        {
-            size = (w - 1, 1),
-            CurrentPage = brightnessCurrentPage,
-            hasParent = true
-        };
-        Pick = new((x + w - 1, y + h - 1)) { hasParent = true };
-
-        Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
-
-        for (var i = 0; i < 13; i++)
-            colorButtons.Add(new((x + i, y + 1)) { size = (1, 1), hasParent = true });
-    }
     private void UpdateParts()
     {
         var (x, y) = Position;
@@ -226,5 +234,5 @@ public class Palette : Element
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }

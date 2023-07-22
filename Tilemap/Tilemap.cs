@@ -308,7 +308,7 @@ public class Tilemap
 
         var x = position.x;
         var y = position.y;
-        var lineList = text.Split("\n").ToList();
+        var lineList = text.TrimEnd().Split("\n").ToList();
 
         if (lineList.Count == 0)
             return;
@@ -335,7 +335,7 @@ public class Tilemap
 
             // otherwise wordwrap
             var endIndex = newLineIndex + (isWordWrapping ? 0 : 1);
-            lineList[i] = line[0..endIndex];
+            lineList[i] = line[0..endIndex].TrimStart();
             lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
         }
 
@@ -371,7 +371,7 @@ public class Tilemap
 
         for (var i = startIndex; i < end; i++)
         {
-            var line = lineList[i].Replace('\n', ' ');
+            var line = lineList[i];
 
             if (alignment is Alignment.TopRight or Alignment.Right or Alignment.BottomRight)
                 line = line.PadLeft(size.width);
@@ -587,17 +587,26 @@ public class Tilemap
         var (x, y) = position;
         var (w, h) = size;
 
+        if (w == 1 || h == 1)
+        {
+            SetRectangle(position, size, tileFill);
+            return;
+        }
+
         SetTile(position, new(cornerTileId, borderTint));
         SetRectangle((x + 1, y), (w - 2, 1), new(borderTileId, borderTint));
         SetTile((x + w - 1, y), new(cornerTileId, borderTint, 1));
 
-        SetRectangle((x, y + 1), (1, h - 2), new(borderTileId, borderTint, 3));
-        SetRectangle((x + 1, y + 1), (w - 2, h - 2), tileFill);
-        SetRectangle((x + w - 1, y + 1), (1, h - 2), new(borderTileId, borderTint, 1));
+        if (h != 2)
+        {
+            SetRectangle((x, y + 1), (1, h - 2), new(borderTileId, borderTint, 3));
+            SetRectangle((x + 1, y + 1), (w - 2, h - 2), tileFill);
+            SetRectangle((x + w - 1, y + 1), (1, h - 2), new(borderTileId, borderTint, 1));
+        }
 
         SetTile((x, y + h - 1), new(cornerTileId, borderTint, 3));
-        SetRectangle((x + 1, y + h - 1), (w - 2, 1), new(borderTileId, borderTint, 2));
         SetTile((x + w - 1, y + h - 1), new(cornerTileId, borderTint, 2));
+        SetRectangle((x + 1, y + h - 1), (w - 2, 1), new(borderTileId, borderTint, 2));
     }
     /// <summary>
     /// Sets the tiles in a rectangular area of the tilemap to create a vertical or horizontal bar.
@@ -614,17 +623,30 @@ public class Tilemap
         uint tint = uint.MaxValue, int size = 5, bool isVertical = false)
     {
         var (x, y) = position;
+        var off = size == 1 ? 0 : 1;
+
         if (isVertical)
         {
-            SetTile(position, new(tileIdEdge, tint, 1));
-            SetRectangle((x, y + 1), (1, size - 2), new(tileId, tint, 1));
-            SetTile((x, y + size - 1), new(tileIdEdge, tint, 3));
+            if (size > 1)
+            {
+                SetTile(position, new(tileIdEdge, tint, 1));
+                SetTile((x, y + size - 1), new(tileIdEdge, tint, 3));
+            }
+
+            if (size != 2)
+                SetRectangle((x, y + off), (1, size - 2), new(tileId, tint, 1));
+
             return;
         }
 
-        SetTile(position, new(tileIdEdge, tint));
-        SetRectangle((x + 1, y), (size - 2, 1), new(tileId, tint));
-        SetTile((x + size - 1, y), new(tileIdEdge, tint, 2));
+        if (size > 1)
+        {
+            SetTile(position, new(tileIdEdge, tint));
+            SetTile((x + size - 1, y), new(tileIdEdge, tint, 2));
+        }
+
+        if (size != 2)
+            SetRectangle((x + off, y), (size - 2, 1), new(tileId, tint));
     }
 
     /// <summary>

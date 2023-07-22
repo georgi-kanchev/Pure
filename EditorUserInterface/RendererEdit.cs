@@ -34,7 +34,6 @@ public class RendererEdit : UserInterface
         {
             element = new Slider(position);
             panel.SizeMinimum = (4, 3);
-            panel.SizeMaximum = (int.MaxValue, 3);
         }
         else if (index == 7)
         {
@@ -49,6 +48,8 @@ public class RendererEdit : UserInterface
         }
         else if (index == 9)
             element = new List(position);
+        else if (index == 10)
+            element = new Layout(position);
 
         if (element == null)
             return;
@@ -87,9 +88,16 @@ public class RendererEdit : UserInterface
             tilemaps[LAYER].SetLine((i, 0), (i, tmapSz.height), new(Tile.SHADE_1, color));
         for (var i = 0; i < tmapSz.height; i += 10)
             tilemaps[LAYER].SetLine((0, i), (tmapSz.width, i), new(Tile.SHADE_1, color, 1));
+
+        for (var i = 0; i < tmapSz.height; i += 20)
+            for (var j = 0; j < tmapSz.width; j += 20)
+            {
+                tilemaps[LAYER].SetTile((j, i), new Tile(Tile.SHADE_OPAQUE, color));
+                tilemaps[LAYER].SetTextLine((j + 1, i + 1), $"{j}, {i}", color);
+            }
     }
 
-    protected override void OnUpdatePanel(Panel panel)
+    protected override void OnDisplayPanel(Panel panel)
     {
         var index = IndexOf(panel);
         var e = ui[index];

@@ -8,14 +8,9 @@ public class Scroll : Element
     /// Gets the slider part of the scroll.
     /// </summary>
     public Slider Slider { get; private set; }
-    /// <summary>
-    /// Gets the button used to scroll up.
-    /// </summary>
-    public Button Up { get; private set; }
-    /// <summary>
-    /// Gets the button used to scroll down.
-    /// </summary>
-    public Button Down { get; private set; }
+
+    public Button Increase { get; private set; }
+    public Button Decrease { get; private set; }
 
     public bool IsVertical
     {
@@ -23,6 +18,15 @@ public class Scroll : Element
         set
         {
             if (hasParent == false) isVertical = value;
+        }
+    }
+    public float Step
+    {
+        get => step;
+        set
+        {
+            if (hasParent == false)
+                step = Math.Clamp(value, 0, 1);
         }
     }
 
@@ -52,9 +56,39 @@ public class Scroll : Element
         return result.ToArray();
     }
 
-    protected override void OnUpdate()
+#region Backend
+    internal bool isVertical;
+    internal float step = 0.1f;
+
+    [MemberNotNull(nameof(Slider))]
+    [MemberNotNull(nameof(Increase))]
+    [MemberNotNull(nameof(Decrease))]
+    private void Init()
     {
-        LimitSizeMin(IsVertical ? (1, 4) : (4, 1));
+        isParent = true;
+
+        Slider = new((0, 0), IsVertical ? Size.height : Size.width, IsVertical) { hasParent = true };
+        Increase = new((0, 0)) { Size = (1, 1), hasParent = true };
+        Decrease = new((0, 0)) { Size = (1, 1), hasParent = true };
+        var dir = IsVertical ? -1 : 1;
+
+        Increase.SubscribeToUserAction(UserAction.Trigger, () => Slider.Progress += dir * Step);
+        Increase.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Increase.IsHovered)
+                Slider.Progress += dir * Step;
+        });
+        Decrease.SubscribeToUserAction(UserAction.Trigger, () => Slider.Progress += dir * -Step);
+        Decrease.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Decrease.IsHovered)
+                Slider.Progress += dir * -Step;
+        });
+    }
+
+    internal override void OnUpdate()
+    {
+        LimitSizeMin(IsVertical ? (1, 2) : (2, 1));
 
         if (IsDisabled)
             return;
@@ -66,62 +100,38 @@ public class Scroll : Element
 
         if (IsVertical)
         {
-            Up.position = (x, y);
-            Down.position = (x, y + h - 1);
+            Increase.position = (x, y);
+            Decrease.position = (x, y + h - 1);
             Slider.position = (x, y + 1);
             Slider.size = (w, h - 2);
         }
         else
         {
-            Up.position = (x + w - 1, y);
-            Down.position = (x, y);
+            Increase.position = (x + w - 1, y);
+            Decrease.position = (x, y);
             Slider.position = (x + 1, y);
             Slider.size = (w - 2, h);
         }
 
         Slider.Update();
-        Up.Update();
-        Down.Update();
+        Increase.Update();
+        Decrease.Update();
 
         // buttons gain focus priority over the slider so
         // retrigger the scrolling behavior when scrolling over them
-        TryScrollWhileHoverButton(Up);
-        TryScrollWhileHoverButton(Down);
+        TryScrollWhileHoverButton(Increase);
+        TryScrollWhileHoverButton(Decrease);
 
         // resize the slider handle to appear as real scroll handle non-(1, 1) size
     }
 
-#region Backend
-    internal bool isVertical;
-
-    [MemberNotNull(nameof(Slider))]
-    [MemberNotNull(nameof(Up))]
-    [MemberNotNull(nameof(Down))]
-    private void Init()
-    {
-        Slider = new((0, 0), IsVertical ? Size.height : Size.width, IsVertical) { hasParent = true };
-        Up = new((0, 0)) { Size = (1, 1), hasParent = true };
-        Down = new((0, 0)) { Size = (1, 1), hasParent = true };
-        var dir = IsVertical ? 1 : -1;
-
-        Up.SubscribeToUserAction(UserAction.Trigger, () => Slider.Move(1 * dir));
-        Up.SubscribeToUserAction(UserAction.PressAndHold, () =>
-        {
-            if (Up.IsHovered)
-                Slider.Move(1 * dir);
-        });
-        Down.SubscribeToUserAction(UserAction.Trigger, () => Slider.Move(-1 * dir));
-        Down.SubscribeToUserAction(UserAction.PressAndHold, () =>
-        {
-            if (Down.IsHovered)
-                Slider.Move(-1 * dir);
-        });
-    }
     private void TryScrollWhileHoverButton(Element btn)
     {
+        var dir = IsVertical ? 1 : -1;
+
         if (btn.IsHovered && Input.Current.ScrollDelta != 0 && btn.IsFocused &&
             FocusedPrevious == btn)
-            Slider.Move(Input.Current.ScrollDelta);
+            Slider.Progress += Input.Current.ScrollDelta * Step;
     }
 #endregion
 }

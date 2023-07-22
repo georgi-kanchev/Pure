@@ -57,36 +57,7 @@ public class Layout : Element
         segments.Add(new(0, CutSide.Top, null));
     }
 
-    protected override void OnUpdate()
-    {
-        if (ui == null)
-            return;
-
-        // updates should be first since it's a hierarchy
-        // and then callbacks (after everything is done)
-
-        for (var i = 0; i < segments.Count; i++)
-        {
-            var seg = segments[i];
-
-            if (i == 0)
-            {
-                seg.position = Position;
-                seg.size = Size;
-            }
-            else
-                UpdateSegment(seg);
-        }
-
-        for (var i = 0; i < segments.Count; i++)
-        {
-            var seg = segments[i];
-            OnSegmentUpdate((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
-            segmentUpdateCallback?.Invoke((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
-        }
-    }
-
-    public virtual void OnSegmentUpdate((int x, int y, int width, int height) segment, int index) { }
+    protected virtual void OnSegmentUpdate((int x, int y, int width, int height) segment, int index) { }
 
     public override byte[] ToBytes()
     {
@@ -131,6 +102,34 @@ public class Layout : Element
     // used in the UI class to receive callbacks
     internal Action<(int x, int y, int width, int height), int>? segmentUpdateCallback;
 
+    internal override void OnUpdate()
+    {
+        if (ui == null)
+            return;
+
+        // updates should be first since it's a hierarchy
+        // and then callbacks (after everything is done)
+
+        for (var i = 0; i < segments.Count; i++)
+        {
+            var seg = segments[i];
+
+            if (i == 0)
+            {
+                seg.position = Position;
+                seg.size = Size;
+            }
+            else
+                UpdateSegment(seg);
+        }
+
+        for (var i = 0; i < segments.Count; i++)
+        {
+            var seg = segments[i];
+            OnSegmentUpdate((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
+            segmentUpdateCallback?.Invoke((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
+        }
+    }
     private void UpdateSegment(Segment seg)
     {
         var (px, py) = Position;

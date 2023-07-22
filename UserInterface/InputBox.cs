@@ -190,58 +190,35 @@ public class InputBox : Element
 
         cursorBlink.Restart();
 
-        var cxPrev = cx;
-        var cyPrev = cy;
-
-        cy += delta.y;
-        cx += delta.x;
-        ClampCursor();
-
-        if (delta.x > 0 && // trying to move right
-            cxPrev + delta.x > lines[cy].Length && // but line ended
-            cy != lines.Count - 1) // not last line
+        for (var i = 0; i < Math.Abs(delta.x); i++)
         {
-            var x = cx;
-            cx = 0;
+            var isGoingLeft = delta.x < 0;
+            var isGoingRight = delta.x > 0;
+            var isAtStart = cx == 0 && cy == 0;
+            var isAtEnd = cy == lines.Count - 1 && cx == lines[cy].Length;
 
-            // keep going with the remaining delta
-            CursorMove((cxPrev + delta.x - x - 1, 1), isScrolling);
+            if ((isAtStart && isGoingLeft) || (isAtEnd && isGoingRight))
+                continue;
+
+            cx += delta.x < 0 ? -1 : 1;
+
+            if (cx < 0)
+            {
+                cy--;
+                cx = lines[cy].Length;
+            }
+
+            if (cx <= lines[cy].Length)
+                continue;
+
+            cx = 0;
+            cy++;
         }
 
-        if (delta.x < 0 && // trying to move left
-            cxPrev + delta.x < 0 && // but line ended
-            cy != 0) // not first line
-        {
-            var x = cx;
-            cx = lines[cy - 1].Length;
+        for (var i = 0; i < Math.Abs(delta.y); i++)
+            cy += delta.y < 0 ? -1 : 1;
 
-            // keep going with the remaining delta
-            CursorMove((cxPrev + delta.x - x - 1, -1), isScrolling);
-        }
-
-        //if (delta.x < 0 && // trying to move left
-        //    cx == 0 && cxPrev == 0 && // but line ended
-        //    cy != 0) // not first line
-        //{
-        //    cy -= 1;
-        //    cx = lines[cy].Length;
-        //    CursorMove((0, 0), isSelecting, isScrolling);
-        //}
-        //else if (delta.x > 0 && // trying to move right
-        //         cx == lines[cy].Length && cxPrev == lines[cy].Length && // but line ended
-        //         cy != lines.Count - 1) // not last line
-        //{
-        //    cx = 0;
-        //    cy += 1;
-        //    CursorMove((0, 0), isSelecting, isScrolling);
-        //}
-
-        if (delta.y > 0 && // trying to move down
-            cy == lines.Count - 1 && cyPrev == lines.Count - 1) // last line
-            cx = lines[cy].Length;
-        else if (delta.y < 0 && // trying to move up
-                 cy == 0 && cyPrev == 0) // first line
-            cx = 0;
+        CursorIndices = (cx, cy);
 
         if (isScrolling)
             CursorScroll();
@@ -268,12 +245,32 @@ public class InputBox : Element
         UpdateText();
     }
 
-    /// <summary>
-    /// Called when the input box needs to be updated. This handles all of the user input
-    /// the input box needs for its behavior. Subclasses should override this 
-    /// method to implement their own behavior.
-    /// </summary>
-    protected override void OnUpdate()
+#region Backend
+    private readonly List<string> lines = new() { "" };
+
+    private const char SELECTION = '█', SPACE = ' ';
+    private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
+    private static readonly Stopwatch holdDelay = new(),
+        hold = new(),
+        clickDelay = new(),
+        cursorBlink = new(),
+        scrollHold = new();
+    private int cx, cy, sx, sy, clicks, scrX, scrY;
+    private (int, int) lastClickIndices = (-1, -1), prevSize;
+
+    static InputBox()
+    {
+        holdDelay.Start();
+        hold.Start();
+        scrollHold.Start();
+    }
+
+    protected override void OnUserAction(UserAction userEvent)
+    {
+        if (userEvent == UserAction.Press)
+            cursorBlink.Restart();
+    }
+    internal override void OnUpdate()
     {
         // reclamp despite scrolling or not cuz maybe the text changed
         ScrollIndices = (scrX, scrY);
@@ -305,32 +302,6 @@ public class InputBox : Element
         TryType(isAllowedType, isPasting);
         TryBackspaceDeleteEnter(isHolding, justDeletedSelected);
         TryMoveCursor(isHolding);
-    }
-
-#region Backend
-    private readonly List<string> lines = new() { "" };
-
-    private const char SELECTION = '█', SPACE = ' ';
-    private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
-    private static readonly Stopwatch holdDelay = new(),
-        hold = new(),
-        clickDelay = new(),
-        cursorBlink = new(),
-        scrollHold = new();
-    private int cx, cy, sx, sy, clicks, scrX, scrY;
-    private (int, int) lastClickIndices = (-1, -1), prevSize;
-
-    static InputBox()
-    {
-        holdDelay.Start();
-        hold.Start();
-        scrollHold.Start();
-    }
-
-    protected override void OnUserAction(UserAction userEvent)
-    {
-        if (userEvent == UserAction.Press)
-            cursorBlink.Restart();
     }
 
     private void UpdateText()
@@ -374,11 +345,6 @@ public class InputBox : Element
         var index = step < 0 ? -1 : 0;
         var symbol = GetSymbol((cx + (step < 0 ? -1 : 0), cy));
         var targetIsWord = char.IsLetterOrDigit(symbol) == false;
-
-        if (Input.Current.IsKeyPressed(Key.ControlLeft) && Input.Current.IsKeyPressed(Key.ArrowLeft))
-        {
-            ;
-        }
 
         for (var i = 0; i < lines[cy].Length; i++)
         {
@@ -441,7 +407,7 @@ public class InputBox : Element
             {
                 cy = iy;
                 cx = ix;
-                ClampCursor();
+                CursorIndices = (cx, cy);
                 CursorScroll();
             }
         }
@@ -459,7 +425,7 @@ public class InputBox : Element
             if (py > y + h) cy += 1;
             else if (py < y) cy -= 1;
 
-            ClampCursor();
+            CursorIndices = (cx, cy);
             CursorScroll();
             scrollHold.Restart();
             return;
@@ -480,14 +446,14 @@ public class InputBox : Element
         {
             cy = indexY;
             cx = indexX;
-            ClampCursor();
+            CursorIndices = (cx, cy);
             CursorScroll();
             SelectionIndices = selectionIndices;
         }
         else if (clicks == 2)
         {
             cx += GetWordEndOffset(-1);
-            ClampCursor();
+            CursorIndices = (cx, cy);
             CursorScroll();
             SelectionIndices = (selectionIndices.symbol + GetWordEndOffset(1), selectionIndices.line);
         }
@@ -621,11 +587,13 @@ public class InputBox : Element
             lines.Insert(cy + 1, textForNewLine);
             cy++;
             cx = 0;
-            cursorBlink.Restart();
-            ClampCursor();
+            CursorIndices = (cx, cy);
+
             SelectionIndices = CursorIndices;
             CursorScroll();
             UpdateText();
+
+            cursorBlink.Restart();
         }
         else if (Allowed(Key.Backspace, isHolding) && justDeletedSelection == false)
         {
@@ -638,10 +606,10 @@ public class InputBox : Element
 
                 cy -= 1;
                 cx = lines[cy].Length;
-                ClampCursor();
+                CursorIndices = (cx, cy);
+                SelectionIndices = CursorIndices;
 
                 TryMergeBottomLine(cy);
-                SelectionIndices = CursorIndices;
                 CursorScroll();
                 UpdateText();
                 return;
@@ -653,10 +621,14 @@ public class InputBox : Element
 
             lines[cy] = lines[cy].Remove(ctrl ? cx + off : cx - 1, count);
 
-            scrX -= Math.Abs(off);
-            ScrollIndices = (scrX, scrY);
+            cx -= ctrl ? off : -1;
+            CursorIndices = (cx, cy);
+            SelectionIndices = CursorIndices;
 
-            CursorMove((ctrl ? off : -1, 0));
+            scrX -= Math.Abs(ctrl ? off : -1);
+            ScrollIndices = (scrX, scrY);
+            CursorScroll();
+
             UpdateText();
         }
         else if (Allowed(Key.Delete, isHolding) && justDeletedSelection == false)
@@ -676,7 +648,13 @@ public class InputBox : Element
             var off = GetWordEndOffset(1);
             var ctrl = Pressed(Key.ControlLeft);
             var count = ctrl ? Math.Abs(off) : 1;
+
             lines[cy] = lines[cy].Remove(cx, count);
+
+            scrX -= Math.Abs(ctrl ? off : -1);
+            ScrollIndices = (scrX, scrY);
+            CursorScroll();
+
             SelectionIndices = CursorIndices;
             UpdateText();
         }
@@ -774,11 +752,6 @@ public class InputBox : Element
         }
 
         return false;
-    }
-    private void ClampCursor()
-    {
-        cy = Math.Clamp(cy, 0, lines.Count - 1);
-        cx = Math.Clamp(cx, 0, lines[cy].Length);
     }
 
     private int GetMaxLineWidth()

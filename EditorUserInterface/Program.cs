@@ -37,7 +37,13 @@ public static class Program
     public static (int x, int y) CameraPosition { get; set; }
     public static (int w, int h) CameraSize { get; private set; }
 
-    #region Backend
+    public static void DisplayInfoText(string text)
+    {
+        infoText += text + Environment.NewLine;
+        infoTextTimer = 2f;
+    }
+
+#region Backend
     private static string infoText = "";
     private static int zoom = 4;
     private const int SCALE_ASPECT_MAX = 10, SCALE_ASPECT_MIN = 2;
@@ -84,12 +90,6 @@ public static class Program
 
             Window.Activate(false);
         }
-    }
-
-    public static void DisplayInfoText(string text)
-    {
-        infoText += text + Environment.NewLine;
-        infoTextTimer = 2f;
     }
 
     private static void Update()
@@ -224,5 +224,5 @@ public static class Program
 
         return null;
     }
-    #endregion
+#endregion
 }

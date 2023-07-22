@@ -17,9 +17,10 @@ public abstract class Menu : List
             this[i].Text = options[i];
     }
 
-    protected override void OnUpdate()
+    protected override void OnDisplay()
     {
-        base.OnUpdate();
+        if (Mouse.ScrollDelta != 0 || Mouse.IsButtonPressed(Mouse.Button.Middle))
+            IsHidden = true;
 
         if (Position.x + Size.width > TilemapSize.width)
             Position = (TilemapSize.width - Size.width, Position.y);
@@ -36,16 +37,19 @@ public abstract class Menu : List
         var scrollColor = Color.Gray;
         var middle = Program.tilemaps[(int)Program.Layer.EditMiddle];
         var front = Program.tilemaps[(int)Program.Layer.EditFront];
+
         middle.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
-        front.SetTile(Scroll.Up.Position, new(Tile.ARROW, GetColor(Scroll.Up, scrollColor), 3));
+        front.SetTile(Scroll.Increase.Position,
+            new(Tile.ARROW, GetColor(Scroll.Increase, scrollColor), 3));
         front.SetTile(Scroll.Slider.Handle.Position,
-            new(Tile.SHAPE_CIRCLE, GetColor(Scroll, scrollColor)));
-        front.SetTile(Scroll.Down.Position, new(Tile.ARROW, GetColor(Scroll.Down, scrollColor), 1));
+            new(Tile.SHAPE_CIRCLE, GetColor(Scroll.Slider, scrollColor)));
+        front.SetTile(Scroll.Decrease.Position,
+            new(Tile.ARROW, GetColor(Scroll.Decrease, scrollColor), 1));
 
         if (IsHidden)
             Position = (int.MaxValue, int.MaxValue);
     }
-    protected override void OnItemUpdate(Button item)
+    protected override void OnItemDisplay(Button item)
     {
         if (IsHidden)
             return;
@@ -58,7 +62,7 @@ public abstract class Menu : List
         front.SetTextLine(item.Position, item.Text, GetColor(item, color));
     }
 
-    #region Backend
+#region Backend
     private static Color GetColor(Element element, Color baseColor)
     {
         if (element.IsDisabled) return baseColor;
@@ -67,5 +71,5 @@ public abstract class Menu : List
 
         return baseColor;
     }
-    #endregion
+#endregion
 }

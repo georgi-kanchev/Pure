@@ -89,55 +89,67 @@ public class UserInterface
     {
         foreach (var element in elements)
         {
-            element.Update();
-
-            if (element is Button b) OnUpdateButton(b);
-            else if (element is InputBox u) OnUpdateInputBox(u);
-            else if (element is List l) OnUpdateList(l);
-            else if (element is Pages g) OnUpdatePages(g);
-            else if (element is Palette t) OnUpdatePalette(t);
-            else if (element is Panel p) OnUpdatePanel(p);
-            else if (element is Stepper n) OnUpdateStepper(n);
-            else if (element is Scroll r) OnUpdateScroll(r);
-            else if (element is Slider s) OnUpdateSlider(s);
-            else if (element is Layout o) OnUpdateLayout(o);
-
             if (element is Button button)
-                button.dragCallback = d => OnDragButton(button, d);
+            {
+                button.displayCallback = () => OnDisplayButton(button);
+                button.displayCallback = () => OnDisplayButton(button);
+            }
             else if (element is InputBox input)
+            {
+                input.displayCallback = () => OnDisplayInputBox(input);
                 input.dragCallback = d => OnDragInputBox(input, d);
+            }
+
             if (element is List list)
             {
-                list.dragCallback = d => OnDragList(list, d);
-                list.itemUpdateCallback = b => OnUpdateListItem(list, b);
+                list.displayCallback = () => OnDisplayList(list);
+                list.itemDisplayCallback = b => OnDisplayListItem(list, b);
                 list.itemTriggerCallback = b => OnListItemTrigger(list, b);
+                list.dragCallback = d => OnDragList(list, d);
             }
             else if (element is Pages pages)
             {
+                pages.displayCallback = () => OnDisplayPages(pages);
+                pages.pageDisplayCallback = b => OnDisplayPagesPage(pages, b);
                 pages.dragCallback = d => OnDragPages(pages, d);
-                pages.pageUpdateCallback = b => OnUpdatePagesPage(pages, b);
             }
             else if (element is Palette palette)
             {
-                palette.dragCallback = d => OnDragPalette(palette, d);
-                palette.pageUpdateCallback = b => OnUpdatePalettePage(palette, b);
-                palette.sampleUpdateCallback =
+                palette.displayCallback = () => OnDisplayPalette(palette);
+                palette.pageDisplayCallback = b => OnDisplayPalettePage(palette, b);
+                palette.sampleDisplayCallback =
                     (b, c) => OnUpdatePaletteSample(palette, b, c);
                 palette.pickCallback = p => OnPalettePick(palette, p);
+                palette.dragCallback = d => OnDragPalette(palette, d);
             }
             else if (element is Panel panel)
             {
+                panel.displayCallback = () => OnDisplayPanel(panel);
                 panel.dragCallback = d => OnDragPanel(panel, d);
                 panel.resizeCallback = d => OnPanelResize(panel, d);
             }
-            else if (element is Stepper stepper)
-                stepper.dragCallback = d => OnDragStepper(stepper, d);
             else if (element is Scroll scroll)
+            {
+                scroll.displayCallback = () => OnDisplayScroll(scroll);
                 scroll.dragCallback = d => OnDragScroll(scroll, d);
+            }
+            else if (element is Stepper stepper)
+            {
+                stepper.displayCallback = () => OnDisplayStepper(stepper);
+                stepper.dragCallback = d => OnDragStepper(stepper, d);
+            }
             else if (element is Slider slider)
+            {
+                slider.displayCallback = () => OnDisplaySlider(slider);
                 slider.dragCallback = d => OnDragSlider(slider, d);
+            }
             else if (element is Layout layout)
-                layout.segmentUpdateCallback = (seg, i) => OnUpdateLayoutSegment(layout, seg, i);
+            {
+                layout.displayCallback = () => OnDisplayLayout(layout);
+                layout.segmentUpdateCallback = (seg, i) => OnDisplayLayoutSegment(layout, seg, i);
+            }
+
+            element.Update();
         }
     }
 
@@ -180,22 +192,22 @@ public class UserInterface
     protected virtual void OnDragSlider(Slider slider, (int width, int height) delta) { }
     protected virtual void OnDragLayout(Layout layout, (int width, int height) delta) { }
 
-    protected virtual void OnUpdateButton(Button button) { }
-    protected virtual void OnUpdateInputBox(InputBox inputBox) { }
-    protected virtual void OnUpdateList(List list) { }
-    protected virtual void OnUpdateListItem(List list, Button item) { }
-    protected virtual void OnUpdateStepper(Stepper stepper) { }
-    protected virtual void OnUpdatePages(Pages pages) { }
-    protected virtual void OnUpdatePagesPage(Pages pages, Button page) { }
-    protected virtual void OnUpdatePalette(Palette palette) { }
-    protected virtual void OnUpdatePalettePage(Palette palette, Button page) { }
+    protected virtual void OnDisplayButton(Button button) { }
+    protected virtual void OnDisplayInputBox(InputBox inputBox) { }
+    protected virtual void OnDisplayList(List list) { }
+    protected virtual void OnDisplayListItem(List list, Button item) { }
+    protected virtual void OnDisplayStepper(Stepper stepper) { }
+    protected virtual void OnDisplayPages(Pages pages) { }
+    protected virtual void OnDisplayPagesPage(Pages pages, Button page) { }
+    protected virtual void OnDisplayPalette(Palette palette) { }
+    protected virtual void OnDisplayPalettePage(Palette palette, Button page) { }
     protected virtual void
         OnUpdatePaletteSample(Palette palette, Button sample, uint color) { }
-    protected virtual void OnUpdatePanel(Panel panel) { }
-    protected virtual void OnUpdateScroll(Scroll scroll) { }
-    protected virtual void OnUpdateSlider(Slider slider) { }
-    protected virtual void OnUpdateLayout(Layout layout) { }
-    protected virtual void OnUpdateLayoutSegment(Layout layout,
+    protected virtual void OnDisplayPanel(Panel panel) { }
+    protected virtual void OnDisplayScroll(Scroll scroll) { }
+    protected virtual void OnDisplaySlider(Slider slider) { }
+    protected virtual void OnDisplayLayout(Layout layout) { }
+    protected virtual void OnDisplayLayoutSegment(Layout layout,
         (int x, int y, int width, int height) segment, int index) { }
 
     protected virtual uint OnPalettePick(Palette palette, (float x, float y) position) => default;

@@ -12,9 +12,11 @@ public class EditPanel : Panel
     {
         Text = "Edit";
         IsHidden = true;
+        IsResizable = false;
+        IsMovable = false;
     }
 
-    protected override void OnUpdate()
+    protected override void OnDisplay()
     {
         var onLmb = Mouse.IsButtonPressed(Mouse.Button.Left).Once("edit-panel-lmb");
         if (onLmb && IsHovered == false && IsHidden == false)
@@ -39,7 +41,10 @@ public class EditPanel : Panel
         const int CORNER = Tile.BOX_HOLLOW_CORNER;
         const int STRAIGHT = Tile.BOX_HOLLOW_STRAIGHT;
 
+        var middle = tilemaps[(int)Layer.EditMiddle];
         var front = tilemaps[(int)Layer.EditFront];
+        middle.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
+        front.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
         front.SetBox(Position, Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
         front.SetTextLine(textPos, Text, Color.Yellow);
 

@@ -8,7 +8,7 @@ using Pure.Utilities;
 
 public class RendererUI : UserInterface
 {
-    protected override void OnUpdateButton(Button button)
+    protected override void OnDisplayButton(Button button)
     {
         var e = button;
         var offX = (e.Size.width - e.Text.Length) / 2;
@@ -16,129 +16,164 @@ public class RendererUI : UserInterface
         offX = Math.Max(offX, 0);
         var (x, y) = e.Position;
 
-        SetBackground(e);
+        SetBackground(Layer.UiBack, e);
+        SetBackground(Layer.UiMiddle, e);
+
         tilemaps[(int)Layer.UiMiddle]
             .SetTextLine((x + offX, y + offY), e.Text, Color.White, e.Size.width);
     }
-    protected override void OnUpdateInputBox(InputBox inputBox)
+    protected override void OnDisplayInputBox(InputBox inputBox)
     {
         var e = inputBox;
-        SetBackground(e);
-        tilemaps[(int)Layer.UiMiddle]
-            .SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
+        var middle = tilemaps[(int)Layer.UiMiddle];
+
+        SetBackground(Layer.UiBack, e);
+        SetBackground(Layer.UiMiddle, e);
+
+        middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
 
         if (string.IsNullOrWhiteSpace(e.Text))
-            tilemaps[(int)Layer.UiMiddle]
-                .SetTextRectangle(e.Position, e.Size, e.Placeholder, Color.Gray.ToBright(), false);
+            middle.SetTextRectangle(e.Position, e.Size, e.Placeholder, Color.Gray.ToBright(), false);
     }
-    protected override void OnUpdateSlider(Slider slider)
+    protected override void OnDisplaySlider(Slider slider)
     {
         var e = slider;
-        tilemaps[(int)Layer.UiMiddle].SetBar(e.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT,
-            Color.Gray,
-            e.Size.width);
-        tilemaps[(int)Layer.UiMiddle].SetTile(e.Handle.Position, new(Tile.SHADE_OPAQUE, Color.White));
+        var middle = tilemaps[(int)Layer.UiMiddle];
+
+        SetBackground(Layer.UiBack, e);
+        middle.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
+            Color.White, e.Size.height, true);
     }
-    protected override void OnUpdateList(List list)
+    protected override void OnDisplayList(List list)
     {
-        SetBackground(list);
-        OnUpdateScroll(list.Scroll);
+        SetBackground(Layer.UiBack, list);
+        SetBackground(Layer.UiMiddle, list);
+        OnDisplayScroll(list.Scroll);
     }
-    protected override void OnUpdateListItem(List list, Button item)
+    protected override void OnDisplayListItem(List list, Button item)
     {
         var color = item.IsSelected ? Color.Green : Color.Gray;
+        var middle = tilemaps[(int)Layer.UiMiddle];
 
-        tilemaps[(int)Layer.UiMiddle].SetTextLine(item.Position, item.Text, color, item.Size.width);
+        middle.SetTextLine(item.Position, item.Text, color, item.Size.width);
 
         var (itemX, itemY) = item.Position;
         var dropdownTile = new Tile(Tile.MATH_GREATER, color, 1);
         if (list.IsExpanded == false)
-            tilemaps[(int)Layer.UiMiddle].SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
+            middle.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
     }
-    protected override void OnUpdatePanel(Panel panel)
+    protected override void OnDisplayPanel(Panel panel)
     {
         var e = panel;
         var offset = (e.Size.width - e.Text.Length) / 2;
+        var back = tilemaps[(int)Layer.UiBack];
+        var middle = tilemaps[(int)Layer.UiMiddle];
         offset = Math.Max(offset, 0);
-        SetBackground(e);
-        tilemaps[(int)Layer.UiMiddle].SetBox(e.Position, e.Size, Tile.SHADE_TRANSPARENT,
-            Tile.BOX_GRID_CORNER, Tile.BOX_GRID_STRAIGHT, Color.Gray);
-        tilemaps[(int)Layer.UiBack].SetRectangle((e.Position.x + 1, e.Position.y), (e.Size.width - 2, 1),
+
+        SetBackground(Layer.UiBack, e);
+        SetBackground(Layer.UiMiddle, e);
+
+        back.SetRectangle((e.Position.x + 1, e.Position.y), (e.Size.width - 2, 1),
             new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.2f)));
-        tilemaps[(int)Layer.UiMiddle].SetTextLine((e.Position.x + offset, e.Position.y), e.Text,
-            Color.White, e.Size.width);
+        middle.SetBox(e.Position, e.Size, Tile.SHADE_TRANSPARENT, Tile.BOX_GRID_CORNER,
+            Tile.BOX_GRID_STRAIGHT, Color.Gray);
+        middle.SetTextLine((e.Position.x + offset, e.Position.y), e.Text, Color.White, e.Size.width);
     }
-    protected override void OnUpdatePages(Pages pages)
+    protected override void OnDisplayPages(Pages pages)
     {
-        SetBackground(pages);
-        tilemaps[(int)Layer.UiMiddle]
-            .SetTile(pages.First.Position, new(Tile.MATH_MUCH_LESS, Color.Gray));
-        tilemaps[(int)Layer.UiMiddle].SetTile(pages.Previous.Position, new(Tile.MATH_LESS, Color.Gray));
-        tilemaps[(int)Layer.UiMiddle].SetTile(pages.Next.Position, new(Tile.MATH_GREATER, Color.Gray));
-        tilemaps[(int)Layer.UiMiddle]
-            .SetTile(pages.Last.Position, new(Tile.MATH_MUCH_GREATER, Color.Gray));
+        var middle = tilemaps[(int)Layer.UiMiddle];
+
+        SetBackground(Layer.UiBack, pages);
+        SetBackground(Layer.UiMiddle, pages);
+
+        middle.SetTile(pages.First.Position, new(Tile.MATH_MUCH_LESS, Color.Gray));
+        middle.SetTile(pages.Previous.Position, new(Tile.MATH_LESS, Color.Gray));
+        middle.SetTile(pages.Next.Position, new(Tile.MATH_GREATER, Color.Gray));
+        middle.SetTile(pages.Last.Position, new(Tile.MATH_MUCH_GREATER, Color.Gray));
     }
-    protected override void OnUpdatePagesPage(Pages pages, Button page)
+    protected override void OnDisplayPagesPage(Pages pages, Button page)
     {
-        var color = page.IsSelected ? Color.Green : Color.Gray;
-        tilemaps[(int)Layer.UiMiddle].SetTextLine(page.Position, page.Text, color);
+        tilemaps[(int)Layer.UiMiddle].SetTextLine(page.Position, page.Text, Color.Gray);
     }
-    protected override void OnUpdatePalette(Palette palette)
+    protected override void OnDisplayPalette(Palette palette)
     {
         var e = palette;
         var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToBright());
         var alpha = e.Opacity;
-        tilemaps[(int)Layer.UiMiddle].SetBar(alpha.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT,
-            Color.Gray,
-            alpha.Size.width);
-        tilemaps[(int)Layer.UiMiddle].SetTile(alpha.Handle.Position, tile);
-
+        var middle = tilemaps[(int)Layer.UiMiddle];
         var first = e.Brightness.First;
         var previous = e.Brightness.Previous;
         var next = e.Brightness.Next;
         var last = e.Brightness.Last;
-        tilemaps[(int)Layer.UiMiddle].SetTile(first.Position, new(Tile.MATH_MUCH_LESS, Color.Gray));
-        tilemaps[(int)Layer.UiMiddle].SetTile(previous.Position, new(Tile.MATH_LESS, Color.Gray));
-        tilemaps[(int)Layer.UiMiddle].SetTile(next.Position, new(Tile.MATH_GREATER, Color.Gray));
-        tilemaps[(int)Layer.UiMiddle].SetTile(last.Position, new(Tile.MATH_MUCH_GREATER, Color.Gray));
 
-        tilemaps[(int)Layer.UiMiddle].SetTile(e.Pick.Position, new(Tile.MATH_PLUS, Color.Gray));
+        middle.SetBar(alpha.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, Color.Gray,
+            alpha.Size.width);
+        middle.SetTile(alpha.Handle.Position, tile);
+
+        middle.SetTile(first.Position, new(Tile.MATH_MUCH_LESS, Color.Gray));
+        middle.SetTile(previous.Position, new(Tile.MATH_LESS, Color.Gray));
+        middle.SetTile(next.Position, new(Tile.MATH_GREATER, Color.Gray));
+        middle.SetTile(last.Position, new(Tile.MATH_MUCH_GREATER, Color.Gray));
+
+        middle.SetTile(e.Pick.Position, new(Tile.MATH_PLUS, Color.Gray));
     }
-    protected override void OnUpdatePalettePage(Palette palette, Button page)
+    protected override void OnDisplayPalettePage(Palette palette, Button page)
     {
-        OnUpdatePagesPage(palette.Brightness, page); // display the same kind of pages
+        OnDisplayPagesPage(palette.Brightness, page); // display the same kind of pages
     }
     protected override void OnUpdatePaletteSample(Palette palette, Button sample, uint color)
     {
         tilemaps[(int)Layer.UiMiddle].SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color));
     }
-    protected override void OnUpdateStepper(Stepper stepper)
+    protected override void OnDisplayStepper(Stepper stepper)
     {
         var e = stepper;
-        SetBackground(stepper);
-        tilemaps[(int)Layer.UiMiddle].SetTile(e.Down.Position, new(Tile.ARROW, Color.Gray, 1));
-        tilemaps[(int)Layer.UiMiddle].SetTextLine((e.Position.x, e.Position.y + 1), $"{e.Value}");
-        tilemaps[(int)Layer.UiMiddle].SetTile(e.Up.Position, new(Tile.ARROW, Color.Gray, 3));
+        var middle = tilemaps[(int)Layer.UiMiddle];
+
+        SetBackground(Layer.UiBack, stepper);
+        SetBackground(Layer.UiMiddle, stepper);
+
+        middle.SetTile(e.Decrease.Position, new(Tile.ARROW, Color.Gray, 1));
+        middle.SetTextLine((e.Position.x, e.Position.y + 1), $"{e.Value}");
+        middle.SetTile(e.Increase.Position, new(Tile.ARROW, Color.Gray, 3));
     }
-    protected override void OnUpdateScroll(Scroll scroll)
+    protected override void OnDisplayScroll(Scroll scroll)
     {
         var scrollUpAng = (sbyte)(scroll.IsVertical ? 3 : 0);
         var scrollDownAng = (sbyte)(scroll.IsVertical ? 1 : 2);
         var scrollColor = Color.Gray.ToBright();
-        SetBackground(scroll);
-        tilemaps[(int)Layer.UiMiddle]
-            .SetTile(scroll.Up.Position, new(Tile.ARROW, scrollColor, scrollUpAng));
-        tilemaps[(int)Layer.UiMiddle]
-            .SetTile(scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, scrollColor));
-        tilemaps[(int)Layer.UiMiddle]
-            .SetTile(scroll.Down.Position, new(Tile.ARROW, scrollColor, scrollDownAng));
+        var middle = tilemaps[(int)Layer.UiMiddle];
+
+        SetBackground(Layer.UiBack, scroll);
+        SetBackground(Layer.UiMiddle, scroll);
+
+        middle.SetTile(scroll.Increase.Position, new(Tile.ARROW, scrollColor, scrollUpAng));
+        middle.SetTile(scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, scrollColor));
+        middle.SetTile(scroll.Decrease.Position, new(Tile.ARROW, scrollColor, scrollDownAng));
+    }
+    protected override void OnDisplayLayoutSegment(Layout layout,
+        (int x, int y, int width, int height) segment, int index)
+    {
+        var colors = new uint[]
+        {
+            Color.Red, Color.Blue, Color.Green, Color.Yellow, Color.Gray,
+            Color.Orange, Color.Cyan, Color.Black, Color.Azure, Color.Brown,
+            Color.Magenta, Color.Purple, Color.Pink, Color.Violet
+        };
+        var pos = (segment.x, segment.y);
+        var size = (segment.width, segment.height);
+        tilemaps[(int)Layer.UiMiddle].SetRectangle(pos, size, new(Tile.SHADE_OPAQUE, colors[index]));
     }
 
 #region Backend
-    private static void SetBackground(Element element)
+    private static void SetBackground(Layer layer, Element element)
     {
-        var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark());
-        tilemaps[(int)Layer.UiBack].SetRectangle(element.Position, element.Size, tile);
+        var color = Color.Gray.ToDark();
+        var tile = new Tile(Tile.SHADE_OPAQUE, color);
+        var middle = tilemaps[(int)layer];
+
+        middle.SetBox(element.Position, element.Size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE,
+            color);
     }
 #endregion
 }

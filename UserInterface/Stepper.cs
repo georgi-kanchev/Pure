@@ -4,8 +4,8 @@ namespace Pure.UserInterface;
 
 public class Stepper : Element
 {
-    public Button Up { get; private set; }
-    public Button Down { get; private set; }
+    public Button Increase { get; private set; }
+    public Button Decrease { get; private set; }
 
     public float Value
     {
@@ -42,17 +42,6 @@ public class Stepper : Element
         Init();
     }
 
-    protected override void OnUpdate()
-    {
-        LimitSizeMin((1, 3));
-
-        Down.position = (Position.x, Position.y + Size.height - 1);
-        Up.position = Position;
-
-        Down.Update();
-        Up.Update();
-    }
-
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -63,22 +52,43 @@ public class Stepper : Element
         return result.ToArray();
     }
 
-    #region Backend
+#region Backend
     private float value;
     private (float min, float max) range = (float.MinValue, float.MaxValue);
 
-    [MemberNotNull(nameof(Up))]
-    [MemberNotNull(nameof(Down))]
+    [MemberNotNull(nameof(Increase))]
+    [MemberNotNull(nameof(Decrease))]
     private void Init()
     {
-        Down = new((0, 0)) { size = (1, 1), hasParent = true };
-        Up = new((0, 0)) { size = (1, 1), hasParent = true };
+        isParent = true;
 
-        Down.SubscribeToUserAction(UserAction.Press, () => Value--);
-        Up.SubscribeToUserAction(UserAction.Press, () => Value++);
+        Decrease = new((0, 0)) { size = (1, 1), hasParent = true };
+        Increase = new((0, 0)) { size = (1, 1), hasParent = true };
 
-        Down.SubscribeToUserAction(UserAction.PressAndHold, () => Value--);
-        Up.SubscribeToUserAction(UserAction.PressAndHold, () => Value++);
+        Decrease.SubscribeToUserAction(UserAction.Trigger, () => Value -= Step);
+        Increase.SubscribeToUserAction(UserAction.Trigger, () => Value += Step);
+
+        Decrease.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Decrease.IsHovered)
+                Value -= Step;
+        });
+        Increase.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Increase.IsHovered)
+                Value += Step;
+        });
     }
-    #endregion
+
+    internal override void OnUpdate()
+    {
+        LimitSizeMin((1, 3));
+
+        Decrease.position = (Position.x, Position.y + Size.height - 1);
+        Increase.position = Position;
+
+        Decrease.Update();
+        Increase.Update();
+    }
+#endregion
 }
