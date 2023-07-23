@@ -115,6 +115,11 @@ public abstract partial class Element
         get => size;
         set
         {
+            if (value.height == int.MaxValue)
+            {
+                ;
+            }
+
             value.width = Math.Clamp(value.width, SizeMinimum.width, SizeMaximum.width);
             value.height = Math.Clamp(value.height, SizeMinimum.height, SizeMaximum.height);
 
@@ -254,6 +259,7 @@ public abstract partial class Element
                 MouseCursorResult = MouseCursor.Disable;
 
             OnUpdate();
+            CallDisplay();
             return;
         }
 
@@ -299,11 +305,16 @@ public abstract partial class Element
         }
 
         OnUpdate();
-        OnDisplay();
-        displayCallback?.Invoke();
+        CallDisplay();
 
-        // parents call OnDisplay on children and themselves to ensure order if needed
-        OnDisplayChildren();
+        void CallDisplay()
+        {
+            OnDisplay();
+            displayCallback?.Invoke();
+
+            // parents call OnDisplay on children and themselves to ensure order if needed
+            OnDisplayChildren();
+        }
     }
     /// <summary>
     /// Simulates a user click over this user interface element.

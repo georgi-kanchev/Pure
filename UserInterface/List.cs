@@ -261,6 +261,9 @@ public class List : Element
 
     internal override void OnUpdate()
     {
+        if (Type != Types.Dropdown)
+            LimitSizeMin((2, 2));
+
         ItemMaximumSize = itemMaxSize; // reclamp value
         var totalWidth = items.Count * (ItemMaximumSize.width + ItemGap.width);
         var totalHeight = items.Count * (ItemMaximumSize.height + ItemGap.height);

@@ -39,6 +39,20 @@ public static class Program
 
     public static void DisplayInfoText(string text)
     {
+        var infoTextSplit = infoText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        if (infoTextSplit.Length > 0 && infoTextSplit[^1].Contains(text))
+        {
+            var lastLine = infoTextSplit[^1];
+            if (lastLine.Contains(')'))
+            {
+                var split = lastLine.Split("(")[1].Replace(")", "");
+                var number = int.Parse(split) + 1;
+                text += $" ({number})";
+            }
+            else
+                text += $" ({2})";
+        }
+
         infoText += text + Environment.NewLine;
         infoTextTimer = 2f;
     }
@@ -46,7 +60,7 @@ public static class Program
 #region Backend
     private static string infoText = "";
     private static int zoom = 4;
-    private const int SCALE_ASPECT_MAX = 10, SCALE_ASPECT_MIN = 2;
+    private const int SCALE_ASPECT_MAX = 10, SCALE_ASPECT_MIN = 3;
     private static float infoTextTimer;
     private static (float x, float y) prevMousePos;
 
@@ -104,6 +118,8 @@ public static class Program
 
         TryControlCamera();
 
+        editPanel.IsHidden = Selected == null;
+
         ui.Update();
         editUI.Update();
         editPanel.Update();
@@ -114,14 +130,14 @@ public static class Program
         UpdateInfoText();
 
         var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("on-lmb-deselect");
-        if (onLmbRelease && GetHovered() == null && editPanel.IsHidden)
+        if (onLmbRelease && GetHovered() == null && editPanel.IsHovered == false)
             Selected = null;
     }
     private static void UpdateInfoText()
     {
         infoTextTimer -= Time.Delta;
 
-        const int TEXT_WIDTH = 20;
+        const int TEXT_WIDTH = 32;
         const int TEXT_HEIGHT = 2;
         var x = CameraPosition.x + CameraSize.w / 2 - TEXT_WIDTH / 2;
         var topY = CameraPosition.y;

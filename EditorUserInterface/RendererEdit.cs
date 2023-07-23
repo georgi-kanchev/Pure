@@ -18,7 +18,6 @@ public class RendererEdit : UserInterface
         {
             element = new Pages(position);
             panel.SizeMinimum = (8, 3);
-            panel.SizeMaximum = (int.MaxValue, 3);
         }
         else if (index == 4)
         {
@@ -28,7 +27,7 @@ public class RendererEdit : UserInterface
         else if (index == 5)
         {
             element = new Palette(position);
-            panel.IsResizable = false;
+            panel.SizeMinimum = (15, 5);
         }
         else if (index == 6)
         {
@@ -47,7 +46,10 @@ public class RendererEdit : UserInterface
             panel.IsResizable = false;
         }
         else if (index == 9)
+        {
             element = new List(position);
+            panel.SizeMinimum = (4, 4);
+        }
         else if (index == 10)
             element = new Layout(position);
 
@@ -60,6 +62,7 @@ public class RendererEdit : UserInterface
         ui.Add(element);
         Add(panel);
 
+        DisplayInfoText("Added " + element.GetType().Name);
         Element.Focused = null;
     }
     public void ElementRemove(Element element)
@@ -133,6 +136,20 @@ public class RendererEdit : UserInterface
         back.SetBox(panel.Position, panel.Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
         back.SetRectangle(textPos, (panel.Text.Length, 1), default);
         middle.SetTextLine(textPos, panel.Text, Color.Cyan);
+
+        var (x, y) = (panel.Position.x, panel.Position.y - 1);
+        var curX = 0;
+        if (Selected.IsDisabled)
+        {
+            back.SetTile((x, y), new(Tile.LOWERCASE_X, Color.Red));
+            curX++;
+        }
+
+        if (Selected.IsHidden == false)
+            return;
+
+        var pos = (x + curX, y);
+        back.SetTile(pos, new(Tile.ICON_EYE_OPENED, Color.Red));
     }
     protected override void OnPanelResize(Panel panel, (int width, int height) delta)
     {

@@ -97,6 +97,22 @@ public class InputBox : Element
         }
     }
 
+    public string Value
+    {
+        get => value;
+        set
+        {
+            this.value = value;
+            var split = value.Split(Environment.NewLine);
+
+            lines.Clear();
+            foreach (var line in split)
+                lines.Add(line);
+
+            UpdateText();
+        }
+    }
+
     public bool IsCursorVisible =>
         IsFocused &&
         cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
@@ -128,15 +144,19 @@ public class InputBox : Element
         get => lineIndex < 0 || lineIndex >= lines.Count ? default : lines[lineIndex];
         set
         {
-            if (lineIndex < 0 || lineIndex >= lines.Count)
+            if (lineIndex < 0)
                 return;
+
+            if (lineIndex >= lines.Count)
+                for (var i = lines.Count - 1; i <= lineIndex; i++)
+                    lines.Insert(i, "");
 
             if (value == null)
                 lines.RemoveAt(lineIndex);
             else
                 lines[lineIndex] = value;
 
-            UpdateText();
+            UpdateTextAndValue();
         }
     }
 
@@ -148,11 +168,12 @@ public class InputBox : Element
     {
         Size = (12, 1);
         lines[0] = Text;
-        UpdateText();
+        Value = Text;
     }
     public InputBox(byte[] bytes) : base(bytes)
     {
         Placeholder = GrabString(bytes);
+        Value = Text;
     }
 
     public override byte[] ToBytes()
@@ -257,6 +278,7 @@ public class InputBox : Element
         scrollHold = new();
     private int cx, cy, sx, sy, clicks, scrX, scrY;
     private (int, int) lastClickIndices = (-1, -1), prevSize;
+    private string value = "";
 
     static InputBox()
     {
@@ -304,19 +326,32 @@ public class InputBox : Element
         TryMoveCursor(isHolding);
     }
 
+    private void UpdateTextAndValue()
+    {
+        UpdateText();
+        UpdateValue();
+    }
     private void UpdateText()
     {
-        var sb = new StringBuilder();
+        var display = new StringBuilder();
         var maxW = Size.width - 1;
         var maxY = Math.Min(scrY + Size.height, lines.Count);
         for (var i = scrY; i < maxY; i++)
         {
+            var newLine = i == scrY ? "" : Environment.NewLine;
             var line = lines[i];
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
-            sb.Append((scrX >= secondIndex ? "" : line[scrX..secondIndex]) + Environment.NewLine);
+            display.Append((scrX >= secondIndex ? "" : newLine + line[scrX..secondIndex]));
         }
 
-        Text = sb.ToString();
+        Text = display.ToString();
+    }
+    private void UpdateValue()
+    {
+        var value = new StringBuilder();
+        for (var i = 0; i < lines.Count; i++)
+            value.Append((i > 0 ? Environment.NewLine : "") + lines[i]);
+        Value = value.ToString();
     }
 
     private static bool Allowed(Key key, bool isHolding) =>
@@ -556,13 +591,13 @@ public class InputBox : Element
 
             var copied = TextCopied.Replace(Environment.NewLine, string.Empty);
             CursorMove((copied.Length, 0));
-            UpdateText();
+            UpdateTextAndValue();
             return;
         }
 
         var text = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
         lines[cy] = lines[cy].Insert(cx, text);
-        UpdateText();
+        UpdateTextAndValue();
         CursorMove((1, 0));
         SelectionIndices = CursorIndices;
     }
@@ -577,7 +612,7 @@ public class InputBox : Element
             {
                 lines.Insert(cy, "");
                 CursorMove((0, 1));
-                UpdateText();
+                UpdateTextAndValue();
                 return;
             }
 
@@ -591,7 +626,7 @@ public class InputBox : Element
 
             SelectionIndices = CursorIndices;
             CursorScroll();
-            UpdateText();
+            UpdateTextAndValue();
 
             cursorBlink.Restart();
         }
@@ -611,7 +646,7 @@ public class InputBox : Element
 
                 TryMergeBottomLine(cy);
                 CursorScroll();
-                UpdateText();
+                UpdateTextAndValue();
                 return;
             }
 
@@ -629,7 +664,7 @@ public class InputBox : Element
             ScrollIndices = (scrX, scrY);
             CursorScroll();
 
-            UpdateText();
+            UpdateTextAndValue();
         }
         else if (Allowed(Key.Delete, isHolding) && justDeletedSelection == false)
         {
@@ -656,7 +691,7 @@ public class InputBox : Element
             CursorScroll();
 
             SelectionIndices = CursorIndices;
-            UpdateText();
+            UpdateTextAndValue();
         }
     }
     private void TryDeleteSelected(ref bool justDeletedSelection, bool shouldDelete)
@@ -702,7 +737,7 @@ public class InputBox : Element
         cx = ixa;
         cy = iya;
         CursorScroll(); // update scrolling
-        UpdateText();
+        UpdateTextAndValue();
         SelectionIndices = CursorIndices;
         justDeletedSelection = true;
     }
@@ -721,7 +756,7 @@ public class InputBox : Element
 
         lines[lineIndex] += lines[nextLineIndex];
         lines.RemoveAt(nextLineIndex);
-        UpdateText();
+        UpdateTextAndValue();
     }
     private void TrySetMouseCursor()
     {

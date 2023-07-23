@@ -113,14 +113,14 @@ public class Palette : Element
 
         Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
 
-        for (var i = 0; i < 13; i++)
+        for (var i = 0; i < palette.Length; i++)
             colorButtons.Add(new((x + i, y + 1)) { size = (1, 1), hasParent = true });
     }
 
     internal override void OnUpdate()
     {
         sizeMinimum = (13, 3);
-        sizeMaximum = (13, 3);
+        LimitSizeMin((13, 3));
 
         if (IsDisabled)
             return;
@@ -170,16 +170,16 @@ public class Palette : Element
         var (w, h) = Size;
 
         Opacity.position = (x, y);
-        Opacity.size = (w, 1);
+        Opacity.size = (w, h - 2);
         Pick.position = (x + w - 1, y + h - 1);
         Pick.size = (1, 1);
-        Brightness.position = (x, y + 2);
+        Brightness.position = (x, y + h - 1);
         Brightness.size = (w - 1, 1);
 
         for (var i = 0; i < colorButtons.Count; i++)
         {
             var btn = colorButtons[i];
-            btn.position = (x + i, y + 1);
+            btn.position = (x + i, y + h - 2);
             btn.size = (1, 1);
         }
     }

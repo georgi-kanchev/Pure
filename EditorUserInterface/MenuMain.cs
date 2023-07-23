@@ -12,13 +12,12 @@ public class MenuMain : Menu
         : base(
             "Element… ",
             "  Add",
-            "  Edit",
             "-------- ",
             "Scene… ",
             "  Save",
             "  Load")
     {
-        Size = (8, 7);
+        Size = (8, 6);
     }
 
     protected override void OnDisplay()
@@ -30,10 +29,6 @@ public class MenuMain : Menu
             IsHidden = false;
             menus[MenuType.Add].IsHidden = true;
         }
-
-        // disable edit if no elements are selected
-        var hoveredStr = Selected != null ? "" : " ";
-        this[2].Text = "  Edit" + hoveredStr;
 
         base.OnDisplay();
     }
@@ -48,7 +43,13 @@ public class MenuMain : Menu
             menuAdd.Position = Position;
             menuAdd.IsHidden = false;
         }
-        else if (index == 2 && Selected != null && editPanel.IsHidden)
-            editPanel.IsHidden = false;
+        else if (index == 3)
+        {
+            // save
+        }
+        else if (index == 4)
+        {
+            // load
+        }
     }
 }

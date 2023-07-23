@@ -11,16 +11,16 @@ public class RendererUI : UserInterface
     protected override void OnDisplayButton(Button button)
     {
         var e = button;
+        var color = e.IsSelected ? Color.Green : Color.White;
+        var (x, y) = e.Position;
+        var middle = tilemaps[(int)Layer.UiMiddle];
         var offX = (e.Size.width - e.Text.Length) / 2;
         var offY = e.Size.height / 2;
         offX = Math.Max(offX, 0);
-        var (x, y) = e.Position;
 
         SetBackground(Layer.UiBack, e);
         SetBackground(Layer.UiMiddle, e);
-
-        tilemaps[(int)Layer.UiMiddle]
-            .SetTextLine((x + offX, y + offY), e.Text, Color.White, e.Size.width);
+        middle.SetTextLine((x + offX, y + offY), e.Text, color, e.Size.width);
     }
     protected override void OnDisplayInputBox(InputBox inputBox)
     {
@@ -52,7 +52,7 @@ public class RendererUI : UserInterface
     }
     protected override void OnDisplayListItem(List list, Button item)
     {
-        var color = item.IsSelected ? Color.Green : Color.Gray;
+        var color = item.IsSelected ? Color.Green : Color.White;
         var middle = tilemaps[(int)Layer.UiMiddle];
 
         middle.SetTextLine(item.Position, item.Text, color, item.Size.width);
@@ -93,12 +93,11 @@ public class RendererUI : UserInterface
     }
     protected override void OnDisplayPagesPage(Pages pages, Button page)
     {
-        tilemaps[(int)Layer.UiMiddle].SetTextLine(page.Position, page.Text, Color.Gray);
+        tilemaps[(int)Layer.UiMiddle].SetTextLine(page.Position, page.Text, Color.White);
     }
     protected override void OnDisplayPalette(Palette palette)
     {
         var e = palette;
-        var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToBright());
         var alpha = e.Opacity;
         var middle = tilemaps[(int)Layer.UiMiddle];
         var first = e.Brightness.First;
@@ -106,9 +105,7 @@ public class RendererUI : UserInterface
         var next = e.Brightness.Next;
         var last = e.Brightness.Last;
 
-        middle.SetBar(alpha.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, Color.Gray,
-            alpha.Size.width);
-        middle.SetTile(alpha.Handle.Position, tile);
+        OnDisplaySlider(alpha);
 
         middle.SetTile(first.Position, new(Tile.MATH_MUCH_LESS, Color.Gray));
         middle.SetTile(previous.Position, new(Tile.MATH_LESS, Color.Gray));
@@ -141,7 +138,7 @@ public class RendererUI : UserInterface
     {
         var scrollUpAng = (sbyte)(scroll.IsVertical ? 3 : 0);
         var scrollDownAng = (sbyte)(scroll.IsVertical ? 1 : 2);
-        var scrollColor = Color.Gray.ToBright();
+        var scrollColor = Color.Gray;
         var middle = tilemaps[(int)Layer.UiMiddle];
 
         SetBackground(Layer.UiBack, scroll);
@@ -162,7 +159,11 @@ public class RendererUI : UserInterface
         };
         var pos = (segment.x, segment.y);
         var size = (segment.width, segment.height);
-        tilemaps[(int)Layer.UiMiddle].SetRectangle(pos, size, new(Tile.SHADE_OPAQUE, colors[index]));
+        var middle = tilemaps[(int)Layer.UiMiddle];
+
+        var tile = new Tile(Tile.SHADE_OPAQUE, colors[index]);
+
+        middle.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, colors[index]);
     }
 
 #region Backend
@@ -171,9 +172,10 @@ public class RendererUI : UserInterface
         var color = Color.Gray.ToDark();
         var tile = new Tile(Tile.SHADE_OPAQUE, color);
         var middle = tilemaps[(int)layer];
+        var pos = element.Position;
+        var size = element.Size;
 
-        middle.SetBox(element.Position, element.Size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE,
-            color);
+        middle.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
     }
 #endregion
 }

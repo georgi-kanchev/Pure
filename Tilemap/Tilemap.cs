@@ -308,7 +308,7 @@ public class Tilemap
 
         var x = position.x;
         var y = position.y;
-        var lineList = text.TrimEnd().Split("\n").ToList();
+        var lineList = text.TrimEnd().Split(Environment.NewLine).ToList();
 
         if (lineList.Count == 0)
             return;
