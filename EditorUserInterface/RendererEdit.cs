@@ -43,7 +43,7 @@ public class RendererEdit : UserInterface
         else if (index == 8)
         {
             element = new Stepper(position);
-            panel.IsResizable = false;
+            panel.SizeMinimum = (3, 4);
         }
         else if (index == 9)
         {

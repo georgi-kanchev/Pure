@@ -90,11 +90,18 @@ public class Scroll : Element
     {
         LimitSizeMin(IsVertical ? (1, 2) : (2, 1));
 
-        if (IsDisabled)
-            return;
-
         Slider.isVertical = IsVertical;
-
+    }
+    internal override void OnInput()
+    {
+        // buttons gain focus priority over the slider so
+        // retrigger the scrolling behavior when scrolling over them
+        TryScrollWhileHoverButton(Increase);
+        TryScrollWhileHoverButton(Decrease);
+        TryScrollWhileHoverButton(Slider.Handle);
+    }
+    internal override void OnChildrenUpdate()
+    {
         var (x, y) = Position;
         var (w, h) = Size;
 
@@ -113,25 +120,20 @@ public class Scroll : Element
             Slider.size = (w - 2, h);
         }
 
+        Slider.InheritParent(this);
+        Increase.InheritParent(this);
+        Decrease.InheritParent(this);
+
         Slider.Update();
         Increase.Update();
         Decrease.Update();
-
-        // buttons gain focus priority over the slider so
-        // retrigger the scrolling behavior when scrolling over them
-        TryScrollWhileHoverButton(Increase);
-        TryScrollWhileHoverButton(Decrease);
-
-        // resize the slider handle to appear as real scroll handle non-(1, 1) size
     }
 
     private void TryScrollWhileHoverButton(Element btn)
     {
-        var dir = IsVertical ? 1 : -1;
-
         if (btn.IsHovered && Input.Current.ScrollDelta != 0 && btn.IsFocused &&
             FocusedPrevious == btn)
-            Slider.Progress += Input.Current.ScrollDelta * Step;
+            Slider.Progress -= Input.Current.ScrollDelta * Step;
     }
 #endregion
 }

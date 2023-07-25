@@ -62,33 +62,38 @@ public class Stepper : Element
     {
         isParent = true;
 
-        Decrease = new((0, 0)) { size = (1, 1), hasParent = true };
         Increase = new((0, 0)) { size = (1, 1), hasParent = true };
+        Decrease = new((0, 0)) { size = (1, 1), hasParent = true };
 
-        Decrease.SubscribeToUserAction(UserAction.Trigger, () => Value -= Step);
         Increase.SubscribeToUserAction(UserAction.Trigger, () => Value += Step);
+        Decrease.SubscribeToUserAction(UserAction.Trigger, () => Value -= Step);
 
-        Decrease.SubscribeToUserAction(UserAction.PressAndHold, () =>
-        {
-            if (Decrease.IsHovered)
-                Value -= Step;
-        });
         Increase.SubscribeToUserAction(UserAction.PressAndHold, () =>
         {
             if (Increase.IsHovered)
                 Value += Step;
         });
+        Decrease.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Decrease.IsHovered)
+                Value -= Step;
+        });
     }
 
     internal override void OnUpdate()
     {
-        LimitSizeMin((1, 3));
-
-        Decrease.position = (Position.x, Position.y + Size.height - 1);
+        LimitSizeMin((1, 2));
+    }
+    internal override void OnChildrenUpdate()
+    {
         Increase.position = Position;
+        Decrease.position = (Position.x, Position.y + Size.height - 1);
 
-        Decrease.Update();
+        Increase.InheritParent(this);
+        Decrease.InheritParent(this);
+
         Increase.Update();
+        Decrease.Update();
     }
 #endregion
 }

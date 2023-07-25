@@ -14,23 +14,26 @@ public class Pages : Element
         get => count;
         set
         {
+            if (count == value)
+                return; // no actual change, skip calculations
+
             count = Math.Clamp(value, 1, 99);
+            Current = current; // reclamp and update pages
             RecreatePages();
-            CurrentPage = currentPage; // reclamp and update pages
+            UpdatePages();
         }
     }
-    public int CurrentPage
+    public int Current
     {
-        get => currentPage;
+        get => current;
         set
         {
-            var prev = currentPage;
-            currentPage = Math.Clamp(value, 1, Count);
-            var pageCount = GetVisiblePageCount();
-            scrollIndex = Math.Clamp(currentPage - pageCount / 2, 1, Math.Max(Count - pageCount + 1, 1));
-            RenumberAndSelectPages();
+            var prev = current;
+            current = Math.Clamp(value, 1, Count);
 
-            if (prev != currentPage)
+            UpdatePages();
+
+            if (prev != current)
                 TriggerUserAction(UserAction.Select);
         }
     }
@@ -45,7 +48,7 @@ public class Pages : Element
     public Pages(byte[] bytes) : base(bytes)
     {
         Count = GrabInt(bytes);
-        CurrentPage = GrabInt(bytes);
+        Current = GrabInt(bytes);
 
         Init();
     }
@@ -54,7 +57,7 @@ public class Pages : Element
     {
         var result = base.ToBytes().ToList();
         PutInt(result, Count);
-        PutInt(result, CurrentPage);
+        PutInt(result, Current);
         return result.ToArray();
     }
 
@@ -63,7 +66,7 @@ public class Pages : Element
 #region Backend
     private (int, int) prevSize;
     private const int PAGE_GAP = 1, PAGE_WIDTH = 2;
-    private int count, currentPage = 1, scrollIndex = 1;
+    private int count, current = 1, scrollIndex = 1;
     private readonly List<Button> visiblePages = new();
 
     internal Action<Button>? pageDisplayCallback; // used in the UI class to receive callbacks
@@ -81,26 +84,41 @@ public class Pages : Element
         Next = new((0, 0)) { hasParent = true };
         Last = new((0, 0)) { hasParent = true };
 
-        First.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = 0);
-        Previous.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage--);
-        Next.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage++);
-        Last.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = Count);
+        First.SubscribeToUserAction(UserAction.Trigger, () => Current = 0);
+        Previous.SubscribeToUserAction(UserAction.Trigger, () => Current--);
+        Next.SubscribeToUserAction(UserAction.Trigger, () => Current++);
+        Last.SubscribeToUserAction(UserAction.Trigger, () => Current = Count);
 
-        Previous.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage--);
-        Next.SubscribeToUserAction(UserAction.PressAndHold, () => CurrentPage++);
+        Previous.SubscribeToUserAction(UserAction.PressAndHold, () => Current--);
+        Next.SubscribeToUserAction(UserAction.PressAndHold, () => Current++);
     }
 
     internal override void OnUpdate()
     {
-        LimitSizeMin((6, 1));
-
-        if (IsDisabled)
-            return;
-
         // for in between pages, overwrite mouse cursor (don't give it to the element bellow)
-        if (IsHovered)
+        if (IsDisabled == false && IsHovered)
             MouseCursorResult = MouseCursor.Arrow;
 
+        LimitSizeMin((6, 1));
+
+        if (Size != prevSize)
+        {
+            RecreatePages();
+            UpdatePages();
+        }
+
+        prevSize = Size;
+    }
+    internal override void OnChildrenDisplay()
+    {
+        foreach (var page in visiblePages)
+        {
+            OnPageDisplay(page);
+            pageDisplayCallback?.Invoke(page);
+        }
+    }
+    internal override void OnChildrenUpdate()
+    {
         var (x, y) = Position;
         var visibleWidth = GetVisibleWidth();
 
@@ -114,33 +132,22 @@ public class Pages : Element
         Next.size = (1, Size.height);
         Last.size = (1, Size.height);
 
+        First.InheritParent(this);
+        Previous.InheritParent(this);
+        Next.InheritParent(this);
+        Last.InheritParent(this);
+
         First.Update();
         Previous.Update();
         Next.Update();
         Last.Update();
 
-        if (Size != prevSize)
-        {
-            RecreatePages();
-            RenumberAndSelectPages();
-        }
-
         for (var i = 0; i < visiblePages.Count; i++)
         {
             var page = visiblePages[i];
-
             page.position = (x + 2 + (PAGE_WIDTH + PAGE_GAP) * i, y);
+            page.InheritParent(this);
             page.Update();
-        }
-
-        prevSize = Size;
-    }
-    internal override void OnDisplayChildren()
-    {
-        foreach (var page in visiblePages)
-        {
-            OnPageDisplay(page);
-            pageDisplayCallback?.Invoke(page);
         }
     }
 
@@ -171,16 +178,19 @@ public class Pages : Element
         {
             var page = new Button((0, 0)) { size = (2, Size.height), hasParent = true };
             visiblePages.Add(page);
-            page.SubscribeToUserAction(UserAction.Trigger, () => CurrentPage = int.Parse(page.Text));
+            page.SubscribeToUserAction(UserAction.Trigger, () => Current = int.Parse(page.Text));
         }
     }
-    private void RenumberAndSelectPages()
+    private void UpdatePages()
     {
+        var pageCount = GetVisiblePageCount();
+        scrollIndex = Math.Clamp(current - pageCount / 2, 1, Math.Max(Count - pageCount + 1, 1));
+
         for (var i = 0; i < visiblePages.Count; i++)
         {
             var pageNumber = i + scrollIndex;
             visiblePages[i].Text = $"{pageNumber:D2}";
-            visiblePages[i].isSelected = pageNumber == currentPage;
+            visiblePages[i].isSelected = pageNumber == current;
         }
     }
 #endregion

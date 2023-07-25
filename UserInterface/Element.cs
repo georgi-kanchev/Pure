@@ -259,6 +259,7 @@ public abstract partial class Element
                 MouseCursorResult = MouseCursor.Disable;
 
             OnUpdate();
+            OnChildrenUpdate();
             CallDisplay();
             return;
         }
@@ -305,6 +306,8 @@ public abstract partial class Element
         }
 
         OnUpdate();
+        OnChildrenUpdate();
+        OnInput();
         CallDisplay();
 
         void CallDisplay()
@@ -313,7 +316,7 @@ public abstract partial class Element
             displayCallback?.Invoke();
 
             // parents call OnDisplay on children and themselves to ensure order if needed
-            OnDisplayChildren();
+            OnChildrenDisplay();
         }
     }
     /// <summary>
@@ -455,6 +458,12 @@ public abstract partial class Element
     protected internal virtual void OnDisplay() { }
     protected virtual void OnDrag((int x, int y) delta) { }
 
+    protected internal void InheritParent(Element parent)
+    {
+        IsHidden = parent.IsHidden;
+        IsDisabled = parent.IsDisabled;
+    }
+
     protected static void PutBool(List<byte> intoBytes, bool value) =>
         intoBytes.AddRange(BitConverter.GetBytes(value));
     protected static void PutByte(List<byte> intoBytes, byte value) => intoBytes.Add(value);
@@ -535,8 +544,10 @@ public abstract partial class Element
             size = (Size.width, maximumSize.height);
     }
 
-    internal virtual void OnDisplayChildren() { }
     internal virtual void OnUpdate() { }
+    internal virtual void OnChildrenUpdate() { }
+    internal virtual void OnChildrenDisplay() { }
+    internal virtual void OnInput() { }
 
     private void UpdateHovered()
     {

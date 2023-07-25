@@ -93,7 +93,8 @@ public class RendererUI : UserInterface
     }
     protected override void OnDisplayPagesPage(Pages pages, Button page)
     {
-        tilemaps[(int)Layer.UiMiddle].SetTextLine(page.Position, page.Text, Color.White);
+        var color = page.IsSelected ? Color.Green : Color.White;
+        tilemaps[(int)Layer.UiMiddle].SetTextLine(page.Position, page.Text, color);
     }
     protected override void OnDisplayPalette(Palette palette)
     {
@@ -131,8 +132,9 @@ public class RendererUI : UserInterface
         SetBackground(Layer.UiMiddle, stepper);
 
         middle.SetTile(e.Decrease.Position, new(Tile.ARROW, Color.Gray, 1));
-        middle.SetTextLine((e.Position.x, e.Position.y + 1), $"{e.Value}");
         middle.SetTile(e.Increase.Position, new(Tile.ARROW, Color.Gray, 3));
+        middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text);
+        middle.SetTextLine((e.Position.x + 2, e.Position.y + 1), $"{e.Value}");
     }
     protected override void OnDisplayScroll(Scroll scroll)
     {

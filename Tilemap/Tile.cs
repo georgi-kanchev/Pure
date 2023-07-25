@@ -486,6 +486,7 @@ public struct Tile
         ARROW_DIAGONAL_THIN = 309,
         ARROW_DIAGONAL_BIG = 310,
         ARROW_DIAGONAL_HOLLOW = 311,
+        ARROW_NO_TAIL = 352,
 #endregion
 
 #region Icon

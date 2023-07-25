@@ -77,10 +77,12 @@ public static class UserInterface
             var e = slider;
             var (w, h) = e.Size;
             var text = $"{e.Progress:F2}";
+            var isHandle = e.Handle.IsPressedAndHeld;
+
             middle.SetBox(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray), Tile.BOX_CORNER_ROUND,
                 Tile.SHADE_OPAQUE, Color.Gray);
             front.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
-                GetColor(e, Color.Magenta), e.Size.height, true);
+                GetColor(isHandle ? e.Handle : e, Color.Magenta), e.Size.height, true);
             front.SetTextLine((e.Position.x + w / 2 - text.Length / 2, e.Position.y + h / 2), text);
         }
         protected override void OnDisplayList(List list)
@@ -195,12 +197,13 @@ public static class UserInterface
             var scrollUpAng = (sbyte)(e.IsVertical ? 3 : 0);
             var scrollDownAng = (sbyte)(e.IsVertical ? 1 : 2);
             var scrollColor = Color.Gray.ToBright();
+            var isHandle = e.Slider.Handle.IsPressedAndHeld;
 
             SetBackground(back, e);
             middle.SetTile(e.Increase.Position,
                 new(Tile.ARROW, GetColor(e.Increase, scrollColor), scrollUpAng));
             middle.SetTile(e.Slider.Handle.Position,
-                new(Tile.SHAPE_CIRCLE, GetColor(e.Slider, scrollColor)));
+                new(Tile.SHAPE_CIRCLE, GetColor(isHandle ? e.Slider.Handle : e.Slider, scrollColor)));
             middle.SetTile(e.Decrease.Position,
                 new(Tile.ARROW, GetColor(e.Decrease, scrollColor), scrollDownAng));
         }

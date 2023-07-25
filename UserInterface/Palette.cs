@@ -42,7 +42,7 @@ public class Palette : Element
         PutUInt(result, SelectedColor);
         PutFloat(result, Opacity.Progress);
         PutInt(result, Brightness.Count);
-        PutInt(result, Brightness.CurrentPage);
+        PutInt(result, Brightness.Current);
         return result.ToArray();
     }
 
@@ -106,7 +106,7 @@ public class Palette : Element
         Brightness = new ChildPagination((x, y + 2), brightnessPageCount, this)
         {
             size = (w - 1, 1),
-            CurrentPage = brightnessCurrentPage,
+            Current = brightnessCurrentPage,
             hasParent = true
         };
         Pick = new((x + w - 1, y + h - 1)) { hasParent = true };
@@ -121,14 +121,17 @@ public class Palette : Element
     {
         sizeMinimum = (13, 3);
         LimitSizeMin((13, 3));
-
-        if (IsDisabled)
-            return;
-
-        Opacity.Update();
-        Brightness.Update();
-        Pick.Update();
-
+    }
+    internal override void OnChildrenDisplay()
+    {
+        for (var i = 0; i < colorButtons.Count; i++)
+        {
+            OnSampleDisplay(colorButtons[i], GetColor(i));
+            sampleDisplayCallback?.Invoke(colorButtons[i], GetColor(i));
+        }
+    }
+    internal override void OnInput()
+    {
         if (isPicking)
             MouseCursorResult = MouseCursor.Crosshair;
 
@@ -146,25 +149,10 @@ public class Palette : Element
         SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
 
         foreach (var btn in colorButtons)
-        {
             if (Input.Current.IsJustReleased && btn is { IsPressedAndHeld: true, IsHovered: true })
                 SelectedColor = GetColor(colorButtons.IndexOf(btn));
-
-            btn.Update();
-        }
-
-        UpdateParts();
     }
-    internal override void OnDisplayChildren()
-    {
-        for (var i = 0; i < colorButtons.Count; i++)
-        {
-            OnSampleDisplay(colorButtons[i], GetColor(i));
-            sampleDisplayCallback?.Invoke(colorButtons[i], GetColor(i));
-        }
-    }
-
-    private void UpdateParts()
+    internal override void OnChildrenUpdate()
     {
         var (x, y) = Position;
         var (w, h) = Size;
@@ -176,11 +164,21 @@ public class Palette : Element
         Brightness.position = (x, y + h - 1);
         Brightness.size = (w - 1, 1);
 
+        Opacity.InheritParent(this);
+        Pick.InheritParent(this);
+        Brightness.InheritParent(this);
+
+        Opacity.Update();
+        Pick.Update();
+        Brightness.Update();
+
         for (var i = 0; i < colorButtons.Count; i++)
         {
             var btn = colorButtons[i];
             btn.position = (x + i, y + h - 2);
             btn.size = (1, 1);
+            btn.InheritParent(this);
+            btn.Update();
         }
     }
 
@@ -224,7 +222,7 @@ public class Palette : Element
     private uint GetColor(int index)
     {
         var color = ToOpacity(palette[index], Opacity.Progress);
-        var value = Map(Brightness.CurrentPage, 1, Brightness.Count, 0, 1);
+        var value = Map(Brightness.Current, 1, Brightness.Count, 0, 1);
         color = ToBrightness(color, value);
         return color;
     }

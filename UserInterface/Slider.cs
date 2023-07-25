@@ -24,11 +24,7 @@ public class Slider : Element
     public float Progress
     {
         get => progress;
-        set
-        {
-            progress = Math.Clamp(value, 0, 1);
-            UpdateHandle();
-        }
+        set => progress = Math.Clamp(value, 0, 1);
     }
 
     /// <summary>
@@ -56,8 +52,6 @@ public class Slider : Element
         Init();
         Progress = GrabFloat(bytes);
         index = GrabInt(bytes);
-
-        UpdateHandle();
     }
 
     /// <summary>
@@ -70,8 +64,6 @@ public class Slider : Element
         index -= delta;
         index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
         Progress = Map(index, 0, sz - 1, 0, 1);
-
-        UpdateHandle();
     }
     /// <summary>
     /// Tries to move the handle of the slider to the specified position. Picks the closest
@@ -86,8 +78,6 @@ public class Slider : Element
         index = IsVertical ? py - y : px - x;
         index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
         Progress = Map(index, 0, sz - 1, 0, 1);
-
-        UpdateHandle();
     }
 
     public override byte[] ToBytes()
@@ -128,23 +118,25 @@ public class Slider : Element
         Handle = new(position) { Size = (1, 1), hasParent = true };
     }
 
-    internal override void OnUpdate()
+    internal override void OnInput()
     {
-        LimitSizeMin(IsVertical ? (1, 1) : (1, 1));
-
-        UpdateHandle();
-
-        if (IsDisabled)
-            return;
-
         if (IsHovered)
             MouseCursorResult = MouseCursor.Hand;
+
+        var p = Input.Current.Position;
+        var pp = Input.Current.PositionPrevious;
+        var px = (int)Math.Floor(p.x);
+        var py = (int)Math.Floor(p.y);
+        var ppx = (int)Math.Floor(pp.x);
+        var ppy = (int)Math.Floor(pp.y);
+
+        if ((px != ppx || py != ppy) && Handle.IsPressedAndHeld)
+            MoveTo((px, py));
 
         if (IsHovered && Input.Current.ScrollDelta != 0 && IsFocused && FocusedPrevious == this)
             Move(Input.Current.ScrollDelta);
     }
-
-    private void UpdateHandle()
+    internal override void OnChildrenUpdate()
     {
         var (x, y) = Position;
         var (w, h) = Size;
@@ -162,7 +154,11 @@ public class Slider : Element
             Handle.position = (x + index, y);
             Handle.size = (1, h);
         }
+
+        Handle.InheritParent(this);
+        Handle.Update();
     }
+
     private static float Map(float number, float a1, float a2, float b1, float b2)
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
