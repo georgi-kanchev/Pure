@@ -108,14 +108,18 @@ public class Scroll : Element
         if (IsVertical)
         {
             Increase.position = (x, y);
+            Increase.size = (w, 1);
             Decrease.position = (x, y + h - 1);
+            Decrease.size = (w, 1);
             Slider.position = (x, y + 1);
             Slider.size = (w, h - 2);
         }
         else
         {
             Increase.position = (x + w - 1, y);
+            Increase.size = (1, h);
             Decrease.position = (x, y);
+            Decrease.size = (1, h);
             Slider.position = (x + 1, y);
             Slider.size = (w - 2, h);
         }

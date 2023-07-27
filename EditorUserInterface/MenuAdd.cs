@@ -1,5 +1,3 @@
-using Pure.Utilities;
-using Pure.Window;
 using static Pure.EditorUserInterface.Program;
 
 namespace Pure.EditorUserInterface;

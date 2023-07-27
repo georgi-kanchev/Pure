@@ -39,10 +39,12 @@ public class RendererUI : UserInterface
     {
         var e = slider;
         var middle = tilemaps[(int)Layer.UiMiddle];
+        var isHorizontal = e.IsVertical == false;
 
         SetBackground(Layer.UiBack, e);
+
         middle.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
-            Color.White, e.Size.height, true);
+            Color.White, isHorizontal ? e.Size.height : e.Size.width, isHorizontal);
     }
     protected override void OnDisplayList(List list)
     {
@@ -127,6 +129,7 @@ public class RendererUI : UserInterface
     {
         var e = stepper;
         var middle = tilemaps[(int)Layer.UiMiddle];
+        var text = $"{e.Value}";
 
         SetBackground(Layer.UiBack, stepper);
         SetBackground(Layer.UiMiddle, stepper);
@@ -134,7 +137,7 @@ public class RendererUI : UserInterface
         middle.SetTile(e.Decrease.Position, new(Tile.ARROW, Color.Gray, 1));
         middle.SetTile(e.Increase.Position, new(Tile.ARROW, Color.Gray, 3));
         middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text);
-        middle.SetTextLine((e.Position.x + 2, e.Position.y + 1), $"{e.Value}");
+        middle.SetTextLine((e.Position.x + 2, e.Position.y + 1), text);
     }
     protected override void OnDisplayScroll(Scroll scroll)
     {
@@ -142,13 +145,19 @@ public class RendererUI : UserInterface
         var scrollDownAng = (sbyte)(scroll.IsVertical ? 1 : 2);
         var scrollColor = Color.Gray;
         var middle = tilemaps[(int)Layer.UiMiddle];
+        var inc = scroll.Increase;
+        var dec = scroll.Decrease;
 
         SetBackground(Layer.UiBack, scroll);
         SetBackground(Layer.UiMiddle, scroll);
 
-        middle.SetTile(scroll.Increase.Position, new(Tile.ARROW, scrollColor, scrollUpAng));
-        middle.SetTile(scroll.Slider.Handle.Position, new(Tile.SHAPE_CIRCLE, scrollColor));
-        middle.SetTile(scroll.Decrease.Position, new(Tile.ARROW, scrollColor, scrollDownAng));
+        var e = scroll.Slider;
+        var isHorizontal = e.IsVertical == false;
+        middle.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
+            Color.White, isHorizontal ? e.Size.height : e.Size.width, isHorizontal);
+
+        middle.SetRectangle(inc.Position, inc.Size, new(Tile.ARROW, scrollColor, scrollUpAng));
+        middle.SetRectangle(dec.Position, dec.Size, new(Tile.ARROW, scrollColor, scrollDownAng));
     }
     protected override void OnDisplayLayoutSegment(Layout layout,
         (int x, int y, int width, int height) segment, int index)

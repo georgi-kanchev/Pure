@@ -28,7 +28,7 @@ public class Stepper : Element
 
     public Stepper((int x, int y) position, float value = 0) : base(position)
     {
-        Size = (1, 3);
+        Size = (10, 2);
         Value = value;
 
         Init();
@@ -54,7 +54,7 @@ public class Stepper : Element
 
 #region Backend
     private float value;
-    private (float min, float max) range = (float.MinValue, float.MaxValue);
+    private (float min, float max) range = (float.NegativeInfinity, float.PositiveInfinity);
 
     [MemberNotNull(nameof(Increase))]
     [MemberNotNull(nameof(Decrease))]

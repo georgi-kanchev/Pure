@@ -1,7 +1,6 @@
 using Pure.Tilemap;
 using Pure.UserInterface;
 using Pure.Utilities;
-using Pure.Window;
 using static Pure.EditorUserInterface.Program;
 
 namespace Pure.EditorUserInterface;
@@ -17,19 +16,35 @@ public class EditPanel : Panel
 
         var disabled = new EditButton((0, 0)) { Text = "Disabled" };
         var hidden = new EditButton((0, 0)) { Text = "Hidden" };
-        var selected = new EditButton((0, 0)) { Text = "Selected" };
         var text = new InputBox((0, 0)) { Placeholder = "Text…", [0] = "" };
+
+        var selected = new EditButton((0, 0)) { Text = "Selected" };
+
         var placeholder = new InputBox((0, 0)) { Placeholder = "Placeholder…", [0] = "Type…" };
-        var pagesCount = new Stepper((0, 0)) { Text = "Count", Range = (1, 99) };
-        var currentPage = new Stepper((0, 0)) { Text = "Current" };
+
+        var pagesCount = new EditStepper((0, 0)) { Text = "Count", Range = (1, 99) };
+        var currentPage = new EditStepper((0, 0)) { Text = "Current" };
+
         var movable = new EditButton((0, 0)) { Text = "Movable" };
         var resizable = new EditButton((0, 0)) { Text = "Resizable" };
         var restricted = new EditButton((0, 0)) { Text = "Restricted" };
-        var brightnessMax = new Stepper((0, 0)) { Text = "Levels", Range = (1, 99) };
-        var brightness = new Stepper((0, 0)) { Text = "Brightness" };
-        var opacity = new Stepper((0, 0)) { Text = "Opacity", Range = (0, 1), Step = 0.05f };
 
-        checkboxes.AddRange(new[] { disabled, hidden, selected, movable, resizable, restricted });
+        var brightnessMax = new EditStepper((0, 0)) { Text = "Levels", Range = (1, 99) };
+        var brightness = new EditStepper((0, 0)) { Text = "Brightness" };
+        var opacity = new EditStepper((0, 0)) { Text = "Opacity", Range = (0, 1), Step = 0.05f };
+
+        var vertical = new EditButton((0, 0)) { Text = "Vertical" };
+        var progress = new EditStepper((0, 0)) { Text = "Progress", Range = (0, 1), Step = 0.05f };
+
+        var step = new EditStepper((0, 0)) { Text = "Step", Range = (0, 1), Step = 0.05f };
+
+        var stepperStep = new EditStepper((0, 0)) { Text = "Step", Step = 0.05f };
+        var min = new EditStepper((0, 0)) { Text = "Minimum", Step = 0.05f };
+        var max = new EditStepper((0, 0)) { Text = "Maximum", Step = 0.05f };
+        var value = new EditStepper((0, 0)) { Text = "Value", Step = 0.05f };
+
+        checkboxes.AddRange(new[]
+            { disabled, hidden, selected, movable, resizable, restricted, vertical });
 
         elements = new()
         {
@@ -39,6 +54,9 @@ public class EditPanel : Panel
             { typeof(Pages), new() { pagesCount, currentPage } },
             { typeof(Panel), new() { movable, resizable, restricted } },
             { typeof(Palette), new() { brightnessMax, brightness, opacity } },
+            { typeof(Slider), new() { vertical, progress } },
+            { typeof(Scroll), new() { vertical, progress, step } },
+            { typeof(Stepper), new() { min, max, value, stepperStep } },
         };
     }
 
@@ -57,7 +75,6 @@ public class EditPanel : Panel
                 UpdatePanelValues();
             }
 
-            TryNotifyTextChange();
             RepositionPanel();
             UpdatePanel();
             UpdatePanelElements();
@@ -69,6 +86,8 @@ public class EditPanel : Panel
 #region Backend
     private class EditButton : Button
     {
+        public EditStepper? parent;
+
         public EditButton((int x, int y) position) : base(position) { }
 
         protected override void OnUserAction(UserAction userAction)
@@ -78,70 +97,93 @@ public class EditPanel : Panel
             if (userAction != UserAction.Trigger || Selected == null)
                 return;
 
-            var name = Selected.GetType().Name;
-            var action = "";
             var panel = editUI[ui.IndexOf(Selected)];
 
             if (Text == "Remove")
             {
                 editUI.ElementRemove(Selected);
                 editPanel.Position = (int.MaxValue, int.MaxValue);
-                action = "removed";
             }
             else if (Text == "To Top")
             {
                 editUI.ElementToTop(Selected);
-                action = "surfaced";
             }
             else if (Text == "Disabled")
             {
                 Selected.IsDisabled = IsSelected;
-                action = IsSelected ? "disabled" : "enabled";
             }
             else if (Text == "Hidden")
             {
                 Selected.IsHidden = IsSelected;
-                action = IsSelected ? "hidden" : "shown";
             }
             else if (Text == "Selected")
             {
                 ((Button)Selected).IsSelected = IsSelected;
-                action = IsSelected ? "selected" : "deselected";
             }
             else if (Text == "Center X")
             {
                 panel.Position = (
                     CameraPosition.x + CameraSize.w / 2 - panel.Size.width / 2,
                     panel.Position.y);
-                action = "centered horizontally";
             }
             else if (Text == "Center Y")
             {
                 panel.Position = (
                     panel.Position.x,
                     CameraPosition.y + CameraSize.h / 2 - panel.Size.height / 2);
-                action = "centered vertically";
             }
             else if (Text == "Movable")
             {
                 var p = (Panel)Selected;
                 p.IsMovable = IsSelected;
-                action = IsSelected ? "movable" : "immovable";
             }
             else if (Text == "Resizable")
             {
                 var p = (Panel)Selected;
                 p.IsResizable = IsSelected;
-                action = IsSelected ? "resizable" : "not resizable";
             }
             else if (Text == "Restricted")
             {
                 var p = (Panel)Selected;
                 p.IsRestricted = IsSelected;
-                action = IsSelected ? "camera restricted" : "camera free";
             }
+            else if (Text == "Vertical" && Selected is Slider s)
+            {
+                s.IsVertical = IsSelected;
+                panel.SizeMinimum = IsSelected ? (3, 4) : (4, 3);
+            }
+            else if (Text == "Vertical" && Selected is Scroll sc)
+            {
+                sc.IsVertical = IsSelected;
+                panel.SizeMinimum = IsSelected ? (3, 4) : (4, 3);
+            }
+            else if (Text == "Minimum" && parent != null)
+            {
+                parent.Value = parent.Range.minimum;
+            }
+            else if (Text == "Middle" && parent != null)
+            {
+                var max = parent.Range.maximum;
+                parent.Value = Snap(float.IsPositiveInfinity(max) ? 0 : max / 2, parent.Step);
+            }
+            else if (Text == "Maximum" && parent != null)
+            {
+                parent.Value = parent.Range.maximum;
+            }
+        }
+    }
 
-            DisplayInfoText(name + " " + action);
+    private class EditStepper : Stepper
+    {
+        public EditButton Minimum { get; }
+        public EditButton Middle { get; }
+        public EditButton Maximum { get; }
+
+        public EditStepper((int x, int y) position, float value = 0) : base(position, value)
+        {
+            Minimum = new((0, 0)) { Text = "Minimum", Size = (1, 1) };
+            Middle = new((0, 0)) { Text = "Middle", Size = (1, 1) };
+            Maximum = new((0, 0)) { Text = "Maximum", Size = (1, 1) };
         }
     }
 
@@ -152,31 +194,7 @@ public class EditPanel : Panel
         centerY = new((0, 0)) { Text = "Center Y" },
         remove = new((0, 0)) { Text = "Remove" };
     private readonly Dictionary<Type, List<Element>> elements;
-    private string prevText = "", prevPlaceholder = "";
     private Element? prevSelected;
-
-    private void TryNotifyTextChange()
-    {
-        if (Selected == null)
-            return;
-
-        var onTextChange = (prevText != Selected.Text).Once("on-text-change");
-        if (onTextChange && Selected == prevSelected)
-            DisplayInfoText($"{Selected.GetType().Name} text changed");
-
-        if (Selected is InputBox inputBox)
-        {
-            var p = prevPlaceholder != inputBox.Placeholder;
-            var onPlaceholderChange = p.Once("on-placeholder-change");
-            if (onPlaceholderChange && inputBox == prevSelected)
-                DisplayInfoText($"{Selected.GetType().Name} placeholder changed");
-        }
-
-        prevText = Selected.Text;
-
-        if (Selected is InputBox i)
-            prevPlaceholder = i.Placeholder;
-    }
 
     private void RepositionPanel()
     {
@@ -244,7 +262,7 @@ public class EditPanel : Panel
                     y += 2;
                     UpdateInputBox(i, (x, y));
                 }
-                else if (element is Stepper s)
+                else if (element is EditStepper s)
                 {
                     UpdateStepper(s, (x, y));
                     y++;
@@ -261,6 +279,7 @@ public class EditPanel : Panel
             return;
 
         var text = (InputBox)elements[typeof(Element)][2];
+
         if (prevSelected is InputBox i)
         {
             var placeholder = (InputBox)elements[typeof(InputBox)][0];
@@ -283,6 +302,28 @@ public class EditPanel : Panel
             pl.Brightness.Current = (int)brightness.Value;
             pl.Opacity.Progress = opacity.Value;
         }
+        else if (prevSelected is Slider s)
+        {
+            var progress = (Stepper)elements[typeof(Slider)][1];
+            s.Progress = progress.Value;
+        }
+        else if (prevSelected is Scroll sc)
+        {
+            var progress = (Stepper)elements[typeof(Slider)][1];
+            var step = (Stepper)elements[typeof(Scroll)][2];
+            sc.Step = step.Value;
+            sc.Slider.Progress = progress.Value;
+        }
+        else if (prevSelected is Stepper st)
+        {
+            var min = (Stepper)elements[typeof(Stepper)][0];
+            var max = (Stepper)elements[typeof(Stepper)][1];
+            var value = (Stepper)elements[typeof(Stepper)][2];
+            var step = (Stepper)elements[typeof(Stepper)][3];
+            st.Range = (min.Value, max.Value);
+            st.Value = value.Value;
+            st.Step = step.Value;
+        }
 
         prevSelected.Text = text.Value;
     }
@@ -294,13 +335,14 @@ public class EditPanel : Panel
         ((Button)elements[typeof(Element)][0]).IsSelected = Selected.IsDisabled;
         ((Button)elements[typeof(Element)][1]).IsSelected = Selected.IsHidden;
 
-        var value = Selected.Text;
+        var valueText = Selected.Text;
         if (Selected is InputBox e)
-            value = e.Value;
+            valueText = e.Value;
 
         var text = (InputBox)elements[typeof(Element)][2];
 
-        text.Value = value;
+        text.Placeholder = "Text…";
+        text.Value = valueText;
         text.CursorIndices = (0, 0);
         text.SelectionIndices = (0, 0);
         text.ScrollIndices = (0, 0);
@@ -309,6 +351,8 @@ public class EditPanel : Panel
             ((Button)elements[typeof(Button)][0]).IsSelected = b.IsSelected;
         else if (Selected is InputBox i)
         {
+            text.Placeholder = "Value…";
+
             var placeholder = (InputBox)elements[typeof(InputBox)][0];
             placeholder.Value = i.Placeholder;
             placeholder.CursorIndices = (0, 0);
@@ -320,6 +364,7 @@ public class EditPanel : Panel
             var count = (Stepper)elements[typeof(Pages)][0];
             var current = (Stepper)elements[typeof(Pages)][1];
             count.Value = p.Count;
+            current.Range = (1, count.Value);
             current.Value = p.Current;
         }
         else if (Selected is Panel pa)
@@ -337,8 +382,36 @@ public class EditPanel : Panel
             var brightness = (Stepper)elements[typeof(Palette)][1];
             var opacity = (Stepper)elements[typeof(Palette)][2];
             brightnessMax.Value = pl.Brightness.Count;
+            brightness.Range = (1, brightnessMax.Value);
             brightness.Value = pl.Brightness.Current;
             opacity.Value = pl.Opacity.Progress;
+        }
+        else if (Selected is Slider s)
+        {
+            var vertical = (Button)elements[typeof(Slider)][0];
+            var progress = (Stepper)elements[typeof(Slider)][1];
+            vertical.IsSelected = s.IsVertical;
+            progress.Value = s.Progress;
+        }
+        else if (Selected is Scroll sc)
+        {
+            var vertical = (Button)elements[typeof(Scroll)][0];
+            var progress = (Stepper)elements[typeof(Scroll)][1];
+            var step = (Stepper)elements[typeof(Scroll)][2];
+            vertical.IsSelected = sc.IsVertical;
+            progress.Value = sc.Slider.Progress;
+            step.Value = sc.Step;
+        }
+        else if (prevSelected is Stepper st)
+        {
+            var min = (Stepper)elements[typeof(Stepper)][0];
+            var max = (Stepper)elements[typeof(Stepper)][1];
+            var value = (Stepper)elements[typeof(Stepper)][2];
+            var step = (Stepper)elements[typeof(Stepper)][3];
+            min.Value = st.Range.minimum;
+            max.Value = st.Range.maximum;
+            value.Value = st.Value;
+            step.Value = st.Step;
         }
     }
 
@@ -385,16 +458,30 @@ public class EditPanel : Panel
     }
     private void UpdateStepper(Stepper stepper, (int x, int y) position)
     {
-        var e = stepper;
+        var e = (EditStepper)stepper;
         var color = Color.Gray;
         var middle = tilemaps[(int)Layer.EditMiddle];
         var front = tilemaps[(int)Layer.EditFront];
         var value = e.Value.Precision() == 0 ? $"{e.Value}" : $"{e.Value:F2}";
+        var (x, y) = e.Position;
+        var (w, h) = e.Size;
 
         e.Position = position;
         e.Size = (Size.width - 2, 2);
 
+        e.Minimum.parent = e;
+        e.Middle.parent = e;
+        e.Maximum.parent = e;
+
+        e.Minimum.Position = (x + w - 3, y + h - 1);
+        e.Middle.Position = (x + w - 2, y + h - 1);
+        e.Maximum.Position = (x + w - 1, y + h - 1);
+
         e.Update();
+
+        e.Minimum.Update();
+        e.Middle.Update();
+        e.Maximum.Update();
 
         SetBackground(middle, stepper, color.ToDark());
         SetBackground(front, stepper, color.ToDark());
@@ -403,12 +490,16 @@ public class EditPanel : Panel
         front.SetTile(e.Decrease.Position, new(Tile.ARROW_NO_TAIL, GetColor(e.Decrease, color), 1));
         front.SetTextLine((e.Position.x + 2, e.Position.y), e.Text, color);
         front.SetTextLine((e.Position.x + 2, e.Position.y + 1), value);
+
+        front.SetTile(e.Minimum.Position, new(Tile.MATH_MUCH_LESS, GetColor(e.Minimum, color)));
+        front.SetTile(e.Middle.Position, new(Tile.PUNCTUATION_PIPE, GetColor(e.Middle, color)));
+        front.SetTile(e.Maximum.Position, new(Tile.MATH_MUCH_GREATER, GetColor(e.Maximum, color)));
     }
 
     private static Color GetColor(Element element, Color baseColor)
     {
-        if (element.IsPressedAndHeld) return baseColor.ToDark();
-        else if (element.IsHovered) return baseColor.ToBright();
+        if (element.IsPressedAndHeld) return baseColor.ToDark(0.3f);
+        else if (element.IsHovered) return baseColor.ToBright(0.3f);
 
         return baseColor;
     }
@@ -419,6 +510,16 @@ public class EditPanel : Panel
         var size = element.Size;
 
         map.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
+    }
+    private static float Snap(float number, float interval)
+    {
+        if (Math.Abs(interval) < 0.001f)
+            return number;
+
+        // this prevents -0
+        var value = number - (number < 0 ? interval : 0);
+        value -= number % interval;
+        return value;
     }
 #endregion
 }

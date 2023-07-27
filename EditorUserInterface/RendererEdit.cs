@@ -37,8 +37,7 @@ public class RendererEdit : UserInterface
         else if (index == 7)
         {
             element = new Scroll(position);
-            panel.SizeMinimum = (3, 6);
-            panel.SizeMaximum = (3, int.MaxValue);
+            panel.SizeMinimum = (3, 4);
         }
         else if (index == 8)
         {

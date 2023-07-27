@@ -115,11 +115,6 @@ public abstract partial class Element
         get => size;
         set
         {
-            if (value.height == int.MaxValue)
-            {
-                ;
-            }
-
             value.width = Math.Clamp(value.width, SizeMinimum.width, SizeMaximum.width);
             value.height = Math.Clamp(value.height, SizeMinimum.height, SizeMaximum.height);
 
