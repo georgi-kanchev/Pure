@@ -1,10 +1,9 @@
-using static Pure.EditorUserInterface.Program;
-
 namespace Pure.EditorUserInterface;
 
-using Pure.Tilemap;
-using Pure.UserInterface;
-using Pure.Utilities;
+using Tilemap;
+using UserInterface;
+using Utilities;
+using static Program;
 
 public class RendererUI : UserInterface
 {
@@ -18,8 +17,11 @@ public class RendererUI : UserInterface
         var offY = e.Size.height / 2;
         offX = Math.Max(offX, 0);
 
-        SetBackground(Layer.UiBack, e);
-        SetBackground(Layer.UiMiddle, e);
+        SetClear(Layer.UiMiddle, e);
+        SetClear(Layer.UiFront, e);
+
+        SetBackground(Layer.UiBack, e, Color.Gray.ToDark());
+
         middle.SetTextLine((x + offX, y + offY), e.Text, color, e.Size.width);
     }
     protected override void OnDisplayInputBox(InputBox inputBox)
@@ -27,8 +29,10 @@ public class RendererUI : UserInterface
         var e = inputBox;
         var middle = tilemaps[(int)Layer.UiMiddle];
 
-        SetBackground(Layer.UiBack, e);
-        SetBackground(Layer.UiMiddle, e);
+        SetClear(Layer.UiMiddle, e);
+        SetClear(Layer.UiFront, e);
+
+        SetBackground(Layer.UiBack, e, Color.Gray.ToDark());
 
         middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
 
@@ -41,28 +45,35 @@ public class RendererUI : UserInterface
         var middle = tilemaps[(int)Layer.UiMiddle];
         var isHorizontal = e.IsVertical == false;
 
-        SetBackground(Layer.UiBack, e);
+        SetClear(Layer.UiMiddle, e);
+        SetClear(Layer.UiFront, e);
+
+        SetBackground(Layer.UiBack, e, Color.Gray.ToDark());
 
         middle.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
             Color.White, isHorizontal ? e.Size.height : e.Size.width, isHorizontal);
     }
     protected override void OnDisplayList(List list)
     {
-        SetBackground(Layer.UiBack, list);
-        SetBackground(Layer.UiMiddle, list);
+        var front = tilemaps[(int)Layer.UiFront];
+
+        SetClear(Layer.UiMiddle, list);
+        SetClear(Layer.UiFront, list);
+        SetBackground(Layer.UiBack, list, Color.Gray.ToDark());
+
         OnDisplayScroll(list.Scroll);
+
+        var dropdownTile = new Tile(Tile.MATH_GREATER, Color.White, 1);
+        if (list.IsExpanded == false)
+            front.SetTile((list.Position.x + list.Size.width - 1, list.Position.y), dropdownTile);
     }
     protected override void OnDisplayListItem(List list, Button item)
     {
         var color = item.IsSelected ? Color.Green : Color.White;
-        var middle = tilemaps[(int)Layer.UiMiddle];
+        var front = tilemaps[(int)Layer.UiFront];
 
-        middle.SetTextLine(item.Position, item.Text, color, item.Size.width);
-
-        var (itemX, itemY) = item.Position;
-        var dropdownTile = new Tile(Tile.MATH_GREATER, color, 1);
-        if (list.IsExpanded == false)
-            middle.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
+        SetBackground(Layer.UiMiddle, item, Color.Gray);
+        front.SetTextLine(item.Position, item.Text, color, item.Size.width);
     }
     protected override void OnDisplayPanel(Panel panel)
     {
@@ -72,8 +83,10 @@ public class RendererUI : UserInterface
         var middle = tilemaps[(int)Layer.UiMiddle];
         offset = Math.Max(offset, 0);
 
-        SetBackground(Layer.UiBack, e);
-        SetBackground(Layer.UiMiddle, e);
+        SetClear(Layer.UiMiddle, e);
+        SetClear(Layer.UiFront, e);
+
+        SetBackground(Layer.UiBack, e, Color.Gray.ToDark());
 
         back.SetRectangle((e.Position.x + 1, e.Position.y), (e.Size.width - 2, 1),
             new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.2f)));
@@ -85,8 +98,10 @@ public class RendererUI : UserInterface
     {
         var middle = tilemaps[(int)Layer.UiMiddle];
 
-        SetBackground(Layer.UiBack, pages);
-        SetBackground(Layer.UiMiddle, pages);
+        SetClear(Layer.UiMiddle, pages);
+        SetClear(Layer.UiFront, pages);
+
+        SetBackground(Layer.UiBack, pages, Color.Gray.ToDark());
 
         middle.SetTile(pages.First.Position, new(Tile.MATH_MUCH_LESS, Color.Gray));
         middle.SetTile(pages.Previous.Position, new(Tile.MATH_LESS, Color.Gray));
@@ -129,10 +144,12 @@ public class RendererUI : UserInterface
     {
         var e = stepper;
         var middle = tilemaps[(int)Layer.UiMiddle];
-        var text = $"{e.Value}";
+        var text = MathF.Round(e.Value, 2).Precision() == 0 ? $"{e.Value}" : $"{e.Value:F2}";
 
-        SetBackground(Layer.UiBack, stepper);
-        SetBackground(Layer.UiMiddle, stepper);
+        SetClear(Layer.UiMiddle, e);
+        SetClear(Layer.UiFront, e);
+
+        SetBackground(Layer.UiBack, stepper, Color.Gray.ToDark());
 
         middle.SetTile(e.Decrease.Position, new(Tile.ARROW, Color.Gray, 1));
         middle.SetTile(e.Increase.Position, new(Tile.ARROW, Color.Gray, 3));
@@ -148,8 +165,10 @@ public class RendererUI : UserInterface
         var inc = scroll.Increase;
         var dec = scroll.Decrease;
 
-        SetBackground(Layer.UiBack, scroll);
-        SetBackground(Layer.UiMiddle, scroll);
+        SetClear(Layer.UiMiddle, scroll);
+        SetClear(Layer.UiFront, scroll);
+
+        SetBackground(Layer.UiBack, scroll, Color.Gray.ToDark());
 
         var e = scroll.Slider;
         var isHorizontal = e.IsVertical == false;
@@ -178,15 +197,18 @@ public class RendererUI : UserInterface
     }
 
 #region Backend
-    private static void SetBackground(Layer layer, Element element)
+    private static void SetBackground(Layer layer, Element element, Color color)
     {
-        var color = Color.Gray.ToDark();
         var tile = new Tile(Tile.SHADE_OPAQUE, color);
-        var middle = tilemaps[(int)layer];
+        var map = tilemaps[(int)layer];
         var pos = element.Position;
         var size = element.Size;
 
-        middle.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
+        map.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
+    }
+    private static void SetClear(Layer layer, Element element)
+    {
+        tilemaps[(int)layer].SetBox(element.Position, element.Size, 0, 0, 0, 0);
     }
 #endregion
 }

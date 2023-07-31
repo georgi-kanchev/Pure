@@ -206,8 +206,7 @@ public class InputBox : Element
 
     public void CursorMove((int x, int y) delta, bool isSelecting = false, bool isScrolling = true)
     {
-        var shift = Input.Current.IsKeyPressed(Key.ShiftLeft) ||
-                    Input.Current.IsKeyPressed(Key.ShiftRight);
+        var shift = Pressed(Key.ShiftLeft) || Pressed(Key.ShiftRight);
 
         cursorBlink.Restart();
 
@@ -292,23 +291,15 @@ public class InputBox : Element
         if (userEvent == UserAction.Press)
             cursorBlink.Restart();
     }
-    internal override void OnUpdate()
+
+    internal override void OnInput()
     {
-        // reclamp despite scrolling or not cuz maybe the text changed
-        ScrollIndices = (scrX, scrY);
-
-        if (prevSize != Size)
-            UpdateText();
-        prevSize = Size;
-
-        TrySetMouseCursor();
-
-        if (IsDisabled || IsFocused == false || TrySelectAll() || JustPressed(Key.Tab))
+        if (IsFocused == false || TrySelectAll() || JustPressed(Key.Tab))
             return;
 
         var isJustTyped = JustTyped();
 
-        TryResetCursorBlinkTimer();
+        TryScroll();
         TryResetHoldTimers(out var isHolding, isJustTyped);
 
         var isAllowedType = isJustTyped || (isHolding && Input.Current.Typed != "");
@@ -324,6 +315,19 @@ public class InputBox : Element
         TryType(isAllowedType, isPasting);
         TryBackspaceDeleteEnter(isHolding, justDeletedSelected);
         TryMoveCursor(isHolding);
+    }
+    internal override void OnUpdate()
+    {
+        // reclamp despite scrolling or not cuz maybe the text changed
+        CursorIndices = (cx, cy);
+        ScrollIndices = (scrX, scrY);
+
+        if (prevSize != Size)
+            UpdateText();
+        prevSize = Size;
+
+        TrySetMouseCursor();
+        TryResetCursorBlinkTimer();
     }
 
     private void UpdateTextAndValue()
@@ -341,10 +345,16 @@ public class InputBox : Element
             var newLine = i == scrY ? "" : Environment.NewLine;
             var line = lines[i];
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
-            display.Append((scrX >= secondIndex ? "" : newLine + line[scrX..secondIndex]));
+            var t = scrX >= secondIndex ? "" : line[scrX..secondIndex];
+
+            display.Append(newLine + t);
         }
 
         Text = display.ToString();
+
+        // reclamp
+        CursorIndices = (cx, cy);
+        ScrollIndices = (scrX, scrY);
     }
     private void UpdateValue()
     {
@@ -553,6 +563,17 @@ public class InputBox : Element
             }
     }
 
+    private void TryScroll()
+    {
+        if (IsHovered == false)
+            return;
+
+        var delta = Input.Current.ScrollDelta;
+        var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
+
+        if (delta != 0)
+            CursorMove(ctrl ? (-delta, 0) : (0, -delta), true);
+    }
     private void TryType(bool isAllowedType, bool isPasting)
     {
         if (isAllowedType == false)

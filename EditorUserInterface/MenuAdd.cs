@@ -1,8 +1,7 @@
-using static Pure.EditorUserInterface.Program;
-
 namespace Pure.EditorUserInterface;
 
 using UserInterface;
+using static Program;
 
 public class MenuAdd : Menu
 {
@@ -17,8 +16,8 @@ public class MenuAdd : Menu
             $"  {nameof(Slider)}",
             $"  {nameof(Pure.UserInterface.Scroll)}",
             $"  {nameof(Stepper)}",
-            $"  {nameof(List)}",
-            $"  {nameof(Layout)}")
+            $"  {nameof(Layout)}",
+            $"  {nameof(List)}")
     {
         Size = (10, 11);
     }
@@ -26,6 +25,14 @@ public class MenuAdd : Menu
     protected override void OnItemTrigger(Button item)
     {
         IsHidden = true;
-        editUI.ElementCreate(IndexOf(item), Position);
+
+        var index = IndexOf(item);
+        if (index == 10)
+        {
+            menus[MenuType.AddList].Show(Position);
+            return;
+        }
+
+        editUI.ElementCreate(index, Position);
     }
 }

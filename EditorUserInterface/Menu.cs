@@ -1,10 +1,10 @@
-using Pure.Window;
-
 namespace Pure.EditorUserInterface;
 
+using Window;
 using Tilemap;
 using UserInterface;
 using Utilities;
+using static Program;
 
 public abstract class Menu : List
 {
@@ -15,6 +15,12 @@ public abstract class Menu : List
 
         for (var i = 0; i < options.Length; i++)
             this[i].Text = options[i];
+    }
+
+    public void Show((int x, int y) position)
+    {
+        Position = position;
+        IsHidden = false;
     }
 
     protected override void OnDisplay()
@@ -32,11 +38,14 @@ public abstract class Menu : List
         if (onLmbRelease && IsHovered == false)
             IsHidden = true;
 
-        ItemMaximumSize = (Size.width - 1, 1);
+        ItemSize = (Size.width - 1, 1);
 
         var scrollColor = Color.Gray;
-        var middle = Program.tilemaps[(int)Program.Layer.EditMiddle];
-        var front = Program.tilemaps[(int)Program.Layer.EditFront];
+        var middle = tilemaps[(int)Layer.EditMiddle];
+        var front = tilemaps[(int)Layer.EditFront];
+
+        SetClear(Layer.EditBack, this);
+        SetClear(Layer.EditFront, this);
 
         middle.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
         front.SetTile(Scroll.Increase.Position,
@@ -57,7 +66,7 @@ public abstract class Menu : List
         item.IsDisabled = item.Text.EndsWith(" ");
 
         var color = item.IsDisabled ? Color.Gray : Color.Gray.ToBright();
-        var front = Program.tilemaps[(int)Program.Layer.EditFront];
+        var front = tilemaps[(int)Layer.EditFront];
 
         front.SetTextLine(item.Position, item.Text, GetColor(item, color));
     }
@@ -70,6 +79,10 @@ public abstract class Menu : List
         else if (element.IsHovered) return baseColor.ToBright();
 
         return baseColor;
+    }
+    private static void SetClear(Layer layer, Element element)
+    {
+        tilemaps[(int)layer].SetBox(element.Position, element.Size, 0, 0, 0, 0);
     }
 #endregion
 }

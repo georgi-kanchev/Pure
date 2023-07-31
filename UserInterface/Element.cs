@@ -279,7 +279,7 @@ public abstract partial class Element
             TriggerUserAction(UserAction.Unhover);
         if (IsPressed && Input.Current.WasPressed == false)
             TriggerUserAction(UserAction.Press);
-        if (IsPressed == false && Input.Current.WasPressed)
+        if (IsHovered && IsPressed == false && Input.Current.WasPressed)
             TriggerUserAction(UserAction.Release);
         if (IsPressedAndHeld && Input.Current.IsJustHeld)
             TriggerUserAction(UserAction.PressAndHold);
@@ -455,8 +455,8 @@ public abstract partial class Element
 
     protected internal void InheritParent(Element parent)
     {
-        IsHidden = parent.IsHidden;
-        IsDisabled = parent.IsDisabled;
+        IsHidden |= parent.IsHidden;
+        IsDisabled |= parent.IsDisabled;
     }
 
     protected static void PutBool(List<byte> intoBytes, bool value) =>

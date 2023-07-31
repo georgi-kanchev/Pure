@@ -52,13 +52,11 @@ public class List : Element
     /// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
     /// </summary>
     public Types Type { get; }
-    /// <summary>
-    /// Gets or sets maximum size of each item.
-    /// </summary>
-    public (int width, int height) ItemMaximumSize
+
+    public (int width, int height) ItemSize
     {
-        get => itemMaxSize;
-        set => itemMaxSize = (Math.Max(value.width, 1), Math.Max(value.height, 1));
+        get => itemSize;
+        set => itemSize = (Math.Max(value.width, 1), Math.Max(value.height, 1));
     }
     public (int width, int height) ItemGap
     {
@@ -98,7 +96,7 @@ public class List : Element
         isParent = true;
         IsSingleSelecting = GrabBool(bytes);
         ItemGap = (GrabInt(bytes), GrabInt(bytes));
-        ItemMaximumSize = (GrabInt(bytes), GrabInt(bytes));
+        ItemSize = (GrabInt(bytes), GrabInt(bytes));
         var scrollProgress = GrabFloat(bytes);
         Add(GrabInt(bytes));
 
@@ -124,7 +122,7 @@ public class List : Element
         if (index < 0 || index > items.Count)
             return;
 
-        for (var i = index; i < count; i++)
+        for (var i = index; i < index + count; i++)
         {
             var item = new Button((0, 0))
             {
@@ -196,6 +194,10 @@ public class List : Element
         if (HasIndex(index) == false)
             return;
 
+        if (IsSingleSelecting)
+            foreach (var item in items)
+                item.isSelected = false;
+
         singleSelectedIndex = isSelected ? index : singleSelectedIndex;
         this[index].isSelected = isSelected;
     }
@@ -208,8 +210,8 @@ public class List : Element
         PutBool(result, IsSingleSelecting);
         PutInt(result, ItemGap.width);
         PutInt(result, ItemGap.height);
-        PutInt(result, ItemMaximumSize.width);
-        PutInt(result, ItemMaximumSize.height);
+        PutInt(result, ItemSize.width);
+        PutInt(result, ItemSize.height);
         PutFloat(result, Scroll.Slider.Progress);
         PutInt(result, Count);
         for (var i = 0; i < Count; i++)
@@ -246,12 +248,34 @@ public class List : Element
     private readonly List<Button> items = new();
     private bool isSingleSelecting, isExpanded;
     private readonly bool isInitialized;
-    private (int width, int height) itemMaxSize = (5, 1), itemGap = (1, 0);
+    private (int width, int height) itemSize = (5, 1), itemGap = (1, 0);
 
     // used in the UI class to receive callbacks
     internal Action<Button>? itemDisplayCallback;
     internal Action<Button>? itemTriggerCallback;
 
+    protected override void OnUserAction(UserAction userAction)
+    {
+        if (userAction != UserAction.Trigger || Type != Types.Dropdown || IsExpanded ||
+            IsFocused == false || this[singleSelectedIndex].IsHovered)
+            return;
+
+        IsExpanded = true;
+    }
+
+    internal override void OnInput()
+    {
+        if (Type == Types.Dropdown && IsExpanded == false && IsHovered)
+            MouseCursorResult = MouseCursor.Hand;
+
+        // in case the user hovers in between items - try scroll
+        if (IsHovered && Input.Current.ScrollDelta != 0 &&
+            (isExpanded || Type != Types.Dropdown) && IsFocused && FocusedPrevious == this)
+            Scroll.Slider.Move(Input.Current.ScrollDelta);
+        // and in case the user hovers the items themselves - also try scroll
+        foreach (var item in items)
+            TryScrollWhileHoverButton(item);
+    }
     internal override void OnUpdate()
     {
         TrySingleSelect();
@@ -263,47 +287,16 @@ public class List : Element
         if (Type != Types.Dropdown)
             LimitSizeMin((2, 2));
 
-        ItemMaximumSize = itemMaxSize; // reclamp value
-        var totalWidth = items.Count * (ItemMaximumSize.width + ItemGap.width);
-        var totalHeight = items.Count * (ItemMaximumSize.height + ItemGap.height);
+        ItemSize = itemSize; // reclamp value
+        var totalWidth = items.Count * (ItemSize.width + ItemGap.width);
+        var totalHeight = items.Count * (ItemSize.height + ItemGap.height);
         var totalSize = Type == Types.Horizontal ? totalWidth : totalHeight;
         Scroll.step = 1f / totalSize;
 
         if (Type == Types.Dropdown && isExpanded == false)
             Size = (Size.width, 1);
     }
-    internal override void OnChildrenDisplay()
-    {
-        if (isInitialized == false)
-            return;
 
-        if (Type == Types.Dropdown && isInitialized && isExpanded == false)
-        {
-            var selectedItem = this[singleSelectedIndex];
-
-            OnItemDisplay(selectedItem);
-            itemDisplayCallback?.Invoke(selectedItem);
-            return;
-        }
-
-        foreach (var item in items)
-            if (IsOverlapping(item))
-            {
-                OnItemDisplay(item);
-                itemDisplayCallback?.Invoke(item);
-            }
-    }
-
-    internal override void OnInput()
-    {
-        // in case the user hovers in between items - try scroll
-        if (IsHovered && Input.Current.ScrollDelta != 0 &&
-            (isExpanded || Type != Types.Dropdown) && IsFocused && FocusedPrevious == this)
-            Scroll.Slider.Move(Input.Current.ScrollDelta);
-        // and in case the user hovers the items themselves - also try scroll
-        foreach (var item in items)
-            TryScrollWhileHoverButton(item);
-    }
     internal override void OnChildrenUpdate()
     {
         var (x, y) = Position;
@@ -322,18 +315,22 @@ public class List : Element
             Scroll.Decrease.position = (int.MaxValue, int.MaxValue);
             Scroll.Increase.position = (int.MaxValue, int.MaxValue);
 
-            if (isInitialized)
-            {
-                var selectedItem = this[singleSelectedIndex];
-                selectedItem.position = Position;
-                TryTrimItem(selectedItem);
-                // after trim
-                selectedItem.size = (selectedItem.Size.width + 1, selectedItem.Size.height);
-                Select(selectedItem);
+            Scroll.InheritParent(this);
+            Scroll.Update();
 
-                selectedItem.InheritParent(this);
-                selectedItem.Update();
-            }
+            if (isInitialized == false)
+                return;
+
+            var selectedItem = this[singleSelectedIndex];
+            selectedItem.position = Position;
+            TryTrimItem(selectedItem);
+            // after trim
+            Select(selectedItem);
+
+            selectedItem.InheritParent(this);
+            selectedItem.Update();
+
+            return;
         }
         else if (Type == Types.Horizontal)
         {
@@ -353,19 +350,19 @@ public class List : Element
 
             if (Type == Types.Horizontal)
             {
-                var totalWidth = items.Count * (ItemMaximumSize.width + ItemGap.width);
+                var totalWidth = items.Count * (ItemSize.width + ItemGap.width);
                 var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalWidth - w - ItemGap.width);
                 var offsetX = (int)MathF.Round(p);
                 offsetX = Math.Max(offsetX, 0);
-                item.position = (x - offsetX + i * (ItemMaximumSize.width + ItemGap.width), y);
+                item.position = (x - offsetX + i * (ItemSize.width + ItemGap.width), y);
             }
             else
             {
-                var totalHeight = items.Count * (ItemMaximumSize.height + ItemGap.height);
+                var totalHeight = items.Count * (ItemSize.height + ItemGap.height);
                 var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalHeight - h - ItemGap.height);
                 var offsetY = (int)MathF.Round(p);
                 offsetY = Math.Max(offsetY, 0);
-                item.position = (x, y - offsetY + i * (ItemMaximumSize.height + ItemGap.height));
+                item.position = (x, y - offsetY + i * (ItemSize.height + ItemGap.height));
             }
 
             var (ix, iy) = item.position;
@@ -387,6 +384,27 @@ public class List : Element
 
         if (IsSingleSelecting && HasIndex(singleSelectedIndex))
             Select(items[singleSelectedIndex]);
+    }
+    internal override void OnChildrenDisplay()
+    {
+        if (isInitialized == false)
+            return;
+
+        if (Type == Types.Dropdown && isInitialized && isExpanded == false)
+        {
+            var selectedItem = this[singleSelectedIndex];
+
+            OnItemDisplay(selectedItem);
+            itemDisplayCallback?.Invoke(selectedItem);
+            return;
+        }
+
+        foreach (var item in items)
+            if (IsOverlapping(item))
+            {
+                OnItemDisplay(item);
+                itemDisplayCallback?.Invoke(item);
+            }
     }
 
     internal void TrySingleSelectOneItem()
@@ -447,30 +465,30 @@ public class List : Element
 
         var botEdgeTrim = Type == Types.Horizontal && HasScroll().horizontal ? 1 : 0;
         var rightEdgeTrim = Type == Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
-        var newWidth = ItemMaximumSize.width;
-        var newHeight = ItemMaximumSize.height;
+        var newWidth = ItemSize.width;
+        var newHeight = ItemSize.height;
         var iw = newWidth;
         var ih = newHeight;
 
         item.listSizeTrimOffset = (0, 0);
 
         if (ix <= x + w && ix + iw >= x + w) // on right edge
-            newWidth = Math.Min(ItemMaximumSize.width, x + w - rightEdgeTrim - ix);
+            newWidth = Math.Min(ItemSize.width, x + w - rightEdgeTrim - ix);
         if (ix < x && ix + iw > x) // on left edge
         {
             newWidth = ix + iw - x;
             item.position = (x, item.position.Item2);
-            item.listSizeTrimOffset = (ItemMaximumSize.width - newWidth, item.listSizeTrimOffset.Item2);
+            item.listSizeTrimOffset = (ItemSize.width - newWidth, item.listSizeTrimOffset.Item2);
         }
 
         if (iy <= y + h && iy + ih >= y + h - botEdgeTrim) // on bottom edge
-            newHeight = Math.Min(ItemMaximumSize.height, y + h - botEdgeTrim - iy);
+            newHeight = Math.Min(ItemSize.height, y + h - botEdgeTrim - iy);
         if (iy < y && iy + ih > y) // on top edge
         {
             newHeight = iy + ih - y;
             item.position = (item.position.Item1, y);
             item.listSizeTrimOffset =
-                (item.listSizeTrimOffset.Item1, ItemMaximumSize.height - newHeight);
+                (item.listSizeTrimOffset.Item1, ItemSize.height - newHeight);
         }
 
         item.size = (newWidth, newHeight);
@@ -485,7 +503,7 @@ public class List : Element
     }
     private (bool horizontal, bool vertical) HasScroll()
     {
-        var (maxW, maxH) = ItemMaximumSize;
+        var (maxW, maxH) = ItemSize;
         var totalW = items.Count * (maxW + ItemGap.width) - ItemGap.width;
         var totalH = items.Count * (maxH + ItemGap.height) - ItemGap.height;
 

@@ -1,14 +1,13 @@
-using static Pure.EditorUserInterface.Program;
-
 namespace Pure.EditorUserInterface;
 
 using Tilemap;
 using UserInterface;
 using Utilities;
+using static Program;
 
 public class RendererEdit : UserInterface
 {
-    public void ElementCreate(int index, (int x, int y) position)
+    public void ElementCreate(int index, (int x, int y) position, List.Types type = default)
     {
         var element = default(Element);
         var panel = new Panel(position) { IsRestricted = false, SizeMinimum = (3, 3) };
@@ -45,12 +44,12 @@ public class RendererEdit : UserInterface
             panel.SizeMinimum = (3, 4);
         }
         else if (index == 9)
+            element = new Layout(position);
+        else if (index == 10)
         {
-            element = new List(position);
+            element = new List(position, 10, type);
             panel.SizeMinimum = (4, 4);
         }
-        else if (index == 10)
-            element = new Layout(position);
 
         if (element == null)
             return;
@@ -103,6 +102,7 @@ public class RendererEdit : UserInterface
     {
         var index = IndexOf(panel);
         var e = ui[index];
+        var notOverEditPanel = editPanel.IsHovered == false || editPanel.IsHidden;
 
         if (panel is { IsPressedAndHeld: true, IsHovered: true })
         {
@@ -114,7 +114,7 @@ public class RendererEdit : UserInterface
                     break;
                 }
 
-            if (isHoveringMenu == false)
+            if (notOverEditPanel && isHoveringMenu == false)
                 Selected = e;
         }
 

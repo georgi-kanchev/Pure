@@ -1,9 +1,9 @@
-using Pure.Tilemap;
-using Pure.UserInterface;
-using Pure.Utilities;
-using static Pure.EditorUserInterface.Program;
-
 namespace Pure.EditorUserInterface;
+
+using Tilemap;
+using UserInterface;
+using Utilities;
+using static Program;
 
 public class EditPanel : Panel
 {
@@ -43,8 +43,23 @@ public class EditPanel : Panel
         var max = new EditStepper((0, 0)) { Text = "Maximum", Step = 0.05f };
         var value = new EditStepper((0, 0)) { Text = "Value", Step = 0.05f };
 
+        var type = new EditButton((0, 0)) { IsDisabled = true };
+        var expanded = new EditButton((0, 0)) { Text = "Expanded" };
+        var items = new InputBox((0, 0)) { Placeholder = "Items…", [0] = "", Size = (0, 7) };
+        var multiSelect = new EditButton((0, 0)) { Text = "Multi-Select" };
+        var scroll = new EditStepper((0, 0)) { Text = "Scroll", Range = (0, 1) };
+        var itemWidth = new EditStepper((0, 0)) { Text = "Width", Range = (1, int.MaxValue) };
+        var itemHeight = new EditStepper((0, 0)) { Text = "Height", Range = (1, int.MaxValue) };
+        var itemGapX = new EditStepper((0, 0)) { Text = "Gap Width", Range = (0, int.MaxValue) };
+        var itemGapY = new EditStepper((0, 0)) { Text = "Gap Height", Range = (0, int.MaxValue) };
+        for (var i = 0; i < items.Size.height; i++)
+            itemSelections.Add(new((0, 0)) { Text = "ItemSelect" });
+
         checkboxes.AddRange(new[]
-            { disabled, hidden, selected, movable, resizable, restricted, vertical });
+        {
+            disabled, hidden, selected, movable, resizable, restricted, vertical, multiSelect,
+            expanded
+        });
 
         elements = new()
         {
@@ -57,17 +72,25 @@ public class EditPanel : Panel
             { typeof(Slider), new() { vertical, progress } },
             { typeof(Scroll), new() { vertical, progress, step } },
             { typeof(Stepper), new() { min, max, value, stepperStep } },
+            {
+                typeof(List),
+                new()
+                {
+                    type, expanded, scroll, items, multiSelect, itemWidth, itemHeight, itemGapX, itemGapY
+                }
+            },
         };
     }
 
     protected override void OnDisplay()
     {
+        if (IsHovered)
+            MouseCursorResult = MouseCursor.Arrow;
+
         if ((IsHidden == false).Once("on-show"))
             UpdatePanelValues();
-        if (IsHidden.Once("on-hide"))
-            UpdateSelected();
 
-        if (Selected != null && !IsHidden)
+        if (Selected != null && IsHidden == false)
         {
             if ((prevSelected != Selected).Once("on-select"))
             {
@@ -78,6 +101,7 @@ public class EditPanel : Panel
             RepositionPanel();
             UpdatePanel();
             UpdatePanelElements();
+            ReclampPanelValues();
         }
 
         prevSelected = Selected;
@@ -116,10 +140,6 @@ public class EditPanel : Panel
             {
                 Selected.IsHidden = IsSelected;
             }
-            else if (Text == "Selected")
-            {
-                ((Button)Selected).IsSelected = IsSelected;
-            }
             else if (Text == "Center X")
             {
                 panel.Position = (
@@ -132,30 +152,15 @@ public class EditPanel : Panel
                     panel.Position.x,
                     CameraPosition.y + CameraSize.h / 2 - panel.Size.height / 2);
             }
-            else if (Text == "Movable")
+            else if (Text == "ItemSelect")
             {
-                var p = (Panel)Selected;
-                p.IsMovable = IsSelected;
-            }
-            else if (Text == "Resizable")
-            {
-                var p = (Panel)Selected;
-                p.IsResizable = IsSelected;
-            }
-            else if (Text == "Restricted")
-            {
-                var p = (Panel)Selected;
-                p.IsRestricted = IsSelected;
-            }
-            else if (Text == "Vertical" && Selected is Slider s)
-            {
-                s.IsVertical = IsSelected;
-                panel.SizeMinimum = IsSelected ? (3, 4) : (4, 3);
-            }
-            else if (Text == "Vertical" && Selected is Scroll sc)
-            {
-                sc.IsVertical = IsSelected;
-                panel.SizeMinimum = IsSelected ? (3, 4) : (4, 3);
+                var items = (InputBox)editPanel.elements[typeof(List)][3];
+                var list = (List)Selected;
+                var index = editPanel.itemSelections.IndexOf(this);
+                var item = list[index + items.ScrollIndices.y];
+
+                list.Select(item, IsSelected);
+                editPanel.UpdateSelected();
             }
             else if (Text == "Minimum" && parent != null)
             {
@@ -187,7 +192,7 @@ public class EditPanel : Panel
         }
     }
 
-    private readonly List<EditButton> checkboxes = new();
+    private readonly List<EditButton> checkboxes = new(), itemSelections = new();
     private readonly EditButton
         toTop = new((0, 0)) { Text = "To Top" },
         centerX = new((0, 0)) { Text = "Center X" },
@@ -215,16 +220,16 @@ public class EditPanel : Panel
         var textPos = (Position.x + offset, Position.y);
         const int CORNER = Tile.BOX_HOLLOW_CORNER;
         const int STRAIGHT = Tile.BOX_HOLLOW_STRAIGHT;
-        var back = tilemaps[(int)Layer.EditBack];
-        var middle = tilemaps[(int)Layer.EditMiddle];
         var front = tilemaps[(int)Layer.EditFront];
         var color = Color.Gray.ToDark(0.66f);
         var (bottomX, bottomY) = (Position.x + 1, Position.y + Size.height - 2);
         var (topX, topY) = (Position.x + 1, Position.y + 1);
 
-        SetBackground(back, this, color);
-        SetBackground(middle, this, color);
-        SetBackground(front, this, color);
+        SetClear(Layer.EditBack, this);
+        SetClear(Layer.EditMiddle, this);
+        SetClear(Layer.EditFront, this);
+
+        SetBackground(tilemaps[(int)Layer.EditBack], this, color);
 
         front.SetBox(Position, Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
         front.SetTextLine(textPos, Text, Color.Yellow);
@@ -233,14 +238,6 @@ public class EditPanel : Panel
         UpdateButton(centerX, (topX, topY + 1));
         UpdateButton(centerY, (topX, topY + 2));
         UpdateButton(remove, (bottomX, bottomY));
-
-        var count = (Stepper)elements[typeof(Pages)][0];
-        var current = (Stepper)elements[typeof(Pages)][1];
-        var brightnessMax = (Stepper)elements[typeof(Palette)][0];
-        var brightness = (Stepper)elements[typeof(Palette)][1];
-
-        current.Range = (1, count.Value);
-        brightness.Range = (1, brightnessMax.Value);
     }
     private void UpdatePanelElements()
     {
@@ -256,15 +253,32 @@ public class EditPanel : Panel
             foreach (var element in kvp.Value)
             {
                 if (element is Button b)
+                {
+                    var prev = b.IsSelected;
                     UpdateButton(b, (x, y));
+
+                    if (prev != b.IsSelected)
+                        UpdateSelected();
+                }
                 else if (element is InputBox i)
                 {
                     y += 2;
+
+                    var prev = i.Value;
                     UpdateInputBox(i, (x, y));
+                    if (prev != i.Value)
+                        UpdateSelected();
+
+                    y += i.Size.height - 1;
                 }
                 else if (element is EditStepper s)
                 {
+                    var prev = s.Value;
                     UpdateStepper(s, (x, y));
+
+                    if (Math.Abs(prev - s.Value) > 0.001f)
+                        UpdateSelected();
+
                     y++;
                 }
 
@@ -278,7 +292,13 @@ public class EditPanel : Panel
         if (prevSelected == null)
             return;
 
+        var panel = editUI[ui.IndexOf(Selected)];
+        var disabled = (EditButton)elements[typeof(Element)][0];
+        var hidden = (EditButton)elements[typeof(Element)][1];
         var text = (InputBox)elements[typeof(Element)][2];
+
+        prevSelected.IsDisabled = disabled.IsSelected;
+        prevSelected.IsHidden = hidden.IsSelected;
 
         if (prevSelected is InputBox i)
         {
@@ -286,12 +306,25 @@ public class EditPanel : Panel
             i.Value = text.Value;
             i.Placeholder = placeholder.Value;
         }
+        else if (prevSelected is Button b)
+        {
+            b.IsSelected = ((EditButton)elements[typeof(Button)][0]).IsSelected;
+        }
         else if (prevSelected is Pages p)
         {
             var count = (Stepper)elements[typeof(Pages)][0];
             var current = (Stepper)elements[typeof(Pages)][1];
             p.Count = (int)count.Value;
             p.Current = (int)current.Value;
+        }
+        else if (prevSelected is Panel pa)
+        {
+            var movable = (Button)elements[typeof(Panel)][0];
+            var resizable = (Button)elements[typeof(Panel)][1];
+            var restricted = (Button)elements[typeof(Panel)][2];
+            pa.IsMovable = movable.IsSelected;
+            pa.IsResizable = resizable.IsSelected;
+            pa.IsRestricted = restricted.IsSelected;
         }
         else if (prevSelected is Palette pl)
         {
@@ -304,15 +337,21 @@ public class EditPanel : Panel
         }
         else if (prevSelected is Slider s)
         {
+            var vertical = (EditButton)elements[typeof(Slider)][0];
             var progress = (Stepper)elements[typeof(Slider)][1];
             s.Progress = progress.Value;
+            s.IsVertical = vertical.IsSelected;
+            panel.SizeMinimum = vertical.IsSelected ? (3, 4) : (4, 3);
         }
         else if (prevSelected is Scroll sc)
         {
-            var progress = (Stepper)elements[typeof(Slider)][1];
+            var vertical = (EditButton)elements[typeof(Scroll)][0];
+            var progress = (Stepper)elements[typeof(Scroll)][1];
             var step = (Stepper)elements[typeof(Scroll)][2];
             sc.Step = step.Value;
             sc.Slider.Progress = progress.Value;
+            sc.IsVertical = vertical.IsSelected;
+            panel.SizeMinimum = vertical.IsSelected ? (3, 4) : (4, 3);
         }
         else if (prevSelected is Stepper st)
         {
@@ -324,6 +363,43 @@ public class EditPanel : Panel
             st.Value = value.Value;
             st.Step = step.Value;
         }
+        else if (prevSelected is List l)
+        {
+            var expanded = (EditButton)elements[typeof(List)][1];
+            var scroll = (Stepper)elements[typeof(List)][2];
+            var items = (InputBox)elements[typeof(List)][3];
+            var multi = (EditButton)elements[typeof(List)][4];
+            var itemWidth = (Stepper)elements[typeof(List)][5];
+            var itemHeight = (Stepper)elements[typeof(List)][6];
+            var itemGapX = (Stepper)elements[typeof(List)][7];
+            var itemGapY = (Stepper)elements[typeof(List)][8];
+            var prev = new List<bool>();
+
+            l.IsExpanded = expanded.IsSelected;
+            l.Scroll.Slider.Progress = scroll.Value;
+            l.ItemSize = ((int)itemWidth.Value, (int)itemHeight.Value);
+            l.ItemGap = ((int)itemGapX.Value, (int)itemGapY.Value);
+            l.IsSingleSelecting = multi.IsSelected == false;
+
+            for (var j = 0; j < l.Count; j++)
+                prev.Add(l[j].IsSelected);
+
+            l.Clear();
+            var split = items.Value.Split(Environment.NewLine);
+            foreach (var line in split)
+            {
+                l.Add();
+                l[^1].Text = line;
+            }
+
+            for (var j = 0; j < l.Count; j++)
+            {
+                if (j >= prev.Count)
+                    break;
+
+                l.Select(l[j], prev[j]);
+            }
+        }
 
         prevSelected.Text = text.Value;
     }
@@ -332,14 +408,16 @@ public class EditPanel : Panel
         if (Selected == null)
             return;
 
-        ((Button)elements[typeof(Element)][0]).IsSelected = Selected.IsDisabled;
-        ((Button)elements[typeof(Element)][1]).IsSelected = Selected.IsHidden;
+        var disabled = (EditButton)elements[typeof(Element)][0];
+        var hidden = (EditButton)elements[typeof(Element)][1];
+        var text = (InputBox)elements[typeof(Element)][2];
+
+        disabled.IsSelected = Selected.IsDisabled;
+        hidden.IsSelected = Selected.IsHidden;
 
         var valueText = Selected.Text;
         if (Selected is InputBox e)
             valueText = e.Value;
-
-        var text = (InputBox)elements[typeof(Element)][2];
 
         text.Placeholder = "Text…";
         text.Value = valueText;
@@ -402,7 +480,7 @@ public class EditPanel : Panel
             progress.Value = sc.Slider.Progress;
             step.Value = sc.Step;
         }
-        else if (prevSelected is Stepper st)
+        else if (Selected is Stepper st)
         {
             var min = (Stepper)elements[typeof(Stepper)][0];
             var max = (Stepper)elements[typeof(Stepper)][1];
@@ -411,7 +489,40 @@ public class EditPanel : Panel
             min.Value = st.Range.minimum;
             max.Value = st.Range.maximum;
             value.Value = st.Value;
+            value.Range = (min.Value, max.Value);
             step.Value = st.Step;
+        }
+        else if (Selected is List l)
+        {
+            var type = elements[typeof(List)][0];
+            var expanded = (EditButton)elements[typeof(List)][1];
+            var scroll = (Stepper)elements[typeof(List)][2];
+            var items = (InputBox)elements[typeof(List)][3];
+            var multi = (EditButton)elements[typeof(List)][4];
+            var itemWidth = (Stepper)elements[typeof(List)][5];
+            var itemHeight = (Stepper)elements[typeof(List)][6];
+            var itemGapX = (Stepper)elements[typeof(List)][7];
+            var itemGapY = (Stepper)elements[typeof(List)][8];
+
+            type.Text = $"{l.Type}";
+            expanded.IsSelected = l.IsExpanded;
+            expanded.IsDisabled = l.Type != List.Types.Dropdown;
+            scroll.Value = l.Scroll.Slider.Progress;
+            multi.IsSelected = l.IsSingleSelecting == false;
+            multi.IsDisabled = l.Type == List.Types.Dropdown;
+            itemWidth.Value = l.ItemSize.width;
+            itemHeight.Value = l.ItemSize.height;
+            itemGapX.Value = l.ItemGap.width;
+            itemGapY.Value = l.ItemGap.height;
+
+            var value = "";
+            for (var j = 0; j < l.Count; j++)
+            {
+                var newLine = j > 0 ? Environment.NewLine : "";
+                value += $"{newLine}{l[j].Text}";
+            }
+
+            items.Value = value;
         }
     }
 
@@ -425,36 +536,59 @@ public class EditPanel : Panel
         btn.Update();
 
         var color = checkboxes.Contains(btn) && btn.IsSelected ? Color.Green.ToBright() : Color.Yellow;
+        color = btn.IsDisabled ? Color.White : color;
 
         front.SetTextRectangle(btn.Position, btn.Size, btn.Text, GetColor(btn, color.ToDark()),
-            alignment: Tilemap.Tilemap.Alignment.Center);
+            alignment: Tilemap.Alignment.Center);
     }
-    private void UpdateInputBox(InputBox inputBox, (int x, int y) position, int height = 1)
+    private void UpdateInputBox(InputBox inputBox, (int x, int y) position)
     {
         var e = inputBox;
         var back = tilemaps[(int)Layer.EditBack];
         var middle = tilemaps[(int)Layer.EditMiddle];
         var front = tilemaps[(int)Layer.EditFront];
         var color = Color.Gray;
+        var isListItems = e.Placeholder.Contains("Items");
+
+        position = isListItems ? (position.x + 1, position.y) : position;
 
         e.Position = position;
-        e.Size = (Size.width - 2, height);
+        e.Size = (Size.width - 2 - (isListItems ? 1 : 0), e.Size.height);
 
         e.Update();
 
-        SetBackground(back, e, color.ToDark());
-        SetBackground(middle, e, color.ToDark());
+        back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, color.ToDark()));
+        SetClear(Layer.EditMiddle, e);
 
         back.SetTextRectangle(e.Position, e.Size, e.Selection,
             e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
         middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
-        middle.SetTextLine((e.Position.x, e.Position.y - 1), e.Placeholder, color);
+        middle.SetTextLine((Position.x + 1, e.Position.y - 1), e.Placeholder, color);
 
         if (string.IsNullOrWhiteSpace(e.Text))
             middle.SetTextRectangle(e.Position, e.Size, e.Placeholder, color.ToBright(), false);
 
         if (e.IsCursorVisible)
             front.SetTile(e.PositionFromIndices(e.CursorIndices), new(Tile.SHAPE_LINE, Color.White, 2));
+
+        if (isListItems == false || Selected is not List list)
+            return;
+
+        var length = Math.Min(list.Count, itemSelections.Count);
+        for (var i = 0; i < length; i++)
+        {
+            var item = list[i + inputBox.ScrollIndices.y];
+            var btn = itemSelections[i];
+            var c = GetColor(btn, (item.IsSelected ? Color.Green : Color.Red).ToDark());
+            var tile = new Tile(item.IsSelected ? Tile.ICON_TICK : Tile.LOWERCASE_X, c);
+
+            btn.Size = (1, 1);
+            btn.Position = (inputBox.Position.x - 1, inputBox.Position.y + i);
+            btn.IsSelected = item.IsSelected;
+            btn.Update();
+
+            middle.SetTile(btn.Position, tile);
+        }
     }
     private void UpdateStepper(Stepper stepper, (int x, int y) position)
     {
@@ -463,11 +597,11 @@ public class EditPanel : Panel
         var middle = tilemaps[(int)Layer.EditMiddle];
         var front = tilemaps[(int)Layer.EditFront];
         var value = e.Value.Precision() == 0 ? $"{e.Value}" : $"{e.Value:F2}";
-        var (x, y) = e.Position;
-        var (w, h) = e.Size;
-
         e.Position = position;
         e.Size = (Size.width - 2, 2);
+
+        var (x, y) = e.Position;
+        var (w, h) = e.Size;
 
         e.Minimum.parent = e;
         e.Middle.parent = e;
@@ -496,20 +630,47 @@ public class EditPanel : Panel
         front.SetTile(e.Maximum.Position, new(Tile.MATH_MUCH_GREATER, GetColor(e.Maximum, color)));
     }
 
+    private void ReclampPanelValues()
+    {
+        var count = (Stepper)elements[typeof(Pages)][0];
+        var current = (Stepper)elements[typeof(Pages)][1];
+        var brightnessMax = (Stepper)elements[typeof(Palette)][0];
+        var brightness = (Stepper)elements[typeof(Palette)][1];
+
+        var minimum = (Stepper)elements[typeof(Stepper)][0];
+        var maximum = (Stepper)elements[typeof(Stepper)][1];
+        var value = (Stepper)elements[typeof(Stepper)][2];
+
+        current.Range = (1, count.Value);
+        brightness.Range = (1, brightnessMax.Value);
+        value.Range = (minimum.Value, maximum.Value);
+
+        if (Selected is not List list)
+            return;
+
+        var scroll = (Stepper)elements[typeof(List)][2];
+        scroll.Step = list.Scroll.Step;
+    }
+
     private static Color GetColor(Element element, Color baseColor)
     {
+        if (element.IsDisabled) return baseColor;
         if (element.IsPressedAndHeld) return baseColor.ToDark(0.3f);
         else if (element.IsHovered) return baseColor.ToBright(0.3f);
 
         return baseColor;
     }
-    private static void SetBackground(Tilemap.Tilemap map, Element element, Color color)
+    private static void SetBackground(Tilemap map, Element element, Color color)
     {
         var tile = new Tile(Tile.SHADE_OPAQUE, color);
         var pos = element.Position;
         var size = element.Size;
 
         map.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
+    }
+    private static void SetClear(Layer layer, Element element)
+    {
+        tilemaps[(int)layer].SetBox(element.Position, element.Size, 0, 0, 0, 0);
     }
     private static float Snap(float number, float interval)
     {

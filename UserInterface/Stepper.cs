@@ -80,6 +80,15 @@ public class Stepper : Element
         });
     }
 
+    internal override void OnInput()
+    {
+        var delta = Input.Current.ScrollDelta;
+
+        if (IsHovered == false || delta == 0)
+            return;
+
+        Value += delta > 0 ? Step : -Step;
+    }
     internal override void OnUpdate()
     {
         LimitSizeMin((1, 2));

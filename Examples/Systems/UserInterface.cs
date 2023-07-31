@@ -60,7 +60,7 @@ public static class UserInterface
         {
             var e = inputBox;
 
-            back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.3f)));
+            back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
             back.SetTextRectangle(e.Position, e.Size, e.Selection,
                 e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
             middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
@@ -79,39 +79,36 @@ public static class UserInterface
             var text = $"{e.Progress:F2}";
             var isHandle = e.Handle.IsPressedAndHeld;
 
-            middle.SetBox(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray), Tile.BOX_CORNER_ROUND,
-                Tile.SHADE_OPAQUE, Color.Gray);
+            SetBackground(middle, e);
             front.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
                 GetColor(isHandle ? e.Handle : e, Color.Magenta), e.Size.height, true);
             front.SetTextLine((e.Position.x + w / 2 - text.Length / 2, e.Position.y + h / 2), text);
         }
         protected override void OnDisplayList(List list)
         {
-            SetBackground(back, list);
+            back.SetRectangle(list.Position, list.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
             OnDisplayScroll(list.Scroll);
+
+            var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(list, Color.Gray.ToBright()), 1);
+            if (list.IsExpanded == false)
+                front.SetTile((list.Position.x + list.Size.width - 1, list.Position.y), dropdownTile);
         }
         protected override void OnDisplayListItem(List list, Button item)
         {
-            var color = item.IsSelected ? Color.Green : Color.Red;
+            var color = item.IsSelected ? Color.Green : Color.Gray.ToBright();
 
-            middle.SetTextLine(item.Position, item.Text, GetColor(item, color), item.Size.width);
-
-            var (itemX, itemY) = item.Position;
-            var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(item, color), 1);
-            if (list.IsExpanded == false)
-                middle.SetTile((itemX + item.Size.width - 1, itemY), dropdownTile);
+            SetBackground(back, item, 0.25f);
+            front.SetTextLine(item.Position, item.Text, GetColor(item, color), item.Size.width);
         }
         protected override void OnDisplayPanel(Panel panel)
         {
             var e = panel;
-            SetBackground(back, e);
+            SetBackground(back, e, 0.75f);
             middle.SetRectangle(e.Position, e.Size, Tile.EMPTY);
             front.SetRectangle(e.Position, e.Size, Tile.EMPTY);
 
             front.SetBox(e.Position, e.Size, Tile.EMPTY, Tile.BOX_GRID_CORNER,
                 Tile.BOX_GRID_STRAIGHT, Color.Blue);
-            back.SetRectangle((e.Position.x + 1, e.Position.y), (e.Size.width - 2, 1),
-                new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.2f)));
             front.SetTextRectangle((e.Position.x, e.Position.y), (e.Size.width, 1), e.Text,
                 alignment: Tilemap.Alignment.Center);
         }
@@ -184,12 +181,14 @@ public static class UserInterface
         protected override void OnDisplayStepper(Stepper stepper)
         {
             var e = stepper;
-            var color = Color.Gray.ToBright();
+            var text = MathF.Round(e.Value, 2).Precision() == 0 ? $"{e.Value}" : $"{e.Value:F2}";
 
-            SetBackground(back, e);
-            middle.SetTile(e.Decrease.Position, new(Tile.ARROW, GetColor(e.Decrease, color), 1));
-            middle.SetTextLine((e.Position.x, e.Position.y + 1), $"{e.Value}");
-            middle.SetTile(e.Increase.Position, new(Tile.ARROW, GetColor(e.Increase, color), 3));
+            SetBackground(back, stepper);
+
+            middle.SetTile(e.Decrease.Position, new(Tile.ARROW, Color.Gray, 1));
+            middle.SetTile(e.Increase.Position, new(Tile.ARROW, Color.Gray, 3));
+            middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text);
+            middle.SetTextLine((e.Position.x + 2, e.Position.y + 1), text);
         }
         protected override void OnDisplayScroll(Scroll scroll)
         {
@@ -224,9 +223,9 @@ public static class UserInterface
             var (sx, sy, sw, sh) = segment;
             var (w, h) = (0, 0);
 
-            if (index == 1)
+            if (index == 0)
                 w = 3;
-            else if (index == 3)
+            else if (index == 1)
             {
                 middle.SetTextRectangle((sx, sy), (sw, sh),
                     "I am a text rectangle with some meaningful text inside.");
@@ -257,15 +256,18 @@ public static class UserInterface
         // simple "animation" for hovering and pressing buttons
         private static Color GetColor(Element element, Color baseColor)
         {
+            if (element.IsDisabled) return baseColor;
             if (element.IsPressedAndHeld) return baseColor.ToDark();
             else if (element.IsHovered) return baseColor.ToBright();
 
             return baseColor;
         }
-        private static void SetBackground(Tilemap map, Element element)
+        private static void SetBackground(Tilemap map, Element element, float shade = 0.5f)
         {
-            var tile = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark());
-            map.SetRectangle(element.Position, element.Size, tile);
+            var e = element;
+            var color = Color.Gray.ToDark(shade);
+            var tile = new Tile(Tile.SHADE_OPAQUE, color);
+            map.SetBox(e.Position, e.Size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
         }
     }
 
@@ -280,12 +282,12 @@ public static class UserInterface
         var front = tilemaps[2];
 
         var userInterface = new UI(back, middle, front);
-        userInterface.Add(new Stepper((34, 6)) { Range = (-9, 13) });
-        userInterface.Add(new List((37, 5), 15, Types.Dropdown) { Size = (6, 6) });
-        userInterface.Add(new Scroll((46, 6), 9));
+        userInterface.Add(new Stepper((34, 4)) { Range = (-9, 13) });
+        userInterface.Add(new List((37, 7), 15, Types.Dropdown) { Size = (8, 6) });
+        userInterface.Add(new Scroll((46, 7), 9));
         // should be last so that it can color pick what's been already "drawn"
         userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
-        userInterface.Add(new Scroll((37, 15), 9, false));
+        userInterface.Add(new Scroll((37, 16), 9, false));
         userInterface.Add(new Pages((29, 1)) { Size = (18, 2) });
         userInterface.Add(new Panel((18, 22))
         {
@@ -310,21 +312,20 @@ public static class UserInterface
         userInterface.Add(layout);
 
         layout.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.4f);
-        layout.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.4f);
+        layout.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.6f);
         layout.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.25f);
         layout.Cut(index: 1, side: Layout.CutSide.Bottom, rate: 0.4f);
 
+        userInterface.Add(new Button((0, 0)));
+        userInterface.Add(new Button((35, 18)) { Text = "Checkbox" });
         userInterface.Add(new List((0, 0), 15)
         {
             Size = (8, 9),
             IsSingleSelecting = true,
             ItemGap = (0, 1),
-            ItemMaximumSize = (7, 1)
         });
-        userInterface.Add(new Button((0, 0)));
         userInterface.Add(new InputBox((0, 0)));
-        userInterface.Add(new Button((35, 18)) { Text = "Checkbox" });
-        userInterface.Add(new Slider((0, 0), 7) { Progress = 0.05f });
+        userInterface.Add(new Slider((0, 0), 7));
 
         while (Window.IsOpen)
         {

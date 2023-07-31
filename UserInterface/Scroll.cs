@@ -98,7 +98,6 @@ public class Scroll : Element
         // retrigger the scrolling behavior when scrolling over them
         TryScrollWhileHoverButton(Increase);
         TryScrollWhileHoverButton(Decrease);
-        TryScrollWhileHoverButton(Slider.Handle);
     }
     internal override void OnChildrenUpdate()
     {

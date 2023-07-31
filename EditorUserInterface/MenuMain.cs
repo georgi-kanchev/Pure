@@ -1,10 +1,9 @@
-using Pure.UserInterface;
-using Pure.Utilities;
-using static Pure.EditorUserInterface.Program;
-
 namespace Pure.EditorUserInterface;
 
+using UserInterface;
+using Utilities;
 using Window;
+using static Program;
 
 public class MenuMain : Menu
 {
@@ -25,9 +24,12 @@ public class MenuMain : Menu
         if (Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRMB"))
         {
             var (x, y) = MousePosition;
+
+            foreach (var kvp in menus)
+                kvp.Value.IsHidden = true;
+
             Position = ((int)x + 1, (int)y + 1);
             IsHidden = false;
-            menus[MenuType.Add].IsHidden = true;
         }
 
         base.OnDisplay();
@@ -38,11 +40,7 @@ public class MenuMain : Menu
 
         var index = IndexOf(item);
         if (index == 1)
-        {
-            var menuAdd = menus[MenuType.Add];
-            menuAdd.Position = Position;
-            menuAdd.IsHidden = false;
-        }
+            menus[MenuType.Add].Show(Position);
         else if (index == 3)
         {
             // save

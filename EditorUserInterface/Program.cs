@@ -1,7 +1,6 @@
-﻿using Pure.Utilities;
+﻿namespace Pure.EditorUserInterface;
 
-namespace Pure.EditorUserInterface;
-
+using Utilities;
 using Tilemap;
 using UserInterface;
 using Window;
@@ -24,6 +23,7 @@ public static class Program
     {
         Main,
         Add,
+        AddList
     }
 
     public static Element? Selected { get; set; }
@@ -60,7 +60,7 @@ public static class Program
 #region Backend
     private static string infoText = "";
     private static int zoom = 4;
-    private const int SCALE_ASPECT_MAX = 10, SCALE_ASPECT_MIN = 3;
+    private const int SCALE_ASPECT_MAX = 10, SCALE_ASPECT_MIN = 4;
     private static float infoTextTimer;
     private static (float x, float y) prevMousePos;
 
@@ -74,6 +74,8 @@ public static class Program
         editUI = new();
         editPanel = new((int.MaxValue, int.MaxValue));
 
+        // submenus need higher update priority to not close upon parent menu opening them
+        menus[MenuType.AddList] = new MenuAddList();
         menus[MenuType.Add] = new MenuAdd();
         menus[MenuType.Main] = new MenuMain();
 
@@ -164,7 +166,7 @@ public static class Program
         var prevSz = CameraSize;
         var prevPos = CameraPosition;
 
-        if (Mouse.ScrollDelta != 0)
+        if (Mouse.ScrollDelta != 0 && editPanel.IsHovered == false)
         {
             var prevZoom = zoom;
             zoom -= Mouse.ScrollDelta;

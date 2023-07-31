@@ -340,6 +340,7 @@ public static class Ludo
 
     private static Color GetColor(Element element, Color baseColor)
     {
+        if (element.IsDisabled) return baseColor;
         if (element.IsPressedAndHeld) return baseColor.ToDark();
         else if (element.IsHovered) return baseColor.ToBright();
 
