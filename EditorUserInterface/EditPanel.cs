@@ -43,6 +43,14 @@ public class EditPanel : Panel
         var max = new EditStepper((0, 0)) { Text = "Maximum", Step = 0.05f };
         var value = new EditStepper((0, 0)) { Text = "Value", Step = 0.05f };
 
+        var restore = new EditButton((0, 0)) { Text = "Restore" };
+        var index = new EditStepper((0, 0)) { Text = "Index" };
+        var rate = new EditStepper((0, 0)) { Text = "Rate", Range = (0, 1), Step = 0.05f };
+        var cutTop = new EditButton((0, 0)) { Text = "Cut Top" };
+        var cutLeft = new EditButton((0, 0)) { Text = "Cut Left" };
+        var cutRight = new EditButton((0, 0)) { Text = "Cut Right" };
+        var cutBottom = new EditButton((0, 0)) { Text = "Cut Bottom" };
+
         var type = new EditButton((0, 0)) { IsDisabled = true };
         var expanded = new EditButton((0, 0)) { Text = "Expanded" };
         var items = new InputBox((0, 0)) { Placeholder = "Items…", [0] = "", Size = (0, 7) };
@@ -71,6 +79,7 @@ public class EditPanel : Panel
             { typeof(Palette), new() { brightnessMax, brightness, opacity } },
             { typeof(Slider), new() { vertical, progress } },
             { typeof(Scroll), new() { vertical, progress, step } },
+            { typeof(Layout), new() { restore, index, rate, cutTop, cutLeft, cutRight, cutBottom } },
             { typeof(Stepper), new() { min, max, value, stepperStep } },
             {
                 typeof(List),
@@ -174,6 +183,22 @@ public class EditPanel : Panel
             else if (Text == "Maximum" && parent != null)
             {
                 parent.Value = parent.Range.maximum;
+            }
+            else if (Text.Contains("Cut") && Selected is Layout l)
+            {
+                var index = (int)((Stepper)editPanel.elements[typeof(Layout)][1]).Value;
+                var rate = ((Stepper)editPanel.elements[typeof(Layout)][2]).Value;
+
+                if (Text.Contains("Top")) l.Cut(index, Layout.CutSide.Top, rate);
+                else if (Text.Contains("Left")) l.Cut(index, Layout.CutSide.Left, rate);
+                else if (Text.Contains("Right")) l.Cut(index, Layout.CutSide.Right, rate);
+                else if (Text.Contains("Bottom")) l.Cut(index, Layout.CutSide.Bottom, rate);
+
+                editPanel.UpdatePanelValues();
+            }
+            else if (Text == "Restore" && Selected is Layout la)
+            {
+                la.Restore();
             }
         }
     }
@@ -491,6 +516,11 @@ public class EditPanel : Panel
             value.Value = st.Value;
             value.Range = (min.Value, max.Value);
             step.Value = st.Step;
+        }
+        else if (Selected is Layout la)
+        {
+            var index = (Stepper)elements[typeof(Layout)][1];
+            index.Range = (0, la.Count - 1);
         }
         else if (Selected is List l)
         {

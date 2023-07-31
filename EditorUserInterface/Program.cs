@@ -67,6 +67,7 @@ public static class Program
     static Program()
     {
         Window.Create(SCALE_ASPECT_MAX);
+        Window.Title = "Pure - User Interface Editor";
 
         var (width, height) = Window.MonitorAspectRatio;
         tilemaps = new((int)Layer.Count, (width * SCALE_ASPECT_MAX, height * SCALE_ASPECT_MAX));

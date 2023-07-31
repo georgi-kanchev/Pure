@@ -7,6 +7,11 @@ using static Program;
 
 public class RendererUI : UserInterface
 {
+    public RendererUI()
+    {
+        seed = (-9999999, 9999999).Random();
+    }
+
     protected override void OnDisplayButton(Button button)
     {
         var e = button;
@@ -181,22 +186,23 @@ public class RendererUI : UserInterface
     protected override void OnDisplayLayoutSegment(Layout layout,
         (int x, int y, int width, int height) segment, int index)
     {
-        var colors = new uint[]
-        {
-            Color.Red, Color.Blue, Color.Green, Color.Yellow, Color.Gray,
-            Color.Orange, Color.Cyan, Color.Black, Color.Azure, Color.Brown,
-            Color.Magenta, Color.Purple, Color.Pink, Color.Violet
-        };
+        var color = new Color(
+            (byte)(50, 200).Random(seed / (index + 0)),
+            (byte)(50, 200).Random(seed / (index + 1)),
+            (byte)(50, 200).Random(seed / (index + 2)));
         var pos = (segment.x, segment.y);
         var size = (segment.width, segment.height);
+        var back = tilemaps[(int)Layer.UiBack];
         var middle = tilemaps[(int)Layer.UiMiddle];
+        var tile = new Tile(Tile.SHADE_OPAQUE, color);
 
-        var tile = new Tile(Tile.SHADE_OPAQUE, colors[index]);
-
-        middle.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, colors[index]);
+        back.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
+        middle.SetTextLine((pos.x + size.width / 2, pos.y + size.height / 2), $"{index}");
     }
 
 #region Backend
+    private readonly float seed;
+
     private static void SetBackground(Layer layer, Element element, Color color)
     {
         var tile = new Tile(Tile.SHADE_OPAQUE, color);

@@ -587,6 +587,9 @@ public class Tilemap
         var (x, y) = position;
         var (w, h) = size;
 
+        if (w <= 0 || h <= 0)
+            return;
+
         if (w == 1 || h == 1)
         {
             SetRectangle(position, size, tileFill);

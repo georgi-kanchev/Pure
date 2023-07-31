@@ -10,6 +10,8 @@ public class Layout : Element
         Bottom
     }
 
+    public int Count => segments.Count;
+
     public Layout((int x, int y) position) : base(position)
     {
         Size = (12, 12);
