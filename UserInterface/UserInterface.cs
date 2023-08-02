@@ -28,6 +28,7 @@ public class UserInterface
 
             if (typeStr == nameof(Button)) Add(new Button(bElement));
             else if (typeStr == nameof(InputBox)) Add(new InputBox(bElement));
+            else if (typeStr == nameof(FileViewer)) Add(new FileViewer(bElement));
             else if (typeStr == nameof(List)) Add(new List(bElement));
             else if (typeStr == nameof(Stepper)) Add(new Stepper(bElement));
             else if (typeStr == nameof(Pages)) Add(new Pages(bElement));
@@ -36,6 +37,8 @@ public class UserInterface
             else if (typeStr == nameof(Scroll)) Add(new Scroll(bElement));
             else if (typeStr == nameof(Slider)) Add(new Slider(bElement));
         }
+
+        return;
 
         int GetInt() => BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
     }
@@ -55,6 +58,8 @@ public class UserInterface
                 element.SubscribeToUserAction(act, () => OnUserActionButton(b, act));
             else if (element is InputBox u)
                 element.SubscribeToUserAction(act, () => OnUserActionInputBox(u, act));
+            else if (element is FileViewer f)
+                element.SubscribeToUserAction(act, () => OnUserActionFileViewer(f, act));
             else if (element is List l)
                 element.SubscribeToUserAction(act, () => OnUserActionList(l, act));
             else if (element is Stepper n)
@@ -92,20 +97,26 @@ public class UserInterface
             if (element is Button button)
             {
                 button.displayCallback = () => OnDisplayButton(button);
-                button.displayCallback = () => OnDisplayButton(button);
+                button.dragCallback = d => OnDragButton(button, d);
             }
             else if (element is InputBox input)
             {
                 input.displayCallback = () => OnDisplayInputBox(input);
                 input.dragCallback = d => OnDragInputBox(input, d);
             }
-
-            if (element is List list)
+            else if (element is FileViewer fileViewer)
+            {
+                fileViewer.displayCallback = () => OnDisplayFileViewer(fileViewer);
+                fileViewer.dragCallback = d => OnDragFileViewer(fileViewer, d);
+                fileViewer.itemDisplayCallback = b => OnDisplayFileViewerItem(fileViewer, b);
+                fileViewer.itemTriggerCallback = b => OnFileViewerItemTrigger(fileViewer, b);
+            }
+            else if (element is List list)
             {
                 list.displayCallback = () => OnDisplayList(list);
+                list.dragCallback = d => OnDragList(list, d);
                 list.itemDisplayCallback = b => OnDisplayListItem(list, b);
                 list.itemTriggerCallback = b => OnListItemTrigger(list, b);
-                list.dragCallback = d => OnDragList(list, d);
             }
             else if (element is Pages pages)
             {
@@ -179,6 +190,7 @@ public class UserInterface
     protected virtual void OnUserActionScroll(Scroll scroll, UserAction userAction) { }
     protected virtual void OnUserActionSlider(Slider slider, UserAction userAction) { }
     protected virtual void OnUserActionLayout(Layout layout, UserAction userAction) { }
+    protected virtual void OnUserActionFileViewer(FileViewer fileViewer, UserAction userAction) { }
 
     protected virtual void OnDragButton(Button button, (int width, int height) delta) { }
     protected virtual void OnDragInputBox(InputBox inputBox, (int width, int height) delta) { }
@@ -191,6 +203,7 @@ public class UserInterface
     protected virtual void OnDragScroll(Scroll scroll, (int width, int height) delta) { }
     protected virtual void OnDragSlider(Slider slider, (int width, int height) delta) { }
     protected virtual void OnDragLayout(Layout layout, (int width, int height) delta) { }
+    protected virtual void OnDragFileViewer(FileViewer fileViewer, (int width, int height) delta) { }
 
     protected virtual void OnDisplayButton(Button button) { }
     protected virtual void OnDisplayInputBox(InputBox inputBox) { }
@@ -206,12 +219,15 @@ public class UserInterface
     protected virtual void OnDisplayPanel(Panel panel) { }
     protected virtual void OnDisplayScroll(Scroll scroll) { }
     protected virtual void OnDisplaySlider(Slider slider) { }
+    protected virtual void OnDisplayFileViewer(FileViewer fileViewer) { }
+    protected virtual void OnDisplayFileViewerItem(FileViewer fileViewer, Button item) { }
     protected virtual void OnDisplayLayout(Layout layout) { }
     protected virtual void OnDisplayLayoutSegment(Layout layout,
         (int x, int y, int width, int height) segment, int index) { }
 
     protected virtual uint OnPalettePick(Palette palette, (float x, float y) position) => default;
     protected virtual void OnListItemTrigger(List list, Button item) { }
+    protected virtual void OnFileViewerItemTrigger(FileViewer fileViewer, Button item) { }
     protected virtual void OnPanelResize(Panel panel, (int width, int height) delta) { }
 
 #region Backend

@@ -100,6 +100,23 @@ public static class UserInterface
             SetBackground(back, item, 0.25f);
             front.SetTextLine(item.Position, item.Text, GetColor(item, color), item.Size.width);
         }
+        protected override void OnDisplayFileViewer(FileViewer fileViewer)
+        {
+            OnDisplayList(fileViewer);
+        }
+        protected override void OnDisplayFileViewerItem(FileViewer fileViewer, Button item)
+        {
+            var color = item.IsSelected ? Color.Green : Color.Gray.ToBright();
+            var (x, y) = item.Position;
+            var index = fileViewer.IndexOf(item);
+            var isFolder = index < fileViewer.CountFolders;
+            var icon = isFolder
+                ? new Tile(Tile.ICON_FOLDER, GetColor(item, Color.Yellow))
+                : new(Tile.ICON_FILE, GetColor(item, Color.Gray.ToBright()));
+
+            front.SetTile((x, y), icon);
+            front.SetTextLine((x + 1, y), item.Text, GetColor(item, color), item.Size.width - 1);
+        }
         protected override void OnDisplayPanel(Panel panel)
         {
             var e = panel;
@@ -232,7 +249,7 @@ public static class UserInterface
                 return;
             }
 
-            var element = this[index + 10];
+            var element = this[index + 11];
             element.Position = (sx, sy);
             element.Size = (sw - w, sh - h);
         }
@@ -285,10 +302,10 @@ public static class UserInterface
         userInterface.Add(new Stepper((34, 4)) { Range = (-9, 13) });
         userInterface.Add(new List((37, 7), 15, Types.Dropdown) { Size = (8, 6) });
         userInterface.Add(new Scroll((46, 7), 9));
-        // should be last so that it can color pick what's been already "drawn"
         userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
         userInterface.Add(new Scroll((37, 16), 9, false));
         userInterface.Add(new Pages((29, 1)) { Size = (18, 2) });
+        userInterface.Add(new FileViewer((1, 18)) { Size = (16, 8) });
         userInterface.Add(new Panel((18, 22))
         {
             Size = (15, 4),
