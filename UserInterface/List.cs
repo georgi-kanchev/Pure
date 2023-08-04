@@ -56,7 +56,11 @@ public class List : Element
     public (int width, int height) ItemSize
     {
         get => itemSize;
-        set => itemSize = (Math.Max(value.width, 1), Math.Max(value.height, 1));
+        set
+        {
+            if (hasParent == false)
+                itemSize = (Math.Max(value.width, 1), Math.Max(value.height, 1));
+        }
     }
     public (int width, int height) ItemGap
     {
@@ -119,26 +123,8 @@ public class List : Element
     public void Add(int count = 1) => Insert(items.Count, count);
     public void Insert(int index = 0, int count = 1)
     {
-        if (index < 0 || index > items.Count)
-            return;
-
-        for (var i = index; i < index + count; i++)
-        {
-            var item = new Button((0, 0))
-            {
-                Text = $"Item{i}",
-                size = (Type == Types.Horizontal ? Text.Length : Size.width, 1),
-                hasParent = true
-            };
-            items.Insert(i, item);
-            item.SubscribeToUserAction(UserAction.Trigger, () =>
-            {
-                OnItemTrigger(item);
-                itemTriggerCallback?.Invoke(item);
-            });
-        }
-
-        TrySingleSelectOneItem();
+        if (hasParent == false)
+            InternalInsert(index, count);
     }
     /// <summary>
     /// Removes the item at the specified index and adjusts the selection accordingly.
@@ -146,26 +132,16 @@ public class List : Element
     /// <param name="index">The index of the item to remove.</param>
     public void Remove(int index = 0)
     {
-        if (HasIndex(index) == false)
-            return;
-
-        items.RemoveAt(index);
-
-        if (index == singleSelectedIndex && index != items.Count)
-            return;
-        else if (index <= singleSelectedIndex)
-            singleSelectedIndex--;
-
-        TrySingleSelectOneItem();
+        if (hasParent == false)
+            InternalRemove(index);
     }
     /// <summary>
     /// Clears all items from the list and resets the selection.
     /// </summary>
     public void Clear()
     {
-        items.Clear();
-        singleSelectedIndex = -1;
-        TrySingleSelectOneItem();
+        if (hasParent == false)
+            InternalClear();
     }
 
     /// <summary>
@@ -195,11 +171,32 @@ public class List : Element
             return;
 
         if (IsSingleSelecting)
+        {
+            var wasSelected = singleSelectedIndex != -1 && this[index].isSelected;
+
             foreach (var item in items)
                 item.isSelected = false;
 
-        singleSelectedIndex = isSelected ? index : singleSelectedIndex;
+            this[index].isSelected = isSelected;
+
+            if (singleSelectedIndex == index || wasSelected || isSelected == false)
+                return;
+
+            singleSelectedIndex = isSelected ? index : singleSelectedIndex;
+            OnItemSelect(this[index]);
+            itemSelectCallback?.Invoke(this[index]);
+
+            return;
+        }
+
+        var wasSel = this[index].isSelected;
         this[index].isSelected = isSelected;
+
+        if (wasSel || isSelected == false)
+            return;
+
+        OnItemSelect(this[index]);
+        itemSelectCallback?.Invoke(this[index]);
     }
     public void Select(Button item, bool isSelected = true) => Select(IndexOf(item), isSelected);
 
@@ -222,6 +219,7 @@ public class List : Element
 
     protected virtual void OnItemDisplay(Button item) { }
     protected virtual void OnItemTrigger(Button item) { }
+    protected virtual void OnItemSelect(Button item) { }
 
     /// <summary>
     /// Implicitly converts an array of button objects to a list object.
@@ -248,11 +246,13 @@ public class List : Element
     private readonly List<Button> items = new();
     private bool isSingleSelecting, isExpanded;
     private readonly bool isInitialized;
-    private (int width, int height) itemSize = (5, 1), itemGap = (1, 0);
+    private (int width, int height) itemGap = (1, 0);
+    internal (int width, int height) itemSize = (5, 1);
 
     // used in the UI class to receive callbacks
     internal Action<Button>? itemDisplayCallback;
     internal Action<Button>? itemTriggerCallback;
+    internal Action<Button>? itemSelectCallback;
 
     protected override void OnUserAction(UserAction userAction)
     {
@@ -261,6 +261,51 @@ public class List : Element
             return;
 
         IsExpanded = true;
+    }
+
+    internal void InternalAdd(int count = 1) => InternalInsert(items.Count, count);
+    internal void InternalInsert(int index = 0, int count = 1)
+    {
+        if (index < 0 || index > items.Count)
+            return;
+
+        for (var i = index; i < index + count; i++)
+        {
+            var item = new Button((0, 0))
+            {
+                Text = $"Item{i}",
+                size = (Type == Types.Horizontal ? Text.Length : Size.width, 1),
+                hasParent = true
+            };
+            items.Insert(i, item);
+            item.SubscribeToUserAction(UserAction.Trigger, () =>
+            {
+                OnItemTrigger(item);
+                itemTriggerCallback?.Invoke(item);
+            });
+        }
+
+        TrySingleSelectOneItem();
+    }
+    internal void InternalRemove(int index = 0)
+    {
+        if (HasIndex(index) == false)
+            return;
+
+        items.RemoveAt(index);
+
+        if (index == singleSelectedIndex && index != items.Count)
+            return;
+        else if (index <= singleSelectedIndex)
+            singleSelectedIndex--;
+
+        TrySingleSelectOneItem();
+    }
+    internal void InternalClear()
+    {
+        items.Clear();
+        singleSelectedIndex = -1;
+        TrySingleSelectOneItem();
     }
 
     internal override void OnInput()
@@ -274,7 +319,7 @@ public class List : Element
             Scroll.Slider.Move(Input.Current.ScrollDelta);
         // and in case the user hovers the items themselves - also try scroll
         foreach (var item in items)
-            TryScrollWhileHoverButton(item);
+            TryScrollWhileHover(item);
     }
     internal override void OnUpdate()
     {
@@ -420,8 +465,7 @@ public class List : Element
         if (isOneSelected)
             return;
 
-        singleSelectedIndex = 0;
-        Select(items[singleSelectedIndex]);
+        Select(items[0]);
     }
     internal void TrySingleSelect()
     {
@@ -444,8 +488,8 @@ public class List : Element
         if (items[hoveredIndex].IsPressedAndHeld == false)
             return;
 
-        singleSelectedIndex = hoveredIndex;
-        items[hoveredIndex].Trigger();
+        var item = items[hoveredIndex];
+        Select(item, item.IsSelected == false);
 
         if (Type != Types.Dropdown)
             return;
@@ -509,11 +553,11 @@ public class List : Element
 
         return (totalW > Size.width, totalH > Size.height);
     }
-    private void TryScrollWhileHoverButton(Element btn)
+    private void TryScrollWhileHover(Element element)
     {
-        if (btn.IsHovered && Input.Current.ScrollDelta != 0 && btn.IsFocused &&
-            FocusedPrevious == btn)
-            Scroll.Slider.Move(Input.Current.ScrollDelta);
+        if (element.IsHovered && Input.Current.ScrollDelta != 0 && element.IsFocused &&
+            FocusedPrevious == element)
+            Scroll.Slider.Progress -= Input.Current.ScrollDelta * Scroll.Step;
     }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)

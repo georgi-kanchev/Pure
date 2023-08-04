@@ -117,6 +117,7 @@ public class UserInterface
                 list.dragCallback = d => OnDragList(list, d);
                 list.itemDisplayCallback = b => OnDisplayListItem(list, b);
                 list.itemTriggerCallback = b => OnListItemTrigger(list, b);
+                list.itemSelectCallback = b => OnListItemSelect(list, b);
             }
             else if (element is Pages pages)
             {
@@ -227,6 +228,7 @@ public class UserInterface
 
     protected virtual uint OnPalettePick(Palette palette, (float x, float y) position) => default;
     protected virtual void OnListItemTrigger(List list, Button item) { }
+    protected virtual void OnListItemSelect(List list, Button item) { }
     protected virtual void OnFileViewerItemTrigger(FileViewer fileViewer, Button item) { }
     protected virtual void OnPanelResize(Panel panel, (int width, int height) delta) { }
 

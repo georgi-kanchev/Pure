@@ -134,10 +134,11 @@ public class Slider : Element
         if ((px != ppx || py != ppy) && Handle.IsPressedAndHeld)
             MoveTo((px, py));
 
-        if (IsHovered && delta != 0 && IsFocused && FocusedPrevious == this)
+        if (IsHovered && delta != 0 && IsFocused && FocusedPrevious == this && hasParent == false)
             Move(delta);
 
-        if (Handle.IsHovered && delta != 0 && Handle.IsFocused && FocusedPrevious == Handle)
+        if (Handle.IsHovered && delta != 0 && Handle.IsFocused && FocusedPrevious == Handle &&
+            hasParent == false)
             Move(delta);
     }
     internal override void OnChildrenUpdate()
@@ -162,7 +163,6 @@ public class Slider : Element
         Handle.InheritParent(this);
         Handle.Update();
     }
-    private void TryScrollWhileHoverHandle(Element btn) { }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)
     {

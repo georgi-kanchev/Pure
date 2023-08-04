@@ -102,17 +102,20 @@ public static class UserInterface
         }
         protected override void OnDisplayFileViewer(FileViewer fileViewer)
         {
+            var (x, y) = fileViewer.Position;
+
             OnDisplayList(fileViewer);
+            front.SetTextLine((x, y - 1), fileViewer.CurrentDirectory);
         }
         protected override void OnDisplayFileViewerItem(FileViewer fileViewer, Button item)
         {
             var color = item.IsSelected ? Color.Green : Color.Gray.ToBright();
             var (x, y) = item.Position;
-            var index = fileViewer.IndexOf(item);
-            var isFolder = index < fileViewer.CountFolders;
-            var icon = isFolder
+            var icon = fileViewer.IsFolder(item)
                 ? new Tile(Tile.ICON_FOLDER, GetColor(item, Color.Yellow))
                 : new(Tile.ICON_FILE, GetColor(item, Color.Gray.ToBright()));
+
+            icon = item.Text == ".." ? Tile.ICON_BACK : icon;
 
             front.SetTile((x, y), icon);
             front.SetTextLine((x + 1, y), item.Text, GetColor(item, color), item.Size.width - 1);

@@ -96,8 +96,10 @@ public class Scroll : Element
     {
         // buttons gain focus priority over the slider so
         // retrigger the scrolling behavior when scrolling over them
-        TryScrollWhileHoverButton(Increase);
-        TryScrollWhileHoverButton(Decrease);
+        TryScrollWhileHover(Increase);
+        TryScrollWhileHover(Decrease);
+        TryScrollWhileHover(Slider);
+        TryScrollWhileHover(Slider.Handle);
     }
     internal override void OnChildrenUpdate()
     {
@@ -132,10 +134,10 @@ public class Scroll : Element
         Decrease.Update();
     }
 
-    private void TryScrollWhileHoverButton(Element btn)
+    private void TryScrollWhileHover(Element element)
     {
-        if (btn.IsHovered && Input.Current.ScrollDelta != 0 && btn.IsFocused &&
-            FocusedPrevious == btn)
+        if (element.IsHovered && Input.Current.ScrollDelta != 0 && element.IsFocused &&
+            FocusedPrevious == element)
             Slider.Progress -= Input.Current.ScrollDelta * Step;
     }
 #endregion
