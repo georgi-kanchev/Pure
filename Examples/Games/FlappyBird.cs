@@ -134,8 +134,8 @@ public static class FlappyBird
             var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
             Window.DrawTile((BIRD_X, birdY), tile);
 
-            Window.DrawRectangles(collisionMap);
-            Window.DrawRectangles(birdRect);
+            //Window.DrawRectangles(collisionMap);
+            //Window.DrawRectangles(birdRect);
 
             Window.Activate(false);
         }

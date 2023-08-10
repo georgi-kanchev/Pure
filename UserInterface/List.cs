@@ -278,11 +278,8 @@ public class List : Element
                 hasParent = true
             };
             items.Insert(i, item);
-            item.SubscribeToUserAction(UserAction.Trigger, () =>
-            {
-                OnItemTrigger(item);
-                itemTriggerCallback?.Invoke(item);
-            });
+            item.SubscribeToUserAction(UserAction.Trigger, () => OnInternalItemTrigger(item));
+            item.SubscribeToUserAction(UserAction.Select, () => OnInternalItemSelect(item));
         }
 
         TrySingleSelectOneItem();
@@ -323,7 +320,11 @@ public class List : Element
     }
     internal override void OnUpdate()
     {
-        TrySingleSelect();
+        if (IsSingleSelecting && singleSelectedIndex == -1)
+            TrySingleSelectOneItem();
+
+        if (Input.Current.IsJustPressed && IsHovered == false)
+            IsExpanded = false;
 
         // for in between items, overwrite mouse cursor (don't give it to the element bellow)
         if (IsDisabled == false && IsHovered)
@@ -363,14 +364,12 @@ public class List : Element
             Scroll.InheritParent(this);
             Scroll.Update();
 
-            if (isInitialized == false)
+            if (isInitialized == false || singleSelectedIndex == -1)
                 return;
 
             var selectedItem = this[singleSelectedIndex];
             selectedItem.position = Position;
             TryTrimItem(selectedItem);
-            // after trim
-            Select(selectedItem);
 
             selectedItem.InheritParent(this);
             selectedItem.Update();
@@ -419,23 +418,17 @@ public class List : Element
                 iy + ih <= y || iy >= y + h - botEdgeTrim)
                 item.position = (int.MaxValue, int.MaxValue);
 
+            TryTrimItem(item);
             item.InheritParent(this);
             item.Update();
-            TryTrimItem(item);
-
-            if (IsSingleSelecting)
-                Select(item, false);
         }
-
-        if (IsSingleSelecting && HasIndex(singleSelectedIndex))
-            Select(items[singleSelectedIndex]);
     }
     internal override void OnChildrenDisplay()
     {
-        if (isInitialized == false)
+        if (isInitialized == false || items.Count == 0)
             return;
 
-        if (Type == Types.Dropdown && isInitialized && isExpanded == false)
+        if (Type == Types.Dropdown && isInitialized && isExpanded == false && singleSelectedIndex != -1)
         {
             var selectedItem = this[singleSelectedIndex];
 
@@ -460,48 +453,36 @@ public class List : Element
             return;
         }
 
-        var isOneSelected = HasIndex(singleSelectedIndex);
-
-        if (isOneSelected)
-            return;
-
         Select(items[0]);
     }
-    internal void TrySingleSelect()
+
+    private void OnInternalItemTrigger(Button item)
     {
-        var isHoveringItems = IsHovered && Scroll.IsHovered == false;
-
-        if (Input.Current.IsJustPressed && IsHovered == false)
-        {
-            IsExpanded = false;
-            return;
-        }
-
-        if (Input.Current.IsJustReleased == false ||
-            IsSingleSelecting == false || isHoveringItems == false)
-            return;
-
-        var hoveredIndex = GetHoveredIndex();
-        if (HasIndex(hoveredIndex) == false)
-            return;
-
-        if (items[hoveredIndex].IsPressedAndHeld == false)
-            return;
-
-        var item = items[hoveredIndex];
-        Select(item, item.IsSelected == false);
+        OnItemTrigger(item);
+        itemTriggerCallback?.Invoke(item);
 
         if (Type != Types.Dropdown)
             return;
 
         IsExpanded = isExpanded == false;
+        Select(item);
+    }
+    private void OnInternalItemSelect(Button item)
+    {
+        OnItemSelect(item);
+        itemSelectCallback?.Invoke(item);
+
+        TrySingleSelectOneItem();
+
+        if (IsSingleSelecting)
+            Select(item);
     }
 
     private bool HasIndex(int index)
     {
         return index >= 0 && index < items.Count;
     }
-    private void TryTrimItem(Button item)
+    private void TryTrimItem(Element item)
     {
         var (x, y) = Position;
         var (w, h) = Size;
@@ -536,14 +517,6 @@ public class List : Element
         }
 
         item.size = (newWidth, newHeight);
-    }
-    private int GetHoveredIndex()
-    {
-        for (var i = 0; i < items.Count; i++)
-            if (items[i].IsHovered)
-                return i;
-
-        return -1;
     }
     private (bool horizontal, bool vertical) HasScroll()
     {

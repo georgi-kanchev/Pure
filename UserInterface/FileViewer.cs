@@ -2,8 +2,10 @@ using System.Diagnostics;
 
 namespace Pure.UserInterface;
 
-public class FileViewer : List
+public class FileViewer : Element
 {
+    public List FilesAndFolders { get; }
+
     public string CurrentDirectory
     {
         get => dir;
@@ -31,62 +33,47 @@ public class FileViewer : List
         {
             var result = new List<string>();
 
-            for (var i = 1; i < Count; i++)
-                if (this[i].IsSelected)
-                    result.Add(Path.Join(CurrentDirectory, this[i].Text));
+            for (var i = 0; i < FilesAndFolders.Count; i++)
+                if (FilesAndFolders[i].IsSelected)
+                    result.Add(Path.Join(CurrentDirectory, FilesAndFolders[i].Text));
 
             return result.ToArray();
         }
     }
 
-    public FileViewer((int x, int y) position, string path = "", bool isSelectingFolders = false)
+    public FileViewer((int x, int y) position, string directory = "", bool isSelectingFolders = false)
         : base(position)
     {
+        FilesAndFolders = new(position, 0)
+        {
+            hasParent = true,
+            itemSelectCallback = OnInternalItemSelect,
+            itemTriggerCallback = OnInternalItemTrigger,
+            itemDisplayCallback = OnInternalItemDisplay
+        };
+
         IsSelectingFolders = isSelectingFolders;
-        CurrentDirectory = path;
+        CurrentDirectory = directory;
         RecreateAllItems();
     }
     public FileViewer(byte[] bytes) : base(bytes) { }
 
-    public bool IsFolder(Button item) => IndexOf(item) <= CountFolders;
+    public bool IsFolder(Button item) => FilesAndFolders.IndexOf(item) < CountFolders;
 
     internal override void OnUpdate()
     {
-        base.OnUpdate();
-        itemSize = (Size.width, 1);
+        var (x, y) = Position;
+        var (w, h) = Size;
+
+        FilesAndFolders.Update();
+        FilesAndFolders.size = (w, h);
+        FilesAndFolders.position = (x, y);
+        FilesAndFolders.itemSize = (w, 1);
     }
 
-    protected override void OnItemSelect(Button item)
-    {
-        if (IsSingleSelecting == false)
-            return;
-
-        if (IsFolder(item) != IsSelectingFolders)
-            Select(0);
-    }
-    protected override void OnItemTrigger(Button item)
-    {
-        var index = IndexOf(item);
-        if (index == 0)
-        {
-            CurrentDirectory = $"{Directory.GetParent(CurrentDirectory)}";
-            return;
-        }
-
-        var isFolder = IsFolder(item);
-
-        if (isFolder != IsSelectingFolders)
-            item.isSelected = false;
-
-        if (isFolder == false)
-            return;
-
-        if (index == clickedIndex && doubleClick.Elapsed.TotalSeconds < 0.5f)
-            CurrentDirectory = Path.Join(CurrentDirectory, item.Text);
-
-        clickedIndex = index;
-        doubleClick.Restart();
-    }
+    protected virtual void OnItemDisplay(Button item) { }
+    protected virtual void OnItemTrigger(Button item) { }
+    protected virtual void OnItemSelect(Button item) { }
 
 #region Backend
     private int clickedIndex;
@@ -94,6 +81,11 @@ public class FileViewer : List
     private string dir = "";
     private static string DefaultPath =>
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+    // used in the UI class to receive callbacks
+    internal Action<Button>? itemDisplayCallback;
+    internal Action<Button>? itemTriggerCallback;
+    internal Action<Button>? itemSelectCallback;
 
     private void RecreateAllItems()
     {
@@ -114,36 +106,65 @@ public class FileViewer : List
             files = Directory.GetFiles(path);
         }
 
-        InternalClear();
+        FilesAndFolders.InternalClear();
 
         CountFolders = 0;
         CountFiles = 0;
 
-        InternalAdd();
-        this[^1].Text = "..";
         foreach (var directory in directories)
         {
-            InternalAdd();
-            this[^1].Text = $"{Path.GetFileName(directory)}";
-        }
-
-        if (IsSelectingFolders)
-        {
-            CountFiles = 0;
-            CountFolders = directories.Length;
-            return;
-        }
-
-        foreach (var file in files)
-        {
-            InternalAdd();
-            this[^1].Text = $"{Path.GetFileName(file)}";
+            FilesAndFolders.InternalAdd();
+            FilesAndFolders[^1].Text = $"{Path.GetFileName(directory)}";
         }
 
         CountFolders = directories.Length;
+
+        if (IsSelectingFolders)
+            return;
+
+        foreach (var file in files)
+        {
+            FilesAndFolders.InternalAdd();
+            FilesAndFolders[^1].Text = $"{Path.GetFileName(file)}";
+        }
+
         CountFiles = files.Length;
 
-        Scroll.Slider.Progress = 0;
+        FilesAndFolders.Scroll.Slider.Progress = 0;
+    }
+    private void OnInternalItemTrigger(Button item)
+    {
+        OnItemTrigger(item);
+        itemTriggerCallback?.Invoke(item);
+
+        if (FilesAndFolders.IsSingleSelecting == false)
+            return;
+
+        if (IsFolder(item) != IsSelectingFolders)
+            FilesAndFolders.Select(0);
+    }
+    private void OnInternalItemSelect(Button item)
+    {
+        var index = FilesAndFolders.IndexOf(item);
+
+        var isFolder = IsFolder(item);
+
+        if (isFolder != IsSelectingFolders)
+            item.isSelected = false;
+
+        if (isFolder == false)
+            return;
+
+        if (index == clickedIndex && doubleClick.Elapsed.TotalSeconds < 0.5f)
+            CurrentDirectory = Path.Join(CurrentDirectory, item.Text);
+
+        clickedIndex = index;
+        doubleClick.Restart();
+    }
+    private void OnInternalItemDisplay(Button item)
+    {
+        OnItemDisplay(item);
+        itemDisplayCallback?.Invoke(item);
     }
 #endregion
 }

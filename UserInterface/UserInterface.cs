@@ -110,6 +110,7 @@ public class UserInterface
                 fileViewer.dragCallback = d => OnDragFileViewer(fileViewer, d);
                 fileViewer.itemDisplayCallback = b => OnDisplayFileViewerItem(fileViewer, b);
                 fileViewer.itemTriggerCallback = b => OnFileViewerItemTrigger(fileViewer, b);
+                fileViewer.itemSelectCallback = b => OnFileViewerItemSelect(fileViewer, b);
             }
             else if (element is List list)
             {
@@ -230,6 +231,7 @@ public class UserInterface
     protected virtual void OnListItemTrigger(List list, Button item) { }
     protected virtual void OnListItemSelect(List list, Button item) { }
     protected virtual void OnFileViewerItemTrigger(FileViewer fileViewer, Button item) { }
+    protected virtual void OnFileViewerItemSelect(FileViewer fileViewer, Button item) { }
     protected virtual void OnPanelResize(Panel panel, (int width, int height) delta) { }
 
 #region Backend

@@ -95,17 +95,21 @@ public static class UserInterface
         }
         protected override void OnDisplayListItem(List list, Button item)
         {
-            var color = item.IsSelected ? Color.Green : Color.Gray.ToBright();
+            var color = item.IsSelected ? Color.Green : Color.Gray.ToBright(0.3f);
+            var (x, y) = item.Position;
+            var (_, h) = item.Size;
 
-            SetBackground(back, item, 0.25f);
-            front.SetTextLine(item.Position, item.Text, GetColor(item, color), item.Size.width);
+            SetBackground(middle, item, 0.25f);
+            front.SetTextLine((x, y + h / 2), item.Text, GetColor(item, color), item.Size.width);
         }
         protected override void OnDisplayFileViewer(FileViewer fileViewer)
         {
-            var (x, y) = fileViewer.Position;
+            var e = fileViewer;
+            var (x, y) = e.Position;
 
-            OnDisplayList(fileViewer);
-            front.SetTextLine((x, y - 1), fileViewer.CurrentDirectory);
+            back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
+            OnDisplayScroll(e.FilesAndFolders.Scroll);
+            front.SetTextLine((x, y - 1), e.CurrentDirectory);
         }
         protected override void OnDisplayFileViewerItem(FileViewer fileViewer, Button item)
         {
@@ -205,8 +209,8 @@ public static class UserInterface
 
             SetBackground(back, stepper);
 
-            middle.SetTile(e.Decrease.Position, new(Tile.ARROW, Color.Gray, 1));
-            middle.SetTile(e.Increase.Position, new(Tile.ARROW, Color.Gray, 3));
+            middle.SetTile(e.Decrease.Position, new(Tile.ARROW, GetColor(e.Decrease, Color.Gray), 1));
+            middle.SetTile(e.Increase.Position, new(Tile.ARROW, GetColor(e.Increase, Color.Gray), 3));
             middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text);
             middle.SetTextLine((e.Position.x + 2, e.Position.y + 1), text);
         }
@@ -302,28 +306,29 @@ public static class UserInterface
         var front = tilemaps[2];
 
         var userInterface = new UI(back, middle, front);
-        userInterface.Add(new Stepper((34, 4)) { Range = (-9, 13) });
+        userInterface.Add(new Stepper((37, 4)) { Range = (-9, 13) });
         userInterface.Add(new List((37, 7), 15, Types.Dropdown) { Size = (8, 6) });
         userInterface.Add(new Scroll((46, 7), 9));
         userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
         userInterface.Add(new Scroll((37, 16), 9, false));
         userInterface.Add(new Pages((29, 1)) { Size = (18, 2) });
         userInterface.Add(new FileViewer((1, 18)) { Size = (16, 8) });
-        userInterface.Add(new Panel((18, 22))
+        userInterface.Add(new Panel((18, 19))
         {
-            Size = (15, 4),
+            Size = (15, 7),
             IsResizable = false,
             IsMovable = false,
         });
-        userInterface.Add(new List((19, 23), 10, Types.Horizontal)
+        userInterface.Add(new List((19, 20), 10, Types.Horizontal)
         {
-            Size = (13, 2)
+            Size = (13, 5),
+            ItemSize = (5, 4),
         });
 
         // -------
 
         var panelIndex = userInterface.Count;
-        userInterface.Add(new Panel((0, 0))
+        userInterface.Add(new Panel((1, 1))
         {
             Size = (15, 15),
             SizeMinimum = (15, 6),
@@ -337,7 +342,7 @@ public static class UserInterface
         layout.Cut(index: 1, side: Layout.CutSide.Bottom, rate: 0.4f);
 
         userInterface.Add(new Button((0, 0)));
-        userInterface.Add(new Button((35, 18)) { Text = "Checkbox" });
+        userInterface.Add(new Button((37, 18)) { Text = "Checkbox" });
         userInterface.Add(new List((0, 0), 15)
         {
             Size = (8, 9),
