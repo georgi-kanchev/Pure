@@ -868,7 +868,7 @@ public static class Extensions
     public static bool HasChance(this float percent, float seed = float.NaN)
     {
         percent = percent.Limit((0, 100));
-        var n = Random((1f, 100f),
+        var n = Random((1f, 100f), 0f,
             seed); // should not roll 0 so it doesn't return true with 0% (outside of roll)
         return n <= percent;
     }
@@ -886,7 +886,7 @@ public static class Extensions
         return HasChance((float)percent, seed);
     }
 
-    #region Backend
+#region Backend
     private class Gate
     {
         public int entries;
@@ -902,5 +902,5 @@ public static class Extensions
         holdFrequency.Start();
         holdDelay.Start();
     }
-    #endregion
+#endregion
 }
