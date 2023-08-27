@@ -2,7 +2,7 @@
 
 /// <summary>
 /// Tracks conditions and triggers methods associated with a unique identifier of type
-/// <typeparamref name="T"/> at certain times.
+/// <typeparamref name="T"/> at certain times according to the provided conditions.
 /// </summary>
 /// <typeparam name="T">The type of the unique identifier.</typeparam>
 public static class Tracker<T> where T : notnull
@@ -11,11 +11,11 @@ public static class Tracker<T> where T : notnull
     /// Subscribes a method to continuously get called
     /// when triggered by the unique identifier.
     /// </summary>
-    /// <param name="uniqueID">The unique identifier associated with the method.</param>
+    /// <param name="uniqueId">The unique identifier associated with the method.</param>
     /// <param name="method">The method to subscribe.</param>
-    public static void While(T uniqueID, Action method)
+    public static void While(T uniqueId, Action method)
     {
-        Subscribe(uniqueID, method, continuous);
+        Subscribe(uniqueId, method, continuous);
     }
     /// <summary>
     /// Subscribes a method to get called
@@ -29,23 +29,22 @@ public static class Tracker<T> where T : notnull
     }
 
     /// <summary>
-    /// Tracks the method of the unique identifier and 
-    /// triggers any subscribed methods accordingly.
+    /// Associates a condition to a unique identifier and triggers any subscribed methods accordingly.
     /// </summary>
-    /// <param name="uniqueID">The unique identifier to track.</param>
+    /// <param name="uniqueId">The unique identifier of the methods.</param>
     /// <param name="condition">The condition to track.</param>
-    public static void Track(T uniqueID, bool condition)
+    public static void Track(T uniqueId, bool condition)
     {
-        var isContinuous = continuous.ContainsKey(uniqueID);
-        var isOnce = once.ContainsKey(uniqueID);
+        var isContinuous = continuous.ContainsKey(uniqueId);
+        var isOnce = once.ContainsKey(uniqueId);
 
         if (isContinuous == false && isOnce == false)
             return;
 
         if (isContinuous && condition)
-            continuous[uniqueID].Trigger();
+            continuous[uniqueId].Trigger();
 
-        var instance = once[uniqueID];
+        var instance = once[uniqueId];
         var prev = instance.condition;
         instance.condition = condition;
 
@@ -53,7 +52,7 @@ public static class Tracker<T> where T : notnull
             instance.Trigger();
     }
 
-    #region Backend
+#region Backend
     private class Instance
     {
         public readonly List<Action> methods = new();
@@ -74,5 +73,5 @@ public static class Tracker<T> where T : notnull
 
         collection[uniqueID].methods.Add(method);
     }
-    #endregion
+#endregion
 }

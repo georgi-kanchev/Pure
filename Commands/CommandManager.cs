@@ -2,8 +2,10 @@
 
 using System.Globalization;
 
-public class Commands
+public class CommandManager
 {
+    public bool IsDisabled { get; set; }
+
     public char Divider { get; set; } = ';';
     public char DividerValue { get; set; } = ' ';
     public char DividerText { get; set; } = '`';
@@ -23,6 +25,9 @@ public class Commands
     }
     public string[] Execute(string command)
     {
+        if (IsDisabled)
+            return Array.Empty<string>();
+
         var strings = GetStrings(ref command);
         var results = new List<string>();
         var cmds = command.Trim().Split(Divider);
@@ -53,7 +58,6 @@ public class Commands
 
         return results.ToArray();
     }
-
     public T? GetNextValue<T>()
     {
         if (parameterIndex >= parameters.Count)

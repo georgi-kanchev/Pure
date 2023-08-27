@@ -1,4 +1,4 @@
-using Cmd = Pure.Commands.Commands;
+using Pure.Commands;
 
 namespace Pure.Examples.Systems;
 
@@ -6,14 +6,17 @@ public static class Commands
 {
     public static void Run()
     {
-        var cmd = new Cmd();
+        var cmd = new CommandManager();
 
         cmd.Add("log", () =>
         {
-            var text = cmd.GetNextValue<int[]>();
+            var text = cmd.GetNextValue<string>();
+            var intArray = cmd.GetNextValue<int[]>();
+            var boolArray = cmd.GetNextValue<bool[]>();
+
             Console.WriteLine(text);
-            return default;
+            return "result";
         });
-        cmd.Execute("log 1|2|3|4|5|6");
+        var results = cmd.Execute("log `hello, world!` 1|2|3|4 true|false|true ; log `second command`");
     }
 }

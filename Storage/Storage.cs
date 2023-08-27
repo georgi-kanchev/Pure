@@ -252,11 +252,8 @@ public class Storage
         if (typeId != default)
             return OnObjectToText(typeId, instance); // ask user for parse
 
-        if (t.IsPrimitive)
-            return $"{instance}";
-
-        if (t == typeof(string))
-            return $"{DividerText}{instance}{DividerText}";
+        if (t.IsPrimitive || t == typeof(string))
+            return TextFromPrimitiveOrTuple(instance);
 
         if (IsGenericList(t) || (t.IsArray && IsArrayOfPrimitives((Array)instance)))
             return TextFromArrayOrList(instance);
@@ -541,7 +538,14 @@ public class Storage
 
     private string TextFromPrimitiveOrTuple(object? value)
     {
-        return value != null && IsPrimitiveTuple(value.GetType()) ? TextFromTuple(value) : $"{value}";
+        if (value == null)
+            return string.Empty;
+
+        if (IsPrimitiveTuple(value.GetType()))
+            return TextFromTuple(value);
+
+        var primitive = value is string str ? $"{DividerText}{str}{DividerText}" : $"{value}";
+        return primitive;
     }
     private object? TextToPrimitiveOrTuple(string dataAsText, Type type)
     {
