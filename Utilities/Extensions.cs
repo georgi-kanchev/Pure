@@ -373,6 +373,81 @@ public static class Extensions
         }
     }
 
+    public static float EvaluateAsMathExpression(this string expression)
+    {
+        expression = expression.Replace(' ', char.MinValue);
+
+        var values = new Stack<float>();
+        var operators = new Stack<char>();
+
+        for (var i = 0; i < expression.Length; i++)
+        {
+            var c = expression[i];
+
+            if (char.IsDigit(c) || c == '.')
+                values.Push(GetNumber(ref i));
+            else if (c == '(')
+                operators.Push(c);
+            else if (c == ')')
+            {
+                while (operators.Count > 0 && operators.Peek() != '(')
+                    Process();
+
+                operators.Pop(); // Pop the '('
+            }
+            else if (IsOperator(c))
+            {
+                while (operators.Count > 0 && Priority(operators.Peek()) >= Priority(c))
+                    Process();
+
+                operators.Push(c);
+            }
+        }
+
+        while (operators.Count > 0)
+            Process();
+
+        return values.Pop();
+
+        void Process()
+        {
+            var val2 = values.Pop();
+            var val1 = values.Pop();
+            var op = operators.Pop();
+            values.Push(ApplyOperator(val1, val2, op));
+        }
+        bool IsOperator(char c) => c is '+' or '-' or '*' or '/' or '^' or '%';
+        int Priority(char op)
+        {
+            if (op is '+' or '-') return 1;
+            if (op is '*' or '/' or '%') return 2;
+            if (op is '^') return 3;
+            return 0;
+        }
+        float ApplyOperator(float val1, float val2, char op)
+        {
+            if (op == '+') return val1 + val2;
+            if (op == '-') return val1 - val2;
+            if (op == '*') return val1 * val2;
+            if (op == '/') return val2 != 0 ? val1 / val2 : float.NaN;
+            if (op == '%') return val2 != 0 ? val1 % val2 : float.NaN;
+            if (op == '^') return MathF.Pow(val1, val2);
+            return float.NaN;
+        }
+        float GetNumber(ref int i)
+        {
+            var num = "";
+            while (i < expression.Length && (char.IsDigit(expression[i]) || expression[i] == '.'))
+            {
+                num += expression[i];
+                i++;
+            }
+
+            i--;
+
+            return num.ToNumber();
+        }
+    }
     /// <param name="text">
     /// The input string to check.</param>
     /// <returns>True if the input string represents a number; otherwise, false.</returns>
@@ -470,7 +545,7 @@ public static class Extensions
     /// Opens a web page in the default browser.
     /// </summary>
     /// <param name="url">The URL of the web page to open.</param>
-    public static void OpenUrl(this string url)
+    public static void OpenAsUrl(this string url)
     {
         try
         {

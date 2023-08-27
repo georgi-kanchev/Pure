@@ -12,7 +12,8 @@ public abstract class Program
         //Systems.Audio.Run();
         //Systems.ChatLAN.Run();
         //Systems.Commands.Run();
-        Systems.Storage.Run();
+        //Systems.Storage.Run();
+        Systems.UtilityExtensions.Run();
 
         //Games.FlappyBird.Run();
         //Games.Ludo.Run();
