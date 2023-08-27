@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Window", "Window\Window.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Particles", "Particles\Particles.csproj", "{4D12C66C-1D47-4EDE-A380-75326E12FEBB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAN", "LAN\LAN.csproj", "{46834276-33C0-4687-AC41-883F98118246}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocalAreaNetwork", "LocalAreaNetwork\LocalAreaNetwork.csproj", "{46834276-33C0-4687-AC41-883F98118246}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tracker", "Tracker\Tracker.csproj", "{5427CCE6-8A4B-4408-B37D-84FD94859A60}"
 EndProject
@@ -32,6 +32,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EditorNotes", "NoteEditor\EditorNotes.csproj", "{74A52FC6-3EF7-4383-8211-6884AEBB85DC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorUserInterface", "EditorUserInterface\EditorUserInterface.csproj", "{3E733970-E290-4636-B9BC-A28A298DA403}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Commands", "Commands\Commands.csproj", "{65C71D65-86A0-4302-B6F7-5C142B3D5252}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -99,6 +101,10 @@ Global
 		{3E733970-E290-4636-B9BC-A28A298DA403}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E733970-E290-4636-B9BC-A28A298DA403}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E733970-E290-4636-B9BC-A28A298DA403}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65C71D65-86A0-4302-B6F7-5C142B3D5252}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65C71D65-86A0-4302-B6F7-5C142B3D5252}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65C71D65-86A0-4302-B6F7-5C142B3D5252}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65C71D65-86A0-4302-B6F7-5C142B3D5252}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

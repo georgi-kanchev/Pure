@@ -1,3 +1,5 @@
+using Pure.Commands;
+
 namespace Pure.Examples;
 
 public abstract class Program
@@ -9,8 +11,10 @@ public abstract class Program
         //Systems.Collision.Run();
         //Systems.Audio.Run();
         //Systems.ChatLAN.Run();
+        //Systems.Commands.Run();
+        Systems.Storage.Run();
 
-        Games.FlappyBird.Run();
+        //Games.FlappyBird.Run();
         //Games.Ludo.Run();
     }
 }
