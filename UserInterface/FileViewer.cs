@@ -1,10 +1,12 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Pure.UserInterface;
 
 public class FileViewer : Element
 {
-    public List FilesAndFolders { get; }
+    public Button Back { get; private set; }
+    public List FilesAndFolders { get; private set; }
 
     public string CurrentDirectory
     {
@@ -44,6 +46,7 @@ public class FileViewer : Element
     public FileViewer((int x, int y) position, string directory = "", bool isSelectingFolders = false)
         : base(position)
     {
+        Init();
         FilesAndFolders = new(position, 0)
         {
             hasParent = true,
@@ -51,23 +54,50 @@ public class FileViewer : Element
             itemTriggerCallback = OnInternalItemTrigger,
             itemDisplayCallback = OnInternalItemDisplay
         };
-
         IsSelectingFolders = isSelectingFolders;
         CurrentDirectory = directory;
-        RecreateAllItems();
     }
-    public FileViewer(byte[] bytes) : base(bytes) { }
+    public FileViewer(byte[] bytes) : base(bytes)
+    {
+        Init();
+        FilesAndFolders = new(bytes)
+        {
+            hasParent = true,
+            itemSelectCallback = OnInternalItemSelect,
+            itemTriggerCallback = OnInternalItemTrigger,
+            itemDisplayCallback = OnInternalItemDisplay
+        };
+        IsSelectingFolders = GrabBool(bytes);
+        CurrentDirectory = GrabString(bytes);
+    }
 
     public bool IsFolder(Button item) => FilesAndFolders.IndexOf(item) < CountFolders;
 
+    public override byte[] ToBytes()
+    {
+        var result = base.ToBytes().ToList();
+        result.AddRange(FilesAndFolders.ToBytes());
+        PutBool(result, IsSelectingFolders);
+        PutString(result, CurrentDirectory);
+        return result.ToArray();
+    }
+
+    internal override void OnInput()
+    {
+        TryScrollWhileHover(Back);
+    }
     internal override void OnUpdate()
     {
         var (x, y) = Position;
         var (w, h) = Size;
 
+        Back.Update();
+        Back.size = (w, 1);
+        Back.position = (x, y);
+
         FilesAndFolders.Update();
-        FilesAndFolders.size = (w, h);
-        FilesAndFolders.position = (x, y);
+        FilesAndFolders.size = (w, h - 1);
+        FilesAndFolders.position = (x, y + 1);
         FilesAndFolders.itemSize = (w, 1);
     }
 
@@ -86,6 +116,14 @@ public class FileViewer : Element
     internal Action<Button>? itemDisplayCallback;
     internal Action<Button>? itemTriggerCallback;
     internal Action<Button>? itemSelectCallback;
+
+    [MemberNotNull(nameof(Back))]
+    private void Init()
+    {
+        Back = new(position) { hasParent = true };
+        Back.SubscribeToUserAction(UserAction.Trigger, () =>
+            CurrentDirectory = Path.GetDirectoryName(CurrentDirectory) ?? DefaultPath);
+    }
 
     private void RecreateAllItems()
     {
@@ -132,6 +170,14 @@ public class FileViewer : Element
 
         FilesAndFolders.Scroll.Slider.Progress = 0;
     }
+    private void TryScrollWhileHover(Element element)
+    {
+        if (element.IsHovered && Input.Current.ScrollDelta != 0 && element.IsFocused &&
+            FocusedPrevious == element)
+            FilesAndFolders.Scroll.Slider.Progress -=
+                Input.Current.ScrollDelta * FilesAndFolders.Scroll.Step;
+    }
+
     private void OnInternalItemTrigger(Button item)
     {
         OnItemTrigger(item);
@@ -146,11 +192,13 @@ public class FileViewer : Element
     private void OnInternalItemSelect(Button item)
     {
         var index = FilesAndFolders.IndexOf(item);
-
         var isFolder = IsFolder(item);
 
         if (isFolder != IsSelectingFolders)
             item.isSelected = false;
+
+        OnItemSelect(item);
+        itemSelectCallback?.Invoke(item);
 
         if (isFolder == false)
             return;

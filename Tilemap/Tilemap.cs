@@ -260,14 +260,20 @@ public class Tilemap
     /// <param name="text">The text to display.</param>
     /// <param name="tint">Optional tint color value (defaults to white).</param>
     /// <param name="maxLength">Optional shortening that adds ellipis '…' if exceeded
-    /// (defaults to none).</param>
+    /// (defaults to none). Negative values reduce the text from the back.</param>
     public void SetTextLine((int x, int y) position, string? text, uint tint = uint.MaxValue,
         int maxLength = int.MaxValue)
     {
         var errorOffset = 0;
 
-        if (text != null && text.Length > maxLength)
-            text = text[..Math.Max(maxLength - 1, 0)] + "…";
+        if (text != null)
+        {
+            var abs = Math.Abs(maxLength);
+            if (maxLength > 0 && text.Length > maxLength)
+                text = text[..Math.Max(maxLength - 1, 0)] + "…";
+            else if (maxLength < 0 && text.Length > abs)
+                text = "…" + text[^abs..];
+        }
 
         for (var i = 0; i < text?.Length; i++)
         {

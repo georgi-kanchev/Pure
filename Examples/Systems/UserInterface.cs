@@ -24,6 +24,11 @@ public static class UserInterface
         {
             if (button.Text == "Button" && userAction == UserAction.Trigger)
                 buttonClickCount++;
+
+            if (userAction == UserAction.DoubleTrigger)
+            {
+                Console.WriteLine("double click");
+            }
         }
 
         protected override void OnDisplayButton(Button button)
@@ -105,11 +110,13 @@ public static class UserInterface
         protected override void OnDisplayFileViewer(FileViewer fileViewer)
         {
             var e = fileViewer;
-            var (x, y) = e.Position;
-
             back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
             OnDisplayScroll(e.FilesAndFolders.Scroll);
-            front.SetTextLine((x, y - 1), e.CurrentDirectory);
+
+            var color = GetColor(e.Back, Color.Gray);
+            var (x, y) = e.Back.Position;
+            front.SetTile((x, y), new(Tile.ICON_BACK, color));
+            front.SetTextLine((x + 1, y), e.CurrentDirectory, color, -e.Back.Size.width + 2);
         }
         protected override void OnDisplayFileViewerItem(FileViewer fileViewer, Button item)
         {

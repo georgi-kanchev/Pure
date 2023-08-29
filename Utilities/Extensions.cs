@@ -373,16 +373,16 @@ public static class Extensions
         }
     }
 
-    public static float EvaluateAsMathExpression(this string expression)
+    public static float Calculate(this string mathExpression)
     {
-        expression = expression.Replace(' ', char.MinValue);
+        mathExpression = mathExpression.Replace(' ', char.MinValue);
 
         var values = new Stack<float>();
         var operators = new Stack<char>();
 
-        for (var i = 0; i < expression.Length; i++)
+        for (var i = 0; i < mathExpression.Length; i++)
         {
-            var c = expression[i];
+            var c = mathExpression[i];
 
             if (char.IsDigit(c) || c == '.')
                 values.Push(GetNumber(ref i));
@@ -437,9 +437,10 @@ public static class Extensions
         float GetNumber(ref int i)
         {
             var num = "";
-            while (i < expression.Length && (char.IsDigit(expression[i]) || expression[i] == '.'))
+            while (i < mathExpression.Length &&
+                   (char.IsDigit(mathExpression[i]) || mathExpression[i] == '.'))
             {
-                num += expression[i];
+                num += mathExpression[i];
                 i++;
             }
 

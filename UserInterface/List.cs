@@ -461,6 +461,9 @@ public class List : Element
         OnItemTrigger(item);
         itemTriggerCallback?.Invoke(item);
 
+        if (IsSingleSelecting)
+            Select(item);
+
         if (Type != Types.Dropdown)
             return;
 
@@ -473,9 +476,6 @@ public class List : Element
         itemSelectCallback?.Invoke(item);
 
         TrySingleSelectOneItem();
-
-        if (IsSingleSelecting)
-            Select(item);
     }
 
     private bool HasIndex(int index)

@@ -15,6 +15,7 @@ public enum UserAction
     Press,
     Release,
     Trigger,
+    DoubleTrigger,
     PressAndHold,
     Scroll,
     Select
@@ -488,20 +489,20 @@ public abstract partial class Element
     }
 
 #region Backend
-// save format
-// [amount of bytes]	- data
-// --------------------------------
-// [4]					- x
-// [4]					- y
-// [4]					- width
-// [4]					- height
-// [4]					- text length
-// [text length]		- text (base 64-ed)
-// [1]					- is hidden
-// [1]					- is disabled
-// [4]					- type name length
-// [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
-    private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
+    // save format
+    // [amount of bytes]	- data
+    // --------------------------------
+    // [4]					- x
+    // [4]					- y
+    // [4]					- width
+    // [4]					- height
+    // [4]					- text length
+    // [text length]		- text (base 64-ed)
+    // [1]					- is hidden
+    // [1]					- is disabled
+    // [4]					- type name length
+    // [type name length]	- type name (Button, InputBox, Slider etc...) - used in the UI class
+    private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f, DOUBLE_CLICK_DELAY = 0.5f;
     internal (int, int) position,
         size,
         listSizeTrimOffset,
@@ -509,7 +510,7 @@ public abstract partial class Element
         sizeMaximum = (int.MaxValue, int.MaxValue);
     internal bool hasParent, isParent;
     internal readonly string typeName;
-    private static readonly Stopwatch hold = new(), holdTrigger = new();
+    private static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private int byteOffset;
     private bool wasFocused, wasHovered;
     private readonly Dictionary<UserAction, List<Action>> userActions = new();
@@ -522,6 +523,8 @@ public abstract partial class Element
     {
         hold.Start();
         holdTrigger.Start();
+        doubleClick.Start();
+
         Text = GetType().Name;
     }
     internal void LimitSizeMin((int width, int height) minimumSize)
@@ -567,7 +570,14 @@ public abstract partial class Element
         }
 
         if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
+        {
             Trigger();
+
+            if (doubleClick.Elapsed.TotalSeconds < DOUBLE_CLICK_DELAY)
+                TriggerUserAction(UserAction.DoubleTrigger);
+
+            doubleClick.Restart();
+        }
 
         if (IsHovered && Input.Current.IsJustPressed)
             IsPressedAndHeld = true;

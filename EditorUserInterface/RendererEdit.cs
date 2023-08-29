@@ -50,6 +50,16 @@ public class RendererEdit : UserInterface
             element = new List(position, 10, type);
             panel.SizeMinimum = (4, 4);
         }
+        else if (index == 11)
+        {
+            element = new FileViewer(position, "");
+            panel.SizeMinimum = (4, 4);
+        }
+        else if (index == 12)
+        {
+            element = new FileViewer(position, "", true);
+            panel.SizeMinimum = (4, 4);
+        }
 
         if (element == null)
             return;

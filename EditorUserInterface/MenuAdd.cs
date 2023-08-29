@@ -17,9 +17,11 @@ public class MenuAdd : Menu
             $"  {nameof(Pure.UserInterface.Scroll)}",
             $"  {nameof(Stepper)}",
             $"  {nameof(Layout)}",
-            $"  {nameof(List)}")
+            $"  {nameof(List)}",
+            $"  {nameof(FileViewer)}",
+            $"  FolderViewer")
     {
-        Size = (10, 11);
+        Size = (13, 13);
     }
 
     protected override void OnItemTrigger(Button item)

@@ -50,7 +50,7 @@ public static class Program
                 text += $" ({number})";
             }
             else
-                text += $" ({2})";
+                text += " (2)";
         }
 
         infoText += text + Environment.NewLine;
