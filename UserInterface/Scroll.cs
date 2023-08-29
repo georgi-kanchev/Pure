@@ -65,8 +65,6 @@ public class Scroll : Element
     [MemberNotNull(nameof(Decrease))]
     private void Init()
     {
-        isParent = true;
-
         Slider = new((0, 0), IsVertical ? Size.height : Size.width, IsVertical) { hasParent = true };
         Increase = new((0, 0)) { Size = (1, 1), hasParent = true };
         Decrease = new((0, 0)) { Size = (1, 1), hasParent = true };

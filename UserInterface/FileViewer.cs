@@ -6,7 +6,7 @@ namespace Pure.UserInterface;
 public class FileViewer : Element
 {
     public Button Back { get; private set; }
-    public List FilesAndFolders { get; private set; }
+    public List FilesAndFolders { get; }
 
     public string CurrentDirectory
     {
@@ -21,7 +21,9 @@ public class FileViewer : Element
                 value = defaultPath;
 
             dir = value;
-            RecreateAllItems();
+            watcher.Path = value;
+
+            Refresh();
         }
     }
     public bool IsSelectingFolders { get; }
@@ -46,9 +48,11 @@ public class FileViewer : Element
     public FileViewer((int x, int y) position, string directory = "", bool isSelectingFolders = false)
         : base(position)
     {
+        Size = (12, 8);
         Init();
         FilesAndFolders = new(position, 0)
         {
+            isReadOnly = true,
             hasParent = true,
             itemSelectCallback = OnInternalItemSelect,
             itemTriggerCallback = OnInternalItemTrigger,
@@ -62,6 +66,7 @@ public class FileViewer : Element
         Init();
         FilesAndFolders = new(bytes)
         {
+            isReadOnly = true,
             hasParent = true,
             itemSelectCallback = OnInternalItemSelect,
             itemTriggerCallback = OnInternalItemTrigger,
@@ -88,6 +93,8 @@ public class FileViewer : Element
     }
     internal override void OnUpdate()
     {
+        LimitSizeMin((3, 3));
+
         var (x, y) = Position;
         var (w, h) = Size;
 
@@ -109,6 +116,7 @@ public class FileViewer : Element
     private int clickedIndex;
     private readonly Stopwatch doubleClick = new();
     private string dir = "";
+    private readonly FileSystemWatcher watcher = new();
     private static string DefaultPath =>
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
@@ -120,12 +128,19 @@ public class FileViewer : Element
     [MemberNotNull(nameof(Back))]
     private void Init()
     {
+        watcher.EnableRaisingEvents = true;
+        watcher.NotifyFilter = NotifyFilters.DirectoryName | NotifyFilters.FileName;
+        watcher.Changed += (_, _) => Refresh();
+        watcher.Deleted += (_, _) => Refresh();
+        watcher.Created += (_, _) => Refresh();
+        watcher.Renamed += (_, _) => Refresh();
+
         Back = new(position) { hasParent = true };
         Back.SubscribeToUserAction(UserAction.Trigger, () =>
             CurrentDirectory = Path.GetDirectoryName(CurrentDirectory) ?? DefaultPath);
     }
 
-    private void RecreateAllItems()
+    private void Refresh()
     {
         var path = CurrentDirectory;
         string[] directories;
@@ -153,6 +168,7 @@ public class FileViewer : Element
         {
             FilesAndFolders.InternalAdd();
             FilesAndFolders[^1].Text = $"{Path.GetFileName(directory)}";
+            FilesAndFolders[^1].isTextReadonly = true;
         }
 
         CountFolders = directories.Length;
@@ -164,6 +180,7 @@ public class FileViewer : Element
         {
             FilesAndFolders.InternalAdd();
             FilesAndFolders[^1].Text = $"{Path.GetFileName(file)}";
+            FilesAndFolders[^1].isTextReadonly = true;
         }
 
         CountFiles = files.Length;

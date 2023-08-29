@@ -47,6 +47,20 @@ public class List : Element
             isExpanded = Type == Types.Dropdown && value;
         }
     }
+    public bool IsReadOnly
+    {
+        get => isReadOnly;
+        set
+        {
+            if (hasParent)
+                return;
+
+            isReadOnly = value;
+
+            foreach (var item in items)
+                item.isTextReadonly = value;
+        }
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
@@ -80,7 +94,6 @@ public class List : Element
         : base(position)
     {
         Size = (12, 8);
-        isParent = true;
         originalHeight = Size.height;
         Type = type;
 
@@ -97,7 +110,6 @@ public class List : Element
     public List(byte[] bytes) : base(bytes)
     {
         Type = (Types)GrabByte(bytes);
-        isParent = true;
         IsSingleSelecting = GrabBool(bytes);
         ItemGap = (GrabInt(bytes), GrabInt(bytes));
         ItemSize = (GrabInt(bytes), GrabInt(bytes));
@@ -253,6 +265,7 @@ public class List : Element
     internal Action<Button>? itemDisplayCallback;
     internal Action<Button>? itemTriggerCallback;
     internal Action<Button>? itemSelectCallback;
+    internal bool isReadOnly;
 
     protected override void OnUserAction(UserAction userAction)
     {
@@ -273,8 +286,8 @@ public class List : Element
         {
             var item = new Button((0, 0))
             {
-                Text = $"Item{i}",
-                size = (Type == Types.Horizontal ? Text.Length : Size.width, 1),
+                text = $"Item{i}",
+                size = (Type == Types.Horizontal ? text.Length : Size.width, 1),
                 hasParent = true
             };
             items.Insert(i, item);

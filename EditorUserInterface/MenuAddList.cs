@@ -9,10 +9,8 @@ public class MenuAddList : Menu
         $"{nameof(List)}… ",
         $"  {Types.Vertical}",
         $"  {Types.Horizontal}",
-        $"  {Types.Dropdown}")
-    {
+        $"  {Types.Dropdown}") =>
         Size = (12, 4);
-    }
 
     protected override void OnItemTrigger(Button item)
     {

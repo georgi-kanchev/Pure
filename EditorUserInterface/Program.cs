@@ -23,7 +23,8 @@ public static class Program
     {
         Main,
         Add,
-        AddList
+        AddList,
+        AddViewer
     }
 
     public static Element? Selected { get; set; }
@@ -76,6 +77,7 @@ public static class Program
         editPanel = new((int.MaxValue, int.MaxValue));
 
         // submenus need higher update priority to not close upon parent menu opening them
+        menus[MenuType.AddViewer] = new MenuAddViewer();
         menus[MenuType.AddList] = new MenuAddList();
         menus[MenuType.Add] = new MenuAdd();
         menus[MenuType.Main] = new MenuMain();

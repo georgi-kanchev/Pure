@@ -96,8 +96,6 @@ public class Palette : Element
     [MemberNotNull(nameof(Pick))]
     private void Init(int brightnessPageCount, int brightnessCurrentPage, float opacityProgress)
     {
-        isParent = true;
-
         var (x, y) = Position;
         var (w, h) = Size;
         brightnessPageCount = Math.Clamp(brightnessPageCount, 1, 99);

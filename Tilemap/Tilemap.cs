@@ -271,7 +271,7 @@ public class Tilemap
             var abs = Math.Abs(maxLength);
             if (maxLength > 0 && text.Length > maxLength)
                 text = text[..Math.Max(maxLength - 1, 0)] + "…";
-            else if (maxLength < 0 && text.Length > abs)
+            else if (maxLength < 0 && text.Length > abs + 1)
                 text = "…" + text[^abs..];
         }
 

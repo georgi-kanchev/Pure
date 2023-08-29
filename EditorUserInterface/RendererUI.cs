@@ -7,11 +7,6 @@ using static Program;
 
 public class RendererUI : UserInterface
 {
-    public RendererUI()
-    {
-        seed = (-9999999, 9999999).Random();
-    }
-
     protected override void OnDisplayButton(Button button)
     {
         var e = button;
@@ -183,6 +178,33 @@ public class RendererUI : UserInterface
         middle.SetRectangle(inc.Position, inc.Size, new(Tile.ARROW, scrollColor, scrollUpAng));
         middle.SetRectangle(dec.Position, dec.Size, new(Tile.ARROW, scrollColor, scrollDownAng));
     }
+    protected override void OnDisplayFileViewer(FileViewer fileViewer)
+    {
+        var e = fileViewer;
+        var back = tilemaps[(int)Layer.UiBack];
+        var front = tilemaps[(int)Layer.UiFront];
+        back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
+        OnDisplayScroll(e.FilesAndFolders.Scroll);
+
+        var color = Color.Gray;
+        var (x, y) = e.Back.Position;
+        front.SetTile((x, y), new(Tile.ICON_BACK, color));
+        front.SetTextLine((x + 1, y), e.CurrentDirectory, color, -e.Back.Size.width + 2);
+    }
+    protected override void OnDisplayFileViewerItem(FileViewer fileViewer, Button item)
+    {
+        var front = tilemaps[(int)Layer.UiFront];
+        var color = item.IsSelected ? Color.Green : Color.Gray.ToBright();
+        var (x, y) = item.Position;
+        var icon = fileViewer.IsFolder(item)
+            ? new Tile(Tile.ICON_FOLDER, Color.Yellow)
+            : new(Tile.ICON_FILE, Color.Gray.ToBright());
+
+        icon = item.Text == ".." ? Tile.ICON_BACK : icon;
+
+        front.SetTile((x, y), icon);
+        front.SetTextLine((x + 1, y), item.Text, color, item.Size.width - 1);
+    }
     protected override void OnDisplayLayoutSegment(Layout layout,
         (int x, int y, int width, int height) segment, int index)
     {
@@ -201,7 +223,7 @@ public class RendererUI : UserInterface
     }
 
 #region Backend
-    private readonly float seed;
+    private readonly float seed = (-9999999, 9999999).Random();
 
     private static void SetBackground(Layer layer, Element element, Color color)
     {

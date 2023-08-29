@@ -53,12 +53,12 @@ public class RendererEdit : UserInterface
         else if (index == 11)
         {
             element = new FileViewer(position, "");
-            panel.SizeMinimum = (4, 4);
+            panel.SizeMinimum = (5, 5);
         }
         else if (index == 12)
         {
             element = new FileViewer(position, "", true);
-            panel.SizeMinimum = (4, 4);
+            panel.SizeMinimum = (5, 5);
         }
 
         if (element == null)

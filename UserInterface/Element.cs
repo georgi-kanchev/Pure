@@ -174,7 +174,17 @@ public abstract partial class Element
     /// <summary>
     /// Gets or sets the text displayed (if any) by the user interface element.
     /// </summary>
-    public string Text { get; set; } = "";
+    public string Text
+    {
+        get => text;
+        set
+        {
+            if (isTextReadonly)
+                return;
+
+            text = value;
+        }
+    }
     /// <summary>
     /// Gets or sets the text that has been copied to the user interface clipboard.
     /// </summary>
@@ -508,7 +518,7 @@ public abstract partial class Element
         listSizeTrimOffset,
         sizeMinimum = (1, 1),
         sizeMaximum = (int.MaxValue, int.MaxValue);
-    internal bool hasParent, isParent;
+    internal bool hasParent, isTextReadonly;
     internal readonly string typeName;
     private static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private int byteOffset;
@@ -518,6 +528,7 @@ public abstract partial class Element
     // used in the UI class to receive callbacks
     internal Action<(int width, int height)>? dragCallback;
     internal Action? displayCallback;
+    internal string text = "";
 
     private void Init()
     {

@@ -114,7 +114,6 @@ public class Slider : Element
     [MemberNotNull(nameof(Handle))]
     private void Init()
     {
-        isParent = true;
         Handle = new(position) { Size = (1, 1), hasParent = true };
     }
 

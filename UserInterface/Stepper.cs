@@ -60,8 +60,6 @@ public class Stepper : Element
     [MemberNotNull(nameof(Decrease))]
     private void Init()
     {
-        isParent = true;
-
         Increase = new((0, 0)) { size = (1, 1), hasParent = true };
         Decrease = new((0, 0)) { size = (1, 1), hasParent = true };
 

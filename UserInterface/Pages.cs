@@ -77,8 +77,6 @@ public class Pages : Element
     [MemberNotNull(nameof(Last))]
     private void Init()
     {
-        isParent = true;
-
         First = new((0, 0)) { hasParent = true };
         Previous = new((0, 0)) { hasParent = true };
         Next = new((0, 0)) { hasParent = true };
