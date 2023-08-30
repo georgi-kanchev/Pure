@@ -1,7 +1,6 @@
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-
 namespace Pure.UserInterface;
+
+using System.Diagnostics.CodeAnalysis;
 
 public class FileViewer : Element
 {
@@ -13,6 +12,9 @@ public class FileViewer : Element
         get => dir;
         set
         {
+            if (dir == value)
+                return;
+
             var defaultPath = DefaultPath;
 
             value ??= defaultPath;
@@ -64,7 +66,11 @@ public class FileViewer : Element
     public FileViewer(byte[] bytes) : base(bytes)
     {
         Init();
-        FilesAndFolders = new(bytes)
+        IsSelectingFolders = GrabBool(bytes);
+        CurrentDirectory = GrabString(bytes);
+
+        var listLength = GrabInt(bytes);
+        FilesAndFolders = new(bytes[^listLength..])
         {
             isReadOnly = true,
             hasParent = true,
@@ -72,8 +78,10 @@ public class FileViewer : Element
             itemTriggerCallback = OnInternalItemTrigger,
             itemDisplayCallback = OnInternalItemDisplay
         };
-        IsSelectingFolders = GrabBool(bytes);
-        CurrentDirectory = GrabString(bytes);
+
+        // try to refresh if the loaded directory doesn't exist so that
+        // all items are up to date
+        CurrentDirectory = dir;
     }
 
     public bool IsFolder(Button item) => FilesAndFolders.IndexOf(item) < CountFolders;
@@ -81,9 +89,13 @@ public class FileViewer : Element
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
-        result.AddRange(FilesAndFolders.ToBytes());
         PutBool(result, IsSelectingFolders);
         PutString(result, CurrentDirectory);
+
+        var bList = FilesAndFolders.ToBytes();
+        PutInt(result, bList.Length);
+        result.AddRange(bList);
+
         return result.ToArray();
     }
 
@@ -113,8 +125,6 @@ public class FileViewer : Element
     protected virtual void OnItemSelect(Button item) { }
 
 #region Backend
-    private int clickedIndex;
-    private readonly Stopwatch doubleClick = new();
     private string dir = "";
     private readonly FileSystemWatcher watcher = new();
     private static string DefaultPath =>
@@ -165,11 +175,7 @@ public class FileViewer : Element
         CountFiles = 0;
 
         foreach (var directory in directories)
-        {
-            FilesAndFolders.InternalAdd();
-            FilesAndFolders[^1].Text = $"{Path.GetFileName(directory)}";
-            FilesAndFolders[^1].isTextReadonly = true;
-        }
+            CreateItem(directory);
 
         CountFolders = directories.Length;
 
@@ -177,15 +183,20 @@ public class FileViewer : Element
             return;
 
         foreach (var file in files)
-        {
-            FilesAndFolders.InternalAdd();
-            FilesAndFolders[^1].Text = $"{Path.GetFileName(file)}";
-            FilesAndFolders[^1].isTextReadonly = true;
-        }
+            CreateItem(file);
 
         CountFiles = files.Length;
 
         FilesAndFolders.Scroll.Slider.Progress = 0;
+    }
+    private void CreateItem(string path)
+    {
+        FilesAndFolders.InternalAdd();
+        var item = FilesAndFolders[^1];
+        item.Text = $"{Path.GetFileName(path)}";
+        item.isTextReadonly = true;
+        item.SubscribeToUserAction(UserAction.DoubleTrigger, () =>
+            CurrentDirectory = Path.Join(CurrentDirectory, item.Text));
     }
     private void TryScrollWhileHover(Element element)
     {
@@ -208,7 +219,6 @@ public class FileViewer : Element
     }
     private void OnInternalItemSelect(Button item)
     {
-        var index = FilesAndFolders.IndexOf(item);
         var isFolder = IsFolder(item);
 
         if (isFolder != IsSelectingFolders)
@@ -216,15 +226,6 @@ public class FileViewer : Element
 
         OnItemSelect(item);
         itemSelectCallback?.Invoke(item);
-
-        if (isFolder == false)
-            return;
-
-        if (index == clickedIndex && doubleClick.Elapsed.TotalSeconds < 0.5f)
-            CurrentDirectory = Path.Join(CurrentDirectory, item.Text);
-
-        clickedIndex = index;
-        doubleClick.Restart();
     }
     private void OnInternalItemDisplay(Button item)
     {

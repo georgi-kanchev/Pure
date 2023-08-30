@@ -8,10 +8,7 @@ using System.Text;
 /// </summary>
 public class InputBox : Element
 {
-    /// <summary>
-    /// The text displayed in the input box when it is empty.
-    /// </summary>
-    public string Placeholder { get; set; } = "Type…";
+    public bool IsEditable { get; set; } = true;
 
     public string Selection
     {
@@ -97,6 +94,10 @@ public class InputBox : Element
         }
     }
 
+    /// <summary>
+    /// The text displayed in the input box when it is empty.
+    /// </summary>
+    public string Placeholder { get; set; } = "Type…";
     public string Value
     {
         get => value;
@@ -113,11 +114,6 @@ public class InputBox : Element
         }
     }
 
-    public bool IsCursorVisible =>
-        IsFocused &&
-        cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
-        IsOverlapping(PositionFromIndices(CursorIndices));
-
     public (int symbol, int line) CursorIndices
     {
         get => (cx, cy);
@@ -128,7 +124,6 @@ public class InputBox : Element
             cx = Math.Clamp(x, 0, lines[cy].Length);
         }
     }
-
     public (int x, int y) ScrollIndices
     {
         get => (scrX, scrY);
@@ -138,6 +133,10 @@ public class InputBox : Element
             scrY = Math.Clamp(value.y, 0, Math.Max(0, lines.Count - Size.height));
         }
     }
+    public bool IsCursorVisible =>
+        IsFocused && IsEditable &&
+        cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
+        IsOverlapping(PositionFromIndices(CursorIndices));
 
     public string? this[int lineIndex]
     {
@@ -166,12 +165,15 @@ public class InputBox : Element
     /// <param name="position">The position of the input box.</param>
     public InputBox((int x, int y) position) : base(position)
     {
+        isTextReadonly = true;
         Size = (12, 1);
         lines[0] = Text;
         Value = Text;
     }
     public InputBox(byte[] bytes) : base(bytes)
     {
+        isTextReadonly = true;
+        IsEditable = GrabBool(bytes);
         Placeholder = GrabString(bytes);
         Value = Text;
     }
@@ -179,6 +181,7 @@ public class InputBox : Element
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
+        PutBool(result, IsEditable);
         PutString(result, Placeholder);
         return result.ToArray();
     }
@@ -350,7 +353,7 @@ public class InputBox : Element
             display.Append(newLine + t);
         }
 
-        Text = display.ToString();
+        text = display.ToString();
 
         // reclamp
         CursorIndices = (cx, cy);
@@ -533,6 +536,9 @@ public class InputBox : Element
 
     private void TryMoveCursor(bool isHolding)
     {
+        if (IsEditable == false)
+            return;
+
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
         var shift = Pressed(Key.ShiftLeft) || Pressed(Key.ShiftRight);
         var i = IndicesToIndex(CursorIndices);
@@ -576,7 +582,7 @@ public class InputBox : Element
     }
     private void TryType(bool isAllowedType, bool isPasting)
     {
-        if (isAllowedType == false)
+        if (isAllowedType == false || IsEditable == false)
             return;
 
         var symbols = Input.Current.Typed ?? "";
@@ -624,6 +630,9 @@ public class InputBox : Element
     }
     private void TryBackspaceDeleteEnter(bool isHolding, bool justDeletedSelection)
     {
+        if (IsEditable == false)
+            return;
+
         var (w, _) = Size;
 
         if (Allowed(Key.Enter, isHolding))
@@ -671,17 +680,17 @@ public class InputBox : Element
                 return;
             }
 
-            var off = GetWordEndOffset(-1);
             var ctrl = Pressed(Key.ControlLeft);
+            var off = ctrl ? GetWordEndOffset(-1) : 0;
             var count = ctrl ? Math.Abs(off) : 1;
 
             lines[cy] = lines[cy].Remove(ctrl ? cx + off : cx - 1, count);
 
-            cx -= ctrl ? off : -1;
+            cx -= ctrl ? off : 1;
             CursorIndices = (cx, cy);
             SelectionIndices = CursorIndices;
 
-            scrX -= Math.Abs(ctrl ? off : -1);
+            scrX -= Math.Abs(ctrl ? off : 1);
             ScrollIndices = (scrX, scrY);
             CursorScroll();
 
@@ -719,7 +728,7 @@ public class InputBox : Element
     {
         var isSelected = SelectionIndices != CursorIndices;
 
-        if (shouldDelete == false || isSelected == false)
+        if (shouldDelete == false || isSelected == false || IsEditable == false)
             return;
 
         var cursorIndex = IndicesToIndex(CursorIndices);
@@ -791,6 +800,9 @@ public class InputBox : Element
         var hasSelection = CursorIndices != SelectionIndices;
 
         isPasting = false;
+
+        if (IsEditable == false)
+            return false;
 
         if (ctrl && Input.Current.Typed == "c")
         {

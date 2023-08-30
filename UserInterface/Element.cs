@@ -522,7 +522,7 @@ public abstract partial class Element
     internal readonly string typeName;
     private static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private int byteOffset;
-    private bool wasFocused, wasHovered;
+    private bool wasFocused, wasHovered, isReadyForDoubleClick;
     private readonly Dictionary<UserAction, List<Action>> userActions = new();
 
     // used in the UI class to receive callbacks
@@ -574,6 +574,10 @@ public abstract partial class Element
     }
     private void TryTrigger()
     {
+        var isAllowed = DOUBLE_CLICK_DELAY > doubleClick.Elapsed.TotalSeconds;
+        if (isAllowed == false && isReadyForDoubleClick)
+            isReadyForDoubleClick = false;
+
         if (IsFocused == false || IsDisabled)
         {
             IsPressedAndHeld = false;
@@ -584,10 +588,17 @@ public abstract partial class Element
         {
             Trigger();
 
-            if (doubleClick.Elapsed.TotalSeconds < DOUBLE_CLICK_DELAY)
+            if (isReadyForDoubleClick == false)
+            {
+                doubleClick.Restart();
+                isReadyForDoubleClick = true;
+                return;
+            }
+
+            if (isReadyForDoubleClick && isAllowed)
                 TriggerUserAction(UserAction.DoubleTrigger);
 
-            doubleClick.Restart();
+            isReadyForDoubleClick = false;
         }
 
         if (IsHovered && Input.Current.IsJustPressed)

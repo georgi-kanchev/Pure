@@ -57,7 +57,7 @@ public class RendererEdit : UserInterface
         }
         else if (index == 12)
         {
-            element = new FileViewer(position, "", true);
+            element = new FileViewer(position, "", true) { Text = "FolderViewer" };
             panel.SizeMinimum = (5, 5);
         }
 
@@ -70,7 +70,7 @@ public class RendererEdit : UserInterface
         ui.Add(element);
         Add(panel);
 
-        DisplayInfoText("Added " + element.GetType().Name);
+        DisplayInfoText("Added " + element.Text);
         Element.Focused = null;
     }
     public void ElementRemove(Element element)

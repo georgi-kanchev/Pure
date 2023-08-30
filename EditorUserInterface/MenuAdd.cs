@@ -18,7 +18,7 @@ public class MenuAdd : Menu
         $"  {nameof(Layout)}",
         $"  {nameof(List)}",
         $"  Viewer") =>
-        Size = (14, 12);
+        Size = (10, 12);
 
     protected override void OnItemTrigger(Button item)
     {
