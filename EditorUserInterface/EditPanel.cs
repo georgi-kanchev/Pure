@@ -62,8 +62,6 @@ public class EditPanel : Panel
         var itemGapX = new EditStepper((0, 0)) { Text = "Gap Width", Range = (0, int.MaxValue) };
         var itemGapY = new EditStepper((0, 0)) { Text = "Gap Height", Range = (0, int.MaxValue) };
 
-        var back = new EditButton((0, 0)) { Text = "Back" };
-
         for (var i = 0; i < items.Size.height; i++)
             itemSelections.Add(new((0, 0)) { Text = "ItemSelect" });
 
@@ -84,7 +82,7 @@ public class EditPanel : Panel
             { typeof(Slider), new() { vertical, progress } },
             { typeof(Scroll), new() { vertical, progress, step } },
             { typeof(Layout), new() { restore, index, rate, cutTop, cutLeft, cutRight, cutBottom } },
-            { typeof(FileViewer), new() { items, back, scroll } },
+            { typeof(FileViewer), new() { } },
             { typeof(Stepper), new() { min, max, value, stepperStep } },
             {
                 typeof(List),
@@ -131,20 +129,6 @@ public class EditPanel : Panel
         protected override void OnUserAction(UserAction userAction)
         {
             base.OnUserAction(userAction);
-
-            if (Text != "Back" && userAction == UserAction.DoubleTrigger && Selected is FileViewer v)
-            {
-                var items = (InputBox)editPanel.elements[typeof(FileViewer)][0];
-                var index = editPanel.itemSelections.IndexOf(this);
-                var item = v.FilesAndFolders[index + items.ScrollIndices.y];
-
-                if (v.IsSelectingFolders == false && v.IsFolder(item) == false)
-                    return;
-
-                v.CurrentDirectory = Path.Join(v.CurrentDirectory, item.Text);
-                editPanel.UpdatePanelValues();
-                return;
-            }
 
             if (userAction != UserAction.Trigger || Selected == null)
                 return;
@@ -225,11 +209,6 @@ public class EditPanel : Panel
             else if (Text == "Restore" && Selected is Layout la)
             {
                 la.Restore();
-            }
-            else if (Text == "Back" && Selected is FileViewer vi)
-            {
-                vi.Back.Trigger();
-                editPanel.UpdatePanelValues();
             }
         }
     }
@@ -458,11 +437,7 @@ public class EditPanel : Panel
                 l.Select(l[j], prev[j]);
             }
         }
-        else if (prevSelected is FileViewer v)
-        {
-            var scroll = (Stepper)elements[typeof(FileViewer)][2];
-            v.FilesAndFolders.Scroll.Slider.Progress = scroll.Value;
-        }
+        else if (prevSelected is FileViewer v) { }
 
         prevSelected.Text = text.Value;
     }
@@ -562,27 +537,7 @@ public class EditPanel : Panel
             var index = (Stepper)elements[typeof(Layout)][1];
             index.Range = (0, la.Count - 1);
         }
-        else if (Selected is FileViewer v)
-        {
-            var items = (InputBox)elements[typeof(FileViewer)][0];
-            var scroll = (Stepper)elements[typeof(FileViewer)][2];
-            items.SelectionIndices = (0, 0);
-            items.CursorIndices = (0, 0);
-            items.CursorScroll();
-            items.IsEditable = false;
-
-            var value = "";
-            for (var j = 0; j < v.FilesAndFolders.Count; j++)
-            {
-                //if (v.IsFolder(v.FilesAndFolders[j]) && v.IsSelectingFolders == false)
-                //    continue;
-
-                value += $"{(value != "" ? Environment.NewLine : "")}{v.FilesAndFolders[j].Text}";
-            }
-
-            items.Value = value;
-            scroll.Value = v.FilesAndFolders.Scroll.Slider.Progress;
-        }
+        else if (Selected is FileViewer v) { }
         else if (Selected is List l)
         {
             var type = elements[typeof(List)][0];
@@ -641,9 +596,6 @@ public class EditPanel : Panel
         var front = tilemaps[(int)Layer.EditFront];
         var color = Color.Gray;
         var isListItems = e.Placeholder.Contains("Empty");
-        var title = isListItems && Selected is FileViewer v
-            ? v.IsSelectingFolders ? "Folders…" : "Files…"
-            : e.Placeholder;
 
         position = isListItems ? (position.x + 1, position.y) : position;
 
@@ -658,7 +610,7 @@ public class EditPanel : Panel
         back.SetTextRectangle(e.Position, e.Size, e.Selection,
             e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
         middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
-        middle.SetTextLine((Position.x + 1, e.Position.y - 1), title, color);
+        middle.SetTextLine((Position.x + 1, e.Position.y - 1), e.Placeholder, color);
 
         if (string.IsNullOrWhiteSpace(e.Text))
             middle.SetTextRectangle(e.Position, e.Size, e.Placeholder, color.ToBright(), false);
@@ -666,10 +618,10 @@ public class EditPanel : Panel
         if (e.IsCursorVisible)
             front.SetTile(e.PositionFromIndices(e.CursorIndices), new(Tile.SHAPE_LINE, Color.White, 2));
 
-        if (isListItems && Selected is List list)
-            UpdateListItems(list, inputBox, null);
-        else if (isListItems && Selected is FileViewer viewer)
-            UpdateListItems(viewer.FilesAndFolders, inputBox, viewer);
+        if (isListItems == false || Selected is not List list)
+            return;
+
+        UpdateListItems(list, inputBox);
     }
     private void UpdateStepper(Stepper stepper, (int x, int y) position)
     {
@@ -710,7 +662,7 @@ public class EditPanel : Panel
         front.SetTile(e.Middle.Position, new(Tile.PUNCTUATION_PIPE, GetColor(e.Middle, color)));
         front.SetTile(e.Maximum.Position, new(Tile.MATH_MUCH_GREATER, GetColor(e.Maximum, color)));
     }
-    private void UpdateListItems(List list, InputBox inputBoxEditor, FileViewer? viewer)
+    private void UpdateListItems(List list, InputBox inputBoxEditor)
     {
         var middle = tilemaps[(int)Layer.EditMiddle];
         var length = Math.Min(list.Count, itemSelections.Count);
@@ -718,29 +670,12 @@ public class EditPanel : Panel
         for (var i = 0; i < length; i++)
         {
             var index = i + inputBoxEditor.ScrollIndices.y;
-
-            // if (viewer is { IsSelectingFolders: false } && index < viewer.CountFolders)
-            //     index += viewer.CountFolders;
-            //
-            // if (index >= list.Count)
-            //     return;
-
             var item = list[index];
             var btn = itemSelections[i];
             var c = GetColor(btn, (item.IsSelected ? Color.Green : Color.Red).ToDark());
             var tile = new Tile(item.IsSelected ? Tile.ICON_TICK : Tile.LOWERCASE_X, c);
 
             btn.IsDisabled = false;
-
-            if (viewer != null)
-            {
-                var isFolder = viewer.IsFolder(item);
-                tile.ID = isFolder ? Tile.ICON_FOLDER : Tile.ICON_FILE;
-
-                if (isFolder != viewer.IsSelectingFolders)
-                    tile.Tint = GetColor(btn, Color.Gray.ToDark(0.25f));
-            }
-
             btn.Size = (1, 1);
             btn.Position = (inputBoxEditor.Position.x - 1, inputBoxEditor.Position.y + i);
             btn.IsSelected = item.IsSelected;
@@ -772,17 +707,11 @@ public class EditPanel : Panel
         brightness.Range = (1, brightnessMax.Value);
         value.Range = (minimum.Value, maximum.Value);
 
-        if (Selected is List list)
-        {
-            var scroll = (Stepper)elements[typeof(List)][2];
-            scroll.Step = list.Scroll.Step;
-        }
-
-        if (Selected is not FileViewer v)
+        if (Selected is not List list)
             return;
 
-        var scr = (Stepper)elements[typeof(FileViewer)][2];
-        scr.Step = v.FilesAndFolders.Scroll.Step;
+        var scroll = (Stepper)elements[typeof(List)][2];
+        scroll.Step = list.Scroll.Step;
     }
 
     private static Color GetColor(Element element, Color baseColor)

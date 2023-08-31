@@ -61,6 +61,7 @@ public class List : Element
                 item.isTextReadonly = value;
         }
     }
+    public bool IsScrollVisible => Type == Types.Horizontal ? HasScroll.horizontal : HasScroll.vertical;
 
     /// <summary>
     /// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
@@ -267,6 +268,18 @@ public class List : Element
     internal Action<Button>? itemSelectCallback;
     internal bool isReadOnly;
 
+    private (bool horizontal, bool vertical) HasScroll
+    {
+        get
+        {
+            var (maxW, maxH) = ItemSize;
+            var totalW = items.Count * (maxW + ItemGap.width) - ItemGap.width;
+            var totalH = items.Count * (maxH + ItemGap.height) - ItemGap.height;
+
+            return (totalW > Size.width, totalH > Size.height);
+        }
+    }
+
     protected override void OnUserAction(UserAction userAction)
     {
         if (userAction != UserAction.Trigger || Type != Types.Dropdown || IsExpanded ||
@@ -364,7 +377,7 @@ public class List : Element
         Scroll.position = (x + w - 1, y);
         Scroll.size = (1, h);
 
-        if (HasScroll().vertical == false)
+        if (HasScroll.vertical == false)
             Scroll.position = (int.MaxValue, int.MaxValue);
 
         if (Type == Types.Dropdown && isExpanded == false)
@@ -394,7 +407,7 @@ public class List : Element
             Scroll.position = (x, y + h - 1);
             Scroll.size = (w, 1);
 
-            if (HasScroll().horizontal == false)
+            if (HasScroll.horizontal == false)
                 Scroll.position = (int.MaxValue, int.MaxValue);
         }
 
@@ -424,7 +437,7 @@ public class List : Element
 
             var (ix, iy) = item.position;
             var (offW, offH) = item.listSizeTrimOffset;
-            var botEdgeTrim = Type == Types.Horizontal && HasScroll().horizontal ? 1 : 0;
+            var botEdgeTrim = Type == Types.Horizontal && HasScroll.horizontal ? 1 : 0;
             //var rightEdgeTrim = Type == Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
             var (iw, ih) = (item.Size.width + offW, item.Size.height + offH);
             if (ix + iw <= x || ix >= x + w ||
@@ -501,8 +514,8 @@ public class List : Element
         var (w, h) = Size;
         var (ix, iy) = item.position;
 
-        var botEdgeTrim = Type == Types.Horizontal && HasScroll().horizontal ? 1 : 0;
-        var rightEdgeTrim = Type == Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
+        var botEdgeTrim = Type == Types.Horizontal && HasScroll.horizontal ? 1 : 0;
+        var rightEdgeTrim = Type == Types.Horizontal == false && HasScroll.vertical ? 1 : 0;
         var newWidth = ItemSize.width;
         var newHeight = ItemSize.height;
         var iw = newWidth;
@@ -530,14 +543,6 @@ public class List : Element
         }
 
         item.size = (newWidth, newHeight);
-    }
-    private (bool horizontal, bool vertical) HasScroll()
-    {
-        var (maxW, maxH) = ItemSize;
-        var totalW = items.Count * (maxW + ItemGap.width) - ItemGap.width;
-        var totalH = items.Count * (maxH + ItemGap.height) - ItemGap.height;
-
-        return (totalW > Size.width, totalH > Size.height);
     }
     private void TryScrollWhileHover(Element element)
     {

@@ -261,7 +261,7 @@ public abstract partial class Element
 
         if (IsDisabled)
         {
-            if (IsHovered)
+            if (IsHovered && IsHidden == false)
                 MouseCursorResult = MouseCursor.Disable;
 
             OnUpdate();

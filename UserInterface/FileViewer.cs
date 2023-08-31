@@ -1,11 +1,28 @@
 namespace Pure.UserInterface;
 
 using System.Diagnostics.CodeAnalysis;
+using static Environment;
 
 public class FileViewer : Element
 {
+    public enum Directory
+    {
+        // tiles
+        Desktop, // 312
+        Programs, // 313
+        LocalApplicationData, // 344
+        Favorites, // 334
+        Recent, // 322
+        UserProfile, // 331
+        MyDocuments, // 318
+        MyMusic, // 359
+        MyVideos, // 353
+        MyPictures, // 347
+        Fonts // 78
+    }
+
     public Button Back { get; private set; }
-    public List FilesAndFolders { get; }
+    public List FilesAndFolders { get; private set; }
 
     public string CurrentDirectory
     {
@@ -19,7 +36,7 @@ public class FileViewer : Element
 
             value ??= defaultPath;
 
-            if (Directory.Exists(value) == false)
+            if (System.IO.Directory.Exists(value) == false)
                 value = defaultPath;
 
             dir = value;
@@ -52,14 +69,6 @@ public class FileViewer : Element
     {
         Size = (12, 8);
         Init();
-        FilesAndFolders = new(position, 0)
-        {
-            isReadOnly = true,
-            hasParent = true,
-            itemSelectCallback = OnInternalItemSelect,
-            itemTriggerCallback = OnInternalItemTrigger,
-            itemDisplayCallback = OnInternalItemDisplay
-        };
         IsSelectingFolders = isSelectingFolders;
         CurrentDirectory = directory;
     }
@@ -68,34 +77,33 @@ public class FileViewer : Element
         Init();
         IsSelectingFolders = GrabBool(bytes);
         CurrentDirectory = GrabString(bytes);
-
-        var listLength = GrabInt(bytes);
-        FilesAndFolders = new(bytes[^listLength..])
-        {
-            isReadOnly = true,
-            hasParent = true,
-            itemSelectCallback = OnInternalItemSelect,
-            itemTriggerCallback = OnInternalItemTrigger,
-            itemDisplayCallback = OnInternalItemDisplay
-        };
-
-        // try to refresh if the loaded directory doesn't exist so that
-        // all items are up to date
-        CurrentDirectory = dir;
     }
 
     public bool IsFolder(Button item) => FilesAndFolders.IndexOf(item) < CountFolders;
+    public static string GetPath(Directory directory)
+    {
+        switch (directory)
+        {
+            case Directory.Desktop: return GetFolderPath(SpecialFolder.Desktop);
+            case Directory.Programs: return GetFolderPath(SpecialFolder.Programs);
+            case Directory.LocalApplicationData:
+            default: return GetFolderPath(SpecialFolder.LocalApplicationData);
+            case Directory.Favorites: return GetFolderPath(SpecialFolder.Favorites);
+            case Directory.Recent: return GetFolderPath(SpecialFolder.Recent);
+            case Directory.UserProfile: return GetFolderPath(SpecialFolder.UserProfile);
+            case Directory.MyDocuments: return GetFolderPath(SpecialFolder.MyDocuments);
+            case Directory.MyMusic: return GetFolderPath(SpecialFolder.MyMusic);
+            case Directory.MyVideos: return GetFolderPath(SpecialFolder.MyVideos);
+            case Directory.MyPictures: return GetFolderPath(SpecialFolder.MyPictures);
+            case Directory.Fonts: return GetFolderPath(SpecialFolder.Fonts);
+        }
+    }
 
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
         PutBool(result, IsSelectingFolders);
         PutString(result, CurrentDirectory);
-
-        var bList = FilesAndFolders.ToBytes();
-        PutInt(result, bList.Length);
-        result.AddRange(bList);
-
         return result.ToArray();
     }
 
@@ -110,14 +118,14 @@ public class FileViewer : Element
         var (x, y) = Position;
         var (w, h) = Size;
 
-        Back.Update();
         Back.size = (w, 1);
         Back.position = (x, y);
+        Back.Update();
 
-        FilesAndFolders.Update();
         FilesAndFolders.size = (w, h - 1);
         FilesAndFolders.position = (x, y + 1);
         FilesAndFolders.itemSize = (w, 1);
+        FilesAndFolders.Update();
     }
 
     protected virtual void OnItemDisplay(Button item) { }
@@ -125,17 +133,16 @@ public class FileViewer : Element
     protected virtual void OnItemSelect(Button item) { }
 
 #region Backend
-    private string dir = "";
+    private string dir = "default";
     private readonly FileSystemWatcher watcher = new();
-    private static string DefaultPath =>
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    private static string DefaultPath => GetPath(Directory.LocalApplicationData);
 
     // used in the UI class to receive callbacks
-    internal Action<Button>? itemDisplayCallback;
-    internal Action<Button>? itemTriggerCallback;
-    internal Action<Button>? itemSelectCallback;
+    internal Action<Button>? itemDisplayCallback,
+        itemTriggerCallback,
+        itemSelectCallback;
 
-    [MemberNotNull(nameof(Back))]
+    [MemberNotNull(nameof(Back), nameof(FilesAndFolders))]
     private void Init()
     {
         watcher.EnableRaisingEvents = true;
@@ -144,6 +151,15 @@ public class FileViewer : Element
         watcher.Deleted += (_, _) => Refresh();
         watcher.Created += (_, _) => Refresh();
         watcher.Renamed += (_, _) => Refresh();
+
+        FilesAndFolders = new(position, 0)
+        {
+            isReadOnly = true,
+            hasParent = true,
+            itemSelectCallback = OnInternalItemSelect,
+            itemTriggerCallback = OnInternalItemTrigger,
+            itemDisplayCallback = OnInternalItemDisplay
+        };
 
         Back = new(position) { hasParent = true };
         Back.SubscribeToUserAction(UserAction.Trigger, () =>
@@ -158,15 +174,15 @@ public class FileViewer : Element
 
         try
         {
-            directories = Directory.GetDirectories(path);
-            files = Directory.GetFiles(path);
+            directories = System.IO.Directory.GetDirectories(path);
+            files = System.IO.Directory.GetFiles(path);
         }
         catch (Exception)
         {
             CurrentDirectory = DefaultPath;
             path = CurrentDirectory;
-            directories = Directory.GetDirectories(path);
-            files = Directory.GetFiles(path);
+            directories = System.IO.Directory.GetDirectories(path);
+            files = System.IO.Directory.GetFiles(path);
         }
 
         FilesAndFolders.InternalClear();
