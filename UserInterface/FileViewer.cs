@@ -114,7 +114,9 @@ public class FileViewer : Element
     internal override void OnUpdate()
     {
         LimitSizeMin((3, 3));
-
+    }
+    internal override void OnChildrenUpdate()
+    {
         var (x, y) = Position;
         var (w, h) = Size;
 

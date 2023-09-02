@@ -192,11 +192,27 @@ public abstract partial class Element
     /// <summary>
     /// Gets or sets a value indicating whether the user interface element is hidden.
     /// </summary>
-    public bool IsHidden { get; set; }
+    public bool IsHidden
+    {
+        get => isHidden;
+        set
+        {
+            if (hasParent == false)
+                isHidden = value;
+        }
+    }
     /// <summary>
     /// Gets or sets a value indicating whether the user interface element is disabled.
     /// </summary>
-    public bool IsDisabled { get; set; }
+    public bool IsDisabled
+    {
+        get => isDisabled;
+        set
+        {
+            if (hasParent == false)
+                isDisabled = value;
+        }
+    }
     /// <summary>
     /// Gets a value indicating whether the user interface element is currently focused by
     /// the user input.
@@ -266,7 +282,7 @@ public abstract partial class Element
 
             OnUpdate();
             OnChildrenUpdate();
-            CallDisplay();
+            TryDisplay();
             return;
         }
 
@@ -314,10 +330,15 @@ public abstract partial class Element
         OnUpdate();
         OnChildrenUpdate();
         OnInput();
-        CallDisplay();
+        TryDisplay();
 
-        void CallDisplay()
+        return;
+
+        void TryDisplay()
         {
+            if (IsHidden)
+                return;
+
             OnDisplay();
             displayCallback?.Invoke();
 
@@ -466,8 +487,8 @@ public abstract partial class Element
 
     protected internal void InheritParent(Element parent)
     {
-        IsHidden |= parent.IsHidden;
-        IsDisabled |= parent.IsDisabled;
+        isHidden |= parent.IsHidden;
+        isDisabled |= parent.IsDisabled;
     }
 
     protected static void PutBool(List<byte> intoBytes, bool value) =>
@@ -518,7 +539,7 @@ public abstract partial class Element
         listSizeTrimOffset,
         sizeMinimum = (1, 1),
         sizeMaximum = (int.MaxValue, int.MaxValue);
-    internal bool hasParent, isTextReadonly;
+    internal bool hasParent, isTextReadonly, isHidden, isDisabled;
     internal readonly string typeName;
     private static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private int byteOffset;

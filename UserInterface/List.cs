@@ -24,27 +24,27 @@ public class List : Element
     /// </summary>
     public bool IsSingleSelecting
     {
-        get => isSingleSelecting;
+        get => isSingleSelecting || Type == Types.Dropdown;
         set
         {
             isSingleSelecting = value || Type == Types.Dropdown;
             TrySingleSelectOneItem();
         }
     }
-    public bool IsExpanded
+    public bool IsCollapsed
     {
-        get => isExpanded || Type != Types.Dropdown;
+        get => isCollapsed && Type == Types.Dropdown;
         set
         {
             if (Type != Types.Dropdown)
                 return;
 
-            if (value)
+            if (value == false)
                 Size = (Size.width, originalHeight);
-            else if (isExpanded)
+            else if (isCollapsed == false)
                 originalHeight = Size.height;
 
-            isExpanded = Type == Types.Dropdown && value;
+            isCollapsed = value;
         }
     }
     public bool IsReadOnly
@@ -61,7 +61,6 @@ public class List : Element
                 item.isTextReadonly = value;
         }
     }
-    public bool IsScrollVisible => Type == Types.Horizontal ? HasScroll.horizontal : HasScroll.vertical;
 
     /// <summary>
     /// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
@@ -105,8 +104,11 @@ public class List : Element
 
         isInitialized = true;
 
-        if (type == Types.Dropdown)
-            IsSingleSelecting = true;
+        if (type != Types.Dropdown)
+            return;
+
+        IsSingleSelecting = true;
+        IsCollapsed = true;
     }
     public List(byte[] bytes) : base(bytes)
     {
@@ -127,6 +129,9 @@ public class List : Element
         isInitialized = true;
 
         originalHeight = Size.height;
+
+        if (Type == Types.Dropdown)
+            IsCollapsed = true;
     }
 
     /// <summary>
@@ -185,7 +190,7 @@ public class List : Element
 
         if (IsSingleSelecting)
         {
-            var wasSelected = singleSelectedIndex != -1 && this[index].isSelected;
+            var wasSelected = singleSelectedIndex >= 0 && this[index].isSelected;
 
             foreach (var item in items)
                 item.isSelected = false;
@@ -257,7 +262,7 @@ public class List : Element
 #region Backend
     private int singleSelectedIndex = -1, originalHeight;
     private readonly List<Button> items = new();
-    private bool isSingleSelecting, isExpanded;
+    private bool isSingleSelecting, isCollapsed;
     private readonly bool isInitialized;
     private (int width, int height) itemGap = (1, 0);
     internal (int width, int height) itemSize = (5, 1);
@@ -279,14 +284,15 @@ public class List : Element
             return (totalW > Size.width, totalH > Size.height);
         }
     }
-
+    internal bool IsScrollVisible =>
+        (Type == Types.Horizontal ? HasScroll.horizontal : HasScroll.vertical) && IsCollapsed == false;
     protected override void OnUserAction(UserAction userAction)
     {
-        if (userAction != UserAction.Trigger || Type != Types.Dropdown || IsExpanded ||
+        if (userAction != UserAction.Trigger || IsCollapsed == false ||
             IsFocused == false || this[singleSelectedIndex].IsHovered)
             return;
 
-        IsExpanded = true;
+        IsCollapsed = false;
     }
 
     internal void InternalAdd(int count = 1) => InternalInsert(items.Count, count);
@@ -333,12 +339,12 @@ public class List : Element
 
     internal override void OnInput()
     {
-        if (Type == Types.Dropdown && IsExpanded == false && IsHovered)
+        if (Type == Types.Dropdown && IsCollapsed && IsHovered)
             MouseCursorResult = MouseCursor.Hand;
 
         // in case the user hovers in between items - try scroll
         if (IsHovered && Input.Current.ScrollDelta != 0 &&
-            (isExpanded || Type != Types.Dropdown) && IsFocused && FocusedPrevious == this)
+            IsCollapsed == false && IsFocused && FocusedPrevious == this)
             Scroll.Slider.Move(Input.Current.ScrollDelta);
         // and in case the user hovers the items themselves - also try scroll
         foreach (var item in items)
@@ -350,7 +356,7 @@ public class List : Element
             TrySingleSelectOneItem();
 
         if (Input.Current.IsJustPressed && IsHovered == false)
-            IsExpanded = false;
+            IsCollapsed = true;
 
         // for in between items, overwrite mouse cursor (don't give it to the element bellow)
         if (IsDisabled == false && IsHovered)
@@ -365,7 +371,7 @@ public class List : Element
         var totalSize = Type == Types.Horizontal ? totalWidth : totalHeight;
         Scroll.step = 1f / totalSize;
 
-        if (Type == Types.Dropdown && isExpanded == false)
+        if (IsCollapsed)
             Size = (Size.width, 1);
     }
 
@@ -374,49 +380,50 @@ public class List : Element
         var (x, y) = Position;
         var (w, h) = Size;
 
+        var hidesScr = IsScrollVisible == false;
+        Scroll.Increase.isHidden = hidesScr;
+        Scroll.Increase.isDisabled = hidesScr;
+        Scroll.Decrease.isHidden = hidesScr;
+        Scroll.Decrease.isDisabled = hidesScr;
+        Scroll.Slider.isHidden = hidesScr;
+        Scroll.Slider.isDisabled = hidesScr;
+        Scroll.isHidden = hidesScr;
+        Scroll.isDisabled = hidesScr;
+        Scroll.InheritParent(this);
+
         Scroll.position = (x + w - 1, y);
         Scroll.size = (1, h);
 
-        if (HasScroll.vertical == false)
-            Scroll.position = (int.MaxValue, int.MaxValue);
-
-        if (Type == Types.Dropdown && isExpanded == false)
+        if (IsCollapsed && isInitialized && singleSelectedIndex >= 0)
         {
-            Scroll.position = (int.MaxValue, int.MaxValue);
-            Scroll.Slider.Handle.position = (int.MaxValue, int.MaxValue);
-            Scroll.Decrease.position = (int.MaxValue, int.MaxValue);
-            Scroll.Increase.position = (int.MaxValue, int.MaxValue);
-
-            Scroll.InheritParent(this);
-            Scroll.Update();
-
-            if (isInitialized == false || singleSelectedIndex == -1)
-                return;
-
             var selectedItem = this[singleSelectedIndex];
             selectedItem.position = Position;
+            selectedItem.isHidden = false;
+            selectedItem.isDisabled = false;
+
             TryTrimItem(selectedItem);
 
             selectedItem.InheritParent(this);
             selectedItem.Update();
 
+            Scroll.Update();
             return;
         }
         else if (Type == Types.Horizontal)
         {
             Scroll.position = (x, y + h - 1);
             Scroll.size = (w, 1);
-
-            if (HasScroll.horizontal == false)
-                Scroll.position = (int.MaxValue, int.MaxValue);
         }
 
-        Scroll.InheritParent(this);
         Scroll.Update();
 
         for (var i = 0; i < items.Count; i++)
         {
             var item = items[i];
+
+            item.isHidden = false;
+            item.isDisabled = false;
+            item.InheritParent(this);
 
             if (Type == Types.Horizontal)
             {
@@ -442,10 +449,12 @@ public class List : Element
             var (iw, ih) = (item.Size.width + offW, item.Size.height + offH);
             if (ix + iw <= x || ix >= x + w ||
                 iy + ih <= y || iy >= y + h - botEdgeTrim)
-                item.position = (int.MaxValue, int.MaxValue);
+            {
+                item.isHidden = true;
+                item.isDisabled = true;
+            }
 
             TryTrimItem(item);
-            item.InheritParent(this);
             item.Update();
         }
     }
@@ -454,9 +463,12 @@ public class List : Element
         if (isInitialized == false || items.Count == 0)
             return;
 
-        if (Type == Types.Dropdown && isInitialized && isExpanded == false && singleSelectedIndex != -1)
+        if (IsCollapsed && isInitialized && singleSelectedIndex >= 0)
         {
             var selectedItem = this[singleSelectedIndex];
+
+            if (selectedItem.IsHidden)
+                return;
 
             OnItemDisplay(selectedItem);
             itemDisplayCallback?.Invoke(selectedItem);
@@ -466,6 +478,9 @@ public class List : Element
         foreach (var item in items)
             if (IsOverlapping(item))
             {
+                if (item.IsHidden)
+                    continue;
+
                 OnItemDisplay(item);
                 itemDisplayCallback?.Invoke(item);
             }
@@ -493,7 +508,7 @@ public class List : Element
         if (Type != Types.Dropdown)
             return;
 
-        IsExpanded = isExpanded == false;
+        IsCollapsed = IsCollapsed == false;
         Select(item);
     }
     private void OnInternalItemSelect(Button item)

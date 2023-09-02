@@ -92,10 +92,12 @@ public static class UserInterface
         protected override void OnDisplayList(List list)
         {
             back.SetRectangle(list.Position, list.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
-            OnDisplayScroll(list.Scroll);
+
+            if (list.Scroll.IsHidden == false)
+                OnDisplayScroll(list.Scroll);
 
             var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(list, Color.Gray.ToBright()), 1);
-            if (list.IsExpanded == false)
+            if (list.IsCollapsed)
                 front.SetTile((list.Position.x + list.Size.width - 1, list.Position.y), dropdownTile);
         }
         protected override void OnDisplayListItem(List list, Button item)
@@ -111,7 +113,9 @@ public static class UserInterface
         {
             var e = fileViewer;
             back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
-            OnDisplayScroll(e.FilesAndFolders.Scroll);
+
+            if (e.FilesAndFolders.Scroll.IsHidden == false)
+                OnDisplayScroll(e.FilesAndFolders.Scroll);
 
             var color = GetColor(e.Back, Color.Gray);
             var (x, y) = e.Back.Position;
@@ -350,7 +354,7 @@ public static class UserInterface
 
         userInterface.Add(new Button((0, 0)));
         userInterface.Add(new Button((37, 18)) { Text = "Checkbox" });
-        userInterface.Add(new List((0, 0), 15)
+        userInterface.Add(new List((0, 0), 6)
         {
             Size = (8, 9),
             IsSingleSelecting = true,
@@ -363,6 +367,7 @@ public static class UserInterface
         {
             Window.Activate(true);
 
+            Time.Update();
             tilemaps.Fill();
 
             Element.ApplyInput(

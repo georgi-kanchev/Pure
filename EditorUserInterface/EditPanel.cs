@@ -411,7 +411,7 @@ public class EditPanel : Panel
             var itemGapX = (Stepper)elements[typeof(List)][7];
             var itemGapY = (Stepper)elements[typeof(List)][8];
 
-            l.IsExpanded = expanded.IsSelected;
+            l.IsCollapsed = expanded.IsSelected;
             l.Scroll.Slider.Progress = scroll.Value;
             l.ItemSize = ((int)itemWidth.Value, (int)itemHeight.Value);
             l.ItemGap = ((int)itemGapX.Value, (int)itemGapY.Value);
@@ -551,7 +551,7 @@ public class EditPanel : Panel
             var itemGapY = (Stepper)elements[typeof(List)][8];
 
             type.Text = $"{l.Type}";
-            expanded.IsSelected = l.IsExpanded;
+            expanded.IsSelected = l.IsCollapsed;
             expanded.IsDisabled = l.Type != List.Types.Dropdown;
             scroll.Value = l.Scroll.Slider.Progress;
             multi.IsSelected = l.IsSingleSelecting == false;

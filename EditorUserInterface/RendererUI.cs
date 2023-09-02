@@ -64,7 +64,7 @@ public class RendererUI : UserInterface
         OnDisplayScroll(list.Scroll);
 
         var dropdownTile = new Tile(Tile.MATH_GREATER, Color.White, 1);
-        if (list.IsExpanded == false)
+        if (list.IsCollapsed == false)
             front.SetTile((list.Position.x + list.Size.width - 1, list.Position.y), dropdownTile);
     }
     protected override void OnDisplayListItem(List list, Button item)
