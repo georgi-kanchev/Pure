@@ -337,7 +337,7 @@ public class List : Element
         TrySingleSelectOneItem();
     }
 
-    internal override void OnInput()
+    protected override void OnInput()
     {
         if (Type == Types.Dropdown && IsCollapsed && IsHovered)
             MouseCursorResult = MouseCursor.Hand;

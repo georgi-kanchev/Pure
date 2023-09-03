@@ -21,25 +21,34 @@ public abstract class Menu : List
     {
         Position = position;
         IsHidden = false;
-    }
-
-    protected override void OnDisplay()
-    {
-        if (Mouse.ScrollDelta != 0 || Mouse.IsButtonPressed(Mouse.Button.Middle))
-            IsHidden = true;
 
         if (Position.x + Size.width > TilemapSize.width)
             Position = (TilemapSize.width - Size.width, Position.y);
         if (Position.y + Size.height > TilemapSize.height)
             Position = (Position.x, TilemapSize.height - Size.height);
 
+        ItemSize = (Size.width - 1, 1);
+    }
+
+    public override void Update()
+    {
+        IsDisabled = IsHidden;
+        base.Update();
+    }
+    protected override void OnInput()
+    {
+        base.OnInput();
+
+        if (Mouse.ScrollDelta != 0 || Mouse.IsButtonPressed(Mouse.Button.Middle))
+            IsHidden = true;
+
         var key = "on-lmb-deselect" + GetHashCode();
         var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once(key);
         if (onLmbRelease && IsHovered == false)
             IsHidden = true;
-
-        ItemSize = (Size.width - 1, 1);
-
+    }
+    protected override void OnDisplay()
+    {
         var scrollColor = Color.Gray;
         var middle = tilemaps[(int)Layer.EditMiddle];
         var front = tilemaps[(int)Layer.EditFront];
@@ -48,21 +57,19 @@ public abstract class Menu : List
         SetClear(Layer.EditFront, this);
 
         middle.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
+
+        if (Scroll.IsHidden)
+            return;
+
         front.SetTile(Scroll.Increase.Position,
             new(Tile.ARROW, GetColor(Scroll.Increase, scrollColor), 3));
         front.SetTile(Scroll.Slider.Handle.Position,
             new(Tile.SHAPE_CIRCLE, GetColor(Scroll.Slider, scrollColor)));
         front.SetTile(Scroll.Decrease.Position,
             new(Tile.ARROW, GetColor(Scroll.Decrease, scrollColor), 1));
-
-        if (IsHidden)
-            Position = (int.MaxValue, int.MaxValue);
     }
     protected override void OnItemDisplay(Button item)
     {
-        if (IsHidden)
-            return;
-
         item.IsDisabled = item.Text.EndsWith(" ");
 
         var color = item.IsDisabled ? Color.Gray : Color.Gray.ToBright();

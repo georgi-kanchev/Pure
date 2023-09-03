@@ -5,6 +5,7 @@ namespace Pure.UserInterface;
 public class UserInterface
 {
     public int Count => elements.Count;
+    public bool IsPromptOpened { get; private set; }
 
     public Element this[int index] => elements[index];
 
@@ -36,12 +37,67 @@ public class UserInterface
             else if (typeStr == nameof(Panel)) Add(new Panel(bElement));
             else if (typeStr == nameof(Scroll)) Add(new Scroll(bElement));
             else if (typeStr == nameof(Slider)) Add(new Slider(bElement));
+            else if (typeStr == nameof(Layout)) Add(new Layout(bElement));
         }
 
         return;
 
         int GetInt() => BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
     }
+
+    public void PromptOpen(string text, Element? element,
+        int buttonCount = 2, Action<int>? onButtonTrigger = null)
+    {
+        if (IsPromptOpened)
+            return;
+
+        var lines = text.Split(Environment.NewLine).Length;
+
+        IsPromptOpened = true;
+
+        promptLabel.Placeholder = text;
+        if (element != null)
+        {
+            var sz = Element.TilemapSize;
+            var (x, y) = (sz.width / 2, sz.height / 2);
+            var (w, h) = element.Size;
+            promptElement = element;
+            promptElement.position = (x - w / 2, y - h / 2 + lines);
+        }
+
+        promptButtons.Clear();
+        for (var i = 0; i < buttonCount; i++)
+        {
+            var btn = new Button((0, 0))
+            {
+                hasParent = true,
+                size = (1, 1),
+            };
+            var index = i;
+            btn.SubscribeToUserAction(UserAction.Trigger, () => onButtonTrigger?.Invoke(index));
+            promptButtons.Add(btn);
+        }
+    }
+    public void PromptClose()
+    {
+        if (IsPromptOpened == false)
+            return;
+
+        IsPromptOpened = false;
+
+        if (promptElement == null)
+            return;
+
+        promptElement.hasParent = false;
+        promptElement = null;
+        promptButtons.Clear();
+    }
+    public bool IsPromptElement(Element? element)
+    {
+        return element != null && (promptButtons.Contains(element) ||
+                                   promptPanel == element || promptLabel == element);
+    }
+    public int PromptIndexOf(Button? button) => button == null ? -1 : promptButtons.IndexOf(button);
 
     public void Add(Element element)
     {
@@ -78,6 +134,9 @@ public class UserInterface
     }
     public void Remove(Element element)
     {
+        if (element is Layout layout)
+            layout.ui = null;
+
         element.UnsubscribeAll();
         elements.Remove(element);
     }
@@ -92,78 +151,10 @@ public class UserInterface
 
     public void Update()
     {
-        foreach (var element in elements)
-        {
-            if (element is Button button)
-            {
-                button.displayCallback = () => OnDisplayButton(button);
-                button.dragCallback = d => OnDragButton(button, d);
-            }
-            else if (element is InputBox input)
-            {
-                input.displayCallback = () => OnDisplayInputBox(input);
-                input.dragCallback = d => OnDragInputBox(input, d);
-            }
-            else if (element is FileViewer fileViewer)
-            {
-                fileViewer.displayCallback = () => OnDisplayFileViewer(fileViewer);
-                fileViewer.dragCallback = d => OnDragFileViewer(fileViewer, d);
-                fileViewer.itemDisplayCallback = b => OnDisplayFileViewerItem(fileViewer, b);
-                fileViewer.itemTriggerCallback = b => OnFileViewerItemTrigger(fileViewer, b);
-                fileViewer.itemSelectCallback = b => OnFileViewerItemSelect(fileViewer, b);
-            }
-            else if (element is List list)
-            {
-                list.displayCallback = () => OnDisplayList(list);
-                list.dragCallback = d => OnDragList(list, d);
-                list.itemDisplayCallback = b => OnDisplayListItem(list, b);
-                list.itemTriggerCallback = b => OnListItemTrigger(list, b);
-                list.itemSelectCallback = b => OnListItemSelect(list, b);
-            }
-            else if (element is Pages pages)
-            {
-                pages.displayCallback = () => OnDisplayPages(pages);
-                pages.pageDisplayCallback = b => OnDisplayPagesPage(pages, b);
-                pages.dragCallback = d => OnDragPages(pages, d);
-            }
-            else if (element is Palette palette)
-            {
-                palette.displayCallback = () => OnDisplayPalette(palette);
-                palette.pageDisplayCallback = b => OnDisplayPalettePage(palette, b);
-                palette.sampleDisplayCallback =
-                    (b, c) => OnUpdatePaletteSample(palette, b, c);
-                palette.pickCallback = p => OnPalettePick(palette, p);
-                palette.dragCallback = d => OnDragPalette(palette, d);
-            }
-            else if (element is Panel panel)
-            {
-                panel.displayCallback = () => OnDisplayPanel(panel);
-                panel.dragCallback = d => OnDragPanel(panel, d);
-                panel.resizeCallback = d => OnPanelResize(panel, d);
-            }
-            else if (element is Scroll scroll)
-            {
-                scroll.displayCallback = () => OnDisplayScroll(scroll);
-                scroll.dragCallback = d => OnDragScroll(scroll, d);
-            }
-            else if (element is Stepper stepper)
-            {
-                stepper.displayCallback = () => OnDisplayStepper(stepper);
-                stepper.dragCallback = d => OnDragStepper(stepper, d);
-            }
-            else if (element is Slider slider)
-            {
-                slider.displayCallback = () => OnDisplaySlider(slider);
-                slider.dragCallback = d => OnDragSlider(slider, d);
-            }
-            else if (element is Layout layout)
-            {
-                layout.displayCallback = () => OnDisplayLayout(layout);
-                layout.segmentUpdateCallback = (seg, i) => OnDisplayLayoutSegment(layout, seg, i);
-            }
+        foreach (var e in elements)
+            UpdateElement(e);
 
-            element.Update();
-        }
+        TryUpdatePrompt();
     }
 
     public byte[] ToBytes()
@@ -237,6 +228,148 @@ public class UserInterface
 #region Backend
     private readonly List<Element> elements = new();
 
+    private Element? promptElement;
+    private readonly List<Button> promptButtons = new();
+    private readonly InputBox promptLabel = new((0, 0))
+    {
+        IsEditable = false,
+        IsDisabled = true,
+        Value = "",
+        hasParent = true,
+    };
+    private readonly Panel promptPanel = new((0, 0))
+    {
+        IsResizable = false,
+        IsMovable = false,
+        IsRestricted = false,
+        isTextReadonly = true,
+        hasParent = true,
+    };
+
+    private void TryUpdatePrompt()
+    {
+        if (IsPromptOpened == false)
+            return;
+
+        var sz = Element.TilemapSize;
+        var (w, h) = (sz.width / 2, sz.height / 2);
+        var (x, y) = (sz.width / 4, sz.height / 4 + sz.height / 2);
+        var lines = promptLabel.Placeholder.Split(Environment.NewLine).Length;
+
+        promptPanel.isDisabled = IsPromptOpened == false;
+        promptPanel.position = IsPromptOpened ? (0, 0) : (int.MaxValue, int.MaxValue);
+        promptPanel.size = sz;
+        UpdateElement(promptPanel);
+
+        if (promptElement != null)
+        {
+            UpdateElement(promptElement);
+            w = promptElement.Size.width;
+            h = promptElement.Size.height;
+            x = promptElement.Position.x;
+            y = promptElement.Position.y;
+        }
+
+        promptLabel.isDisabled = promptPanel.isDisabled;
+        promptLabel.position = IsPromptOpened ? (x, y - lines) : (int.MaxValue, int.MaxValue);
+        promptLabel.size = (w, lines);
+        UpdateElement(promptLabel);
+
+        var btnXs = Distribute(promptButtons.Count, (x, x + w));
+        for (var i = 0; i < promptButtons.Count; i++)
+        {
+            var btn = promptButtons[i];
+            btn.position = ((int)btnXs[i], y + h);
+            UpdateElement(btn);
+        }
+    }
+    private void UpdateElement(Element e)
+    {
+        if (e is Button button)
+        {
+            button.displayCallback = () => OnDisplayButton(button);
+            button.dragCallback = d => OnDragButton(button, d);
+        }
+        else if (e is InputBox input)
+        {
+            input.displayCallback = () => OnDisplayInputBox(input);
+            input.dragCallback = d => OnDragInputBox(input, d);
+        }
+        else if (e is FileViewer fileViewer)
+        {
+            fileViewer.displayCallback = () => OnDisplayFileViewer(fileViewer);
+            fileViewer.dragCallback = d => OnDragFileViewer(fileViewer, d);
+            fileViewer.itemDisplayCallback = b => OnDisplayFileViewerItem(fileViewer, b);
+            fileViewer.itemTriggerCallback = b => OnFileViewerItemTrigger(fileViewer, b);
+            fileViewer.itemSelectCallback = b => OnFileViewerItemSelect(fileViewer, b);
+        }
+        else if (e is List list)
+        {
+            list.displayCallback = () => OnDisplayList(list);
+            list.dragCallback = d => OnDragList(list, d);
+            list.itemDisplayCallback = b => OnDisplayListItem(list, b);
+            list.itemTriggerCallback = b => OnListItemTrigger(list, b);
+            list.itemSelectCallback = b => OnListItemSelect(list, b);
+        }
+        else if (e is Pages pages)
+        {
+            pages.displayCallback = () => OnDisplayPages(pages);
+            pages.pageDisplayCallback = b => OnDisplayPagesPage(pages, b);
+            pages.dragCallback = d => OnDragPages(pages, d);
+        }
+        else if (e is Palette palette)
+        {
+            palette.displayCallback = () => OnDisplayPalette(palette);
+            palette.pageDisplayCallback = b => OnDisplayPalettePage(palette, b);
+            palette.sampleDisplayCallback =
+                (b, c) => OnUpdatePaletteSample(palette, b, c);
+            palette.pickCallback = p => OnPalettePick(palette, p);
+            palette.dragCallback = d => OnDragPalette(palette, d);
+        }
+        else if (e is Panel panel)
+        {
+            panel.displayCallback = () => OnDisplayPanel(panel);
+            panel.dragCallback = d => OnDragPanel(panel, d);
+            panel.resizeCallback = d => OnPanelResize(panel, d);
+        }
+        else if (e is Scroll scroll)
+        {
+            scroll.displayCallback = () => OnDisplayScroll(scroll);
+            scroll.dragCallback = d => OnDragScroll(scroll, d);
+        }
+        else if (e is Stepper stepper)
+        {
+            stepper.displayCallback = () => OnDisplayStepper(stepper);
+            stepper.dragCallback = d => OnDragStepper(stepper, d);
+        }
+        else if (e is Slider slider)
+        {
+            slider.displayCallback = () => OnDisplaySlider(slider);
+            slider.dragCallback = d => OnDragSlider(slider, d);
+        }
+        else if (e is Layout layout)
+        {
+            layout.displayCallback = () => OnDisplayLayout(layout);
+            layout.segmentUpdateCallback = (seg, i) => OnDisplayLayoutSegment(layout, seg, i);
+        }
+
+        e.Update();
+    }
+
+    private static float[] Distribute(int amount, (float a, float b) range)
+    {
+        if (amount <= 0)
+            return Array.Empty<float>();
+
+        var result = new float[amount];
+        var size = range.b - range.a;
+        var spacing = size / (amount + 1);
+
+        for (var i = 1; i <= amount; i++)
+            result[i - 1] = range.a + i * spacing;
+
+        return result;
+    }
     private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
     {
         var result = fromBytes[offset..(offset + amount)];

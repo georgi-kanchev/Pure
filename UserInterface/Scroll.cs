@@ -90,7 +90,7 @@ public class Scroll : Element
 
         Slider.isVertical = IsVertical;
     }
-    internal override void OnInput()
+    protected override void OnInput()
     {
         // buttons gain focus priority over the slider so
         // retrigger the scrolling behavior when scrolling over them

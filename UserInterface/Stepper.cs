@@ -78,7 +78,7 @@ public class Stepper : Element
         });
     }
 
-    internal override void OnInput()
+    protected override void OnInput()
     {
         var delta = Input.Current.ScrollDelta;
 

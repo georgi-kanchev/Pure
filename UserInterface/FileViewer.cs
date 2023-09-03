@@ -45,7 +45,19 @@ public class FileViewer : Element
             Refresh();
         }
     }
-    public bool IsSelectingFolders { get; }
+    public bool IsSelectingFolders
+    {
+        get => isSelectingFolders;
+        set
+        {
+            if (value == isSelectingFolders)
+                return;
+
+            isSelectingFolders = value;
+
+            Refresh();
+        }
+    }
 
     public int CountFiles { get; private set; }
     public int CountFolders { get; private set; }
@@ -107,7 +119,7 @@ public class FileViewer : Element
         return result.ToArray();
     }
 
-    internal override void OnInput()
+    protected override void OnInput()
     {
         TryScrollWhileHover(Back);
     }
@@ -143,6 +155,7 @@ public class FileViewer : Element
     internal Action<Button>? itemDisplayCallback,
         itemTriggerCallback,
         itemSelectCallback;
+    private bool isSelectingFolders;
 
     [MemberNotNull(nameof(Back), nameof(FilesAndFolders))]
     private void Init()

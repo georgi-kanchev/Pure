@@ -34,6 +34,9 @@ public static class Program
     public static readonly RendererUI ui;
     public static readonly RendererEdit editUI;
     public static readonly EditPanel editPanel;
+    public static readonly FileViewer saveLoad = new((0, 0));
+    public static readonly InputBox fileName = new((0, 0));
+
     public static (float x, float y) MousePosition { get; set; }
     public static (int x, int y) CameraPosition { get; set; }
     public static (int w, int h) CameraSize { get; private set; }

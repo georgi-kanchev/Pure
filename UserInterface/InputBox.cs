@@ -113,6 +113,7 @@ public class InputBox : Element
             UpdateText();
         }
     }
+    public int LineCount => lines.Count;
 
     public (int symbol, int line) CursorIndices
     {
@@ -295,9 +296,10 @@ public class InputBox : Element
             cursorBlink.Restart();
     }
 
-    internal override void OnInput()
+    protected override void OnInput()
     {
-        if (IsFocused == false || TrySelectAll() || JustPressed(Key.Tab))
+        var isBellowElement = IsFocused == false || FocusedPrevious != this;
+        if (isBellowElement || TrySelectAll() || JustPressed(Key.Tab))
             return;
 
         var isJustTyped = JustTyped();
@@ -792,6 +794,9 @@ public class InputBox : Element
     {
         if (IsDisabled == false && (IsHovered || IsPressedAndHeld))
             MouseCursorResult = MouseCursor.Text;
+
+        if (IsHovered && IsEditable == false && Value.Length == 0)
+            MouseCursorResult = MouseCursor.Arrow;
     }
     private bool TryCopyPasteCut(ref bool justDeletedSelection, ref bool shouldDelete,
         out bool isPasting)

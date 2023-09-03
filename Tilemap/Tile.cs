@@ -8,7 +8,7 @@ public struct Tile
     /// <summary>
     /// Gets or sets the identifier of the tile.
     /// </summary>
-    public int ID { get; set; }
+    public int Id { get; set; }
     /// <summary>
     /// Gets or sets the tint of the tile.
     /// </summary>
@@ -38,7 +38,7 @@ public struct Tile
     public Tile(int id, uint tint = uint.MaxValue, sbyte angle = default,
         (bool isHorizontal, bool isVertical) flips = default)
     {
-        ID = id;
+        Id = id;
         Tint = tint;
         Angle = angle;
         Flips = flips;
@@ -47,7 +47,7 @@ public struct Tile
     {
         var offset = 0;
 
-        ID = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
+        Id = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
         Tint = BitConverter.ToUInt32(GetBytesFrom(bytes, 4, ref offset));
         Angle = (sbyte)GetBytesFrom(bytes, 1, ref offset)[0];
         Flips = (
@@ -64,13 +64,13 @@ public struct Tile
     /// A string representation of this tile.".</returns>
     public override string ToString()
     {
-        return $"ID({ID}) Tint({Tint}) Angle({Angle}) Flips{Flips}";
+        return $"ID({Id}) Tint({Tint}) Angle({Angle}) Flips{Flips}";
     }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
 
-        result.AddRange(BitConverter.GetBytes(ID));
+        result.AddRange(BitConverter.GetBytes(Id));
         result.AddRange(BitConverter.GetBytes(Tint));
         result.Add((byte)Angle);
         result.AddRange(BitConverter.GetBytes(Flips.isHorizontal));
@@ -109,7 +109,7 @@ public struct Tile
         bool isFlippedVertically)(Tile tile)
     {
         return (
-            tile.ID,
+            tile.Id,
             tile.Tint,
             tile.Angle,
             tile.Flips.isHorizontal,
@@ -118,13 +118,13 @@ public struct Tile
 
     public static bool operator ==(Tile a, Tile b)
     {
-        return a.ID == b.ID && a.Tint == b.Tint && a.Angle == b.Angle &&
+        return a.Id == b.Id && a.Tint == b.Tint && a.Angle == b.Angle &&
                a.Flips.isHorizontal == b.Flips.isHorizontal &&
                a.Flips.isVertical == b.Flips.isVertical;
     }
     public static bool operator !=(Tile a, Tile b)
     {
-        return a.ID != b.ID || a.Tint != b.Tint || a.Angle != b.Angle ||
+        return a.Id != b.Id || a.Tint != b.Tint || a.Angle != b.Angle ||
                a.Flips.isHorizontal != b.Flips.isHorizontal ||
                a.Flips.isVertical != b.Flips.isVertical;
     }
@@ -520,6 +520,11 @@ public struct Tile
         ICON_INPUT_KEYBOARD = 337,
         ICON_INPUT_CONTROLLER = 338,
         ICON_TICK = 339,
+        ICON_CHECK = 339,
+        ICON_OKAY = 339,
+        ICON_YES = 339,
+        ICON_CANCEL = 101,
+        ICON_NO = 101,
         ICON_BACK = 340,
         ICON_LOOP = 341,
         ICON_SIZE_REDUCE = 342,

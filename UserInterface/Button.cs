@@ -56,7 +56,7 @@ public class Button : Element
 #region Backend
     internal bool isSelected;
 
-    internal override void OnInput()
+    protected override void OnInput()
     {
         if (IsHovered)
             MouseCursorResult = MouseCursor.Hand;

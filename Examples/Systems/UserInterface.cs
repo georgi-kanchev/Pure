@@ -10,14 +10,14 @@ public static class UserInterface
 {
     private class UI : Pure.UserInterface.UserInterface
     {
-        private readonly Tilemap back, middle, front;
+        private readonly TilemapManager maps;
+        private readonly Element prompt;
         private int buttonClickCount;
 
-        public UI(Tilemap back, Tilemap middle, Tilemap front)
+        public UI(TilemapManager tilemaps, Element prompt)
         {
-            this.back = back;
-            this.middle = middle;
-            this.front = front;
+            maps = tilemaps;
+            this.prompt = prompt;
         }
 
         protected override void OnUserActionButton(Button button, UserAction userAction)
@@ -35,18 +35,36 @@ public static class UserInterface
         {
             var e = button;
             var (w, h) = e.Size;
+
+            var promptBtnIndex = PromptIndexOf(e);
+            if (promptBtnIndex != -1)
+            {
+                var tile = new Tile(Tile.ICON_TICK, GetColor(e, Color.Green));
+                if (promptBtnIndex == 1)
+                {
+                    tile.Id = Tile.ICON_CANCEL;
+                    tile.Tint = GetColor(e, Color.Red);
+                }
+
+                Clear(maps[0], e);
+                Clear(maps[1], e);
+                maps[2].SetTile(e.Position, tile);
+                Clear(maps[3], e);
+                return;
+            }
+
             if (e.Text == "Button")
             {
                 var offW = w / 2 - Math.Min(e.Text.Length, w - 2) / 2;
-                middle.SetBox(e.Position, e.Size, Tile.EMPTY,
+                maps[1].SetBox(e.Position, e.Size, Tile.EMPTY,
                     Tile.BOX_DEFAULT_CORNER, Tile.BOX_DEFAULT_STRAIGHT,
                     GetColor(e, Color.Yellow).ToDark());
-                middle.SetTextLine(
+                maps[1].SetTextLine(
                     (e.Position.x + offW, e.Position.y + h / 2),
                     e.Text,
                     GetColor(e, Color.Yellow.ToDark()),
                     e.Size.width - 2);
-                middle.SetTextLine((e.Position.x + 1 + e.Size.width, e.Position.y + 1),
+                maps[1].SetTextLine((e.Position.x + 1 + e.Size.width, e.Position.y + 1),
                     $"{buttonClickCount}", Color.White);
             }
             else if (e.Text == "Checkbox")
@@ -56,25 +74,39 @@ public static class UserInterface
                 var color = e.IsSelected ? Color.Orange : Color.Red;
                 var tile = new Tile(e.IsSelected ? Tile.ICON_TICK : Tile.UPPERCASE_X,
                     GetColor(e, color));
-                SetBackground(back, e);
-                middle.SetTile(e.Position, tile);
-                middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text, GetColor(button, color));
+                SetBackground(maps[0], e);
+                maps[1].SetTile(e.Position, tile);
+                maps[1].SetTextLine((e.Position.x + 2, e.Position.y), e.Text, GetColor(button, color));
             }
         }
         protected override void OnDisplayInputBox(InputBox inputBox)
         {
             var e = inputBox;
+            var isPrompt = IsPromptElement(e);
 
-            back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
-            back.SetTextRectangle(e.Position, e.Size, e.Selection,
+            Clear(maps[1], e);
+            Clear(maps[2], e);
+
+            var bgColor = Color.Gray.ToDark();
+            if (isPrompt)
+            {
+                bgColor = Color.Gray;
+                Clear(maps[3], e);
+            }
+
+            maps[0].SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, bgColor));
+            maps[0].SetTextRectangle(e.Position, e.Size, e.Selection,
                 e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
-            middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
+            maps[1].SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
 
-            if (string.IsNullOrWhiteSpace(e.Text))
-                middle.SetTextRectangle(e.Position, e.Size, e.Placeholder, Color.Gray.ToBright(), false);
+            if (string.IsNullOrWhiteSpace(e.Value))
+                maps[1].SetTextRectangle(e.Position, e.Size, e.Placeholder,
+                    tint: isPrompt ? Color.White : Color.Gray.ToBright(),
+                    isWordWrapping: isPrompt,
+                    alignment: isPrompt ? Tilemap.Alignment.Center : Tilemap.Alignment.TopLeft);
 
             if (e.IsCursorVisible)
-                front.SetTile(e.PositionFromIndices(e.CursorIndices),
+                maps[2].SetTile(e.PositionFromIndices(e.CursorIndices),
                     new(Tile.SHAPE_LINE, Color.White, 2));
         }
         protected override void OnDisplaySlider(Slider slider)
@@ -84,21 +116,24 @@ public static class UserInterface
             var text = $"{e.Progress:F2}";
             var isHandle = e.Handle.IsPressedAndHeld;
 
-            SetBackground(middle, e);
-            front.SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
+            SetBackground(maps[1], e);
+            maps[2].SetBar(e.Handle.Position, Tile.BAR_DEFAULT_EDGE, Tile.BAR_DEFAULT_STRAIGHT,
                 GetColor(isHandle ? e.Handle : e, Color.Magenta), e.Size.height, true);
-            front.SetTextLine((e.Position.x + w / 2 - text.Length / 2, e.Position.y + h / 2), text);
+            maps[2].SetTextLine((e.Position.x + w / 2 - text.Length / 2, e.Position.y + h / 2), text);
         }
         protected override void OnDisplayList(List list)
         {
-            back.SetRectangle(list.Position, list.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
+            Clear(maps[1], list);
+            Clear(maps[2], list);
+
+            maps[0].SetRectangle(list.Position, list.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
 
             if (list.Scroll.IsHidden == false)
                 OnDisplayScroll(list.Scroll);
 
             var dropdownTile = new Tile(Tile.MATH_GREATER, GetColor(list, Color.Gray.ToBright()), 1);
             if (list.IsCollapsed)
-                front.SetTile((list.Position.x + list.Size.width - 1, list.Position.y), dropdownTile);
+                maps[2].SetTile((list.Position.x + list.Size.width - 1, list.Position.y), dropdownTile);
         }
         protected override void OnDisplayListItem(List list, Button item)
         {
@@ -106,21 +141,21 @@ public static class UserInterface
             var (x, y) = item.Position;
             var (_, h) = item.Size;
 
-            SetBackground(middle, item, 0.25f);
-            front.SetTextLine((x, y + h / 2), item.Text, GetColor(item, color), item.Size.width);
+            SetBackground(maps[1], item, 0.25f);
+            maps[2].SetTextLine((x, y + h / 2), item.Text, GetColor(item, color), item.Size.width);
         }
         protected override void OnDisplayFileViewer(FileViewer fileViewer)
         {
             var e = fileViewer;
-            back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
+            maps[0].SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
 
             if (e.FilesAndFolders.Scroll.IsHidden == false)
                 OnDisplayScroll(e.FilesAndFolders.Scroll);
 
             var color = GetColor(e.Back, Color.Gray);
             var (x, y) = e.Back.Position;
-            front.SetTile((x, y), new(Tile.ICON_BACK, color));
-            front.SetTextLine((x + 1, y), e.CurrentDirectory, color, -e.Back.Size.width + 2);
+            maps[2].SetTile((x, y), new(Tile.ICON_BACK, color));
+            maps[2].SetTextLine((x + 1, y), e.CurrentDirectory, color, -e.Back.Size.width + 2);
         }
         protected override void OnDisplayFileViewerItem(FileViewer fileViewer, Button item)
         {
@@ -132,50 +167,58 @@ public static class UserInterface
 
             icon = item.Text == ".." ? Tile.ICON_BACK : icon;
 
-            front.SetTile((x, y), icon);
-            front.SetTextLine((x + 1, y), item.Text, GetColor(item, color), item.Size.width - 1);
+            maps[2].SetTile((x, y), icon);
+            maps[2].SetTextLine((x + 1, y), item.Text, GetColor(item, color), item.Size.width - 1);
         }
         protected override void OnDisplayPanel(Panel panel)
         {
             var e = panel;
-            SetBackground(back, e, 0.75f);
-            middle.SetRectangle(e.Position, e.Size, Tile.EMPTY);
-            front.SetRectangle(e.Position, e.Size, Tile.EMPTY);
 
-            front.SetBox(e.Position, e.Size, Tile.EMPTY, Tile.BOX_GRID_CORNER,
+            if (IsPromptElement(panel))
+            {
+                var color = new Color(0, 0, 0, 200);
+                maps[3].SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, color));
+                maps[3].SetRectangle(prompt.Position, prompt.Size, Tile.SHADE_TRANSPARENT);
+                return;
+            }
+
+            SetBackground(maps[0], e, 0.75f);
+
+            maps[1].SetRectangle(e.Position, e.Size, Tile.EMPTY);
+            maps[2].SetRectangle(e.Position, e.Size, Tile.EMPTY);
+
+            maps[2].SetBox(e.Position, e.Size, Tile.EMPTY, Tile.BOX_GRID_CORNER,
                 Tile.BOX_GRID_STRAIGHT, Color.Blue);
-            front.SetTextRectangle((e.Position.x, e.Position.y), (e.Size.width, 1), e.Text,
+            maps[2].SetTextRectangle((e.Position.x, e.Position.y), (e.Size.width, 1), e.Text,
                 alignment: Tilemap.Alignment.Center);
         }
         protected override void OnDisplayPages(Pages pages)
         {
             var e = pages;
-            SetBackground(back, e);
+            SetBackground(maps[0], e);
             var colorFirst = GetColor(e.First, Color.Gray);
             var colorPrevious = GetColor(e.Previous, Color.Gray);
             var colorNext = GetColor(e.Next, Color.Gray);
             var colorLast = GetColor(e.Last, Color.Gray);
-            middle.SetTile(e.First.Position, new(Tile.MATH_MUCH_LESS, colorFirst));
-            middle.SetTile((e.First.Position.x, e.First.Position.y + 1),
+            maps[1].SetTile(e.First.Position, new(Tile.MATH_MUCH_LESS, colorFirst));
+            maps[1].SetTile((e.First.Position.x, e.First.Position.y + 1),
                 new(Tile.PUNCTUATION_PIPE, colorFirst));
-            middle.SetTile(e.Previous.Position, new(Tile.MATH_LESS, colorPrevious));
-            middle.SetTile((e.Previous.Position.x, e.Previous.Position.y + 1),
+            maps[1].SetTile(e.Previous.Position, new(Tile.MATH_LESS, colorPrevious));
+            maps[1].SetTile((e.Previous.Position.x, e.Previous.Position.y + 1),
                 new(Tile.PUNCTUATION_PIPE, colorPrevious));
-            middle.SetTile(e.Next.Position, new(Tile.MATH_GREATER, colorNext));
-            middle.SetTile((e.Next.Position.x, e.Next.Position.y + 1),
+            maps[1].SetTile(e.Next.Position, new(Tile.MATH_GREATER, colorNext));
+            maps[1].SetTile((e.Next.Position.x, e.Next.Position.y + 1),
                 new(Tile.PUNCTUATION_PIPE, colorNext));
-            middle.SetTile(e.Last.Position, new(Tile.MATH_MUCH_GREATER, colorLast));
-            middle.SetTile((e.Last.Position.x, e.Last.Position.y + 1),
+            maps[1].SetTile(e.Last.Position, new(Tile.MATH_MUCH_GREATER, colorLast));
+            maps[1].SetTile((e.Last.Position.x, e.Last.Position.y + 1),
                 new(Tile.PUNCTUATION_PIPE, colorLast));
         }
         protected override void OnDisplayPagesPage(Pages pages, Button page)
         {
             var color = page.IsSelected ? Color.Green : Color.Gray;
-            middle.SetTextLine(page.Position, page.Text, GetColor(page, color));
-
-            if (pages.Count == 10)
-                middle.SetTile((page.Position.x, page.Position.y + 1),
-                    new(Tile.ICON_HOME + int.Parse(page.Text), GetColor(page, color)));
+            maps[1].SetTextLine(page.Position, page.Text, GetColor(page, color));
+            maps[1].SetTile((page.Position.x, page.Position.y + 1),
+                new(Tile.ICON_HOME + int.Parse(page.Text), GetColor(page, color)));
         }
         protected override void OnDisplayPalette(Palette palette)
         {
@@ -185,45 +228,49 @@ public static class UserInterface
             var tile = new Tile(Tile.SHADE_OPAQUE, GetColor(e.Opacity, Color.Gray.ToBright()));
             var alpha = e.Opacity;
 
-            back.SetRectangle((x, y - 3), (w, h + 3), new(Tile.SHADE_5, Color.Gray.ToDark()));
-            middle.SetBar(alpha.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, Color.Gray,
+            Clear(maps[0], e);
+            Clear(maps[2], e);
+
+            maps[0].SetRectangle((x, y), (w, h), new(Tile.SHADE_5, Color.Gray.ToDark()));
+            maps[1].SetBar(alpha.Position, Tile.BAR_BIG_EDGE, Tile.BAR_BIG_STRAIGHT, e.SelectedColor,
                 alpha.Size.width);
-            middle.SetTile(alpha.Handle.Position, tile);
+            maps[1].SetTile(alpha.Handle.Position, tile);
 
             var first = e.Brightness.First;
             var previous = e.Brightness.Previous;
             var next = e.Brightness.Next;
             var last = e.Brightness.Last;
 
-            middle.SetTile(first.Position, new(Tile.MATH_MUCH_LESS, GetColor(first, Color.Gray)));
-            middle.SetTile(previous.Position, new(Tile.MATH_LESS, GetColor(previous, Color.Gray)));
-            middle.SetTile(next.Position, new(Tile.MATH_GREATER, GetColor(next, Color.Gray)));
-            middle.SetTile(last.Position, new(Tile.MATH_MUCH_GREATER, GetColor(last, Color.Gray)));
+            maps[1].SetTile(first.Position, new(Tile.MATH_MUCH_LESS, GetColor(first, Color.Gray)));
+            maps[1].SetTile(previous.Position, new(Tile.MATH_LESS, GetColor(previous, Color.Gray)));
+            maps[1].SetTile(next.Position, new(Tile.MATH_GREATER, GetColor(next, Color.Gray)));
+            maps[1].SetTile(last.Position, new(Tile.MATH_MUCH_GREATER, GetColor(last, Color.Gray)));
 
-            middle.SetTile(e.Pick.Position, new(Tile.MATH_PLUS, GetColor(e.Pick, Color.Gray)));
+            maps[1].SetTile(e.Pick.Position, new(Tile.MATH_PLUS, GetColor(e.Pick, Color.Gray)));
 
-            middle.SetRectangle((x, y - 3), (e.Size.width, 3), new(Tile.SHADE_OPAQUE, e.SelectedColor));
+            //maps[1].SetRectangle((x, y - 3), (e.Size.width, 3), new(Tile.SHADE_OPAQUE, e.SelectedColor));
         }
         protected override void OnDisplayPalettePage(Palette palette, Button page)
         {
-            OnDisplayPagesPage(palette.Brightness, page); // display the same kind of pages
+            var color = page.IsSelected ? Color.Green : Color.Gray;
+            maps[1].SetTextLine(page.Position, page.Text, GetColor(page, color));
         }
         protected override void OnUpdatePaletteSample(Palette palette, Button sample,
             uint color)
         {
-            middle.SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color));
+            maps[1].SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color));
         }
         protected override void OnDisplayStepper(Stepper stepper)
         {
             var e = stepper;
             var text = MathF.Round(e.Value, 2).Precision() == 0 ? $"{e.Value}" : $"{e.Value:F2}";
 
-            SetBackground(back, stepper);
+            SetBackground(maps[0], stepper);
 
-            middle.SetTile(e.Decrease.Position, new(Tile.ARROW, GetColor(e.Decrease, Color.Gray), 1));
-            middle.SetTile(e.Increase.Position, new(Tile.ARROW, GetColor(e.Increase, Color.Gray), 3));
-            middle.SetTextLine((e.Position.x + 2, e.Position.y), e.Text);
-            middle.SetTextLine((e.Position.x + 2, e.Position.y + 1), text);
+            maps[1].SetTile(e.Decrease.Position, new(Tile.ARROW, GetColor(e.Decrease, Color.Gray), 1));
+            maps[1].SetTile(e.Increase.Position, new(Tile.ARROW, GetColor(e.Increase, Color.Gray), 3));
+            maps[1].SetTextLine((e.Position.x + 2, e.Position.y), e.Text);
+            maps[1].SetTextLine((e.Position.x + 2, e.Position.y + 1), text);
         }
         protected override void OnDisplayScroll(Scroll scroll)
         {
@@ -233,12 +280,12 @@ public static class UserInterface
             var scrollColor = Color.Gray.ToBright();
             var isHandle = e.Slider.Handle.IsPressedAndHeld;
 
-            SetBackground(back, e);
-            middle.SetTile(e.Increase.Position,
+            SetBackground(maps[0], e);
+            maps[1].SetTile(e.Increase.Position,
                 new(Tile.ARROW, GetColor(e.Increase, scrollColor), scrollUpAng));
-            middle.SetTile(e.Slider.Handle.Position,
+            maps[1].SetTile(e.Slider.Handle.Position,
                 new(Tile.SHAPE_CIRCLE, GetColor(isHandle ? e.Slider.Handle : e.Slider, scrollColor)));
-            middle.SetTile(e.Decrease.Position,
+            maps[1].SetTile(e.Decrease.Position,
                 new(Tile.ARROW, GetColor(e.Decrease, scrollColor), scrollDownAng));
         }
         protected override void OnDisplayLayout(Layout layout) { }
@@ -253,7 +300,7 @@ public static class UserInterface
             //};
             //var pos = (segment.x, segment.y);
             //var size = (segment.width, segment.height);
-            //middle.SetRectangle(pos, size, new(Tile.SHADE_OPAQUE, colors[index]));
+            //maps[1].SetRectangle(pos, size, new(Tile.SHADE_OPAQUE, colors[index]));
 
             var (sx, sy, sw, sh) = segment;
             var (w, h) = (0, 0);
@@ -262,7 +309,7 @@ public static class UserInterface
                 w = 3;
             else if (index == 1)
             {
-                middle.SetTextRectangle((sx, sy), (sw, sh),
+                maps[1].SetTextRectangle((sx, sy), (sw, sh),
                     "I am a text rectangle with some meaningful text inside.");
                 return;
             }
@@ -278,12 +325,12 @@ public static class UserInterface
         protected override uint OnPalettePick(Palette palette, (float x, float y) position)
         {
             var p = ((int)position.x, (int)position.y);
-            var color = front.TileAt(p).Tint;
+            var color = maps[2].TileAt(p).Tint;
 
             if (color == default || color == Color.Black)
-                color = middle.TileAt(p).Tint;
+                color = maps[1].TileAt(p).Tint;
             if (color == default || color == Color.Black)
-                color = back.TileAt(p).Tint;
+                color = maps[0].TileAt(p).Tint;
 
             return color;
         }
@@ -304,6 +351,10 @@ public static class UserInterface
             var tile = new Tile(Tile.SHADE_OPAQUE, color);
             map.SetBox(e.Position, e.Size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
         }
+        private static void Clear(Tilemap map, Element element)
+        {
+            map.SetRectangle(element.Position, element.Size, Tile.SHADE_TRANSPARENT);
+        }
     }
 
     public static void Run()
@@ -311,26 +362,24 @@ public static class UserInterface
         Window.Create(3);
 
         var (width, height) = Window.MonitorAspectRatio;
-        var tilemaps = new TilemapManager(3, (width * 3, height * 3));
-        var back = tilemaps[0];
-        var middle = tilemaps[1];
-        var front = tilemaps[2];
+        var tilemaps = new TilemapManager(4, (width * 3, height * 3));
+        var prompt = new FileViewer((0, 0));
+        var ui = new UI(tilemaps, prompt);
 
-        var userInterface = new UI(back, middle, front);
-        userInterface.Add(new Stepper((37, 4)) { Range = (-9, 13) });
-        userInterface.Add(new List((37, 7), 15, Types.Dropdown) { Size = (8, 6) });
-        userInterface.Add(new Scroll((46, 7), 9));
-        userInterface.Add(new Palette((34, 23), brightnessLevels: 30));
-        userInterface.Add(new Scroll((37, 16), 9, false));
-        userInterface.Add(new Pages((29, 1)) { Size = (18, 2) });
-        userInterface.Add(new FileViewer((1, 18)) { Size = (16, 8) });
-        userInterface.Add(new Panel((18, 19))
+        ui.Add(new Stepper((37, 4)) { Range = (-9, 13) });
+        ui.Add(new List((37, 7), 15, Types.Dropdown) { Size = (8, 6) });
+        ui.Add(new Scroll((46, 7), 9));
+        ui.Add(new Palette((34, 23), brightnessLevels: 30));
+        ui.Add(new Scroll((37, 16), 9, false));
+        ui.Add(new Pages((29, 1)) { Size = (18, 2) });
+        ui.Add(new FileViewer((1, 18)) { Size = (16, 8) });
+        ui.Add(new Panel((18, 19))
         {
             Size = (15, 7),
             IsResizable = false,
             IsMovable = false,
         });
-        userInterface.Add(new List((19, 20), 10, Types.Horizontal)
+        ui.Add(new List((19, 20), 10, Types.Horizontal)
         {
             Size = (13, 5),
             ItemSize = (5, 4),
@@ -338,30 +387,30 @@ public static class UserInterface
 
         // -------
 
-        var panelIndex = userInterface.Count;
-        userInterface.Add(new Panel((1, 1))
+        var panelIndex = ui.Count;
+        ui.Add(new Panel((1, 1))
         {
             Size = (15, 15),
             SizeMinimum = (15, 6),
         });
         var layout = new Layout((0, 0));
-        userInterface.Add(layout);
+        ui.Add(layout);
 
         layout.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.4f);
         layout.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.6f);
         layout.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.25f);
         layout.Cut(index: 1, side: Layout.CutSide.Bottom, rate: 0.4f);
 
-        userInterface.Add(new Button((0, 0)));
-        userInterface.Add(new Button((37, 18)) { Text = "Checkbox" });
-        userInterface.Add(new List((0, 0), 6)
+        ui.Add(new Button((0, 0)));
+        ui.Add(new Button((37, 18)) { Text = "Checkbox" });
+        ui.Add(new List((0, 0), 6)
         {
             Size = (8, 9),
             IsSingleSelecting = true,
             ItemGap = (0, 1),
         });
-        userInterface.Add(new InputBox((0, 0)));
-        userInterface.Add(new Slider((0, 0), 7));
+        ui.Add(new InputBox((0, 0)));
+        ui.Add(new Slider((0, 0), 7));
 
         while (Window.IsOpen)
         {
@@ -378,13 +427,22 @@ public static class UserInterface
                 keysTyped: Keyboard.KeyTyped,
                 tilemapSize: tilemaps.Size);
 
-            userInterface.Update();
+            ui.Update();
 
-            var p = userInterface[panelIndex];
+            var p = ui[panelIndex];
             layout.Size = (p.Size.width - 2, p.Size.height - 2);
             layout.Position = (p.Position.x + 1, p.Position.y + 1);
 
             Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
+
+            if (Keyboard.IsKeyPressed(Keyboard.Key.A).Once("on-a-press"))
+                ui.PromptOpen("Your message:", prompt, 2, index =>
+                {
+                    if (index == 0)
+                        Console.WriteLine(prompt.SelectedPaths[0]);
+
+                    ui.PromptClose();
+                });
 
             for (var i = 0; i < tilemaps.Count; i++)
                 Window.DrawTiles(tilemaps[i].ToBundle());

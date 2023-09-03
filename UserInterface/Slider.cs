@@ -117,7 +117,7 @@ public class Slider : Element
         Handle = new(position) { Size = (1, 1), hasParent = true };
     }
 
-    internal override void OnInput()
+    protected override void OnInput()
     {
         if (IsHovered)
             MouseCursorResult = MouseCursor.Hand;

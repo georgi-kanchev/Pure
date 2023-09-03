@@ -751,6 +751,24 @@ public static class Extensions
             return number;
         }
     }
+    /// <param name="amount">
+    /// The number of values to distribute.</param>
+    /// <param name="range">The range of values (inclusive). The order is maintained.</param>
+    /// <returns>An array of evenly distributed numbers across the specified range.</returns>
+    public static float[] Distribute(this int amount, (float a, float b) range)
+    {
+        if (amount <= 0)
+            return Array.Empty<float>();
+
+        var result = new float[amount];
+        var size = range.b - range.a;
+        var spacing = size / (amount + 1);
+
+        for (var i = 1; i <= amount; i++)
+            result[i - 1] = range.a + i * spacing;
+
+        return result;
+    }
     /// <summary>
     /// Limits an int number to a specified range.
     /// </summary>

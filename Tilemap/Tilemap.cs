@@ -44,7 +44,7 @@ public class Tilemap
             var result = new int[data.GetLength(0), data.GetLength(1)];
             for (var j = 0; j < data.GetLength(1); j++)
                 for (var i = 0; i < data.GetLength(0); i++)
-                    result[i, j] = data[i, j].ID;
+                    result[i, j] = data[i, j].Id;
 
             return result;
         }
@@ -426,7 +426,7 @@ public class Tilemap
         for (var x = position.x; x != position.x + size.width; x += xStep)
             for (var y = position.y; y != position.y + size.height; y += yStep)
             {
-                if (tileList[0] != TileAt((x, y)).ID)
+                if (tileList[0] != TileAt((x, y)).Id)
                     continue;
 
                 var correctSymbolCount = 0;
@@ -436,7 +436,7 @@ public class Tilemap
 
                 for (var i = 0; i < text.Length; i++)
                 {
-                    if (tileList[i] != TileAt((curX, curY)).ID)
+                    if (tileList[i] != TileAt((curX, curY)).Id)
                         break;
 
                     correctSymbolCount++;
@@ -450,8 +450,8 @@ public class Tilemap
                 }
 
                 var endPos = (curX, curY);
-                var left = TileAt(startPos).ID == 0 || curX == position.x;
-                var right = TileAt(endPos).ID == 0 || curX == position.x + size.width;
+                var left = TileAt(startPos).Id == 0 || curX == position.x;
+                var right = TileAt(endPos).Id == 0 || curX == position.x + size.width;
                 var isWord = left && right;
 
                 if (isWord ^ isMatchingWord)
@@ -470,7 +470,7 @@ public class Tilemap
                         curY++;
                     }
 
-                    SetTile((curX, curY), new(TileAt((curX, curY)).ID, tint));
+                    SetTile((curX, curY), new(TileAt((curX, curY)).Id, tint));
                     curX++;
                 }
             }

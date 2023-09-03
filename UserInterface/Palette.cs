@@ -112,7 +112,12 @@ public class Palette : Element
         Pick.SubscribeToUserAction(UserAction.Trigger, () => isPicking = true);
 
         for (var i = 0; i < palette.Length; i++)
-            colorButtons.Add(new((x + i, y + 1)) { size = (1, 1), hasParent = true });
+        {
+            var btn = new Button((x + i, y + 1)) { size = (1, 1), hasParent = true };
+            var index = i;
+            btn.SubscribeToUserAction(UserAction.Trigger, () => SelectedColor = GetColor(index));
+            colorButtons.Add(btn);
+        }
     }
 
     internal override void OnUpdate()
@@ -128,7 +133,7 @@ public class Palette : Element
             sampleDisplayCallback?.Invoke(colorButtons[i], GetColor(i));
         }
     }
-    internal override void OnInput()
+    protected override void OnInput()
     {
         if (isPicking)
             MouseCursorResult = MouseCursor.Crosshair;
@@ -145,10 +150,6 @@ public class Palette : Element
         }
 
         SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
-
-        foreach (var btn in colorButtons)
-            if (Input.Current.IsJustReleased && btn is { IsPressedAndHeld: true, IsHovered: true })
-                SelectedColor = GetColor(colorButtons.IndexOf(btn));
     }
     internal override void OnChildrenUpdate()
     {

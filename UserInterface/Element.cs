@@ -92,7 +92,7 @@ public abstract partial class Element
     /// <summary>
     /// The size of the tilemap being used by the user interface.
     /// </summary>
-    protected static (int width, int height) TilemapSize { get; private set; }
+    protected internal static (int width, int height) TilemapSize { get; private set; }
 
     /// <summary>
     /// Gets or sets the position of the user interface element.
@@ -285,6 +285,8 @@ public abstract partial class Element
             TryDisplay();
             return;
         }
+        else if (IsHovered)
+            MouseCursorResult = MouseCursor.Arrow;
 
         var isJustPressed = Input.Current.WasPressed == false && IsPressed;
         var isJustScrolled = Input.Current.ScrollDelta != 0 && IsHovered;
@@ -483,6 +485,7 @@ public abstract partial class Element
     /// </summary>
     protected virtual void OnUserAction(UserAction userAction) { }
     protected internal virtual void OnDisplay() { }
+    protected virtual void OnInput() { }
     protected virtual void OnDrag((int x, int y) delta) { }
 
     protected internal void InheritParent(Element parent)
@@ -577,7 +580,6 @@ public abstract partial class Element
     internal virtual void OnUpdate() { }
     internal virtual void OnChildrenUpdate() { }
     internal virtual void OnChildrenDisplay() { }
-    internal virtual void OnInput() { }
 
     private void UpdateHovered()
     {

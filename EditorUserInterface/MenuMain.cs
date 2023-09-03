@@ -16,21 +16,22 @@ public class MenuMain : Menu
         "  Load") =>
         Size = (8, 6);
 
-    protected override void OnDisplay()
+    public override void Update()
     {
-        if (Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRMB"))
-        {
-            var (x, y) = MousePosition;
+        base.Update();
 
-            foreach (var kvp in menus)
-                kvp.Value.IsHidden = true;
+        if (Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRMB") == false)
+            return;
 
-            Position = ((int)x + 1, (int)y + 1);
-            IsHidden = false;
-        }
+        var (x, y) = MousePosition;
 
-        base.OnDisplay();
+        foreach (var kvp in menus)
+            kvp.Value.IsHidden = true;
+
+        Position = ((int)x + 1, (int)y + 1);
+        IsHidden = false;
     }
+
     protected override void OnItemTrigger(Button item)
     {
         IsHidden = true;
@@ -40,7 +41,30 @@ public class MenuMain : Menu
             menus[MenuType.Add].Show(Position);
         else if (index == 3)
         {
-            // save
+            saveLoad.IsSelectingFolders = true;
+            editUI.PromptOpen("Select folder:", saveLoad, 2, btnIndex =>
+            {
+                if (btnIndex == 0)
+                {
+                    var directory = saveLoad.SelectedPaths.Length == 0
+                        ? saveLoad.CurrentDirectory
+                        : saveLoad.SelectedPaths[0];
+                    editUI.PromptClose();
+                    editUI.PromptOpen("Enter file name:", fileName, 2, btnIndex2 =>
+                    {
+                        if (btnIndex2 == 0)
+                        {
+                            var bytes = ui.ToBytes();
+                            File.WriteAllBytes(Path.Join(directory, fileName.Value), bytes);
+                        }
+
+                        editUI.PromptClose();
+                    });
+                    return;
+                }
+
+                editUI.PromptClose();
+            });
         }
         else if (index == 4)
         {

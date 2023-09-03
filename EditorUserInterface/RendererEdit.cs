@@ -108,25 +108,32 @@ public class RendererEdit : UserInterface
             }
     }
 
+    protected override void OnUserActionPanel(Panel panel, UserAction userAction)
+    {
+        if (userAction != UserAction.Press)
+            return;
+
+        var notOverEditPanel = editPanel.IsHovered == false || editPanel.IsHidden;
+        var isHoveringMenu = false;
+        foreach (var kvp in menus)
+            if (kvp.Value is { IsHovered: true, IsHidden: false })
+            {
+                isHoveringMenu = true;
+                break;
+            }
+
+        if (notOverEditPanel == false || isHoveringMenu)
+            return;
+
+        var index = IndexOf(panel);
+        var e = ui[index];
+        Selected = e;
+        panel.IsHidden = false;
+    }
     protected override void OnDisplayPanel(Panel panel)
     {
         var index = IndexOf(panel);
         var e = ui[index];
-        var notOverEditPanel = editPanel.IsHovered == false || editPanel.IsHidden;
-
-        if (panel is { IsPressedAndHeld: true, IsHovered: true })
-        {
-            var isHoveringMenu = false;
-            foreach (var kvp in menus)
-                if (kvp.Value.IsHovered)
-                {
-                    isHoveringMenu = true;
-                    break;
-                }
-
-            if (notOverEditPanel && isHoveringMenu == false)
-                Selected = e;
-        }
 
         e.Position = (panel.Position.x + 1, panel.Position.y + 1);
         e.Size = (panel.Size.width - 2, panel.Size.height - 2);
