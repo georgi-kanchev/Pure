@@ -7,166 +7,158 @@ namespace Pure.UserInterface;
 /// </summary>
 public class Slider : Element
 {
-    /// <summary>
-    /// Gets or sets a value indicating whether this slider is vertical or horizontal.
-    /// </summary>
-    public bool IsVertical
-    {
-        get => isVertical;
-        set
-        {
-            if (hasParent == false) isVertical = value;
-        }
-    }
-    /// <summary>
-    /// Gets or sets the current progress of the slider (ranged 0 to 1).
-    /// </summary>
-    public float Progress
-    {
-        get => progress;
-        set => progress = Math.Clamp(value, 0, 1);
-    }
+	/// <summary>
+	/// Gets or sets a value indicating whether this slider is vertical or horizontal.
+	/// </summary>
+	public bool IsVertical
+	{
+		get => isVertical;
+		set
+		{
+			if(hasParent == false) isVertical = value;
+		}
+	}
+	/// <summary>
+	/// Gets or sets the current progress of the slider (ranged 0 to 1).
+	/// </summary>
+	public float Progress
+	{
+		get => progress;
+		set => progress = Math.Clamp(value, 0, 1);
+	}
 
-    /// <summary>
-    /// Gets the handle button of the slider.
-    /// </summary>
-    public Button Handle { get; private set; }
+	/// <summary>
+	/// Gets the handle button of the slider.
+	/// </summary>
+	public Button Handle { get; private set; }
 
-    /// <summary>
-    /// Initializes a slider new instance with the specified position, size and orientation.
-    /// </summary>
-    /// <param name="position">The position of the slider.</param>
-    /// <param name="size">The size of the slider.</param>
-    /// <param name="isVertical">Whether the slider is vertical or horizontal.</param>
-    public Slider((int x, int y) position, int size = 5, bool isVertical = false) : base(position)
-    {
-        IsVertical = isVertical;
-        Size = isVertical ? (1, size) : (size, 1);
+	/// <summary>
+	/// Initializes a slider new instance with the specified position, size and orientation.
+	/// </summary>
+	/// <param name="position">The position of the slider.</param>
+	/// <param name="size">The size of the slider.</param>
+	/// <param name="isVertical">Whether the slider is vertical or horizontal.</param>
+	public Slider((int x, int y) position, int size = 5, bool isVertical = false) : base(position)
+	{
+		IsVertical = isVertical;
+		Size = isVertical ? (1, size) : (size, 1);
 
-        Init();
-    }
-    public Slider(byte[] bytes) : base(bytes)
-    {
-        IsVertical = GrabBool(bytes);
+		Init();
+	}
+	public Slider(byte[] bytes) : base(bytes)
+	{
+		IsVertical = GrabBool(bytes);
 
-        Init();
-        Progress = GrabFloat(bytes);
-        index = GrabInt(bytes);
-    }
+		Init();
+		Progress = GrabFloat(bytes);
+		index = GrabInt(bytes);
+	}
 
-    /// <summary>
-    /// Moves the handle of the slider by the specified amount.
-    /// </summary>
-    /// <param name="delta">The amount to move the handle.</param>
-    public void Move(int delta)
-    {
-        var sz = IsVertical ? Size.height : Size.width;
-        index -= delta;
-        index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
-        Progress = Map(index, 0, sz - 1, 0, 1);
-    }
-    /// <summary>
-    /// Tries to move the handle of the slider to the specified position. Picks the closest
-    /// position on the slider if not successful.
-    /// </summary>
-    /// <param name="position">The position to try move the handle to.</param>
-    public void MoveTo((int x, int y) position)
-    {
-        var sz = IsVertical ? Size.height : Size.width;
-        var (x, y) = Position;
-        var (px, py) = position;
-        index = IsVertical ? py - y : px - x;
-        index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
-        Progress = Map(index, 0, sz - 1, 0, 1);
-    }
+	/// <summary>
+	/// Moves the handle of the slider by the specified amount.
+	/// </summary>
+	/// <param name="delta">The amount to move the handle.</param>
+	public void Move(int delta)
+	{
+		var sz = IsVertical ? Size.height : Size.width;
+		index -= delta;
+		index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
+		Progress = Map(index, 0, sz - 1, 0, 1);
+	}
+	/// <summary>
+	/// Tries to move the handle of the slider to the specified position. Picks the closest
+	/// position on the slider if not successful.
+	/// </summary>
+	/// <param name="position">The position to try move the handle to.</param>
+	public void MoveTo((int x, int y) position)
+	{
+		var sz = IsVertical ? Size.height : Size.width;
+		var (x, y) = Position;
+		var (px, py) = position;
+		index = IsVertical ? py - y : px - x;
+		index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
+		Progress = Map(index, 0, sz - 1, 0, 1);
+	}
 
-    public override byte[] ToBytes()
-    {
-        var result = base.ToBytes().ToList();
-        PutBool(result, IsVertical);
-        PutFloat(result, Progress);
-        PutInt(result, index);
-        return result.ToArray();
-    }
+	public override byte[] ToBytes()
+	{
+		var result = base.ToBytes().ToList();
+		PutBool(result, IsVertical);
+		PutFloat(result, Progress);
+		PutInt(result, index);
+		return result.ToArray();
+	}
 
-    protected override void OnUserAction(UserAction userAction)
-    {
-        if (IsDisabled || userAction != UserAction.Trigger)
-            return;
+	protected override void OnUserAction(UserAction userAction)
+	{
+		if(userAction == UserAction.Trigger)
+		{
+			var (x, y) = Input.Current.Position;
+			MoveTo(((int)x, (int)y));
+		}
+		else if(userAction == UserAction.Scroll)
+			Move(Input.Current.ScrollDelta);
+	}
+	protected override void OnDrag((int x, int y) delta)
+	{
+		var (x, y) = Input.Current.Position;
+		MoveTo(((int)x, (int)y));
+	}
+	protected override void OnInput()
+	{
+		if(IsHovered)
+			MouseCursorResult = MouseCursor.Hand;
 
-        var (x, y) = Input.Current.Position;
-        MoveTo(((int)x, (int)y));
-    }
-    protected override void OnDrag((int x, int y) delta)
-    {
-        if (IsDisabled || FocusedPrevious != this)
-            return;
+		var p = Input.Current.Position;
+		var pp = Input.Current.PositionPrevious;
+		var px = (int)Math.Floor(p.x);
+		var py = (int)Math.Floor(p.y);
+		var ppx = (int)Math.Floor(pp.x);
+		var ppy = (int)Math.Floor(pp.y);
 
-        var (x, y) = Input.Current.Position;
-        MoveTo(((int)x, (int)y));
-    }
+		if((px != ppx || py != ppy) && Handle.IsPressedAndHeld)
+			MoveTo((px, py));
+	}
 
-#region Backend
-    internal float progress;
-    internal int index;
-    internal bool isVertical;
+	#region Backend
+	internal float progress;
+	internal int index;
+	internal bool isVertical;
 
-    [MemberNotNull(nameof(Handle))]
-    private void Init()
-    {
-        Handle = new(position) { Size = (1, 1), hasParent = true };
-    }
+	[MemberNotNull(nameof(Handle))]
+	private void Init()
+	{
+		Handle = new(position) { Size = (1, 1), hasParent = true };
+	}
 
-    protected override void OnInput()
-    {
-        if (IsHovered)
-            MouseCursorResult = MouseCursor.Hand;
+	internal override void OnChildrenUpdate()
+	{
+		var (x, y) = Position;
+		var (w, h) = Size;
+		var curSz = IsVertical ? Size.height : Size.width;
+		var sz = Math.Max(0, curSz - 1);
+		index = (int)Map(progress, 0, 1, 0, sz);
 
-        var p = Input.Current.Position;
-        var pp = Input.Current.PositionPrevious;
-        var px = (int)Math.Floor(p.x);
-        var py = (int)Math.Floor(p.y);
-        var ppx = (int)Math.Floor(pp.x);
-        var ppy = (int)Math.Floor(pp.y);
-        var delta = Input.Current.ScrollDelta;
+		if(IsVertical)
+		{
+			Handle.position = (x, y + index);
+			Handle.size = (w, 1);
+		}
+		else
+		{
+			Handle.position = (x + index, y);
+			Handle.size = (1, h);
+		}
 
-        if ((px != ppx || py != ppy) && Handle.IsPressedAndHeld)
-            MoveTo((px, py));
+		Handle.InheritParent(this);
+		Handle.Update();
+	}
+	internal override bool AreAnyChildrenStillFocused() => IsFocused && FocusedPrevious == Handle;
 
-        if (IsHovered && delta != 0 && IsFocused && FocusedPrevious == this && hasParent == false)
-            Move(delta);
-
-        if (Handle.IsHovered && delta != 0 && Handle.IsFocused && FocusedPrevious == Handle &&
-            hasParent == false)
-            Move(delta);
-    }
-    internal override void OnChildrenUpdate()
-    {
-        var (x, y) = Position;
-        var (w, h) = Size;
-        var curSz = IsVertical ? Size.height : Size.width;
-        var sz = Math.Max(0, curSz - 1);
-        index = (int)Map(progress, 0, 1, 0, sz);
-
-        if (IsVertical)
-        {
-            Handle.position = (x, y + index);
-            Handle.size = (w, 1);
-        }
-        else
-        {
-            Handle.position = (x + index, y);
-            Handle.size = (1, h);
-        }
-
-        Handle.InheritParent(this);
-        Handle.Update();
-    }
-
-    private static float Map(float number, float a1, float a2, float b1, float b2)
-    {
-        var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
-        return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-    }
-#endregion
+	private static float Map(float number, float a1, float a2, float b1, float b2)
+	{
+		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
+		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+	}
+	#endregion
 }
