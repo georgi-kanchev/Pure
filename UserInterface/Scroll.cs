@@ -4,136 +4,134 @@ namespace Pure.UserInterface;
 
 public class Scroll : Element
 {
-	/// <summary>
-	/// Gets the slider part of the scroll.
-	/// </summary>
-	public Slider Slider { get; private set; }
+    /// <summary>
+    /// Gets the slider part of the scroll.
+    /// </summary>
+    public Slider Slider { get; private set; }
 
-	public Button Increase { get; private set; }
-	public Button Decrease { get; private set; }
+    public Button Increase { get; private set; }
+    public Button Decrease { get; private set; }
 
-	public bool IsVertical
-	{
-		get => isVertical;
-		set
-		{
-			if(hasParent == false)
-				isVertical = value;
-		}
-	}
-	public float Step
-	{
-		get => step;
-		set
-		{
-			if(hasParent == false)
-				step = Math.Clamp(value, 0, 1);
-		}
-	}
+    public bool IsVertical
+    {
+        get => isVertical;
+        set
+        {
+            if (hasParent == false)
+                isVertical = value;
+        }
+    }
+    public float Step
+    {
+        get => step;
+        set
+        {
+            if (hasParent == false)
+                step = Math.Clamp(value, 0, 1);
+        }
+    }
 
-	public Scroll((int x, int y) position, int size = 5, bool isVertical = true) : base(position)
-	{
-		IsVertical = isVertical;
-		Size = IsVertical ? (1, size) : (size, 1);
+    public Scroll((int x, int y) position, int size = 5, bool isVertical = true) : base(position)
+    {
+        IsVertical = isVertical;
+        Size = IsVertical ? (1, size) : (size, 1);
 
-		Init();
-	}
-	public Scroll(byte[] bytes) : base(bytes)
-	{
-		IsVertical = GrabBool(bytes);
-		Size = IsVertical ? (1, Size.height) : (Size.width, 1);
+        Init();
+    }
+    public Scroll(byte[] bytes) : base(bytes)
+    {
+        IsVertical = GrabBool(bytes);
+        Size = IsVertical ? (1, Size.height) : (Size.width, 1);
 
-		Init();
-		Slider.progress = GrabFloat(bytes);
-		Slider.index = GrabInt(bytes);
-	}
+        Init();
+        Slider.progress = GrabFloat(bytes);
+        Slider.index = GrabInt(bytes);
+    }
 
-	public override byte[] ToBytes()
-	{
-		var result = base.ToBytes().ToList();
-		PutBool(result, IsVertical);
-		PutFloat(result, Slider.Progress);
-		PutInt(result, Slider.index);
-		return result.ToArray();
-	}
+    public override byte[] ToBytes()
+    {
+        var result = base.ToBytes().ToList();
+        PutBool(result, IsVertical);
+        PutFloat(result, Slider.Progress);
+        PutInt(result, Slider.index);
+        return result.ToArray();
+    }
 
-	protected override void OnUserAction(UserAction userAction)
-	{
-		if(userAction == UserAction.Scroll)
-			Slider.Progress -= Input.Current.ScrollDelta * Step;
-	}
+#region Backend
+    internal bool isVertical;
+    internal float step = 0.1f;
 
-	#region Backend
-	internal bool isVertical;
-	internal float step = 0.1f;
+    [MemberNotNull(nameof(Slider))]
+    [MemberNotNull(nameof(Increase))]
+    [MemberNotNull(nameof(Decrease))]
+    private void Init()
+    {
+        Slider = new((0, 0), IsVertical ? Size.height : Size.width, IsVertical) { hasParent = true };
+        Increase = new((0, 0)) { Size = (1, 1), hasParent = true };
+        Decrease = new((0, 0)) { Size = (1, 1), hasParent = true };
+        var dir = IsVertical ? -1 : 1;
 
-	[MemberNotNull(nameof(Slider))]
-	[MemberNotNull(nameof(Increase))]
-	[MemberNotNull(nameof(Decrease))]
-	private void Init()
-	{
-		Slider = new((0, 0), IsVertical ? Size.height : Size.width, IsVertical) { hasParent = true };
-		Increase = new((0, 0)) { Size = (1, 1), hasParent = true };
-		Decrease = new((0, 0)) { Size = (1, 1), hasParent = true };
-		var dir = IsVertical ? -1 : 1;
+        Slider.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
 
-		Increase.SubscribeToUserAction(UserAction.Trigger, () => Slider.Progress += dir * Step);
-		Increase.SubscribeToUserAction(UserAction.PressAndHold, () =>
-		{
-			if(Increase.IsHovered)
-				Slider.Progress += dir * Step;
-		});
-		Decrease.SubscribeToUserAction(UserAction.Trigger, () => Slider.Progress += dir * -Step);
-		Decrease.SubscribeToUserAction(UserAction.PressAndHold, () =>
-		{
-			if(Decrease.IsHovered)
-				Slider.Progress += dir * -Step;
-		});
-	}
+        Increase.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
+        Increase.SubscribeToUserAction(UserAction.Trigger, () => Slider.Progress += dir * Step);
+        Increase.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Increase.IsHovered)
+                Slider.Progress += dir * Step;
+        });
 
-	internal override void OnUpdate()
-	{
-		LimitSizeMin(IsVertical ? (1, 2) : (2, 1));
+        Decrease.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
+        Decrease.SubscribeToUserAction(UserAction.Trigger, () => Slider.Progress += dir * -Step);
+        Decrease.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        {
+            if (Decrease.IsHovered)
+                Slider.Progress += dir * -Step;
+        });
+    }
+    internal override void ApplyScroll()
+    {
+        if (Slider.IsHovered == false)
+            Slider.ApplyScroll();
+    }
 
-		Slider.isVertical = IsVertical;
-	}
-	internal override void OnChildrenUpdate()
-	{
-		var (x, y) = Position;
-		var (w, h) = Size;
+    internal override void OnUpdate()
+    {
+        LimitSizeMin(IsVertical ? (1, 2) : (2, 1));
 
-		if(IsVertical)
-		{
-			Increase.position = (x, y);
-			Increase.size = (w, 1);
-			Decrease.position = (x, y + h - 1);
-			Decrease.size = (w, 1);
-			Slider.position = (x, y + 1);
-			Slider.size = (w, h - 2);
-		}
-		else
-		{
-			Increase.position = (x + w - 1, y);
-			Increase.size = (1, h);
-			Decrease.position = (x, y);
-			Decrease.size = (1, h);
-			Slider.position = (x + 1, y);
-			Slider.size = (w - 2, h);
-		}
+        Slider.isVertical = IsVertical;
+    }
+    internal override void OnChildrenUpdate()
+    {
+        var (x, y) = Position;
+        var (w, h) = Size;
 
-		Slider.InheritParent(this);
-		Increase.InheritParent(this);
-		Decrease.InheritParent(this);
+        if (IsVertical)
+        {
+            Increase.position = (x, y);
+            Increase.size = (w, 1);
+            Decrease.position = (x, y + h - 1);
+            Decrease.size = (w, 1);
+            Slider.position = (x, y + 1);
+            Slider.size = (w, h - 2);
+        }
+        else
+        {
+            Increase.position = (x + w - 1, y);
+            Increase.size = (1, h);
+            Decrease.position = (x, y);
+            Decrease.size = (1, h);
+            Slider.position = (x + 1, y);
+            Slider.size = (w - 2, h);
+        }
 
-		Slider.Update();
-		Increase.Update();
-		Decrease.Update();
-	}
-	internal override bool AreAnyChildrenStillFocused()
-	{
-		return IsFocused &&
-			(FocusedPrevious == Slider || FocusedPrevious == Slider.Handle ||
-			FocusedPrevious == Increase || FocusedPrevious == Decrease);
-	}
-	#endregion
+        Slider.InheritParent(this);
+        Increase.InheritParent(this);
+        Decrease.InheritParent(this);
+
+        Slider.Update();
+        Increase.Update();
+        Decrease.Update();
+    }
+#endregion
 }
