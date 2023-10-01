@@ -64,14 +64,6 @@ public class Stepper : Element
         return result.ToArray();
     }
 
-    protected override void OnUserAction(UserAction userAction)
-    {
-        if (userAction != UserAction.Scroll)
-            return;
-
-        ApplyScroll();
-    }
-
 #region Backend
     private float value;
     private (float min, float max) range = (float.NegativeInfinity, float.PositiveInfinity);
@@ -85,33 +77,30 @@ public class Stepper : Element
         Middle = new((0, 0)) { size = (1, 1), hasParent = true };
         Maximum = new((0, 0)) { size = (1, 1), hasParent = true };
 
-        Increase.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
-        Increase.SubscribeToUserAction(UserAction.Trigger, () => Value += Step);
-        Increase.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        Increase.OnUserAction(UserAction.Scroll, ApplyScroll);
+        Increase.OnUserAction(UserAction.Trigger, () => Value += Step);
+        Increase.OnUserAction(UserAction.PressAndHold, () =>
         {
             if (Increase.IsHovered)
                 Value += Step;
         });
-        Decrease.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
-        Decrease.SubscribeToUserAction(UserAction.Trigger, () => Value -= Step);
-        Decrease.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        Decrease.OnUserAction(UserAction.Scroll, ApplyScroll);
+        Decrease.OnUserAction(UserAction.Trigger, () => Value -= Step);
+        Decrease.OnUserAction(UserAction.PressAndHold, () =>
         {
             if (Decrease.IsHovered)
                 Value -= Step;
         });
 
-        Minimum.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
-        Minimum.SubscribeToUserAction(UserAction.Trigger, () => Value = Range.minimum);
+        Minimum.OnUserAction(UserAction.Scroll, ApplyScroll);
+        Minimum.OnUserAction(UserAction.Trigger, () => Value = Range.minimum);
 
-        Middle.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
-        Middle.SubscribeToUserAction(UserAction.Trigger,
-            () =>
-            {
-                Value = Snap(float.IsPositiveInfinity(Range.maximum) ? 0 : Range.maximum / 2, Step);
-            });
+        Middle.OnUserAction(UserAction.Scroll, ApplyScroll);
+        Middle.OnUserAction(UserAction.Trigger, () =>
+            Value = Snap(float.IsPositiveInfinity(Range.maximum) ? 0 : Range.maximum / 2, Step));
 
-        Maximum.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
-        Maximum.SubscribeToUserAction(UserAction.Trigger, () => Value = Range.maximum);
+        Maximum.OnUserAction(UserAction.Scroll, ApplyScroll);
+        Maximum.OnUserAction(UserAction.Trigger, () => Value = Range.maximum);
     }
 
     internal override void ApplyScroll()

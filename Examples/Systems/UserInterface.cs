@@ -11,13 +11,12 @@ public static class UserInterface
     private class UI : Pure.UserInterface.UserInterface
     {
         private readonly TilemapManager maps;
-        private readonly Element prompt;
         private int buttonClickCount;
 
-        public UI(TilemapManager tilemaps, Element prompt)
+        public UI(TilemapManager tilemaps, Prompt prompt)
         {
+            Prompt = prompt;
             maps = tilemaps;
-            this.prompt = prompt;
         }
 
         protected override void OnUserActionButton(Button button, UserAction userAction)
@@ -31,7 +30,7 @@ public static class UserInterface
             var e = button;
             var (w, h) = e.Size;
 
-            var promptBtnIndex = PromptIndexOf(e);
+            var promptBtnIndex = Prompt?.IndexOf(e);
             if (promptBtnIndex != -1)
             {
                 var tile = new Tile(Tile.ICON_TICK, GetColor(e, Color.Green));
@@ -77,7 +76,7 @@ public static class UserInterface
         protected override void OnDisplayInputBox(InputBox inputBox)
         {
             var e = inputBox;
-            var isPrompt = IsPromptElement(e);
+            var isPrompt = Prompt?.IsOwning(e) ?? false;
 
             Clear(maps[1], e);
             Clear(maps[2], e);
@@ -169,11 +168,11 @@ public static class UserInterface
         {
             var e = panel;
 
-            if (IsPromptElement(panel))
+            if (Prompt != null && Prompt.IsOwning(panel))
             {
                 var color = new Color(0, 0, 0, 200);
                 maps[3].SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, color));
-                maps[3].SetRectangle(prompt.Position, prompt.Size, Tile.SHADE_TRANSPARENT);
+                maps[3].SetRectangle(Prompt.Position, Prompt.Size, Tile.SHADE_TRANSPARENT);
                 return;
             }
 
@@ -365,7 +364,8 @@ public static class UserInterface
 
         var (width, height) = Window.MonitorAspectRatio;
         var tilemaps = new TilemapManager(4, (width * 3, height * 3));
-        var prompt = new Panel((0, 0));
+        var promptInputBox = new InputBox() { Size = (16, 1) };
+        var prompt = new Prompt();
         var ui = new UI(tilemaps, prompt);
 
         ui.Add(new Stepper((37, 4)) { Range = (-9, 13) });
@@ -438,14 +438,19 @@ public static class UserInterface
             Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.A).Once("on-a-press"))
-                ui.PromptOpen("Your message:", prompt, 4, index =>
+            {
+                prompt.Element = promptInputBox;
+                prompt.Message = "Your message:";
+                prompt.Open(2, index =>
                 {
                     if (index == 0)
-                        Console.WriteLine("Panel");
+                        Console.WriteLine(promptInputBox.Value);
                     else if (index == 2)
                         Window.Close();
-                    ui.PromptClose();
+
+                    prompt.Close();
                 });
+            }
 
             for (var i = 0; i < tilemaps.Count; i++)
                 Window.DrawTiles(tilemaps[i].ToBundle());

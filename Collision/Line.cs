@@ -1,6 +1,6 @@
-﻿using System.Numerics;
+﻿namespace Pure.Collision;
 
-namespace Pure.Collision;
+using System.Numerics;
 
 /// <summary>
 /// Represents a line segment in 2D space defined by two points. Useful for
@@ -9,33 +9,32 @@ namespace Pure.Collision;
 public struct Line
 {
     /// <summary>
-    ///     Gets or sets the start point of the line.
+    /// Gets or sets the start point of the line.
     /// </summary>
     public (float x, float y) A { get; set; }
     /// <summary>
-    ///     Gets or sets the end point of the line.
+    /// Gets or sets the end point of the line.
     /// </summary>
     public (float x, float y) B { get; set; }
     /// <summary>
-    ///     Gets the length of the line.
+    /// Gets the length of the line.
     /// </summary>
     public float Length => Vector2.Distance(new(A.Item1, A.Item2), new(B.Item1, B.Item2));
     /// <summary>
-    ///     Gets the angle of the line in degrees.
+    /// Gets the angle of the line in degrees.
     /// </summary>
     public float Angle => ToAngle(Direction);
     /// <summary>
-    ///     Gets the direction of the line as a normalized vector.
+    /// Gets the direction of the line as a normalized vector.
     /// </summary>
     public (float x, float y) Direction => Normalize((B.Item1 - A.Item1, B.Item2 - A.Item2));
     /// <summary>
-    ///     Gets or sets the color of the line.
+    /// Gets or sets the color of the line.
     /// </summary>
     public uint Color { get; set; }
 
     /// <summary>
-    ///     Initializes a new instance of the line with the specified
-    ///     start and end points.
+    /// Initializes a new instance of the line with the specified start and end points.
     /// </summary>
     /// <param name="a">The start point of the line.</param>
     /// <param name="b">The end point of the line.</param>
@@ -48,12 +47,11 @@ public struct Line
     }
 
     /// <summary>
-    ///     Checks if this line is crossing any rectangles in the given map.
+    /// Checks if this line is crossing any rectangles in the given map.
     /// </summary>
     /// <param name="map">The map to check for crossing.</param>
     /// <returns>
-    ///     True if this line is crossing with the specified
-    ///     map, otherwise false.
+    /// True if this line is crossing with the specified map, otherwise false.
     /// </returns>
     public bool IsCrossing(Map map)
     {
@@ -88,7 +86,7 @@ public struct Line
         return CrossPoints(rectangle).Length > 0;
     }
     /// <summary>
-    ///     Determines if this line is crossing another line.
+    /// Determines if this line is crossing another line.
     /// </summary>
     /// <param name="line">The other line to check for crossing.</param>
     /// <returns>True if the lines cross, false otherwise.</returns>
@@ -122,14 +120,23 @@ public struct Line
         return IsCrossing((point.x, point.y));
     }
 
+    public float IsLeftOf((float x, float y) point)
+    {
+        var (px, py) = point;
+        return (B.x - A.x) * (py - A.y) - (B.y - A.y) * (px - A.x);
+    }
+    public float IsLeftOf((float x, float y, uint color) point)
+    {
+        return IsLeftOf((point.x, point.y));
+    }
+
     /// <summary>
-    ///     Calculates all points of intersection between this line and the rectangles of the
-    ///     specified map.
+    /// Calculates all points of intersection between this line and the rectangles of the
+    /// specified map.
     /// </summary>
     /// <param name="map">The map to calculate the intersection points with.</param>
     /// <returns>
-    ///     An array of all points of intersection between this line and the specified
-    ///     map.
+    /// An array of all points of intersection between this line and the specified map.
     /// </returns>
     public (float x, float y, uint color)[] CrossPoints(Map map)
     {
@@ -186,13 +193,11 @@ public struct Line
         return result.ToArray();
     }
     /// <summary>
-    ///     Calculates all points of intersection between this line and the rectangles of the
-    ///     specified hitbox.
+    /// Calculates all points of intersection between this line and the rectangles of the
+    /// specified hitbox.
     /// </summary>
     /// <param name="hitbox">The hitbox to calculate the intersection points with.</param>
-    /// <returns>
-    ///     An array of all points of intersection between this line and the specified
-    ///     hitbox.
+    /// <returns> An array of all points of intersection between this line and the specified hitbox.
     /// </returns>
     public (float x, float y, uint color)[] CrossPoints(Hitbox hitbox)
     {
@@ -282,7 +287,7 @@ public struct Line
     }
 
     /// <summary>
-    ///     Implicitly converts a tuple of two points and a color into a line.
+    /// Implicitly converts a tuple of two points and a color into a line.
     /// </summary>
     /// <param name="bundle">The tuple to convert.</param>
     /// <returns>A new line instance.</returns>
@@ -291,7 +296,7 @@ public struct Line
         return new((bundle.ax, bundle.ay), (bundle.bx, bundle.by), bundle.color);
     }
     /// <summary>
-    ///     Implicitly converts a line into a tuple bundle of two points and a color.
+    /// Implicitly converts a line into a tuple bundle of two points and a color.
     /// </summary>
     /// <param name="line">The line to convert.</param>
     /// <returns>A tuple bundle containing the two points and the color of the line.</returns>
@@ -300,7 +305,7 @@ public struct Line
         return (line.A.x, line.A.y, line.B.x, line.B.y, line.Color);
     }
 
-    #region Backend
+#region Backend
     private const int MAX_ITERATIONS = 1000;
 
     private static (float, float, uint) CrossPoint((float, float) a, (float, float) b, (float, float) c,
@@ -365,5 +370,5 @@ public struct Line
         var (bx, by) = b;
         return ax * bx + ay * by;
     }
-    #endregion
+#endregion
 }

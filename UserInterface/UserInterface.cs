@@ -4,380 +4,271 @@ namespace Pure.UserInterface;
 
 public class UserInterface
 {
-	public int Count => elements.Count;
-	public bool IsPromptOpened { get; private set; }
+    public int Count => elements.Count;
+    public Prompt? Prompt { get; set; }
 
-	public Element this[int index] => elements[index];
+    public Element this[int index] => elements[index];
 
-	public UserInterface() { }
-	public UserInterface(byte[] bytes)
-	{
-		var offset = 0;
-		var count = GetInt();
+    public UserInterface() { }
+    public UserInterface(byte[] bytes)
+    {
+        var offset = 0;
+        var count = GetInt();
 
-		for(var i = 0; i < count; i++)
-		{
-			var byteCount = GetInt();
+        for (var i = 0; i < count; i++)
+        {
+            var byteCount = GetInt();
 
-			// elementType string gets saved first for each element
-			var typeStrBytesLength = GetInt();
-			var typeStr = Encoding.UTF8.GetString(GetBytes(bytes, typeStrBytesLength, ref offset));
+            // elementType string gets saved first for each element
+            var typeStrBytesLength = GetInt();
+            var typeStr = Encoding.UTF8.GetString(GetBytes(bytes, typeStrBytesLength, ref offset));
 
-			// return the offset to where it was so the element can get loaded properly
-			offset -= typeStrBytesLength + 4;
-			var bElement = GetBytes(bytes, byteCount, ref offset);
+            // return the offset to where it was so the element can get loaded properly
+            offset -= typeStrBytesLength + 4;
+            var bElement = GetBytes(bytes, byteCount, ref offset);
 
-			if(typeStr == nameof(Button)) Add(new Button(bElement));
-			else if(typeStr == nameof(InputBox)) Add(new InputBox(bElement));
-			else if(typeStr == nameof(FileViewer)) Add(new FileViewer(bElement));
-			else if(typeStr == nameof(List)) Add(new List(bElement));
-			else if(typeStr == nameof(Stepper)) Add(new Stepper(bElement));
-			else if(typeStr == nameof(Pages)) Add(new Pages(bElement));
-			else if(typeStr == nameof(Palette)) Add(new Palette(bElement));
-			else if(typeStr == nameof(Panel)) Add(new Panel(bElement));
-			else if(typeStr == nameof(Scroll)) Add(new Scroll(bElement));
-			else if(typeStr == nameof(Slider)) Add(new Slider(bElement));
-			else if(typeStr == nameof(Layout)) Add(new Layout(bElement));
-		}
+            if (typeStr == nameof(Button)) Add(new Button(bElement));
+            else if (typeStr == nameof(InputBox)) Add(new InputBox(bElement));
+            else if (typeStr == nameof(FileViewer)) Add(new FileViewer(bElement));
+            else if (typeStr == nameof(List)) Add(new List(bElement));
+            else if (typeStr == nameof(Stepper)) Add(new Stepper(bElement));
+            else if (typeStr == nameof(Pages)) Add(new Pages(bElement));
+            else if (typeStr == nameof(Palette)) Add(new Palette(bElement));
+            else if (typeStr == nameof(Panel)) Add(new Panel(bElement));
+            else if (typeStr == nameof(Scroll)) Add(new Scroll(bElement));
+            else if (typeStr == nameof(Slider)) Add(new Slider(bElement));
+            else if (typeStr == nameof(Layout)) Add(new Layout(bElement));
+        }
 
-		return;
+        return;
 
-		int GetInt() => BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
-	}
+        int GetInt() => BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+    }
 
-	public void PromptOpen(string text, Element? element,
-		int buttonCount = 2, Action<int>? onButtonTrigger = null)
-	{
-		if(IsPromptOpened)
-			return;
+    public void Add(Element element)
+    {
+        elements.Add(element);
 
-		var lines = text.Split(Environment.NewLine).Length;
+        if (element is Layout layout)
+            layout.ui = this;
 
-		IsPromptOpened = true;
+        var userActionCount = Enum.GetNames(typeof(UserAction)).Length;
+        for (var i = 0; i < userActionCount; i++)
+        {
+            var act = (UserAction)i;
+            if (element is Button b)
+                element.OnUserAction(act, () => OnUserActionButton(b, act));
+            else if (element is InputBox u)
+                element.OnUserAction(act, () => OnUserActionInputBox(u, act));
+            else if (element is FileViewer f)
+                element.OnUserAction(act, () => OnUserActionFileViewer(f, act));
+            else if (element is List l)
+                element.OnUserAction(act, () => OnUserActionList(l, act));
+            else if (element is Stepper n)
+                element.OnUserAction(act, () => OnUserActionStepper(n, act));
+            else if (element is Pages g)
+                element.OnUserAction(act, () => OnUserActionPages(g, act));
+            else if (element is Palette t)
+                element.OnUserAction(act, () => OnUserActionPalette(t, act));
+            else if (element is Panel p)
+                element.OnUserAction(act, () => OnUserActionPanel(p, act));
+            else if (element is Scroll r)
+                element.OnUserAction(act, () => OnUserActionScroll(r, act));
+            else if (element is Slider s)
+                element.OnUserAction(act, () => OnUserActionSlider(s, act));
+        }
+    }
+    public void Remove(Element element)
+    {
+        if (element is Layout layout)
+            layout.ui = null;
 
-		promptLabel.Placeholder = text;
-		if(element != null)
-		{
-			var sz = Element.TilemapSize;
-			var (x, y) = (sz.width / 2, sz.height / 2);
-			var (w, h) = element.Size;
-			promptElement = element;
-			promptElement.position = (x - w / 2, y - h / 2 + lines);
-		}
+        element.OffUserAction();
+        elements.Remove(element);
+    }
+    public void BringToTop(Element element)
+    {
+        Remove(element);
+        Add(element);
+    }
 
-		promptButtons.Clear();
-		for(var i = 0; i < buttonCount; i++)
-		{
-			var btn = new Button((0, 0))
-			{
-				hasParent = true,
-				size = (1, 1),
-			};
-			var index = i;
-			btn.SubscribeToUserAction(UserAction.Trigger, () => onButtonTrigger?.Invoke(index));
-			promptButtons.Add(btn);
-		}
-	}
-	public void PromptClose()
-	{
-		if(IsPromptOpened == false)
-			return;
+    public int IndexOf(Element? element) => element == null ? -1 : elements.IndexOf(element);
+    public bool IsContaining(Element? element) => element != null && elements.Contains(element);
 
-		IsPromptOpened = false;
+    public void Update()
+    {
+        foreach (var e in elements)
+            UpdateElement(e);
 
-		if(promptElement == null)
-			return;
+        Prompt?.Update(this);
+    }
 
-		promptElement.hasParent = false;
-		promptElement = null;
-		promptButtons.Clear();
-	}
-	public bool IsPromptElement(Element? element)
-	{
-		return element != null && (promptButtons.Contains(element) ||
-								   promptPanel == element || promptLabel == element);
-	}
-	public int PromptIndexOf(Button? button) => button == null ? -1 : promptButtons.IndexOf(button);
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+        result.AddRange(BitConverter.GetBytes(elements.Count));
 
-	public void Add(Element element)
-	{
-		elements.Add(element);
+        foreach (var element in elements)
+        {
+            var bytes = element.ToBytes();
+            result.AddRange(BitConverter.GetBytes(bytes.Length));
+            result.AddRange(bytes);
+        }
 
-		if(element is Layout layout)
-			layout.ui = this;
+        return result.ToArray();
+    }
 
-		var userActionCount = Enum.GetNames(typeof(UserAction)).Length;
-		for(var i = 0; i < userActionCount; i++)
-		{
-			var act = (UserAction)i;
-			if(element is Button b)
-				element.SubscribeToUserAction(act, () => OnUserActionButton(b, act));
-			else if(element is InputBox u)
-				element.SubscribeToUserAction(act, () => OnUserActionInputBox(u, act));
-			else if(element is FileViewer f)
-				element.SubscribeToUserAction(act, () => OnUserActionFileViewer(f, act));
-			else if(element is List l)
-				element.SubscribeToUserAction(act, () => OnUserActionList(l, act));
-			else if(element is Stepper n)
-				element.SubscribeToUserAction(act, () => OnUserActionStepper(n, act));
-			else if(element is Pages g)
-				element.SubscribeToUserAction(act, () => OnUserActionPages(g, act));
-			else if(element is Palette t)
-				element.SubscribeToUserAction(act, () => OnUserActionPalette(t, act));
-			else if(element is Panel p)
-				element.SubscribeToUserAction(act, () => OnUserActionPanel(p, act));
-			else if(element is Scroll r)
-				element.SubscribeToUserAction(act, () => OnUserActionScroll(r, act));
-			else if(element is Slider s)
-				element.SubscribeToUserAction(act, () => OnUserActionSlider(s, act));
-		}
-	}
-	public void Remove(Element element)
-	{
-		if(element is Layout layout)
-			layout.ui = null;
+    public void OnUserAction<T>(Action<T, UserAction> method) { }
+    public void OnDisplay<T>(Action<T> method) where T : Element { }
+    public void OnDrag<T>(Action<T, (int deltaX, int deltaY)> method) where T : Element { }
 
-		element.UnsubscribeAll();
-		elements.Remove(element);
-	}
-	public void BringToTop(Element element)
-	{
-		Remove(element);
-		Add(element);
-	}
+    public void OnItemTrigger(Action<List, Button> method) { }
+    public void OnItemTrigger(Action<FileViewer, Button> method) { }
+    public void OnItemSelect(Action<List, Button> method) { }
+    public void OnItemSelect(Action<FileViewer, Button> method) { }
+    public void OnItemDisplay(Action<List, Button> method) { }
+    public void OnItemDisplay(Action<Pages, Button> method) { }
+    public void OnItemDisplay(Action<Palette, Button> method) { }
+    public void OnItemDisplay(Action<FileViewer, Button> method) { }
+    public void
+        OnItemDisplay(Action<Layout, (int x, int y, int width, int height, int index)> method) { }
 
-	public int IndexOf(Element? element) => element == null ? -1 : elements.IndexOf(element);
-	public bool IsContaining(Element? element) => element != null && elements.Contains(element);
+    public void OnPanelResize(Action<Panel, (int deltaX, int deltaY)> method) { }
+    public void OnPalettePick(Action<Palette, (float x, float y)> method) { }
 
-	public void Update()
-	{
-		foreach(var e in elements)
-			UpdateElement(e);
+    protected virtual void OnUserActionButton(Button button, UserAction userAction) { }
+    protected virtual void OnUserActionInputBox(InputBox inputBox, UserAction userAction) { }
+    protected virtual void OnUserActionList(List list, UserAction userAction) { }
+    protected virtual void OnUserActionStepper(Stepper stepper,
+        UserAction userAction) { }
+    protected virtual void OnUserActionPages(Pages pages, UserAction userAction) { }
+    protected virtual void OnUserActionPalette(Palette palette, UserAction userAction) { }
+    protected virtual void OnUserActionPanel(Panel panel, UserAction userAction) { }
+    protected virtual void OnUserActionScroll(Scroll scroll, UserAction userAction) { }
+    protected virtual void OnUserActionSlider(Slider slider, UserAction userAction) { }
+    protected virtual void OnUserActionLayout(Layout layout, UserAction userAction) { }
+    protected virtual void OnUserActionFileViewer(FileViewer fileViewer, UserAction userAction) { }
 
-		TryUpdatePrompt();
-	}
+    protected virtual void OnDragButton(Button button, (int width, int height) delta) { }
+    protected virtual void OnDragInputBox(InputBox inputBox, (int width, int height) delta) { }
+    protected virtual void OnDragList(List list, (int width, int height) delta) { }
+    protected virtual void OnDragStepper(Stepper stepper,
+        (int width, int height) delta) { }
+    protected virtual void OnDragPages(Pages pages, (int width, int height) delta) { }
+    protected virtual void OnDragPalette(Palette palette, (int width, int height) delta) { }
+    protected virtual void OnDragPanel(Panel panel, (int width, int height) delta) { }
+    protected virtual void OnDragScroll(Scroll scroll, (int width, int height) delta) { }
+    protected virtual void OnDragSlider(Slider slider, (int width, int height) delta) { }
+    protected virtual void OnDragLayout(Layout layout, (int width, int height) delta) { }
+    protected virtual void OnDragFileViewer(FileViewer fileViewer, (int width, int height) delta) { }
 
-	public byte[] ToBytes()
-	{
-		var result = new List<byte>();
-		result.AddRange(BitConverter.GetBytes(elements.Count));
+    protected virtual void OnDisplayButton(Button button) { }
+    protected virtual void OnDisplayInputBox(InputBox inputBox) { }
+    protected virtual void OnDisplayList(List list) { }
+    protected virtual void OnDisplayListItem(List list, Button item) { }
+    protected virtual void OnDisplayStepper(Stepper stepper) { }
+    protected virtual void OnDisplayPages(Pages pages) { }
+    protected virtual void OnDisplayPagesPage(Pages pages, Button page) { }
+    protected virtual void OnDisplayPalette(Palette palette) { }
+    protected virtual void OnDisplayPalettePage(Palette palette, Button page) { }
+    protected virtual void
+        OnUpdatePaletteSample(Palette palette, Button sample, uint color) { }
+    protected virtual void OnDisplayPanel(Panel panel) { }
+    protected virtual void OnDisplayScroll(Scroll scroll) { }
+    protected virtual void OnDisplaySlider(Slider slider) { }
+    protected virtual void OnDisplayFileViewer(FileViewer fileViewer) { }
+    protected virtual void OnDisplayFileViewerItem(FileViewer fileViewer, Button item) { }
+    protected virtual void OnDisplayLayout(Layout layout) { }
+    protected virtual void OnDisplayLayoutSegment(Layout layout,
+        (int x, int y, int width, int height) segment, int index) { }
 
-		foreach(var element in elements)
-		{
-			var bytes = element.ToBytes();
-			result.AddRange(BitConverter.GetBytes(bytes.Length));
-			result.AddRange(bytes);
-		}
+    protected virtual uint OnPalettePick(Palette palette, (float x, float y) position) => default;
+    protected virtual void OnListItemTrigger(List list, Button item) { }
+    protected virtual void OnListItemSelect(List list, Button item) { }
+    protected virtual void OnFileViewerItemTrigger(FileViewer fileViewer, Button item) { }
+    protected virtual void OnFileViewerItemSelect(FileViewer fileViewer, Button item) { }
+    protected virtual void OnPanelResize(Panel panel, (int width, int height) delta) { }
 
-		return result.ToArray();
-	}
+#region Backend
+    private readonly List<Element> elements = new();
 
-	protected virtual void OnUserActionButton(Button button, UserAction userAction) { }
-	protected virtual void OnUserActionInputBox(InputBox inputBox, UserAction userAction) { }
-	protected virtual void OnUserActionList(List list, UserAction userAction) { }
-	protected virtual void OnUserActionStepper(Stepper stepper,
-		UserAction userAction)
-	{ }
-	protected virtual void OnUserActionPages(Pages pages, UserAction userAction) { }
-	protected virtual void OnUserActionPalette(Palette palette, UserAction userAction) { }
-	protected virtual void OnUserActionPanel(Panel panel, UserAction userAction) { }
-	protected virtual void OnUserActionScroll(Scroll scroll, UserAction userAction) { }
-	protected virtual void OnUserActionSlider(Slider slider, UserAction userAction) { }
-	protected virtual void OnUserActionLayout(Layout layout, UserAction userAction) { }
-	protected virtual void OnUserActionFileViewer(FileViewer fileViewer, UserAction userAction) { }
+    internal void UpdateElement(Element e)
+    {
+        if (e is Button button)
+        {
+            button.displayCallback = () => OnDisplayButton(button);
+            button.dragCallback = d => OnDragButton(button, d);
+        }
+        else if (e is InputBox input)
+        {
+            input.displayCallback = () => OnDisplayInputBox(input);
+            input.dragCallback = d => OnDragInputBox(input, d);
+        }
+        else if (e is FileViewer fileViewer)
+        {
+            fileViewer.displayCallback = () => OnDisplayFileViewer(fileViewer);
+            fileViewer.dragCallback = d => OnDragFileViewer(fileViewer, d);
+            fileViewer.itemDisplayCallback = b => OnDisplayFileViewerItem(fileViewer, b);
+            fileViewer.itemTriggerCallback = b => OnFileViewerItemTrigger(fileViewer, b);
+            fileViewer.itemSelectCallback = b => OnFileViewerItemSelect(fileViewer, b);
+        }
+        else if (e is List list)
+        {
+            list.displayCallback = () => OnDisplayList(list);
+            list.dragCallback = d => OnDragList(list, d);
+            list.itemDisplayCallback = b => OnDisplayListItem(list, b);
+            list.itemTriggerCallback = b => OnListItemTrigger(list, b);
+            list.itemSelectCallback = b => OnListItemSelect(list, b);
+        }
+        else if (e is Pages pages)
+        {
+            pages.displayCallback = () => OnDisplayPages(pages);
+            pages.pageDisplayCallback = b => OnDisplayPagesPage(pages, b);
+            pages.dragCallback = d => OnDragPages(pages, d);
+        }
+        else if (e is Palette palette)
+        {
+            palette.displayCallback = () => OnDisplayPalette(palette);
+            palette.pageDisplayCallback = b => OnDisplayPalettePage(palette, b);
+            palette.sampleDisplayCallback = (b, c) => OnUpdatePaletteSample(palette, b, c);
+            palette.pickCallback = p => OnPalettePick(palette, p);
+            palette.dragCallback = d => OnDragPalette(palette, d);
+        }
+        else if (e is Panel panel)
+        {
+            panel.displayCallback = () => OnDisplayPanel(panel);
+            panel.dragCallback = d => OnDragPanel(panel, d);
+            panel.resizeCallback = d => OnPanelResize(panel, d);
+        }
+        else if (e is Scroll scroll)
+        {
+            scroll.displayCallback = () => OnDisplayScroll(scroll);
+            scroll.dragCallback = d => OnDragScroll(scroll, d);
+        }
+        else if (e is Stepper stepper)
+        {
+            stepper.displayCallback = () => OnDisplayStepper(stepper);
+            stepper.dragCallback = d => OnDragStepper(stepper, d);
+        }
+        else if (e is Slider slider)
+        {
+            slider.displayCallback = () => OnDisplaySlider(slider);
+            slider.dragCallback = d => OnDragSlider(slider, d);
+        }
+        else if (e is Layout layout)
+        {
+            layout.displayCallback = () => OnDisplayLayout(layout);
+            layout.segmentUpdateCallback = (seg, i) => OnDisplayLayoutSegment(layout, seg, i);
+        }
 
-	protected virtual void OnDragButton(Button button, (int width, int height) delta) { }
-	protected virtual void OnDragInputBox(InputBox inputBox, (int width, int height) delta) { }
-	protected virtual void OnDragList(List list, (int width, int height) delta) { }
-	protected virtual void OnDragStepper(Stepper stepper,
-		(int width, int height) delta)
-	{ }
-	protected virtual void OnDragPages(Pages pages, (int width, int height) delta) { }
-	protected virtual void OnDragPalette(Palette palette, (int width, int height) delta) { }
-	protected virtual void OnDragPanel(Panel panel, (int width, int height) delta) { }
-	protected virtual void OnDragScroll(Scroll scroll, (int width, int height) delta) { }
-	protected virtual void OnDragSlider(Slider slider, (int width, int height) delta) { }
-	protected virtual void OnDragLayout(Layout layout, (int width, int height) delta) { }
-	protected virtual void OnDragFileViewer(FileViewer fileViewer, (int width, int height) delta) { }
+        e.Update();
+    }
 
-	protected virtual void OnDisplayButton(Button button) { }
-	protected virtual void OnDisplayInputBox(InputBox inputBox) { }
-	protected virtual void OnDisplayList(List list) { }
-	protected virtual void OnDisplayListItem(List list, Button item) { }
-	protected virtual void OnDisplayStepper(Stepper stepper) { }
-	protected virtual void OnDisplayPages(Pages pages) { }
-	protected virtual void OnDisplayPagesPage(Pages pages, Button page) { }
-	protected virtual void OnDisplayPalette(Palette palette) { }
-	protected virtual void OnDisplayPalettePage(Palette palette, Button page) { }
-	protected virtual void
-		OnUpdatePaletteSample(Palette palette, Button sample, uint color)
-	{ }
-	protected virtual void OnDisplayPanel(Panel panel) { }
-	protected virtual void OnDisplayScroll(Scroll scroll) { }
-	protected virtual void OnDisplaySlider(Slider slider) { }
-	protected virtual void OnDisplayFileViewer(FileViewer fileViewer) { }
-	protected virtual void OnDisplayFileViewerItem(FileViewer fileViewer, Button item) { }
-	protected virtual void OnDisplayLayout(Layout layout) { }
-	protected virtual void OnDisplayLayoutSegment(Layout layout,
-		(int x, int y, int width, int height) segment, int index)
-	{ }
-
-	protected virtual uint OnPalettePick(Palette palette, (float x, float y) position) => default;
-	protected virtual void OnListItemTrigger(List list, Button item) { }
-	protected virtual void OnListItemSelect(List list, Button item) { }
-	protected virtual void OnFileViewerItemTrigger(FileViewer fileViewer, Button item) { }
-	protected virtual void OnFileViewerItemSelect(FileViewer fileViewer, Button item) { }
-	protected virtual void OnPanelResize(Panel panel, (int width, int height) delta) { }
-
-	#region Backend
-	private readonly List<Element> elements = new();
-
-	private Element? promptElement;
-	private readonly List<Button> promptButtons = new();
-	private readonly InputBox promptLabel = new((0, 0))
-	{
-		IsEditable = false,
-		IsDisabled = true,
-		Value = "",
-		hasParent = true,
-	};
-	private readonly Panel promptPanel = new((0, 0))
-	{
-		IsResizable = false,
-		IsMovable = false,
-		IsRestricted = false,
-		isTextReadonly = true,
-		hasParent = true,
-	};
-
-	private void TryUpdatePrompt()
-	{
-		if(IsPromptOpened == false)
-			return;
-
-		var sz = Element.TilemapSize;
-		var (w, h) = (sz.width / 2, sz.height / 2);
-		var (x, y) = (sz.width / 4, sz.height / 4 + sz.height / 2);
-		var lines = promptLabel.Placeholder.Split(Environment.NewLine).Length;
-
-		promptPanel.isDisabled = IsPromptOpened == false;
-		promptPanel.position = IsPromptOpened ? (0, 0) : (int.MaxValue, int.MaxValue);
-		promptPanel.size = sz;
-		UpdateElement(promptPanel);
-
-		if(promptElement != null)
-		{
-			UpdateElement(promptElement);
-			w = promptElement.Size.width;
-			h = promptElement.Size.height;
-			x = promptElement.Position.x;
-			y = promptElement.Position.y;
-		}
-
-		promptLabel.isDisabled = promptPanel.isDisabled;
-		promptLabel.position = IsPromptOpened ? (x, y - lines) : (int.MaxValue, int.MaxValue);
-		promptLabel.size = (w, lines);
-		UpdateElement(promptLabel);
-
-		var btnXs = Distribute(promptButtons.Count, (x, x + w));
-		for(var i = 0; i < promptButtons.Count; i++)
-		{
-			var btn = promptButtons[i];
-			btn.position = ((int)btnXs[i], y + h);
-			UpdateElement(btn);
-		}
-	}
-	private void UpdateElement(Element e)
-	{
-		if(e is Button button)
-		{
-			button.displayCallback = () => OnDisplayButton(button);
-			button.dragCallback = d => OnDragButton(button, d);
-		}
-		else if(e is InputBox input)
-		{
-			input.displayCallback = () => OnDisplayInputBox(input);
-			input.dragCallback = d => OnDragInputBox(input, d);
-		}
-		else if(e is FileViewer fileViewer)
-		{
-			fileViewer.displayCallback = () => OnDisplayFileViewer(fileViewer);
-			fileViewer.dragCallback = d => OnDragFileViewer(fileViewer, d);
-			fileViewer.itemDisplayCallback = b => OnDisplayFileViewerItem(fileViewer, b);
-			fileViewer.itemTriggerCallback = b => OnFileViewerItemTrigger(fileViewer, b);
-			fileViewer.itemSelectCallback = b => OnFileViewerItemSelect(fileViewer, b);
-		}
-		else if(e is List list)
-		{
-			list.displayCallback = () => OnDisplayList(list);
-			list.dragCallback = d => OnDragList(list, d);
-			list.itemDisplayCallback = b => OnDisplayListItem(list, b);
-			list.itemTriggerCallback = b => OnListItemTrigger(list, b);
-			list.itemSelectCallback = b => OnListItemSelect(list, b);
-		}
-		else if(e is Pages pages)
-		{
-			pages.displayCallback = () => OnDisplayPages(pages);
-			pages.pageDisplayCallback = b => OnDisplayPagesPage(pages, b);
-			pages.dragCallback = d => OnDragPages(pages, d);
-		}
-		else if(e is Palette palette)
-		{
-			palette.displayCallback = () => OnDisplayPalette(palette);
-			palette.pageDisplayCallback = b => OnDisplayPalettePage(palette, b);
-			palette.sampleDisplayCallback = (b, c) => OnUpdatePaletteSample(palette, b, c);
-			palette.pickCallback = p => OnPalettePick(palette, p);
-			palette.dragCallback = d => OnDragPalette(palette, d);
-		}
-		else if(e is Panel panel)
-		{
-			panel.displayCallback = () => OnDisplayPanel(panel);
-			panel.dragCallback = d => OnDragPanel(panel, d);
-			panel.resizeCallback = d => OnPanelResize(panel, d);
-		}
-		else if(e is Scroll scroll)
-		{
-			scroll.displayCallback = () => OnDisplayScroll(scroll);
-			scroll.dragCallback = d => OnDragScroll(scroll, d);
-		}
-		else if(e is Stepper stepper)
-		{
-			stepper.displayCallback = () => OnDisplayStepper(stepper);
-			stepper.dragCallback = d => OnDragStepper(stepper, d);
-		}
-		else if(e is Slider slider)
-		{
-			slider.displayCallback = () => OnDisplaySlider(slider);
-			slider.dragCallback = d => OnDragSlider(slider, d);
-		}
-		else if(e is Layout layout)
-		{
-			layout.displayCallback = () => OnDisplayLayout(layout);
-			layout.segmentUpdateCallback = (seg, i) => OnDisplayLayoutSegment(layout, seg, i);
-		}
-
-		e.Update();
-	}
-
-	private static float[] Distribute(int amount, (float a, float b) range)
-	{
-		if(amount <= 0)
-			return Array.Empty<float>();
-
-		var result = new float[amount];
-		var size = range.b - range.a;
-		var spacing = size / (amount + 1);
-
-		for(var i = 1; i <= amount; i++)
-			result[i - 1] = range.a + i * spacing;
-
-		return result;
-	}
-	private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
-	{
-		var result = fromBytes[offset..(offset + amount)];
-		offset += amount;
-		return result;
-	}
-	#endregion
+    private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
+    }
+#endregion
 }

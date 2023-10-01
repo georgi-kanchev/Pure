@@ -98,6 +98,7 @@ public class List : Element
     public List((int x, int y) position, int itemCount = 10, Spans type = Spans.Vertical)
         : base(position)
     {
+        Init();
         Size = (12, 8);
         originalHeight = Size.height;
         Span = type;
@@ -117,6 +118,7 @@ public class List : Element
     }
     public List(byte[] bytes) : base(bytes)
     {
+        Init();
         Span = (Spans)GrabByte(bytes);
         IsSingleSelecting = GrabBool(bytes);
         ItemGap = (GrabInt(bytes), GrabInt(bytes));
@@ -261,12 +263,6 @@ public class List : Element
     protected virtual void OnItemTrigger(Button item) { }
     protected virtual void OnItemSelect(Button item) { }
 
-    protected override void OnUserAction(UserAction userAction)
-    {
-        if (userAction == UserAction.Trigger && IsCollapsed &&
-            IsFocused && this[singleSelectedIndex].IsHovered == false)
-            IsCollapsed = false;
-    }
     protected override void OnInput()
     {
         if (Span == Spans.Dropdown && IsCollapsed && IsHovered)
@@ -322,6 +318,15 @@ public class List : Element
     internal bool IsScrollVisible =>
         (Span == Spans.Horizontal ? HasScroll.horizontal : HasScroll.vertical) && IsCollapsed == false;
 
+    private void Init()
+    {
+        OnUserAction(UserAction.Trigger, () =>
+        {
+            if (IsCollapsed && IsFocused && this[singleSelectedIndex].IsHovered == false)
+                IsCollapsed = false;
+        });
+    }
+
     internal void InternalAdd(int count = 1) => InternalInsert(items.Count, count);
     internal void InternalInsert(int index = 0, int count = 1)
     {
@@ -337,9 +342,9 @@ public class List : Element
                 hasParent = true
             };
             items.Insert(i, item);
-            item.SubscribeToUserAction(UserAction.Trigger, () => OnInternalItemTrigger(item));
-            item.SubscribeToUserAction(UserAction.Select, () => OnInternalItemSelect(item));
-            item.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
+            item.OnUserAction(UserAction.Trigger, () => OnInternalItemTrigger(item));
+            item.OnUserAction(UserAction.Select, () => OnInternalItemSelect(item));
+            item.OnUserAction(UserAction.Scroll, ApplyScroll);
         }
 
         TrySingleSelectOneItem();

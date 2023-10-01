@@ -237,12 +237,13 @@ public abstract partial class Element
 
     internal bool IsScrollable => IsFocused && FocusedPrevious == this && IsHovered;
 
+    protected Element() : this((0, 0)) { }
     /// <summary>
     /// Initializes a new user interface element instance class with the specified 
     /// position.
     /// </summary>
     /// <param name="position">The position of the user interface element.</param>
-    protected Element((int x, int y) position)
+    protected Element((int x, int y) position = default)
     {
         Size = (1, 1);
         Position = position;
@@ -298,19 +299,19 @@ public abstract partial class Element
         TryTrigger();
 
         if (IsFocused && wasFocused == false)
-            TriggerUserAction(UserAction.Focus);
+            SimulateUserAction(UserAction.Focus);
         if (IsFocused == false && wasFocused)
-            TriggerUserAction(UserAction.Unfocus);
+            SimulateUserAction(UserAction.Unfocus);
         if (IsHovered && wasHovered == false)
-            TriggerUserAction(UserAction.Hover);
+            SimulateUserAction(UserAction.Hover);
         if (IsHovered == false && wasHovered)
-            TriggerUserAction(UserAction.Unhover);
+            SimulateUserAction(UserAction.Unhover);
         if (IsPressed && Input.Current.WasPressed == false)
-            TriggerUserAction(UserAction.Press);
+            SimulateUserAction(UserAction.Press);
         if (IsHovered && IsPressed == false && Input.Current.WasPressed)
-            TriggerUserAction(UserAction.Release);
+            SimulateUserAction(UserAction.Release);
         if (IsPressedAndHeld && Input.Current.IsJustHeld)
-            TriggerUserAction(UserAction.PressAndHold);
+            SimulateUserAction(UserAction.PressAndHold);
 
         var p = Input.Current.Position;
         var pp = Input.Current.PositionPrevious;
@@ -334,7 +335,7 @@ public abstract partial class Element
         if (Input.Current.ScrollDelta == 0 || IsScrollable == false)
             return; // scroll even when hovering children
 
-        TriggerUserAction(UserAction.Scroll);
+        SimulateUserAction(UserAction.Scroll);
         ApplyScroll();
 
         return;
@@ -358,7 +359,7 @@ public abstract partial class Element
     public void Trigger()
     {
         IsPressedAndHeld = false;
-        TriggerUserAction(UserAction.Trigger);
+        SimulateUserAction(UserAction.Trigger);
     }
 
     public bool IsOverlapping((float x, float y) point)
@@ -449,45 +450,28 @@ public abstract partial class Element
         return result.ToArray();
     }
 
-    public override string ToString() => $"{GetType().Name} \"{Text}\"";
-
-    /// <summary>
-    /// Invokes all the registered methods associated with the specified user action.
-    /// Used internally by the user interface elements to notify subscribers of
-    /// user interactions and state changes.
-    /// </summary>
-    /// <param name="userAction">The identifier of the user action to trigger.</param>
-    protected internal void TriggerUserAction(UserAction userAction)
+    public override string ToString()
     {
-        OnUserAction(userAction);
+        return $"{GetType().Name} \"{Text}\"";
+    }
 
+    public void SimulateUserAction(UserAction userAction)
+    {
         if (userActions.ContainsKey(userAction) == false)
             return;
 
-        for (var i = 0; i < userActions[userAction].Count; i++)
-            userActions[userAction][i].Invoke();
+        userActions[userAction].Invoke();
     }
-    /// <summary>
-    /// Subscribes the specified method to the specified user action, 
-    /// so that it will be invoked every time the action is triggered. Multiple methods can be 
-    /// associated with the same action.
-    /// </summary>
-    /// <param name="userAction">The identifier of the user action to subscribe to.</param>
-    /// <param name="method">The method to subscribe.</param>
-    protected internal void SubscribeToUserAction(UserAction userAction, Action method)
+    public void OnUserAction(UserAction userAction, Action method)
     {
-        if (userActions.ContainsKey(userAction) == false)
-            userActions[userAction] = new();
-
-        userActions[userAction].Add(method);
+        if (userActions.TryAdd(userAction, method) == false)
+            userActions[userAction] += method;
     }
-    protected internal void UnsubscribeAll() => userActions.Clear();
+    public void OffUserAction()
+    {
+        userActions.Clear();
+    }
 
-    /// <summary>
-    /// Called by <see cref="Update"/> to update the state and appearance of the user interface element. 
-    /// Subclasses should override this method to implement their own behavior.
-    /// </summary>
-    protected virtual void OnUserAction(UserAction userAction) { }
     protected internal virtual void OnDisplay() { }
     protected virtual void OnInput() { }
     protected virtual void OnDrag((int x, int y) delta) { }
@@ -551,7 +535,7 @@ public abstract partial class Element
     private static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private int byteOffset;
     private bool wasFocused, wasHovered, isReadyForDoubleClick;
-    private readonly Dictionary<UserAction, List<Action>> userActions = new();
+    private readonly Dictionary<UserAction, Action> userActions = new();
 
     // used in the UI class to receive callbacks
     internal Action<(int width, int height)>? dragCallback;
@@ -624,7 +608,7 @@ public abstract partial class Element
             }
 
             if (isReadyForDoubleClick && isAllowed)
-                TriggerUserAction(UserAction.DoubleTrigger);
+                SimulateUserAction(UserAction.DoubleTrigger);
 
             isReadyForDoubleClick = false;
         }

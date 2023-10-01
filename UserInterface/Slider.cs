@@ -89,14 +89,6 @@ public class Slider : Element
         return result.ToArray();
     }
 
-    protected override void OnUserAction(UserAction userAction)
-    {
-        if (userAction != UserAction.Trigger)
-            return;
-
-        var (x, y) = Input.Current.Position;
-        MoveTo(((int)x, (int)y));
-    }
     protected override void OnDrag((int x, int y) delta)
     {
         var (x, y) = Input.Current.Position;
@@ -126,8 +118,13 @@ public class Slider : Element
     [MemberNotNull(nameof(Handle))]
     private void Init()
     {
+        OnUserAction(UserAction.Trigger, () =>
+        {
+            var (x, y) = Input.Current.Position;
+            MoveTo(((int)x, (int)y));
+        });
         Handle = new(position) { Size = (1, 1), hasParent = true };
-        Handle.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
+        Handle.OnUserAction(UserAction.Scroll, ApplyScroll);
     }
 
     internal override void ApplyScroll()

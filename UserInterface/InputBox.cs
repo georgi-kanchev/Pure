@@ -164,16 +164,16 @@ public class InputBox : Element
     /// Initializes a new input box instance with a specific position and default size of (12, 1).
     /// </summary>
     /// <param name="position">The position of the input box.</param>
-    public InputBox((int x, int y) position) : base(position)
+    public InputBox((int x, int y) position = default) : base(position)
     {
-        isTextReadonly = true;
+        Init();
         Size = (12, 1);
         lines[0] = Text;
         Value = Text;
     }
     public InputBox(byte[] bytes) : base(bytes)
     {
-        isTextReadonly = true;
+        Init();
         IsEditable = GrabBool(bytes);
         Placeholder = GrabString(bytes);
         Value = Text;
@@ -290,10 +290,11 @@ public class InputBox : Element
         scrollHold.Start();
     }
 
-    protected override void OnUserAction(UserAction userAction)
+    private void Init()
     {
-        if (userAction == UserAction.Press)
-            cursorBlink.Restart();
+        isTextReadonly = true;
+
+        OnUserAction(UserAction.Press, () => cursorBlink.Restart());
     }
 
     protected override void OnInput()

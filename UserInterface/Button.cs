@@ -19,6 +19,7 @@ public class Button : Element
 
     public Button(byte[] bytes) : base(bytes)
     {
+        Init();
         IsSelected = GrabBool(bytes);
     }
     /// <summary>
@@ -27,6 +28,7 @@ public class Button : Element
     /// <param name="position">The position of the button.</param>
     public Button((int x, int y) position) : base(position)
     {
+        Init();
         Size = (10, 1);
     }
 
@@ -37,25 +39,20 @@ public class Button : Element
         return result.ToArray();
     }
 
-    /// <summary>
-    /// Responds to a user event on the button. Subclasses should 
-    /// override this method to implement their own behavior.
-    /// </summary>
-    /// <param name="userEvent">The user event that occurred.</param>
-    protected override void OnUserAction(UserAction userEvent)
-    {
-        if (userEvent != UserAction.Trigger)
-            return;
-
-        isSelected = isSelected == false; // the user click can access it despite of parent
-
-        if (IsSelected)
-            TriggerUserAction(UserAction.Select);
-    }
-
 #region Backend
     internal bool isSelected;
 
+    private void Init()
+    {
+        OnUserAction(UserAction.Trigger, () =>
+        {
+            // not using property since the user click can access it despite of parent
+            isSelected = isSelected == false;
+
+            if (IsSelected)
+                SimulateUserAction(UserAction.Select);
+        });
+    }
     protected override void OnInput()
     {
         if (IsHovered)

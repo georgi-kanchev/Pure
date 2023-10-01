@@ -155,8 +155,8 @@ public class FileViewer : Element
         };
 
         Back = new(position) { hasParent = true };
-        Back.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
-        Back.SubscribeToUserAction(UserAction.Trigger, () =>
+        Back.OnUserAction(UserAction.Scroll, ApplyScroll);
+        Back.OnUserAction(UserAction.Trigger, () =>
             CurrentDirectory = Path.GetDirectoryName(CurrentDirectory) ?? DefaultPath);
     }
 
@@ -205,7 +205,7 @@ public class FileViewer : Element
         var item = FilesAndFolders[^1];
         item.Text = $"{Path.GetFileName(path)}";
         item.isTextReadonly = true;
-        item.SubscribeToUserAction(UserAction.DoubleTrigger, () =>
+        item.OnUserAction(UserAction.DoubleTrigger, () =>
             CurrentDirectory = Path.Join(CurrentDirectory, item.Text));
     }
 

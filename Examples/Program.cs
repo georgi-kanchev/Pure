@@ -1,5 +1,3 @@
-using Pure.Commands;
-
 namespace Pure.Examples;
 
 public abstract class Program

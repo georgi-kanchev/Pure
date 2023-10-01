@@ -61,9 +61,7 @@ public class Scroll : Element
     internal bool isVertical;
     internal float step = 0.1f;
 
-    [MemberNotNull(nameof(Slider))]
-    [MemberNotNull(nameof(Increase))]
-    [MemberNotNull(nameof(Decrease))]
+    [MemberNotNull(nameof(Slider), nameof(Increase), nameof(Decrease))]
     private void Init()
     {
         Slider = new((0, 0), IsVertical ? Size.height : Size.width, IsVertical) { hasParent = true };
@@ -71,19 +69,19 @@ public class Scroll : Element
         Decrease = new((0, 0)) { Size = (1, 1), hasParent = true };
         var dir = IsVertical ? -1 : 1;
 
-        Slider.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
+        Slider.OnUserAction(UserAction.Scroll, ApplyScroll);
 
-        Increase.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
-        Increase.SubscribeToUserAction(UserAction.Trigger, () => Slider.Progress += dir * Step);
-        Increase.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        Increase.OnUserAction(UserAction.Scroll, ApplyScroll);
+        Increase.OnUserAction(UserAction.Trigger, () => Slider.Progress += dir * Step);
+        Increase.OnUserAction(UserAction.PressAndHold, () =>
         {
             if (Increase.IsHovered)
                 Slider.Progress += dir * Step;
         });
 
-        Decrease.SubscribeToUserAction(UserAction.Scroll, ApplyScroll);
-        Decrease.SubscribeToUserAction(UserAction.Trigger, () => Slider.Progress += dir * -Step);
-        Decrease.SubscribeToUserAction(UserAction.PressAndHold, () =>
+        Decrease.OnUserAction(UserAction.Scroll, ApplyScroll);
+        Decrease.OnUserAction(UserAction.Trigger, () => Slider.Progress += dir * -Step);
+        Decrease.OnUserAction(UserAction.PressAndHold, () =>
         {
             if (Decrease.IsHovered)
                 Slider.Progress += dir * -Step;
