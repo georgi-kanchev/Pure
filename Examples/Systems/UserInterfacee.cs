@@ -6,7 +6,7 @@ using Utilities;
 using Window;
 using static Pure.UserInterface.List;
 
-public static class UserInterface
+public static class UserInterfacee
 {
     private class UI : Pure.UserInterface.UserInterface
     {

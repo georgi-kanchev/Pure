@@ -21,8 +21,4 @@
         <ProjectReference Include="..\UserInterface\UserInterface.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Systems\UserInterface\"/>
-    </ItemGroup>
-
 </Project>

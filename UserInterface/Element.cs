@@ -345,21 +345,13 @@ public abstract partial class Element
             if (IsHidden)
                 return;
 
-            OnDisplay();
+            display?.Invoke();
             displayCallback?.Invoke();
 
             OnChildrenUpdate();
             // parents call OnDisplay on children and themselves to ensure order if needed
             OnChildrenDisplay();
         }
-    }
-    /// <summary>
-    /// Simulates a user click over this user interface element.
-    /// </summary>
-    public void Trigger()
-    {
-        IsPressedAndHeld = false;
-        SimulateUserAction(UserAction.Trigger);
     }
 
     public bool IsOverlapping((float x, float y) point)
@@ -462,17 +454,17 @@ public abstract partial class Element
 
         userActions[userAction].Invoke();
     }
+
     public void OnUserAction(UserAction userAction, Action method)
     {
         if (userActions.TryAdd(userAction, method) == false)
             userActions[userAction] += method;
     }
-    public void OffUserAction()
+    public void OnDisplay(Action method)
     {
-        userActions.Clear();
+        display += method;
     }
 
-    protected internal virtual void OnDisplay() { }
     protected virtual void OnInput() { }
     protected virtual void OnDrag((int x, int y) delta) { }
 
@@ -536,6 +528,7 @@ public abstract partial class Element
     private int byteOffset;
     private bool wasFocused, wasHovered, isReadyForDoubleClick;
     private readonly Dictionary<UserAction, Action> userActions = new();
+    private Action? display;
 
     // used in the UI class to receive callbacks
     internal Action<(int width, int height)>? dragCallback;
@@ -598,7 +591,8 @@ public abstract partial class Element
 
         if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
         {
-            Trigger();
+            IsPressedAndHeld = false;
+            SimulateUserAction(UserAction.Trigger);
 
             if (isReadyForDoubleClick == false)
             {

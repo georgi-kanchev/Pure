@@ -83,7 +83,6 @@ public class UserInterface
         if (element is Layout layout)
             layout.ui = null;
 
-        element.OffUserAction();
         elements.Remove(element);
     }
     public void BringToTop(Element element)
