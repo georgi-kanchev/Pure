@@ -117,24 +117,6 @@ public class UserInterface
         return result.ToArray();
     }
 
-    public void OnUserAction<T>(Action<T, UserAction> method) { }
-    public void OnDisplay<T>(Action<T> method) where T : Element { }
-    public void OnDrag<T>(Action<T, (int deltaX, int deltaY)> method) where T : Element { }
-
-    public void OnItemTrigger(Action<List, Button> method) { }
-    public void OnItemTrigger(Action<FileViewer, Button> method) { }
-    public void OnItemSelect(Action<List, Button> method) { }
-    public void OnItemSelect(Action<FileViewer, Button> method) { }
-    public void OnItemDisplay(Action<List, Button> method) { }
-    public void OnItemDisplay(Action<Pages, Button> method) { }
-    public void OnItemDisplay(Action<Palette, Button> method) { }
-    public void OnItemDisplay(Action<FileViewer, Button> method) { }
-    public void
-        OnItemDisplay(Action<Layout, (int x, int y, int width, int height, int index)> method) { }
-
-    public void OnPanelResize(Action<Panel, (int deltaX, int deltaY)> method) { }
-    public void OnPalettePick(Action<Palette, (float x, float y)> method) { }
-
     protected virtual void OnUserActionButton(Button button, UserAction userAction) { }
     protected virtual void OnUserActionInputBox(InputBox inputBox, UserAction userAction) { }
     protected virtual void OnUserActionList(List list, UserAction userAction) { }

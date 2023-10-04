@@ -364,7 +364,7 @@ public static class UserInterfacee
 
         var (width, height) = Window.MonitorAspectRatio;
         var tilemaps = new TilemapManager(4, (width * 3, height * 3));
-        var promptInputBox = new InputBox() { Size = (16, 1) };
+        var promptInputBox = new InputBox { Size = (16, 1) };
         var prompt = new Prompt();
         var ui = new UI(tilemaps, prompt);
 
@@ -436,21 +436,6 @@ public static class UserInterfacee
             layout.Position = (p.Position.x + 1, p.Position.y + 1);
 
             Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
-
-            if (Keyboard.IsKeyPressed(Keyboard.Key.A).Once("on-a-press"))
-            {
-                prompt.Element = promptInputBox;
-                prompt.Message = "Your message:";
-                prompt.Open(2, index =>
-                {
-                    if (index == 0)
-                        Console.WriteLine(promptInputBox.Value);
-                    else if (index == 2)
-                        Window.Close();
-
-                    prompt.Close();
-                });
-            }
 
             for (var i = 0; i < tilemaps.Count; i++)
                 Window.DrawTiles(tilemaps[i].ToBundle());

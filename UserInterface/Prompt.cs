@@ -8,16 +8,7 @@ public class Prompt
         set
         {
             currentElement = value;
-
-            if (value == null)
-                return;
-
-            var text = Message ?? "";
-            var lines = text.Split(Environment.NewLine).Length;
-            var sz = Element.TilemapSize;
-            var (x, y) = (sz.width / 2, sz.height / 2);
-            var (w, h) = value.Size;
-            value.position = (x - w / 2, y - h / 2 + lines);
+            UpdateElementPosition();
         }
     }
 
@@ -31,13 +22,10 @@ public class Prompt
         if (IsOpened)
             return;
 
-        var text = Message ?? "";
-
         IsOpened = true;
+        UpdateElementPosition();
 
-        promptLabel.Placeholder = text;
-
-        promptButtons.Clear();
+        buttons.Clear();
         for (var i = 0; i < buttonCount; i++)
         {
             var btn = new Button((0, 0))
@@ -47,7 +35,7 @@ public class Prompt
             };
             var index = i;
             btn.OnUserAction(UserAction.Trigger, () => onButtonTrigger?.Invoke(index));
-            promptButtons.Add(btn);
+            buttons.Add(btn);
         }
     }
     public void Close()
@@ -56,32 +44,23 @@ public class Prompt
             return;
 
         IsOpened = false;
-
-        if (Element == null)
-            return;
-
-        Element.hasParent = false;
-        Element = null;
-        promptButtons.Clear();
+        buttons.Clear();
     }
 
     public bool IsOwning(Element? element)
     {
-        return element != null && (promptButtons.Contains(element) ||
-                                   promptPanel == element || promptLabel == element);
+        return element != null && (buttons.Contains(element) || panel == element);
     }
-    public int IndexOf(Button? button) => button == null ? -1 : promptButtons.IndexOf(button);
+    public int IndexOf(Button? button) => button == null ? -1 : buttons.IndexOf(button);
+
+    public void OnDisplay(Action<Button[]> method)
+    {
+        display += method;
+    }
 
 #region Backend
-    private readonly List<Button> promptButtons = new();
-    private readonly InputBox promptLabel = new((0, 0))
-    {
-        IsEditable = false,
-        IsDisabled = true,
-        Value = "",
-        hasParent = true,
-    };
-    private readonly Panel promptPanel = new((0, 0))
+    private readonly List<Button> buttons = new();
+    private readonly Panel panel = new((0, 0))
     {
         IsResizable = false,
         IsMovable = false,
@@ -91,6 +70,8 @@ public class Prompt
     };
     private Element? currentElement;
 
+    private Action<Button[]>? display;
+
     internal void Update(UserInterface ui)
     {
         if (IsOpened == false)
@@ -99,12 +80,14 @@ public class Prompt
         var sz = Element.TilemapSize;
         var (w, h) = (sz.width / 2, sz.height / 2);
         var (x, y) = (sz.width / 4, sz.height / 4 + sz.height / 2);
-        var lines = promptLabel.Placeholder.Split(Environment.NewLine).Length;
+        var lines = Message?.Split(Environment.NewLine).Length ?? 0;
 
-        promptPanel.isDisabled = IsOpened == false;
-        promptPanel.position = IsOpened ? (0, 0) : (int.MaxValue, int.MaxValue);
-        promptPanel.size = sz;
-        ui.UpdateElement(promptPanel);
+        display?.Invoke(buttons.ToArray());
+
+        panel.isDisabled = IsOpened == false;
+        panel.position = IsOpened ? (0, 0) : (int.MaxValue, int.MaxValue);
+        panel.size = sz;
+        ui.UpdateElement(panel);
 
         if (Element != null)
         {
@@ -115,21 +98,31 @@ public class Prompt
             y = Element.Position.y;
         }
 
-        promptLabel.isDisabled = promptPanel.isDisabled;
-        promptLabel.position = IsOpened ? (x, y - lines) : (int.MaxValue, int.MaxValue);
-        promptLabel.size = (w, lines);
-        ui.UpdateElement(promptLabel);
+        //promptLabel.position = IsOpened ? (x, y - lines) : (int.MaxValue, int.MaxValue);
+        //promptLabel.size = (w, lines);
 
-        Position = promptLabel.position;
-        Size = (w, promptLabel.Size.height + h + 1);
+        Position = IsOpened ? (x, y - lines) : (int.MaxValue, int.MaxValue);
+        Size = (w, lines + h + 1);
 
-        var btnXs = Distribute(promptButtons.Count, (x, x + w));
-        for (var i = 0; i < promptButtons.Count; i++)
+        var btnXs = Distribute(buttons.Count, (x, x + w));
+        for (var i = 0; i < buttons.Count; i++)
         {
-            var btn = promptButtons[i];
+            var btn = buttons[i];
             btn.position = ((int)btnXs[i], y + h);
             ui.UpdateElement(btn);
         }
+    }
+    private void UpdateElementPosition()
+    {
+        if (currentElement == null)
+            return;
+
+        var text = Message ?? "";
+        var lines = text.Split(Environment.NewLine).Length;
+        var sz = Element.TilemapSize;
+        var (x, y) = (sz.width / 2, sz.height / 2);
+        var (w, h) = currentElement.Size;
+        currentElement.position = (x - w / 2, y - h / 2 + lines);
     }
 
     private static float[] Distribute(int amount, (float a, float b) range)

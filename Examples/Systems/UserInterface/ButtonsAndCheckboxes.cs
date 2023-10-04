@@ -7,14 +7,14 @@ using Window;
 using static Utility;
 using static Tilemap.Tile;
 
-public static class ButtonAndCheckbox
+public static class ButtonsAndCheckboxes
 {
     public static void Run()
     {
         Window.Create(3);
-
         var (width, height) = Window.MonitorAspectRatio;
         var tilemaps = new TilemapManager(2, (width * 3, height * 3));
+        var ui = new UserInterface();
 
         var button = new Button((12, 5)) { Text = "Cool Button" };
         var buttonDisabled = new Button((12, 15)) { IsDisabled = true, Text = "Disabled Button" };
@@ -55,6 +55,8 @@ public static class ButtonAndCheckbox
                 text: b.Text,
                 tint: color,
                 maxLength: w - 2);
+
+            tilemaps[1].SetTextLine((0, 0), $"The {button.Text} was pressed {counter} times.");
         });
         checkbox.OnDisplay(() =>
         {
@@ -72,33 +74,10 @@ public static class ButtonAndCheckbox
                 tint: GetColor(checkbox, color));
         });
 
-        while (Window.IsOpen)
-        {
-            Window.Activate(true);
+        ui.Add(button);
+        ui.Add(buttonDisabled);
+        ui.Add(checkbox);
 
-            Time.Update();
-            tilemaps.Fill();
-
-            Element.ApplyInput(
-                isPressed: Mouse.IsButtonPressed(Mouse.Button.Left),
-                position: tilemaps.PointFrom(Mouse.CursorPosition, Window.Size),
-                scrollDelta: Mouse.ScrollDelta,
-                keysPressed: Keyboard.KeyIDsPressed,
-                keysTyped: Keyboard.KeyTyped,
-                tilemapSize: tilemaps.Size);
-
-            buttonDisabled.Update();
-            button.Update();
-            checkbox.Update();
-
-            Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
-
-            tilemaps[1].SetTextLine((0, 0), $"The {button.Text} was pressed {counter} times.");
-
-            for (var i = 0; i < tilemaps.Count; i++)
-                Window.DrawTiles(tilemaps[i].ToBundle());
-
-            Window.Activate(false);
-        }
+        RunWindow(ui, tilemaps);
     }
 }

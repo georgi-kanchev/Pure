@@ -269,6 +269,14 @@ public class InputBox : Element
         UpdateText();
     }
 
+    public void SelectAll()
+    {
+        sx = 0;
+        sy = 0;
+        CursorIndices = (int.MaxValue, int.MaxValue);
+        CursorScroll();
+    }
+
 #region Backend
     private readonly List<string> lines = new() { "" };
 
@@ -535,10 +543,7 @@ public class InputBox : Element
         if (ctrl == false || Input.Current.Typed != "a")
             return false;
 
-        cx = 0;
-        cy = 0;
-        CursorScroll();
-        SelectionIndices = (int.MaxValue, int.MaxValue);
+        SelectAll();
         return true;
     }
 
