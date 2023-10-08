@@ -4,199 +4,208 @@ namespace Pure.UserInterface;
 
 public class Pages : Element
 {
-    public Button First { get; private set; }
-    public Button Previous { get; private set; }
-    public Button Next { get; private set; }
-    public Button Last { get; private set; }
+	public Button First { get; private set; }
+	public Button Previous { get; private set; }
+	public Button Next { get; private set; }
+	public Button Last { get; private set; }
 
-    public int Count
-    {
-        get => count;
-        set
-        {
-            if (count == value)
-                return; // no actual change, skip calculations
+	public int Count
+	{
+		get => count;
+		set
+		{
+			if(count == value)
+				return; // no actual change, skip calculations
 
-            count = Math.Clamp(value, 1, 99);
-            Current = current; // reclamp and update pages
-            RecreatePages();
-            UpdatePages();
-        }
-    }
-    public int Current
-    {
-        get => current;
-        set
-        {
-            var prev = current;
-            current = Math.Clamp(value, 1, Count);
+			count = Math.Clamp(value, 1, 99);
+			Current = current; // reclamp and update pages
+			RecreatePages();
+			UpdatePages();
+		}
+	}
+	public int Current
+	{
+		get => current;
+		set
+		{
+			var prev = current;
+			current = Math.Clamp(value, 1, Count);
 
-            UpdatePages();
+			UpdatePages();
 
-            if (prev != current)
-                SimulateUserAction(UserAction.Select);
-        }
-    }
+			if(prev != current)
+				SimulateInteraction(Interaction.Select);
+		}
+	}
 
-    public Pages((int x, int y) position, int count = 10) : base(position)
-    {
-        Size = (12, 1);
-        Count = count;
+	public Pages((int x, int y) position = default, int count = 10) : base(position)
+	{
+		Size = (12, 1);
+		Count = count;
 
-        Init();
-    }
-    public Pages(byte[] bytes) : base(bytes)
-    {
-        Count = GrabInt(bytes);
-        Current = GrabInt(bytes);
+		Init();
+	}
+	public Pages(byte[] bytes) : base(bytes)
+	{
+		Count = GrabInt(bytes);
+		Current = GrabInt(bytes);
 
-        Init();
-    }
+		Init();
+	}
 
-    public override byte[] ToBytes()
-    {
-        var result = base.ToBytes().ToList();
-        PutInt(result, Count);
-        PutInt(result, Current);
-        return result.ToArray();
-    }
+	public override byte[] ToBytes()
+	{
+		var result = base.ToBytes().ToList();
+		PutInt(result, Count);
+		PutInt(result, Current);
+		return result.ToArray();
+	}
 
-    protected virtual void OnPageDisplay(Button page) { }
+	public void OnItemDisplay(Action<Button> method)
+	{
+		itemDisplays += method;
+	}
+	public void OnItemInteraction(Interaction interaction, Action<Button> method)
+	{
+		if(itemInteractions.TryAdd(interaction, method) == false)
+			itemInteractions[interaction] += method;
 
-#region Backend
-    private (int, int) prevSize;
-    private const int PAGE_GAP = 1, PAGE_WIDTH = 2;
-    private int count, current = 1, scrollIndex = 1;
-    private readonly List<Button> visiblePages = new();
+		foreach(var item in visiblePages)
+			item.OnInteraction(interaction, () => method.Invoke(item));
+	}
 
-    internal Action<Button>? pageDisplayCallback; // used in the UI class to receive callbacks
+	#region Backend
+	private (int, int) prevSize;
+	private const int PAGE_GAP = 1, PAGE_WIDTH = 2;
+	private int count, current = 1, scrollIndex = 1;
+	private readonly List<Button> visiblePages = new();
 
-    [MemberNotNull(nameof(First), nameof(Previous), nameof(Next), nameof(Last))]
-    private void Init()
-    {
-        First = new((0, 0)) { hasParent = true };
-        Previous = new((0, 0)) { hasParent = true };
-        Next = new((0, 0)) { hasParent = true };
-        Last = new((0, 0)) { hasParent = true };
+	private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
+	private Action<Button>? itemDisplays;
 
-        First.OnUserAction(UserAction.Trigger, () => Current = 0);
-        Previous.OnUserAction(UserAction.Trigger, () => Current--);
-        Next.OnUserAction(UserAction.Trigger, () => Current++);
-        Last.OnUserAction(UserAction.Trigger, () => Current = Count);
+	[MemberNotNull(nameof(First), nameof(Previous), nameof(Next), nameof(Last))]
+	private void Init()
+	{
+		First = new((0, 0)) { hasParent = true };
+		Previous = new((0, 0)) { hasParent = true };
+		Next = new((0, 0)) { hasParent = true };
+		Last = new((0, 0)) { hasParent = true };
 
-        Previous.OnUserAction(UserAction.PressAndHold, () => Current--);
-        Next.OnUserAction(UserAction.PressAndHold, () => Current++);
+		First.OnInteraction(Interaction.Trigger, () => Current = 0);
+		Previous.OnInteraction(Interaction.Trigger, () => Current--);
+		Next.OnInteraction(Interaction.Trigger, () => Current++);
+		Last.OnInteraction(Interaction.Trigger, () => Current = Count);
 
-        First.OnUserAction(UserAction.Scroll, ApplyScroll);
-        Previous.OnUserAction(UserAction.Scroll, ApplyScroll);
-        Next.OnUserAction(UserAction.Scroll, ApplyScroll);
-        Last.OnUserAction(UserAction.Scroll, ApplyScroll);
-    }
+		Previous.OnInteraction(Interaction.PressAndHold, () => Current--);
+		Next.OnInteraction(Interaction.PressAndHold, () => Current++);
 
-    internal override void OnUpdate()
-    {
-        // for in between pages, overwrite mouse cursor (don't give it to the element bellow)
-        if (IsDisabled == false && IsHovered)
-            MouseCursorResult = MouseCursor.Arrow;
+		First.OnInteraction(Interaction.Scroll, ApplyScroll);
+		Previous.OnInteraction(Interaction.Scroll, ApplyScroll);
+		Next.OnInteraction(Interaction.Scroll, ApplyScroll);
+		Last.OnInteraction(Interaction.Scroll, ApplyScroll);
+	}
 
-        LimitSizeMin((6, 1));
+	internal override void OnUpdate()
+	{
+		// for in between pages, overwrite mouse cursor (don't give it to the element bellow)
+		if(IsDisabled == false && IsHovered)
+			MouseCursorResult = MouseCursor.Arrow;
 
-        if (Size != prevSize)
-        {
-            RecreatePages();
-            UpdatePages();
-        }
+		LimitSizeMin((6, 1));
 
-        prevSize = Size;
-    }
-    internal override void OnChildrenDisplay()
-    {
-        foreach (var page in visiblePages)
-        {
-            OnPageDisplay(page);
-            pageDisplayCallback?.Invoke(page);
-        }
-    }
-    internal override void OnChildrenUpdate()
-    {
-        var (x, y) = Position;
-        var visibleWidth = GetVisibleWidth();
+		if(Size != prevSize)
+		{
+			RecreatePages();
+			UpdatePages();
+		}
 
-        First.position = (x, y);
-        Previous.position = (x + 1, y);
-        Next.position = (Previous.Position.x + visibleWidth + 1, y);
-        Last.position = (Next.Position.x + 1, y);
+		prevSize = Size;
+	}
+	internal override void OnChildrenDisplay()
+	{
+		foreach(var page in visiblePages)
+			itemDisplays?.Invoke(page);
+	}
+	internal override void OnChildrenUpdate()
+	{
+		var (x, y) = Position;
+		var visibleWidth = GetVisibleWidth();
 
-        First.size = (1, Size.height);
-        Previous.size = (1, Size.height);
-        Next.size = (1, Size.height);
-        Last.size = (1, Size.height);
+		First.position = (x, y);
+		Previous.position = (x + 1, y);
+		Next.position = (Previous.Position.x + visibleWidth + 1, y);
+		Last.position = (Next.Position.x + 1, y);
 
-        First.InheritParent(this);
-        Previous.InheritParent(this);
-        Next.InheritParent(this);
-        Last.InheritParent(this);
+		First.size = (1, Size.height);
+		Previous.size = (1, Size.height);
+		Next.size = (1, Size.height);
+		Last.size = (1, Size.height);
 
-        First.Update();
-        Previous.Update();
-        Next.Update();
-        Last.Update();
+		First.InheritParent(this);
+		Previous.InheritParent(this);
+		Next.InheritParent(this);
+		Last.InheritParent(this);
 
-        for (var i = 0; i < visiblePages.Count; i++)
-        {
-            var page = visiblePages[i];
-            page.position = (x + 2 + (PAGE_WIDTH + PAGE_GAP) * i, y);
-            page.InheritParent(this);
-            page.Update();
-        }
-    }
-    internal override void ApplyScroll()
-    {
-        Current += Input.Current.ScrollDelta;
-    }
+		First.Update();
+		Previous.Update();
+		Next.Update();
+		Last.Update();
 
-    private int GetVisibleWidth() => Size.width - 4;
-    private int GetVisiblePageCount()
-    {
-        var visibleWidth = GetVisibleWidth();
-        var result = 0;
-        var width = 0;
-        while (width + PAGE_WIDTH <= visibleWidth)
-        {
-            width += PAGE_WIDTH + PAGE_GAP;
-            result++;
+		for(var i = 0; i < visiblePages.Count; i++)
+		{
+			var page = visiblePages[i];
+			page.position = (x + 2 + (PAGE_WIDTH + PAGE_GAP) * i, y);
+			page.InheritParent(this);
+			page.Update();
+		}
+	}
+	internal override void ApplyScroll()
+	{
+		Current += Input.Current.ScrollDelta;
+	}
 
-            if (result > Count)
-                return Count;
-        }
+	private int GetVisibleWidth() => Size.width - 4;
+	private int GetVisiblePageCount()
+	{
+		var visibleWidth = GetVisibleWidth();
+		var result = 0;
+		var width = 0;
+		while(width + PAGE_WIDTH <= visibleWidth)
+		{
+			width += PAGE_WIDTH + PAGE_GAP;
+			result++;
 
-        return result;
-    }
+			if(result > Count)
+				return Count;
+		}
 
-    private void RecreatePages()
-    {
-        var pageCount = GetVisiblePageCount();
+		return result;
+	}
 
-        visiblePages.Clear();
-        for (var i = 0; i < pageCount; i++)
-        {
-            var page = new Button((0, 0)) { size = (2, Size.height), hasParent = true };
-            visiblePages.Add(page);
-            page.OnUserAction(UserAction.Trigger, () => Current = int.Parse(page.Text));
-            page.OnUserAction(UserAction.Scroll, ApplyScroll);
-        }
-    }
-    private void UpdatePages()
-    {
-        var pageCount = GetVisiblePageCount();
-        scrollIndex = Math.Clamp(current - pageCount / 2, 1, Math.Max(Count - pageCount + 1, 1));
+	private void RecreatePages()
+	{
+		var pageCount = GetVisiblePageCount();
 
-        for (var i = 0; i < visiblePages.Count; i++)
-        {
-            var pageNumber = i + scrollIndex;
-            visiblePages[i].Text = $"{pageNumber:D2}";
-            visiblePages[i].isSelected = pageNumber == current;
-        }
-    }
-#endregion
+		visiblePages.Clear();
+		for(var i = 0; i < pageCount; i++)
+		{
+			var page = new Button((0, 0)) { size = (2, Size.height), hasParent = true };
+			visiblePages.Add(page);
+			page.OnInteraction(Interaction.Trigger, () => Current = int.Parse(page.Text));
+			page.OnInteraction(Interaction.Scroll, ApplyScroll);
+		}
+	}
+	private void UpdatePages()
+	{
+		var pageCount = GetVisiblePageCount();
+		scrollIndex = Math.Clamp(current - pageCount / 2, 1, Math.Max(Count - pageCount + 1, 1));
+
+		for(var i = 0; i < visiblePages.Count; i++)
+		{
+			var pageNumber = i + scrollIndex;
+			visiblePages[i].Text = $"{pageNumber:D2}";
+			visiblePages[i].isSelected = pageNumber == current;
+		}
+	}
+	#endregion
 }

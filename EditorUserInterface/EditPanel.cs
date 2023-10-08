@@ -97,7 +97,7 @@ public class EditPanel : Panel
 		};
 	}
 
-	protected override void OnDisplay()
+	protected void OnDisplay()
 	{
 		if(IsHovered)
 			MouseCursorResult = MouseCursor.Arrow;
@@ -127,11 +127,9 @@ public class EditPanel : Panel
 	{
 		public EditButton((int x, int y) position) : base(position) { }
 
-		protected override void OnUserAction(UserAction userAction)
+		protected void OnUserAction(Interaction userAction)
 		{
-			base.OnUserAction(userAction);
-
-			if(userAction != UserAction.Trigger || Selected == null)
+			if(userAction != Interaction.Trigger || Selected == null)
 				return;
 
 			var panel = editUI[ui.IndexOf(Selected)];

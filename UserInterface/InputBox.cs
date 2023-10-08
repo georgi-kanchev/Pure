@@ -302,7 +302,7 @@ public class InputBox : Element
     {
         isTextReadonly = true;
 
-        OnUserAction(UserAction.Press, () => cursorBlink.Restart());
+        OnInteraction(Interaction.Press, () => cursorBlink.Restart());
     }
 
     protected override void OnInput()

@@ -111,9 +111,9 @@ public class RendererEdit : UserInterface
 			}
 	}
 
-	protected override void OnUserActionPanel(Panel panel, UserAction userAction)
+	protected override void OnUserActionPanel(Panel panel, Interaction userAction)
 	{
-		if(userAction != UserAction.Press)
+		if(userAction != Interaction.Press)
 			return;
 
 		var notOverEditPanel = editPanel.IsHovered == false || editPanel.IsHidden;

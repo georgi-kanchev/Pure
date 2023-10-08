@@ -174,7 +174,24 @@ public static class Mouse
 		pressed.Clear();
 	}
 
+	public static void OnButtonPress(Button button, Action method)
+	{
+		if(actionsPress.TryAdd(button, method) == false)
+			actionsPress[button] += method;
+	}
+	public static void OnButtonRelease(Button button, Action method)
+	{
+		if(actionsRelease.TryAdd(button, method) == false)
+			actionsRelease[button] += method;
+	}
+	public static void OnWheelScroll(Action method)
+	{
+		actionScroll += method;
+	}
+
 	#region Backend
+	private static readonly Dictionary<Button, Action> actionsPress = new(), actionsRelease = new();
+	private static Action? actionScroll;
 	private static readonly List<Button> pressed = new();
 	private static readonly List<(float, float)> cursorOffsets = new()
 	{
@@ -190,15 +207,34 @@ public static class Mouse
 
 	internal static void OnButtonPressed(object? s, MouseButtonEventArgs e)
 	{
-		pressed.Add((Button)(e.Button));
+		var btn = (Button)e.Button;
+		var contains = pressed.Contains(btn);
+
+		if(contains)
+			return;
+
+		pressed.Add(btn);
+
+		if(actionsPress.ContainsKey(btn))
+			actionsPress[btn].Invoke();
 	}
 	internal static void OnButtonReleased(object? s, MouseButtonEventArgs e)
 	{
-		pressed.Remove((Button)e.Button);
+		var btn = (Button)e.Button;
+		var contains = pressed.Contains(btn);
+
+		if(contains == false)
+			return;
+
+		pressed.Remove(btn);
+
+		if(actionsRelease.ContainsKey(btn))
+			actionsRelease[btn].Invoke();
 	}
 	internal static void OnWheelScrolled(object? s, MouseWheelScrollEventArgs e)
 	{
 		ScrollDelta = e.Delta < 0 ? -1 : 1;
+		actionScroll?.Invoke();
 	}
 
 	internal static void Update()

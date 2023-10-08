@@ -44,13 +44,13 @@ public class Button : Element
 
     private void Init()
     {
-        OnUserAction(UserAction.Trigger, () =>
+        OnInteraction(Interaction.Trigger, () =>
         {
             // not using property since the user click can access it despite of parent
             isSelected = isSelected == false;
 
             if (IsSelected)
-                SimulateUserAction(UserAction.Select);
+                SimulateInteraction(Interaction.Select);
         });
     }
     protected override void OnInput()

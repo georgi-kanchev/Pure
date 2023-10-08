@@ -289,7 +289,7 @@ public static class Extensions
 	/// <param name="separatorColumn">The string used to separate columns in the resulting string.</param>
 	/// <param name="separatorRow">The string used to separate rows in the resulting string.</param>
 	/// <returns>A string representation of the two-dimensional array  with specified separators.</returns>
-	public static string ToString<T>(this T[,] matrix, string separatorColumn, string separatorRow)
+	public static string ToString<T>(this T[,] matrix, (string horizontal, string vertical) separator)
 	{
 		var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
 		var result = new StringBuilder();
@@ -301,10 +301,10 @@ public static class Extensions
 				result.Append(matrix[i, j]);
 
 				if(j < n - 1)
-					result.Append(separatorColumn);
+					result.Append(separator.horizontal);
 			}
 
-			result.Append(separatorRow);
+			result.Append(separator.vertical);
 		}
 
 		result.Remove(result.Length - 1, 1);
@@ -348,13 +348,12 @@ public static class Extensions
 	/// <typeparam name="T">The type of the elements in the matrix.</typeparam>
 	/// <param name="matrix">The two-dimensional array to flip.</param>
 	/// <param name="flips">A tuple indicating the flip direction for the horizontal and vertical axes. The first element indicates whether to flip horizontally, and the second element indicates whether to flip vertically.</param>
-	public static void Flip<T>(this T[,] matrix,
-		(bool isFlippedHorizontally, bool isFlippedVertically) flips)
+	public static void Flip<T>(this T[,] matrix, (bool horizontally, bool vertically) isFlipped)
 	{
 		var rows = matrix.GetLength(0);
 		var cols = matrix.GetLength(1);
 
-		if(flips.isFlippedHorizontally)
+		if(isFlipped.horizontally)
 		{
 			for(var i = 0; i < rows; i++)
 				for(var j = 0; j < cols / 2; j++)
@@ -363,7 +362,7 @@ public static class Extensions
 				}
 		}
 
-		if(flips.isFlippedVertically)
+		if(isFlipped.vertically)
 		{
 			for(var i = 0; i < rows / 2; i++)
 				for(var j = 0; j < cols; j++)
@@ -988,7 +987,6 @@ public static class Extensions
 	}
 
 	private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
-
 	private static readonly Dictionary<string, Gate> gates = new();
 
 	static Extensions()
