@@ -5,12 +5,15 @@ using UserInterface;
 
 public class MenuAddList : Menu
 {
-    public MenuAddList() : base(
-        $"{nameof(List)}… ",
-        $"  {Spans.Vertical}",
-        $"  {Spans.Horizontal}",
-        $"  {Spans.Dropdown}") =>
+    public MenuAddList()
+        : base(
+            $"{nameof(List)}ï¿½ ",
+            $"  {Spans.Vertical}",
+            $"  {Spans.Horizontal}",
+            $"  {Spans.Dropdown}")
+    {
         Size = (12, 4);
+    }
 
     protected override void OnItemTrigger(Button item)
     {

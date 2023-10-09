@@ -8,21 +8,37 @@ public struct Tile
     /// <summary>
     /// Gets or sets the identifier of the tile.
     /// </summary>
-    public int Id { get; set; }
+    public int Id
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Gets or sets the tint of the tile.
     /// </summary>
-    public uint Tint { get; set; }
+    public uint Tint
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Gets or sets the amount of 90 degree rotations, wrapping in intervals of 4.
     /// Positive values indicate clockwise rotation,
     /// negative values indicate counter-clockwise rotation.
     /// </summary>
-    public sbyte Angle { get; set; }
+    public sbyte Angle
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Gets or sets a tuple indicating whether the tile is flipped horizontally or vertically.
     /// </summary>
-    public (bool isHorizontal, bool isVertical) Flips { get; set; }
+    public (bool isHorizontal, bool isVertical) Flips
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Initializes a new tile instance with the specified identifier, 
@@ -35,7 +51,10 @@ public struct Tile
     /// negative values indicate counter-clockwise rotation.</param>
     /// <param name="flips">A tuple indicating whether the tile is flipped 
     /// horizontally or vertically.</param>
-    public Tile(int id, uint tint = uint.MaxValue, sbyte angle = default,
+    public Tile(
+        int id,
+        uint tint = uint.MaxValue,
+        sbyte angle = default,
         (bool isHorizontal, bool isVertical) flips = default)
     {
         Id = id;
@@ -58,8 +77,10 @@ public struct Tile
     /// <returns>
     /// A bundle tuple containing the identifier, tint, angle and flips of the tile.</returns>
     public (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)
-        ToBundle() =>
-        this;
+        ToBundle()
+    {
+        return this;
+    }
     /// <returns>
     /// A string representation of this tile.".</returns>
     public override string ToString()
@@ -79,14 +100,23 @@ public struct Tile
         return result.ToArray();
     }
 
-    public override int GetHashCode() => base.GetHashCode();
-    public override bool Equals(object? obj) => base.Equals(obj);
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
+    }
+    public override bool Equals(object? obj)
+    {
+        return base.Equals(obj);
+    }
 
     /// <summary>
     /// Implicitly converts an identifier to a white, not rotated and not flipped tile.
     /// </summary>
     /// <param name="id">The identifier of the tile.</param>
-    public static implicit operator Tile(int id) => new(id);
+    public static implicit operator Tile(int id)
+    {
+        return new(id);
+    }
     /// <summary>
     /// Implicitly converts a bundle tuple of values to a tile with the 
     /// specified identifier, tint, angle, and flips.

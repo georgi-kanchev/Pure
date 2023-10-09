@@ -5,20 +5,23 @@ using static Program;
 
 public class MenuAdd : Menu
 {
-    public MenuAdd() : base(
-        "Add… ",
-        $"  {nameof(Button)}",
-        $"  {nameof(InputBox)}",
-        $"  {nameof(Pages)}",
-        $"  {nameof(Panel)}",
-        $"  {nameof(Palette)}",
-        $"  {nameof(Slider)}",
-        $"  {nameof(Pure.UserInterface.Scroll)}",
-        $"  {nameof(Stepper)}",
-        $"  {nameof(Layout)}",
-        $"  {nameof(List)}",
-        $"  Viewer") =>
+    public MenuAdd()
+        : base(
+            "Add… ",
+            $"  {nameof(Button)}",
+            $"  {nameof(InputBox)}",
+            $"  {nameof(Pages)}",
+            $"  {nameof(Panel)}",
+            $"  {nameof(Palette)}",
+            $"  {nameof(Slider)}",
+            $"  {nameof(Pure.UserInterface.Scroll)}",
+            $"  {nameof(Stepper)}",
+            $"  {nameof(Layout)}",
+            $"  {nameof(List)}",
+            $"  Viewer")
+    {
         Size = (10, 12);
+    }
 
     protected override void OnItemTrigger(Button item)
     {

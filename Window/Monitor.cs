@@ -31,6 +31,9 @@ internal static class Monitor
 
         return (width / gcd, height / gcd);
 
-        int GetGreatestCommonDivisor(int a, int b) => b == 0 ? a : GetGreatestCommonDivisor(b, a % b);
+        int GetGreatestCommonDivisor(int a, int b)
+        {
+            return b == 0 ? a : GetGreatestCommonDivisor(b, a % b);
+        }
     }
 }

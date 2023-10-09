@@ -16,28 +16,46 @@ public class Buffer
     /// <summary>
     /// Is the buffer empty?
     /// </summary>
-    public bool IsEmpty => (_data == null) || (_size == 0);
+    public bool IsEmpty
+    {
+        get => (_data == null) || (_size == 0);
+    }
     /// <summary>
     /// Bytes memory buffer
     /// </summary>
-    public byte[] Data => _data;
+    public byte[] Data
+    {
+        get => _data;
+    }
     /// <summary>
     /// Bytes memory buffer capacity
     /// </summary>
-    public long Capacity => _data.Length;
+    public long Capacity
+    {
+        get => _data.Length;
+    }
     /// <summary>
     /// Bytes memory buffer size
     /// </summary>
-    public long Size => _size;
+    public long Size
+    {
+        get => _size;
+    }
     /// <summary>
     /// Bytes memory buffer offset
     /// </summary>
-    public long Offset => _offset;
+    public long Offset
+    {
+        get => _offset;
+    }
 
     /// <summary>
     /// Buffer indexer operator
     /// </summary>
-    public byte this[long index] => _data[index];
+    public byte this[long index]
+    {
+        get => _data[index];
+    }
 
     /// <summary>
     /// Initialize a new expandable buffer with zero capacity
@@ -222,7 +240,10 @@ public class Buffer
     /// </summary>
     /// <param name="buffer">Buffer to append</param>
     /// <returns>Count of append bytes</returns>
-    public long Append(Buffer buffer) => Append(buffer.AsSpan());
+    public long Append(Buffer buffer)
+    {
+        return Append(buffer.AsSpan());
+    }
 
     /// <summary>
     /// Append the given text in UTF-8 encoding

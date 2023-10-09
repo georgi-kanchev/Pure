@@ -41,24 +41,36 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="address">IP address</param>
     /// <param name="port">Port number</param>
-    public TcpServer(IPAddress address, int port) : this(new IPEndPoint(address, port)) { }
+    public TcpServer(IPAddress address, int port)
+        : this(new IPEndPoint(address, port))
+    {
+    }
     /// <summary>
     /// Initialize TCP server with a given IP address and port number
     /// </summary>
     /// <param name="address">IP address</param>
     /// <param name="port">Port number</param>
-    public TcpServer(string address, int port) : this(new IPEndPoint(IPAddress.Parse(address), port)) { }
+    public TcpServer(string address, int port)
+        : this(new IPEndPoint(IPAddress.Parse(address), port))
+    {
+    }
     /// <summary>
     /// Initialize TCP server with a given DNS endpoint
     /// </summary>
     /// <param name="endpoint">DNS endpoint</param>
-    public TcpServer(DnsEndPoint endpoint) : this(endpoint as EndPoint, endpoint.Host, endpoint.Port) { }
+    public TcpServer(DnsEndPoint endpoint)
+        : this(endpoint as EndPoint, endpoint.Host, endpoint.Port)
+    {
+    }
     /// <summary>
     /// Initialize TCP server with a given IP endpoint
     /// </summary>
     /// <param name="endpoint">IP endpoint</param>
-    public TcpServer(IPEndPoint endpoint) : this(endpoint as EndPoint, endpoint.Address.ToString(),
-        endpoint.Port) { }
+    public TcpServer(IPEndPoint endpoint)
+        : this(endpoint as EndPoint, endpoint.Address.ToString(),
+            endpoint.Port)
+    {
+    }
     /// <summary>
     /// Initialize TCP server with a given endpoint, address and port
     /// </summary>
@@ -76,48 +88,61 @@ internal class TcpServer : IDisposable
     /// <summary>
     /// Server Id
     /// </summary>
-    public Guid Id { get; }
+    public Guid Id
+    {
+        get;
+    }
 
     /// <summary>
     /// TCP server address
     /// </summary>
-    public string Address { get; }
+    public string Address
+    {
+        get;
+    }
     /// <summary>
     /// TCP server port
     /// </summary>
-    public int Port { get; }
+    public int Port
+    {
+        get;
+    }
     /// <summary>
     /// Endpoint
     /// </summary>
-    public EndPoint Endpoint { get; private set; }
+    public EndPoint Endpoint
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Number of sessions connected to the server
     /// </summary>
     public long ConnectedSessions
     {
-        get { return Sessions.Count; }
+        get => Sessions.Count;
     }
     /// <summary>
     /// Number of bytes pending sent by the server
     /// </summary>
     public long BytesPending
     {
-        get { return _bytesPending; }
+        get => _bytesPending;
     }
     /// <summary>
     /// Number of bytes sent by the server
     /// </summary>
     public long BytesSent
     {
-        get { return _bytesSent; }
+        get => _bytesSent;
     }
     /// <summary>
     /// Number of bytes received by the server
     /// </summary>
     public long BytesReceived
     {
-        get { return _bytesReceived; }
+        get => _bytesReceived;
     }
 
     /// <summary>
@@ -126,7 +151,11 @@ internal class TcpServer : IDisposable
     /// <remarks>
     /// This option will set the listening socket's backlog size
     /// </remarks>
-    public int OptionAcceptorBacklog { get; set; } = 1024;
+    public int OptionAcceptorBacklog
+    {
+        get;
+        set;
+    } = 1024;
     /// <summary>
     /// Option: dual mode socket
     /// </summary>
@@ -134,64 +163,104 @@ internal class TcpServer : IDisposable
     /// Specifies whether the Socket is a dual-mode socket used for both IPv4 and IPv6.
     /// Will work only if socket is bound on IPv6 address.
     /// </remarks>
-    public bool OptionDualMode { get; set; }
+    public bool OptionDualMode
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Option: keep alive
     /// </summary>
     /// <remarks>
     /// This option will setup SO_KEEPALIVE if the OS support this feature
     /// </remarks>
-    public bool OptionKeepAlive { get; set; }
+    public bool OptionKeepAlive
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Option: TCP keep alive time
     /// </summary>
     /// <remarks>
     /// The number of seconds a TCP connection will remain alive/idle before keepalive probes are sent to the remote
     /// </remarks>
-    public int OptionTcpKeepAliveTime { get; set; } = -1;
+    public int OptionTcpKeepAliveTime
+    {
+        get;
+        set;
+    } = -1;
     /// <summary>
     /// Option: TCP keep alive interval
     /// </summary>
     /// <remarks>
     /// The number of seconds a TCP connection will wait for a keepalive response before sending another keepalive probe
     /// </remarks>
-    public int OptionTcpKeepAliveInterval { get; set; } = -1;
+    public int OptionTcpKeepAliveInterval
+    {
+        get;
+        set;
+    } = -1;
     /// <summary>
     /// Option: TCP keep alive retry count
     /// </summary>
     /// <remarks>
     /// The number of TCP keep alive probes that will be sent before the connection is terminated
     /// </remarks>
-    public int OptionTcpKeepAliveRetryCount { get; set; } = -1;
+    public int OptionTcpKeepAliveRetryCount
+    {
+        get;
+        set;
+    } = -1;
     /// <summary>
     /// Option: no delay
     /// </summary>
     /// <remarks>
     /// This option will enable/disable Nagle's algorithm for TCP protocol
     /// </remarks>
-    public bool OptionNoDelay { get; set; }
+    public bool OptionNoDelay
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Option: reuse address
     /// </summary>
     /// <remarks>
     /// This option will enable/disable SO_REUSEADDR if the OS support this feature
     /// </remarks>
-    public bool OptionReuseAddress { get; set; }
+    public bool OptionReuseAddress
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Option: enables a socket to be bound for exclusive access
     /// </summary>
     /// <remarks>
     /// This option will enable/disable SO_EXCLUSIVEADDRUSE if the OS support this feature
     /// </remarks>
-    public bool OptionExclusiveAddressUse { get; set; }
+    public bool OptionExclusiveAddressUse
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Option: receive buffer size
     /// </summary>
-    public int OptionReceiveBufferSize { get; set; } = 8192;
+    public int OptionReceiveBufferSize
+    {
+        get;
+        set;
+    } = 8192;
     /// <summary>
     /// Option: send buffer size
     /// </summary>
-    public int OptionSendBufferSize { get; set; } = 8192;
+    public int OptionSendBufferSize
+    {
+        get;
+        set;
+    } = 8192;
 
 #region Start/Stop server
     // Server acceptor
@@ -206,11 +275,19 @@ internal class TcpServer : IDisposable
     /// <summary>
     /// Is the server started?
     /// </summary>
-    public bool IsStarted { get; private set; }
+    public bool IsStarted
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Is the server accepting new clients?
     /// </summary>
-    public bool IsAccepting { get; private set; }
+    public bool IsAccepting
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Create a new socket object
@@ -316,7 +393,9 @@ internal class TcpServer : IDisposable
             // Update the acceptor socket disposed flag
             IsSocketDisposed = true;
         }
-        catch (ObjectDisposedException) { }
+        catch (ObjectDisposedException)
+        {
+        }
 
         // Disconnect all sessions
         DisconnectAll();
@@ -467,7 +546,10 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="buffer">Buffer to multicast</param>
     /// <returns>'true' if the data was successfully multicasted, 'false' if the data was not multicasted</returns>
-    public virtual bool Multicast(byte[] buffer) => Multicast(buffer.AsSpan());
+    public virtual bool Multicast(byte[] buffer)
+    {
+        return Multicast(buffer.AsSpan());
+    }
 
     /// <summary>
     /// Multicast data to all connected clients
@@ -476,8 +558,10 @@ internal class TcpServer : IDisposable
     /// <param name="offset">Buffer offset</param>
     /// <param name="size">Buffer size</param>
     /// <returns>'true' if the data was successfully multicasted, 'false' if the data was not multicasted</returns>
-    public virtual bool Multicast(byte[] buffer, long offset, long size) =>
-        Multicast(buffer.AsSpan((int)offset, (int)size));
+    public virtual bool Multicast(byte[] buffer, long offset, long size)
+    {
+        return Multicast(buffer.AsSpan((int)offset, (int)size));
+    }
 
     /// <summary>
     /// Multicast data to all connected clients
@@ -504,61 +588,84 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="text">Text string to multicast</param>
     /// <returns>'true' if the text was successfully multicasted, 'false' if the text was not multicasted</returns>
-    public virtual bool Multicast(string text) => Multicast(Encoding.UTF8.GetBytes(text));
+    public virtual bool Multicast(string text)
+    {
+        return Multicast(Encoding.UTF8.GetBytes(text));
+    }
 
     /// <summary>
     /// Multicast text to all connected clients
     /// </summary>
     /// <param name="text">Text to multicast as a span of characters</param>
     /// <returns>'true' if the text was successfully multicasted, 'false' if the text was not multicasted</returns>
-    public virtual bool Multicast(ReadOnlySpan<char> text) =>
-        Multicast(Encoding.UTF8.GetBytes(text.ToArray()));
+    public virtual bool Multicast(ReadOnlySpan<char> text)
+    {
+        return Multicast(Encoding.UTF8.GetBytes(text.ToArray()));
+    }
 #endregion
 
 #region Server handlers
     /// <summary>
     /// Handle server starting notification
     /// </summary>
-    protected virtual void OnStarting() { }
+    protected virtual void OnStarting()
+    {
+    }
     /// <summary>
     /// Handle server started notification
     /// </summary>
-    protected virtual void OnStarted() { }
+    protected virtual void OnStarted()
+    {
+    }
     /// <summary>
     /// Handle server stopping notification
     /// </summary>
-    protected virtual void OnStopping() { }
+    protected virtual void OnStopping()
+    {
+    }
     /// <summary>
     /// Handle server stopped notification
     /// </summary>
-    protected virtual void OnStopped() { }
+    protected virtual void OnStopped()
+    {
+    }
 
     /// <summary>
     /// Handle session connecting notification
     /// </summary>
     /// <param name="session">Connecting session</param>
-    protected virtual void OnConnecting(TcpSession session) { }
+    protected virtual void OnConnecting(TcpSession session)
+    {
+    }
     /// <summary>
     /// Handle session connected notification
     /// </summary>
     /// <param name="session">Connected session</param>
-    protected virtual void OnConnected(TcpSession session) { }
+    protected virtual void OnConnected(TcpSession session)
+    {
+    }
     /// <summary>
     /// Handle session disconnecting notification
     /// </summary>
     /// <param name="session">Disconnecting session</param>
-    protected virtual void OnDisconnecting(TcpSession session) { }
+    protected virtual void OnDisconnecting(TcpSession session)
+    {
+    }
     /// <summary>
     /// Handle session disconnected notification
     /// </summary>
     /// <param name="session">Disconnected session</param>
-    protected virtual void OnDisconnected(TcpSession session) { }
+    protected virtual void OnDisconnected(TcpSession session)
+    {
+    }
 
     /// <summary>
     /// Handle error notification
     /// </summary>
     /// <param name="error">Socket error code</param>
-    protected virtual void OnError(SocketError error) { }
+    protected virtual void OnError(SocketError error)
+    {
+    }
 
     internal void OnConnectingInternal(TcpSession session)
     {
@@ -601,12 +708,20 @@ internal class TcpServer : IDisposable
     /// <summary>
     /// Disposed flag
     /// </summary>
-    public bool IsDisposed { get; private set; }
+    public bool IsDisposed
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Acceptor socket disposed flag
     /// </summary>
-    public bool IsSocketDisposed { get; private set; } = true;
+    public bool IsSocketDisposed
+    {
+        get;
+        private set;
+    } = true;
 
     // Implement IDisposable.
     public void Dispose()

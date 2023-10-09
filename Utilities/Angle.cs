@@ -10,11 +10,17 @@ public struct Angle
     /// <summary>
     /// Returns a value that represents a NaN (not a number) angle.
     /// </summary>
-    public static Angle NaN => float.NaN;
+    public static Angle NaN
+    {
+        get => float.NaN;
+    }
     /// <summary>
     /// Gets a value indicating whether the angle is NaN (not a number).
     /// </summary>
-    public bool IsNaN => float.IsNaN(Value);
+    public bool IsNaN
+    {
+        get => float.IsNaN(Value);
+    }
 
     /// <summary>
     /// Initializes a new angle instance with the specified value in degrees.
@@ -88,7 +94,10 @@ public struct Angle
     /// Converts the angle from degrees to radians.
     /// </summary>
     /// <returns>The angle in radians.</returns>
-    public float ToRadians() => MathF.PI / 180f * Value;
+    public float ToRadians()
+    {
+        return MathF.PI / 180f * Value;
+    }
     /// <returns>
     /// A string that represents the current angle.</returns>
     public override string ToString()
@@ -175,7 +184,7 @@ public struct Angle
 
     // no need of operator overloading since it implicitly casts to int/float
 
-    #region Backend
+#region Backend
     private float Value
     {
         get => value;
@@ -191,5 +200,5 @@ public struct Angle
     {
         value = ((value % 360) + 360) % 360;
     }
-    #endregion
+#endregion
 }

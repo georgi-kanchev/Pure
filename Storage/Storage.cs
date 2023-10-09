@@ -99,13 +99,19 @@ public class Storage
     /// </summary>
     /// <param name="key">The key of the object instance.</param>
     /// <returns>The type ID of the object instance.</returns>
-    public int GetTypeId(string key) => data.ContainsKey(key) ? data[key].typeId : default;
+    public int GetTypeId(string key)
+    {
+        return data.ContainsKey(key) ? data[key].typeId : default;
+    }
     /// <summary>
     /// Gets the object instance with the specified key as text.
     /// </summary>
     /// <param name="key">The key of the object instance.</param>
     /// <returns>The object instance as text.</returns>
-    public string? GetAsText(string key) => data.ContainsKey(key) ? data[key].data : default;
+    public string? GetAsText(string key)
+    {
+        return data.ContainsKey(key) ? data[key].data : default;
+    }
     /// <summary>
     /// Gets the object instance with the specified key as an object of type <typeparamref name="T"/>.
     /// </summary>
@@ -549,9 +555,7 @@ public class Storage
     }
     private object? TextToPrimitiveOrTuple(string dataAsText, Type type)
     {
-        return IsPrimitiveTuple(type)
-            ? TextToTuple(dataAsText, type)
-            : TextToPrimitive(dataAsText, type);
+        return IsPrimitiveTuple(type) ? TextToTuple(dataAsText, type) : TextToPrimitive(dataAsText, type);
     }
 
     private static T Wrap<T>(decimal value, T minValue, T maxValue)
@@ -597,7 +601,10 @@ public class Storage
                (type.GenericTypeArguments[0].IsPrimitive ||
                 IsPrimitiveTuple(type.GenericTypeArguments[0]));
     }
-    private static bool IsPrimitiveTuple(Type type) => IsPrimitiveGenTypes(type);
+    private static bool IsPrimitiveTuple(Type type)
+    {
+        return IsPrimitiveGenTypes(type);
+    }
     private static bool IsPrimitiveGenTypes(Type type)
     {
         var gen = type.GenericTypeArguments;

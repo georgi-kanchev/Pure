@@ -17,12 +17,30 @@ public static class Ludo
         { Team.Yellow, Color.Yellow },
         { Team.Green, Color.Green },
     };
-    private static Dictionary<(int x, int y), Corner> Corners { get; } = new();
-    private static Dictionary<Team, Corner> CornersStart { get; } = new();
-    private static Dictionary<Team, Corner> CornersFinish { get; } = new();
-    private static Dictionary<Team, (int x, int y)> PositionsHome { get; } = new();
-    private static Dictionary<Team, List<(int x, int y)>> PositionsBase { get; } = new();
-    private static List<Pawn> Pawns { get; } = new();
+    private static Dictionary<(int x, int y), Corner> Corners
+    {
+        get;
+    } = new();
+    private static Dictionary<Team, Corner> CornersStart
+    {
+        get;
+    } = new();
+    private static Dictionary<Team, Corner> CornersFinish
+    {
+        get;
+    } = new();
+    private static Dictionary<Team, (int x, int y)> PositionsHome
+    {
+        get;
+    } = new();
+    private static Dictionary<Team, List<(int x, int y)>> PositionsBase
+    {
+        get;
+    } = new();
+    private static List<Pawn> Pawns
+    {
+        get;
+    } = new();
 
     private enum Team
     {
@@ -52,12 +70,31 @@ public static class Ludo
         private int remainingMoves;
         private readonly (int x, int y) basePosition;
 
-        public Team Team { get; }
-        public bool IsInBase { get; private set; } = true;
-        public bool IsInHome { get; private set; }
+        public Team Team
+        {
+            get;
+        }
+        public bool IsInBase
+        {
+            get;
+            private set;
+        } = true;
+        public bool IsInHome
+        {
+            get;
+            private set;
+        }
 
-        public (int x, int y) Position { get; private set; }
-        public (int x, int y) Direction { get; private set; }
+        public (int x, int y) Position
+        {
+            get;
+            private set;
+        }
+        public (int x, int y) Direction
+        {
+            get;
+            private set;
+        }
 
         public Pawn(Team team, (int x, int y) position)
         {
@@ -122,10 +159,21 @@ public static class Ludo
             };
         private readonly (int x, int y) position;
 
-        public Dice((int x, int y) position) => this.position = position;
+        public Dice((int x, int y) position)
+        {
+            this.position = position;
+        }
 
-        public int CurrentValue { get; private set; }
-        public bool IsRolling { get; set; }
+        public int CurrentValue
+        {
+            get;
+            private set;
+        }
+        public bool IsRolling
+        {
+            get;
+            set;
+        }
 
         public void Update()
         {
@@ -318,9 +366,7 @@ public static class Ludo
                     break;
                 }
 
-            var tile = hasPawn
-                ? (Tile.SHAPE_SQUARE, (uint)Color.White, (sbyte)0, false, false)
-                : (Tile.ARROW, (uint)TeamColors[kvp.Key], (sbyte)i, false, false);
+            var tile = hasPawn ? (Tile.SHAPE_SQUARE, (uint)Color.White, (sbyte)0, false, false) : (Tile.ARROW, (uint)TeamColors[kvp.Key], (sbyte)i, false, false);
             map.SetTile(kvp.Value.position, tile);
             i++;
         }

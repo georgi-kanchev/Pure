@@ -8,7 +8,11 @@ using System.Text;
 /// </summary>
 public class InputBox : Element
 {
-    public bool IsEditable { get; set; } = true;
+    public bool IsEditable
+    {
+        get;
+        set;
+    } = true;
 
     public string Selection
     {
@@ -97,7 +101,11 @@ public class InputBox : Element
     /// <summary>
     /// The text displayed in the input box when it is empty.
     /// </summary>
-    public string Placeholder { get; set; } = "Type…";
+    public string Placeholder
+    {
+        get;
+        set;
+    }
     public string Value
     {
         get => value;
@@ -113,7 +121,10 @@ public class InputBox : Element
             UpdateText();
         }
     }
-    public int LineCount => lines.Count;
+    public int LineCount
+    {
+        get => lines.Count;
+    }
 
     public (int symbol, int line) CursorIndices
     {
@@ -134,10 +145,18 @@ public class InputBox : Element
             scrY = Math.Clamp(value.y, 0, Math.Max(0, lines.Count - Size.height));
         }
     }
-    public bool IsCursorVisible =>
-        IsFocused && IsEditable &&
-        cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
-        IsOverlapping(PositionFromIndices(CursorIndices));
+    public bool IsCursorVisible
+    {
+        get =>
+            IsFocused && IsEditable &&
+            cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
+            IsOverlapping(PositionFromIndices(CursorIndices));
+    }
+    public bool IsMultiLine
+    {
+        get;
+        set;
+    }
 
     public string? this[int lineIndex]
     {
@@ -164,14 +183,17 @@ public class InputBox : Element
     /// Initializes a new input box instance with a specific position and default size of (12, 1).
     /// </summary>
     /// <param name="position">The position of the input box.</param>
-    public InputBox((int x, int y) position = default) : base(position)
+    public InputBox((int x, int y) position = default)
+        : base(position)
     {
         Init();
+        Placeholder = "Type…";
         Size = (12, 1);
         lines[0] = Text;
         Value = Text;
     }
-    public InputBox(byte[] bytes) : base(bytes)
+    public InputBox(byte[] bytes)
+        : base(bytes)
     {
         Init();
         IsEditable = GrabBool(bytes);
@@ -302,7 +324,17 @@ public class InputBox : Element
     {
         isTextReadonly = true;
 
-        OnInteraction(Interaction.Press, () => cursorBlink.Restart());
+        OnInteraction(Interaction.Press, () =>
+        {
+            cursorBlink.Restart();
+            TryCycleSelected();
+        });
+        OnInteraction(Interaction.Focus, () =>
+        {
+            clicks = 0;
+            clickDelay.Restart();
+            TrySelect();
+        });
     }
 
     protected override void OnInput()
@@ -317,7 +349,8 @@ public class InputBox : Element
 
         var isAllowedType = isJustTyped || (isHolding && Input.Current.Typed != "");
         var shouldDelete = isAllowedType || Allowed(Key.Backspace, isHolding) ||
-                           Allowed(Key.Delete, isHolding) || Allowed(Key.Enter, isHolding);
+                           Allowed(Key.Delete, isHolding) ||
+                           (Allowed(Key.Enter, isHolding) && IsMultiLine);
 
         var justDeletedSelected = false;
         if (TryCopyPasteCut(ref justDeletedSelected, ref shouldDelete, out var isPasting))
@@ -356,7 +389,7 @@ public class InputBox : Element
     }
     private void UpdateText()
     {
-        var display = new StringBuilder();
+        var str = new StringBuilder();
         var maxW = Size.width - 1;
         var maxY = Math.Min(scrY + Size.height, lines.Count);
         for (var i = scrY; i < maxY; i++)
@@ -366,10 +399,10 @@ public class InputBox : Element
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
             var t = scrX >= secondIndex ? "" : line[scrX..secondIndex];
 
-            display.Append(newLine + t);
+            str.Append(newLine + t);
         }
 
-        text = display.ToString();
+        text = str.ToString();
 
         // reclamp
         CursorIndices = (cx, cy);
@@ -377,16 +410,24 @@ public class InputBox : Element
     }
     private void UpdateValue()
     {
-        var value = new StringBuilder();
+        var str = new StringBuilder();
         for (var i = 0; i < lines.Count; i++)
-            value.Append((i > 0 ? Environment.NewLine : "") + lines[i]);
-        Value = value.ToString();
+            str.Append((i > 0 ? Environment.NewLine : "") + lines[i]);
+        Value = str.ToString();
     }
 
-    private static bool Allowed(Key key, bool isHolding) =>
-        JustPressed(key) || (Pressed(key) && isHolding);
-    private static bool JustPressed(Key key) => Input.Current.IsKeyJustPressed(key);
-    private static bool Pressed(Key key) => Input.Current.IsKeyPressed(key);
+    private static bool Allowed(Key key, bool isHolding)
+    {
+        return JustPressed(key) || (Pressed(key) && isHolding);
+    }
+    private static bool JustPressed(Key key)
+    {
+        return Input.Current.IsKeyJustPressed(key);
+    }
+    private static bool Pressed(Key key)
+    {
+        return Input.Current.IsKeyPressed(key);
+    }
     private static bool JustTyped()
     {
         var typed = Input.Current.Typed ?? "";
@@ -477,28 +518,24 @@ public class InputBox : Element
         }
 
         // hold & drag outside
-        if (hasMoved == false && IsPressedAndHeld && IsHovered == false &&
-            scrollHold.Elapsed.TotalSeconds > 0.15f)
-        {
-            var (px, py) = Input.Current.Position;
-            var (x, y) = Position;
-            var (w, h) = Size;
-
-            if (px > x + w) cx += 1;
-            else if (px < x) cx -= 1;
-            if (py > y + h) cy += 1;
-            else if (py < y) cy -= 1;
-
-            CursorIndices = (cx, cy);
-            CursorScroll();
-            scrollHold.Restart();
+        if (hasMoved || !IsPressedAndHeld || IsHovered ||
+            scrollHold.Elapsed.TotalSeconds > 0.15f == false)
             return;
-        }
 
-        if (Input.Current.IsJustPressed)
-            TryCycleSelected(ix, iy);
+        var (px, py) = Input.Current.Position;
+        var (x, y) = Position;
+        var (w, h) = Size;
+
+        if (px > x + w) cx += 1;
+        else if (px < x) cx -= 1;
+        if (py > y + h) cy += 1;
+        else if (py < y) cy -= 1;
+
+        CursorIndices = (cx, cy);
+        CursorScroll();
+        scrollHold.Restart();
     }
-    private void TryCycleSelected(int indexX, int indexY)
+    private void TryCycleSelected()
     {
         var (x, y) = Position;
         var (hx, hy) = Input.Current.Position;
@@ -508,32 +545,31 @@ public class InputBox : Element
 
         if (clicks == 1)
         {
-            cy = indexY;
-            cx = indexX;
-            CursorIndices = (cx, cy);
+            var ix = (int)Math.Round(scrX + hx - Position.x);
+            var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
+            CursorIndices = (ix, iy);
             CursorScroll();
-            SelectionIndices = selectionIndices;
+            SelectionIndices = (ix, iy);
         }
         else if (clicks == 2)
         {
-            cx += GetWordEndOffset(-1);
+            cx += GetWordEndOffset(1);
             CursorIndices = (cx, cy);
             CursorScroll();
-            SelectionIndices = (selectionIndices.symbol + GetWordEndOffset(1), selectionIndices.line);
+            SelectionIndices = (cx + GetWordEndOffset(-1), selectionIndices.line);
         }
         else if (clicks == 3)
         {
             var p = PositionToIndices((x + lines[cy].Length, y + cy));
-            cx = 0;
+            cx = p.symbol;
             CursorScroll();
-            SelectionIndices = p;
+            SelectionIndices = (0, cy);
         }
         else if (clicks == 4)
         {
-            cy = 0;
-            cx = 0;
+            CursorIndices = (int.MaxValue, int.MaxValue);
             CursorScroll();
-            SelectionIndices = (int.MaxValue, int.MaxValue);
+            SelectionIndices = (0, 0);
         }
     }
     private bool TrySelectAll()
@@ -637,7 +673,7 @@ public class InputBox : Element
 
         var (w, _) = Size;
 
-        if (Allowed(Key.Enter, isHolding))
+        if (Allowed(Key.Enter, isHolding) && IsMultiLine)
         {
             // insert line above?
             if (cx == 0)
@@ -798,7 +834,9 @@ public class InputBox : Element
         if (IsHovered && IsEditable == false && Value.Length == 0)
             MouseCursorResult = MouseCursor.Arrow;
     }
-    private bool TryCopyPasteCut(ref bool justDeletedSelection, ref bool shouldDelete,
+    private bool TryCopyPasteCut(
+        ref bool justDeletedSelection,
+        ref bool shouldDelete,
         out bool isPasting)
     {
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);

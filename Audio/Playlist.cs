@@ -2,10 +2,21 @@ namespace Pure.Audio;
 
 public class Playlist
 {
-    public float TrackDelay { get; set; } = 0.5f;
-    public bool IsLooping { get; set; }
+    public float TrackDelay
+    {
+        get;
+        set;
+    } = 0.5f;
+    public bool IsLooping
+    {
+        get;
+        set;
+    }
 
-    public Audio this[int index] => audios[index];
+    public Audio this[int index]
+    {
+        get => audios[index];
+    }
     public Audio this[string? tag]
     {
         get
@@ -114,15 +125,22 @@ public class Playlist
             Stop();
     }
 
-    protected virtual void OnAudioEnd(int index, string? tag) { }
-    protected virtual void OnListEnd() { }
+    protected virtual void OnAudioEnd(int index, string? tag)
+    {
+    }
+    protected virtual void OnListEnd()
+    {
+    }
 
 #region Backend
     private bool isPlaying;
     private float time;
     private int currentIndex;
 
-    private bool IsInvalid => audios.Count == 0 || currentIndex < 0 || currentIndex >= audios.Count;
+    private bool IsInvalid
+    {
+        get => audios.Count == 0 || currentIndex < 0 || currentIndex >= audios.Count;
+    }
 
     private readonly Dictionary<string, List<Audio>> tags = new();
     private readonly List<Audio> audios = new();

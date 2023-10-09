@@ -7,14 +7,17 @@ using static Program;
 
 public class MenuMain : Menu
 {
-    public MenuMain() : base(
-        "Element� ",
-        "  Add",
-        "-------- ",
-        "Scene� ",
-        "  Save",
-        "  Load") =>
+    public MenuMain()
+        : base(
+            "Element� ",
+            "  Add",
+            "-------- ",
+            "Scene� ",
+            "  Save",
+            "  Load")
+    {
         Size = (8, 6);
+    }
 
     public override void Update()
     {

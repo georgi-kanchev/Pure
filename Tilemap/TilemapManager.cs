@@ -4,11 +4,25 @@ namespace Pure.Tilemap;
 
 public class TilemapManager
 {
-    public int Count => tilemaps.Length;
-    public (int width, int height) Size { get; private set; }
-    public (int x, int y, int width, int height) Camera { get; set; }
+    public int Count
+    {
+        get => tilemaps.Length;
+    }
+    public (int width, int height) Size
+    {
+        get;
+        private set;
+    }
+    public (int x, int y, int width, int height) Camera
+    {
+        get;
+        set;
+    }
 
-    public Tilemap this[int index] => tilemaps[index];
+    public Tilemap this[int index]
+    {
+        get => tilemaps[index];
+    }
 
     public TilemapManager(byte[] bytes)
     {
@@ -27,7 +41,10 @@ public class TilemapManager
             tilemaps[i] = new Tilemap(GetBytesFrom(b, tmapByteCount, ref offset));
         }
 
-        byte[] Get<T>() => GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
     }
     public TilemapManager(int count, (int width, int height) size)
     {
@@ -73,7 +90,9 @@ public class TilemapManager
 
         return result;
     }
-    public (float x, float y) PointFrom((int x, int y) pixelPosition, (int width, int height) windowSize,
+    public (float x, float y) PointFrom(
+        (int x, int y) pixelPosition,
+        (int width, int height) windowSize,
         bool isAccountingForCamera = true)
     {
         // cannot use first tilemap to not duplicate code since the used camera props are
@@ -90,7 +109,9 @@ public class TilemapManager
         return (x, y);
     }
 
-    public void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A,
+    public void ConfigureText(
+        int lowercase = Tile.LOWERCASE_A,
+        int uppercase = Tile.UPPERCASE_A,
         int numbers = Tile.NUMBER_0)
     {
         for (var i = 0; i < Count; i++)

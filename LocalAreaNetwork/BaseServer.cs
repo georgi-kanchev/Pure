@@ -92,13 +92,20 @@ public abstract class BaseServer : Base
 #region Backend
     private class Server : TcpServer
     {
-        public Server(BaseServer parent, IPAddress address, int port) : base(address, port)
+        public Server(BaseServer parent, IPAddress address, int port)
+            : base(address, port)
         {
             this.parent = parent;
         }
 
-        protected override TcpSession CreateSession() => new _Session(this);
-        protected override void OnError(SocketError error) => parent.OnError(error.ToString());
+        protected override TcpSession CreateSession()
+        {
+            return new _Session(this);
+        }
+        protected override void OnError(SocketError error)
+        {
+            parent.OnError(error.ToString());
+        }
 
 #region Backend
         internal readonly BaseServer parent;
@@ -107,7 +114,11 @@ public abstract class BaseServer : Base
 
     private class _Session : TcpSession
     {
-        public _Session(Server parent) : base(parent) => this.parent = parent;
+        public _Session(Server parent)
+            : base(parent)
+        {
+            this.parent = parent;
+        }
 
         protected override void OnConnected()
         {
@@ -287,7 +298,10 @@ public abstract class BaseServer : Base
             TriggerEvent();
         }
 
-        void TriggerEvent() => OnMessageReceive(GetNickname(fromGuid), message.Tag, message.Value);
+        void TriggerEvent()
+        {
+            OnMessageReceive(GetNickname(fromGuid), message.Tag, message.Value);
+        }
     }
 #endregion
 }

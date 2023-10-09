@@ -75,8 +75,13 @@ internal static class Vertices
             y0 += sy;
         }
     }
-    public static void QueueTile((float, float) position, int tile, uint tint, sbyte angle,
-        (int, int) size, (bool, bool) flips)
+    public static void QueueTile(
+        (float, float) position,
+        int tile,
+        uint tint,
+        sbyte angle,
+        (int, int) size,
+        (bool, bool) flips)
     {
         TryInitQueue();
 
@@ -245,9 +250,12 @@ internal static class Vertices
         retroTurnoff.Elapsed += (_, _) => Window.window?.Close();
     }
 
-    #region Backend
+#region Backend
     private static readonly Random retroRand = new();
-    private static RenderStates Rend => Window.IsRetro ? new(retroScreen) : default;
+    private static RenderStates Rend
+    {
+        get => Window.IsRetro ? new(retroScreen) : default;
+    }
     private static readonly SFML.System.Clock retroScreenTimer = new();
     private static System.Timers.Timer? retroTurnoff;
     private static Clock? retroTurnoffTime;
@@ -269,9 +277,7 @@ internal static class Vertices
     private static (int, int) IndexToCoords(int index, (int, int) fieldSize)
     {
         index = index < 0 ? 0 : index;
-        index = index > fieldSize.Item1 * fieldSize.Item2 - 1
-            ? (fieldSize.Item1 * fieldSize.Item2 - 1)
-            : index;
+        index = index > fieldSize.Item1 * fieldSize.Item2 - 1 ? (fieldSize.Item1 * fieldSize.Item2 - 1) : index;
 
         return (index % fieldSize.Item1, index / fieldSize.Item1);
     }
@@ -390,7 +396,11 @@ internal static class Vertices
                 (matrix[i, j], matrix[rows - i - 1, j]) = (matrix[rows - i - 1, j], matrix[i, j]);
             }
     }
-    private static void QueueTile((float, float) position, int id, uint tint, sbyte angle,
+    private static void QueueTile(
+        (float, float) position,
+        int id,
+        uint tint,
+        sbyte angle,
         (int, int) size)
     {
         if (Window.window == null || id == tileIdEmpty)
@@ -438,7 +448,8 @@ internal static class Vertices
         verts.Append(new(br, c, tbr));
         verts.Append(new(bl, c, tbl));
     }
-    private static (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int id,
+    private static (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(
+        int id,
         (int, int) size)
     {
         var (w, h) = size;
@@ -456,5 +467,5 @@ internal static class Vertices
         var bl = tl + new Vector2f(0, tileH * h);
         return (tl, tr, br, bl);
     }
-    #endregion
+#endregion
 }

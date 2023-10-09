@@ -11,27 +11,48 @@ public struct Line
     /// <summary>
     /// Gets or sets the start point of the line.
     /// </summary>
-    public (float x, float y) A { get; set; }
+    public (float x, float y) A
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Gets or sets the end point of the line.
     /// </summary>
-    public (float x, float y) B { get; set; }
+    public (float x, float y) B
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Gets the length of the line.
     /// </summary>
-    public float Length => Vector2.Distance(new(A.Item1, A.Item2), new(B.Item1, B.Item2));
+    public float Length
+    {
+        get => Vector2.Distance(new(A.Item1, A.Item2), new(B.Item1, B.Item2));
+    }
     /// <summary>
     /// Gets the angle of the line in degrees.
     /// </summary>
-    public float Angle => ToAngle(Direction);
+    public float Angle
+    {
+        get => ToAngle(Direction);
+    }
     /// <summary>
     /// Gets the direction of the line as a normalized vector.
     /// </summary>
-    public (float x, float y) Direction => Normalize((B.Item1 - A.Item1, B.Item2 - A.Item2));
+    public (float x, float y) Direction
+    {
+        get => Normalize((B.Item1 - A.Item1, B.Item2 - A.Item2));
+    }
     /// <summary>
     /// Gets or sets the color of the line.
     /// </summary>
-    public uint Color { get; set; }
+    public uint Color
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Initializes a new instance of the line with the specified start and end points.
@@ -308,7 +329,10 @@ public struct Line
 #region Backend
     private const int MAX_ITERATIONS = 1000;
 
-    private static (float, float, uint) CrossPoint((float, float) a, (float, float) b, (float, float) c,
+    private static (float, float, uint) CrossPoint(
+        (float, float) a,
+        (float, float) b,
+        (float, float) c,
         (float, float) d)
     {
         var a1 = b.Item2 - a.Item2;
@@ -347,8 +371,12 @@ public struct Line
         var (x2, y2) = b;
         return MathF.Sqrt(MathF.Pow(x2 - x1, 2) + MathF.Pow(y2 - y1, 2));
     }
-    private static bool IsBetween(float number, float rangeA, float rangeB,
-        bool inclusiveA = false, bool inclusiveB = false)
+    private static bool IsBetween(
+        float number,
+        float rangeA,
+        float rangeB,
+        bool inclusiveA = false,
+        bool inclusiveB = false)
     {
         if (rangeA > rangeB)
             (rangeA, rangeB) = (rangeB, rangeA);

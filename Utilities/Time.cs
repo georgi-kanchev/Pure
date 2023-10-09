@@ -56,36 +56,68 @@ public static class Time
     /// Gets the real time clock taken from <see cref="DateTime.Now"/> in seconds ranged
     /// 0 to 86399)<br></br>or in clock hours ranged 12 AM/00:00/24:00 to 11:59:59 AM/23:59:59.
     /// </summary>
-    public static float Clock { get; private set; }
+    public static float Clock
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Gets or sets the maximum delta time between updates.
     /// </summary>
-    public static float DeltaMax { get; set; } = 0.1f;
+    public static float DeltaMax
+    {
+        get;
+        set;
+    } = 0.1f;
     /// <summary>
     /// Gets the delta time since the last update capped at <see cref="DeltaMax"/>.
     /// </summary>
-    public static float Delta { get; private set; }
+    public static float Delta
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Gets the raw delta time since the last update.
     /// </summary>
-    public static float DeltaRaw { get; private set; }
+    public static float DeltaRaw
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Gets the number of updates per second.
     /// </summary>
-    public static float UpdatesPerSecond { get; private set; }
+    public static float UpdatesPerSecond
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Gets the average number of updates per second.
     /// </summary>
-    public static float UpdatesPerSecondAverage { get; private set; }
+    public static float UpdatesPerSecondAverage
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Gets the runtime clock in seconds.
     /// </summary>
-    public static float RuntimeClock { get; private set; }
+    public static float RuntimeClock
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Gets the number of updates that have occurred.
     /// </summary>
-    public static uint UpdateCount { get; private set; }
+    public static uint UpdateCount
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Updates the clock and timers. Should be called once per frame.
@@ -122,7 +154,9 @@ public static class Time
     /// <param name="separator">The separator string to use between clock elements.</param>
     /// <param name="units">The units to include in the formatted string.</param>
     /// <returns>A formatted clock string.</returns>
-    public static string ClockFrom(this float seconds, string separator = ":",
+    public static string ClockFrom(
+        this float seconds,
+        string separator = ":",
         Unit units = Unit.Hour | Unit.Minute | Unit.Second)
     {
         var ts = TimeSpan.FromSeconds(seconds);
@@ -139,9 +173,7 @@ public static class Time
         if (units.HasFlag(Unit.Hour))
         {
             var sep = counter > 0 ? separator : "";
-            var val = counter == 0
-                ? (int)ts.TotalHours
-                : (units.HasFlag(Unit.AM_PM) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
+            var val = counter == 0 ? (int)ts.TotalHours : (units.HasFlag(Unit.AM_PM) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
             //val = val == 0 ? 12 : val;
             result += $"{sep}{val:D2}";
             counter++;
@@ -254,7 +286,7 @@ public static class Time
                 t.delay += seconds;
     }
 
-    #region Backend
+#region Backend
     private class Timer
     {
         private float time;
@@ -262,7 +294,10 @@ public static class Time
 
         public Action? method;
         public float delay;
-        public bool IsDisposed => method == null;
+        public bool IsDisposed
+        {
+            get => method == null;
+        }
 
         public Timer(float seconds, bool isLooping, Action method)
         {
@@ -304,6 +339,9 @@ public static class Time
     private static readonly List<Timer> timers = new();
     private static readonly Stopwatch dt = new();
 
-    private static float Now => (float)DateTime.Now.TimeOfDay.TotalSeconds;
-    #endregion
+    private static float Now
+    {
+        get => (float)DateTime.Now.TimeOfDay.TotalSeconds;
+    }
+#endregion
 }

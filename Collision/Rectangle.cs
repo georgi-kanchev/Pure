@@ -8,15 +8,27 @@ public struct Rectangle
     /// <summary>
     /// Gets or sets the position of the top-left corner of the rectangle.
     /// </summary>
-    public (float x, float y) Position { get; set; }
+    public (float x, float y) Position
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Gets or sets the size of the rectangle.
     /// </summary>
-    public (float width, float height) Size { get; set; }
+    public (float width, float height) Size
+    {
+        get;
+        set;
+    }
     /// <summary>
     /// Gets or sets the color of the rectangle.
     /// </summary>
-    public uint Color { get; set; }
+    public uint Color
+    {
+        get;
+        set;
+    }
 
     /// <summary>
     /// Initializes a new rectangle instance with the specified 
@@ -26,7 +38,9 @@ public struct Rectangle
     /// The default value is (0, 0).</param>
     /// <param name="size">The size of the rectangle.</param>
     /// <param name="color">The color of the rectangle.</param>
-    public Rectangle((float width, float height) size, (float x, float y) position = default,
+    public Rectangle(
+        (float width, float height) size,
+        (float x, float y) position = default,
         uint color = uint.MaxValue)
     {
         Position = position;
@@ -85,7 +99,10 @@ public struct Rectangle
 
     /// <returns>
     /// A bundle tuple containing the position, size and the color of the rectangle.</returns>
-    public (float x, float y, float width, float height, uint color) ToBundle() => this;
+    public (float x, float y, float width, float height, uint color) ToBundle()
+    {
+        return this;
+    }
 
     /// <returns>
     /// A string that represents this rectangle. 
@@ -103,15 +120,19 @@ public struct Rectangle
     /// <param name="bundle">The bundle tuple to convert.</param>
     /// <returns>A new rectangle instance.</returns>
     public static implicit operator
-        Rectangle((float x, float y, float width, float height, uint color) bundle) =>
-        new((bundle.x, bundle.y), (bundle.width, bundle.height), bundle.color);
+        Rectangle((float x, float y, float width, float height, uint color) bundle)
+    {
+        return new((bundle.x, bundle.y), (bundle.width, bundle.height), bundle.color);
+    }
     /// <summary>
     /// Implicitly converts a rectangle into a bundle tuple of position, size and color.
     /// </summary>
     /// <param name="rectangle">The rectangle to convert.</param>
     /// <returns>A bundle tuple containing the position, size and color of the rectangle.</returns>
     public static implicit operator (float x, float y, float width, float height, uint color
-        )(Rectangle rectangle) =>
-        (rectangle.Position.x, rectangle.Position.y, rectangle.Size.width, rectangle.Size.height,
+        )(Rectangle rectangle)
+    {
+        return (rectangle.Position.x, rectangle.Position.y, rectangle.Size.width, rectangle.Size.height,
             rectangle.Color);
+    }
 }

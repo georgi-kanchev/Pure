@@ -12,12 +12,18 @@ public class Map
     /// <summary>
     /// Gets the total number of rectangles at all cells.
     /// </summary>
-    public int RectangleCount { get; private set; }
+    public int RectangleCount
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Initializes a new empty map instance.
     /// </summary>
-    public Map() { }
+    public Map()
+    {
+    }
 
     public Map(byte[] bytes)
     {
@@ -43,7 +49,10 @@ public class Map
             }
         }
 
-        byte[] Get<T>() => GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
     }
 
     /// <summary>
@@ -82,9 +91,7 @@ public class Map
     }
     public Rectangle[] GetRectangles(int tile)
     {
-        return cellRects.ContainsKey(tile) == false
-            ? Array.Empty<Rectangle>()
-            : cellRects[tile].ToArray();
+        return cellRects.ContainsKey(tile) == false ? Array.Empty<Rectangle>() : cellRects[tile].ToArray();
     }
     public Rectangle[] GetRectangles()
     {
@@ -192,7 +199,10 @@ public class Map
 
     /// <returns>
     /// An array copy of the rectangles in this map hitbox collection, as a bundle tuple.</returns>
-    public (float x, float y, float width, float height, uint color)[] ToBundle() => this;
+    public (float x, float y, float width, float height, uint color)[] ToBundle()
+    {
+        return this;
+    }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -220,7 +230,10 @@ public class Map
     /// Implicitly converts a map object to a rectangle array.
     /// </summary>
     /// <param name="map">The map object to convert.</param>
-    public static implicit operator Rectangle[](Map map) => map.GetRectangles();
+    public static implicit operator Rectangle[](Map map)
+    {
+        return map.GetRectangles();
+    }
     /// <summary>
     /// Implicitly converts a map object to an array of rectangle bundles.
     /// </summary>

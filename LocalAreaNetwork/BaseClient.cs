@@ -11,24 +11,42 @@ public abstract class BaseClient : Base
     /// <summary>
     /// Gets an array of nicknames of all connected clients.
     /// </summary>
-    public string[] Nicknames => clients.Values.ToArray();
+    public string[] Nicknames
+    {
+        get => clients.Values.ToArray();
+    }
     /// <summary>
     /// Gets an array of identifiers of all connected clients.
     /// </summary>
-    public byte[] IDs => clients.Keys.ToArray();
+    public byte[] IDs
+    {
+        get => clients.Keys.ToArray();
+    }
 
     /// <summary>
     /// Gets a value indicating whether the client is currently connected to the network.
     /// </summary>
-    public bool IsConnected { get; private set; }
+    public bool IsConnected
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Gets or sets the identifier of the client.
     /// </summary>
-    public byte ID { get; internal set; }
+    public byte ID
+    {
+        get;
+        internal set;
+    }
     /// <summary>
     /// Gets the nickname of the client.
     /// </summary>
-    public string Nickname { get; private set; }
+    public string Nickname
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Initializes a new instance with the specified nickname.
@@ -99,16 +117,21 @@ public abstract class BaseClient : Base
     /// <summary>
     /// Occurs when the client has lost connection to the server.
     /// </summary>
-    protected virtual void OnLostConnection() { }
+    protected virtual void OnLostConnection()
+    {
+    }
     /// <summary>
     /// Occurs when the client is attempting to reconnect to the server after losing connection.
     /// </summary>
-    protected virtual void OnReconnectionAttempt() { }
+    protected virtual void OnReconnectionAttempt()
+    {
+    }
 
 #region Backend
     private class _Client : TcpClient
     {
-        public _Client(BaseClient parent, string address, int port) : base(address, port)
+        public _Client(BaseClient parent, string address, int port)
+            : base(address, port)
         {
             this.parent = parent;
         }
@@ -259,8 +282,10 @@ public abstract class BaseClient : Base
                  ID == message.ToID) // private msg for me? self msg is possible - goes through server
             TriggerEvent();
 
-        void TriggerEvent() =>
+        void TriggerEvent()
+        {
             OnMessageReceive(fromID == 0 ? "" : clients[fromID], message.Tag, message.Value);
+        }
     }
     private byte GetID(string nickname)
     {

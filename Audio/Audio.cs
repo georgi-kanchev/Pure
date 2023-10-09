@@ -5,8 +5,13 @@ namespace Pure.Audio;
 
 public class Audio
 {
-    static Audio() => GlobalVolume = 0.5f;
-    protected Audio() { }
+    static Audio()
+    {
+        GlobalVolume = 0.5f;
+    }
+    protected Audio()
+    {
+    }
     public Audio(string path, bool isStreaming)
     {
         if (isStreaming)
@@ -80,7 +85,10 @@ public class Audio
                 music.PlayingOffset = Time.FromSeconds(seconds);
         }
     }
-    public float Duration => Get().dur / Get().pch;
+    public float Duration
+    {
+        get => Get().dur / Get().pch;
+    }
     public bool IsLooping
     {
         get => Get().loop;
@@ -99,7 +107,10 @@ public class Audio
             Set();
         }
     }
-    public bool IsPlaying => Get().pl;
+    public bool IsPlaying
+    {
+        get => Get().pl;
+    }
 
     public void Play()
     {

@@ -48,56 +48,102 @@ internal class TcpSession : IDisposable
     /// <summary>
     /// Session Id
     /// </summary>
-    public Guid Id { get; }
+    public Guid Id
+    {
+        get;
+    }
 
     /// <summary>
     /// Server
     /// </summary>
-    public TcpServer Server { get; }
+    public TcpServer Server
+    {
+        get;
+    }
     /// <summary>
     /// Socket
     /// </summary>
-    public Socket Socket { get; private set; }
+    public Socket Socket
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Number of bytes pending sent by the session
     /// </summary>
-    public long BytesPending { get; private set; }
+    public long BytesPending
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Number of bytes sending by the session
     /// </summary>
-    public long BytesSending { get; private set; }
+    public long BytesSending
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Number of bytes sent by the session
     /// </summary>
-    public long BytesSent { get; private set; }
+    public long BytesSent
+    {
+        get;
+        private set;
+    }
     /// <summary>
     /// Number of bytes received by the session
     /// </summary>
-    public long BytesReceived { get; private set; }
+    public long BytesReceived
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Option: receive buffer limit
     /// </summary>
-    public int OptionReceiveBufferLimit { get; set; } = 0;
+    public int OptionReceiveBufferLimit
+    {
+        get;
+        set;
+    } = 0;
     /// <summary>
     /// Option: receive buffer size
     /// </summary>
-    public int OptionReceiveBufferSize { get; set; } = 8192;
+    public int OptionReceiveBufferSize
+    {
+        get;
+        set;
+    } = 8192;
     /// <summary>
     /// Option: send buffer limit
     /// </summary>
-    public int OptionSendBufferLimit { get; set; } = 0;
+    public int OptionSendBufferLimit
+    {
+        get;
+        set;
+    } = 0;
     /// <summary>
     /// Option: send buffer size
     /// </summary>
-    public int OptionSendBufferSize { get; set; } = 8192;
+    public int OptionSendBufferSize
+    {
+        get;
+        set;
+    } = 8192;
 
 #region Connect/Disconnect session
     /// <summary>
     /// Is the session connected?
     /// </summary>
-    public bool IsConnected { get; private set; }
+    public bool IsConnected
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Connect the session
@@ -201,7 +247,9 @@ internal class TcpSession : IDisposable
                 // Shutdown the socket associated with the client
                 Socket.Shutdown(SocketShutdown.Both);
             }
-            catch (SocketException) { }
+            catch (SocketException)
+            {
+            }
 
             // Close the session socket
             Socket.Close();
@@ -216,7 +264,9 @@ internal class TcpSession : IDisposable
             // Update the session socket disposed flag
             IsSocketDisposed = true;
         }
-        catch (ObjectDisposedException) { }
+        catch (ObjectDisposedException)
+        {
+        }
 
         // Update the connected flag
         IsConnected = false;
@@ -259,7 +309,10 @@ internal class TcpSession : IDisposable
     /// </summary>
     /// <param name="buffer">Buffer to send</param>
     /// <returns>Size of sent data</returns>
-    public virtual long Send(byte[] buffer) => Send(buffer.AsSpan());
+    public virtual long Send(byte[] buffer)
+    {
+        return Send(buffer.AsSpan());
+    }
 
     /// <summary>
     /// Send data to the client (synchronous)
@@ -268,8 +321,10 @@ internal class TcpSession : IDisposable
     /// <param name="offset">Buffer offset</param>
     /// <param name="size">Buffer size</param>
     /// <returns>Size of sent data</returns>
-    public virtual long Send(byte[] buffer, long offset, long size) =>
-        Send(buffer.AsSpan((int)offset, (int)size));
+    public virtual long Send(byte[] buffer, long offset, long size)
+    {
+        return Send(buffer.AsSpan((int)offset, (int)size));
+    }
 
     /// <summary>
     /// Send data to the client (synchronous)
@@ -311,21 +366,30 @@ internal class TcpSession : IDisposable
     /// </summary>
     /// <param name="text">Text string to send</param>
     /// <returns>Size of sent data</returns>
-    public virtual long Send(string text) => Send(Encoding.UTF8.GetBytes(text));
+    public virtual long Send(string text)
+    {
+        return Send(Encoding.UTF8.GetBytes(text));
+    }
 
     /// <summary>
     /// Send text to the client (synchronous)
     /// </summary>
     /// <param name="text">Text to send as a span of characters</param>
     /// <returns>Size of sent data</returns>
-    public virtual long Send(ReadOnlySpan<char> text) => Send(Encoding.UTF8.GetBytes(text.ToArray()));
+    public virtual long Send(ReadOnlySpan<char> text)
+    {
+        return Send(Encoding.UTF8.GetBytes(text.ToArray()));
+    }
 
     /// <summary>
     /// Send data to the client (asynchronous)
     /// </summary>
     /// <param name="buffer">Buffer to send</param>
     /// <returns>'true' if the data was successfully sent, 'false' if the session is not connected</returns>
-    public virtual bool SendAsync(byte[] buffer) => SendAsync(buffer.AsSpan());
+    public virtual bool SendAsync(byte[] buffer)
+    {
+        return SendAsync(buffer.AsSpan());
+    }
 
     /// <summary>
     /// Send data to the client (asynchronous)
@@ -334,8 +398,10 @@ internal class TcpSession : IDisposable
     /// <param name="offset">Buffer offset</param>
     /// <param name="size">Buffer size</param>
     /// <returns>'true' if the data was successfully sent, 'false' if the session is not connected</returns>
-    public virtual bool SendAsync(byte[] buffer, long offset, long size) =>
-        SendAsync(buffer.AsSpan((int)offset, (int)size));
+    public virtual bool SendAsync(byte[] buffer, long offset, long size)
+    {
+        return SendAsync(buffer.AsSpan((int)offset, (int)size));
+    }
 
     /// <summary>
     /// Send data to the client (asynchronous)
@@ -384,15 +450,20 @@ internal class TcpSession : IDisposable
     /// </summary>
     /// <param name="text">Text string to send</param>
     /// <returns>'true' if the text was successfully sent, 'false' if the session is not connected</returns>
-    public virtual bool SendAsync(string text) => SendAsync(Encoding.UTF8.GetBytes(text));
+    public virtual bool SendAsync(string text)
+    {
+        return SendAsync(Encoding.UTF8.GetBytes(text));
+    }
 
     /// <summary>
     /// Send text to the client (asynchronous)
     /// </summary>
     /// <param name="text">Text to send as a span of characters</param>
     /// <returns>'true' if the text was successfully sent, 'false' if the session is not connected</returns>
-    public virtual bool SendAsync(ReadOnlySpan<char> text) =>
-        SendAsync(Encoding.UTF8.GetBytes(text.ToArray()));
+    public virtual bool SendAsync(ReadOnlySpan<char> text)
+    {
+        return SendAsync(Encoding.UTF8.GetBytes(text.ToArray()));
+    }
 
     /// <summary>
     /// Receive data from the client (synchronous)
@@ -487,7 +558,9 @@ internal class TcpSession : IDisposable
                 if (!Socket.ReceiveAsync(_receiveEventArg))
                     process = ProcessReceive(_receiveEventArg);
             }
-            catch (ObjectDisposedException) { }
+            catch (ObjectDisposedException)
+            {
+            }
         }
     }
 
@@ -548,7 +621,9 @@ internal class TcpSession : IDisposable
                 if (!Socket.SendAsync(_sendEventArg))
                     process = ProcessSend(_sendEventArg);
             }
-            catch (ObjectDisposedException) { }
+            catch (ObjectDisposedException)
+            {
+            }
         }
     }
 
@@ -705,19 +780,27 @@ internal class TcpSession : IDisposable
     /// <summary>
     /// Handle client connecting notification
     /// </summary>
-    protected virtual void OnConnecting() { }
+    protected virtual void OnConnecting()
+    {
+    }
     /// <summary>
     /// Handle client connected notification
     /// </summary>
-    protected virtual void OnConnected() { }
+    protected virtual void OnConnected()
+    {
+    }
     /// <summary>
     /// Handle client disconnecting notification
     /// </summary>
-    protected virtual void OnDisconnecting() { }
+    protected virtual void OnDisconnecting()
+    {
+    }
     /// <summary>
     /// Handle client disconnected notification
     /// </summary>
-    protected virtual void OnDisconnected() { }
+    protected virtual void OnDisconnected()
+    {
+    }
 
     /// <summary>
     /// Handle buffer received notification
@@ -728,7 +811,9 @@ internal class TcpSession : IDisposable
     /// <remarks>
     /// Notification is called when another chunk of buffer was received from the client
     /// </remarks>
-    protected virtual void OnReceived(byte[] buffer, long offset, long size) { }
+    protected virtual void OnReceived(byte[] buffer, long offset, long size)
+    {
+    }
     /// <summary>
     /// Handle buffer sent notification
     /// </summary>
@@ -738,7 +823,9 @@ internal class TcpSession : IDisposable
     /// Notification is called when another chunk of buffer was sent to the client.
     /// This handler could be used to send another buffer to the client for instance when the pending size is zero.
     /// </remarks>
-    protected virtual void OnSent(long sent, long pending) { }
+    protected virtual void OnSent(long sent, long pending)
+    {
+    }
 
     /// <summary>
     /// Handle empty send buffer notification
@@ -747,13 +834,17 @@ internal class TcpSession : IDisposable
     /// Notification is called when the send buffer is empty and ready for a new data to send.
     /// This handler could be used to send another buffer to the client.
     /// </remarks>
-    protected virtual void OnEmpty() { }
+    protected virtual void OnEmpty()
+    {
+    }
 
     /// <summary>
     /// Handle error notification
     /// </summary>
     /// <param name="error">Socket error code</param>
-    protected virtual void OnError(SocketError error) { }
+    protected virtual void OnError(SocketError error)
+    {
+    }
 #endregion
 
 #region Error handling
@@ -779,12 +870,20 @@ internal class TcpSession : IDisposable
     /// <summary>
     /// Disposed flag
     /// </summary>
-    public bool IsDisposed { get; private set; }
+    public bool IsDisposed
+    {
+        get;
+        private set;
+    }
 
     /// <summary>
     /// Session socket disposed flag
     /// </summary>
-    public bool IsSocketDisposed { get; private set; } = true;
+    public bool IsSocketDisposed
+    {
+        get;
+        private set;
+    } = true;
 
     // Implement IDisposable.
     public void Dispose()
