@@ -30,7 +30,7 @@ public abstract class BaseServer : Base
     /// <summary>
     /// Gets an array of identifiers of all connected clients.
     /// </summary>
-    public byte[] IDs
+    public byte[] Ids
     {
         get
         {
@@ -85,7 +85,7 @@ public abstract class BaseServer : Base
     /// <param name="tag">The tag of the message.</param>
     public void SendToClient(string toNickname, string message, byte tag = 0)
     {
-        var msg = new Message(0, GetID(toNickname), Tag.SERVER_TO_CLIENT, tag, message);
+        var msg = new Message(0, GetId(toNickname), Tag.SERVER_TO_CLIENT, tag, message);
         server.Multicast(msg.Data);
     }
 
@@ -129,7 +129,7 @@ public abstract class BaseServer : Base
         {
             // a client just disconnected
             var clientNickname = parent.parent.GetNickname(Id);
-            var clientID = parent.parent.GetID(Id).ToString();
+            var clientID = parent.parent.GetId(Id).ToString();
 
             // remove them from the local clients storage
             parent.parent.clients.TryRemove(Id, out _);
@@ -146,6 +146,7 @@ public abstract class BaseServer : Base
             //var msgStr = System.Text.Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
             var bytes = buffer[(int)offset..((int)offset + (int)size)];
             Parse(bytes);
+            return;
 
             void Parse(byte[] bytes)
             {
@@ -179,7 +180,7 @@ public abstract class BaseServer : Base
 
         return false;
     }
-    internal bool HasID(byte id)
+    internal bool HasId(byte id)
     {
         foreach (var kvp in clients)
             if (kvp.Value.Item1 == id)
@@ -196,7 +197,7 @@ public abstract class BaseServer : Base
     {
         return clients.TryGetValue(guid, out var client) ? client.Item2 : null;
     }
-    internal byte GetID(string nickname)
+    internal byte GetId(string nickname)
     {
         foreach (var kvp in clients)
             if (kvp.Value.Item2 == nickname)
@@ -204,7 +205,7 @@ public abstract class BaseServer : Base
 
         return 0;
     }
-    internal byte GetID(Guid guid)
+    internal byte GetId(Guid guid)
     {
         return clients.TryGetValue(guid, out var client) ? client.Item1 : default;
     }
@@ -217,10 +218,10 @@ public abstract class BaseServer : Base
         return default;
     }
 
-    private byte GetFreeID()
+    private byte GetFreeId()
     {
         for (byte i = 1; i < byte.MaxValue; i++)
-            if (HasID(i) == false)
+            if (HasId(i) == false)
                 return i;
 
         return 0;
@@ -261,7 +262,7 @@ public abstract class BaseServer : Base
         {
             // send them a free ID; this would also notify everyone else
             // about them joining and their new ID
-            var freeID = GetFreeID();
+            var freeID = GetFreeId();
             var newID = new Message(0, 0, Tag.ID, 0, freeID.ToString());
             server.Multicast(newID.Data);
 
@@ -297,6 +298,8 @@ public abstract class BaseServer : Base
             server.Multicast(message.Data);
             TriggerEvent();
         }
+
+        return;
 
         void TriggerEvent()
         {

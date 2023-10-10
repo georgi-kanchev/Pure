@@ -44,6 +44,7 @@ public class Layout : Element
 
         for (var i = 0; i < segments.Count; i++)
             segments[i].parent = segments[parentIndexes[i]];
+        return;
 
         int GetInt()
         {

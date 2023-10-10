@@ -80,6 +80,8 @@ public class Tilemap
                 offset += Tile.BYTE_SIZE;
             }
 
+        return;
+
         byte[] Get<T>()
         {
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
@@ -331,8 +333,7 @@ public class Tilemap
         Alignment alignment = Alignment.TopLeft,
         float scrollProgress = 0)
     {
-        if (string.IsNullOrEmpty(text) ||
-            size.width <= 0 || size.height <= 0)
+        if (string.IsNullOrEmpty(text) || size.width <= 0 || size.height <= 0)
             return;
 
         var x = position.x;
@@ -355,29 +356,25 @@ public class Tilemap
             // end of line? can't word wrap, proceed to symbol wrap
             if (newLineIndex == 0)
             {
-                lineList[i] = line[0..size.width];
+                lineList[i] = line[..size.width];
                 lineList.Insert(i + 1, line[size.width..line.Length]);
                 continue;
             }
 
             // otherwise wordwrap
             var endIndex = newLineIndex + (isWordWrapping ? 0 : 1);
-            lineList[i] = line[0..endIndex].TrimStart();
+            lineList[i] = line[..endIndex].TrimStart();
             lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
         }
 
         var yDiff = size.height - lineList.Count;
 
         if (alignment is Alignment.Left or Alignment.Center or Alignment.Right)
-        {
             for (var i = 0; i < yDiff / 2; i++)
-                lineList.Insert(0, "");
-        }
+                lineList.Insert(0, string.Empty);
         else if (alignment is Alignment.BottomLeft or Alignment.Bottom or Alignment.BottomRight)
-        {
             for (var i = 0; i < yDiff; i++)
-                lineList.Insert(0, "");
-        }
+                lineList.Insert(0, string.Empty);
 
         // new lineList.Count
         yDiff = size.height - lineList.Count;
@@ -408,6 +405,8 @@ public class Tilemap
             SetTextLine((x, y), line, tint);
             NewLine();
         }
+
+        return;
 
         void NewLine()
         {
@@ -467,11 +466,12 @@ public class Tilemap
                     correctSymbolCount++;
                     curX++;
 
-                    if (curX > x + size.width) // try new line
-                    {
-                        curX = position.x;
-                        curY++;
-                    }
+                    // try new line
+                    if (curX <= x + size.width)
+                        continue;
+
+                    curX = position.x;
+                    curY++;
                 }
 
                 var endPos = (curX, curY);
@@ -551,6 +551,8 @@ public class Tilemap
                 p += sqrRX - py + px;
             }
         }
+
+        return;
 
         void Set()
         {

@@ -65,6 +65,8 @@ public class Hitbox
             AddRectangle(new((w, h), (x, y), color));
         }
 
+        return;
+
         byte[] Get<T>()
         {
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);

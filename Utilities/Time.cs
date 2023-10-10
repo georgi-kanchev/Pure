@@ -8,7 +8,7 @@ using System.Diagnostics;
 public static class Time
 {
     /// <summary>
-    /// Defines the different types of time conversions used by <see cref="TimeFrom"/>.
+    /// Defines the different types of time conversions used by <see cref="Time.ToTime"/>.
     /// </summary>
     public enum Conversion
     {
@@ -36,7 +36,7 @@ public static class Time
 
     /// <summary>
     /// Defines the different units of time that can be used in calculations and display by
-    /// <see cref="ClockFrom"/>.
+    /// <see cref="Time.ToClock"/>.
     /// </summary>
     [Flags]
     public enum Unit
@@ -47,8 +47,8 @@ public static class Time
         Minute = 4,
         Second = 8,
         Millisecond = 16,
-        AM_PM = 32,
-        DisplayAM_PM = 64,
+        AmPm = 32,
+        DisplayAmPm = 64,
 #pragma warning restore CS1591
     }
 
@@ -154,7 +154,7 @@ public static class Time
     /// <param name="separator">The separator string to use between clock elements.</param>
     /// <param name="units">The units to include in the formatted string.</param>
     /// <returns>A formatted clock string.</returns>
-    public static string ClockFrom(
+    public static string ToClock(
         this float seconds,
         string separator = ":",
         Unit units = Unit.Hour | Unit.Minute | Unit.Second)
@@ -173,7 +173,7 @@ public static class Time
         if (units.HasFlag(Unit.Hour))
         {
             var sep = counter > 0 ? separator : "";
-            var val = counter == 0 ? (int)ts.TotalHours : (units.HasFlag(Unit.AM_PM) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
+            var val = counter == 0 ? (int)ts.TotalHours : (units.HasFlag(Unit.AmPm) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
             //val = val == 0 ? 12 : val;
             result += $"{sep}{val:D2}";
             counter++;
@@ -204,7 +204,7 @@ public static class Time
             counter++;
         }
 
-        if (units.HasFlag(Unit.DisplayAM_PM))
+        if (units.HasFlag(Unit.DisplayAmPm))
         {
             var sep = counter > 0 ? " " : "";
             var str = ts.Hours >= 12 ? "PM" : "AM";
@@ -224,7 +224,7 @@ public static class Time
     /// <param name="time">The duration to convert.</param>
     /// <param name="convertType">The type of conversion to perform.</param>
     /// <returns>The converted duration.</returns>
-    public static float TimeFrom(this float time, Conversion convertType)
+    public static float ToTime(this float time, Conversion convertType)
     {
         return convertType switch
         {

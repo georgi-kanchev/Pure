@@ -69,6 +69,8 @@ public static class Collision
             Window.Activate(false);
         }
 
+        return;
+
         void FillWithRandomGrass()
         {
             var targetTile = Tile.SHAPE_CIRCLE;
@@ -97,9 +99,9 @@ public static class Collision
         }
         void SetHouses(params (int x, int y)[] positions)
         {
-            for (var i = 0; i < positions?.Length; i++)
+            foreach (var t in positions)
             {
-                var (x, y) = positions[i];
+                var (x, y) = t;
                 var roof = new Tile(Tile.GEOMETRY_ANGLE, Color.Red.ToDark());
                 var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Color.Brown.ToBright());
 
@@ -123,9 +125,9 @@ public static class Collision
         }
         void SetTrees(params (int x, int y)[] positions)
         {
-            for (var i = 0; i < positions?.Length; i++)
+            foreach (var t in positions)
             {
-                var (x, y) = positions[i];
+                var (x, y) = t;
                 tilemap.SetEllipse((x, y - 1), (1, 1), new(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
                 tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
             }

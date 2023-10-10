@@ -199,6 +199,7 @@ public abstract class BaseClient : Base
         {
             var bytes = buffer[(int)offset..((int)offset + (int)size)];
             Parse(bytes);
+            return;
 
             void Parse(byte[] bytes)
             {
@@ -281,6 +282,8 @@ public abstract class BaseClient : Base
         else if ((tag == Tag.SERVER_TO_CLIENT || tag == Tag.CLIENT_TO_CLIENT) &&
                  ID == message.ToID) // private msg for me? self msg is possible - goes through server
             TriggerEvent();
+
+        return;
 
         void TriggerEvent()
         {

@@ -64,6 +64,7 @@ internal static class DefaultGraphics
             isPacked = sameBitSequence >= RAW_BITS_COUNT;
             prevBit = bit;
             readIndexCounter++;
+            continue;
 
             void ProcessPackedSequence()
             {

@@ -3,6 +3,20 @@
 using System.Diagnostics;
 using System.Text;
 
+[Flags]
+public enum SymbolSet
+{
+    None = 0,
+    Letters = 1,
+    Digits = 2,
+    Punctuation = 4,
+    Math = 8,
+    Special = 16,
+    Space = 32,
+    Other = 64,
+    Password = 128,
+}
+
 /// <summary>
 /// A user interface element for accepting text input from the user.
 /// </summary>
@@ -71,7 +85,7 @@ public class InputBox : Element
         get
         {
             if (SelectionIndices == CursorIndices)
-                return "";
+                return string.Empty;
 
             var sb = new StringBuilder();
             var cursorIndex = IndicesToIndex(CursorIndices);
@@ -99,7 +113,7 @@ public class InputBox : Element
     }
 
     /// <summary>
-    /// The text displayed in the input box when it is empty.
+    /// The text that should be displayed in the input box when it is empty.
     /// </summary>
     public string Placeholder
     {
@@ -119,6 +133,11 @@ public class InputBox : Element
                 lines.Add(line);
 
             UpdateText();
+            CursorScroll();
+
+            // reclamp
+            SelectionIndices = (sx, sy);
+            CursorIndices = (cx, cy);
         }
     }
     public int LineCount
@@ -157,6 +176,17 @@ public class InputBox : Element
         get;
         set;
     }
+    public SymbolSet SymbolSet
+    {
+        get => symbolSet;
+        set
+        {
+            if (symbolSet != value)
+                allowedSymbolsCache.Clear();
+
+            symbolSet = value;
+        }
+    }
 
     public string? this[int lineIndex]
     {
@@ -168,7 +198,7 @@ public class InputBox : Element
 
             if (lineIndex >= lines.Count)
                 for (var i = lines.Count - 1; i <= lineIndex; i++)
-                    lines.Insert(i, "");
+                    lines.Insert(i, string.Empty);
 
             if (value == null)
                 lines.RemoveAt(lineIndex);
@@ -191,6 +221,14 @@ public class InputBox : Element
         Size = (12, 1);
         lines[0] = Text;
         Value = Text;
+
+        SymbolSet = SymbolSet.Letters |
+                    SymbolSet.Digits |
+                    SymbolSet.Punctuation |
+                    SymbolSet.Math |
+                    SymbolSet.Special |
+                    SymbolSet.Space |
+                    SymbolSet.Other;
     }
     public InputBox(byte[] bytes)
         : base(bytes)
@@ -290,7 +328,6 @@ public class InputBox : Element
 
         UpdateText();
     }
-
     public void SelectAll()
     {
         sx = 0;
@@ -299,10 +336,54 @@ public class InputBox : Element
         CursorScroll();
     }
 
-#region Backend
-    private readonly List<string> lines = new() { "" };
+    public bool IsAllowed(string symbol)
+    {
+        if (allowedSymbolsCache.TryGetValue(symbol, out var allowed))
+            return allowed;
 
-    private const char SELECTION = '█', SPACE = ' ';
+        var set = string.Empty;
+        var values = symbolSets.Values;
+        var keys = symbolSets.Keys;
+        var isNotInSets = true;
+
+        foreach (var flag in keys)
+            if (SymbolSet.HasFlag(flag))
+                set += symbolSets[flag];
+
+        foreach (var charSet in values)
+            if (charSet.Contains(symbol))
+                isNotInSets = false;
+
+        var isOther = SymbolSet.HasFlag(SymbolSet.Other) && isNotInSets;
+        var result = set.Contains(symbol) || isOther;
+        allowedSymbolsCache[symbol] = result;
+        return result;
+    }
+
+    public void OnType(Action<string> method)
+    {
+        type += method;
+    }
+    public void OnSubmit(Action method)
+    {
+        submit += method;
+    }
+
+#region Backend
+    private readonly List<string> lines = new() { string.Empty };
+    private readonly Dictionary<string, bool> allowedSymbolsCache = new();
+
+    private static readonly Dictionary<SymbolSet, string> symbolSets = new()
+    {
+        { SymbolSet.Letters, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" },
+        { SymbolSet.Digits, "0123456789" },
+        { SymbolSet.Punctuation, ",.;:!?-()[]{}\"'" },
+        { SymbolSet.Math, "+-*/=<>%(),.^" },
+        { SymbolSet.Special, "@#&_|\\/^" },
+        { SymbolSet.Space, " " }
+    };
+
+    private const char SELECTION = '█', SPACE = ' ', PASSWORD = '*';
     private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
     private static readonly Stopwatch holdDelay = new(),
         hold = new(),
@@ -311,7 +392,11 @@ public class InputBox : Element
         scrollHold = new();
     private int cx, cy, sx, sy, clicks, scrX, scrY;
     private (int, int) lastClickIndices = (-1, -1), prevSize;
-    private string value = "";
+    private string value = string.Empty;
+
+    private Action<string>? type;
+    private Action? submit;
+    private SymbolSet symbolSet;
 
     static InputBox()
     {
@@ -339,6 +424,9 @@ public class InputBox : Element
 
     protected override void OnInput()
     {
+        if (IsFocused && IsMultiLine == false && JustPressed(Key.Enter))
+            submit?.Invoke();
+
         var isBellowElement = IsFocused == false || FocusedPrevious != this;
         if (isBellowElement || TrySelectAll() || JustPressed(Key.Tab))
             return;
@@ -347,7 +435,7 @@ public class InputBox : Element
 
         TryResetHoldTimers(out var isHolding, isJustTyped);
 
-        var isAllowedType = isJustTyped || (isHolding && Input.Current.Typed != "");
+        var isAllowedType = isJustTyped || (isHolding && Input.Current.Typed != string.Empty);
         var shouldDelete = isAllowedType || Allowed(Key.Backspace, isHolding) ||
                            Allowed(Key.Delete, isHolding) ||
                            (Allowed(Key.Enter, isHolding) && IsMultiLine);
@@ -394,12 +482,15 @@ public class InputBox : Element
         var maxY = Math.Min(scrY + Size.height, lines.Count);
         for (var i = scrY; i < maxY; i++)
         {
-            var newLine = i == scrY ? "" : Environment.NewLine;
+            var newLine = i == scrY ? string.Empty : Environment.NewLine;
             var line = lines[i];
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
-            var t = scrX >= secondIndex ? "" : line[scrX..secondIndex];
+            var result = scrX >= secondIndex ? string.Empty : line[scrX..secondIndex];
 
-            str.Append(newLine + t);
+            if (SymbolSet.HasFlag(SymbolSet.Password))
+                result = new(PASSWORD, result.Length);
+
+            str.Append(newLine + result);
         }
 
         text = str.ToString();
@@ -412,8 +503,10 @@ public class InputBox : Element
     {
         var str = new StringBuilder();
         for (var i = 0; i < lines.Count; i++)
-            str.Append((i > 0 ? Environment.NewLine : "") + lines[i]);
-        Value = str.ToString();
+            str.Append((i > 0 ? Environment.NewLine : string.Empty) + lines[i]);
+
+        var result = str.ToString();
+        Value = result;
     }
 
     private static bool Allowed(Key key, bool isHolding)
@@ -430,8 +523,8 @@ public class InputBox : Element
     }
     private static bool JustTyped()
     {
-        var typed = Input.Current.Typed ?? "";
-        var prev = Input.Current.TypedPrevious ?? "";
+        var typed = Input.Current.Typed ?? string.Empty;
+        var prev = Input.Current.TypedPrevious ?? string.Empty;
 
         foreach (var s in typed)
             if (prev.Contains(s) == false)
@@ -623,7 +716,7 @@ public class InputBox : Element
         if (isAllowedType == false || IsEditable == false)
             return;
 
-        var symbols = Input.Current.Typed ?? "";
+        var symbols = Input.Current.Typed ?? string.Empty;
         Type(symbols, isPasting);
     }
     private void Type(string symbols, bool isPasting)
@@ -635,7 +728,7 @@ public class InputBox : Element
 
             for (var i = 0; i < pastedLines.Length; i++)
             {
-                var line = pastedLines[i];
+                var line = RemoveForbiddenSymbols(pastedLines[i]);
                 if (i == 0) // first line
                 {
                     if (pastedLines.Length > 1)
@@ -651,7 +744,7 @@ public class InputBox : Element
 
                 if (i == pastedLines.Length - 1 && // last line
                     string.IsNullOrEmpty(carry) == false) // has carry 
-                    lines[cy + i] += carry;
+                    lines[cy + i] += RemoveForbiddenSymbols(carry);
             }
 
             var copied = TextCopied.Replace(Environment.NewLine, string.Empty);
@@ -660,11 +753,17 @@ public class InputBox : Element
             return;
         }
 
-        var text = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
-        lines[cy] = lines[cy].Insert(cx, text);
+        var str = symbols.Length > 1 ? symbols[^1].ToString() : symbols;
+
+        if (IsAllowed(str) == false)
+            return;
+
+        lines[cy] = lines[cy].Insert(cx, str);
         UpdateTextAndValue();
         CursorMove((1, 0));
         SelectionIndices = CursorIndices;
+
+        type?.Invoke(str);
     }
     private void TryBackspaceDeleteEnter(bool isHolding, bool justDeletedSelection)
     {
@@ -678,7 +777,7 @@ public class InputBox : Element
             // insert line above?
             if (cx == 0)
             {
-                lines.Insert(cy, "");
+                lines.Insert(cy, string.Empty);
                 CursorMove((0, 1));
                 UpdateTextAndValue();
                 return;
@@ -934,6 +1033,20 @@ public class InputBox : Element
         }
         else
             isHolding = false;
+    }
+
+    private string RemoveForbiddenSymbols(string str)
+    {
+        if (string.IsNullOrEmpty(str))
+            return str;
+
+        var result = new StringBuilder(str.Length);
+
+        foreach (var symbol in str)
+            if (IsAllowed(symbol.ToString()))
+                result.Append(symbol);
+
+        return result.ToString();
     }
 #endregion
 }

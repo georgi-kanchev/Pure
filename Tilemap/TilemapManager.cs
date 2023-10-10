@@ -41,6 +41,8 @@ public class TilemapManager
             tilemaps[i] = new Tilemap(GetBytesFrom(b, tmapByteCount, ref offset));
         }
 
+        return;
+
         byte[] Get<T>()
         {
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);

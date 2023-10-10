@@ -9,36 +9,107 @@ public static class InputBoxes
 {
     public static Element[] Create(TilemapManager maps)
     {
-        var singleLine = new InputBox();
-        var multiLine = new InputBox { IsMultiLine = true, Size = (12, 6) };
+        var line = Environment.NewLine;
+        var messages = $"Welcome to the chat! :){line}" +
+                       $"Type a message &{line}" +
+                       $"press <Enter> to send it.{line}{line}";
+        var chat = new InputBox
+        {
+            Size = (20, 1),
+            Value = "",
+            Placeholder = "Chat message…",
+        };
+        chat.Align((0.1f, 0.95f));
+        chat.OnSubmit(() =>
+        {
+            var clock = $"[{Time.Clock.ToClock()}]";
+            messages += $"{clock}{line}{chat.Value}" +
+                        $"{line}{line}";
+            chat.Value = "";
+        });
+        chat.OnDisplay(() =>
+        {
+            var (x, y) = chat.Position;
+            maps[0].SetTextRectangle(
+                position: (x, y - 10),
+                size: (chat.Size.width, 10),
+                text: messages,
+                alignment: Tilemap.Alignment.BottomLeft,
+                scrollProgress: 1f);
+            DisplayInputBox(maps, chat, 0);
+        });
 
-        singleLine.Align((0.5f, 0.3f));
-        multiLine.Align((0.5f, 0.6f));
-        singleLine.OnDisplay(() => DisplayInputBox(maps, singleLine, 0));
+        // ==========================
+
+        var multiLine = new InputBox
+        {
+            Size = (12, 12),
+            Value = "",
+            Placeholder = "Type some text on multiple lines…",
+            IsMultiLine = true,
+        };
+        multiLine.Align((0.1f, 0.1f));
         multiLine.OnDisplay(() => DisplayInputBox(maps, multiLine, 0));
 
-        return new Element[] { singleLine, multiLine };
+        // ==========================
+
+        var pass = "<Enter> to submit";
+        var password = new InputBox
+        {
+            Size = (17, 1),
+            Value = "",
+            Placeholder = "Password…",
+        };
+        password.SymbolSet |= SymbolSet.Password;
+        password.Align((0.95f, 0.1f));
+        password.OnSubmit(() => { pass = password.Value; });
+        password.OnDisplay(() =>
+        {
+            var pos = password.Position;
+            maps[0].SetTextLine((pos.x, pos.y - 1), pass);
+            DisplayInputBox(maps, password, 0);
+        });
+
+        // ==========================
+
+        var mathResult = "<Enter> to calculate";
+        var equation = new InputBox
+        {
+            Size = (20, 1),
+            Value = "",
+            Placeholder = "Math equation…",
+            SymbolSet = SymbolSet.Math | SymbolSet.Digits,
+        };
+        equation.Align((0.95f, 0.9f));
+        equation.OnSubmit(() => mathResult = $"{equation.Value.Calculate()}");
+        equation.OnDisplay(() =>
+        {
+            var pos = equation.Position;
+            maps[0].SetTextLine((pos.x, pos.y - 1), mathResult);
+            DisplayInputBox(maps, equation, 0);
+        });
+
+        return new Element[] { multiLine, password, chat, equation };
     }
 
     public static void DisplayInputBox(TilemapManager maps, InputBox inputBox, int backgroundIndex)
     {
-        var e = inputBox;
+        var ib = inputBox;
         var bgColor = Color.Gray.ToDark(0.4f);
+        var selectColor = ib.IsFocused ? Color.Blue : Color.Blue.ToBright();
 
         Clear(maps, inputBox);
-        maps[backgroundIndex].SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, bgColor));
-        maps[backgroundIndex].SetTextRectangle(e.Position, e.Size, e.Selection,
-            e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
-        maps[backgroundIndex + 1].SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
+        maps[backgroundIndex].SetRectangle(ib.Position, ib.Size, new(Tile.SHADE_OPAQUE, bgColor));
+        maps[backgroundIndex].SetTextRectangle(ib.Position, ib.Size, ib.Selection, selectColor, false);
+        maps[backgroundIndex + 1].SetTextRectangle(ib.Position, ib.Size, ib.Text, isWordWrapping: false);
 
-        if (string.IsNullOrWhiteSpace(e.Value))
-            maps[backgroundIndex + 1].SetTextRectangle(e.Position, e.Size, e.Placeholder,
+        if (string.IsNullOrWhiteSpace(ib.Value))
+            maps[backgroundIndex + 1].SetTextRectangle(ib.Position, ib.Size, ib.Placeholder,
                 tint: Color.Gray.ToBright(),
-                isWordWrapping: false,
                 alignment: Tilemap.Alignment.TopLeft);
 
-        if (e.IsCursorVisible)
-            maps[backgroundIndex + 2].SetTile(e.PositionFromIndices(e.CursorIndices),
+        if (ib.IsCursorVisible)
+            maps[backgroundIndex + 2].SetTile(ib.PositionFromIndices(ib.CursorIndices),
                 new(Tile.SHAPE_LINE, Color.White, 2));
     }
 }

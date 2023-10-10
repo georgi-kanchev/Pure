@@ -140,6 +140,8 @@ public static class FlappyBird
             Window.Activate(false);
         }
 
+        return;
+
         void InitializePipes()
         {
             pipes = new()

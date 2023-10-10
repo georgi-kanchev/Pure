@@ -49,6 +49,8 @@ public class Map
             }
         }
 
+        return;
+
         byte[] Get<T>()
         {
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);

@@ -286,12 +286,6 @@ public static class Extensions
         return false;
     }
 
-    /// <typeparam name="T">
-    /// The type of the elements in the matrix.</typeparam>
-    /// <param name="matrix">The two-dimensional array to convert to a string.</param>
-    /// <param name="separatorColumn">The string used to separate columns in the resulting string.</param>
-    /// <param name="separatorRow">The string used to separate rows in the resulting string.</param>
-    /// <returns>A string representation of the two-dimensional array  with specified separators.</returns>
     public static string ToString<T>(this T[,] matrix, (string horizontal, string vertical) separator)
     {
         var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
@@ -345,12 +339,6 @@ public static class Extensions
         direction++;
         return Rotate(rotated, direction);
     }
-    /// <summary>
-    /// Flips a two-dimensional array horizontally and/or vertically.
-    /// </summary>
-    /// <typeparam name="T">The type of the elements in the matrix.</typeparam>
-    /// <param name="matrix">The two-dimensional array to flip.</param>
-    /// <param name="flips">A tuple indicating the flip direction for the horizontal and vertical axes. The first element indicates whether to flip horizontally, and the second element indicates whether to flip vertically.</param>
     public static void Flip<T>(this T[,] matrix, (bool horizontally, bool vertically) isFlipped)
     {
         var rows = matrix.GetLength(0);
@@ -381,6 +369,8 @@ public static class Extensions
 
         var values = new Stack<float>();
         var operators = new Stack<char>();
+        var bracketCountOpen = 0;
+        var bracketCountClose = 0;
 
         for (var i = 0; i < mathExpression.Length; i++)
         {
@@ -389,34 +379,51 @@ public static class Extensions
             if (char.IsDigit(c) || c == '.')
                 values.Push(GetNumber(ref i));
             else if (c == '(')
+            {
                 operators.Push(c);
+                bracketCountOpen++;
+            }
             else if (c == ')')
             {
+                bracketCountClose++;
                 while (operators.Count > 0 && operators.Peek() != '(')
-                    Process();
+                    if (Process())
+                        return float.NaN;
 
                 operators.Pop(); // Pop the '('
             }
             else if (IsOperator(c))
             {
                 while (operators.Count > 0 && Priority(operators.Peek()) >= Priority(c))
-                    Process();
+                    if (Process())
+                        return float.NaN;
 
                 operators.Push(c);
             }
+
+            if (bracketCountClose > bracketCountOpen)
+                return float.NaN;
         }
 
+        if (bracketCountOpen != bracketCountClose)
+            return float.NaN;
+
         while (operators.Count > 0)
-            Process();
+            if (Process())
+                return float.NaN;
 
-        return values.Pop();
+        return values.Count == 0 ? float.NaN : values.Pop();
 
-        void Process()
+        bool Process()
         {
+            if (values.Count < 2 || operators.Count < 1)
+                return true;
+
             var val2 = values.Pop();
             var val1 = values.Pop();
             var op = operators.Pop();
             values.Push(ApplyOperator(val1, val2, op));
+            return false;
         }
         bool IsOperator(char c)
         {
