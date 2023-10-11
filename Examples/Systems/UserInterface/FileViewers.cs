@@ -22,9 +22,9 @@ public static class FileViewers
         };
 
         fileViewer.OnDisplay(() => DisplayFileViewer(maps, fileViewer));
-        fileViewer.FilesAndFolders.OnItemDisplay((item) => DisplayFileViewerItem(item, maps, fileViewer));
+        fileViewer.FilesAndFolders.OnItemDisplay(item => DisplayFileViewerItem(item, maps, fileViewer));
         folderViewer.OnDisplay(() => DisplayFileViewer(maps, folderViewer));
-        folderViewer.FilesAndFolders.OnItemDisplay((item) => DisplayFileViewerItem(item, maps, folderViewer));
+        folderViewer.FilesAndFolders.OnItemDisplay(item => DisplayFileViewerItem(item, maps, folderViewer));
 
         return new Element[] { fileViewer, folderViewer };
     }

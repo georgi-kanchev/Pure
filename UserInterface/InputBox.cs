@@ -114,6 +114,7 @@ public class InputBox : Element
 
     /// <summary>
     /// The text that should be displayed in the input box when it is empty.
+    /// Defaults to "Type…".
     /// </summary>
     public string Placeholder
     {

@@ -4,12 +4,8 @@ public class Prompt
 {
     public Element? Element
     {
-        get => currentElement;
-        set
-        {
-            currentElement = value;
-            UpdateElementPosition();
-        }
+        get;
+        set;
     }
 
     public (int x, int y) Position
@@ -33,32 +29,31 @@ public class Prompt
         private set;
     }
 
-    public void Open(int buttonCount = 2, Action<int>? onButtonTrigger = null)
+    public void Open(int buttonCount = 1, Action<int>? onButtonTrigger = null)
     {
-        if (IsOpened)
-            return;
-
-        IsOpened = true;
         UpdateElementPosition();
-
+        buttonCount = Math.Max(buttonCount, 1);
+        IsOpened = true;
         buttons.Clear();
+
         for (var i = 0; i < buttonCount; i++)
         {
-            var btn = new Button((0, 0))
+            var btn = new Button((-1, -1))
             {
                 hasParent = true,
                 size = (1, 1),
             };
             var index = i;
-            btn.OnInteraction(Interaction.Trigger, () => onButtonTrigger?.Invoke(index));
+            btn.OnInteraction(Interaction.Trigger, () =>
+            {
+                onButtonTrigger?.Invoke(index);
+                Close();
+            });
             buttons.Add(btn);
         }
     }
     public void Close()
     {
-        if (IsOpened == false)
-            return;
-
         IsOpened = false;
         buttons.Clear();
     }
@@ -87,7 +82,6 @@ public class Prompt
         isTextReadonly = true,
         hasParent = true,
     };
-    private Element? currentElement;
 
     private Action<Button[]>? display;
 
@@ -98,8 +92,8 @@ public class Prompt
 
         var sz = Element.TilemapSize;
         var lines = Message?.Split(Environment.NewLine).Length ?? 0;
-        var (w, h) = (sz.width / 2, lines - 2);
-        var (x, y) = (sz.width / 4, sz.height / 2);
+        var (w, h) = (sz.width / 2, 0);
+        var (x, y) = (sz.width / 4, sz.height / 2 + lines / 2);
 
         display?.Invoke(buttons.ToArray());
 
@@ -127,17 +121,21 @@ public class Prompt
             btn.position = ((int)btnXs[i], y + h);
             ui.UpdateElement(btn);
         }
+
+        if (Element.Input.Current.IsKeyJustPressed(Key.Escape))
+            Close();
     }
     private void UpdateElementPosition()
     {
-        if (currentElement == null)
+        if (Element == null)
             return;
 
         var text = Message ?? "";
         var lines = text.Split(Environment.NewLine).Length;
-        currentElement.Align((0.5f, 0.5f));
-        var (x, y) = currentElement.Position;
-        currentElement.position = (x, y + lines / 2);
+
+        Element.Align((0.5f, 0.5f));
+        var (x, y) = Element.Position;
+        Element.position = (x, y + lines / 2);
     }
 
     private static float[] Distribute(int amount, (float a, float b) range)

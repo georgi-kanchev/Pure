@@ -5,7 +5,7 @@ public abstract partial class Element
     /// <summary>
     /// Represents user input for received by the user interface.
     /// </summary>
-    protected class Input
+    protected internal class Input
     {
         /// <summary>
         /// The last input received by the user interface.

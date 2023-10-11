@@ -97,6 +97,11 @@ public class Layout : Element
         return bytes.ToArray();
     }
 
+    public void OnDisplaySegment(Action<(int x, int y, int width, int height), int> method)
+    {
+        displaySegment += method;
+    }
+
 #region Backend
     private class Segment
     {
@@ -119,7 +124,7 @@ public class Layout : Element
     internal UserInterface? ui;
 
     // used in the UI class to receive callbacks
-    internal Action<(int x, int y, int width, int height), int>? segmentUpdateCallback;
+    internal Action<(int x, int y, int width, int height), int>? displaySegment;
 
     internal override void OnUpdate()
     {
@@ -146,7 +151,7 @@ public class Layout : Element
         {
             var seg = segments[i];
             OnSegmentUpdate((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
-            segmentUpdateCallback?.Invoke((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
+            displaySegment?.Invoke((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
         }
     }
     private void UpdateSegment(Segment seg)

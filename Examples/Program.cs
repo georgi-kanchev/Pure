@@ -1,5 +1,6 @@
 namespace Pure.Examples;
 
+using Systems;
 using Systems.UserInterface;
 using Tilemap;
 using UserInterface;
@@ -10,7 +11,7 @@ public abstract class Program
     private static void Main()
     {
         // systems examples
-        // DefaultGraphics.Run();
+        //DefaultGraphics.Run();
         // Collision.Run();
         // Audio.Run();
         // ChatLAN.Run();
@@ -24,11 +25,12 @@ public abstract class Program
         var maps = new TilemapManager(7, (width * 3, height * 3));
         var ui = new UserInterface();
         Element.ApplyInput(default, default, default, Array.Empty<int>(), "", maps.Size);
-        //ui.Prompt = Prompts.Create(maps);
+        ui.Prompt = Prompts.Create(maps);
         //ui.Add(ButtonsAndCheckboxes.Create(maps));
         //ui.Add(SlidersAndScrolls.Create(maps));
         //ui.Add(FileViewers.Create(maps));
-        ui.Add(InputBoxes.Create(maps));
+        //ui.Add(InputBoxes.Create(maps));
+        ui.Add(Layouts.Create(maps));
         Utility.Run(ui, maps);
 
         // games examples

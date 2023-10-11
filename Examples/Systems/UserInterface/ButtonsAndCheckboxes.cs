@@ -10,22 +10,14 @@ public static class ButtonsAndCheckboxes
 {
     public static Element[] Create(TilemapManager maps)
     {
-        var button = new Button((12, 5)) { Text = "Cool Button" };
-        var buttonDisabled = new Button((12, 15)) { IsDisabled = true, Text = "Disabled Button" };
-        var checkbox = new Button((12, 10)) { Text = "Checkbox" };
         var counter = 0;
-
+        var button = new Button { Text = "Cool Button" };
+        button.Size = (button.Text.Length + 2, 3);
+        button.Align((0.5f, 0.3f));
         button.OnInteraction(Interaction.Trigger, () => counter++);
-
-        buttonDisabled.OnDisplay(() =>
-        {
-            maps[0].SetTextLine(buttonDisabled.Position, buttonDisabled.Text,
-                tint: Color.Gray.ToDark(0.7f));
-        });
         button.OnDisplay(() =>
         {
             var b = button;
-            b.Size = (b.Text.Length + 2, 3);
 
             var (w, h) = b.Size;
             var offsetW = w / 2 - Math.Min(b.Text.Length, w - 2) / 2;
@@ -52,10 +44,14 @@ public static class ButtonsAndCheckboxes
 
             maps[1].SetTextLine((0, 0), $"The {button.Text} was pressed {counter} times.");
         });
+
+        // ==============
+
+        var checkbox = new Button { Text = "Checkbox" };
+        checkbox.Size = (checkbox.Text.Length + 2, 1);
+        checkbox.Align((0.5f, 0.5f));
         checkbox.OnDisplay(() =>
         {
-            checkbox.Size = (checkbox.Text.Length + 2, 1);
-
             var color = checkbox.IsSelected ? Color.Green : Color.Red;
             var tileId = checkbox.IsSelected ? ICON_TICK : UPPERCASE_X;
             var tile = new Tile(tileId, GetColor(checkbox, color));
@@ -67,6 +63,19 @@ public static class ButtonsAndCheckboxes
                 text: checkbox.Text,
                 tint: GetColor(checkbox, color));
         });
+
+        // ==============
+
+        var buttonDisabled = new Button { IsDisabled = true, Text = "Disabled Button" };
+        buttonDisabled.Size = (buttonDisabled.Text.Length, 1);
+        buttonDisabled.Align((0.5f, 0.8f));
+        buttonDisabled.OnDisplay(() =>
+        {
+            maps[0].SetTextLine(buttonDisabled.Position, buttonDisabled.Text,
+                tint: Color.Gray.ToDark(0.7f));
+        });
+
+        // ==============
 
         return new Element[] { button, buttonDisabled, checkbox };
     }
