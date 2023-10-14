@@ -36,12 +36,6 @@ public class Slider : Element
         private set;
     }
 
-    /// <summary>
-    /// Initializes a slider new instance with the specified position, size and orientation.
-    /// </summary>
-    /// <param name="position">The position of the slider.</param>
-    /// <param name="size">The size of the slider.</param>
-    /// <param name="isVertical">Whether the slider is vertical or horizontal.</param>
     public Slider((int x, int y) position = default, bool isVertical = false)
         : base(position)
     {
@@ -119,7 +113,7 @@ public class Slider : Element
             MoveTo(((int)x, (int)y));
         });
 
-        Handle = new(position) { Size = (1, 1), hasParent = true };
+        Handle = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
         Handle.OnDrag(_ =>
         {
             var (x, y) = Input.Current.Position;

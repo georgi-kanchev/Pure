@@ -63,7 +63,8 @@ public class Panel : Element
     }
 
 #region Backend
-    private bool isDragging, isResizingL, isResizingR, isResizingU, isResizingD;
+    private bool isMoving, isResizingL, isResizingR, isResizingU, isResizingD;
+    private (int x, int y) startBotR;
 
     // used in the UI class to receive callbacks
     internal Action<(int width, int height)>? resizeCallback;
@@ -79,43 +80,61 @@ public class Panel : Element
         var (w, h) = Size;
         var (inputX, inputY) = Input.Current.Position;
         var (prevX, prevY) = Input.Current.PositionPrevious;
-        var isClicked = Input.Current.IsPressed && Input.Current.WasPressed == false;
-        var wasClicked = Input.Current.IsPressed == false && Input.Current.WasPressed;
 
         inputX = MathF.Floor(inputX);
         inputY = MathF.Floor(inputY);
         prevX = MathF.Floor(prevX);
         prevY = MathF.Floor(prevY);
 
-        const float e = 0.01f;
         var tlOff = IsResizable ? 1 : 0;
         var trOff = IsResizable ? 2 : 1;
-        var isHoveringTop = IsBetween(inputX, x + tlOff, x + w - trOff) && Math.Abs(inputY - y) < e;
-        var isHoveringTopCorners = (x, y) == (inputX, inputY) || (x + w - 1, y) == (inputX, inputY);
-        var isHoveringLeft = Math.Abs(inputX - x) < e && IsBetween(inputY, y, y + h - 1);
-        var isHoveringRight = Math.Abs(inputX - (x + w - 1)) < e && IsBetween(inputY, y, y + h - 1);
-        var isHoveringBottom = IsBetween(inputX, x, x + w - 1) && Math.Abs(inputY - (y + h - 1)) < e;
-        var isHoveringInside = IsHovered && isHoveringTop == false &&
-                               isHoveringLeft == false && isHoveringRight == false &&
-                               isHoveringBottom == false;
+        const float E = 0.01f;
+        var isHovCornersT = (x, y) == (inputX, inputY) || (x + w - 1, y) == (inputX, inputY);
+        var isHovT = IsBetween(inputX, x + tlOff, x + w - trOff) && Math.Abs(inputY - y) < E;
+        var isHovL = Math.Abs(inputX - x) < E && IsBetween(inputY, y, y + h - 1);
+        var isHovR = Math.Abs(inputX - (x + w - 1)) < E && IsBetween(inputY, y, y + h - 1);
+        var isHovB = IsBetween(inputX, x, x + w - 1) && Math.Abs(inputY - (y + h - 1)) < E;
+        var isHovInside = IsHovered && isHovT == false &&
+                          isHovL == false && isHovR == false &&
+                          isHovB == false;
+        var isHoveringSides = isHovInside || isHovT ||
+                              ((isHovL || isHovR || isHovB) &&
+                               IsResizable == false);
+
+        TrySetCursorAndCache(isHoveringSides, isHovL, isHovR, isHovB, isHovCornersT, isHovT);
+
+        if (IsFocused == false || Input.Current.IsPressed == false ||
+            Input.Current.Position == Input.Current.PositionPrevious)
+            return;
+
+        TryMoveAndResize(inputX, inputY, prevX, prevY);
+    }
+
+    private void TrySetCursorAndCache(
+        bool isHoveringSides,
+        bool isHoveringLeft,
+        bool isHoveringRight,
+        bool isHoveringBottom,
+        bool isHoveringTopCorners,
+        bool isHoveringTop)
+    {
+        var isClicked = Input.Current.IsPressed && Input.Current.WasPressed == false;
+        var wasClicked = Input.Current.IsPressed == false && Input.Current.WasPressed;
 
         if (IsDisabled == false && IsHovered)
             MouseCursorResult = MouseCursor.Arrow;
 
         if (wasClicked)
         {
-            isDragging = false;
+            isMoving = false;
             isResizingL = false;
             isResizingR = false;
             isResizingU = false;
             isResizingD = false;
         }
 
-        var isHoveringSides = isHoveringInside || isHoveringTop || ((isHoveringLeft || isHoveringRight ||
-                                                                     isHoveringBottom) &&
-                                                                    IsResizable == false);
         if (IsMovable && isHoveringSides)
-            Process(ref isDragging, MouseCursor.Move);
+            Process(ref isMoving, MouseCursor.Move);
         else if (IsResizable)
         {
             if (isHoveringLeft)
@@ -138,77 +157,91 @@ public class Panel : Element
                 MouseCursorResult = MouseCursor.ResizeDiagonal2;
         }
 
-        if (IsFocused && Input.Current.IsPressed &&
-            Input.Current.Position != Input.Current.PositionPrevious)
-        {
-            var (deltaX, deltaY) = ((int)inputX - (int)prevX, (int)inputY - (int)prevY);
-            var (newX, newY) = (x, y);
-            var (newW, newH) = (w, h);
-            var (maxX, maxY) = SizeMinimum;
-
-            if (deltaX == 0 && deltaY == 0 || FocusedPrevious != this)
-                return;
-
-            if (isDragging)
-            {
-                newX += deltaX;
-                newY += deltaY;
-            }
-
-            if (isResizingL && Math.Abs(inputX - (x + deltaX)) < e)
-            {
-                newX += deltaX;
-                newW -= deltaX;
-            }
-
-            if (isResizingR && Math.Abs(inputX - (x + w - 1 + deltaX)) < e) newW += deltaX;
-            if (isResizingD && Math.Abs(inputY - (y + h - 1 + deltaY)) < e) newH += deltaY;
-            if (isResizingU && Math.Abs(inputY - (y + deltaY)) < e)
-            {
-                newY += deltaY;
-                newH -= deltaY;
-            }
-
-            var isOutsideScreen =
-                newX + newW > TilemapSize.width ||
-                newY + newH > TilemapSize.height ||
-                newX < 0 ||
-                newY < 0;
-            var isBelowMinimumSize = newW < Math.Abs(maxX) || newH < Math.Abs(maxY);
-            var moveNoResize = isDragging == false &&
-                               (isResizingD || isResizingL || isResizingR || isResizingU);
-
-            if (isBelowMinimumSize || (isOutsideScreen && IsRestricted))
-                return;
-
-            var prevSz = Size;
-            var prevPos = Position;
-            Size = (newW, newH);
-            Position = (newX, newY);
-
-            // sometimes resizing causes only drag because of the nature of
-            // limited size for example - so prevent it
-            if (moveNoResize && prevSz == Size && prevPos != Position)
-                Position = (x, y);
-
-            if (prevSz != Size)
-            {
-                var delta = (Size.width - prevSz.width, Size.height - prevSz.height);
-                OnResize(delta);
-                resizeCallback?.Invoke(delta);
-            }
-        }
-
         return;
 
         void Process(ref bool condition, MouseCursor cursor)
         {
             if (isClicked && IsFocused)
+            {
                 condition = true;
+                startBotR = (Position.x + Size.width, Position.y + Size.height);
+            }
 
             if (IsDisabled == false)
                 MouseCursorResult = cursor;
         }
+    }
+    private void TryMoveAndResize(float inputX, float inputY, float prevX, float prevY)
+    {
+        var (x, y) = Position;
+        var (w, h) = Size;
+        var (deltaX, deltaY) = ((int)inputX - (int)prevX, (int)inputY - (int)prevY);
+        var (newX, newY) = (x, y);
+        var (newW, newH) = (w, h);
+        var (minX, minY) = SizeMinimum;
+
+        if (FocusedPrevious != this)
+            return;
+
+        if (isMoving)
+        {
+            newX += deltaX;
+            newY += deltaY;
+        }
+
+        if (isResizingR)
+        {
+            newW = (int)inputX - x + 1;
+            
+            if (inputX <= x)
+                return;
+        }
+
+        if (isResizingD)
+        {
+            newH = (int)inputY - y + 1;
+            
+            if (inputY <= y)
+                return;
+        }
+
+        if (isResizingL)
+        {
+            newW = startBotR.x - (int)inputX;
+            newX = (int)inputX;
+
+            if (inputX >= startBotR.x - 1)
+                return;
+        }
+
+        if (isResizingU)
+        {
+            newH = startBotR.y - (int)inputY;
+            newY = (int)inputY;
+
+            if (inputY >= startBotR.y - 1)
+                return;
+        }
+
+        var isOutsideScreen =
+            newX + newW > TilemapSize.width ||
+            newY + newH > TilemapSize.height ||
+            newX < 0 || newY < 0;
+        var isBelowMinimumSize = newW < Math.Abs(minX) || newH < Math.Abs(minY);
+
+        if (isBelowMinimumSize || (isOutsideScreen && IsRestricted))
+            return;
+
+        var prevSz = Size;
+        Size = (newW, newH);
+        Position = (newX, newY);
+
+        if (prevSz == Size)
+            return;
+
+        var delta = (Size.width - prevSz.width, Size.height - prevSz.height);
+        OnResize(delta);
+        resizeCallback?.Invoke(delta);
     }
 
     private static bool IsBetween(float number, float rangeA, float rangeB)

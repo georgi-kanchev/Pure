@@ -172,7 +172,7 @@ public class InputBox : Element
             cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
             IsOverlapping(PositionFromIndices(CursorIndices));
     }
-    public bool IsMultiLine
+    public bool IsSingleLine
     {
         get;
         set;
@@ -315,15 +315,15 @@ public class InputBox : Element
         var (cpx, cpy) = PositionFromIndices(CursorIndices);
         while (IsOverlapping((cpx, cpy)) == false)
         {
-            var (sx, sy) = (0, 0);
+            var (offX, offY) = (0, 0);
 
-            if (cpx < Position.x) sx = -1;
-            else if (cpx >= Position.x + Size.width) sx = 1;
+            if (cpx < Position.x) offX = -1;
+            else if (cpx >= Position.x + Size.width) offX = 1;
 
-            if (cpy < Position.y) sy = -1;
-            else if (cpy >= Position.y + Size.height) sy = 1;
+            if (cpy < Position.y) offY = -1;
+            else if (cpy >= Position.y + Size.height) offY = 1;
 
-            ScrollIndices = (ScrollIndices.x + sx, ScrollIndices.y + sy);
+            ScrollIndices = (ScrollIndices.x + offX, ScrollIndices.y + offY);
             (cpx, cpy) = PositionFromIndices(CursorIndices); // update
         }
 
@@ -425,7 +425,7 @@ public class InputBox : Element
 
     protected override void OnInput()
     {
-        if (IsFocused && IsMultiLine == false && JustPressed(Key.Enter))
+        if (IsFocused && IsSingleLine && JustPressed(Key.Enter))
             submit?.Invoke();
 
         var isBellowElement = IsFocused == false || FocusedPrevious != this;
@@ -439,7 +439,7 @@ public class InputBox : Element
         var isAllowedType = isJustTyped || (isHolding && Input.Current.Typed != string.Empty);
         var shouldDelete = isAllowedType || Allowed(Key.Backspace, isHolding) ||
                            Allowed(Key.Delete, isHolding) ||
-                           (Allowed(Key.Enter, isHolding) && IsMultiLine);
+                           (Allowed(Key.Enter, isHolding) && IsSingleLine == false);
 
         var justDeletedSelected = false;
         if (TryCopyPasteCut(ref justDeletedSelected, ref shouldDelete, out var isPasting))
@@ -655,7 +655,7 @@ public class InputBox : Element
         else if (clicks == 3)
         {
             var p = PositionToIndices((x + lines[cy].Length, y + cy));
-            cx = p.symbol;
+            CursorIndices = (p.symbol, cy);
             CursorScroll();
             SelectionIndices = (0, cy);
         }
@@ -773,7 +773,7 @@ public class InputBox : Element
 
         var (w, _) = Size;
 
-        if (Allowed(Key.Enter, isHolding) && IsMultiLine)
+        if (Allowed(Key.Enter, isHolding) && IsSingleLine == false)
         {
             // insert line above?
             if (cx == 0)

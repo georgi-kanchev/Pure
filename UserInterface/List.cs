@@ -121,8 +121,7 @@ public class List : Element
         originalHeight = Size.height;
         Span = type;
 
-        var isVertical = type != Spans.Horizontal;
-        Scroll = new((0, 0)) { hasParent = true };
+        Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true };
 
         Add(itemCount);
 
@@ -145,8 +144,7 @@ public class List : Element
         var scrollProgress = GrabFloat(bytes);
         Add(GrabInt(bytes));
 
-        var isVertical = Span != Spans.Horizontal;
-        Scroll = new((0, 0)) { hasParent = true };
+        Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true };
 
         for (var i = 0; i < Count; i++)
             Select(i, GrabBool(bytes));

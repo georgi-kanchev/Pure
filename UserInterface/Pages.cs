@@ -104,10 +104,10 @@ public class Pages : Element
     [MemberNotNull(nameof(First), nameof(Previous), nameof(Next), nameof(Last))]
     private void Init()
     {
-        First = new((0, 0)) { hasParent = true };
-        Previous = new((0, 0)) { hasParent = true };
-        Next = new((0, 0)) { hasParent = true };
-        Last = new((0, 0)) { hasParent = true };
+        First = new((int.MaxValue, int.MaxValue)) { hasParent = true };
+        Previous = new((int.MaxValue, int.MaxValue)) { hasParent = true };
+        Next = new((int.MaxValue, int.MaxValue)) { hasParent = true };
+        Last = new((int.MaxValue, int.MaxValue)) { hasParent = true };
 
         First.OnInteraction(Interaction.Trigger, () => Current = 0);
         Previous.OnInteraction(Interaction.Trigger, () => Current--);

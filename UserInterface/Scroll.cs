@@ -77,9 +77,9 @@ public class Scroll : Element
     [MemberNotNull(nameof(Slider), nameof(Increase), nameof(Decrease))]
     private void Init()
     {
-        Slider = new((0, 0)) { hasParent = true };
-        Increase = new((0, 0)) { Size = (1, 1), hasParent = true };
-        Decrease = new((0, 0)) { Size = (1, 1), hasParent = true };
+        Slider = new((int.MaxValue, int.MaxValue)) { hasParent = true };
+        Increase = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
+        Decrease = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
         var dir = IsVertical ? -1 : 1;
 
         Slider.OnInteraction(Interaction.Scroll, ApplyScroll);

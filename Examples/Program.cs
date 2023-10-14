@@ -30,7 +30,8 @@ public abstract class Program
         //ui.Add(SlidersAndScrolls.Create(maps));
         //ui.Add(FileViewers.Create(maps));
         //ui.Add(InputBoxes.Create(maps));
-        ui.Add(Layouts.Create(maps));
+        ui.Add(Panels.Create(maps));
+        //ui.Add(Layouts.Create(maps));
         Utility.Run(ui, maps);
 
         // games examples

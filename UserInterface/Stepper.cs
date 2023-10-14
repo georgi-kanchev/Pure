@@ -97,11 +97,11 @@ public class Stepper : Element
     [MemberNotNull(nameof(Increase), nameof(Decrease), nameof(Minimum), nameof(Middle), nameof(Maximum))]
     private void Init()
     {
-        Increase = new((0, 0)) { size = (1, 1), hasParent = true };
-        Decrease = new((0, 0)) { size = (1, 1), hasParent = true };
-        Minimum = new((0, 0)) { size = (1, 1), hasParent = true };
-        Middle = new((0, 0)) { size = (1, 1), hasParent = true };
-        Maximum = new((0, 0)) { size = (1, 1), hasParent = true };
+        Increase = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
+        Decrease = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
+        Minimum = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
+        Middle = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
+        Maximum = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
 
         Increase.OnInteraction(Interaction.Scroll, ApplyScroll);
         Increase.OnInteraction(Interaction.Trigger, () => Value += Step);

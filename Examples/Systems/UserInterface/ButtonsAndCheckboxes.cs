@@ -17,31 +17,7 @@ public static class ButtonsAndCheckboxes
         button.OnInteraction(Interaction.Trigger, () => counter++);
         button.OnDisplay(() =>
         {
-            var b = button;
-
-            var (w, h) = b.Size;
-            var offsetW = w / 2 - Math.Min(b.Text.Length, w - 2) / 2;
-            var color = GetColor(b, Color.Yellow.ToDark());
-            var colorBack = Color.Gray.ToDark(0.6f);
-
-            maps[0].SetBox(b.Position, b.Size,
-                tileFill: new(SHADE_OPAQUE, colorBack),
-                cornerTileId: BOX_CORNER_ROUND,
-                borderTileId: SHADE_OPAQUE,
-                borderTint: colorBack);
-
-            maps[1].SetBox(b.Position, b.Size,
-                tileFill: EMPTY,
-                cornerTileId: BOX_DEFAULT_CORNER,
-                borderTileId: BOX_DEFAULT_STRAIGHT,
-                borderTint: color);
-
-            maps[1].SetTextLine(
-                position: (b.Position.x + offsetW, b.Position.y + h / 2),
-                text: b.Text,
-                tint: color,
-                maxLength: w - 2);
-
+            DisplayButton(maps, button);
             maps[1].SetTextLine((0, 0), $"The {button.Text} was pressed {counter} times.");
         });
 
@@ -78,5 +54,32 @@ public static class ButtonsAndCheckboxes
         // ==============
 
         return new Element[] { button, buttonDisabled, checkbox };
+    }
+    public static void DisplayButton(TilemapManager maps, Button button)
+    {
+        var b = button;
+
+        var (w, h) = b.Size;
+        var offsetW = w / 2 - Math.Min(b.Text.Length, w - 2) / 2;
+        var color = GetColor(b, Color.Yellow.ToDark());
+        var colorBack = Color.Gray.ToDark(0.6f);
+
+        maps[0].SetBox(b.Position, b.Size,
+            tileFill: new(SHADE_OPAQUE, colorBack),
+            cornerTileId: BOX_CORNER_ROUND,
+            borderTileId: SHADE_OPAQUE,
+            borderTint: colorBack);
+
+        maps[1].SetBox(b.Position, b.Size,
+            tileFill: EMPTY,
+            cornerTileId: BOX_DEFAULT_CORNER,
+            borderTileId: BOX_DEFAULT_STRAIGHT,
+            borderTint: color);
+
+        maps[1].SetTextLine(
+            position: (b.Position.x + offsetW, b.Position.y + h / 2),
+            text: b.Text,
+            tint: color,
+            maxLength: w - 2);
     }
 }

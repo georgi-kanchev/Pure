@@ -18,6 +18,7 @@ public static class InputBoxes
             Size = (20, 1),
             Value = "",
             Placeholder = "Chat message…",
+            IsSingleLine = true,
         };
         chat.Align((0.1f, 0.95f));
         chat.OnSubmit(() =>
@@ -46,7 +47,6 @@ public static class InputBoxes
             Size = (12, 12),
             Value = "",
             Placeholder = "Type some text on multiple lines…",
-            IsMultiLine = true,
         };
         multiLine.Align((0.1f, 0.1f));
         multiLine.OnDisplay(() => DisplayInputBox(maps, multiLine, 0));
@@ -59,6 +59,7 @@ public static class InputBoxes
             Size = (17, 1),
             Value = "",
             Placeholder = "Password…",
+            IsSingleLine = true,
         };
         password.SymbolSet |= SymbolSet.Password;
         password.Align((0.95f, 0.1f));
@@ -79,6 +80,7 @@ public static class InputBoxes
             Value = "",
             Placeholder = "Math equation…",
             SymbolSet = SymbolSet.Math | SymbolSet.Digits,
+            IsSingleLine = true,
         };
         equation.Align((0.95f, 0.9f));
         equation.OnSubmit(() => mathResult = $"{equation.Value.Calculate()}");
