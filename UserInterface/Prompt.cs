@@ -100,11 +100,11 @@ public class Prompt
         panel.isDisabled = IsOpened == false;
         panel.position = IsOpened ? (0, 0) : (int.MaxValue, int.MaxValue);
         panel.size = sz;
-        ui.UpdateElement(panel);
+        panel.Update();
 
         if (Element != null)
         {
-            ui.UpdateElement(Element);
+            Element.Update();
             w = Element.Size.width;
             h = Element.Size.height;
             x = Element.Position.x;
@@ -119,7 +119,7 @@ public class Prompt
         {
             var btn = buttons[i];
             btn.position = ((int)btnXs[i], y + h);
-            ui.UpdateElement(btn);
+            btn.Update();
         }
 
         if (Input.IsKeyJustPressed(Key.Escape))

@@ -81,11 +81,8 @@ public class Layout : Element
     public override byte[] ToBytes()
     {
         var bytes = base.ToBytes().ToList();
-
-        if (ui == null)
-            return bytes.ToArray();
-
         bytes.AddRange(BitConverter.GetBytes(segments.Count));
+
         foreach (var seg in segments)
         {
             var parentIndex = seg.parent == null ? -1 : segments.IndexOf(seg.parent);
@@ -121,15 +118,11 @@ public class Layout : Element
     }
 
     private readonly List<Segment> segments = new();
-    internal UserInterface? ui;
 
     internal Action<(int x, int y, int width, int height), int>? displaySegment;
 
     internal override void OnUpdate()
     {
-        if (ui == null)
-            return;
-
         // updates should be first since it's a hierarchy
         // and then callbacks (after everything is done)
 
