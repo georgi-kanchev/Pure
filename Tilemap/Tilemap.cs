@@ -287,13 +287,16 @@ public class Tilemap
     {
         var errorOffset = 0;
 
+        if (maxLength == 0)
+            return;
+
         if (text != null)
         {
             var abs = Math.Abs(maxLength);
             if (maxLength > 0 && text.Length > maxLength)
-                text = text[..Math.Max(maxLength - 1, 0)] + "…";
-            else if (maxLength < 0 && text.Length > abs + 1)
-                text = "…" + text[^abs..];
+                text = text[..Math.Max(abs - 1, 0)] + "…";
+            else if (maxLength < 0 && text.Length > abs)
+                text = "…" + text[^(abs - 1)..];
         }
 
         for (var i = 0; i < text?.Length; i++)
@@ -351,7 +354,9 @@ public class Tilemap
                 continue;
 
             var lastLineIndex = size.width - 1;
-            var newLineIndex = isWordWrapping ? GetSafeNewLineIndex(line, (uint)lastLineIndex) : lastLineIndex;
+            var newLineIndex = isWordWrapping ?
+                GetSafeNewLineIndex(line, (uint)lastLineIndex) :
+                lastLineIndex;
 
             // end of line? can't word wrap, proceed to symbol wrap
             if (newLineIndex == 0)

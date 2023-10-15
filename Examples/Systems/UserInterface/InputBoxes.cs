@@ -94,24 +94,24 @@ public static class InputBoxes
         return new Element[] { multiLine, password, chat, equation };
     }
 
-    public static void DisplayInputBox(TilemapManager maps, InputBox inputBox, int backgroundIndex)
+    public static void DisplayInputBox(TilemapManager maps, InputBox inputBox, int zOrder)
     {
         var ib = inputBox;
         var bgColor = Color.Gray.ToDark(0.4f);
         var selectColor = ib.IsFocused ? Color.Blue : Color.Blue.ToBright();
 
-        Clear(maps, inputBox);
-        maps[backgroundIndex].SetRectangle(ib.Position, ib.Size, new(Tile.SHADE_OPAQUE, bgColor));
-        maps[backgroundIndex].SetTextRectangle(ib.Position, ib.Size, ib.Selection, selectColor, false);
-        maps[backgroundIndex + 1].SetTextRectangle(ib.Position, ib.Size, ib.Text, isWordWrapping: false);
+        Clear(maps, inputBox, (zOrder, zOrder + 2));
+        maps[zOrder].SetRectangle(ib.Position, ib.Size, new(Tile.SHADE_OPAQUE, bgColor));
+        maps[zOrder].SetTextRectangle(ib.Position, ib.Size, ib.Selection, selectColor, false);
+        maps[zOrder + 1].SetTextRectangle(ib.Position, ib.Size, ib.Text, isWordWrapping: false);
 
         if (string.IsNullOrWhiteSpace(ib.Value))
-            maps[backgroundIndex + 1].SetTextRectangle(ib.Position, ib.Size, ib.Placeholder,
+            maps[zOrder + 1].SetTextRectangle(ib.Position, ib.Size, ib.Placeholder,
                 tint: Color.Gray.ToBright(),
                 alignment: Tilemap.Alignment.TopLeft);
 
         if (ib.IsCursorVisible)
-            maps[backgroundIndex + 2].SetTile(ib.PositionFromIndices(ib.CursorIndices),
+            maps[zOrder + 2].SetTile(ib.PositionFromIndices(ib.CursorIndices),
                 new(Tile.SHAPE_LINE, Color.White, 2));
     }
 }

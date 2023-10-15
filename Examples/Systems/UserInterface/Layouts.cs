@@ -1,5 +1,3 @@
-using Pure.Window;
-
 namespace Pure.Examples.Systems.UserInterface;
 
 using Pure.UserInterface;
@@ -16,23 +14,30 @@ public static class Layouts
 
         //============
 
+        var nl = Environment.NewLine;
         var layoutElements = new Element[] { new Button(), new Button(), new Slider(), new InputBox() };
         var layoutFull = new Layout { Size = (20, 20) };
-        layoutFull.Align((0.9f, 0.5f));
         layoutFull.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.4f);
         layoutFull.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.3f);
         layoutFull.Cut(index: 2, side: Layout.CutSide.Top, rate: 0.5f);
         layoutFull.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.4f);
+        layoutFull.OnDisplay(() =>
+        {
+            layoutFull.Size = (
+                25 + (int)(Math.Sin(Time.Clock / 2) * 10),
+                20 + (int)(Math.Cos(Time.Clock / 2) * 3));
+            layoutFull.Align((0.9f, 0.5f));
+        });
         layoutFull.OnDisplaySegment((segment, index) =>
         {
             if (index == 0)
             {
-                DisplaySegment(maps, segment, index);
+                DisplaySegment(maps, segment, index, false);
                 maps[1].SetTextRectangle(
                     position: (segment.x, segment.y),
                     size: (segment.width, segment.height),
-                    text: "A very meaningful text",
-                    alignment: Tilemap.Alignment.Center);
+                    text: $"- Useful for containing structured elements{nl}{nl}" +
+                          $"- Can be dynamically resized without losing its ratios");
                 return;
             }
 
@@ -41,22 +46,22 @@ public static class Layouts
             e.Size = (segment.width, segment.height);
 
             if (e is Button button)
-                ButtonsAndCheckboxes.DisplayButton(maps, button);
+                ButtonsAndCheckboxes.DisplayButton(maps, button, zOrder: 0);
             else if (e is Slider slider)
-                SlidersAndScrolls.DisplaySlider(maps, slider);
+                SlidersAndScrolls.DisplaySlider(maps, slider, zOrder: 0);
             else if (e is InputBox inputBox)
-                InputBoxes.DisplayInputBox(maps, inputBox, 0);
+                InputBoxes.DisplayInputBox(maps, inputBox, zOrder: 0);
         });
 
         //============
 
         var layoutEmpty = new Layout();
-        layoutEmpty.Align((0.1f, 0.5f));
+        layoutEmpty.Align((0.05f, 0.5f));
         layoutEmpty.Cut(index: 0, side: Layout.CutSide.Right, rate: 0.4f);
         layoutEmpty.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.6f);
         layoutEmpty.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.25f);
         layoutEmpty.Cut(index: 1, side: Layout.CutSide.Bottom, rate: 0.4f);
-        layoutEmpty.OnDisplaySegment((segment, index) => DisplaySegment(maps, segment, index));
+        layoutEmpty.OnDisplaySegment((segment, index) => DisplaySegment(maps, segment, index, true));
 
         var elements = new List<Element>
         {
@@ -70,7 +75,8 @@ public static class Layouts
     private static void DisplaySegment(
         TilemapManager maps,
         (int x, int y, int width, int height) segment,
-        int index)
+        int index,
+        bool isIndexVisible)
     {
         var colors = new uint[]
         {
@@ -86,10 +92,11 @@ public static class Layouts
             borderTileId: Tile.SHADE_OPAQUE,
             borderTint: colors[index]);
 
-        maps[1].SetTextRectangle(
-            position: (segment.x, segment.y),
-            size: (segment.width, segment.height),
-            text: index.ToString(),
-            alignment: Tilemap.Alignment.Center);
+        if (isIndexVisible)
+            maps[1].SetTextRectangle(
+                position: (segment.x, segment.y),
+                size: (segment.width, segment.height),
+                text: index.ToString(),
+                alignment: Tilemap.Alignment.Center);
     }
 }

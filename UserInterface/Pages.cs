@@ -33,7 +33,7 @@ public class Pages : Element
             if (count == value)
                 return; // no actual change, skip calculations
 
-            count = Math.Clamp(value, 1, 99);
+            count = Math.Max(value, 1);
             Current = current; // reclamp and update pages
             RecreatePages();
             UpdatePages();
@@ -54,16 +54,27 @@ public class Pages : Element
         }
     }
 
-    public Pages((int x, int y) position = default, int count = 10)
-        : base(position)
+    public int ItemWidth
     {
+        get => itemWidth;
+        set => itemWidth = Math.Max(value, 1);
+    }
+    public int ItemGap
+    {
+        get;
+        set;
+    }
+
+    public Pages((int x, int y) position = default, int count = 10) : base(position)
+    {
+        ItemWidth = 1;
+        ItemGap = 1;
         Size = (12, 1);
         Count = count;
 
         Init();
     }
-    public Pages(byte[] bytes)
-        : base(bytes)
+    public Pages(byte[] bytes) : base(bytes)
     {
         Count = GrabInt(bytes);
         Current = GrabInt(bytes);
@@ -94,12 +105,39 @@ public class Pages : Element
 
 #region Backend
     private (int, int) prevSize;
-    private const int PAGE_GAP = 1, PAGE_WIDTH = 2;
     private int count, current = 1, scrollIndex = 1;
     private readonly List<Button> visiblePages = new();
 
+    private int VisibleWidth
+    {
+        get => Size.width - 4;
+    }
+    private int VisiblePageCount
+    {
+        get
+        {
+            var result = Math.Min(VisibleWidth / (ItemWidth + ItemGap), Count);
+
+            // check if there's a gap at the end and if so, increment the result by 1
+            if (result < Count && VisibleWidth % (ItemWidth + ItemGap) >= ItemWidth)
+                result++;
+
+            return result;
+        }
+    }
+    private bool HasFreeSpace
+    {
+        get
+        {
+            var totalItemSpace = Count * ItemWidth + (Count - 1) * ItemGap;
+            var remainingSpace = VisibleWidth - totalItemSpace;
+            return remainingSpace >= ItemWidth;
+        }
+    }
+
     private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
     private Action<Button>? itemDisplays;
+    private int itemWidth;
 
     [MemberNotNull(nameof(First), nameof(Previous), nameof(Next), nameof(Last))]
     private void Init()
@@ -127,7 +165,7 @@ public class Pages : Element
     {
         // for in between pages, overwrite mouse cursor (don't give it to the element bellow)
         if (IsDisabled == false && IsHovered)
-            MouseCursorResult = MouseCursor.Arrow;
+            Input.MouseCursorResult = MouseCursor.Arrow;
 
         LimitSizeMin((6, 1));
 
@@ -147,7 +185,7 @@ public class Pages : Element
     internal override void OnChildrenUpdate()
     {
         var (x, y) = Position;
-        var visibleWidth = GetVisibleWidth();
+        var visibleWidth = VisibleWidth;
 
         First.position = (x, y);
         Previous.position = (x + 1, y);
@@ -169,48 +207,40 @@ public class Pages : Element
         Next.Update();
         Last.Update();
 
+        var hasFreeSpace = HasFreeSpace;
+        var range = hasFreeSpace ? (Position.x + 2, Position.x + Size.width - 2) : (0, 0);
+        var xs = Distribute(hasFreeSpace ? visiblePages.Count : 0, range);
+
         for (var i = 0; i < visiblePages.Count; i++)
         {
             var page = visiblePages[i];
-            page.position = (x + 2 + (PAGE_WIDTH + PAGE_GAP) * i, y);
+            var pos = (x + 2 + (ItemWidth + ItemGap) * i, y);
+
+            if (hasFreeSpace)
+                pos = ((int)xs[i], y);
+
+            page.position = pos;
             page.InheritParent(this);
             page.Update();
         }
     }
     internal override void ApplyScroll()
     {
-        Current += Input.Current.ScrollDelta;
-    }
-
-    private int GetVisibleWidth()
-    {
-        return Size.width - 4;
-    }
-    private int GetVisiblePageCount()
-    {
-        var visibleWidth = GetVisibleWidth();
-        var result = 0;
-        var width = 0;
-        while (width + PAGE_WIDTH <= visibleWidth)
-        {
-            width += PAGE_WIDTH + PAGE_GAP;
-            result++;
-
-            if (result > Count)
-                return Count;
-        }
-
-        return result;
+        Current -= Input.ScrollDelta;
     }
 
     private void RecreatePages()
     {
-        var pageCount = GetVisiblePageCount();
+        var pageCount = VisiblePageCount;
 
         visiblePages.Clear();
         for (var i = 0; i < pageCount; i++)
         {
-            var page = new Button((0, 0)) { size = (2, Size.height), hasParent = true };
+            var page = new Button((0, 0))
+            {
+                size = (ItemWidth, Size.height),
+                hasParent = true
+            };
             visiblePages.Add(page);
             page.OnInteraction(Interaction.Trigger, () => Current = int.Parse(page.Text));
             page.OnInteraction(Interaction.Scroll, ApplyScroll);
@@ -218,15 +248,30 @@ public class Pages : Element
     }
     private void UpdatePages()
     {
-        var pageCount = GetVisiblePageCount();
+        var pageCount = VisiblePageCount;
         scrollIndex = Math.Clamp(current - pageCount / 2, 1, Math.Max(Count - pageCount + 1, 1));
 
         for (var i = 0; i < visiblePages.Count; i++)
         {
             var pageNumber = i + scrollIndex;
-            visiblePages[i].Text = $"{pageNumber:D2}";
+            visiblePages[i].Text = $"{pageNumber}";
             visiblePages[i].isSelected = pageNumber == current;
         }
+    }
+
+    private static float[] Distribute(int amount, (float a, float b) range)
+    {
+        if (amount <= 0)
+            return Array.Empty<float>();
+
+        var result = new float[amount];
+        var size = range.b - range.a;
+        var spacing = size / (amount + 1);
+
+        for (var i = 1; i <= amount; i++)
+            result[i - 1] = range.a + i * spacing;
+
+        return result;
     }
 #endregion
 }

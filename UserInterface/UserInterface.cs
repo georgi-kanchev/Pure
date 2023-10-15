@@ -60,7 +60,7 @@ public class UserInterface
         }
     }
 
-    public void Add(params Element[] elements)
+    public void Add(params Element[]? elements)
     {
         if (elements == null || elements.Length == 0)
             return;
@@ -80,7 +80,7 @@ public class UserInterface
                     list.OnItemInteraction(kvp.Key, item => kvp.Value.Invoke(list, item));
         }
     }
-    public void Remove(params Element[] elements)
+    public void Remove(params Element[]? elements)
     {
         if (elements == null || elements.Length == 0)
             return;
@@ -93,7 +93,7 @@ public class UserInterface
             this.elements.Remove(element);
         }
     }
-    public void BringToTop(params Element[] elements)
+    public void BringToTop(params Element[]? elements)
     {
         if (elements == null || elements.Length == 0)
             return;

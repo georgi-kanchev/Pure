@@ -80,24 +80,23 @@ public class Scroll : Element
         Slider = new((int.MaxValue, int.MaxValue)) { hasParent = true };
         Increase = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
         Decrease = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
-        var dir = IsVertical ? -1 : 1;
 
         Slider.OnInteraction(Interaction.Scroll, ApplyScroll);
 
         Increase.OnInteraction(Interaction.Scroll, ApplyScroll);
-        Increase.OnInteraction(Interaction.Trigger, () => Slider.Progress += dir * Step);
+        Increase.OnInteraction(Interaction.Trigger, () => Slider.Progress += Step);
         Increase.OnInteraction(Interaction.PressAndHold, () =>
         {
             if (Increase.IsHovered)
-                Slider.Progress += dir * Step;
+                Slider.Progress += Step;
         });
 
         Decrease.OnInteraction(Interaction.Scroll, ApplyScroll);
-        Decrease.OnInteraction(Interaction.Trigger, () => Slider.Progress += dir * -Step);
+        Decrease.OnInteraction(Interaction.Trigger, () => Slider.Progress -= Step);
         Decrease.OnInteraction(Interaction.PressAndHold, () =>
         {
             if (Decrease.IsHovered)
-                Slider.Progress += dir * -Step;
+                Slider.Progress -= Step;
         });
     }
     internal override void ApplyScroll()
@@ -119,9 +118,9 @@ public class Scroll : Element
 
         if (IsVertical)
         {
-            Increase.position = (x, y);
+            Increase.position = (x, y + h - 1);
             Increase.size = (w, 1);
-            Decrease.position = (x, y + h - 1);
+            Decrease.position = (x, y);
             Decrease.size = (w, 1);
             Slider.position = (x, y + 1);
             Slider.size = (w, h - 2);

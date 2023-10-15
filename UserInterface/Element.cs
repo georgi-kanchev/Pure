@@ -1,6 +1,5 @@
 ﻿namespace Pure.UserInterface;
 
-using System.Diagnostics;
 using System.Text;
 
 /// <summary>
@@ -73,40 +72,8 @@ public enum Key
 /// Represents a user interface element that the user can interact with and receive some
 /// results back.
 /// </summary>
-public abstract partial class Element
+public abstract class Element
 {
-    /// <summary>
-    /// Gets or sets the mouse cursor graphics result. Usually set by each user interface element
-    /// when the user interacts with that specific element.
-    /// </summary>
-    public static MouseCursor MouseCursorResult
-    {
-        get;
-        protected set;
-    }
-
-    /// <summary>
-    /// The currently focused user interface element.
-    /// </summary>
-    public static Element? Focused
-    {
-        get;
-        set;
-    }
-    internal static Element? FocusedPrevious
-    {
-        get;
-        set;
-    }
-    /// <summary>
-    /// The size of the tilemap being used by the user interface.
-    /// </summary>
-    protected internal static (int width, int height) TilemapSize
-    {
-        get;
-        private set;
-    }
-
     /// <summary>
     /// Gets or sets the position of the user interface element.
     /// </summary>
@@ -236,8 +203,8 @@ public abstract partial class Element
     /// </summary>
     public bool IsFocused
     {
-        get => Focused == this;
-        set => Focused = value ? this : default;
+        get => Input.Focused == this;
+        set => Input.Focused = value ? this : default;
     }
     /// <summary>
     /// Gets a value indicating whether the input position is currently hovering 
@@ -254,7 +221,7 @@ public abstract partial class Element
     /// </summary>
     public bool IsPressed
     {
-        get => IsHovered && Input.Current.IsPressed;
+        get => IsHovered && Input.IsPressed;
     }
     /// <summary>
     /// Gets a value indicating whether the user interface element is currently held by the input,
@@ -268,11 +235,10 @@ public abstract partial class Element
 
     internal bool IsScrollable
     {
-        get => IsFocused && FocusedPrevious == this && IsHovered;
+        get => IsFocused && Input.FocusedPrevious == this && IsHovered;
     }
 
-    protected Element()
-        : this((0, 0))
+    protected Element() : this((0, 0))
     {
     }
     /// <summary>
@@ -308,54 +274,54 @@ public abstract partial class Element
         LimitSizeMin((1, 1));
 
         wasHovered = IsHovered;
-        IsHovered = IsOverlapping(Input.Current.Position);
+        IsHovered = IsOverlapping(Input.Position);
 
         if (IsDisabled)
         {
             if (IsHovered && IsHidden == false)
-                MouseCursorResult = MouseCursor.Disable;
+                Input.MouseCursorResult = MouseCursor.Disable;
 
             OnUpdate();
             TryDisplaySelfAndProcessChildren();
             return;
         }
         else if (IsHovered)
-            MouseCursorResult = MouseCursor.Arrow;
+            Input.MouseCursorResult = MouseCursor.Arrow;
 
-        var isJustPressed = Input.Current.WasPressed == false && IsPressed;
-        var isJustScrolled = Input.Current.ScrollDelta != 0 && IsHovered;
+        var isJustPressed = Input.WasPressed == false && IsPressed;
+        var isJustScrolled = Input.ScrollDelta != 0 && IsHovered;
 
         if (isJustPressed || isJustScrolled)
             IsFocused = true;
 
-        if (Input.Current.IsKeyJustPressed(Key.Escape))
+        if (Input.IsKeyJustPressed(Key.Escape))
             IsFocused = false;
 
         TryTrigger();
 
-        if (IsFocused && FocusedPrevious != this)
+        if (IsFocused && Input.FocusedPrevious != this)
             SimulateInteraction(Interaction.Focus);
-        if (IsFocused == false && FocusedPrevious == this)
+        if (IsFocused == false && Input.FocusedPrevious == this)
             SimulateInteraction(Interaction.Unfocus);
         if (IsHovered && wasHovered == false)
             SimulateInteraction(Interaction.Hover);
         if (IsHovered == false && wasHovered)
             SimulateInteraction(Interaction.Unhover);
-        if (IsPressed && Input.Current.WasPressed == false)
+        if (IsPressed && Input.WasPressed == false)
             SimulateInteraction(Interaction.Press);
-        if (IsHovered && IsPressed == false && Input.Current.WasPressed)
+        if (IsHovered && IsPressed == false && Input.WasPressed)
             SimulateInteraction(Interaction.Release);
-        if (IsPressedAndHeld && Input.Current.IsJustHeld)
+        if (IsPressedAndHeld && Input.IsJustHeld)
             SimulateInteraction(Interaction.PressAndHold);
 
-        var p = Input.Current.Position;
-        var pp = Input.Current.PositionPrevious;
+        var p = Input.Position;
+        var pp = Input.PositionPrevious;
         var px = (int)Math.Floor(p.x);
         var py = (int)Math.Floor(p.y);
         var ppx = (int)Math.Floor(pp.x);
         var ppy = (int)Math.Floor(pp.y);
 
-        if ((px != ppx || py != ppy) && IsPressedAndHeld && IsFocused && FocusedPrevious == this)
+        if ((px != ppx || py != ppy) && IsPressedAndHeld && IsFocused && Input.FocusedPrevious == this)
         {
             var delta = (px - ppx, py - ppy);
             drag?.Invoke(delta);
@@ -366,7 +332,7 @@ public abstract partial class Element
 
         TryDisplaySelfAndProcessChildren();
 
-        if (Input.Current.ScrollDelta == 0 || IsScrollable == false)
+        if (Input.ScrollDelta == 0 || IsScrollable == false)
             return; // scroll even when hovering children
 
         SimulateInteraction(Interaction.Scroll);
@@ -404,66 +370,9 @@ public abstract partial class Element
 
     public void Align((float horizontal, float vertical) alignment)
     {
-        var newX = Map(alignment.horizontal, (0, 1), (0, TilemapSize.width - Size.width));
-        var newY = Map(alignment.vertical, (0, 1), (0, TilemapSize.height - Size.height));
+        var newX = Map(alignment.horizontal, (0, 1), (0, Input.TilemapSize.width - Size.width));
+        var newY = Map(alignment.vertical, (0, 1), (0, Input.TilemapSize.height - Size.height));
         Position = ((int)newX, (int)newY);
-    }
-
-    /// <summary>
-    /// Applies input to the user interface element, updating its state accordingly.
-    /// </summary>
-    /// <param name="isPressed">Whether an input is currently pressed.</param>
-    /// <param name="position">The current position of the input.</param>
-    /// <param name="scrollDelta">The amount the mouse wheel has been scrolled.</param>
-    /// <param name="keysPressed">An array of currently pressed keys on the keyboard.</param>
-    /// <param name="keysTyped">A string containing characters typed on the keyboard.</param>
-    /// <param name="tilemapSize">The size of the tilemap used by the user interface element.</param>
-    public static void ApplyInput(
-        bool isPressed,
-        (float x, float y) position,
-        int scrollDelta,
-        int[] keysPressed,
-        string keysTyped,
-        (int width, int height) tilemapSize)
-    {
-        Input.IsCanceled = false;
-
-        MouseCursorResult = MouseCursor.Arrow;
-        TilemapSize = (Math.Abs(tilemapSize.width), Math.Abs(tilemapSize.height));
-
-        Input.Current.WasPressed = Input.Current.IsPressed;
-        Input.Current.TypedPrevious = Input.Current.Typed;
-        Input.Current.PositionPrevious = Input.Current.Position;
-        Input.Current.prevPressedKeys.Clear();
-        Input.Current.prevPressedKeys.AddRange(Input.Current.pressedKeys);
-
-        Input.Current.IsPressed = isPressed;
-        Input.Current.Position = position;
-
-        var keys = new Key[keysPressed.Length];
-        for (var i = 0; i < keysPressed.Length; i++)
-            keys[i] = (Key)keysPressed[i];
-
-        Input.Current.PressedKeys = keys;
-        Input.Current.Typed = keysTyped
-            .Replace("\n", "")
-            .Replace("\t", "")
-            .Replace("\r", "");
-        Input.Current.ScrollDelta = scrollDelta;
-
-        if (Input.Current.IsJustPressed)
-            hold.Restart();
-
-        Input.Current.IsJustHeld = false;
-        if (hold.Elapsed.TotalSeconds > HOLD_DELAY && holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
-        {
-            holdTrigger.Restart();
-            Input.Current.IsJustHeld = true;
-        }
-
-        FocusedPrevious = Focused;
-        if (Input.Current.WasPressed == false && Input.Current.IsPressed)
-            Focused = default;
     }
 
     public virtual byte[] ToBytes()
@@ -578,9 +487,6 @@ public abstract partial class Element
     }
 
 #region Backend
-    private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f, DOUBLE_CLICK_DELAY = 0.5f;
-    private static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
-
     internal (int, int) position,
         size,
         listSizeTrimOffset,
@@ -599,9 +505,9 @@ public abstract partial class Element
 
     private void Init()
     {
-        hold.Start();
-        holdTrigger.Start();
-        doubleClick.Start();
+        Input.hold.Start();
+        Input.holdTrigger.Start();
+        Input.doubleClick.Start();
 
         Text = GetType().Name;
     }
@@ -635,7 +541,7 @@ public abstract partial class Element
 
     private void TryTrigger()
     {
-        var isAllowed = DOUBLE_CLICK_DELAY > doubleClick.Elapsed.TotalSeconds;
+        var isAllowed = Input.DOUBLE_CLICK_DELAY > Input.doubleClick.Elapsed.TotalSeconds;
         if (isAllowed == false && isReadyForDoubleClick)
             isReadyForDoubleClick = false;
 
@@ -645,14 +551,14 @@ public abstract partial class Element
             return;
         }
 
-        if (IsHovered && Input.Current.IsJustReleased && IsPressedAndHeld)
+        if (IsHovered && Input.IsJustReleased && IsPressedAndHeld)
         {
             IsPressedAndHeld = false;
             SimulateInteraction(Interaction.Trigger);
 
             if (isReadyForDoubleClick == false)
             {
-                doubleClick.Restart();
+                Input.doubleClick.Restart();
                 isReadyForDoubleClick = true;
                 return;
             }
@@ -663,10 +569,10 @@ public abstract partial class Element
             isReadyForDoubleClick = false;
         }
 
-        if (IsHovered && Input.Current.IsJustPressed)
+        if (IsHovered && Input.IsJustPressed)
             IsPressedAndHeld = true;
 
-        if (IsHovered == false && Input.Current.IsJustReleased)
+        if (IsHovered == false && Input.IsJustReleased)
             IsPressedAndHeld = false;
     }
 

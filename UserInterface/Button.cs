@@ -58,7 +58,7 @@ public class Button : Element
     protected override void OnInput()
     {
         if (IsHovered)
-            MouseCursorResult = MouseCursor.Hand;
+            Input.MouseCursorResult = MouseCursor.Hand;
     }
 #endregion
 }

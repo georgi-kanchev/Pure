@@ -1,6 +1,5 @@
 namespace Pure.Examples;
 
-using Systems;
 using Systems.UserInterface;
 using Tilemap;
 using UserInterface;
@@ -24,14 +23,18 @@ public abstract class Program
         var (width, height) = Window.MonitorAspectRatio;
         var maps = new TilemapManager(7, (width * 3, height * 3));
         var ui = new UserInterface();
-        Element.ApplyInput(default, default, default, Array.Empty<int>(), "", maps.Size);
-        ui.Prompt = Prompts.Create(maps);
+        Input.TilemapSize = maps.Size;
+        //ui.Prompt = Prompts.Create(maps);
         //ui.Add(ButtonsAndCheckboxes.Create(maps));
         //ui.Add(SlidersAndScrolls.Create(maps));
         //ui.Add(FileViewers.Create(maps));
         //ui.Add(InputBoxes.Create(maps));
-        ui.Add(Panels.Create(maps));
+        //ui.Add(Panels.Create(maps));
         //ui.Add(Layouts.Create(maps));
+        //ui.Add(Lists.Create(maps));
+        //ui.Add(Steppers.Create(maps));
+        //ui.Add(Pagination.Create(maps));
+        ui.Add(Palettes.Create(maps));
         Utility.Run(ui, maps);
 
         // games examples

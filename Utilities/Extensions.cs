@@ -1,4 +1,6 @@
-﻿namespace Pure.Utilities;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Pure.Utilities;
 
 using System.Diagnostics;
 using System.Globalization;
@@ -589,6 +591,20 @@ public static class Extensions
         return string.IsNullOrEmpty(target) ? 0 : text.Split(target).Length - 1;
     }
 
+    [SuppressMessage("ReSharper", "FormatStringProblem")]
+    public static string PadZeros(this float number, int amountOfZeros)
+    {
+        if (amountOfZeros == 0)
+            return $"{number}";
+
+        var format = amountOfZeros < 0 ? new('0', Math.Abs(amountOfZeros)) : "F" + amountOfZeros;
+        return string.Format("{0:" + format + "}", number);
+    }
+    [SuppressMessage("ReSharper", "FormatStringProblem")]
+    public static string PadZeros(this int number, int amountOfZeros)
+    {
+        return string.Format("{0:D" + Math.Abs(amountOfZeros) + "}", number);
+    }
     /// <summary>
     /// Calculates the average of the given numbers, 
     /// including the specified number.
@@ -686,7 +702,9 @@ public static class Extensions
             {
                 return curve == AnimationCurve.Backward ? 1 - MathF.Sqrt(1 - MathF.Pow(x, 2)) :
                     curve == AnimationCurve.Forward ? MathF.Sqrt(1 - MathF.Pow(x - 1, 2)) :
-                    (x < 0.5 ? (1 - MathF.Sqrt(1 - MathF.Pow(2 * x, 2))) / 2 : (MathF.Sqrt(1 - MathF.Pow(-2 * x + 2, 2)) + 1) / 2);
+                    (x < 0.5 ?
+                        (1 - MathF.Sqrt(1 - MathF.Pow(2 * x, 2))) / 2 :
+                        (MathF.Sqrt(1 - MathF.Pow(-2 * x + 2, 2)) + 1) / 2);
             }
             case Animation.Elastic:
             {
@@ -711,7 +729,9 @@ public static class Extensions
                 return curve == AnimationCurve.Backward ? 2.70158f * x * x * x - 1.70158f * x * x :
                     curve == AnimationCurve.Forward ? 1 + 2.70158f * MathF.Pow(x - 1, 3) +
                                                       1.70158f * MathF.Pow(x - 1, 2) :
-                    (x < 0.5 ? (MathF.Pow(2 * x, 2) * ((2.59491f + 1) * 2 * x - 2.59491f)) / 2 : (MathF.Pow(2 * x - 2, 2) * ((2.59491f + 1) * (x * 2 - 2) + 2.59491f) + 2) / 2);
+                    (x < 0.5 ?
+                        (MathF.Pow(2 * x, 2) * ((2.59491f + 1) * 2 * x - 2.59491f)) / 2 :
+                        (MathF.Pow(2 * x - 2, 2) * ((2.59491f + 1) * (x * 2 - 2) + 2.59491f) + 2) / 2);
             }
             case Animation.Bounce:
             {

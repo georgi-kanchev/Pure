@@ -207,13 +207,13 @@ public static class Ludo
         {
             Window.Activate(true);
 
-            Element.ApplyInput(
+            Input.TilemapSize = map.Size;
+            Input.Update(
                 Mouse.IsButtonPressed(Mouse.Button.Left),
                 map.PointFrom(Mouse.CursorPosition, Window.Size),
                 Mouse.ScrollDelta,
                 Array.Empty<int>(),
-                "",
-                map.Size);
+                "");
 
             Time.Update();
             dice.Update();
@@ -229,7 +229,7 @@ public static class Ludo
             SetSlider(map, slider);
             SetButton(map, button);
 
-            Mouse.CursorGraphics = (Mouse.Cursor)Element.MouseCursorResult;
+            Mouse.CursorGraphics = (Mouse.Cursor)Input.MouseCursorResult;
 
             Window.DrawTiles(map.ToBundle());
             foreach (var pawn in Pawns)
@@ -366,7 +366,9 @@ public static class Ludo
                     break;
                 }
 
-            var tile = hasPawn ? (Tile.SHAPE_SQUARE, (uint)Color.White, (sbyte)0, false, false) : (Tile.ARROW, (uint)TeamColors[kvp.Key], (sbyte)i, false, false);
+            var tile = hasPawn ?
+                (Tile.SHAPE_SQUARE, (uint)Color.White, (sbyte)0, false, false) :
+                (Tile.ARROW, (uint)TeamColors[kvp.Key], (sbyte)i, false, false);
             map.SetTile(kvp.Value.position, tile);
             i++;
         }

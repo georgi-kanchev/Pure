@@ -70,13 +70,14 @@ public class List : Element
                 item.isTextReadonly = value;
         }
     }
-    public int CountSelected
+
+    public int[] IndexesSelected
     {
-        get => indexesSelected.Count;
+        get => indexesSelected.ToArray();
     }
-    public int CountDisabled
+    public int[] IndexesDisabled
     {
-        get => indexesDisabled.Count;
+        get => indexesDisabled.ToArray();
     }
 
     /// <summary>
@@ -96,10 +97,10 @@ public class List : Element
                 itemSize = (Math.Max(value.width, 1), Math.Max(value.height, 1));
         }
     }
-    public (int width, int height) ItemGap
+    public int ItemGap
     {
         get => itemGap;
-        set => itemGap = (Math.Max(value.width, 0), Math.Max(value.height, 0));
+        set => itemGap = Math.Max(value, 0);
     }
 
     public Button this[int index]
@@ -112,14 +113,15 @@ public class List : Element
     /// </summary>
     /// <param name="position">The position of the top-left corner of the list.</param>
     /// <param name="itemCount">The initial number of buttons in the list.</param>
-    /// <param name="type">The type of the list.</param>
-    public List((int x, int y) position = default, int itemCount = 10, Spans type = Spans.Vertical)
+    /// <param name="span">The type of the list.</param>
+    public List((int x, int y) position = default, int itemCount = 10, Spans span = Spans.Vertical)
         : base(position)
     {
         Init();
         Size = (12, 8);
+        ItemGap = span == Spans.Horizontal ? 1 : 0;
         originalHeight = Size.height;
-        Span = type;
+        Span = span;
 
         Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true };
 
@@ -127,19 +129,18 @@ public class List : Element
 
         isInitialized = true;
 
-        if (type != Spans.Dropdown)
+        if (span != Spans.Dropdown)
             return;
 
         IsSingleSelecting = true;
         IsCollapsed = true;
     }
-    public List(byte[] bytes)
-        : base(bytes)
+    public List(byte[] bytes) : base(bytes)
     {
         Init();
         Span = (Spans)GrabByte(bytes);
         IsSingleSelecting = GrabBool(bytes);
-        ItemGap = (GrabInt(bytes), GrabInt(bytes));
+        ItemGap = GrabInt(bytes);
         ItemSize = (GrabInt(bytes), GrabInt(bytes));
         var scrollProgress = GrabFloat(bytes);
         Add(GrabInt(bytes));
@@ -217,11 +218,8 @@ public class List : Element
 
         if (IsSingleSelecting)
         {
-            if (isSelected == false || indexesSelected.Contains(index))
-                return;
-
-            foreach (var i in indexesSelected)
-                this[i].isSelected = false;
+            foreach (var item in items)
+                item.isSelected = false;
 
             indexesSelected.Clear();
             this[index].isSelected = isSelected;
@@ -265,8 +263,7 @@ public class List : Element
         var result = base.ToBytes().ToList();
         PutByte(result, (byte)Span);
         PutBool(result, IsSingleSelecting);
-        PutInt(result, ItemGap.width);
-        PutInt(result, ItemGap.height);
+        PutInt(result, ItemGap);
         PutInt(result, ItemSize.width);
         PutInt(result, ItemSize.height);
         PutFloat(result, Scroll.Slider.Progress);
@@ -280,7 +277,7 @@ public class List : Element
     protected override void OnInput()
     {
         if (Span == Spans.Dropdown && IsCollapsed && IsHovered)
-            MouseCursorResult = MouseCursor.Hand;
+            Input.MouseCursorResult = MouseCursor.Hand;
     }
 
     public void OnItemDisplay(Action<Button> method)
@@ -324,7 +321,7 @@ public class List : Element
     private readonly List<Button> items = new();
     private bool isSingleSelecting, isCollapsed;
     private readonly bool isInitialized;
-    private (int width, int height) itemGap = (1, 0);
+    private int itemGap;
     internal (int width, int height) itemSize = (5, 1);
     private readonly List<int> indexesDisabled = new(), indexesSelected = new();
     internal bool isReadOnly;
@@ -337,15 +334,16 @@ public class List : Element
         get
         {
             var (maxW, maxH) = ItemSize;
-            var totalW = items.Count * (maxW + ItemGap.width) - ItemGap.width;
-            var totalH = items.Count * (maxH + ItemGap.height) - ItemGap.height;
+            var totalW = items.Count * (maxW + ItemGap) - ItemGap;
+            var totalH = items.Count * (maxH + ItemGap) - ItemGap;
 
             return (totalW > Size.width, totalH > Size.height);
         }
     }
     internal bool IsScrollVisible
     {
-        get => (Span == Spans.Horizontal ? HasScroll.horizontal : HasScroll.vertical) && IsCollapsed == false;
+        get => (Span == Spans.Horizontal ? HasScroll.horizontal : HasScroll.vertical) &&
+               IsCollapsed == false;
     }
 
     private void Init()
@@ -410,21 +408,22 @@ public class List : Element
         if (IsSingleSelecting && singleSelectedIndex == -1)
             TrySingleSelectOneItem();
 
-        if (Input.Current.IsJustPressed && IsHovered == false)
+        if (Input.IsJustPressed && IsHovered == false)
             IsCollapsed = true;
 
         // for in between items, overwrite mouse cursor (don't give it to the element bellow)
         if (IsDisabled == false && IsHovered)
-            MouseCursorResult = MouseCursor.Arrow;
+            Input.MouseCursorResult = MouseCursor.Arrow;
 
         if (Span != Spans.Dropdown)
             LimitSizeMin((2, 2));
 
         ItemSize = itemSize; // reclamp value
-        var totalWidth = items.Count * (ItemSize.width + ItemGap.width);
-        var totalHeight = items.Count * (ItemSize.height + ItemGap.height);
+        var totalWidth = items.Count * (ItemSize.width + ItemGap);
+        var totalHeight = items.Count * (ItemSize.height + ItemGap);
         var totalSize = Span == Spans.Horizontal ? totalWidth : totalHeight;
         Scroll.step = 1f / totalSize;
+        Scroll.isVertical = Span != Spans.Horizontal;
 
         if (IsCollapsed)
             Size = (Size.width, 1);
@@ -432,7 +431,7 @@ public class List : Element
     internal override void ApplyScroll()
     {
         if (Scroll.IsHovered == false)
-            Scroll.Slider.Progress -= Input.Current.ScrollDelta * Scroll.Step;
+            Scroll.Slider.Progress -= Input.ScrollDelta * Scroll.Step;
     }
     internal override void OnChildrenUpdate()
     {
@@ -486,19 +485,19 @@ public class List : Element
 
             if (Span == Spans.Horizontal)
             {
-                var totalWidth = items.Count * (ItemSize.width + ItemGap.width);
-                var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalWidth - w - ItemGap.width);
+                var totalWidth = items.Count * (ItemSize.width + ItemGap);
+                var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalWidth - w - ItemGap);
                 var offsetX = (int)MathF.Round(p);
                 offsetX = Math.Max(offsetX, 0);
-                item.position = (x - offsetX + i * (ItemSize.width + ItemGap.width), y);
+                item.position = (x - offsetX + i * (ItemSize.width + ItemGap), y);
             }
             else
             {
-                var totalHeight = items.Count * (ItemSize.height + ItemGap.height);
-                var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalHeight - h - ItemGap.height);
+                var totalHeight = items.Count * (ItemSize.height + ItemGap);
+                var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalHeight - h - ItemGap);
                 var offsetY = (int)MathF.Round(p);
                 offsetY = Math.Max(offsetY, 0);
-                item.position = (x, y - offsetY + i * (ItemSize.height + ItemGap.height));
+                item.position = (x, y - offsetY + i * (ItemSize.height + ItemGap));
             }
 
             var (ix, iy) = item.position;
@@ -545,8 +544,6 @@ public class List : Element
 
     internal void TrySingleSelectOneItem()
     {
-        indexesSelected.Clear();
-
         if (IsSingleSelecting == false || items.Count == 0)
         {
             singleSelectedIndex = -1;
@@ -556,6 +553,7 @@ public class List : Element
         if (indexesSelected.Count == 1)
             return;
 
+        indexesSelected.Clear();
         Select(items[0]);
     }
 
@@ -563,6 +561,14 @@ public class List : Element
     {
         if (IsSingleSelecting)
             Select(item);
+        else
+        {
+            var index = IndexOf(item);
+            if (item.IsSelected)
+                indexesSelected.Add(index);
+            else
+                indexesSelected.Remove(index);
+        }
 
         if (Span != Spans.Dropdown)
             return;

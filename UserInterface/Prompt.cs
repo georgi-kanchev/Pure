@@ -90,7 +90,7 @@ public class Prompt
         if (IsOpened == false)
             return;
 
-        var sz = Element.TilemapSize;
+        var sz = Input.TilemapSize;
         var lines = Message?.Split(Environment.NewLine).Length ?? 0;
         var (w, h) = (sz.width / 2, 0);
         var (x, y) = (sz.width / 4, sz.height / 2 + lines / 2);
@@ -122,7 +122,7 @@ public class Prompt
             ui.UpdateElement(btn);
         }
 
-        if (Element.Input.Current.IsKeyJustPressed(Key.Escape))
+        if (Input.IsKeyJustPressed(Key.Escape))
             Close();
     }
     private void UpdateElementPosition()

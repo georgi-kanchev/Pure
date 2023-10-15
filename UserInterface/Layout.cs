@@ -123,7 +123,6 @@ public class Layout : Element
     private readonly List<Segment> segments = new();
     internal UserInterface? ui;
 
-    // used in the UI class to receive callbacks
     internal Action<(int x, int y, int width, int height), int>? displaySegment;
 
     internal override void OnUpdate()

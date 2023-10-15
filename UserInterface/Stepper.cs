@@ -62,16 +62,14 @@ public class Stepper : Element
         set;
     } = 1f;
 
-    public Stepper((int x, int y) position = default, float value = 0)
-        : base(position)
+    public Stepper((int x, int y) position = default, float value = 0) : base(position)
     {
         Size = (10, 2);
         Value = value;
 
         Init();
     }
-    public Stepper(byte[] bytes)
-        : base(bytes)
+    public Stepper(byte[] bytes) : base(bytes)
     {
         Range = (GrabFloat(bytes), GrabFloat(bytes));
         Value = GrabFloat(bytes);
@@ -123,7 +121,10 @@ public class Stepper : Element
 
         Middle.OnInteraction(Interaction.Scroll, ApplyScroll);
         Middle.OnInteraction(Interaction.Trigger, () =>
-            Value = Snap(float.IsPositiveInfinity(Range.maximum) ? 0 : Range.maximum / 2, Step));
+        {
+            var isInfinity = float.IsInfinity(Range.maximum) && float.IsInfinity(Range.minimum);
+            Value = Snap(isInfinity ? 0 : (Range.maximum + Range.minimum) / 2, Step);
+        });
 
         Maximum.OnInteraction(Interaction.Scroll, ApplyScroll);
         Maximum.OnInteraction(Interaction.Trigger, () => Value = Range.maximum);
@@ -131,7 +132,7 @@ public class Stepper : Element
 
     internal override void ApplyScroll()
     {
-        Value += Input.Current.ScrollDelta * Step;
+        Value += Input.ScrollDelta * Step;
     }
     internal override void OnUpdate()
     {

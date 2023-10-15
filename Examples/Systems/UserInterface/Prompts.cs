@@ -18,7 +18,7 @@ public static class Prompts
         };
         input.OnDisplay(() => InputBoxes.DisplayInputBox(maps, input, 4));
         var prompt = new Prompt();
-        prompt.OnDisplay(buttons => DisplayPrompt(maps, prompt, buttons));
+        prompt.OnDisplay(buttons => DisplayPrompt(maps, prompt, buttons, 3));
         Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
         {
             var shouldLog = prompt.Element == input && prompt.IsOpened;
@@ -49,38 +49,34 @@ public static class Prompts
 
         return prompt;
     }
-    private static void DisplayPrompt(TilemapManager maps, Prompt promptInput, Button[] buttons)
+    private static void DisplayPrompt(TilemapManager maps, Prompt prompt, Button[] buttons, int zOrder)
     {
-        if (promptInput.IsOpened)
+        if (prompt.IsOpened)
         {
             var tile = new Tile(Tile.SHADE_OPAQUE, new Color(0, 0, 0, 127));
-            maps[3].SetRectangle((0, 0), maps.Size, tile);
-            maps[3].SetBox(promptInput.Position, promptInput.Size,
+            maps[zOrder].SetRectangle((0, 0), maps.Size, tile);
+            maps[zOrder + 1].SetBox(prompt.Position, prompt.Size,
                 tileFill: new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()),
                 cornerTileId: Tile.BOX_CORNER_ROUND,
                 borderTileId: Tile.SHADE_OPAQUE,
                 borderTint: Color.Gray.ToDark());
         }
 
-        var messageSize = (promptInput.Size.width, promptInput.Size.height - 1);
-        maps[6].SetTextRectangle(promptInput.Position, messageSize, promptInput.Message,
+        var messageSize = (prompt.Size.width, prompt.Size.height - 1);
+        maps[zOrder + 2].SetTextRectangle(prompt.Position, messageSize, prompt.Message,
             alignment: Tilemap.Alignment.Center);
 
         for (var i = 0; i < buttons.Length; i++)
         {
             var btn = buttons[i];
-            Clear(maps, btn);
-
             var tile = new Tile(Tile.ICON_TICK, GetColor(btn, Color.Green));
-            var bg = new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark());
             if (i == 1)
             {
                 tile.Id = Tile.ICON_CANCEL;
                 tile.Tint = GetColor(btn, Color.Red);
             }
 
-            maps[3].SetTile(btn.Position, bg);
-            maps[6].SetTile(btn.Position, tile);
+            maps[zOrder + 3].SetTile(btn.Position, tile);
         }
     }
 }

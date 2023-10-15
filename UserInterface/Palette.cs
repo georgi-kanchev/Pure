@@ -33,15 +33,13 @@ public class Palette : Element
         }
     }
 
-    public Palette((int x, int y) position = default, int brightnessLevels = 30)
-        : base(position)
+    public Palette((int x, int y) position = default, int brightnessLevels = 30) : base(position)
     {
         Size = (13, 3);
 
         Init(brightnessLevels, brightnessLevels / 2, 1f);
     }
-    public Palette(byte[] bytes)
-        : base(bytes)
+    public Palette(byte[] bytes) : base(bytes)
     {
         SelectedColor = GrabUInt(bytes);
         var opacity = GrabFloat(bytes);
@@ -60,30 +58,24 @@ public class Palette : Element
         return result.ToArray();
     }
 
-    protected virtual void OnSampleDisplay(Button sample, uint color)
+    public void OnColorSampleDisplay(Action<Button, uint> method)
     {
+        displaySample += method;
     }
-    protected virtual void OnPageDisplay(Button page)
+    public void OnColorPick(Func<(float x, float y), uint> method)
     {
+        pick = method;
     }
-    protected virtual uint OnPick((float x, float y) position)
-    {
-        return default;
-    }
+
     protected override void OnInput()
     {
         if (isPicking)
-            MouseCursorResult = MouseCursor.Crosshair;
+            Input.MouseCursorResult = MouseCursor.Crosshair;
 
-        if (Input.Current.IsJustPressed && isPicking && IsHovered == false)
+        if (Input.IsJustPressed && isPicking && IsHovered == false)
         {
             isPicking = false;
-
-            // ui callback first, then child callback (child is with priority
-            // - will overwrite the value if possible)
-            var uiColor = pickCallback?.Invoke(Input.Current.Position);
-            var childColor = OnPick(Input.Current.Position);
-            SelectedColor = childColor == default && uiColor != null ? (uint)uiColor : childColor;
+            SelectedColor = pick?.Invoke(Input.Position) ?? default;
         }
 
         SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
@@ -110,10 +102,8 @@ public class Palette : Element
     private bool isPicking;
     private uint selectedColor = uint.MaxValue;
 
-    // used in the UI class to receive callbacks
-    internal Action<Button>? pageDisplayCallback;
-    internal Action<Button, uint>? sampleDisplayCallback;
-    internal Func<(float, float), uint>? pickCallback;
+    internal Action<Button, uint>? displaySample;
+    internal Func<(float x, float y), uint>? pick;
 
     [MemberNotNull(nameof(Opacity), nameof(Brightness), nameof(Pick))]
     private void Init(int brightnessPageCount, int brightnessCurrentPage, float opacityProgress)
@@ -123,11 +113,12 @@ public class Palette : Element
         brightnessPageCount = Math.Clamp(brightnessPageCount, 1, 99);
 
         Opacity = new((x, y)) { Progress = opacityProgress, hasParent = true };
-        Brightness = new Pages((x, y + 2), brightnessPageCount)
+        Brightness = new((x, y + 2), brightnessPageCount)
         {
             size = (w - 1, 1),
             Current = brightnessCurrentPage,
-            hasParent = true
+            ItemWidth = $"{brightnessPageCount}".Length,
+            hasParent = true,
         };
         Pick = new((x + w - 1, y + h - 1)) { hasParent = true };
 
@@ -150,10 +141,7 @@ public class Palette : Element
     internal override void OnChildrenDisplay()
     {
         for (var i = 0; i < colorButtons.Count; i++)
-        {
-            OnSampleDisplay(colorButtons[i], GetColor(i));
-            sampleDisplayCallback?.Invoke(colorButtons[i], GetColor(i));
-        }
+            displaySample?.Invoke(colorButtons[i], GetColor(i));
     }
     internal override void OnChildrenUpdate()
     {

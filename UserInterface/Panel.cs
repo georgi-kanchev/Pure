@@ -35,13 +35,11 @@ public class Panel : Element
     /// Initializes a new panel instance with the specified position.
     /// </summary>
     /// <param name="position">The position of the panel.</param>
-    public Panel((int x, int y) position = default)
-        : base(position)
+    public Panel((int x, int y) position = default) : base(position)
     {
         Size = (12, 8);
     }
-    public Panel(byte[] bytes)
-        : base(bytes)
+    public Panel(byte[] bytes) : base(bytes)
     {
         sizeMinimum = (GrabInt(bytes), GrabInt(bytes));
         IsResizable = GrabBool(bytes);
@@ -58,16 +56,16 @@ public class Panel : Element
         return result.ToArray();
     }
 
-    protected virtual void OnResize((int width, int height) delta)
+    public void OnResize(Action<(int deltaWidth, int deltaHeight)> method)
     {
+        resize += method;
     }
 
 #region Backend
     private bool isMoving, isResizingL, isResizingR, isResizingU, isResizingD;
     private (int x, int y) startBotR;
 
-    // used in the UI class to receive callbacks
-    internal Action<(int width, int height)>? resizeCallback;
+    internal Action<(int deltaWidth, int deltaHeight)>? resize;
 
     internal override void OnUpdate()
     {
@@ -78,8 +76,8 @@ public class Panel : Element
 
         var (x, y) = Position;
         var (w, h) = Size;
-        var (inputX, inputY) = Input.Current.Position;
-        var (prevX, prevY) = Input.Current.PositionPrevious;
+        var (inputX, inputY) = Input.Position;
+        var (prevX, prevY) = Input.PositionPrevious;
 
         inputX = MathF.Floor(inputX);
         inputY = MathF.Floor(inputY);
@@ -103,8 +101,8 @@ public class Panel : Element
 
         TrySetCursorAndCache(isHoveringSides, isHovL, isHovR, isHovB, isHovCornersT, isHovT);
 
-        if (IsFocused == false || Input.Current.IsPressed == false ||
-            Input.Current.Position == Input.Current.PositionPrevious)
+        if (IsFocused == false || Input.IsPressed == false ||
+            Input.Position == Input.PositionPrevious)
             return;
 
         TryMoveAndResize(inputX, inputY, prevX, prevY);
@@ -118,11 +116,11 @@ public class Panel : Element
         bool isHoveringTopCorners,
         bool isHoveringTop)
     {
-        var isClicked = Input.Current.IsPressed && Input.Current.WasPressed == false;
-        var wasClicked = Input.Current.IsPressed == false && Input.Current.WasPressed;
+        var isClicked = Input.IsPressed && Input.WasPressed == false;
+        var wasClicked = Input.IsPressed == false && Input.WasPressed;
 
         if (IsDisabled == false && IsHovered)
-            MouseCursorResult = MouseCursor.Arrow;
+            Input.MouseCursorResult = MouseCursor.Arrow;
 
         if (wasClicked)
         {
@@ -152,9 +150,9 @@ public class Panel : Element
             var bl = isHoveringBottom && isHoveringLeft;
 
             if (IsDisabled == false && (tl || br))
-                MouseCursorResult = MouseCursor.ResizeDiagonal1;
+                Input.MouseCursorResult = MouseCursor.ResizeDiagonal1;
             if (IsDisabled == false && (tr || bl))
-                MouseCursorResult = MouseCursor.ResizeDiagonal2;
+                Input.MouseCursorResult = MouseCursor.ResizeDiagonal2;
         }
 
         return;
@@ -168,7 +166,7 @@ public class Panel : Element
             }
 
             if (IsDisabled == false)
-                MouseCursorResult = cursor;
+                Input.MouseCursorResult = cursor;
         }
     }
     private void TryMoveAndResize(float inputX, float inputY, float prevX, float prevY)
@@ -180,7 +178,7 @@ public class Panel : Element
         var (newW, newH) = (w, h);
         var (minX, minY) = SizeMinimum;
 
-        if (FocusedPrevious != this)
+        if (Input.FocusedPrevious != this)
             return;
 
         if (isMoving)
@@ -192,7 +190,7 @@ public class Panel : Element
         if (isResizingR)
         {
             newW = (int)inputX - x + 1;
-            
+
             if (inputX <= x)
                 return;
         }
@@ -200,7 +198,7 @@ public class Panel : Element
         if (isResizingD)
         {
             newH = (int)inputY - y + 1;
-            
+
             if (inputY <= y)
                 return;
         }
@@ -224,8 +222,8 @@ public class Panel : Element
         }
 
         var isOutsideScreen =
-            newX + newW > TilemapSize.width ||
-            newY + newH > TilemapSize.height ||
+            newX + newW > Input.TilemapSize.width ||
+            newY + newH > Input.TilemapSize.height ||
             newX < 0 || newY < 0;
         var isBelowMinimumSize = newW < Math.Abs(minX) || newH < Math.Abs(minY);
 
@@ -240,8 +238,7 @@ public class Panel : Element
             return;
 
         var delta = (Size.width - prevSz.width, Size.height - prevSz.height);
-        OnResize(delta);
-        resizeCallback?.Invoke(delta);
+        resize?.Invoke(delta);
     }
 
     private static bool IsBetween(float number, float rangeA, float rangeB)

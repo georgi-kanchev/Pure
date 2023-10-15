@@ -9,29 +9,59 @@ public static class Panels
 {
     public static Element[] Create(TilemapManager maps)
     {
-        var panelText = new Panel { Size = (15, 15) };
+        var nl = Environment.NewLine;
+        var text = $"- Useful for containing other elements{nl}{nl}" +
+                   $"- Title{nl}{nl}" +
+                   $"- Can be optionally moved and/or resized{nl}{nl}" +
+                   $"- Cannot be resized or moved outside the window{nl}{nl}" +
+                   $"- Minimum sizes";
+        var panelText = new Panel { Text = "Cool Title", Size = (19, 19), SizeMinimum = (4, 2) };
         panelText.Align((0.1f, 0.5f));
-        panelText.OnDisplay(() => DisplayPanel(maps, panelText));
+        panelText.OnDisplay(() =>
+        {
+            var (x, y) = panelText.Position;
+            var (w, h) = panelText.Size;
+
+            DisplayPanel(maps, panelText, zOrder: 0);
+            maps[1].SetTextRectangle(
+                position: (x + 1, y + 1),
+                size: (w - 2, h - 2),
+                text,
+                tint: Color.Green);
+        });
 
         //============
 
-        var panelButton = new Panel { Size = (15, 15) };
-        panelButton.Align((0.9f, 0.5f));
-        panelButton.OnDisplay(() => DisplayPanel(maps, panelButton));
+        var button = new Button { Text = "CLICK ME!" };
+        var panelButton = new Panel { Size = (15, 9), SizeMinimum = (5, 5) };
+        panelButton.Align((0.95f, 0.5f));
+        panelButton.OnDisplay(() =>
+        {
+            var (x, y) = panelButton.Position;
+            var (w, h) = panelButton.Size;
 
-        return new Element[] { panelText, panelButton };
+            DisplayPanel(maps, panelButton, zOrder: 2);
+            button.Position = (x + 1, y + 1);
+            button.Size = (w - 2, h - 2);
+            ButtonsAndCheckboxes.DisplayButton(maps, button, zOrder: 2);
+        });
+
+        return new Element[] { panelText, panelButton, button };
     }
-    public static void DisplayPanel(TilemapManager maps, Panel panel)
+    public static void DisplayPanel(TilemapManager maps, Panel panel, int zOrder)
     {
         var e = panel;
-        SetBackground(maps[0], e, 0.6f);
+        var (x, y) = e.Position;
+        var (w, _) = e.Size;
 
-        maps[1].SetRectangle(e.Position, e.Size, Tile.EMPTY);
-        maps[2].SetRectangle(e.Position, e.Size, Tile.EMPTY);
+        Clear(maps, panel, (zOrder, zOrder + 1));
+        SetBackground(maps[zOrder], e, 0.6f);
 
-        maps[2].SetBox(e.Position, e.Size, Tile.EMPTY, Tile.BOX_GRID_CORNER,
+        maps[zOrder + 1].SetBox(e.Position, e.Size, Tile.EMPTY, Tile.BOX_GRID_CORNER,
             Tile.BOX_GRID_STRAIGHT, Color.Blue);
-        maps[2].SetTextRectangle((e.Position.x, e.Position.y), (e.Size.width, 1), e.Text,
-            alignment: Tilemap.Alignment.Center);
+        maps[zOrder + 1].SetTextLine(
+            position: (x + w / 2 - e.Text.Length / 2, y),
+            e.Text,
+            maxLength: Math.Min(w, e.Text.Length));
     }
 }

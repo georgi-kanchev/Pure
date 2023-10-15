@@ -428,7 +428,7 @@ public class InputBox : Element
         if (IsFocused && IsSingleLine && JustPressed(Key.Enter))
             submit?.Invoke();
 
-        var isBellowElement = IsFocused == false || FocusedPrevious != this;
+        var isBellowElement = IsFocused == false || Input.FocusedPrevious != this;
         if (isBellowElement || TrySelectAll() || JustPressed(Key.Tab))
             return;
 
@@ -436,7 +436,7 @@ public class InputBox : Element
 
         TryResetHoldTimers(out var isHolding, isJustTyped);
 
-        var isAllowedType = isJustTyped || (isHolding && Input.Current.Typed != string.Empty);
+        var isAllowedType = isJustTyped || (isHolding && Input.Typed != string.Empty);
         var shouldDelete = isAllowedType || Allowed(Key.Backspace, isHolding) ||
                            Allowed(Key.Delete, isHolding) ||
                            (Allowed(Key.Enter, isHolding) && IsSingleLine == false);
@@ -466,7 +466,7 @@ public class InputBox : Element
     }
     internal override void ApplyScroll()
     {
-        var delta = Input.Current.ScrollDelta;
+        var delta = Input.ScrollDelta;
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
         CursorMove(ctrl ? (-delta, 0) : (0, -delta), true);
     }
@@ -516,16 +516,16 @@ public class InputBox : Element
     }
     private static bool JustPressed(Key key)
     {
-        return Input.Current.IsKeyJustPressed(key);
+        return Input.IsKeyJustPressed(key);
     }
     private static bool Pressed(Key key)
     {
-        return Input.Current.IsKeyPressed(key);
+        return Input.IsKeyPressed(key);
     }
     private static bool JustTyped()
     {
-        var typed = Input.Current.Typed ?? string.Empty;
-        var prev = Input.Current.TypedPrevious ?? string.Empty;
+        var typed = Input.Typed ?? string.Empty;
+        var prev = Input.TypedPrevious ?? string.Empty;
 
         foreach (var s in typed)
             if (prev.Contains(s) == false)
@@ -566,12 +566,12 @@ public class InputBox : Element
     private void TrySelect()
     {
         var isSamePosClick = false;
-        var (hx, hy) = Input.Current.Position;
+        var (hx, hy) = Input.Position;
         var ix = (int)Math.Round(scrX + hx - Position.x);
         var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
-        var hasMoved = Input.Current.PositionPrevious != Input.Current.Position;
+        var hasMoved = Input.PositionPrevious != Input.Position;
 
-        if (Input.Current.IsPressed)
+        if (Input.IsPressed)
         {
             cursorBlink.Restart();
             clickDelay.Restart();
@@ -593,7 +593,7 @@ public class InputBox : Element
             if (IsPressedAndHeld && hasMoved)
                 MoveCursor();
 
-            if (Input.Current.IsJustPressed == false)
+            if (Input.IsJustPressed == false)
                 return;
 
             // click
@@ -616,7 +616,7 @@ public class InputBox : Element
             scrollHold.Elapsed.TotalSeconds > 0.15f == false)
             return;
 
-        var (px, py) = Input.Current.Position;
+        var (px, py) = Input.Position;
         var (x, y) = Position;
         var (w, h) = Size;
 
@@ -632,7 +632,7 @@ public class InputBox : Element
     private void TryCycleSelected()
     {
         var (x, y) = Position;
-        var (hx, hy) = Input.Current.Position;
+        var (hx, hy) = Input.Position;
         var selectionIndices = PositionToIndices(((int)hx, (int)hy));
 
         clicks = clicks == 4 ? 1 : clicks + 1;
@@ -670,7 +670,7 @@ public class InputBox : Element
     {
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
 
-        if (ctrl == false || Input.Current.Typed != "a")
+        if (ctrl == false || Input.Typed != "a")
             return false;
 
         SelectAll();
@@ -717,7 +717,7 @@ public class InputBox : Element
         if (isAllowedType == false || IsEditable == false)
             return;
 
-        var symbols = Input.Current.Typed ?? string.Empty;
+        var symbols = Input.Typed ?? string.Empty;
         Type(symbols, isPasting);
     }
     private void Type(string symbols, bool isPasting)
@@ -929,10 +929,10 @@ public class InputBox : Element
     private void TrySetMouseCursor()
     {
         if (IsDisabled == false && (IsHovered || IsPressedAndHeld))
-            MouseCursorResult = MouseCursor.Text;
+            Input.MouseCursorResult = MouseCursor.Text;
 
         if (IsHovered && IsEditable == false && Value.Length == 0)
-            MouseCursorResult = MouseCursor.Arrow;
+            Input.MouseCursorResult = MouseCursor.Arrow;
     }
     private bool TryCopyPasteCut(
         ref bool justDeletedSelection,
@@ -947,14 +947,14 @@ public class InputBox : Element
         if (IsEditable == false)
             return false;
 
-        if (ctrl && Input.Current.Typed == "c")
+        if (ctrl && Input.Typed == "c")
         {
             TextCopied = SelectedText;
             return true;
         }
-        else if (ctrl && Input.Current.Typed == "v")
+        else if (ctrl && Input.Typed == "v")
             isPasting = true;
-        else if (hasSelection && ctrl && Input.Current.Typed == "x")
+        else if (hasSelection && ctrl && Input.Typed == "x")
         {
             TextCopied = SelectedText;
             shouldDelete = true;

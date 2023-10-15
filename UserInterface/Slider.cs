@@ -91,7 +91,7 @@ public class Slider : Element
     protected override void OnInput()
     {
         if (IsHovered)
-            MouseCursorResult = MouseCursor.Hand;
+            Input.MouseCursorResult = MouseCursor.Hand;
     }
 
 #region Backend
@@ -104,19 +104,19 @@ public class Slider : Element
     {
         OnInteraction(Interaction.Trigger, () =>
         {
-            var (x, y) = Input.Current.Position;
+            var (x, y) = Input.Position;
             MoveTo(((int)x, (int)y));
         });
         OnDrag(_ =>
         {
-            var (x, y) = Input.Current.Position;
+            var (x, y) = Input.Position;
             MoveTo(((int)x, (int)y));
         });
 
         Handle = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
         Handle.OnDrag(_ =>
         {
-            var (x, y) = Input.Current.Position;
+            var (x, y) = Input.Position;
             MoveTo(((int)x, (int)y));
         });
         Handle.OnInteraction(Interaction.Scroll, ApplyScroll);
@@ -124,7 +124,7 @@ public class Slider : Element
 
     internal override void ApplyScroll()
     {
-        Move(Input.Current.ScrollDelta);
+        Move(Input.ScrollDelta);
     }
     internal override void OnChildrenUpdate()
     {

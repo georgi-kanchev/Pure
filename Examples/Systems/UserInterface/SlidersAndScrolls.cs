@@ -19,15 +19,15 @@ public static class SlidersAndScrolls
         scrollH.Align((0.9f, 0.9f));
         scrollV.Align((0.1f, 0.9f));
 
-        sliderH.OnDisplay(() => DisplaySlider(maps, sliderH));
-        sliderV.OnDisplay(() => DisplaySlider(maps, sliderV));
-        scrollH.OnDisplay(() => DisplayScroll(maps, scrollH));
-        scrollV.OnDisplay(() => DisplayScroll(maps, scrollV));
+        sliderH.OnDisplay(() => DisplaySlider(maps, sliderH, zOrder: 0));
+        sliderV.OnDisplay(() => DisplaySlider(maps, sliderV, zOrder: 0));
+        scrollH.OnDisplay(() => DisplayScroll(maps, scrollH, zOrder: 0));
+        scrollV.OnDisplay(() => DisplayScroll(maps, scrollV, zOrder: 0));
 
         return new Element[] { sliderH, sliderV, scrollH, scrollV };
     }
 
-    public static void DisplaySlider(TilemapManager maps, Slider slider)
+    public static void DisplaySlider(TilemapManager maps, Slider slider, int zOrder)
     {
         var e = slider;
         var (w, h) = e.Size;
@@ -35,31 +35,31 @@ public static class SlidersAndScrolls
         var isHandle = e.Handle.IsPressedAndHeld;
         var color = GetColor(isHandle ? e.Handle : e, Color.Gray.ToBright());
 
-        SetBackground(maps[0], e);
-        maps[1].SetBar(e.Handle.Position,
+        SetBackground(maps[zOrder], e);
+        maps[zOrder + 1].SetBar(e.Handle.Position,
             tileIdEdge: Tile.BAR_DEFAULT_EDGE,
             tileId: Tile.BAR_DEFAULT_STRAIGHT,
             color,
             size: e.Size.height,
             isVertical: e.IsVertical == false);
-        maps[2].SetTextLine(
+        maps[zOrder + 2].SetTextLine(
             position: (e.Position.x + w / 2 - text.Length / 2, e.Position.y + h / 2),
             text);
     }
-    public static void DisplayScroll(TilemapManager maps, Scroll scroll)
+    public static void DisplayScroll(TilemapManager maps, Scroll scroll, int zOrder)
     {
         var e = scroll;
-        var scrollUpAng = (sbyte)(e.IsVertical ? 3 : 0);
-        var scrollDownAng = (sbyte)(e.IsVertical ? 1 : 2);
+        var scrollUpAng = (sbyte)(e.IsVertical ? 1 : 0);
+        var scrollDownAng = (sbyte)(e.IsVertical ? 3 : 2);
         var scrollColor = Color.Gray.ToBright();
         var isHandle = e.Slider.Handle.IsPressedAndHeld;
 
-        SetBackground(maps[0], e, 0.4f);
-        maps[1].SetTile(e.Increase.Position,
+        SetBackground(maps[zOrder], e, 0.4f);
+        maps[zOrder + 1].SetTile(e.Increase.Position,
             new(Tile.ARROW, GetColor(e.Increase, scrollColor), scrollUpAng));
-        maps[1].SetTile(e.Slider.Handle.Position,
+        maps[zOrder + 1].SetTile(e.Slider.Handle.Position,
             new(Tile.SHAPE_CIRCLE, GetColor(isHandle ? e.Slider.Handle : e.Slider, scrollColor)));
-        maps[1].SetTile(e.Decrease.Position,
+        maps[zOrder + 1].SetTile(e.Decrease.Position,
             new(Tile.ARROW, GetColor(e.Decrease, scrollColor), scrollDownAng));
     }
 }
