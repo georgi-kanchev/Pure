@@ -15,10 +15,53 @@
         <ProjectReference Include="..\Window\Window.csproj"/>
         <ProjectReference Include="..\Utilities\Utilities.csproj"/>
         <ProjectReference Include="..\Animation\Animation.csproj"/>
-        <ProjectReference Include="..\Tracker\Tracker.csproj"/>
         <ProjectReference Include="..\Collision\Collision.csproj"/>
         <ProjectReference Include="..\Storage\Storage.csproj"/>
         <ProjectReference Include="..\UserInterface\UserInterface.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="ExamplesUserInterface\ButtonsAndCheckboxes.cs">
+            <Link>ExampleUserInterface\ButtonsAndCheckboxes.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\FileViewers.cs">
+            <Link>ExampleUserInterface\FileViewers.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\InputBoxes.cs">
+            <Link>ExampleUserInterface\InputBoxes.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\Layouts.cs">
+            <Link>ExampleUserInterface\Layouts.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\Lists.cs">
+            <Link>ExampleUserInterface\Lists.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\Pagination.cs">
+            <Link>ExampleUserInterface\Pagination.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\Palettes.cs">
+            <Link>ExampleUserInterface\Palettes.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\Panels.cs">
+            <Link>ExampleUserInterface\Panels.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\Prompts.cs">
+            <Link>ExampleUserInterface\Prompts.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\SlidersAndScrolls.cs">
+            <Link>ExampleUserInterface\SlidersAndScrolls.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\Steppers.cs">
+            <Link>ExampleUserInterface\Steppers.cs</Link>
+        </Compile>
+        <Compile Update="ExamplesUserInterface\Utility.cs">
+            <Link>ExampleUserInterface\Utility.cs</Link>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Games\"/>
+        <Folder Include="Systems\"/>
     </ItemGroup>
 
 </Project>

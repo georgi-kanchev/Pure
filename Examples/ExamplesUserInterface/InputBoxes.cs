@@ -1,0 +1,91 @@
+namespace Pure.Examples.ExamplesUserInterface;
+
+public static class InputBoxes
+{
+    public static Block[] Create(TilemapPack maps)
+    {
+        var line = Environment.NewLine;
+        var messages = $"Welcome to the chat! :){line}" +
+                       $"Type a message &{line}" +
+                       $"press <Enter> to send it.{line}{line}";
+        var chat = new InputBox
+        {
+            Size = (20, 1),
+            Value = "",
+            Placeholder = "Chat message…",
+            IsSingleLine = true,
+        };
+        chat.Align((0.1f, 0.95f));
+        chat.OnSubmit(() =>
+        {
+            var clock = $"[{Time.Clock.ToClock()}]";
+            messages += $"{clock}{line}{chat.Value}" +
+                        $"{line}{line}";
+            chat.Value = "";
+        });
+        chat.OnDisplay(() =>
+        {
+            var (x, y) = chat.Position;
+            maps[0].SetTextRectangle(
+                position: (x, y - 10),
+                size: (chat.Size.width, 10),
+                text: messages,
+                alignment: Tilemap.Alignment.BottomLeft,
+                scrollProgress: 1f);
+            SetInputBox(maps, chat, 0);
+        });
+
+        // ==========================
+
+        var multiLine = new InputBox
+        {
+            Size = (12, 12),
+            Value = "",
+            Placeholder = "Type some text on multiple lines…",
+        };
+        multiLine.Align((0.1f, 0.1f));
+        multiLine.OnDisplay(() => SetInputBox(maps, multiLine, 0));
+
+        // ==========================
+
+        var pass = "<Enter> to submit";
+        var password = new InputBox
+        {
+            Size = (17, 1),
+            Value = "",
+            Placeholder = "Password…",
+            IsSingleLine = true,
+        };
+        password.SymbolSet |= SymbolSet.Password;
+        password.Align((0.95f, 0.1f));
+        password.OnSubmit(() => { pass = password.Value; });
+        password.OnDisplay(() =>
+        {
+            var pos = password.Position;
+            maps[0].SetTextLine((pos.x, pos.y - 1), pass);
+            SetInputBox(maps, password, 0);
+        });
+
+        // ==========================
+
+        var mathResult = "<Enter> to calculate";
+        var equation = new InputBox
+        {
+            Size = (20, 1),
+            Value = "",
+            Placeholder = "Math equation…",
+            SymbolSet = SymbolSet.Math | SymbolSet.Digits,
+            IsSingleLine = true,
+        };
+        equation.Align((0.95f, 0.9f));
+        equation.OnSubmit(() => mathResult = $"{equation.Value.Calculate()}");
+        equation.OnDisplay(() =>
+        {
+            var pos = equation.Position;
+            maps[0].SetTextLine((pos.x, pos.y - 1), mathResult);
+            SetInputBox(maps, equation, 0);
+        });
+
+        return new Block[] { multiLine, password, chat, equation };
+    }
+}
