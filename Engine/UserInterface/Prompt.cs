@@ -1,0 +1,156 @@
+namespace Pure.Engine.UserInterface;
+
+public class Prompt
+{
+    public Block? Block
+    {
+        get;
+        set;
+    }
+
+    public (int x, int y) Position
+    {
+        get;
+        private set;
+    }
+    public (int width, int height) Size
+    {
+        get;
+        private set;
+    }
+    public string? Message
+    {
+        get;
+        set;
+    }
+    public bool IsOpened
+    {
+        get;
+        private set;
+    }
+
+    public void Open(int buttonCount = 1, Action<int>? onButtonTrigger = null)
+    {
+        UpdateBlockPosition();
+        buttonCount = Math.Max(buttonCount, 1);
+        IsOpened = true;
+        buttons.Clear();
+
+        for (var i = 0; i < buttonCount; i++)
+        {
+            var btn = new Button((-1, -1))
+            {
+                hasParent = true,
+                size = (1, 1),
+            };
+            var index = i;
+            btn.OnInteraction(Interaction.Trigger, () =>
+            {
+                onButtonTrigger?.Invoke(index);
+                Close();
+            });
+            buttons.Add(btn);
+        }
+    }
+    public void Close()
+    {
+        IsOpened = false;
+        buttons.Clear();
+    }
+
+    public bool IsOwning(Block? block)
+    {
+        return block != null && (buttons.Contains(block) || panel == block);
+    }
+    public int IndexOf(Button? button)
+    {
+        return button == null ? -1 : buttons.IndexOf(button);
+    }
+
+    public void OnDisplay(Action<Button[]> method)
+    {
+        display += method;
+    }
+
+#region Backend
+    private readonly List<Button> buttons = new();
+    private readonly Panel panel = new((0, 0))
+    {
+        IsResizable = false,
+        IsMovable = false,
+        IsRestricted = false,
+        isTextReadonly = true,
+        hasParent = true,
+    };
+
+    private Action<Button[]>? display;
+
+    internal void Update(BlockPack ui)
+    {
+        if (IsOpened == false)
+            return;
+
+        var sz = Input.TilemapSize;
+        var lines = Message?.Split(Environment.NewLine).Length ?? 0;
+        var (w, h) = (sz.width / 2, 0);
+        var (x, y) = (sz.width / 4, sz.height / 2 + lines / 2);
+
+        display?.Invoke(buttons.ToArray());
+
+        panel.isDisabled = IsOpened == false;
+        panel.position = IsOpened ? (0, 0) : (int.MaxValue, int.MaxValue);
+        panel.size = sz;
+        panel.Update();
+
+        if (Block != null)
+        {
+            Block.Update();
+            w = Block.Size.width;
+            h = Block.Size.height;
+            x = Block.Position.x;
+            y = Block.Position.y;
+        }
+
+        Position = IsOpened ? (x, y - lines) : (int.MaxValue, int.MaxValue);
+        Size = (w, lines + h + 1);
+
+        var btnXs = Distribute(buttons.Count, (x, x + w));
+        for (var i = 0; i < buttons.Count; i++)
+        {
+            var btn = buttons[i];
+            btn.position = ((int)btnXs[i], y + h);
+            btn.Update();
+        }
+
+        if (Input.IsKeyJustPressed(Key.Escape))
+            Close();
+    }
+    private void UpdateBlockPosition()
+    {
+        if (Block == null)
+            return;
+
+        var text = Message ?? "";
+        var lines = text.Split(Environment.NewLine).Length;
+
+        Block.Align((0.5f, 0.5f));
+        var (x, y) = Block.Position;
+        Block.position = (x, y + lines / 2);
+    }
+
+    private static float[] Distribute(int amount, (float a, float b) range)
+    {
+        if (amount <= 0)
+            return Array.Empty<float>();
+
+        var result = new float[amount];
+        var size = range.b - range.a;
+        var spacing = size / (amount + 1);
+
+        for (var i = 1; i <= amount; i++)
+            result[i - 1] = range.a + i * spacing;
+
+        return result;
+    }
+#endregion
+}
