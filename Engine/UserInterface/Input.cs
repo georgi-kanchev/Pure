@@ -72,11 +72,7 @@ public static class Input
             PressedKeys = keys;
         }
 
-        if (string.IsNullOrWhiteSpace(keysTyped) == false)
-            Typed = keysTyped
-                .Replace("\n", "")
-                .Replace("\t", "")
-                .Replace("\r", "");
+        Typed = keysTyped?.Replace("\n", "").Replace("\t", "").Replace("\r", "");
 
         ScrollDelta = scrollDelta;
 
