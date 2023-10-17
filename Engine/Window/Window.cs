@@ -173,13 +173,22 @@ public static class Window
             Mouse.CancelInput();
             Keyboard.CancelInput();
         };
-        window.MouseEntered += (_, _) => Mouse.UpdateCursorVisibility();
-        window.MouseLeft += (_, _) => Mouse.UpdateCursorVisibility();
+        window.MouseEntered += (_, _) =>
+        {
+            Mouse.isCursorTileVisible = true;
+            Mouse.UpdateCursorVisibility();
+        };
+        window.MouseLeft += (_, _) =>
+        {
+            Mouse.isCursorTileVisible = false;
+            Mouse.UpdateCursorVisibility();
+        };
         window.KeyPressed += Keyboard.OnKeyPress;
         window.KeyReleased += Keyboard.OnKeyRelease;
         window.MouseButtonPressed += Mouse.OnButtonPressed;
         window.MouseButtonReleased += Mouse.OnButtonReleased;
         window.MouseWheelScrolled += Mouse.OnWheelScrolled;
+        window.MouseMoved += Mouse.OnMove;
 
         window.DispatchEvents();
         window.Clear();

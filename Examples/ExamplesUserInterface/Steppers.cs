@@ -10,7 +10,7 @@ public static class Steppers
         {
             var (x, y) = stepper.Position;
             maps[0].SetTextLine((x, y - 1), "Step: 1 / Range: (-8, 10)");
-            SetStepper(maps, stepper, zOrder: 0);
+            maps.SetStepper(stepper);
         });
 
         //==============
@@ -21,7 +21,7 @@ public static class Steppers
         {
             var (x, y) = stepperDecimal.Position;
             maps[0].SetTextLine((x, y - 1), "Step: 0.1");
-            SetStepper(maps, stepperDecimal, zOrder: 0);
+            maps.SetStepper(stepperDecimal);
         });
 
         return new Block[] { stepper, stepperDecimal };

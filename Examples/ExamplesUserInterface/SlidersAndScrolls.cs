@@ -14,10 +14,10 @@ public static class SlidersAndScrolls
         scrollH.Align((0.9f, 0.9f));
         scrollV.Align((0.1f, 0.9f));
 
-        sliderH.OnDisplay(() => SetSlider(maps, sliderH, zOrder: 0));
-        sliderV.OnDisplay(() => SetSlider(maps, sliderV, zOrder: 0));
-        scrollH.OnDisplay(() => SetScroll(maps, scrollH, zOrder: 0));
-        scrollV.OnDisplay(() => SetScroll(maps, scrollV, zOrder: 0));
+        sliderH.OnDisplay(() => maps.SetSlider(sliderH));
+        sliderV.OnDisplay(() => maps.SetSlider(sliderV));
+        scrollH.OnDisplay(() => maps.SetScroll(scrollH));
+        scrollV.OnDisplay(() => maps.SetScroll(scrollV));
 
         return new Block[] { sliderH, sliderV, scrollH, scrollV };
     }

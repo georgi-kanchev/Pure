@@ -9,12 +9,12 @@ public static class Palettes
         palette.OnColorPick(position => maps[0].TileAt(((int)position.x, (int)position.y)).Tint);
         palette.OnDisplay(() =>
         {
-            SetPalette(maps, palette, zOrder: 0);
-            SetPages(maps, palette.Brightness, zOrder: 1);
+            maps.SetPalette(palette);
+            maps.SetPages(palette.Brightness);
             palette.OnColorSampleDisplay((sample, color) =>
                 maps[1].SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color)));
             palette.Brightness.OnItemDisplay(item =>
-                SetPagesItem(maps, palette.Brightness, item, zOrder: 2));
+                maps.SetPagesItem(palette.Brightness, item, zOrder: 2));
         });
 
         //===============

@@ -27,7 +27,7 @@ public static class Layouts
         {
             if (index == 0)
             {
-                SetLayoutSegment(maps, segment, index, false);
+                maps.SetLayoutSegment(segment, index, false);
                 maps[1].SetTextRectangle(
                     position: (segment.x, segment.y),
                     size: (segment.width, segment.height),
@@ -41,11 +41,11 @@ public static class Layouts
             e.Size = (segment.width, segment.height);
 
             if (e is Button button)
-                SetButton(maps, button, zOrder: 0);
+                maps.SetButton(button);
             else if (e is Slider slider)
-                SetSlider(maps, slider, zOrder: 0);
+                maps.SetSlider(slider);
             else if (e is InputBox inputBox)
-                SetInputBox(maps, inputBox, zOrder: 0);
+                maps.SetInputBox(inputBox);
         });
 
         //============
@@ -56,7 +56,8 @@ public static class Layouts
         layoutEmpty.Cut(index: 0, side: Layout.CutSide.Bottom, rate: 0.6f);
         layoutEmpty.Cut(index: 1, side: Layout.CutSide.Top, rate: 0.25f);
         layoutEmpty.Cut(index: 1, side: Layout.CutSide.Bottom, rate: 0.4f);
-        layoutEmpty.OnDisplaySegment((segment, index) => SetLayoutSegment(maps, segment, index, true));
+        layoutEmpty.OnDisplaySegment((segment, index) =>
+            maps.SetLayoutSegment(segment, index, true));
 
         var elements = new List<Block>
         {

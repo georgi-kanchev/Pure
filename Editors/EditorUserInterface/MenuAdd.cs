@@ -1,4 +1,4 @@
-namespace Pure.EditorUserInterface;
+namespace Pure.Editors.EditorUserInterface;
 
 internal class MenuAdd : Menu
 {

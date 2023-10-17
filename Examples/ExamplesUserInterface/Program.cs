@@ -24,7 +24,7 @@ public static class Program
             Window.Activate(true);
 
             Time.Update();
-            maps.Fill();
+            maps.Clear();
 
             Input.TilemapSize = maps.Size;
             Input.Update(

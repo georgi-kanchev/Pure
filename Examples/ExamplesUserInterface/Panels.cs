@@ -17,7 +17,7 @@ public static class Panels
             var (x, y) = panelText.Position;
             var (w, h) = panelText.Size;
 
-            SetPanel(maps, panelText, zOrder: 0);
+            maps.SetPanel(panelText);
             maps[1].SetTextRectangle(
                 position: (x + 1, y + 1),
                 size: (w - 2, h - 2),
@@ -35,10 +35,10 @@ public static class Panels
             var (x, y) = panelButton.Position;
             var (w, h) = panelButton.Size;
 
-            SetPanel(maps, panelButton, zOrder: 2);
+            maps.SetPanel(panelButton, zOrder: 2);
             button.Position = (x + 1, y + 1);
             button.Size = (w - 2, h - 2);
-            SetButton(maps, button, zOrder: 2);
+            maps.SetButton(button, zOrder: 2);
         });
 
         return new Block[] { panelText, panelButton, button };

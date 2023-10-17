@@ -48,8 +48,7 @@ public static class Mouse
         get
         {
             Window.TryNoWindowException();
-            var p = SFML.Window.Mouse.GetPosition(Window.window);
-            return (p.X, p.Y);
+            return cursorPos;
         }
     }
     /// <summary>
@@ -190,6 +189,7 @@ public static class Mouse
     }
 
 #region Backend
+    internal static bool isCursorTileVisible;
     private static readonly Dictionary<Button, Action> actionsPress = new(), actionsRelease = new();
     private static Action? actionScroll;
     private static readonly List<Button> pressed = new();
@@ -199,12 +199,17 @@ public static class Mouse
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
     };
 
+    private static (int x, int y) cursorPos;
     private static int cursorTile = 442, scrollData;
     private static Cursor cursor;
     private static uint cursorColor = uint.MaxValue;
     private static SFML.Window.Cursor sysCursor = new(SFML.Window.Cursor.CursorType.Arrow);
     private static bool isMouseGrabbed, isCursorTile = true;
 
+    internal static void OnMove(object? s, MouseMoveEventArgs e)
+    {
+        cursorPos = (e.X, e.Y);
+    }
     internal static void OnButtonPressed(object? s, MouseButtonEventArgs e)
     {
         var btn = (Button)e.Button;
@@ -215,8 +220,8 @@ public static class Mouse
 
         pressed.Add(btn);
 
-        if (actionsPress.ContainsKey(btn))
-            actionsPress[btn].Invoke();
+        if (actionsPress.TryGetValue(btn, out var value))
+            value.Invoke();
     }
     internal static void OnButtonReleased(object? s, MouseButtonEventArgs e)
     {
@@ -228,8 +233,8 @@ public static class Mouse
 
         pressed.Remove(btn);
 
-        if (actionsRelease.ContainsKey(btn))
-            actionsRelease[btn].Invoke();
+        if (actionsRelease.TryGetValue(btn, out var value))
+            value.Invoke();
     }
     internal static void OnWheelScrolled(object? s, MouseWheelScrollEventArgs e)
     {
@@ -241,7 +246,7 @@ public static class Mouse
     {
         ScrollDelta = 0;
 
-        if (IsCursorTile == false || CursorGraphics == Cursor.None)
+        if (IsCursorTile == false || isCursorTileVisible == false || CursorGraphics == Cursor.None)
             return;
 
         var (x, y) = Window.PointFrom(CursorPosition);

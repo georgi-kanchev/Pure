@@ -32,7 +32,7 @@ public static class InputBoxes
                 text: messages,
                 alignment: Tilemap.Alignment.BottomLeft,
                 scrollProgress: 1f);
-            SetInputBox(maps, chat, 0);
+            maps.SetInputBox(chat);
         });
 
         // ==========================
@@ -44,7 +44,7 @@ public static class InputBoxes
             Placeholder = "Type some text on multiple lines…",
         };
         multiLine.Align((0.1f, 0.1f));
-        multiLine.OnDisplay(() => SetInputBox(maps, multiLine, 0));
+        multiLine.OnDisplay(() => maps.SetInputBox(multiLine));
 
         // ==========================
 
@@ -63,7 +63,7 @@ public static class InputBoxes
         {
             var pos = password.Position;
             maps[0].SetTextLine((pos.x, pos.y - 1), pass);
-            SetInputBox(maps, password, 0);
+            maps.SetInputBox(password);
         });
 
         // ==========================
@@ -83,7 +83,7 @@ public static class InputBoxes
         {
             var pos = equation.Position;
             maps[0].SetTextLine((pos.x, pos.y - 1), mathResult);
-            SetInputBox(maps, equation, 0);
+            maps.SetInputBox(equation);
         });
 
         return new Block[] { multiLine, password, chat, equation };

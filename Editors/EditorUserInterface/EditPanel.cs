@@ -1,4 +1,4 @@
-namespace Pure.EditorUserInterface;
+namespace Pure.Editors.EditorUserInterface;
 
 internal class EditPanel : Panel
 {
@@ -86,31 +86,31 @@ internal class EditPanel : Panel
                 }
             },
         };
-    }
 
-    protected void OnDisplay()
-    {
-        if (IsHovered)
-            Input.MouseCursorResult = MouseCursor.Arrow;
-
-        if ((IsHidden == false).Once("on-show"))
-            UpdatePanelValues();
-
-        if (Selected != null && IsHidden == false)
+        OnDisplay(() =>
         {
-            if ((prevSelected != Selected).Once("on-select"))
-            {
-                UpdateSelected();
+            if (IsHovered)
+                Input.MouseCursorResult = MouseCursor.Arrow;
+
+            if ((IsHidden == false).Once("on-show"))
                 UpdatePanelValues();
+
+            if (Selected != null && IsHidden == false)
+            {
+                if ((prevSelected != Selected).Once("on-select"))
+                {
+                    UpdateSelected();
+                    UpdatePanelValues();
+                }
+
+                RepositionPanel();
+                UpdatePanel();
+                UpdatePanelBlocks();
+                ReclampPanelValues();
             }
 
-            RepositionPanel();
-            UpdatePanel();
-            UpdatePanelBlocks();
-            ReclampPanelValues();
-        }
-
-        prevSelected = Selected;
+            prevSelected = Selected;
+        });
     }
 
 #region Backend
@@ -118,77 +118,76 @@ internal class EditPanel : Panel
     {
         public EditButton((int x, int y) position) : base(position)
         {
-        }
+            OnInteraction(Interaction.Trigger, () =>
+            {
+                if (Selected == null)
+                    return;
 
-        protected void OnUserAction(Interaction userAction)
-        {
-            if (userAction != Interaction.Trigger || Selected == null)
-                return;
+                var panel = editUI[ui.IndexOf(Selected)];
 
-            var panel = editUI[ui.IndexOf(Selected)];
+                if (Text == "Remove")
+                {
+                    editUI.BlockRemove(Selected);
+                    editPanel.Position = (int.MaxValue, int.MaxValue);
+                }
+                else if (Text == "To Top")
+                {
+                    editUI.BlockToTop(Selected);
+                }
+                else if (Text == "Disabled")
+                {
+                    Selected.IsDisabled = IsSelected;
+                }
+                else if (Text == "Hidden")
+                {
+                    Selected.IsHidden = IsSelected;
+                }
+                else if (Text == "Center X")
+                {
+                    panel.Position = (
+                        CameraPosition.x + CameraSize.w / 2 - panel.Size.width / 2,
+                        panel.Position.y);
+                }
+                else if (Text == "Center Y")
+                {
+                    panel.Position = (
+                        panel.Position.x,
+                        CameraPosition.y + CameraSize.h / 2 - panel.Size.height / 2);
+                }
+                else if (Text == "ItemSelect")
+                {
+                    var isViewer = Selected is FileViewer;
+                    var items = isViewer ?
+                        (InputBox)editPanel.blocks[typeof(FileViewer)][0] :
+                        (InputBox)editPanel.blocks[typeof(List)][3];
+                    var list = isViewer ? ((FileViewer)Selected).FilesAndFolders : (List)Selected;
+                    var index = editPanel.itemSelections.IndexOf(this);
 
-            if (Text == "Remove")
-            {
-                editUI.BlockRemove(Selected);
-                editPanel.Position = (int.MaxValue, int.MaxValue);
-            }
-            else if (Text == "To Top")
-            {
-                editUI.BlockToTop(Selected);
-            }
-            else if (Text == "Disabled")
-            {
-                Selected.IsDisabled = IsSelected;
-            }
-            else if (Text == "Hidden")
-            {
-                Selected.IsHidden = IsSelected;
-            }
-            else if (Text == "Center X")
-            {
-                panel.Position = (
-                    CameraPosition.x + CameraSize.w / 2 - panel.Size.width / 2,
-                    panel.Position.y);
-            }
-            else if (Text == "Center Y")
-            {
-                panel.Position = (
-                    panel.Position.x,
-                    CameraPosition.y + CameraSize.h / 2 - panel.Size.height / 2);
-            }
-            else if (Text == "ItemSelect")
-            {
-                var isViewer = Selected is FileViewer;
-                var items = isViewer ?
-                    (InputBox)editPanel.blocks[typeof(FileViewer)][0] :
-                    (InputBox)editPanel.blocks[typeof(List)][3];
-                var list = isViewer ? ((FileViewer)Selected).FilesAndFolders : (List)Selected;
-                var index = editPanel.itemSelections.IndexOf(this);
+                    //if (Selected is FileViewer { IsSelectingFolders: false } v && index < v.CountFolders)
+                    //    index += v.CountFolders;
 
-                //if (Selected is FileViewer { IsSelectingFolders: false } v && index < v.CountFolders)
-                //    index += v.CountFolders;
+                    var item = list[index + items.ScrollIndices.y];
 
-                var item = list[index + items.ScrollIndices.y];
+                    list.Select(item, IsSelected);
+                    editPanel.UpdateSelected();
+                }
+                else if (Text.Contains("Cut") && Selected is Layout l)
+                {
+                    var index = (int)((Stepper)editPanel.blocks[typeof(Layout)][1]).Value;
+                    var rate = ((Stepper)editPanel.blocks[typeof(Layout)][2]).Value;
 
-                list.Select(item, IsSelected);
-                editPanel.UpdateSelected();
-            }
-            else if (Text.Contains("Cut") && Selected is Layout l)
-            {
-                var index = (int)((Stepper)editPanel.blocks[typeof(Layout)][1]).Value;
-                var rate = ((Stepper)editPanel.blocks[typeof(Layout)][2]).Value;
+                    if (Text.Contains("Top")) l.Cut(index, Layout.CutSide.Top, rate);
+                    else if (Text.Contains("Left")) l.Cut(index, Layout.CutSide.Left, rate);
+                    else if (Text.Contains("Right")) l.Cut(index, Layout.CutSide.Right, rate);
+                    else if (Text.Contains("Bottom")) l.Cut(index, Layout.CutSide.Bottom, rate);
 
-                if (Text.Contains("Top")) l.Cut(index, Layout.CutSide.Top, rate);
-                else if (Text.Contains("Left")) l.Cut(index, Layout.CutSide.Left, rate);
-                else if (Text.Contains("Right")) l.Cut(index, Layout.CutSide.Right, rate);
-                else if (Text.Contains("Bottom")) l.Cut(index, Layout.CutSide.Bottom, rate);
-
-                editPanel.UpdatePanelValues();
-            }
-            else if (Text == "Restore" && Selected is Layout la)
-            {
-                la.Restore();
-            }
+                    editPanel.UpdatePanelValues();
+                }
+                else if (Text == "Restore" && Selected is Layout la)
+                {
+                    la.Restore();
+                }
+            });
         }
     }
 
@@ -220,7 +219,7 @@ internal class EditPanel : Panel
         var textPos = (Position.x + offset, Position.y);
         const int CORNER = Tile.BOX_HOLLOW_CORNER;
         const int STRAIGHT = Tile.BOX_HOLLOW_STRAIGHT;
-        var front = tilemaps[(int)Layer.EditFront];
+        var front = maps[(int)Layer.EditFront];
         var color = Color.Gray.ToDark(0.66f);
         var (bottomX, bottomY) = (Position.x + 1, Position.y + Size.height - 2);
         var (topX, topY) = (Position.x + 1, Position.y + 1);
@@ -229,7 +228,7 @@ internal class EditPanel : Panel
         SetClear(Layer.EditMiddle, this);
         SetClear(Layer.EditFront, this);
 
-        SetBackground(tilemaps[(int)Layer.EditBack], this, color);
+        SetBackground(maps[(int)Layer.EditBack], this, color);
 
         front.SetBox(Position, Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
         front.SetTextLine(textPos, Text, Color.Yellow);
@@ -543,7 +542,7 @@ internal class EditPanel : Panel
 
     private void UpdateButton(Button btn, (int x, int y) position)
     {
-        var front = tilemaps[(int)Layer.EditFront];
+        var front = maps[(int)Layer.EditFront];
 
         btn.Position = position;
         btn.Size = (Size.width - 2, 1);
@@ -559,9 +558,9 @@ internal class EditPanel : Panel
     private void UpdateInputBox(InputBox inputBox, (int x, int y) position)
     {
         var e = inputBox;
-        var back = tilemaps[(int)Layer.EditBack];
-        var middle = tilemaps[(int)Layer.EditMiddle];
-        var front = tilemaps[(int)Layer.EditFront];
+        var back = maps[(int)Layer.EditBack];
+        var middle = maps[(int)Layer.EditMiddle];
+        var front = maps[(int)Layer.EditFront];
         var color = Color.Gray;
         var isListItems = e.Placeholder.Contains("Empty");
 
@@ -595,14 +594,15 @@ internal class EditPanel : Panel
     {
         var e = stepper;
         var color = Color.Gray;
-        var middle = tilemaps[(int)Layer.EditMiddle];
-        var front = tilemaps[(int)Layer.EditFront];
+        var middle = maps[(int)Layer.EditMiddle];
+        var front = maps[(int)Layer.EditFront];
         var value = e.Step.Precision() == 0 ? $"{e.Value}" : $"{e.Value:F2}";
         e.Position = position;
         e.Size = (Size.width - 2, 2);
 
         var prev = e.Value;
         e.Update();
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
         if (prev != e.Value)
             UpdateSelected();
 
@@ -620,7 +620,7 @@ internal class EditPanel : Panel
     }
     private void UpdateListItems(List list, InputBox inputBoxEditor)
     {
-        var middle = tilemaps[(int)Layer.EditMiddle];
+        var middle = maps[(int)Layer.EditMiddle];
         var length = Math.Min(list.Count, itemSelections.Count);
 
         for (var i = 0; i < length; i++)
@@ -693,7 +693,7 @@ internal class EditPanel : Panel
     }
     private static void SetClear(Layer layer, Block block)
     {
-        tilemaps[(int)layer].SetBox(block.Position, block.Size, 0, 0, 0, 0);
+        maps[(int)layer].SetBox(block.Position, block.Size, 0, 0, 0, 0);
     }
 #endregion
 }

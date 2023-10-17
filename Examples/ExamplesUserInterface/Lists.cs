@@ -15,9 +15,9 @@ public static class Lists
         {
             var (x, y) = listVertical.Position;
             maps[0].SetTextLine((x, y - 1), "Single select");
-            SetList(maps, listVertical, 0);
+            maps.SetList(listVertical);
         });
-        listVertical.OnItemDisplay(item => SetListItem(maps, listVertical, item, 1));
+        listVertical.OnItemDisplay(item => maps.SetListItem(listVertical, item));
 
         //==============
 
@@ -32,16 +32,16 @@ public static class Lists
         {
             var (x, y) = listHorizontal.Position;
             maps[0].SetTextLine((x, y - 1), "Multi select");
-            SetList(maps, listHorizontal, 0);
+            maps.SetList(listHorizontal);
         });
-        listHorizontal.OnItemDisplay(item => SetListItem(maps, listHorizontal, item, 1));
+        listHorizontal.OnItemDisplay(item => maps.SetListItem(listHorizontal, item));
 
         //==============
 
         var listDropdown = new List(span: List.Spans.Dropdown) { Size = (6, 10) };
         listDropdown.Align((0.5f, 0.5f));
-        listDropdown.OnDisplay(() => SetList(maps, listDropdown, 0));
-        listDropdown.OnItemDisplay(item => SetListItem(maps, listDropdown, item, 1));
+        listDropdown.OnDisplay(() => maps.SetList(listDropdown));
+        listDropdown.OnItemDisplay(item => maps.SetListItem(listDropdown, item));
 
         return new Block[] { listVertical, listHorizontal, listDropdown };
     }

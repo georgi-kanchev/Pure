@@ -1,16 +1,16 @@
-namespace Pure.EditorUserInterface;
+namespace Pure.Editors.EditorUserInterface;
 
 internal class MenuMain : Menu
 {
     public MenuMain() : base(
-        "Element� ",
+        "Block� ",
         "  Add",
-        "-------- ",
+        "------ ",
         "Scene� ",
         "  Save",
         "  Load")
     {
-        Size = (8, 6);
+        Size = (6, 6);
 
         OnItemInteraction(Interaction.Trigger, item =>
         {

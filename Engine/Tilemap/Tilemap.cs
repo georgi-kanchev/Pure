@@ -157,6 +157,11 @@ public class Tilemap
         return IndicesAreValid(position) ? data[position.x, position.y] : default;
     }
 
+    public void Clear()
+    {
+        var (w, h) = Size;
+        data = new Tile[w, h];
+    }
     /// <summary>
     /// Fills the entire tilemap with the specified tile.
     /// </summary>
@@ -913,7 +918,7 @@ public class Tilemap
         { '▕', 432 },
     };
 
-    private readonly Tile[,] data;
+    private Tile[,] data;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)
     {

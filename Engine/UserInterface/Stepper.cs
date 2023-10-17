@@ -37,7 +37,7 @@ public class Stepper : Block
         set
         {
             value = Math.Clamp(value, Range.minimum, Range.maximum);
-            value = MathF.Round(value, Precision(Step));
+            value = MathF.Round(value, Math.Min(Precision(Step), 6));
             this.value = value;
         }
     }

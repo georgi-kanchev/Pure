@@ -16,7 +16,7 @@ public static class DefaultGraphics
         {
             Window.Activate(true);
 
-            tilemap.Fill();
+            tilemap.Clear();
 
             for (var i = 0; i < 26; i++)
                 for (var j = 0; j < 26; j++)

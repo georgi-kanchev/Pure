@@ -61,7 +61,7 @@ public static class FlappyBird
 
             // clear the tilemaps from the previous frame
             background.Fill(new(Tile.SHADE_OPAQUE, Color.Blue.ToDark()));
-            foreground.Fill();
+            foreground.Clear();
 
             // apply gravity, unless game over
             if (isGameOver == false)

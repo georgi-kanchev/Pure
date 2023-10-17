@@ -10,9 +10,9 @@ public static class Prompts
             Value = "",
             Placeholder = "Message…",
         };
-        input.OnDisplay(() => SetInputBox(maps, input, 4));
+        input.OnDisplay(() => maps.SetInputBox(input, zOrder: 4));
         var prompt = new Prompt();
-        prompt.OnDisplay(buttons => SetPrompt(maps, prompt, buttons, 3));
+        prompt.OnDisplay(buttons => maps.SetPrompt(prompt, buttons, zOrder: 3));
         Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
         {
             var shouldLog = prompt.Block == input && prompt.IsOpened;

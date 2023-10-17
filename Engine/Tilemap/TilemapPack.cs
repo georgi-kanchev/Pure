@@ -78,10 +78,16 @@ public class TilemapPack
 
         return result;
     }
-    public void Fill(Tile withTile = default)
+
+    public void Clear()
     {
         foreach (var t in tilemaps)
-            t.Fill(withTile);
+            t.Clear();
+    }
+    public void Fill(Tile tile = default)
+    {
+        foreach (var t in tilemaps)
+            t.Fill(tile);
     }
 
     public Tile[] TilesAt((int x, int y) position)

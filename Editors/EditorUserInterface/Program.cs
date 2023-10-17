@@ -2,9 +2,10 @@
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
-global using static Pure.EditorUserInterface.Program;
+global using static Pure.Editors.EditorUserInterface.Program;
+global using static Pure.Default.RendererUserInterface.Default;
 
-namespace Pure.EditorUserInterface;
+namespace Pure.Editors.EditorUserInterface;
 
 public static class Program
 {
@@ -35,8 +36,8 @@ public static class Program
     }
 
     internal static readonly Dictionary<MenuType, Menu> menus = new();
-    internal static readonly TilemapPack tilemaps;
-    internal static readonly RendererUI ui;
+    internal static readonly TilemapPack maps;
+    internal static readonly BlockPack ui;
     internal static readonly RendererEdit editUI;
     internal static readonly EditPanel editPanel;
     internal static readonly FileViewer saveLoad = new((0, 0));
@@ -64,15 +65,15 @@ public static class Program
         {
             Window.Activate(true);
             Time.Update();
-            tilemaps.Fill();
+            maps.Clear();
 
             Update();
             RendererEdit.DrawGrid();
 
             Mouse.CursorGraphics = (Mouse.Cursor)Input.MouseCursorResult;
-            for (var i = 0; i < tilemaps.Count; i++)
+            for (var i = 0; i < maps.Count; i++)
             {
-                var tmap = tilemaps[i];
+                var tmap = maps[i];
                 var cam = tmap.CameraUpdate();
                 var (cx, cy, _, _) = tmap.Camera;
                 MousePosition = cam.PointFrom(Mouse.CursorPosition, Window.Size);
@@ -117,7 +118,7 @@ public static class Program
         Window.Title = "Pure - User Interface Editor";
 
         var (width, height) = Window.MonitorAspectRatio;
-        tilemaps = new((int)Layer.Count, (width * SCALE_ASPECT_MAX, height * SCALE_ASPECT_MAX));
+        maps = new((int)Layer.Count, (width * SCALE_ASPECT_MAX, height * SCALE_ASPECT_MAX));
         ui = new();
         editUI = new();
         editPanel = new((int.MaxValue, int.MaxValue));
@@ -133,7 +134,7 @@ public static class Program
 
     private static void Update()
     {
-        Input.TilemapSize = tilemaps.Size;
+        Input.TilemapSize = maps.Size;
         Input.Update(
             Mouse.IsButtonPressed(Mouse.Button.Left),
             MousePosition,
@@ -145,7 +146,9 @@ public static class Program
 
         editPanel.IsHidden = Selected == null;
 
+        IsInteractable = false;
         ui.Update();
+        IsInteractable = true;
         editUI.Update();
         editPanel.Update();
 
@@ -169,7 +172,7 @@ public static class Program
         var bottomY = topY + CameraSize.h;
         var (mx, my) = MousePosition;
 
-        tilemaps[(int)Layer.EditFront]
+        maps[(int)Layer.EditFront]
             .SetTextRectangle((x, bottomY - 1), (TEXT_WIDTH, 1), $"Cursor {(int)mx}, {(int)my}",
                 alignment: Tilemap.Alignment.Center);
 
@@ -179,7 +182,7 @@ public static class Program
             return;
         }
 
-        tilemaps[(int)Layer.EditFront]
+        maps[(int)Layer.EditFront]
             .SetTextRectangle((x, topY), (TEXT_WIDTH, TEXT_HEIGHT), infoText,
                 alignment: Tilemap.Alignment.Top, scrollProgress: 1f);
     }
@@ -208,9 +211,9 @@ public static class Program
                     (CameraPosition.x - 8, CameraPosition.y - 5);
         }
 
-        var mousePos = tilemaps[0].PointFrom(Mouse.CursorPosition, Window.Size, false);
-        var tmapCameraAspectX = (float)tilemaps.Size.width / CameraSize.w;
-        var tmapCameraAspectY = (float)tilemaps.Size.height / CameraSize.h;
+        var mousePos = maps[0].PointFrom(Mouse.CursorPosition, Window.Size, false);
+        var tmapCameraAspectX = (float)maps.Size.width / CameraSize.w;
+        var tmapCameraAspectY = (float)maps.Size.height / CameraSize.h;
         mousePos.x /= tmapCameraAspectX;
         mousePos.y /= tmapCameraAspectY;
         var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
@@ -243,12 +246,12 @@ public static class Program
     {
         var (width, height) = Window.MonitorAspectRatio;
 
-        for (var i = 0; i < tilemaps.Count; i++)
+        for (var i = 0; i < maps.Count; i++)
         {
-            var tmap = tilemaps[i];
+            var tmap = maps[i];
             CameraSize = (width * zoom, height * zoom);
-            var x = Math.Clamp(CameraPosition.x, 0, tilemaps.Size.width - CameraSize.w);
-            var y = Math.Clamp(CameraPosition.y, 0, tilemaps.Size.height - CameraSize.h);
+            var x = Math.Clamp(CameraPosition.x, 0, maps.Size.width - CameraSize.w);
+            var y = Math.Clamp(CameraPosition.y, 0, maps.Size.height - CameraSize.h);
             CameraPosition = (x, y);
 
             tmap.Camera = (CameraPosition.x, CameraPosition.y, CameraSize.w, CameraSize.h);

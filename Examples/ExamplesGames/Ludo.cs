@@ -221,7 +221,7 @@ public static class Ludo
             foreach (var pawn in Pawns)
                 pawn.Update(Time.Delta);
 
-            map.Fill(new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.6f)));
+            map.Clear();
             SetMap(map);
             SetArrows(map);
             SetSlider(map, slider);

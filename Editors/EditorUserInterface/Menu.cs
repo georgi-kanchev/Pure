@@ -1,4 +1,4 @@
-namespace Pure.EditorUserInterface;
+namespace Pure.Editors.EditorUserInterface;
 
 internal abstract class Menu : List
 {
@@ -13,8 +13,8 @@ internal abstract class Menu : List
         OnDisplay(() =>
         {
             var scrollColor = Color.Gray;
-            var middle = tilemaps[(int)Layer.EditMiddle];
-            var front = tilemaps[(int)Layer.EditFront];
+            var middle = maps[(int)Layer.EditMiddle];
+            var front = maps[(int)Layer.EditFront];
 
             SetClear(Layer.EditBack, this);
             SetClear(Layer.EditFront, this);
@@ -36,7 +36,7 @@ internal abstract class Menu : List
             Disable(item, item.Text.EndsWith(" "));
 
             var color = item.IsDisabled ? Color.Gray : Color.Gray.ToBright();
-            var front = tilemaps[(int)Layer.EditFront];
+            var front = maps[(int)Layer.EditFront];
 
             front.SetTextLine(item.Position, item.Text, GetColor(item, color));
         });
@@ -82,7 +82,7 @@ internal abstract class Menu : List
     }
     private static void SetClear(Layer layer, Block block)
     {
-        tilemaps[(int)layer].SetBox(block.Position, block.Size, 0, 0, 0, 0);
+        maps[(int)layer].SetBox(block.Position, block.Size, 0, 0, 0, 0);
     }
 #endregion
 }
