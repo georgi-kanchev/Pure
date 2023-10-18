@@ -51,6 +51,7 @@ public class TilemapPack
     public TilemapPack(int count, (int width, int height) size)
     {
         Size = size;
+        Camera = (0, 0, size.width, size.height);
 
         count = Math.Max(count, 1);
 

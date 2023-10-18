@@ -14,9 +14,9 @@ internal class MenuAdd : Menu
         $"  {nameof(Stepper)}",
         $"  {nameof(Layout)}",
         $"  {nameof(List)}",
-        $"  Viewer")
+        $"  {nameof(FileViewer)}")
     {
-        Size = (10, 12);
+        Size = (12, 12);
 
         OnItemInteraction(Interaction.Trigger, item =>
         {
@@ -26,11 +26,6 @@ internal class MenuAdd : Menu
             if (index == 10)
             {
                 menus[MenuType.AddList].Show(Position);
-                return;
-            }
-            else if (index == 11)
-            {
-                menus[MenuType.AddViewer].Show(Position);
                 return;
             }
 

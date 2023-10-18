@@ -91,16 +91,14 @@ public class FileViewer : Block
         }
     }
 
-    public FileViewer((int x, int y) position = default)
-        : base(position)
+    public FileViewer((int x, int y) position = default) : base(position)
     {
         Size = (12, 8);
         Init();
         IsSelectingFolders = isSelectingFolders;
         CurrentDirectory = dir;
     }
-    public FileViewer(byte[] bytes)
-        : base(bytes)
+    public FileViewer(byte[] bytes) : base(bytes)
     {
         Init();
         IsSelectingFolders = GrabBool(bytes);

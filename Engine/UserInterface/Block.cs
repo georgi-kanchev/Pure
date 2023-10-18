@@ -372,7 +372,9 @@ public abstract class Block
     {
         var newX = Map(alignment.horizontal, (0, 1), (0, Input.TilemapSize.width - Size.width));
         var newY = Map(alignment.vertical, (0, 1), (0, Input.TilemapSize.height - Size.height));
-        Position = ((int)newX, (int)newY);
+        Position = (
+            float.IsNaN(alignment.horizontal) ? Position.x : (int)newX,
+            float.IsNaN(alignment.vertical) ? Position.y : (int)newY);
     }
 
     public virtual byte[] ToBytes()

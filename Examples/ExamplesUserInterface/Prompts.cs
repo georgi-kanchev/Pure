@@ -27,7 +27,7 @@ public static class Prompts
             input.SelectAll();
 
             prompt.Block = input;
-            prompt.Message = $"Log a message?";
+            prompt.Message = "Log a message?";
             prompt.Open(2, index =>
             {
                 if (index == 0)

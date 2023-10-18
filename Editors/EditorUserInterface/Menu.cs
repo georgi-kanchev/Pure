@@ -47,10 +47,10 @@ internal abstract class Menu : List
         Position = position;
         IsHidden = false;
 
-        if (Position.x + Size.width > Input.TilemapSize.width)
-            Position = (Input.TilemapSize.width - Size.width, Position.y);
-        if (Position.y + Size.height > Input.TilemapSize.height)
-            Position = (Position.x, Input.TilemapSize.height - Size.height);
+        //if (Position.x + Size.width > Input.TilemapSize.width)
+        //    Position = (Input.TilemapSize.width - Size.width, Position.y);
+        //if (Position.y + Size.height > Input.TilemapSize.height)
+        //    Position = (Position.x, Input.TilemapSize.height - Size.height);
     }
 
     public override void Update()

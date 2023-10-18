@@ -209,10 +209,10 @@ public static class Default
             var tile = new Tile(Tile.SHADE_OPAQUE, new Color(0, 0, 0, 127));
             maps[zOrder].SetRectangle((0, 0), maps.Size, tile);
             maps[zOrder + 1].SetBox(prompt.Position, prompt.Size,
-                tileFill: new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()),
+                tileFill: new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.6f)),
                 cornerTileId: Tile.BOX_CORNER_ROUND,
                 borderTileId: Tile.SHADE_OPAQUE,
-                borderTint: Color.Gray.ToDark());
+                borderTint: Color.Gray.ToDark(0.6f));
         }
 
         var messageSize = (prompt.Size.width, prompt.Size.height - 1);

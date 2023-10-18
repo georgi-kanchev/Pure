@@ -216,15 +216,18 @@ public class List : Block
         if (HasIndex(index) == false)
             return;
 
-        if (IsSingleSelecting)
+        if (IsSingleSelecting && singleSelectedIndex != index && isSelected)
         {
             foreach (var item in items)
                 item.isSelected = false;
 
-            indexesSelected.Clear();
             this[index].isSelected = isSelected;
             singleSelectedIndex = isSelected ? index : singleSelectedIndex;
-            indexesSelected.Add(index);
+
+            indexesSelected.Clear();
+            if (isSelected)
+                indexesSelected.Add(index);
+
             return;
         }
 
@@ -374,7 +377,7 @@ public class List : Block
             };
             items.Insert(i, item);
             item.OnInteraction(Interaction.Trigger, () => OnInternalItemTrigger(item));
-            item.OnInteraction(Interaction.Select, () => OnInternalItemSelect(item));
+            item.OnInteraction(Interaction.Select, TrySingleSelectOneItem);
             item.OnInteraction(Interaction.Scroll, ApplyScroll);
 
             foreach (var kvp in itemInteractions)
@@ -553,8 +556,7 @@ public class List : Block
         if (indexesSelected.Count == 1)
             return;
 
-        indexesSelected.Clear();
-        Select(items[0]);
+        Select(0);
     }
 
     private void OnInternalItemTrigger(Button item)
@@ -575,10 +577,6 @@ public class List : Block
 
         IsCollapsed = IsCollapsed == false;
         Select(item);
-    }
-    private void OnInternalItemSelect(Button item)
-    {
-        TrySingleSelectOneItem();
     }
 
     private bool HasIndex(int index)

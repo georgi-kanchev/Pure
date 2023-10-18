@@ -18,6 +18,10 @@ public static class Program
         EditBack,
         EditMiddle,
         EditFront,
+        PromptFade,
+        PromptBack,
+        PromptMiddle,
+        PromptFront,
         Count
     }
 
@@ -25,8 +29,7 @@ public static class Program
     {
         Main,
         Add,
-        AddList,
-        AddViewer
+        AddList
     }
 
     internal static Block? Selected
@@ -124,7 +127,6 @@ public static class Program
         editPanel = new((int.MaxValue, int.MaxValue));
 
         // submenus need higher update priority to not close upon parent menu opening them
-        menus[MenuType.AddViewer] = new MenuAddViewer();
         menus[MenuType.AddList] = new MenuAddList();
         menus[MenuType.Add] = new MenuAdd();
         menus[MenuType.Main] = new MenuMain();
@@ -134,7 +136,7 @@ public static class Program
 
     private static void Update()
     {
-        Input.TilemapSize = maps.Size;
+        Input.TilemapSize = (CameraSize.w, CameraSize.h);
         Input.Update(
             Mouse.IsButtonPressed(Mouse.Button.Left),
             MousePosition,
@@ -149,6 +151,7 @@ public static class Program
         IsInteractable = false;
         ui.Update();
         IsInteractable = true;
+
         editUI.Update();
         editPanel.Update();
 
@@ -158,7 +161,8 @@ public static class Program
         UpdateInfoText();
 
         var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("on-lmb-deselect");
-        if (onLmbRelease && GetHovered() == null && editPanel.IsHovered == false)
+        if (onLmbRelease && GetHovered() == null && editPanel.IsHovered == false &&
+            editUI.Prompt?.IsOpened == false)
             Selected = null;
     }
     private static void UpdateInfoText()
@@ -189,6 +193,9 @@ public static class Program
 
     private static void TryControlCamera()
     {
+        if (editUI.Prompt is { IsOpened: true })
+            return;
+
         var prevSz = CameraSize;
         var prevPos = CameraPosition;
 

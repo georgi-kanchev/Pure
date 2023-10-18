@@ -56,13 +56,15 @@ internal class EditPanel : Panel
         var itemHeight = new Stepper((0, 0)) { Text = "Height", Range = (1, int.MaxValue) };
         var itemGap = new Stepper((0, 0)) { Text = "Gap", Range = (0, int.MaxValue) };
 
+        var fileSelect = new EditButton((0, 0)) { Text = "File-Select" };
+
         for (var i = 0; i < items.Size.height; i++)
             itemSelections.Add(new((0, 0)) { Text = "ItemSelect" });
 
         checkboxes.AddRange(new[]
         {
             disabled, hidden, selected, movable, resizable, restricted, vertical, multiSelect,
-            expanded, editable
+            expanded, editable, fileSelect
         });
 
         blocks = new()
@@ -76,7 +78,7 @@ internal class EditPanel : Panel
             { typeof(Slider), new() { vertical, progress } },
             { typeof(Scroll), new() { vertical, progress, step } },
             { typeof(Layout), new() { restore, index, rate, cutTop, cutLeft, cutRight, cutBottom } },
-            { typeof(FileViewer), new() { } },
+            { typeof(FileViewer), new() { fileSelect } },
             { typeof(Stepper), new() { min, max, value, stepperStep } },
             {
                 typeof(List),
@@ -131,28 +133,52 @@ internal class EditPanel : Panel
                     editPanel.Position = (int.MaxValue, int.MaxValue);
                 }
                 else if (Text == "To Top")
-                {
                     editUI.BlockToTop(Selected);
-                }
                 else if (Text == "Disabled")
-                {
                     Selected.IsDisabled = IsSelected;
-                }
                 else if (Text == "Hidden")
-                {
                     Selected.IsHidden = IsSelected;
-                }
-                else if (Text == "Center X")
+                else if (Text == "Align X")
                 {
-                    panel.Position = (
-                        CameraPosition.x + CameraSize.w / 2 - panel.Size.width / 2,
-                        panel.Position.y);
+                    if (editUI.Prompt?.Block == null)
+                        return;
+
+                    editUI.Prompt.Message = "Left      Right";
+                    editUI.Prompt.Open(2, i =>
+                    {
+                        if (i != 0 || editUI.Prompt.Block == null)
+                            return;
+
+                        var slider = (Slider)editUI.Prompt.Block;
+                        var (cx, _) = CameraPosition;
+                        panel.Align((slider.Progress, float.NaN));
+                        panel.Position = (panel.Position.x + cx, panel.Position.y);
+                    });
+
+                    var (camX, camY) = CameraPosition;
+                    var (x, y) = editUI.Prompt.Block.Position;
+                    editUI.Prompt.Block.Position = (x + camX, y + camY);
                 }
-                else if (Text == "Center Y")
+                else if (Text == "Align Y")
                 {
-                    panel.Position = (
-                        panel.Position.x,
-                        CameraPosition.y + CameraSize.h / 2 - panel.Size.height / 2);
+                    if (editUI.Prompt?.Block == null)
+                        return;
+
+                    editUI.Prompt.Message = "Top      Bottom";
+                    editUI.Prompt.Open(2, i =>
+                    {
+                        if (i != 0 || editUI.Prompt.Block == null)
+                            return;
+
+                        var slider = (Slider)editUI.Prompt.Block;
+                        var (_, cy) = CameraPosition;
+                        panel.Align((float.NaN, slider.Progress));
+                        panel.Position = (panel.Position.x, panel.Position.y + cy);
+                    });
+
+                    var (camX, camY) = CameraPosition;
+                    var (x, y) = editUI.Prompt.Block.Position;
+                    editUI.Prompt.Block.Position = (x + camX, y + camY);
                 }
                 else if (Text == "ItemSelect")
                 {
@@ -162,11 +188,10 @@ internal class EditPanel : Panel
                         (InputBox)editPanel.blocks[typeof(List)][3];
                     var list = isViewer ? ((FileViewer)Selected).FilesAndFolders : (List)Selected;
                     var index = editPanel.itemSelections.IndexOf(this);
-
-                    //if (Selected is FileViewer { IsSelectingFolders: false } v && index < v.CountFolders)
-                    //    index += v.CountFolders;
-
                     var item = list[index + items.ScrollIndices.y];
+
+                    if (list.IsSingleSelecting && list.IndexesSelected[0] == index)
+                        return;
 
                     list.Select(item, IsSelected);
                     editPanel.UpdateSelected();
@@ -184,9 +209,7 @@ internal class EditPanel : Panel
                     editPanel.UpdatePanelValues();
                 }
                 else if (Text == "Restore" && Selected is Layout la)
-                {
                     la.Restore();
-                }
             });
         }
     }
@@ -194,8 +217,8 @@ internal class EditPanel : Panel
     private readonly List<EditButton> checkboxes = new(), itemSelections = new();
     private readonly EditButton
         toTop = new((0, 0)) { Text = "To Top" },
-        centerX = new((0, 0)) { Text = "Center X" },
-        centerY = new((0, 0)) { Text = "Center Y" },
+        alignX = new((0, 0)) { Text = "Align X" },
+        alignY = new((0, 0)) { Text = "Align Y" },
         remove = new((0, 0)) { Text = "Remove" };
     private readonly Dictionary<Type, List<Block>> blocks;
     private Block? prevSelected;
@@ -234,8 +257,8 @@ internal class EditPanel : Panel
         front.SetTextLine(textPos, Text, Color.Yellow);
 
         UpdateButton(toTop, (topX, topY));
-        UpdateButton(centerX, (topX, topY + 1));
-        UpdateButton(centerY, (topX, topY + 2));
+        UpdateButton(alignX, (topX, topY + 1));
+        UpdateButton(alignY, (topX, topY + 2));
         UpdateButton(remove, (bottomX, bottomY));
     }
     private void UpdatePanelBlocks()
@@ -400,6 +423,8 @@ internal class EditPanel : Panel
         }
         else if (prevSelected is FileViewer v)
         {
+            var fileSelect = (EditButton)blocks[typeof(FileViewer)][0];
+            v.IsSelectingFolders = fileSelect.IsSelected == false;
         }
 
         prevSelected.Text = text.Value;
@@ -506,6 +531,8 @@ internal class EditPanel : Panel
         }
         else if (Selected is FileViewer v)
         {
+            var fileSelect = (EditButton)blocks[typeof(FileViewer)][0];
+            fileSelect.IsSelected = v.IsSelectingFolders == false;
         }
         else if (Selected is List l)
         {

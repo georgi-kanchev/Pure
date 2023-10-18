@@ -2,6 +2,15 @@ namespace Pure.Editors.EditorUserInterface;
 
 internal class RendererEdit : BlockPack
 {
+    public RendererEdit()
+    {
+        Prompt = new();
+        Prompt.OnDisplay(buttons => maps.SetPrompt(Prompt, buttons, zOrder: (int)Layer.PromptFade));
+        var slider = new Slider { Size = (15, 1) };
+        Prompt.Block = slider;
+        slider.OnDisplay(() => maps.SetSlider(slider, (int)Layer.PromptBack));
+    }
+
     public void BlockCreate(int index, (int x, int y) position, List.Spans type = default)
     {
         var back = (int)Layer.UiBack;
@@ -82,16 +91,10 @@ internal class RendererEdit : BlockPack
             list.OnDisplay(() => maps.SetList(list, back));
             list.OnItemDisplay(item => maps.SetListItem(list, item, middle));
         }
-        else if (index is 11 or 12)
+        else if (index == 11)
         {
             block = new FileViewer(position);
             var fileViewer = (FileViewer)block;
-
-            if (index == 12)
-            {
-                fileViewer.Text = "FolderViewer";
-                fileViewer.IsSelectingFolders = true;
-            }
 
             panel.SizeMinimum = (5, 5);
             block.OnDisplay(() => maps.SetFileViewer(fileViewer, back));
@@ -146,6 +149,7 @@ internal class RendererEdit : BlockPack
             }
     }
 
+#region Backend
     private void OnPanelPress(Panel panel)
     {
         var notOverEditPanel = editPanel.IsHovered == false || editPanel.IsHidden;
@@ -208,4 +212,5 @@ internal class RendererEdit : BlockPack
     {
         DisplayInfoText($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
     }
+#endregion
 }
