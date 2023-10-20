@@ -102,7 +102,6 @@ public class FileViewer : Block
     {
         Init();
         IsSelectingFolders = GrabBool(bytes);
-        CurrentDirectory = GrabString(bytes);
     }
 
     public bool IsFolder(Button item)
@@ -132,7 +131,6 @@ public class FileViewer : Block
     {
         var result = base.ToBytes().ToList();
         PutBool(result, IsSelectingFolders);
-        PutString(result, CurrentDirectory);
         return result.ToArray();
     }
 

@@ -4,11 +4,6 @@ internal class RendererEdit : BlockPack
 {
     public RendererEdit()
     {
-        Prompt = new();
-        Prompt.OnDisplay(buttons => maps.SetPrompt(Prompt, buttons, zOrder: (int)Layer.PromptFade));
-        var slider = new Slider { Size = (15, 1) };
-        Prompt.Block = slider;
-        slider.OnDisplay(() => maps.SetSlider(slider, (int)Layer.PromptBack));
     }
 
     public void BlockCreate(int index, (int x, int y) position, List.Spans type = default)

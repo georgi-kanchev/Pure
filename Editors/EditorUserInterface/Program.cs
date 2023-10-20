@@ -42,6 +42,8 @@ public static class Program
     internal static readonly TilemapPack maps;
     internal static readonly BlockPack ui;
     internal static readonly RendererEdit editUI;
+    internal static readonly Prompt prompt;
+    internal static readonly Slider promptSlider;
     internal static readonly EditPanel editPanel;
     internal static readonly FileViewer saveLoad = new((0, 0));
     internal static readonly InputBox fileName = new((0, 0));
@@ -126,6 +128,12 @@ public static class Program
         editUI = new();
         editPanel = new((int.MaxValue, int.MaxValue));
 
+        prompt = new() { ButtonCount = 2 };
+        prompt.OnDisplay(() => maps.SetPrompt(prompt, zOrder: (int)Layer.PromptFade));
+        prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: (int)Layer.PromptFade));
+        promptSlider = new() { Size = (15, 1) };
+        promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, (int)Layer.PromptBack));
+
         // submenus need higher update priority to not close upon parent menu opening them
         menus[MenuType.AddList] = new MenuAddList();
         menus[MenuType.Add] = new MenuAdd();
@@ -162,7 +170,7 @@ public static class Program
 
         var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("on-lmb-deselect");
         if (onLmbRelease && GetHovered() == null && editPanel.IsHovered == false &&
-            editUI.Prompt?.IsOpened == false)
+            prompt.IsHidden)
             Selected = null;
     }
     private static void UpdateInfoText()
@@ -193,7 +201,7 @@ public static class Program
 
     private static void TryControlCamera()
     {
-        if (editUI.Prompt is { IsOpened: true })
+        if (prompt.IsHidden)
             return;
 
         var prevSz = CameraSize;

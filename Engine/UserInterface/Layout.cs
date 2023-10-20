@@ -1,33 +1,31 @@
 namespace Pure.Engine.UserInterface;
 
+public enum Side
+{
+    Left,
+    Right,
+    Top,
+    Bottom
+}
+
 public class Layout : Block
 {
-    public enum CutSide
-    {
-        Left,
-        Right,
-        Top,
-        Bottom
-    }
-
     public int Count
     {
         get => segments.Count;
     }
 
-    public Layout((int x, int y) position = default)
-        : base(position)
+    public Layout((int x, int y) position = default) : base(position)
     {
         Size = (12, 12);
         Restore();
     }
-    public Layout(byte[] bytes)
-        : base(bytes)
+    public Layout(byte[] bytes) : base(bytes)
     {
         Restore();
 
         var offset = 0;
-        var count = GetInt();
+        var count = GetByte();
 
         // all segments need to be added before parent linking
         var parentIndexes = new List<int>();
@@ -35,9 +33,9 @@ public class Layout : Block
         for (var i = 0; i < count; i++)
         {
             var rate = GetFloat();
-            var cutSide = (CutSide)GetByte();
+            var cutSide = (Side)GetByte();
 
-            parentIndexes.Add(GetInt());
+            parentIndexes.Add(GetByte());
             var seg = new Segment(rate, cutSide, null);
             segments.Add(seg);
         }
@@ -60,7 +58,7 @@ public class Layout : Block
         }
     }
 
-    public void Cut(int index, CutSide side, float rate)
+    public void Cut(int index, Side side, float rate)
     {
         if (index < 0 || index >= segments.Count)
             return;
@@ -71,7 +69,7 @@ public class Layout : Block
     public void Restore()
     {
         segments.Clear();
-        segments.Add(new(0, CutSide.Top, null));
+        segments.Add(new(0, Side.Top, null));
     }
 
     protected virtual void OnSegmentUpdate((int x, int y, int width, int height) segment, int index)
@@ -81,14 +79,14 @@ public class Layout : Block
     public override byte[] ToBytes()
     {
         var bytes = base.ToBytes().ToList();
-        bytes.AddRange(BitConverter.GetBytes(segments.Count));
+        PutByte(bytes, (byte)segments.Count);
 
         foreach (var seg in segments)
         {
             var parentIndex = seg.parent == null ? -1 : segments.IndexOf(seg.parent);
-            bytes.AddRange(BitConverter.GetBytes(seg.rate));
-            bytes.AddRange(BitConverter.GetBytes((byte)seg.cutSide));
-            bytes.AddRange(BitConverter.GetBytes(parentIndex));
+            PutFloat(bytes, seg.rate);
+            PutByte(bytes, (byte)seg.side);
+            PutByte(bytes, (byte)parentIndex);
         }
 
         return bytes.ToArray();
@@ -103,16 +101,16 @@ public class Layout : Block
     private class Segment
     {
         public readonly float rate;
-        public readonly CutSide cutSide;
+        public readonly Side side;
         public Segment? parent;
 
         public (int x, int y) position;
         public (int w, int h) size;
 
-        public Segment(float rate, CutSide cutSide, Segment? parent)
+        public Segment(float rate, Side side, Segment? parent)
         {
             this.rate = Math.Clamp(rate, 0, 1);
-            this.cutSide = cutSide;
+            this.side = side;
             this.parent = parent;
         }
     }
@@ -158,20 +156,20 @@ public class Layout : Block
         }
 
         // update segment itself
-        if (seg.cutSide is CutSide.Left or CutSide.Top)
+        if (seg.side is Side.Left or Side.Top)
             seg.position = (px, py);
-        else if (seg.cutSide == CutSide.Right)
+        else if (seg.side == Side.Right)
             seg.position = ((int)Map(seg.rate, (0, 1), (px + pw, px)), py);
-        else if (seg.cutSide == CutSide.Bottom)
+        else if (seg.side == Side.Bottom)
             seg.position = (px, (int)Map(seg.rate, (0, 1), (py + ph, py)));
 
-        if (seg.cutSide == CutSide.Left)
+        if (seg.side == Side.Left)
             seg.size = ((int)Map(seg.rate, (0, 1), (0, pw)), ph);
-        else if (seg.cutSide == CutSide.Right)
+        else if (seg.side == Side.Right)
             seg.size = ((int)MathF.Ceiling(Map(seg.rate, (0, 1), (0, pw))), ph);
-        else if (seg.cutSide == CutSide.Top)
+        else if (seg.side == Side.Top)
             seg.size = (pw, (int)Map(seg.rate, (0, 1), (0, ph)));
-        else if (seg.cutSide == CutSide.Bottom)
+        else if (seg.side == Side.Bottom)
             seg.size = (pw, (int)MathF.Ceiling(Map(seg.rate, (0, 1), (0, ph))));
 
         // update its parent
@@ -181,14 +179,14 @@ public class Layout : Block
         var (x, y) = seg.position;
         var (w, h) = seg.size;
 
-        if (seg.cutSide is CutSide.Left or CutSide.Right)
+        if (seg.side is Side.Left or Side.Right)
             seg.parent.size = (pw - w, h);
-        if (seg.cutSide is CutSide.Top or CutSide.Bottom)
+        if (seg.side is Side.Top or Side.Bottom)
             seg.parent.size = (w, ph - h);
 
-        if (seg.cutSide == CutSide.Left)
+        if (seg.side == Side.Left)
             seg.parent.position = (x + w, y);
-        if (seg.cutSide == CutSide.Top)
+        if (seg.side == Side.Top)
             seg.parent.position = (x, y + h);
         // bottom and right cut position stays the same
     }

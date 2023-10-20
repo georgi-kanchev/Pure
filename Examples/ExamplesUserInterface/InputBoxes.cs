@@ -56,7 +56,7 @@ public static class InputBoxes
             Placeholder = "Password…",
             IsSingleLine = true,
         };
-        password.SymbolSet |= SymbolSet.Password;
+        password.SymbolGroup |= SymbolGroup.Password;
         password.Align((0.95f, 0.1f));
         password.OnSubmit(() => { pass = password.Value; });
         password.OnDisplay(() =>
@@ -74,7 +74,7 @@ public static class InputBoxes
             Size = (20, 1),
             Value = "",
             Placeholder = "Math equation…",
-            SymbolSet = SymbolSet.Math | SymbolSet.Digits,
+            SymbolGroup = SymbolGroup.Math | SymbolGroup.Digits,
             IsSingleLine = true,
         };
         equation.Align((0.95f, 0.9f));

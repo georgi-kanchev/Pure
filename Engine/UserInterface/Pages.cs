@@ -78,6 +78,8 @@ public class Pages : Block
     {
         Count = GrabInt(bytes);
         Current = GrabInt(bytes);
+        ItemWidth = GrabByte(bytes);
+        ItemGap = GrabByte(bytes);
 
         Init();
     }
@@ -87,6 +89,8 @@ public class Pages : Block
         var result = base.ToBytes().ToList();
         PutInt(result, Count);
         PutInt(result, Current);
+        PutByte(result, (byte)ItemWidth);
+        PutByte(result, (byte)ItemGap);
         return result.ToArray();
     }
 

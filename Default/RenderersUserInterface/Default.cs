@@ -86,7 +86,7 @@ public static class Default
         maps[zOrder].SetTextRectangle(ib.Position, ib.Size, ib.Selection, selectColor, false);
         maps[zOrder + 1].SetTextRectangle(ib.Position, ib.Size, ib.Text, isWordWrapping: false);
 
-        if (string.IsNullOrWhiteSpace(ib.Value))
+        if (string.IsNullOrEmpty(ib.Value))
             maps[zOrder + 1].SetTextRectangle(ib.Position, ib.Size, ib.Placeholder,
                 tint: Color.Gray.ToBright(),
                 alignment: Tilemap.Alignment.TopLeft);
@@ -202,9 +202,9 @@ public static class Default
             position: s.Maximum.Position,
             tile: new(Tile.MATH_MUCH_GREATER, GetColor(s.Maximum, color)));
     }
-    public static void SetPrompt(this TilemapPack maps, Prompt prompt, Button[] buttons, int zOrder = 0)
+    public static void SetPrompt(this TilemapPack maps, Prompt prompt, int zOrder = 0)
     {
-        if (prompt.IsOpened)
+        if (prompt.IsHidden == false)
         {
             var tile = new Tile(Tile.SHADE_OPAQUE, new Color(0, 0, 0, 127));
             maps[zOrder].SetRectangle((0, 0), maps.Size, tile);
@@ -216,21 +216,19 @@ public static class Default
         }
 
         var messageSize = (prompt.Size.width, prompt.Size.height - 1);
-        maps[zOrder + 2].SetTextRectangle(prompt.Position, messageSize, prompt.Message,
+        maps[zOrder + 2].SetTextRectangle(prompt.Position, messageSize, prompt.Text,
             alignment: Tilemap.Alignment.Center);
-
-        for (var i = 0; i < buttons.Length; i++)
+    }
+    public static void SetPromptItem(this TilemapPack maps, Prompt prompt, Button item, int zOrder = 2)
+    {
+        var tile = new Tile(Tile.ICON_TICK, GetColor(item, Color.Green));
+        if (prompt.IndexOf(item) == 1)
         {
-            var btn = buttons[i];
-            var tile = new Tile(Tile.ICON_TICK, GetColor(btn, Color.Green));
-            if (i == 1)
-            {
-                tile.Id = Tile.ICON_CANCEL;
-                tile.Tint = GetColor(btn, Color.Red);
-            }
-
-            maps[zOrder + 3].SetTile(btn.Position, tile);
+            tile.Id = Tile.ICON_CANCEL;
+            tile.Tint = GetColor(item, Color.Red);
         }
+
+        maps[zOrder].SetTile(item.Position, tile);
     }
     public static void SetPanel(this TilemapPack maps, Panel panel, int zOrder = 0)
     {

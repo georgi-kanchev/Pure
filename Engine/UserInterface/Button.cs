@@ -17,21 +17,19 @@ public class Button : Block
         }
     }
 
-    public Button(byte[] bytes)
-        : base(bytes)
-    {
-        Init();
-        IsSelected = GrabBool(bytes);
-    }
     /// <summary>
     /// Initializes a new button instance with the specified position and default size of (10, 1).
     /// </summary>
     /// <param name="position">The position of the button.</param>
-    public Button((int x, int y) position = default)
-        : base(position)
+    public Button((int x, int y) position = default) : base(position)
     {
         Init();
         Size = (10, 1);
+    }
+    public Button(byte[] bytes) : base(bytes)
+    {
+        Init();
+        IsSelected = GrabBool(bytes);
     }
 
     public override byte[] ToBytes()

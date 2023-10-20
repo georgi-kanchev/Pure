@@ -8,11 +8,6 @@ public class BlockPack
     {
         get => blocks.Count;
     }
-    public Prompt? Prompt
-    {
-        get;
-        set;
-    }
 
     public Block this[int index]
     {
@@ -37,19 +32,19 @@ public class BlockPack
 
             // return the offset to where it was so the block can get loaded properly
             offset -= typeStrBytesLength + 4;
-            var bblock = GetBytes(bytes, byteCount, ref offset);
+            var bBlock = GetBytes(bytes, byteCount, ref offset);
 
-            if (typeStr == nameof(Button)) Add(new Button(bblock));
-            else if (typeStr == nameof(InputBox)) Add(new InputBox(bblock));
-            else if (typeStr == nameof(FileViewer)) Add(new FileViewer(bblock));
-            else if (typeStr == nameof(List)) Add(new List(bblock));
-            else if (typeStr == nameof(Stepper)) Add(new Stepper(bblock));
-            else if (typeStr == nameof(Pages)) Add(new Pages(bblock));
-            else if (typeStr == nameof(Palette)) Add(new Palette(bblock));
-            else if (typeStr == nameof(Panel)) Add(new Panel(bblock));
-            else if (typeStr == nameof(Scroll)) Add(new Scroll(bblock));
-            else if (typeStr == nameof(Slider)) Add(new Slider(bblock));
-            else if (typeStr == nameof(Layout)) Add(new Layout(bblock));
+            if (typeStr == nameof(Button)) Add(new Button(bBlock));
+            else if (typeStr == nameof(InputBox)) Add(new InputBox(bBlock));
+            else if (typeStr == nameof(FileViewer)) Add(new FileViewer(bBlock));
+            else if (typeStr == nameof(List)) Add(new List(bBlock));
+            else if (typeStr == nameof(Stepper)) Add(new Stepper(bBlock));
+            else if (typeStr == nameof(Pages)) Add(new Pages(bBlock));
+            else if (typeStr == nameof(Palette)) Add(new Palette(bBlock));
+            else if (typeStr == nameof(Panel)) Add(new Panel(bBlock));
+            else if (typeStr == nameof(Scroll)) Add(new Scroll(bBlock));
+            else if (typeStr == nameof(Slider)) Add(new Slider(bBlock));
+            else if (typeStr == nameof(Layout)) Add(new Layout(bBlock));
         }
 
         return;
@@ -101,8 +96,6 @@ public class BlockPack
     {
         foreach (var e in blocks)
             e.Update();
-
-        Prompt?.Update(this);
     }
 
     public byte[] ToBytes()

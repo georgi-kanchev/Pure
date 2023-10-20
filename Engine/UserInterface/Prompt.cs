@@ -1,42 +1,36 @@
 namespace Pure.Engine.UserInterface;
 
-public class Prompt
+public class Prompt : Block
 {
-    public Block? Block
+    public int ButtonCount
     {
         get;
         set;
+    } = 1;
+
+    public Prompt()
+    {
+        Init();
+    }
+    public Prompt(byte[] bytes) : base(bytes)
+    {
+        Init();
+        ButtonCount = GrabByte(bytes);
     }
 
-    public (int x, int y) Position
+    public void Open(Block? block = null, Action<int>? onButtonTrigger = null)
     {
-        get;
-        private set;
-    }
-    public (int width, int height) Size
-    {
-        get;
-        private set;
-    }
-    public string? Message
-    {
-        get;
-        set;
-    }
-    public bool IsOpened
-    {
-        get;
-        private set;
-    }
+        if (block != null)
+            block.IsFocused = true;
 
-    public void Open(int buttonCount = 1, Action<int>? onButtonTrigger = null)
-    {
+        currentBlock = block;
         UpdateBlockPosition();
-        buttonCount = Math.Max(buttonCount, 1);
-        IsOpened = true;
+
+        ButtonCount = Math.Max(ButtonCount, 1);
+        isHidden = false;
         buttons.Clear();
 
-        for (var i = 0; i < buttonCount; i++)
+        for (var i = 0; i < ButtonCount; i++)
         {
             var btn = new Button((-1, -1))
             {
@@ -54,22 +48,26 @@ public class Prompt
     }
     public void Close()
     {
-        IsOpened = false;
+        currentBlock = null;
+        isHidden = true;
         buttons.Clear();
     }
 
-    public bool IsOwning(Block? block)
-    {
-        return block != null && (buttons.Contains(block) || panel == block);
-    }
     public int IndexOf(Button? button)
     {
         return button == null ? -1 : buttons.IndexOf(button);
     }
 
-    public void OnDisplay(Action<Button[]> method)
+    public void OnItemDisplay(Action<Button> method)
     {
-        display += method;
+        itemDisplay += method;
+    }
+
+    public override byte[] ToBytes()
+    {
+        var result = base.ToBytes().ToList();
+        PutByte(result, (byte)ButtonCount);
+        return result.ToArray();
     }
 
 #region Backend
@@ -83,36 +81,52 @@ public class Prompt
         hasParent = true,
     };
 
-    private Action<Button[]>? display;
+    private Action<Button>? itemDisplay;
+    private Block? currentBlock;
 
-    internal void Update(BlockPack ui)
+    private void Init()
     {
-        if (IsOpened == false)
+        hasParent = true;
+        isHidden = true;
+    }
+    private void UpdateBlockPosition()
+    {
+        if (currentBlock == null)
+            return;
+
+        var lines = Text.Split(Environment.NewLine).Length;
+
+        currentBlock.Align((0.5f, 0.5f));
+        var (x, y) = currentBlock.Position;
+        currentBlock.position = (x, y + lines / 2);
+    }
+
+    internal override void OnUpdate()
+    {
+        if (isHidden)
             return;
 
         var sz = Input.TilemapSize;
-        var lines = Message?.Split(Environment.NewLine).Length ?? 0;
+        var lines = Text.Split(Environment.NewLine).Length;
         var (w, h) = (sz.width / 2, 0);
         var (x, y) = (sz.width / 4, sz.height / 2 + lines / 2);
 
-        display?.Invoke(buttons.ToArray());
-
-        panel.isDisabled = IsOpened == false;
-        panel.position = IsOpened ? (0, 0) : (int.MaxValue, int.MaxValue);
+        panel.isDisabled = isHidden;
+        panel.position = isHidden ? (int.MaxValue, int.MaxValue) : (0, 0);
         panel.size = sz;
         panel.Update();
 
-        if (Block != null)
+        if (currentBlock != null)
         {
-            Block.Update();
-            w = Block.Size.width;
-            h = Block.Size.height;
-            x = Block.Position.x;
-            y = Block.Position.y;
+            currentBlock.Update();
+            w = currentBlock.Size.width;
+            h = currentBlock.Size.height;
+            x = currentBlock.Position.x;
+            y = currentBlock.Position.y;
         }
 
-        Position = IsOpened ? (x, y - lines) : (int.MaxValue, int.MaxValue);
-        Size = (w, lines + h + 1);
+        position = isHidden ? (int.MaxValue, int.MaxValue) : (x, y - lines);
+        size = (w, lines + h + 1);
 
         var btnXs = Distribute(buttons.Count, (x, x + w));
         for (var i = 0; i < buttons.Count; i++)
@@ -120,22 +134,11 @@ public class Prompt
             var btn = buttons[i];
             btn.position = ((int)btnXs[i], y + h);
             btn.Update();
+            itemDisplay?.Invoke(btn);
         }
 
         if (Input.IsKeyJustPressed(Key.Escape))
             Close();
-    }
-    private void UpdateBlockPosition()
-    {
-        if (Block == null)
-            return;
-
-        var text = Message ?? "";
-        var lines = text.Split(Environment.NewLine).Length;
-
-        Block.Align((0.5f, 0.5f));
-        var (x, y) = Block.Position;
-        Block.position = (x, y + lines / 2);
     }
 
     private static float[] Distribute(int amount, (float a, float b) range)

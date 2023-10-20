@@ -36,15 +36,13 @@ public class Slider : Block
         private set;
     }
 
-    public Slider((int x, int y) position = default, bool isVertical = false)
-        : base(position)
+    public Slider((int x, int y) position = default, bool isVertical = false) : base(position)
     {
         IsVertical = isVertical;
         Size = isVertical ? (1, 10) : (10, 1);
         Init();
     }
-    public Slider(byte[] bytes)
-        : base(bytes)
+    public Slider(byte[] bytes) : base(bytes)
     {
         IsVertical = GrabBool(bytes);
 

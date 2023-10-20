@@ -6,14 +6,15 @@ public static class Run
 {
     public static void Main()
     {
-        Editors.EditorUserInterface.Program.Run();
-        //RunExampleUserInterface();
+        //https://youtu.be/qRtrj6Pua2A?t=234
+
+        //Editors.EditorUserInterface.Program.Run();
+        RunExampleUserInterface();
     }
 
     private static void RunExampleUserInterface()
     {
         var (maps, blocks) = Program.Initialize();
-        blocks.Prompt = Prompts.Create(maps);
         //blocks.Add(ButtonsAndCheckboxes.Create(maps));
         //blocks.Add(SlidersAndScrolls.Create(maps));
         //blocks.Add(FileViewers.Create(maps));
@@ -23,6 +24,7 @@ public static class Run
         //blocks.Add(Lists.Create(maps));
         //blocks.Add(Steppers.Create(maps));
         //blocks.Add(Pagination.Create(maps));
+        blocks.Add(Prompts.Create(maps));
         Program.Run(maps, blocks);
     }
 }

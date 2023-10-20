@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Text;
 
 [Flags]
-public enum SymbolSet
+public enum SymbolGroup
 {
     None = 0,
     Letters = 1,
@@ -22,11 +22,56 @@ public enum SymbolSet
 /// </summary>
 public class InputBox : Block
 {
-    public bool IsEditable
+    /// <summary>
+    /// The text that should be displayed in the input box when it is empty.
+    /// Defaults to "Type…".
+    /// </summary>
+    public string Placeholder
     {
         get;
         set;
-    } = true;
+    }
+    public string Value
+    {
+        get => value;
+        set
+        {
+            this.value = value;
+            var split = value.Split(Environment.NewLine);
+
+            lines.Clear();
+            foreach (var line in split)
+                lines.Add(line);
+
+            UpdateText();
+            CursorScroll();
+
+            // reclamp
+            SelectionIndices = (sx, sy);
+            CursorIndices = (cx, cy);
+        }
+    }
+    public bool IsReadOnly
+    {
+        get;
+        set;
+    }
+    public bool IsSingleLine
+    {
+        get;
+        set;
+    }
+    public SymbolGroup SymbolGroup
+    {
+        get => symbolGroup;
+        set
+        {
+            if (symbolGroup != value)
+                allowedSymbolsCache.Clear();
+
+            symbolGroup = value;
+        }
+    }
 
     public string Selection
     {
@@ -112,40 +157,6 @@ public class InputBox : Block
         }
     }
 
-    /// <summary>
-    /// The text that should be displayed in the input box when it is empty.
-    /// Defaults to "Type…".
-    /// </summary>
-    public string Placeholder
-    {
-        get;
-        set;
-    }
-    public string Value
-    {
-        get => value;
-        set
-        {
-            this.value = value;
-            var split = value.Split(Environment.NewLine);
-
-            lines.Clear();
-            foreach (var line in split)
-                lines.Add(line);
-
-            UpdateText();
-            CursorScroll();
-
-            // reclamp
-            SelectionIndices = (sx, sy);
-            CursorIndices = (cx, cy);
-        }
-    }
-    public int LineCount
-    {
-        get => lines.Count;
-    }
-
     public (int symbol, int line) CursorIndices
     {
         get => (cx, cy);
@@ -168,25 +179,14 @@ public class InputBox : Block
     public bool IsCursorVisible
     {
         get =>
-            IsFocused && IsEditable &&
+            IsFocused && IsReadOnly == false &&
             cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
             IsOverlapping(PositionFromIndices(CursorIndices));
     }
-    public bool IsSingleLine
-    {
-        get;
-        set;
-    }
-    public SymbolSet SymbolSet
-    {
-        get => symbolSet;
-        set
-        {
-            if (symbolSet != value)
-                allowedSymbolsCache.Clear();
 
-            symbolSet = value;
-        }
+    public int LineCount
+    {
+        get => lines.Count;
     }
 
     public string? this[int lineIndex]
@@ -222,27 +222,32 @@ public class InputBox : Block
         lines[0] = Text;
         Value = Text;
 
-        SymbolSet = SymbolSet.Letters |
-                    SymbolSet.Digits |
-                    SymbolSet.Punctuation |
-                    SymbolSet.Math |
-                    SymbolSet.Special |
-                    SymbolSet.Space |
-                    SymbolSet.Other;
+        SymbolGroup = SymbolGroup.Letters |
+                      SymbolGroup.Digits |
+                      SymbolGroup.Punctuation |
+                      SymbolGroup.Math |
+                      SymbolGroup.Special |
+                      SymbolGroup.Space |
+                      SymbolGroup.Other;
     }
     public InputBox(byte[] bytes) : base(bytes)
     {
         Init();
-        IsEditable = GrabBool(bytes);
+        IsReadOnly = GrabBool(bytes);
+        IsSingleLine = GrabBool(bytes);
         Placeholder = GrabString(bytes);
-        Value = Text;
+        Value = GrabString(bytes);
+        SymbolGroup = (SymbolGroup)GrabByte(bytes);
     }
 
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
-        PutBool(result, IsEditable);
+        PutBool(result, IsReadOnly);
+        PutBool(result, IsSingleLine);
         PutString(result, Placeholder);
+        PutString(result, Value);
+        PutByte(result, (byte)SymbolGroup);
         return result.ToArray();
     }
 
@@ -346,14 +351,14 @@ public class InputBox : Block
         var isNotInSets = true;
 
         foreach (var flag in keys)
-            if (SymbolSet.HasFlag(flag))
+            if (SymbolGroup.HasFlag(flag))
                 set += symbolSets[flag];
 
         foreach (var charSet in values)
             if (charSet.Contains(symbol))
                 isNotInSets = false;
 
-        var isOther = SymbolSet.HasFlag(SymbolSet.Other) && isNotInSets;
+        var isOther = SymbolGroup.HasFlag(SymbolGroup.Other) && isNotInSets;
         var result = set.Contains(symbol) || isOther;
         allowedSymbolsCache[symbol] = result;
         return result;
@@ -372,14 +377,14 @@ public class InputBox : Block
     private readonly List<string> lines = new() { string.Empty };
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
 
-    private static readonly Dictionary<SymbolSet, string> symbolSets = new()
+    private static readonly Dictionary<SymbolGroup, string> symbolSets = new()
     {
-        { SymbolSet.Letters, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" },
-        { SymbolSet.Digits, "0123456789" },
-        { SymbolSet.Punctuation, ",.;:!?-()[]{}\"'" },
-        { SymbolSet.Math, "+-*/=<>%(),.^" },
-        { SymbolSet.Special, "@#&_|\\/^" },
-        { SymbolSet.Space, " " }
+        { SymbolGroup.Letters, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" },
+        { SymbolGroup.Digits, "0123456789" },
+        { SymbolGroup.Punctuation, ",.;:!?-()[]{}\"'" },
+        { SymbolGroup.Math, "+-*/=<>%(),.^" },
+        { SymbolGroup.Special, "@#&_|\\/^" },
+        { SymbolGroup.Space, " " }
     };
 
     private const char SELECTION = '█', SPACE = ' ', PASSWORD = '*';
@@ -395,7 +400,7 @@ public class InputBox : Block
 
     private Action<string>? type;
     private Action? submit;
-    private SymbolSet symbolSet;
+    private SymbolGroup symbolGroup;
 
     static InputBox()
     {
@@ -486,7 +491,7 @@ public class InputBox : Block
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
             var result = scrX >= secondIndex ? string.Empty : line[scrX..secondIndex];
 
-            if (SymbolSet.HasFlag(SymbolSet.Password))
+            if (SymbolGroup.HasFlag(SymbolGroup.Password))
                 result = new(PASSWORD, result.Length);
 
             str.Append(newLine + result);
@@ -677,7 +682,7 @@ public class InputBox : Block
 
     private void TryMoveCursor(bool isHolding)
     {
-        if (IsEditable == false)
+        if (IsReadOnly)
             return;
 
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
@@ -712,7 +717,7 @@ public class InputBox : Block
 
     private void TryType(bool isAllowedType, bool isPasting)
     {
-        if (isAllowedType == false || IsEditable == false)
+        if (isAllowedType == false || IsReadOnly)
             return;
 
         var symbols = Input.Typed ?? string.Empty;
@@ -766,7 +771,7 @@ public class InputBox : Block
     }
     private void TryBackspaceDeleteEnter(bool isHolding, bool justDeletedSelection)
     {
-        if (IsEditable == false)
+        if (IsReadOnly)
             return;
 
         var (w, _) = Size;
@@ -864,7 +869,7 @@ public class InputBox : Block
     {
         var isSelected = SelectionIndices != CursorIndices;
 
-        if (shouldDelete == false || isSelected == false || IsEditable == false)
+        if (shouldDelete == false || isSelected == false || IsReadOnly)
             return;
 
         var cursorIndex = IndicesToIndex(CursorIndices);
@@ -929,7 +934,7 @@ public class InputBox : Block
         if (IsDisabled == false && (IsHovered || IsPressedAndHeld))
             Input.MouseCursorResult = MouseCursor.Text;
 
-        if (IsHovered && IsEditable == false && Value.Length == 0)
+        if (IsHovered && IsReadOnly && Value.Length == 0)
             Input.MouseCursorResult = MouseCursor.Arrow;
     }
     private bool TryCopyPasteCut(
@@ -942,7 +947,7 @@ public class InputBox : Block
 
         isPasting = false;
 
-        if (IsEditable == false)
+        if (IsReadOnly)
             return false;
 
         if (ctrl && Input.Typed == "c")

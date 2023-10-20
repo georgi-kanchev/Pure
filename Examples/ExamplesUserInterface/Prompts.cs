@@ -11,11 +11,14 @@ public static class Prompts
             Placeholder = "Message…",
         };
         input.OnDisplay(() => maps.SetInputBox(input, zOrder: 4));
+
         var prompt = new Prompt();
-        prompt.OnDisplay(buttons => maps.SetPrompt(prompt, buttons, zOrder: 3));
+        prompt.OnDisplay(() => maps.SetPrompt(prompt, zOrder: 3));
+        prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: 5));
+
         Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
         {
-            var shouldLog = prompt.Block == input && prompt.IsOpened;
+            var shouldLog = input.IsHidden == false && prompt.IsHidden == false;
             prompt.Close();
 
             if (shouldLog)
@@ -24,11 +27,11 @@ public static class Prompts
         Keyboard.OnKeyPress(Keyboard.Key.ShiftLeft, asText =>
         {
             input.IsFocused = true;
-            input.SelectAll();
+            input.IsHidden = false;
 
-            prompt.Block = input;
-            prompt.Message = "Log a message?";
-            prompt.Open(2, index =>
+            prompt.Text = "Log a message?";
+            prompt.ButtonCount = 2;
+            prompt.Open(input, index =>
             {
                 if (index == 0)
                     Console.WriteLine(input.Value);
@@ -36,8 +39,10 @@ public static class Prompts
         });
         Keyboard.OnKeyPress(Keyboard.Key.ControlLeft, asText =>
         {
-            prompt.Block = null;
-            prompt.Message = $"This should be some{Environment.NewLine}important message!";
+            input.IsHidden = true;
+
+            prompt.Text = $"This should be some{Environment.NewLine}important message!";
+            prompt.ButtonCount = 1;
             prompt.Open();
         });
 

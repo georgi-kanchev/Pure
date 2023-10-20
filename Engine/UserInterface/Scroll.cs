@@ -43,17 +43,16 @@ public class Scroll : Block
         }
     }
 
-    public Scroll((int x, int y) position = default, bool isVertical = true)
-        : base(position)
+    public Scroll((int x, int y) position = default, bool isVertical = true) : base(position)
     {
         IsVertical = isVertical;
         Size = IsVertical ? (1, 10) : (10, 1);
         Init();
     }
-    public Scroll(byte[] bytes)
-        : base(bytes)
+    public Scroll(byte[] bytes) : base(bytes)
     {
         IsVertical = GrabBool(bytes);
+        Step = GrabFloat(bytes);
         Size = IsVertical ? (1, Size.height) : (Size.width, 1);
 
         Init();
@@ -65,6 +64,7 @@ public class Scroll : Block
     {
         var result = base.ToBytes().ToList();
         PutBool(result, IsVertical);
+        PutFloat(result, Step);
         PutFloat(result, Slider.Progress);
         PutInt(result, Slider.index);
         return result.ToArray();

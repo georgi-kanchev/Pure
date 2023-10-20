@@ -41,18 +41,17 @@ public class Panel : Block
     }
     public Panel(byte[] bytes) : base(bytes)
     {
-        sizeMinimum = (GrabInt(bytes), GrabInt(bytes));
         IsResizable = GrabBool(bytes);
         IsMovable = GrabBool(bytes);
+        IsRestricted = GrabBool(bytes);
     }
 
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
-        PutInt(result, SizeMinimum.width);
-        PutInt(result, SizeMinimum.height);
         PutBool(result, IsResizable);
         PutBool(result, IsMovable);
+        PutBool(result, IsRestricted);
         return result.ToArray();
     }
 

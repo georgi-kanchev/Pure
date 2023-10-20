@@ -140,6 +140,7 @@ public class List : Block
         Init();
         Span = (Spans)GrabByte(bytes);
         IsSingleSelecting = GrabBool(bytes);
+        IsReadOnly = GrabBool(bytes);
         ItemGap = GrabInt(bytes);
         ItemSize = (GrabInt(bytes), GrabInt(bytes));
         var scrollProgress = GrabFloat(bytes);
@@ -149,6 +150,9 @@ public class List : Block
 
         for (var i = 0; i < Count; i++)
             Select(i, GrabBool(bytes));
+
+        for (var i = 0; i < Count; i++)
+            Disable(i, GrabBool(bytes));
 
         Scroll.Slider.Progress = scrollProgress;
         isInitialized = true;
@@ -266,6 +270,7 @@ public class List : Block
         var result = base.ToBytes().ToList();
         PutByte(result, (byte)Span);
         PutBool(result, IsSingleSelecting);
+        PutBool(result, IsReadOnly);
         PutInt(result, ItemGap);
         PutInt(result, ItemSize.width);
         PutInt(result, ItemSize.height);
@@ -273,6 +278,8 @@ public class List : Block
         PutInt(result, Count);
         for (var i = 0; i < Count; i++)
             PutBool(result, this[i].IsSelected);
+        for (var i = 0; i < Count; i++)
+            PutBool(result, this[i].IsDisabled);
 
         return result.ToArray();
     }

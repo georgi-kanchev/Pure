@@ -140,45 +140,37 @@ internal class EditPanel : Panel
                     Selected.IsHidden = IsSelected;
                 else if (Text == "Align X")
                 {
-                    if (editUI.Prompt?.Block == null)
-                        return;
-
-                    editUI.Prompt.Message = "Left      Right";
-                    editUI.Prompt.Open(2, i =>
+                    prompt.Text = "Left      Right";
+                    prompt.Open(promptSlider, i =>
                     {
-                        if (i != 0 || editUI.Prompt.Block == null)
+                        if (i != 0)
                             return;
 
-                        var slider = (Slider)editUI.Prompt.Block;
                         var (cx, _) = CameraPosition;
-                        panel.Align((slider.Progress, float.NaN));
-                        panel.Position = (panel.Position.x + cx, panel.Position.y);
+                        panel.Align((promptSlider.Progress, float.NaN));
+                        panel.Position = (promptSlider.Position.x + cx, panel.Position.y);
                     });
 
                     var (camX, camY) = CameraPosition;
-                    var (x, y) = editUI.Prompt.Block.Position;
-                    editUI.Prompt.Block.Position = (x + camX, y + camY);
+                    var (x, y) = promptSlider.Position;
+                    promptSlider.Position = (x + camX, y + camY);
                 }
                 else if (Text == "Align Y")
                 {
-                    if (editUI.Prompt?.Block == null)
-                        return;
-
-                    editUI.Prompt.Message = "Top      Bottom";
-                    editUI.Prompt.Open(2, i =>
+                    prompt.Text = "Top      Bottom";
+                    prompt.Open(promptSlider, i =>
                     {
-                        if (i != 0 || editUI.Prompt.Block == null)
+                        if (i != 0)
                             return;
 
-                        var slider = (Slider)editUI.Prompt.Block;
                         var (_, cy) = CameraPosition;
-                        panel.Align((float.NaN, slider.Progress));
+                        panel.Align((float.NaN, promptSlider.Progress));
                         panel.Position = (panel.Position.x, panel.Position.y + cy);
                     });
 
                     var (camX, camY) = CameraPosition;
-                    var (x, y) = editUI.Prompt.Block.Position;
-                    editUI.Prompt.Block.Position = (x + camX, y + camY);
+                    var (x, y) = promptSlider.Position;
+                    promptSlider.Position = (x + camX, y + camY);
                 }
                 else if (Text == "ItemSelect")
                 {
@@ -201,10 +193,10 @@ internal class EditPanel : Panel
                     var index = (int)((Stepper)editPanel.blocks[typeof(Layout)][1]).Value;
                     var rate = ((Stepper)editPanel.blocks[typeof(Layout)][2]).Value;
 
-                    if (Text.Contains("Top")) l.Cut(index, Layout.CutSide.Top, rate);
-                    else if (Text.Contains("Left")) l.Cut(index, Layout.CutSide.Left, rate);
-                    else if (Text.Contains("Right")) l.Cut(index, Layout.CutSide.Right, rate);
-                    else if (Text.Contains("Bottom")) l.Cut(index, Layout.CutSide.Bottom, rate);
+                    if (Text.Contains("Top")) l.Cut(index, Side.Top, rate);
+                    else if (Text.Contains("Left")) l.Cut(index, Side.Left, rate);
+                    else if (Text.Contains("Right")) l.Cut(index, Side.Right, rate);
+                    else if (Text.Contains("Bottom")) l.Cut(index, Side.Bottom, rate);
 
                     editPanel.UpdatePanelValues();
                 }
@@ -326,7 +318,7 @@ internal class EditPanel : Panel
         {
             var editable = (Button)blocks[typeof(InputBox)][0];
             var placeholder = (InputBox)blocks[typeof(InputBox)][1];
-            i.IsEditable = editable.IsSelected;
+            i.IsReadOnly = editable.IsSelected;
             i.Value = text.Value;
             i.Placeholder = placeholder.Value;
         }
@@ -459,7 +451,7 @@ internal class EditPanel : Panel
 
             var editable = (Button)blocks[typeof(InputBox)][0];
             var placeholder = (InputBox)blocks[typeof(InputBox)][1];
-            editable.IsSelected = i.IsEditable;
+            editable.IsSelected = i.IsReadOnly;
             placeholder.Value = i.Placeholder;
             placeholder.CursorIndices = (0, 0);
             placeholder.SelectionIndices = (0, 0);
@@ -559,7 +551,7 @@ internal class EditPanel : Panel
             for (var j = 0; j < l.Count; j++)
                 value += $"{(j > 0 ? Environment.NewLine : "")}{l[j].Text}";
 
-            items.IsEditable = true;
+            items.IsReadOnly = true;
             items.Value = value;
             items.SelectionIndices = (0, 0);
             items.CursorIndices = (0, 0);

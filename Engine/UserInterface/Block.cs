@@ -156,13 +156,13 @@ public abstract class Block
     /// </summary>
     public string Text
     {
-        get => text;
+        get => text ?? string.Empty;
         set
         {
             if (isTextReadonly)
                 return;
 
-            text = value;
+            text = value ?? string.Empty;
         }
     }
     /// <summary>
