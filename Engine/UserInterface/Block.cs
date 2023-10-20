@@ -269,6 +269,32 @@ public abstract class Block
         hasParent = GrabBool(bytes);
     }
 
+    public virtual byte[] ToBytes()
+    {
+        var result = new List<byte>();
+
+        PutString(result, typeName);
+        PutInt(result, Position.x);
+        PutInt(result, Position.y);
+        PutInt(result, SizeMinimum.width);
+        PutInt(result, SizeMinimum.height);
+        PutInt(result, SizeMaximum.width);
+        PutInt(result, SizeMaximum.height);
+        PutInt(result, Size.width);
+        PutInt(result, Size.height);
+        PutString(result, Text);
+        PutBool(result, IsHidden);
+        PutBool(result, IsDisabled);
+        PutBool(result, hasParent);
+
+        return result.ToArray();
+    }
+
+    public override string ToString()
+    {
+        return $"{GetType().Name} \"{Text}\"";
+    }
+
     public virtual void Update()
     {
         LimitSizeMin((1, 1));
@@ -375,32 +401,6 @@ public abstract class Block
         Position = (
             float.IsNaN(alignment.horizontal) ? Position.x : (int)newX,
             float.IsNaN(alignment.vertical) ? Position.y : (int)newY);
-    }
-
-    public virtual byte[] ToBytes()
-    {
-        var result = new List<byte>();
-
-        PutString(result, typeName);
-        PutInt(result, Position.x);
-        PutInt(result, Position.y);
-        PutInt(result, SizeMinimum.width);
-        PutInt(result, SizeMinimum.height);
-        PutInt(result, SizeMaximum.width);
-        PutInt(result, SizeMaximum.height);
-        PutInt(result, Size.width);
-        PutInt(result, Size.height);
-        PutString(result, Text);
-        PutBool(result, IsHidden);
-        PutBool(result, IsDisabled);
-        PutBool(result, hasParent);
-
-        return result.ToArray();
-    }
-
-    public override string ToString()
-    {
-        return $"{GetType().Name} \"{Text}\"";
     }
 
     public void SimulateInteraction(Interaction interaction)

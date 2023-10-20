@@ -72,8 +72,8 @@ public class Stepper : Block
     public Stepper(byte[] bytes) : base(bytes)
     {
         Range = (GrabFloat(bytes), GrabFloat(bytes));
-        Value = GrabFloat(bytes);
         Step = GrabFloat(bytes);
+        Value = GrabFloat(bytes);
 
         Init();
     }
@@ -83,8 +83,8 @@ public class Stepper : Block
         var result = base.ToBytes().ToList();
         PutFloat(result, Range.minimum);
         PutFloat(result, Range.maximum);
-        PutFloat(result, Value);
         PutFloat(result, Step);
+        PutFloat(result, Value);
         return result.ToArray();
     }
 
@@ -166,7 +166,7 @@ public class Stepper : Block
         if (float.IsInfinity(number) || Math.Abs(interval) < 0.001f)
             return number;
 
-        var precision = Precision(interval);
+        var precision = Math.Min(Precision(interval), 6);
         var round = MathF.Round(number % interval, precision);
         if (Precision(round) == precision)
             return number;

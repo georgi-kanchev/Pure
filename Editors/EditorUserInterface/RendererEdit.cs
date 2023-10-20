@@ -2,106 +2,123 @@ namespace Pure.Editors.EditorUserInterface;
 
 internal class RendererEdit : BlockPack
 {
-    public RendererEdit()
+    public void BlockCreate(
+        string typeName,
+        (int x, int y) position,
+        Span type = default,
+        byte[]? bytes = default)
     {
-    }
-
-    public void BlockCreate(int index, (int x, int y) position, List.Spans type = default)
-    {
-        var back = (int)Layer.UiBack;
-        var middle = (int)Layer.UiMiddle;
         var block = default(Block);
-        var panel = new Panel(position) { IsRestricted = false, SizeMinimum = (3, 3) };
+
+        const int BACK = (int)Layer.UiBack;
+        const int MIDDLE = (int)Layer.UiMiddle;
+
+        var panel = new Panel { IsRestricted = false, SizeMinimum = (3, 3) };
+
+        switch (typeName)
+        {
+            case nameof(Button):
+            {
+                block = bytes != null ? new(bytes) : new Button(position);
+                block.OnDisplay(() => maps.SetButton((Button)block, BACK, true));
+                break;
+            }
+            case nameof(InputBox):
+            {
+                block = bytes != null ? new(bytes) : new InputBox(position);
+                block.OnDisplay(() => maps.SetInputBox((InputBox)block, BACK));
+                break;
+            }
+            case nameof(Pages):
+            {
+                block = bytes != null ? new(bytes) : new Pages(position);
+                var pages = (Pages)block;
+                panel.SizeMinimum = (8, 3);
+                block.OnDisplay(() => maps.SetPages(pages, BACK));
+                pages.OnItemDisplay(item => maps.SetPagesItem(pages, item, MIDDLE));
+                break;
+            }
+            case nameof(Panel):
+            {
+                block = bytes != null ? new(bytes) : new Panel(position);
+                panel.SizeMinimum = (5, 5);
+                block.OnDisplay(() => maps.SetPanel((Panel)block, BACK));
+                break;
+            }
+            case nameof(Palette):
+            {
+                block = bytes != null ? new(bytes) : new Palette(position);
+                var palette = (Palette)block;
+                panel.SizeMinimum = (15, 5);
+                block.OnDisplay(() => maps.SetPalette(palette, BACK));
+                block.OnDisplay(() => maps.SetPages(palette.Brightness, BACK));
+                palette.Brightness.OnItemDisplay(item =>
+                    maps.SetPagesItem(palette.Brightness, item, MIDDLE));
+                palette.OnColorSampleDisplay((btn, c) =>
+                    maps[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
+                break;
+            }
+            case nameof(Slider):
+            {
+                block = bytes != null ? new(bytes) : new Slider(position);
+                panel.SizeMinimum = (4, 3);
+                block.OnDisplay(() => maps.SetSlider((Slider)block, BACK));
+                break;
+            }
+            case nameof(Scroll):
+            {
+                block = bytes != null ? new(bytes) : new Scroll(position);
+                panel.SizeMinimum = (3, 4);
+                block.OnDisplay(() => maps.SetScroll((Scroll)block, BACK));
+                break;
+            }
+            case nameof(Stepper):
+            {
+                block = bytes != null ? new(bytes) : new Stepper(position);
+                panel.SizeMinimum = (6, 4);
+                block.OnDisplay(() => maps.SetStepper((Stepper)block, BACK));
+                break;
+            }
+            case nameof(Layout):
+            {
+                block = bytes != null ? new(bytes) : new Layout(position);
+                var layout = (Layout)block;
+                layout.OnDisplaySegment((s, i) => maps.SetLayoutSegment(s, i, true, BACK));
+                break;
+            }
+            case nameof(List):
+            {
+                block = bytes != null ? new(bytes) : new List(position, 10, type);
+                var list = (List)block;
+                panel.SizeMinimum = (4, 4);
+                list.OnDisplay(() => maps.SetList(list, BACK));
+                list.OnItemDisplay(item => maps.SetListItem(list, item, MIDDLE));
+                break;
+            }
+            case nameof(FileViewer):
+            {
+                block = bytes != null ? new(bytes) : new FileViewer(position);
+                var fileViewer = (FileViewer)block;
+
+                panel.SizeMinimum = (5, 5);
+                block.OnDisplay(() => maps.SetFileViewer(fileViewer, BACK));
+                fileViewer.FilesAndFolders.OnItemDisplay(item =>
+                    maps.SetFileViewerItem(fileViewer, item, MIDDLE));
+                break;
+            }
+        }
+
+        if (block == null)
+            return;
 
         panel.OnInteraction(Interaction.Press, () => OnPanelPress(panel));
         panel.OnDisplay(() => OnPanelDisplay(panel));
         panel.OnResize(delta => OnPanelResize(panel, delta));
         panel.OnDrag(delta => OnDragPanel(panel, delta));
 
-        if (index == 1)
-        {
-            block = new Button(position);
-            block.OnDisplay(() => maps.SetButton((Button)block, back, true));
-        }
-        else if (index == 2)
-        {
-            block = new InputBox(position);
-            block.OnDisplay(() => maps.SetInputBox((InputBox)block, back));
-        }
-        else if (index == 3)
-        {
-            block = new Pages(position);
-            var pages = (Pages)block;
-            panel.SizeMinimum = (8, 3);
-            block.OnDisplay(() => maps.SetPages(pages, back));
-            pages.OnItemDisplay(item => maps.SetPagesItem(pages, item, middle));
-        }
-        else if (index == 4)
-        {
-            block = new Panel(position);
-            panel.SizeMinimum = (5, 5);
-            block.OnDisplay(() => maps.SetPanel((Panel)block, back));
-        }
-        else if (index == 5)
-        {
-            block = new Palette(position);
-            var palette = (Palette)block;
-            panel.SizeMinimum = (15, 5);
-            block.OnDisplay(() => maps.SetPalette(palette, back));
-            block.OnDisplay(() => maps.SetPages(palette.Brightness, back));
-            palette.Brightness.OnItemDisplay(item =>
-                maps.SetPagesItem(palette.Brightness, item, middle));
-            palette.OnColorSampleDisplay((btn, c) =>
-                maps[back].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
-        }
-        else if (index == 6)
-        {
-            block = new Slider(position);
-            panel.SizeMinimum = (4, 3);
-            block.OnDisplay(() => maps.SetSlider((Slider)block, back));
-        }
-        else if (index == 7)
-        {
-            block = new Scroll(position);
-            panel.SizeMinimum = (3, 4);
-            block.OnDisplay(() => maps.SetScroll((Scroll)block, back));
-        }
-        else if (index == 8)
-        {
-            block = new Stepper(position);
-            panel.SizeMinimum = (6, 4);
-            block.OnDisplay(() => maps.SetStepper((Stepper)block, back));
-        }
-        else if (index == 9)
-        {
-            block = new Layout(position);
-            var layout = (Layout)block;
-            layout.OnDisplaySegment((s, i) => maps.SetLayoutSegment(s, i, true, back));
-        }
-        else if (index == 10)
-        {
-            block = new List(position, 10, type);
-            var list = (List)block;
-            panel.SizeMinimum = (4, 4);
-            list.OnDisplay(() => maps.SetList(list, back));
-            list.OnItemDisplay(item => maps.SetListItem(list, item, middle));
-        }
-        else if (index == 11)
-        {
-            block = new FileViewer(position);
-            var fileViewer = (FileViewer)block;
-
-            panel.SizeMinimum = (5, 5);
-            block.OnDisplay(() => maps.SetFileViewer(fileViewer, back));
-            fileViewer.FilesAndFolders.OnItemDisplay(item =>
-                maps.SetFileViewerItem(fileViewer, item, middle));
-        }
-
-        if (block == null)
-            return;
-
         panel.Size = (block.Size.width + 2, block.Size.height + 2);
         panel.Text = block.Text;
+        panel.Position = (block.Position.x - 1, block.Position.y - 1);
 
         ui.Add(block);
         Add(panel);
@@ -156,7 +173,7 @@ internal class RendererEdit : BlockPack
                 break;
             }
 
-        if (notOverEditPanel == false || isHoveringMenu)
+        if (prompt.IsHidden == false || notOverEditPanel == false || isHoveringMenu)
             return;
 
         Selected = ui[IndexOf(panel)];

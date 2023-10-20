@@ -57,12 +57,22 @@ public class Pages : Block
     public int ItemWidth
     {
         get => itemWidth;
-        set => itemWidth = Math.Max(value, 1);
+        set
+        {
+            itemWidth = Math.Max(value, 1);
+            RecreatePages();
+            UpdatePages();
+        }
     }
     public int ItemGap
     {
-        get;
-        set;
+        get => itemGap;
+        set
+        {
+            itemGap = Math.Max(value, 0);
+            RecreatePages();
+            UpdatePages();
+        }
     }
 
     public Pages((int x, int y) position = default, int count = 10) : base(position)
@@ -76,10 +86,10 @@ public class Pages : Block
     }
     public Pages(byte[] bytes) : base(bytes)
     {
-        Count = GrabInt(bytes);
-        Current = GrabInt(bytes);
         ItemWidth = GrabByte(bytes);
         ItemGap = GrabByte(bytes);
+        Count = GrabInt(bytes);
+        Current = GrabInt(bytes);
 
         Init();
     }
@@ -87,10 +97,10 @@ public class Pages : Block
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
-        PutInt(result, Count);
-        PutInt(result, Current);
         PutByte(result, (byte)ItemWidth);
         PutByte(result, (byte)ItemGap);
+        PutInt(result, Count);
+        PutInt(result, Current);
         return result.ToArray();
     }
 
@@ -142,6 +152,7 @@ public class Pages : Block
     private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
     private Action<Button>? itemDisplays;
     private int itemWidth;
+    private int itemGap;
 
     [MemberNotNull(nameof(First), nameof(Previous), nameof(Next), nameof(Last))]
     private void Init()

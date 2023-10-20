@@ -4,26 +4,26 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 
 /// <summary>
+/// Specifies the alignment of the text in <see cref="Tilemap.SetTextRectangle"/>.
+/// </summary>
+public enum Alignment
+{
+    TopLeft,
+    Top,
+    TopRight,
+    Left,
+    Center,
+    Right,
+    BottomLeft,
+    Bottom,
+    BottomRight
+}
+
+/// <summary>
 /// Represents a tilemap consisting of a grid of tiles.
 /// </summary>
 public class Tilemap
 {
-    /// <summary>
-    /// Specifies the alignment of the text in <see cref="SetTextRectangle"/>.
-    /// </summary>
-    public enum Alignment
-    {
-        TopLeft,
-        Top,
-        TopRight,
-        Left,
-        Center,
-        Right,
-        BottomLeft,
-        Bottom,
-        BottomRight
-    }
-
     /// <summary>
     /// Gets the size of the tilemap in tiles.
     /// </summary>

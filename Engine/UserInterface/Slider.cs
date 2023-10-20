@@ -51,6 +51,15 @@ public class Slider : Block
         index = GrabInt(bytes);
     }
 
+    public override byte[] ToBytes()
+    {
+        var result = base.ToBytes().ToList();
+        PutBool(result, IsVertical);
+        PutFloat(result, Progress);
+        PutInt(result, index);
+        return result.ToArray();
+    }
+
     /// <summary>
     /// Moves the handle of the slider by the specified amount.
     /// </summary>
@@ -75,15 +84,6 @@ public class Slider : Block
         index = IsVertical ? py - y : px - x;
         index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
         Progress = Map(index, 0, sz - 1, 0, 1);
-    }
-
-    public override byte[] ToBytes()
-    {
-        var result = base.ToBytes().ToList();
-        PutBool(result, IsVertical);
-        PutFloat(result, Progress);
-        PutInt(result, index);
-        return result.ToArray();
     }
 
     protected override void OnInput()

@@ -428,7 +428,7 @@ public class InputBox : Block
 
     protected override void OnInput()
     {
-        if (IsFocused && IsSingleLine && JustPressed(Key.Enter))
+        if (IsReadOnly == false && IsFocused && IsSingleLine && JustPressed(Key.Enter))
             submit?.Invoke();
 
         var isBellowElement = IsFocused == false || Input.FocusedPrevious != this;

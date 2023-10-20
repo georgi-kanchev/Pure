@@ -22,40 +22,43 @@ public class Layout : Block
     }
     public Layout(byte[] bytes) : base(bytes)
     {
-        Restore();
-
-        var offset = 0;
-        var count = GetByte();
+        var count = GrabByte(bytes);
 
         // all segments need to be added before parent linking
         var parentIndexes = new List<int>();
 
         for (var i = 0; i < count; i++)
         {
-            var rate = GetFloat();
-            var cutSide = (Side)GetByte();
+            var rate = GrabFloat(bytes);
+            var cutSide = (Side)GrabByte(bytes);
+            var parentIndex = GrabInt(bytes);
 
-            parentIndexes.Add(GetByte());
+            parentIndexes.Add(parentIndex);
             var seg = new Segment(rate, cutSide, null);
             segments.Add(seg);
         }
 
         for (var i = 0; i < segments.Count; i++)
-            segments[i].parent = segments[parentIndexes[i]];
-        return;
+        {
+            var parentIndex = parentIndexes[i];
+            segments[i].parent = parentIndex == -1 ? null : segments[parentIndex];
+        }
+    }
 
-        int GetInt()
+    public override byte[] ToBytes()
+    {
+        var bytes = base.ToBytes().ToList();
+        PutByte(bytes, (byte)segments.Count);
+
+        foreach (var seg in segments)
         {
-            return BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+            var parentIndex = seg.parent == null ? -1 : segments.IndexOf(seg.parent);
+            PutFloat(bytes, seg.rate);
+            PutByte(bytes, (byte)seg.side);
+            PutInt(bytes, parentIndex);
         }
-        float GetFloat()
-        {
-            return BitConverter.ToSingle(GetBytes(bytes, 4, ref offset));
-        }
-        byte GetByte()
-        {
-            return GetBytes(bytes, 1, ref offset)[0];
-        }
+
+        return bytes.ToArray();
     }
 
     public void Cut(int index, Side side, float rate)
@@ -74,22 +77,6 @@ public class Layout : Block
 
     protected virtual void OnSegmentUpdate((int x, int y, int width, int height) segment, int index)
     {
-    }
-
-    public override byte[] ToBytes()
-    {
-        var bytes = base.ToBytes().ToList();
-        PutByte(bytes, (byte)segments.Count);
-
-        foreach (var seg in segments)
-        {
-            var parentIndex = seg.parent == null ? -1 : segments.IndexOf(seg.parent);
-            PutFloat(bytes, seg.rate);
-            PutByte(bytes, (byte)seg.side);
-            PutByte(bytes, (byte)parentIndex);
-        }
-
-        return bytes.ToArray();
     }
 
     public void OnDisplaySegment(Action<(int x, int y, int width, int height), int> method)

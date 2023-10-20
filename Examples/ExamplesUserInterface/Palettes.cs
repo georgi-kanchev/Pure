@@ -37,7 +37,7 @@ public static class Palettes
                 position,
                 size,
                 "This text can be used to pick colors from with the + button!",
-                alignment: Tilemap.Alignment.Center);
+                alignment: Alignment.Center);
 
             for (var i = 0; i < colors.Length; i++)
                 maps[0].SetTextRectangleTint(

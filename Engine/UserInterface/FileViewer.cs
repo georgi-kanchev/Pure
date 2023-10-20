@@ -96,12 +96,18 @@ public class FileViewer : Block
         Size = (12, 8);
         Init();
         IsSelectingFolders = isSelectingFolders;
-        CurrentDirectory = dir;
     }
     public FileViewer(byte[] bytes) : base(bytes)
     {
         Init();
         IsSelectingFolders = GrabBool(bytes);
+    }
+
+    public override byte[] ToBytes()
+    {
+        var result = base.ToBytes().ToList();
+        PutBool(result, IsSelectingFolders);
+        return result.ToArray();
     }
 
     public bool IsFolder(Button item)
@@ -125,13 +131,6 @@ public class FileViewer : Block
             case Directory.MyPictures: return GetFolderPath(SpecialFolder.MyPictures);
             case Directory.Fonts: return GetFolderPath(SpecialFolder.Fonts);
         }
-    }
-
-    public override byte[] ToBytes()
-    {
-        var result = base.ToBytes().ToList();
-        PutBool(result, IsSelectingFolders);
-        return result.ToArray();
     }
 
 #region Backend
@@ -167,6 +166,8 @@ public class FileViewer : Block
         Back.OnInteraction(Interaction.Scroll, ApplyScroll);
         Back.OnInteraction(Interaction.Trigger, () =>
             CurrentDirectory = Path.GetDirectoryName(CurrentDirectory) ?? DefaultPath);
+
+        CurrentDirectory = dir;
     }
 
     private void Refresh()
@@ -207,6 +208,9 @@ public class FileViewer : Block
         CountFiles = files.Length;
 
         FilesAndFolders.Scroll.Slider.Progress = 0;
+
+        if (FilesAndFolders.IsSingleSelecting)
+            FilesAndFolders.Select(IsSelectingFolders ? 0 : CountFolders);
     }
     private void CreateItem(string path)
     {
@@ -236,6 +240,12 @@ public class FileViewer : Block
     internal override void OnUpdate()
     {
         LimitSizeMin((3, 3));
+
+        if (FilesAndFolders is not { IsSingleSelecting: true, IndexesSelected.Length: 1 })
+            return;
+
+        if (IsSelectingFolders ^ FilesAndFolders.IndexesSelected[0] < CountFolders)
+            FilesAndFolders.Select(IsSelectingFolders ? 0 : CountFolders);
     }
     internal override void OnChildrenUpdate()
     {

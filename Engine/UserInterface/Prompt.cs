@@ -18,6 +18,13 @@ public class Prompt : Block
         ButtonCount = GrabByte(bytes);
     }
 
+    public override byte[] ToBytes()
+    {
+        var result = base.ToBytes().ToList();
+        PutByte(result, (byte)ButtonCount);
+        return result.ToArray();
+    }
+
     public void Open(Block? block = null, Action<int>? onButtonTrigger = null)
     {
         if (block != null)
@@ -38,11 +45,7 @@ public class Prompt : Block
                 size = (1, 1),
             };
             var index = i;
-            btn.OnInteraction(Interaction.Trigger, () =>
-            {
-                onButtonTrigger?.Invoke(index);
-                Close();
-            });
+            btn.OnInteraction(Interaction.Trigger, () => onButtonTrigger?.Invoke(index));
             buttons.Add(btn);
         }
     }
@@ -61,13 +64,6 @@ public class Prompt : Block
     public void OnItemDisplay(Action<Button> method)
     {
         itemDisplay += method;
-    }
-
-    public override byte[] ToBytes()
-    {
-        var result = base.ToBytes().ToList();
-        PutByte(result, (byte)ButtonCount);
-        return result.ToArray();
     }
 
 #region Backend
@@ -106,6 +102,22 @@ public class Prompt : Block
         if (isHidden)
             return;
 
+        if (Input.IsKeyJustPressed(Key.Escape))
+            Close();
+    }
+    internal override void OnChildrenDisplay()
+    {
+        if (isHidden)
+            return;
+
+        foreach (var btn in buttons)
+            itemDisplay?.Invoke(btn);
+    }
+    internal override void OnChildrenUpdate()
+    {
+        if (isHidden)
+            return;
+
         var sz = Input.TilemapSize;
         var lines = Text.Split(Environment.NewLine).Length;
         var (w, h) = (sz.width / 2, 0);
@@ -134,11 +146,7 @@ public class Prompt : Block
             var btn = buttons[i];
             btn.position = ((int)btnXs[i], y + h);
             btn.Update();
-            itemDisplay?.Invoke(btn);
         }
-
-        if (Input.IsKeyJustPressed(Key.Escape))
-            Close();
     }
 
     private static float[] Distribute(int amount, (float a, float b) range)

@@ -11,15 +11,17 @@ internal class EditPanel : Panel
 
         var disabled = new EditButton((0, 0)) { Text = "Disabled" };
         var hidden = new EditButton((0, 0)) { Text = "Hidden" };
-        var text = new InputBox((0, 0)) { Placeholder = "Text�", [0] = "" };
+        var text = new InputBox((0, 0)) { Placeholder = "Text…", [0] = "" };
 
         var selected = new EditButton((0, 0)) { Text = "Selected" };
 
-        var placeholder = new InputBox((0, 0)) { Placeholder = "Placeholder�", [0] = "Type�" };
+        var placeholder = new InputBox((0, 0)) { Placeholder = "Placeholder…", [0] = "Type…" };
         var editable = new EditButton((0, 0)) { Text = "Editable" };
 
-        var pagesCount = new Stepper((0, 0)) { Text = "Count", Range = (1, 99) };
-        var currentPage = new Stepper((0, 0)) { Text = "Current" };
+        var count = new Stepper((0, 0)) { Text = "Count", Range = (1, 9999) };
+        var current = new Stepper((0, 0)) { Text = "Current" };
+        var pageWidth = new Stepper((0, 0)) { Text = "Width", Range = (1, 9999) };
+        var pageGap = new Stepper((0, 0)) { Text = "Gap", Range = (1, 9999) };
 
         var movable = new EditButton((0, 0)) { Text = "Movable" };
         var resizable = new EditButton((0, 0)) { Text = "Resizable" };
@@ -49,12 +51,12 @@ internal class EditPanel : Panel
 
         var type = new EditButton((0, 0)) { IsDisabled = true };
         var expanded = new EditButton((0, 0)) { Text = "Expanded" };
-        var items = new InputBox((0, 0)) { Placeholder = "Empty�", [0] = "", Size = (0, 7) };
+        var items = new InputBox((0, 0)) { Placeholder = "Items�", [0] = "", Size = (0, 7) };
         var multiSelect = new EditButton((0, 0)) { Text = "Multi-Select" };
         var scroll = new Stepper((0, 0)) { Text = "Scroll", Range = (0, 1) };
-        var itemWidth = new Stepper((0, 0)) { Text = "Width", Range = (1, int.MaxValue) };
-        var itemHeight = new Stepper((0, 0)) { Text = "Height", Range = (1, int.MaxValue) };
-        var itemGap = new Stepper((0, 0)) { Text = "Gap", Range = (0, int.MaxValue) };
+        var width = new Stepper((0, 0)) { Text = "Width", Range = (1, int.MaxValue) };
+        var height = new Stepper((0, 0)) { Text = "Height", Range = (1, int.MaxValue) };
+        var gap = new Stepper((0, 0)) { Text = "Gap", Range = (0, int.MaxValue) };
 
         var fileSelect = new EditButton((0, 0)) { Text = "File-Select" };
 
@@ -72,7 +74,7 @@ internal class EditPanel : Panel
             { typeof(Block), new() { disabled, hidden, text } },
             { typeof(Button), new() { selected } },
             { typeof(InputBox), new() { editable, placeholder } },
-            { typeof(Pages), new() { pagesCount, currentPage } },
+            { typeof(Pages), new() { count, current, pageWidth, pageGap } },
             { typeof(Panel), new() { movable, resizable, restricted } },
             { typeof(Palette), new() { brightnessMax, brightness, opacity } },
             { typeof(Slider), new() { vertical, progress } },
@@ -80,13 +82,7 @@ internal class EditPanel : Panel
             { typeof(Layout), new() { restore, index, rate, cutTop, cutLeft, cutRight, cutBottom } },
             { typeof(FileViewer), new() { fileSelect } },
             { typeof(Stepper), new() { min, max, value, stepperStep } },
-            {
-                typeof(List),
-                new()
-                {
-                    type, expanded, scroll, items, multiSelect, itemWidth, itemHeight, itemGap
-                }
-            },
+            { typeof(List), new() { type, expanded, scroll, items, multiSelect, width, height, gap } },
         };
 
         OnDisplay(() =>
@@ -201,7 +197,10 @@ internal class EditPanel : Panel
                     editPanel.UpdatePanelValues();
                 }
                 else if (Text == "Restore" && Selected is Layout la)
+                {
                     la.Restore();
+                    editPanel.UpdatePanelValues();
+                }
             });
         }
     }
@@ -330,8 +329,12 @@ internal class EditPanel : Panel
         {
             var count = (Stepper)blocks[typeof(Pages)][0];
             var current = (Stepper)blocks[typeof(Pages)][1];
+            var width = (Stepper)blocks[typeof(Pages)][2];
+            var gap = (Stepper)blocks[typeof(Pages)][3];
             p.Count = (int)count.Value;
             p.Current = (int)current.Value;
+            p.ItemWidth = (int)width.Value;
+            p.ItemGap = (int)gap.Value;
         }
         else if (prevSelected is Panel pa)
         {
@@ -461,9 +464,13 @@ internal class EditPanel : Panel
         {
             var count = (Stepper)blocks[typeof(Pages)][0];
             var current = (Stepper)blocks[typeof(Pages)][1];
+            var width = (Stepper)blocks[typeof(Pages)][2];
+            var gap = (Stepper)blocks[typeof(Pages)][3];
             count.Value = p.Count;
             current.Range = (1, count.Value);
             current.Value = p.Current;
+            width.Value = p.ItemWidth;
+            gap.Value = p.ItemGap;
         }
         else if (Selected is Panel pa)
         {
@@ -539,10 +546,10 @@ internal class EditPanel : Panel
 
             type.Text = $"{l.Span}";
             expanded.IsSelected = l.IsCollapsed;
-            expanded.IsDisabled = l.Span != List.Spans.Dropdown;
+            expanded.IsDisabled = l.Span != Span.Dropdown;
             scroll.Value = l.Scroll.Slider.Progress;
             multi.IsSelected = l.IsSingleSelecting == false;
-            multi.IsDisabled = l.Span == List.Spans.Dropdown;
+            multi.IsDisabled = l.Span == Span.Dropdown;
             itemWidth.Value = l.ItemSize.width;
             itemHeight.Value = l.ItemSize.height;
             itemGap.Value = l.ItemGap;
@@ -551,7 +558,6 @@ internal class EditPanel : Panel
             for (var j = 0; j < l.Count; j++)
                 value += $"{(j > 0 ? Environment.NewLine : "")}{l[j].Text}";
 
-            items.IsReadOnly = true;
             items.Value = value;
             items.SelectionIndices = (0, 0);
             items.CursorIndices = (0, 0);
@@ -572,7 +578,7 @@ internal class EditPanel : Panel
         color = btn.IsDisabled ? Color.White : color;
 
         front.SetTextRectangle(btn.Position, btn.Size, btn.Text, GetColor(btn, color.ToDark()),
-            alignment: Tilemap.Alignment.Center);
+            alignment: Alignment.Center);
     }
     private void UpdateInputBox(InputBox inputBox, (int x, int y) position)
     {
@@ -581,7 +587,7 @@ internal class EditPanel : Panel
         var middle = maps[(int)Layer.EditMiddle];
         var front = maps[(int)Layer.EditFront];
         var color = Color.Gray;
-        var isListItems = e.Placeholder.Contains("Empty");
+        var isListItems = e.Placeholder.Contains("Items");
 
         position = isListItems ? (position.x + 1, position.y) : position;
 

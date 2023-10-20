@@ -50,7 +50,7 @@ public static class Default
             cornerTileId: Tile.BOX_DEFAULT_CORNER,
             borderTileId: Tile.BOX_DEFAULT_STRAIGHT,
             borderTint: color);
-        maps[zOrder + 2].SetTextLine(
+        maps[zOrder + 1].SetTextLine(
             position: (b.Position.x + offsetW, b.Position.y + h / 2),
             text: b.Text,
             tint: color,
@@ -89,7 +89,7 @@ public static class Default
         if (string.IsNullOrEmpty(ib.Value))
             maps[zOrder + 1].SetTextRectangle(ib.Position, ib.Size, ib.Placeholder,
                 tint: Color.Gray.ToBright(),
-                alignment: Tilemap.Alignment.TopLeft);
+                alignment: Alignment.TopLeft);
 
         if (ib.IsCursorVisible)
             maps[zOrder + 2].SetTile(ib.PositionFromIndices(ib.CursorIndices),
@@ -136,8 +136,9 @@ public static class Default
     public static void SetSlider(this TilemapPack maps, Slider slider, int zOrder = 0)
     {
         var s = slider;
+        var (x, y) = s.Position;
         var (w, h) = s.Size;
-        var text = s.IsVertical ? $"{s.Progress:F2}" : $"{s.Progress * 100f:F0}%";
+        var text = $"{s.Progress * 100f:F0}%";
         var isHandle = s.Handle.IsPressedAndHeld;
         var color = GetColor(isHandle ? s.Handle : s, Color.Gray.ToBright());
 
@@ -147,10 +148,10 @@ public static class Default
             tileIdEdge: Tile.BAR_DEFAULT_EDGE,
             tileId: Tile.BAR_DEFAULT_STRAIGHT,
             color,
-            size: s.Size.height,
+            size: s.IsVertical ? w : h,
             isVertical: s.IsVertical == false);
         maps[zOrder + 2].SetTextLine(
-            position: (s.Position.x + w / 2 - text.Length / 2, s.Position.y + h / 2),
+            position: (x + w / 2 - text.Length / 2, y + h / 2),
             text);
     }
     public static void SetScroll(this TilemapPack maps, Scroll scroll, int zOrder = 0)
@@ -173,24 +174,31 @@ public static class Default
     public static void SetStepper(this TilemapPack maps, Stepper stepper, int zOrder = 0)
     {
         var s = stepper;
+        var (x, y) = s.Position;
+        var (w, h) = s.Size;
         var text = MathF.Round(s.Step, 2).Precision() == 0 ? $"{s.Value}" : $"{s.Value:F2}";
-        var color = Color.Gray.ToBright();
+        var color = Color.Gray;
+        var maxTextSize = Math.Min(w - 3, s.Text.Length);
 
         Clear(maps, s, zOrder);
         SetBackground(maps[zOrder], stepper);
 
         maps[zOrder + 1].SetTile(
             position: s.Decrease.Position,
-            tile: new(Tile.ARROW, GetColor(s.Decrease, color), angle: 1));
+            tile: new(Tile.ARROW_NO_TAIL, GetColor(s.Decrease, color), angle: 1));
         maps[zOrder + 1].SetTile(
             s.Increase.Position,
-            tile: new(Tile.ARROW, GetColor(s.Increase, color), angle: 3));
+            tile: new(Tile.ARROW_NO_TAIL, GetColor(s.Increase, color), angle: 3));
         maps[zOrder + 1].SetTextLine(
-            position: (s.Position.x + 2, s.Position.y),
-            s.Text);
-        maps[zOrder + 1].SetTextLine(
-            position: (s.Position.x + 2, s.Position.y + 1),
-            text);
+            position: (x + (int)MathF.Ceiling(w / 2f - maxTextSize / 2f), y),
+            s.Text,
+            Color.Gray,
+            maxTextSize);
+        maps[zOrder + 1].SetTextRectangle(
+            position: (x + 2, y + 1),
+            size: (Math.Max(w - 5, text.Length), Math.Max(h - 2, 1)),
+            text,
+            alignment: Alignment.Left);
 
         maps[zOrder + 1].SetTile(
             position: s.Minimum.Position,
@@ -215,9 +223,12 @@ public static class Default
                 borderTint: Color.Gray.ToDark(0.6f));
         }
 
-        var messageSize = (prompt.Size.width, prompt.Size.height - 1);
-        maps[zOrder + 2].SetTextRectangle(prompt.Position, messageSize, prompt.Text,
-            alignment: Tilemap.Alignment.Center);
+        var lines = prompt.Text.Split(Environment.NewLine).Length;
+        maps[zOrder + 2].SetTextRectangle(
+            prompt.Position,
+            size: (prompt.Size.width, lines),
+            prompt.Text,
+            alignment: Alignment.Center);
     }
     public static void SetPromptItem(this TilemapPack maps, Prompt prompt, Button item, int zOrder = 2)
     {
@@ -297,12 +308,15 @@ public static class Default
     {
         var color = GetColor(item, item.IsSelected ? Color.Green : Color.Gray.ToBright(0.2f));
         var text = item.Text.ToNumber().PadZeros(-pages.ItemWidth);
-        maps[zOrder].SetTextLine(item.Position, text, color);
+        SetBackground(maps[zOrder], item, 0.33f);
+        maps[zOrder + 1]
+            .SetTextRectangle(item.Position, item.Size, text, color, alignment: Alignment.Center);
     }
     public static void SetPagesIcon(this TilemapPack maps, Button item, int tileId, int zOrder = 1)
     {
         var color = GetColor(item, item.IsSelected ? Color.Green : Color.Gray.ToBright(0.2f));
-        maps[zOrder].SetTile(
+        SetBackground(maps[zOrder], item, 0.33f);
+        maps[zOrder + 1].SetTile(
             item.Position,
             tile: new(tileId + int.Parse(item.Text), color));
     }
@@ -328,7 +342,7 @@ public static class Default
         var (x, y) = item.Position;
         var (_, h) = item.Size;
         var isLeftCrop =
-            list.Span == List.Spans.Horizontal &&
+            list.Span == Span.Horizontal &&
             item.Size.width < list.ItemSize.width &&
             item.Position == list.Position;
 
@@ -366,7 +380,7 @@ public static class Default
                 position: (segment.x, segment.y),
                 size: (segment.width, segment.height),
                 text: index.ToString(),
-                alignment: Tilemap.Alignment.Center);
+                alignment: Alignment.Center);
     }
 
 #region Backend

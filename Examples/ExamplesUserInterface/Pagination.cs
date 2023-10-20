@@ -24,7 +24,7 @@ public static class Pagination
         buttons.ItemWidth = $"{buttons.Count}".Length + 2;
         buttons.Align((0.5f, 0.1f));
         buttons.OnDisplay(() => maps.SetPages(buttons));
-        buttons.OnItemDisplay(item => maps.SetButtonSelect(item));
+        buttons.OnItemDisplay(item => maps.SetButtonSelect(item, zOrder: 1));
 
         //================
 
@@ -33,7 +33,7 @@ public static class Pagination
         buttonsBig.Align((0.5f, 0.9f));
         buttonsBig.OnDisplay(() => maps.SetPages(buttonsBig));
         buttonsBig.OnItemDisplay(item =>
-            maps.SetButton(item, isDisplayingSelection: true));
+            maps.SetButton(item, isDisplayingSelection: true, zOrder: 1));
 
         return new Block[] { icons, pages, buttons, buttonsBig };
     }

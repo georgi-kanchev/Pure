@@ -30,7 +30,7 @@ public static class InputBoxes
                 position: (x, y - 10),
                 size: (chat.Size.width, 10),
                 text: messages,
-                alignment: Tilemap.Alignment.BottomLeft,
+                alignment: Alignment.BottomLeft,
                 scrollProgress: 1f);
             maps.SetInputBox(chat);
         });

@@ -1,18 +1,18 @@
 ﻿namespace Pure.Engine.UserInterface;
 
+public enum Span
+{
+    Vertical,
+    Horizontal,
+    Dropdown
+}
+
 /// <summary>
 /// Stores items, represented as buttons that can be
 /// scrolled, clicked, selected and manipulated.
 /// </summary>
 public class List : Block
 {
-    public enum Spans
-    {
-        Vertical,
-        Horizontal,
-        Dropdown
-    }
-
     public Scroll Scroll
     {
         get;
@@ -30,11 +30,11 @@ public class List : Block
     /// </summary>
     public bool IsSingleSelecting
     {
-        get => isSingleSelecting || Span == Spans.Dropdown;
+        get => isSingleSelecting || Span == Span.Dropdown;
         set
         {
             var was = isSingleSelecting;
-            isSingleSelecting = value || Span == Spans.Dropdown;
+            isSingleSelecting = value || Span == Span.Dropdown;
 
             if (was != isSingleSelecting)
                 TrySingleSelectOneItem();
@@ -42,10 +42,10 @@ public class List : Block
     }
     public bool IsCollapsed
     {
-        get => isCollapsed && Span == Spans.Dropdown;
+        get => isCollapsed && Span == Span.Dropdown;
         set
         {
-            if (Span != Spans.Dropdown)
+            if (Span != Span.Dropdown)
                 return;
 
             if (value == false)
@@ -83,7 +83,7 @@ public class List : Block
     /// <summary>
     /// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
     /// </summary>
-    public Spans Span
+    public Span Span
     {
         get;
     }
@@ -114,12 +114,12 @@ public class List : Block
     /// <param name="position">The position of the top-left corner of the list.</param>
     /// <param name="itemCount">The initial number of buttons in the list.</param>
     /// <param name="span">The type of the list.</param>
-    public List((int x, int y) position = default, int itemCount = 10, Spans span = Spans.Vertical)
+    public List((int x, int y) position = default, int itemCount = 10, Span span = Span.Vertical)
         : base(position)
     {
         Init();
         Size = (12, 8);
-        ItemGap = span == Spans.Horizontal ? 1 : 0;
+        ItemGap = span == Span.Horizontal ? 1 : 0;
         originalHeight = Size.height;
         Span = span;
 
@@ -129,7 +129,7 @@ public class List : Block
 
         isInitialized = true;
 
-        if (span != Spans.Dropdown)
+        if (span != Span.Dropdown)
             return;
 
         IsSingleSelecting = true;
@@ -138,29 +138,55 @@ public class List : Block
     public List(byte[] bytes) : base(bytes)
     {
         Init();
-        Span = (Spans)GrabByte(bytes);
+        Span = (Span)GrabByte(bytes);
         IsSingleSelecting = GrabBool(bytes);
         IsReadOnly = GrabBool(bytes);
         ItemGap = GrabInt(bytes);
         ItemSize = (GrabInt(bytes), GrabInt(bytes));
         var scrollProgress = GrabFloat(bytes);
-        Add(GrabInt(bytes));
+        var scrollIndex = GrabInt(bytes);
+        InternalInsert(0, GrabInt(bytes));
 
         Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true };
 
         for (var i = 0; i < Count; i++)
+        {
             Select(i, GrabBool(bytes));
-
-        for (var i = 0; i < Count; i++)
             Disable(i, GrabBool(bytes));
+            this[i].text = GrabString(bytes);
+        }
 
-        Scroll.Slider.Progress = scrollProgress;
+        Scroll.Slider.progress = scrollProgress;
+        Scroll.Slider.index = scrollIndex;
         isInitialized = true;
 
         originalHeight = Size.height;
 
-        if (Span == Spans.Dropdown)
+        if (Span == Span.Dropdown)
             IsCollapsed = true;
+    }
+
+    public override byte[] ToBytes()
+    {
+        var result = base.ToBytes().ToList();
+        PutByte(result, (byte)Span);
+        PutBool(result, IsSingleSelecting);
+        PutBool(result, IsReadOnly);
+        PutInt(result, ItemGap);
+        PutInt(result, ItemSize.width);
+        PutInt(result, ItemSize.height);
+        PutFloat(result, Scroll.Slider.Progress);
+        PutFloat(result, Scroll.Slider.index);
+        PutInt(result, Count);
+
+        for (var i = 0; i < Count; i++)
+        {
+            PutBool(result, this[i].IsSelected);
+            PutBool(result, this[i].IsDisabled);
+            PutString(result, this[i].Text);
+        }
+
+        return result.ToArray();
     }
 
     /// <summary>
@@ -265,28 +291,9 @@ public class List : Block
         Disable(IndexOf(item), isDisabled);
     }
 
-    public override byte[] ToBytes()
-    {
-        var result = base.ToBytes().ToList();
-        PutByte(result, (byte)Span);
-        PutBool(result, IsSingleSelecting);
-        PutBool(result, IsReadOnly);
-        PutInt(result, ItemGap);
-        PutInt(result, ItemSize.width);
-        PutInt(result, ItemSize.height);
-        PutFloat(result, Scroll.Slider.Progress);
-        PutInt(result, Count);
-        for (var i = 0; i < Count; i++)
-            PutBool(result, this[i].IsSelected);
-        for (var i = 0; i < Count; i++)
-            PutBool(result, this[i].IsDisabled);
-
-        return result.ToArray();
-    }
-
     protected override void OnInput()
     {
-        if (Span == Spans.Dropdown && IsCollapsed && IsHovered)
+        if (Span == Span.Dropdown && IsCollapsed && IsHovered)
             Input.MouseCursorResult = MouseCursor.Hand;
     }
 
@@ -352,7 +359,7 @@ public class List : Block
     }
     internal bool IsScrollVisible
     {
-        get => (Span == Spans.Horizontal ? HasScroll.horizontal : HasScroll.vertical) &&
+        get => (Span == Span.Horizontal ? HasScroll.horizontal : HasScroll.vertical) &&
                IsCollapsed == false;
     }
 
@@ -379,7 +386,7 @@ public class List : Block
             var item = new Button((0, 0))
             {
                 text = $"Item{i}",
-                size = (Span == Spans.Horizontal ? text.Length : Size.width, 1),
+                size = (Span == Span.Horizontal ? text.Length : Size.width, 1),
                 hasParent = true
             };
             items.Insert(i, item);
@@ -425,15 +432,15 @@ public class List : Block
         if (IsDisabled == false && IsHovered)
             Input.MouseCursorResult = MouseCursor.Arrow;
 
-        if (Span != Spans.Dropdown)
+        if (Span != Span.Dropdown)
             LimitSizeMin((2, 2));
 
         ItemSize = itemSize; // reclamp value
         var totalWidth = items.Count * (ItemSize.width + ItemGap);
         var totalHeight = items.Count * (ItemSize.height + ItemGap);
-        var totalSize = Span == Spans.Horizontal ? totalWidth : totalHeight;
+        var totalSize = Span == Span.Horizontal ? totalWidth : totalHeight;
         Scroll.step = 1f / totalSize;
-        Scroll.isVertical = Span != Spans.Horizontal;
+        Scroll.isVertical = Span != Span.Horizontal;
 
         if (IsCollapsed)
             Size = (Size.width, 1);
@@ -477,7 +484,7 @@ public class List : Block
             Scroll.Update();
             return;
         }
-        else if (Span == Spans.Horizontal)
+        else if (Span == Span.Horizontal)
         {
             Scroll.position = (x, y + h - 1);
             Scroll.size = (w, 1);
@@ -493,7 +500,7 @@ public class List : Block
             item.isDisabled = indexesDisabled.Contains(i);
             item.InheritParent(this);
 
-            if (Span == Spans.Horizontal)
+            if (Span == Span.Horizontal)
             {
                 var totalWidth = items.Count * (ItemSize.width + ItemGap);
                 var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalWidth - w - ItemGap);
@@ -512,7 +519,7 @@ public class List : Block
 
             var (ix, iy) = item.position;
             var (offW, offH) = item.listSizeTrimOffset;
-            var botEdgeTrim = Span == Spans.Horizontal && HasScroll.horizontal ? 1 : 0;
+            var botEdgeTrim = Span == Span.Horizontal && HasScroll.horizontal ? 1 : 0;
             //var rightEdgeTrim = Type == Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
             var (iw, ih) = (item.Size.width + offW, item.Size.height + offH);
             if (ix + iw <= x || ix >= x + w ||
@@ -579,7 +586,7 @@ public class List : Block
                 indexesSelected.Remove(index);
         }
 
-        if (Span != Spans.Dropdown)
+        if (Span != Span.Dropdown)
             return;
 
         IsCollapsed = IsCollapsed == false;
@@ -596,8 +603,8 @@ public class List : Block
         var (w, h) = Size;
         var (ix, iy) = item.position;
 
-        var botEdgeTrim = Span == Spans.Horizontal && HasScroll.horizontal ? 1 : 0;
-        var rightEdgeTrim = Span == Spans.Horizontal == false && HasScroll.vertical ? 1 : 0;
+        var botEdgeTrim = Span == Span.Horizontal && HasScroll.horizontal ? 1 : 0;
+        var rightEdgeTrim = Span == Span.Horizontal == false && HasScroll.vertical ? 1 : 0;
         var newWidth = ItemSize.width;
         var newHeight = ItemSize.height;
         var iw = newWidth;

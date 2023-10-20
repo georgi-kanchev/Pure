@@ -45,8 +45,8 @@ public static class Program
     internal static readonly Prompt prompt;
     internal static readonly Slider promptSlider;
     internal static readonly EditPanel editPanel;
-    internal static readonly FileViewer saveLoad = new((0, 0));
-    internal static readonly InputBox fileName = new((0, 0));
+    internal static readonly FileViewer saveLoad;
+    internal static readonly InputBox fileName;
 
     internal static (float x, float y) MousePosition
     {
@@ -130,9 +130,17 @@ public static class Program
 
         prompt = new() { ButtonCount = 2 };
         prompt.OnDisplay(() => maps.SetPrompt(prompt, zOrder: (int)Layer.PromptFade));
-        prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: (int)Layer.PromptFade));
+        prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: (int)Layer.PromptMiddle));
         promptSlider = new() { Size = (15, 1) };
         promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, (int)Layer.PromptBack));
+
+        saveLoad = new() { Size = (20, 10) };
+        saveLoad.OnDisplay(() => maps.SetFileViewer(saveLoad, (int)Layer.PromptBack));
+        saveLoad.FilesAndFolders.IsSingleSelecting = true;
+        saveLoad.FilesAndFolders.OnItemDisplay(item =>
+            maps.SetFileViewerItem(saveLoad, item, (int)Layer.PromptMiddle));
+        fileName = new() { Size = (20, 1), IsSingleLine = true };
+        fileName.OnDisplay(() => maps.SetInputBox(fileName, (int)Layer.PromptBack));
 
         // submenus need higher update priority to not close upon parent menu opening them
         menus[MenuType.AddList] = new MenuAddList();
@@ -163,6 +171,9 @@ public static class Program
         editUI.Update();
         editPanel.Update();
 
+        if (prompt.IsHidden == false)
+            prompt.Update();
+
         foreach (var kvp in menus)
             kvp.Value.Update();
 
@@ -186,7 +197,7 @@ public static class Program
 
         maps[(int)Layer.EditFront]
             .SetTextRectangle((x, bottomY - 1), (TEXT_WIDTH, 1), $"Cursor {(int)mx}, {(int)my}",
-                alignment: Tilemap.Alignment.Center);
+                alignment: Alignment.Center);
 
         if (infoTextTimer <= 0)
         {
@@ -196,12 +207,12 @@ public static class Program
 
         maps[(int)Layer.EditFront]
             .SetTextRectangle((x, topY), (TEXT_WIDTH, TEXT_HEIGHT), infoText,
-                alignment: Tilemap.Alignment.Top, scrollProgress: 1f);
+                alignment: Alignment.Top, scrollProgress: 1f);
     }
 
     private static void TryControlCamera()
     {
-        if (prompt.IsHidden)
+        if (prompt.IsHidden == false)
             return;
 
         var prevSz = CameraSize;

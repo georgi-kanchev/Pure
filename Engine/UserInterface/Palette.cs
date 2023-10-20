@@ -43,9 +43,12 @@ public class Palette : Block
     {
         SelectedColor = GrabUInt(bytes);
         var opacity = GrabFloat(bytes);
+        var index = GrabInt(bytes);
         var count = GrabInt(bytes);
         var page = GrabInt(bytes);
         Init(count, page, opacity);
+        Opacity.progress = opacity;
+        Opacity.index = index;
     }
 
     public override byte[] ToBytes()
@@ -53,6 +56,7 @@ public class Palette : Block
         var result = base.ToBytes().ToList();
         PutUInt(result, SelectedColor);
         PutFloat(result, Opacity.Progress);
+        PutInt(result, Opacity.index);
         PutInt(result, Brightness.Count);
         PutInt(result, Brightness.Current);
         return result.ToArray();

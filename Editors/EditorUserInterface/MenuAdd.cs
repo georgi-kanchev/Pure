@@ -29,7 +29,7 @@ internal class MenuAdd : Menu
                 return;
             }
 
-            editUI.BlockCreate(index, Position);
+            editUI.BlockCreate(item.Text.Trim(), Position);
         });
     }
 }

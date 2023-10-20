@@ -2,8 +2,19 @@ namespace Pure.Examples.ExamplesUserInterface;
 
 public static class Prompts
 {
-    public static Prompt Create(TilemapPack maps)
+    public static Block[] Create(TilemapPack maps)
     {
+        const Key HOTKEY_LOG = Key.ShiftLeft;
+        const Key HOTKEY_MSG = Key.ControlLeft;
+
+        var info = new Button { Position = (int.MaxValue, 0) };
+        info.OnDisplay(() => maps[0].SetTextRectangle(
+            position: (0, 0),
+            size: (maps.Size.width, 2),
+            text:
+            $"Press <{HOTKEY_LOG}> to type and log{Environment.NewLine}" +
+            $"Press <{HOTKEY_MSG}> to show a message"));
+
         var input = new InputBox
         {
             Size = (16, 1),
@@ -16,7 +27,7 @@ public static class Prompts
         prompt.OnDisplay(() => maps.SetPrompt(prompt, zOrder: 3));
         prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: 5));
 
-        Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
+        OnKeyPress(Key.Enter, asText =>
         {
             var shouldLog = input.IsHidden == false && prompt.IsHidden == false;
             prompt.Close();
@@ -24,7 +35,7 @@ public static class Prompts
             if (shouldLog)
                 Console.WriteLine(input.Value);
         });
-        Keyboard.OnKeyPress(Keyboard.Key.ShiftLeft, asText =>
+        OnKeyPress(HOTKEY_LOG, asText =>
         {
             input.IsFocused = true;
             input.IsHidden = false;
@@ -33,19 +44,21 @@ public static class Prompts
             prompt.ButtonCount = 2;
             prompt.Open(input, index =>
             {
+                prompt.Close();
+
                 if (index == 0)
                     Console.WriteLine(input.Value);
             });
         });
-        Keyboard.OnKeyPress(Keyboard.Key.ControlLeft, asText =>
+        OnKeyPress(HOTKEY_MSG, asText =>
         {
             input.IsHidden = true;
 
             prompt.Text = $"This should be some{Environment.NewLine}important message!";
             prompt.ButtonCount = 1;
-            prompt.Open();
+            prompt.Open(onButtonTrigger: _ => prompt.Close());
         });
 
-        return prompt;
+        return new Block[] { info, prompt };
     }
 }

@@ -3,6 +3,8 @@ global using Pure.Engine.UserInterface;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
+global using static Pure.Engine.Window.Keyboard;
+global using Key = Pure.Engine.Window.Keyboard.Key;
 
 namespace Pure.Examples.ExamplesUserInterface;
 
@@ -31,8 +33,8 @@ public static class Program
                 isPressed: Mouse.IsButtonPressed(Mouse.Button.Left),
                 position: maps.PointFrom(Mouse.CursorPosition, Window.Size),
                 scrollDelta: Mouse.ScrollDelta,
-                keysPressed: Keyboard.KeyIDsPressed,
-                keysTyped: Keyboard.KeyTyped);
+                keysPressed: KeyIDsPressed,
+                keysTyped: KeyTyped);
 
             blocks.Update();
 
