@@ -10,7 +10,7 @@ public static class DefaultGraphics
     {
         var tilemap = new Tilemap((16 * 3, 9 * 3));
 
-        Window.Create(3);
+        Window.Create();
 
         while (Window.IsOpen)
         {

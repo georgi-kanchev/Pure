@@ -4,6 +4,7 @@ using Raylib_cs;
 
 internal static class Monitor
 {
+    internal static uint current;
     internal static readonly List<(int x, int y, int w, int h)> posSizes = new();
 
     internal static void Initialize()

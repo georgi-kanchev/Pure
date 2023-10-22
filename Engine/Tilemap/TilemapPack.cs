@@ -13,7 +13,7 @@ public class TilemapPack
         get;
         private set;
     }
-    public (int x, int y, int width, int height) Camera
+    public (int x, int y, int width, int height) View
     {
         get;
         set;
@@ -30,7 +30,7 @@ public class TilemapPack
         var offset = 0;
         tilemaps = new Tilemap[BitConverter.ToInt32(Get<int>())];
         Size = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-        Camera = (BitConverter.ToInt32(Get<int>()),
+        View = (BitConverter.ToInt32(Get<int>()),
             BitConverter.ToInt32(Get<int>()),
             BitConverter.ToInt32(Get<int>()),
             BitConverter.ToInt32(Get<int>()));
@@ -51,7 +51,7 @@ public class TilemapPack
     public TilemapPack(int count, (int width, int height) size)
     {
         Size = size;
-        Camera = (0, 0, size.width, size.height);
+        View = (0, 0, size.width, size.height);
 
         count = Math.Max(count, 1);
 
@@ -60,21 +60,42 @@ public class TilemapPack
             tilemaps[i] = new(size);
     }
 
-    public Tilemap[] CameraUpdate()
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+        result.AddRange(BitConverter.GetBytes(Count));
+        result.AddRange(BitConverter.GetBytes(Size.width));
+        result.AddRange(BitConverter.GetBytes(Size.height));
+        result.AddRange(BitConverter.GetBytes(View.x));
+        result.AddRange(BitConverter.GetBytes(View.y));
+        result.AddRange(BitConverter.GetBytes(View.width));
+        result.AddRange(BitConverter.GetBytes(View.height));
+
+        foreach (var t in tilemaps)
+        {
+            var bytes = t.ToBytes();
+            result.AddRange(BitConverter.GetBytes(bytes.Length));
+            result.AddRange(bytes);
+        }
+
+        return Tilemap.Compress(result.ToArray());
+    }
+
+    public Tilemap[] ViewUpdate()
     {
         var result = new Tilemap[Count];
         for (var i = 0; i < Count; i++)
         {
             var tmap = tilemaps[i];
 
-            // keep the original tilemap camera props, use the manager ones
-            var prevCam = tmap.Camera;
-            tmap.Camera = Camera;
+            // keep the original tilemap view props, use the manager ones
+            var prevCam = tmap.View;
+            tmap.View = View;
 
-            result[i] = tmap.CameraUpdate();
+            result[i] = tmap.ViewUpdate();
 
             // and revert
-            tmap.Camera = prevCam;
+            tmap.View = prevCam;
         }
 
         return result;
@@ -104,18 +125,15 @@ public class TilemapPack
         (int width, int height) windowSize,
         bool isAccountingForCamera = true)
     {
-        // cannot use first tilemap to not duplicate code since the used camera props are
+        // cannot use first tilemap to not duplicate code since the used view props are
         // the ones on the manager
-        var x = Map(pixelPosition.x, 0, windowSize.width, 0, Size.width);
-        var y = Map(pixelPosition.y, 0, windowSize.height, 0, Size.height);
+        var (w, h) = isAccountingForCamera ? (View.width, View.height) : Size;
+        var x = Map(pixelPosition.x, 0, windowSize.width, 0, w);
+        var y = Map(pixelPosition.y, 0, windowSize.height, 0, h);
 
-        if (isAccountingForCamera)
-        {
-            x += Camera.x;
-            y += Camera.y;
-        }
-
-        return (x, y);
+        return isAccountingForCamera == false ?
+            (x, y) :
+            (x + View.x, y + View.y);
     }
 
     public void ConfigureText(
@@ -152,47 +170,7 @@ public class TilemapPack
         return tilemaps[0].TileIdsFrom(text);
     }
 
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(Count));
-        result.AddRange(BitConverter.GetBytes(Size.width));
-        result.AddRange(BitConverter.GetBytes(Size.height));
-        result.AddRange(BitConverter.GetBytes(Camera.x));
-        result.AddRange(BitConverter.GetBytes(Camera.y));
-        result.AddRange(BitConverter.GetBytes(Camera.width));
-        result.AddRange(BitConverter.GetBytes(Camera.height));
-
-        foreach (var t in tilemaps)
-        {
-            var bytes = t.ToBytes();
-            result.AddRange(BitConverter.GetBytes(bytes.Length));
-            result.AddRange(bytes);
-        }
-
-        return Tilemap.Compress(result.ToArray());
-    }
-
 #region Backend
-    // save format in sectors
-    // [amount of bytes]		- data
-    // --------------------------------
-    // [4]						- tilemaps count
-    // [4]						- width
-    // [4]						- height
-    // [4]						- camera x
-    // [4]						- camera y
-    // [4]						- camera width
-    // [4]						- camera height
-    // = = = = = = (sector 1)
-    // [4]						- tile bundles size
-    // [tile bundles size]		- tile bundles array
-    // = = = = = = (sector 2)
-    // [4]						- tile bundles size
-    // [tile bundles size]		- tile bundles array
-    // = = = = = = (sector 3)
-    // ... up to sector [tilemaps count]
-
     private readonly Tilemap[] tilemaps;
 
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)

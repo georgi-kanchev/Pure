@@ -8,7 +8,7 @@ public static class Audio
 {
     public static void Run()
     {
-        Window.Create(3f);
+        Window.Create();
 
         var jingleBells =
             ".5_E4_._E4_._E4_.2_E4_._E4_._E4_.2_E4_._G4_._C4_._D4_._E4~4_" +

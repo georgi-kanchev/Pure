@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Default\RenderersUserInterface\RenderersUserInterface.csproj"/>
+        <ProjectReference Include="..\..\Engine\Tilemap\Tilemap.csproj"/>
+        <ProjectReference Include="..\..\Engine\UserInterface\UserInterface.csproj"/>
+        <ProjectReference Include="..\..\Engine\Utilities\Utilities.csproj"/>
+        <ProjectReference Include="..\..\Engine\Window\Window.csproj"/>
+    </ItemGroup>
+
+</Project>

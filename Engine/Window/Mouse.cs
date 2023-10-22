@@ -249,7 +249,6 @@ public static class Mouse
         if (IsCursorTile == false || isCursorTileVisible == false || CursorGraphics == Cursor.None)
             return;
 
-        var (x, y) = Window.PointFrom(CursorPosition);
         var (offX, offY) = cursorOffsets[(int)CursorGraphics];
 
         Vertices.graphicsPath = "default";
@@ -278,7 +277,7 @@ public static class Mouse
         tile.tint = cursorColor;
         tile.ang = ang;
 
-        Window.DrawTile((x - offX, y - offY), tile);
+        Window.DrawTile((cursorPos.x - offX, cursorPos.y - offY), tile);
     }
 
     private static void TryUpdateSystemCursor()

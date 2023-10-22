@@ -31,7 +31,7 @@ public static class FlappyBird
         collisionMap.AddRectangle(new((1, 1)), Tile.BOX_DEFAULT_CORNER);
         collisionMap.AddRectangle(new((1, 1)), Tile.BOX_DEFAULT_STRAIGHT);
 
-        Window.Create(3);
+        Window.Create();
         //Window.IsRetro = true;
 
         InitializePipes();

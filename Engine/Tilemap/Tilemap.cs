@@ -34,9 +34,9 @@ public class Tilemap
     }
 
     /// <summary>
-    /// Gets or sets the position and the size of the camera viewport.
+    /// Gets or sets the position and the size of the view.
     /// </summary>
-    public (int x, int y, int height, int width) Camera
+    public (int x, int y, int height, int width) View
     {
         get;
         set;
@@ -67,7 +67,7 @@ public class Tilemap
 
         data = new Tile[w, h];
         Size = (w, h);
-        Camera = (BitConverter.ToInt32(Get<int>()),
+        View = (BitConverter.ToInt32(Get<int>()),
             BitConverter.ToInt32(Get<int>()),
             BitConverter.ToInt32(Get<int>()),
             BitConverter.ToInt32(Get<int>()));
@@ -101,7 +101,7 @@ public class Tilemap
             h = 1;
 
         data = new Tile[w, h];
-        Camera = (0, 0, size.width, size.height);
+        View = (0, 0, size.width, size.height);
     }
     /// <summary>
     /// Initializes a new tilemap instance with the specified tileData.
@@ -117,16 +117,34 @@ public class Tilemap
         var h = tileData.GetLength(1);
         Size = (w, h);
         data = Copy(tileData);
-        Camera = (0, 0, w, h);
+        View = (0, 0, w, h);
+    }
+
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+        var (w, h) = Size;
+        result.AddRange(BitConverter.GetBytes(View.x));
+        result.AddRange(BitConverter.GetBytes(View.y));
+        result.AddRange(BitConverter.GetBytes(View.width));
+        result.AddRange(BitConverter.GetBytes(View.height));
+        result.AddRange(BitConverter.GetBytes(w));
+        result.AddRange(BitConverter.GetBytes(h));
+
+        for (var i = 0; i < h; i++)
+            for (var j = 0; j < w; j++)
+                result.AddRange(TileAt((j, i)).ToBytes());
+
+        return Compress(result.ToArray());
     }
 
     /// <summary>
-    /// Updates the camera's view of the tilemap.
+    /// Updates the view of the tilemap.
     /// </summary>
     /// <returns>The updated tilemap view.</returns>
-    public Tilemap CameraUpdate()
+    public Tilemap ViewUpdate()
     {
-        var (cx, cy, w, h) = Camera;
+        var (cx, cy, w, h) = View;
         var newData = new Tile[Math.Abs(w), Math.Abs(h)];
         var xStep = w < 0 ? -1 : 1;
         var yStep = h < 0 ? -1 : 1;
@@ -217,7 +235,7 @@ public class Tilemap
                 if (i > Math.Abs(size.width * size.height))
                     return;
 
-                if (TileAt((x, y)) != targetTile)
+                if (TileAt((x, y)).Id != targetTile.Id)
                     continue;
 
                 SetTile((x, y), ChooseOne(tiles, HashCode.Combine(x + sx, y + sy) + sz));
@@ -712,23 +730,35 @@ public class Tilemap
     /// Converts a screen pixelPosition to a world point on the tilemap.
     /// </summary>
     /// <param name="pixelPosition">The screen pixel position to convert.</param>
-    /// <param name="windowSize">The size of the application window.</param>
-    /// <param name="isAccountingForCamera">Whether or not to account for the camera's position.</param>
+    /// <param name="windowToMonitorRatio">The size of the monitor divided by the application window.</param>
+    /// <param name="pixelScale">The multiplier applied to the monitor pixel size.</param>
+    /// <param name="tileSize">The size of each tile in the graphics.</param>
+    /// <param name="isAccountingForView">Whether or not to account for this tilemap's view position.</param>
     /// <returns>The world point corresponding to the given screen 
     /// pixelPosition.</returns>
     public (float x, float y) PointFrom(
         (int x, int y) pixelPosition,
-        (int width, int height) windowSize,
-        bool isAccountingForCamera = true)
+        (float width, float height) windowToMonitorRatio,
+        float pixelScale = 5f,
+        (float x, float y) offset = default,
+        float zoom = 1f,
+        (int width, int height) tileSize = default,
+        bool isAccountingForView = true)
     {
-        var x = Map(pixelPosition.x, 0, windowSize.width, 0, Size.width);
-        var y = Map(pixelPosition.y, 0, windowSize.height, 0, Size.height);
+        tileSize = tileSize == default ? (8, 8) : tileSize;
+        var (w, h) = (
+            Size.width * tileSize.width * pixelScale * zoom,
+            Size.height * tileSize.height * pixelScale * zoom);
+        var x = Map(pixelPosition.x, 0, w, 0, Size.width);
+        var y = Map(pixelPosition.y, 0, h, 0, Size.height);
+        x *= windowToMonitorRatio.width;
+        y *= windowToMonitorRatio.height;
 
-        if (isAccountingForCamera == false)
+        if (isAccountingForView == false)
             return (x, y);
 
-        x += Camera.x;
-        y += Camera.y;
+        x += View.x;
+        y += View.y;
 
         return (x, y);
     }
@@ -835,36 +865,8 @@ public class Tilemap
     {
         return this;
     }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        var (w, h) = Size;
-        result.AddRange(BitConverter.GetBytes(Camera.x));
-        result.AddRange(BitConverter.GetBytes(Camera.y));
-        result.AddRange(BitConverter.GetBytes(Camera.width));
-        result.AddRange(BitConverter.GetBytes(Camera.height));
-        result.AddRange(BitConverter.GetBytes(w));
-        result.AddRange(BitConverter.GetBytes(h));
-
-        for (var i = 0; i < h; i++)
-            for (var j = 0; j < w; j++)
-                result.AddRange(TileAt((j, i)).ToBytes());
-
-        return Compress(result.ToArray());
-    }
 
 #region Backend
-    // save format
-    // [amount of bytes]		- data
-    // --------------------------------
-    // [4]						- camera x
-    // [4]						- camera y
-    // [4]						- camera width
-    // [4]						- camera height
-    // [4]						- width
-    // [4]						- height
-    // [width * height]			- tile bundles array
-
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;

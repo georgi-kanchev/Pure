@@ -79,8 +79,8 @@ public static class Program
             for (var i = 0; i < maps.Count; i++)
             {
                 var tmap = maps[i];
-                var cam = tmap.CameraUpdate();
-                var (cx, cy, _, _) = tmap.Camera;
+                var cam = tmap.ViewUpdate();
+                var (cx, cy, _, _) = tmap.View;
                 MousePosition = cam.PointFrom(Mouse.CursorPosition, Window.Size);
                 MousePosition = (MousePosition.x + cx, MousePosition.y + cy);
                 Window.DrawTiles(cam.ToBundle());
@@ -112,14 +112,14 @@ public static class Program
 
 #region Backend
     private static string infoText = "";
-    private static int zoom = 4;
-    private const int SCALE_ASPECT_MAX = 10, SCALE_ASPECT_MIN = 4;
     private static float infoTextTimer;
+    private static int zoom = 4;
     private static (float x, float y) prevMousePos;
+    private const int SCALE_ASPECT_MAX = 10, SCALE_ASPECT_MIN = 4;
 
     static Program()
     {
-        Window.Create(SCALE_ASPECT_MAX);
+        Window.Create();
         Window.Title = "Pure - User Interface Editor";
 
         var (width, height) = Window.MonitorAspectRatio;
@@ -237,7 +237,7 @@ public static class Program
                     (CameraPosition.x - 8, CameraPosition.y - 5);
         }
 
-        var mousePos = maps[0].PointFrom(Mouse.CursorPosition, Window.Size, false);
+        var mousePos = maps[0].PointFrom(Mouse.CursorPosition, Window.Size, isAccountingForView: false);
         var tmapCameraAspectX = (float)maps.Size.width / CameraSize.w;
         var tmapCameraAspectY = (float)maps.Size.height / CameraSize.h;
         mousePos.x /= tmapCameraAspectX;
@@ -280,7 +280,7 @@ public static class Program
             var y = Math.Clamp(CameraPosition.y, 0, maps.Size.height - CameraSize.h);
             CameraPosition = (x, y);
 
-            tmap.Camera = (CameraPosition.x, CameraPosition.y, CameraSize.w, CameraSize.h);
+            tmap.View = (CameraPosition.x, CameraPosition.y, CameraSize.w, CameraSize.h);
         }
     }
 

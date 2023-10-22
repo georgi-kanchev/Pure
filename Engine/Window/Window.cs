@@ -20,6 +20,15 @@ public static class Window
     }
 
     /// <summary>
+    /// Gets the mode that the window was created with.
+    /// </summary>
+    public static Mode InitialMode
+    {
+        get;
+        private set;
+    }
+
+    /// <summary>
     /// Gets or sets a value indicating whether the window is open.
     /// </summary>
     public static bool IsOpen
@@ -98,6 +107,7 @@ public static class Window
             isRetro = value;
         }
     }
+
     /// <summary>
     /// Gets the aspect ratio of the monitor the window was created on.
     /// </summary>
@@ -109,13 +119,21 @@ public static class Window
             return aspectRatio;
         }
     }
-    /// <summary>
-    /// Gets the mode that the window was created with.
-    /// </summary>
-    public static Mode InitialMode
+    public static int MonitorCount
     {
-        get;
-        private set;
+        get
+        {
+            TryNoWindowException();
+            return Monitor.posSizes.Count;
+        }
+    }
+    public static (float width, float height) WindowToMonitorRatio
+    {
+        get
+        {
+            var (_, _, w, h) = Monitor.posSizes[(int)Monitor.current];
+            return ((float)w / Size.width, (float)h / Size.height);
+        }
     }
 
     /// <summary>
@@ -124,35 +142,24 @@ public static class Window
     /// <param name="mode">The mode to create the window in.</param>
     /// <param name="monitor">The index of the user monitor to display the window on.</param>
     /// <param name="pixelScale">The multiplier applied to the monitor pixel size.</param>
-    /// <param name="mainTileSize">The main target tile size of the application used to calculate each
-    /// window pixel, defaults to (8, 8) - the size of the default graphics.</param>
     [MemberNotNull(nameof(window))]
-    public static void Create(
-        float pixelScale,
-        Mode mode = Mode.Windowed,
-        uint monitor = 0,
-        (int width, int height) mainTileSize = default)
+    public static void Create(float pixelScale = 5f, Mode mode = Mode.Windowed, uint monitor = 0)
     {
         if (window != null)
             return;
 
-        var (tw, th) = mainTileSize;
-        tw = tw < 1 ? 8 : tw;
-        th = th < 1 ? 8 : th;
-
+        Monitor.current = monitor;
         InitialMode = mode;
-
+        scale = pixelScale;
         Monitor.Initialize();
 
         if (monitor >= Monitor.posSizes.Count)
             monitor = (uint)Monitor.posSizes.Count - 1;
 
-        Window.pixelScale = pixelScale;
         var style = Styles.Default;
         var (x, y, w, h) = Monitor.posSizes[(int)monitor];
         aspectRatio = Monitor.GetAspectRatio(w, h);
-        var (aw, ah) = aspectRatio;
-        renderTexture = new((uint)(aw * pixelScale * tw), (uint)(ah * pixelScale * th));
+        renderTexture = new((uint)(w / pixelScale), (uint)(h / pixelScale));
 
         if (mode == Mode.Fullscreen) style = Styles.Fullscreen;
         else if (mode == Mode.Borderless) style = Styles.None;
@@ -228,37 +235,31 @@ public static class Window
     /// <summary>
     /// Sets the properties of the layer that the window should draw on.
     /// </summary>
-    /// <param name="cellCount">The number of cells in the layer.</param>
+    /// <param name="tilesetPath">The path to the tileset graphics file to use for the layer.</param>
     /// <param name="tileSize">The size of each tile in the graphics.</param>
     /// <param name="tileGap">The gap between each tile in the graphics.</param>
-    /// <param name="graphicsPath">The path to the graphics file to use for the layer.</param>
-    /// <param name="drawOrder">The order in which to draw the layer alongside layers.</param>
-    /// <param name="tileIdEmpty">The tile identifier of the fully transparent tile in the tileset.</param>
     /// <param name="tileIdFull">The tile identifier of the fully opaque tile in the tileset.</param>
-    public static void SetLayer(
-        (int horizontal, int vertical) cellCount = default,
+    public static void SetDrawLayer(
+        string? tilesetPath = null,
         (int width, int height) tileSize = default,
         (int x, int y) tileGap = default,
-        string? graphicsPath = null,
-        int drawOrder = 0,
-        int tileIdEmpty = 0,
-        int tileIdFull = 10)
+        int tileIdFull = 10,
+        (float x, float y) offset = default,
+        float zoom = 1f)
     {
         TryNoWindowException();
 
-        cellCount = cellCount == default ? (48, 27) : cellCount;
         tileSize = tileSize == default ? (8, 8) : tileSize;
-        graphicsPath ??= "default";
+        tilesetPath ??= "default";
 
-        TryLoadGraphics(graphicsPath);
+        TryLoadGraphics(tilesetPath);
 
-        Vertices.layer = drawOrder;
-        Vertices.graphicsPath = graphicsPath;
+        Vertices.graphicsPath = tilesetPath;
         Vertices.tileSize = tileSize;
         Vertices.tileGap = tileGap;
-        Vertices.mapCellCount = ((uint)cellCount.horizontal, (uint)cellCount.vertical);
-        Vertices.tileIdEmpty = tileIdEmpty;
         Vertices.tileIdFull = tileIdFull;
+        Vertices.offset = offset;
+        Vertices.zoom = zoom;
 
         Vertices.TryInitQueue();
     }
@@ -352,7 +353,7 @@ public static class Window
 
 #region Backend
     internal static bool isRetro, isClosing;
-    internal static float pixelScale;
+    internal static float scale;
     private static string title = "Game";
     private static (int, int) aspectRatio;
 
@@ -376,13 +377,6 @@ public static class Window
     //        result += 2;
     //    return result;
     //}
-    internal static (float, float) PointFrom((int, int) screenPixel)
-    {
-        var x = Map(screenPixel.Item1, 0, Size.width, 0, Vertices.mapCellCount.Item1);
-        var y = Map(screenPixel.Item2, 0, Size.height, 0, Vertices.mapCellCount.Item2);
-
-        return (x, y);
-    }
     private static float Map(float number, float a1, float a2, float b1, float b2)
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
@@ -392,10 +386,10 @@ public static class Window
     {
         TryNoWindowException();
 
-        var view = window.GetView();
-        view.Size = new(window.Size.X, window.Size.Y);
-        view.Center = new(view.Size.X / 2, view.Size.Y / 2);
-        window.SetView(view);
+        //var view = window.GetView();
+        //view.Size = new(window.Size.X, window.Size.Y);
+        //view.Center = new(view.Size.X / 2, view.Size.Y / 2);
+        //window.SetView(view);
     }
 
     [MemberNotNull(nameof(window))]
@@ -405,18 +399,6 @@ public static class Window
         if (window == null || renderTexture == null)
             throw new MemberAccessException(
                 $"{nameof(Window)} is not created. Use {nameof(Create)}(...).");
-    }
-    internal static void TryArrayMismatchException(params Array[] arrays)
-    {
-        var length = 0;
-        for (var i = 0; i < arrays.Length; i++)
-        {
-            length = i == 0 ? arrays[i].Length : length;
-
-            if (arrays[i] == null || arrays.Length != length)
-                throw new ArgumentException(
-                    "All the provided arrays should be non-null and with equal sizes.");
-        }
     }
 #endregion
 }

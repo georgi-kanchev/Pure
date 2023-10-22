@@ -6,31 +6,27 @@ using SFML.System;
 internal static class Vertices
 {
     public static string graphicsPath = "default";
-    public static int layer, tileIdEmpty, tileIdFull = 10;
-    public static (int, int) tileSize = (8, 8);
-    public static (int, int) tileGap;
-    public static (uint, uint) mapCellCount = (48, 27);
+    public static int tileIdFull = 10;
+    public static (int w, int h) tileGap, tileSize = (8, 8);
+    public static (float x, float y) offset;
+    public static float zoom = 1f;
 
     public static Shader? retroScreen;
-    public static readonly SortedDictionary<(int, string), VertexArray> vertexQueue = new();
+    public static readonly SortedDictionary<string, VertexArray> vertexQueue = new();
 
-    public static void QueueRectangle((float, float) position, (float, float) size, uint tint)
+    public static void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
     {
         Window.TryNoWindowException();
 
         TryInitQueue();
 
-        var (cellWidth, cellHeight) = tileSize;
-        var (tileWidth, tileHeight) = tileSize;
-
         var (w, h) = size;
-        var x = position.Item1 * tileWidth;
-        var y = position.Item2 * tileHeight;
+        var (x, y) = (position.x * tileSize.w, position.y * tileSize.h);
         var c = new Color(tint);
-        var verts = vertexQueue[(layer, graphicsPath)];
+        var verts = vertexQueue[graphicsPath];
         var (ttl, ttr, tbr, tbl) = GetTexCoords(tileIdFull, (1, 1));
         var tl = new Vector2f((int)x, (int)y);
-        var br = new Vector2f((int)(x + cellWidth * w), (int)(y + cellHeight * h));
+        var br = new Vector2f((int)x + tileSize.w * w, (int)y + tileSize.h * h);
         var tr = new Vector2f(br.X, tl.Y);
         var bl = new Vector2f(tl.X, br.Y);
 
@@ -123,25 +119,20 @@ internal static class Vertices
         TryInitQueue();
 
         var (tilemapW, tilemapH) = (tilemap.GetLength(0), tilemap.GetLength(1));
-        var cellWidth = tileSize.Item1;
-        var cellHeight = tileSize.Item2;
-        var key = (layer, graphicsPath);
-        var cellCount = ((uint)tilemapW, (uint)tilemapH);
-
-        mapCellCount = cellCount;
+        tilemapCenter = (tilemapW * tileSize.w / 2, tilemapH * tileSize.h / 2);
 
         for (var y = 0; y < tilemapH; y++)
             for (var x = 0; x < tilemapW; x++)
             {
                 var id = tilemap[x, y].tile;
-                if (id == tileIdEmpty)
+                if (id == 0)
                     continue;
 
                 var tint = new Color(tilemap[x, y].tint);
-                var tl = new Vector2f(x * cellWidth, y * cellHeight);
-                var tr = new Vector2f((x + 1) * cellWidth, y * cellHeight);
-                var br = new Vector2f((x + 1) * cellWidth, (y + 1) * cellHeight);
-                var bl = new Vector2f(x * cellWidth, (y + 1) * cellHeight);
+                var tl = new Vector2f(x * tileSize.w, y * tileSize.h);
+                var tr = new Vector2f((x + 1) * tileSize.w, y * tileSize.h);
+                var br = new Vector2f((x + 1) * tileSize.w, (y + 1) * tileSize.h);
+                var bl = new Vector2f(x * tileSize.w, (y + 1) * tileSize.h);
                 var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (1, 1));
                 var rotated = GetRotatedPoints(tilemap[x, y].angle, tl, tr, br, bl);
                 var (flipX, flipY) = (tilemap[x, y].isFlippedHorizontally,
@@ -169,10 +160,10 @@ internal static class Vertices
                 br = new((int)br.X, (int)br.Y);
                 bl = new((int)bl.X, (int)bl.Y);
 
-                vertexQueue[key].Append(new(tl, tint, ttl));
-                vertexQueue[key].Append(new(tr, tint, ttr));
-                vertexQueue[key].Append(new(br, tint, tbr));
-                vertexQueue[key].Append(new(bl, tint, tbl));
+                vertexQueue[graphicsPath].Append(new(tl, tint, ttl));
+                vertexQueue[graphicsPath].Append(new(tr, tint, ttr));
+                vertexQueue[graphicsPath].Append(new(br, tint, tbr));
+                vertexQueue[graphicsPath].Append(new(bl, tint, tbl));
             }
     }
     public static void QueuePoint((float x, float y) position, uint tint)
@@ -186,9 +177,8 @@ internal static class Vertices
 
     public static void TryInitQueue()
     {
-        var key = (layer, graphicsPath);
-        if (vertexQueue.ContainsKey(key) == false)
-            vertexQueue[key] = new(PrimitiveType.Quads);
+        if (vertexQueue.ContainsKey(graphicsPath) == false)
+            vertexQueue[graphicsPath] = new(PrimitiveType.Quads);
     }
     public static void DrawQueue()
     {
@@ -197,27 +187,28 @@ internal static class Vertices
         Window.renderTexture.Clear();
         foreach (var kvp in vertexQueue)
         {
-            var tex = Window.graphics[kvp.Key.Item2];
-            Window.renderTexture.Draw(kvp.Value, new(tex));
+            var tex = Window.graphics[kvp.Key];
+            var tr = Transform.Identity;
+            var (centerX, centerY) = tilemapCenter;
+            tr.Translate(offset.x, offset.y);
+            tr.Scale(zoom, zoom, centerX, centerY);
+            var r = new RenderStates(BlendMode.Alpha, tr, tex, null);
+            Window.renderTexture.Draw(kvp.Value, r);
         }
 
         Window.renderTexture.Display();
 
-        var (w, h) = Window.Size;
+        var sz = Window.window.GetView().Size;
         var (tw, th) = (Window.renderTexture.Size.X, Window.renderTexture.Size.Y);
         var shader = Window.IsRetro ? retroScreen : null;
-        var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, Window.renderTexture.Texture,
-            shader);
-        var p = Window.pixelScale;
-        var (width, height) = Window.MonitorAspectRatio;
-        var (targetWidth, targetHeight) = (width * p, height * p);
-        var (zx, zy) = (targetWidth / mapCellCount.Item1, targetHeight / mapCellCount.Item2);
+        var rend = new RenderStates(
+            BlendMode.Alpha, Transform.Identity, Window.renderTexture.Texture, shader);
         var verts = new Vertex[]
         {
             new(new(0, 0), Color.White, new(0, 0)),
-            new(new(w * zx, 0), Color.White, new(tw, 0)),
-            new(new(w * zx, h * zy), Color.White, new(tw, th)),
-            new(new(0, h * zy), Color.White, new(0, th)),
+            new(new(sz.X, 0), Color.White, new(tw, 0)),
+            new(new(sz.X, sz.Y), Color.White, new(tw, th)),
+            new(new(0, sz.Y), Color.White, new(0, th)),
         };
 
         if (Window.IsRetro)
@@ -225,7 +216,7 @@ internal static class Vertices
             var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
             shader?.SetUniform("time", retroScreenTimer.ElapsedTime.AsSeconds());
             shader?.SetUniform("randomVec", randVec);
-            shader?.SetUniform("viewSize", Window.window.GetView().Size);
+            shader?.SetUniform("viewSize", new Vector2f(Window.window.Size.X, Window.window.Size.Y));
 
             if (Window.isClosing && retroTurnoffTime != null)
             {
@@ -252,14 +243,11 @@ internal static class Vertices
 
 #region Backend
     private static readonly Random retroRand = new();
-    private static RenderStates Rend
-    {
-        get => Window.IsRetro ? new(retroScreen) : default;
-    }
-    private static readonly SFML.System.Clock retroScreenTimer = new();
+    private static readonly Clock retroScreenTimer = new();
     private static System.Timers.Timer? retroTurnoff;
     private static Clock? retroTurnoffTime;
     private const float RETRO_TURNOFF_TIME = 0.5f;
+    private static (int x, int y) tilemapCenter;
 
     private static bool IsWithin(float number, float targetNumber, float range)
     {
@@ -286,27 +274,6 @@ internal static class Vertices
     private static int CoordsToIndex(int x, int y, int width)
     {
         return y * width + x;
-    }
-    private static (float, float) ToGrid((float, float) pos, (float, float) gridSize)
-    {
-        if (gridSize == default)
-            return pos;
-
-        var X = pos.Item1;
-        var Y = pos.Item2;
-
-        // this prevents -0 cells
-        var x = X - (X < 0 ? gridSize.Item1 : 0);
-        var y = Y - (Y < 0 ? gridSize.Item2 : 0);
-
-        x -= X % gridSize.Item1;
-        y -= Y % gridSize.Item2;
-        return new(x, y);
-    }
-    private static float Map(float number, float a1, float a2, float b1, float b2)
-    {
-        var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
-        return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
     private static int Wrap(int number, int targetNumber)
     {
@@ -350,32 +317,6 @@ internal static class Vertices
         Shift(points, Wrap(-angle, 4));
         return points;
     }
-    private static T[,] Rotate<T>(T[,] matrix, int direction)
-    {
-        var dir = Wrap(Math.Abs(direction), 4);
-        if (dir == 0)
-            return matrix;
-
-        var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
-        var rotated = new T[n, m];
-
-        if (direction > 0)
-        {
-            for (var i = 0; i < n; i++)
-                for (var j = 0; j < m; j++)
-                    rotated[i, j] = matrix[m - j - 1, i];
-
-            direction--;
-            return Rotate(rotated, direction);
-        }
-
-        for (var i = 0; i < n; i++)
-            for (var j = 0; j < m; j++)
-                rotated[i, j] = matrix[j, n - i - 1];
-
-        direction++;
-        return Rotate(rotated, direction);
-    }
     private static void FlipHorizontally<T>(T[,] matrix)
     {
         var rows = matrix.GetLength(0);
@@ -399,31 +340,28 @@ internal static class Vertices
             }
     }
     private static void QueueTile(
-        (float, float) position,
+        (float x, float y) position,
         int id,
         uint tint,
         sbyte angle,
-        (int, int) size)
+        (int w, int h) size)
     {
-        if (Window.window == null || id == tileIdEmpty)
+        if (Window.window == null || id == 0)
             return;
 
-        var verts = vertexQueue[(layer, graphicsPath)];
-        var (cellWidth, cellHeight) = tileSize;
-        var (tileWidth, tileHeight) = tileSize;
+        var verts = vertexQueue[graphicsPath];
         var (w, h) = size;
         w = Math.Abs(w);
         h = Math.Abs(h);
 
         var (ttl, ttr, tbr, tbl) = GetTexCoords(id, size);
-        var x = position.Item1 * tileWidth;
-        var y = position.Item2 * tileHeight;
+        var (x, y) = (position.x * tileSize.w, position.y * tileSize.h);
         var c = new Color(tint);
         var tl = new Vector2f((int)x, (int)y);
-        var br = new Vector2f((int)(x + cellWidth * w), (int)(y + cellHeight * h));
+        var br = new Vector2f((int)(x + tileSize.w * w), (int)(y + tileSize.h * h));
 
-        if (angle == 1 || angle == 3)
-            br = new((int)(x + cellHeight * h), (int)(y + cellWidth * w));
+        if (angle is 1 or 3)
+            br = new((int)(x + tileSize.h * h), (int)(y + tileSize.w * w));
 
         var tr = new Vector2f(br.X, tl.Y);
         var bl = new Vector2f(tl.X, br.Y);
@@ -433,13 +371,13 @@ internal static class Vertices
         tbr = rotated[2];
         tbl = rotated[3];
 
-        if (size.Item1 < 0)
+        if (size.w < 0)
         {
             (ttl, ttr) = (ttr, ttl);
             (tbl, tbr) = (tbr, tbl);
         }
 
-        if (size.Item2 < 0)
+        if (size.h < 0)
         {
             (ttl, tbl) = (tbl, ttl);
             (ttr, tbr) = (tbr, ttr);

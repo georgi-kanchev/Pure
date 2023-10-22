@@ -12,7 +12,7 @@ public static class Program
 {
     public static (TilemapPack, BlockPack) Initialize()
     {
-        Window.Create(3);
+        Window.Create();
         var (width, height) = Window.MonitorAspectRatio;
         var maps = new TilemapPack(7, (width * 3, height * 3));
         var blocks = new BlockPack();
