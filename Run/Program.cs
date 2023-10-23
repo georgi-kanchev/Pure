@@ -6,9 +6,7 @@ public static class Run
 {
     public static void Main()
     {
-        Examples.ExamplesSystems.Collision.Run();
-        //Editors.EditorUserInterface.Program.Run();
-        //Editors.EditorMap.Program.Run();
+        Editors.EditorMap.Program.Run();
         //RunExampleUserInterface();
     }
 

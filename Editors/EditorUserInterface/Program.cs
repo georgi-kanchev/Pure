@@ -61,7 +61,7 @@ public static class Program
     internal static (int w, int h) CameraSize
     {
         get;
-        private set;
+        set;
     }
 
     public static void Run()
@@ -72,18 +72,17 @@ public static class Program
             Time.Update();
             maps.Clear();
 
+            Window.SetDrawLayer(offset: offset, zoom: zoom);
             Update();
             RendererEdit.DrawGrid();
 
             Mouse.CursorGraphics = (Mouse.Cursor)Input.MouseCursorResult;
             for (var i = 0; i < maps.Count; i++)
             {
-                var tmap = maps[i];
-                var cam = tmap.ViewUpdate();
-                var (cx, cy, _, _) = tmap.View;
-                MousePosition = cam.PointFrom(Mouse.CursorPosition, Window.Size);
-                MousePosition = (MousePosition.x + cx, MousePosition.y + cy);
-                Window.DrawTiles(cam.ToBundle());
+                var t = maps[i];
+                prevMousePos = MousePosition;
+                MousePosition = Mouse.PixelToWorld(Mouse.CursorPosition);
+                Window.DrawTiles(t.ToBundle());
             }
 
             Window.Activate(false);
@@ -113,9 +112,8 @@ public static class Program
 #region Backend
     private static string infoText = "";
     private static float infoTextTimer;
-    private static int zoom = 4;
-    private static (float x, float y) prevMousePos;
-    private const int SCALE_ASPECT_MAX = 10, SCALE_ASPECT_MIN = 4;
+    private static float zoom = 1f;
+    private static (float x, float y) prevMousePos, offset;
 
     static Program()
     {
@@ -123,7 +121,7 @@ public static class Program
         Window.Title = "Pure - User Interface Editor";
 
         var (width, height) = Window.MonitorAspectRatio;
-        maps = new((int)Layer.Count, (width * SCALE_ASPECT_MAX, height * SCALE_ASPECT_MAX));
+        maps = new((int)Layer.Count, (width * 10, height * 10));
         ui = new();
         editUI = new();
         editPanel = new((int.MaxValue, int.MaxValue));
@@ -146,13 +144,10 @@ public static class Program
         menus[MenuType.AddList] = new MenuAddList();
         menus[MenuType.Add] = new MenuAdd();
         menus[MenuType.Main] = new MenuMain();
-
-        UpdateCamera();
     }
 
     private static void Update()
     {
-        Input.TilemapSize = (CameraSize.w, CameraSize.h);
         Input.Update(
             Mouse.IsButtonPressed(Mouse.Button.Left),
             MousePosition,
@@ -186,6 +181,7 @@ public static class Program
     }
     private static void UpdateInfoText()
     {
+        /*
         infoTextTimer -= Time.Delta;
 
         const int TEXT_WIDTH = 32;
@@ -208,6 +204,7 @@ public static class Program
         maps[(int)Layer.EditFront]
             .SetTextRectangle((x, topY), (TEXT_WIDTH, TEXT_HEIGHT), infoText,
                 alignment: Alignment.Top, scrollProgress: 1f);
+        */
     }
 
     private static void TryControlCamera()
@@ -215,6 +212,7 @@ public static class Program
         if (prompt.IsHidden == false)
             return;
 
+        /*
         var prevSz = CameraSize;
         var prevPos = CameraPosition;
 
@@ -222,7 +220,7 @@ public static class Program
         {
             var prevZoom = zoom;
             zoom -= Mouse.ScrollDelta;
-            zoom = Math.Clamp(zoom, SCALE_ASPECT_MIN, SCALE_ASPECT_MAX);
+            zoom = Math.Clamp(zoom, 0.3f, 2f);
 
             var cx = (float)Mouse.CursorPosition.x;
             var cy = (float)Mouse.CursorPosition.y;
@@ -237,7 +235,7 @@ public static class Program
                     (CameraPosition.x - 8, CameraPosition.y - 5);
         }
 
-        var mousePos = maps[0].PointFrom(Mouse.CursorPosition, Window.Size, isAccountingForView: false);
+        var mousePos = Mouse.PixelToWorld(Mouse.CursorPosition);
         var tmapCameraAspectX = (float)maps.Size.width / CameraSize.w;
         var tmapCameraAspectY = (float)maps.Size.height / CameraSize.h;
         mousePos.x /= tmapCameraAspectX;
@@ -250,38 +248,21 @@ public static class Program
         {
             var (deltaX, deltaY) = (mx - px, my - py);
             CameraPosition = (CameraPosition.x - deltaX, CameraPosition.y - deltaY);
-            UpdateCamera();
         }
 
         var (w, h) = CameraSize;
         if (prevPos != CameraPosition)
         {
             DisplayInfoText($"Camera {CameraPosition.x + w / 2}, {CameraPosition.y + h / 2}");
-            UpdateCamera();
         }
 
         if (prevSz != CameraSize)
         {
             DisplayInfoText($"Camera {CameraSize.w}x{CameraSize.h}");
-            UpdateCamera();
         }
 
         prevMousePos = (mx, my);
-    }
-    private static void UpdateCamera()
-    {
-        var (width, height) = Window.MonitorAspectRatio;
-
-        for (var i = 0; i < maps.Count; i++)
-        {
-            var tmap = maps[i];
-            CameraSize = (width * zoom, height * zoom);
-            var x = Math.Clamp(CameraPosition.x, 0, maps.Size.width - CameraSize.w);
-            var y = Math.Clamp(CameraPosition.y, 0, maps.Size.height - CameraSize.h);
-            CameraPosition = (x, y);
-
-            tmap.View = (CameraPosition.x, CameraPosition.y, CameraSize.w, CameraSize.h);
-        }
+        */
     }
 
     private static Block? GetHovered()

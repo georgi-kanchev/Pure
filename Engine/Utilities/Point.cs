@@ -65,6 +65,9 @@ public struct Point
     }
     public Point MoveIn((float x, float y) direction, float speed, float deltaTime = 1)
     {
+        if (direction == default)
+            return this;
+
         // normalize
         var x = direction.Item1;
         var y = direction.Item2;
@@ -87,6 +90,9 @@ public struct Point
     }
     public Point MoveTo(Point targetPoint, float speed, float deltaTime = 1)
     {
+        if (targetPoint == this)
+            return this;
+
         var result = MoveIn(targetPoint - this, speed, deltaTime);
 
         speed *= deltaTime;
@@ -116,7 +122,7 @@ public struct Point
     {
         return Wrap(ToAngle(targetPoint - this), 360);
     }
-    public (float, float) Direction(Point targetPoint)
+    public (float x, float y) Direction(Point targetPoint)
     {
         var dir = (targetPoint - this);
         var x = dir.X;

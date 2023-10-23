@@ -726,43 +726,6 @@ public class Tilemap
             SetRectangle((x + off, y), (size - 2, 1), new(tileId, tint));
     }
 
-    /// <summary>
-    /// Converts a screen pixelPosition to a world point on the tilemap.
-    /// </summary>
-    /// <param name="pixelPosition">The screen pixel position to convert.</param>
-    /// <param name="windowToMonitorRatio">The size of the monitor divided by the application window.</param>
-    /// <param name="pixelScale">The multiplier applied to the monitor pixel size.</param>
-    /// <param name="tileSize">The size of each tile in the graphics.</param>
-    /// <param name="isAccountingForView">Whether or not to account for this tilemap's view position.</param>
-    /// <returns>The world point corresponding to the given screen 
-    /// pixelPosition.</returns>
-    public (float x, float y) PointFrom(
-        (int x, int y) pixelPosition,
-        (float width, float height) windowToMonitorRatio,
-        float pixelScale = 5f,
-        (float x, float y) offset = default,
-        float zoom = 1f,
-        (int width, int height) tileSize = default,
-        bool isAccountingForView = true)
-    {
-        tileSize = tileSize == default ? (8, 8) : tileSize;
-        var (w, h) = (
-            Size.width * tileSize.width * pixelScale * zoom,
-            Size.height * tileSize.height * pixelScale * zoom);
-        var x = Map(pixelPosition.x, 0, w, 0, Size.width);
-        var y = Map(pixelPosition.y, 0, h, 0, Size.height);
-        x *= windowToMonitorRatio.width;
-        y *= windowToMonitorRatio.height;
-
-        if (isAccountingForView == false)
-            return (x, y);
-
-        x += View.x;
-        y += View.y;
-
-        return (x, y);
-    }
-
     public void ConfigureText(
         int lowercase = Tile.LOWERCASE_A,
         int uppercase = Tile.UPPERCASE_A,
@@ -939,11 +902,6 @@ public class Tilemap
         var spaces = length - text.Length;
         var padLeft = spaces / 2 + text.Length;
         return text.PadLeft(padLeft).PadRight(length);
-    }
-    private static float Map(float number, float a1, float a2, float b1, float b2)
-    {
-        var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
-        return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
     private static T[,] Copy<T>(T[,] array)
     {

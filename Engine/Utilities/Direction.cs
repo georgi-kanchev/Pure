@@ -38,6 +38,11 @@ public struct Direction
         }
     }
 
+    public Direction Reversed
+    {
+        get => (-X, -Y);
+    }
+
     /// <summary>
     /// Determines whether the direction is invalid.
     /// </summary>
@@ -61,27 +66,25 @@ public struct Direction
     /// Initializes a new direction instance with the same X and Y components.
     /// </summary>
     /// <param name="xy">The value to use for both the X and Y components of the direction.</param>
-    public Direction(float xy)
-        : this(xy, xy)
+    public Direction(float xy) : this(xy, xy)
     {
     }
     /// <summary>
     /// Initializes a new direction instance with the X and Y components specified as a bundle tuple.
     /// </summary>
     /// <param name="bundle">A bundle tuple containing the X and Y components of the direction.</param>
-    public Direction((float x, float y) bundle)
-        : this(bundle.x, bundle.y)
+    public Direction((float x, float y) bundle) : this(bundle.x, bundle.y)
     {
     }
 
     /// <summary>
     /// Calculates the dot product between this direction and another direction.
     /// </summary>
-    /// <param name="targetVector">The direction to calculate the dot product with.</param>
+    /// <param name="target">The direction to calculate the dot product with.</param>
     /// <returns>The dot product of the two directions.</returns>
-    public float Dot(Direction targetVector)
+    public float Dot(Direction target)
     {
-        return X * targetVector.X + Y * targetVector.Y;
+        return X * target.X + Y * target.Y;
     }
     /// <summary>
     /// Reflects this direction from a given surface normal.

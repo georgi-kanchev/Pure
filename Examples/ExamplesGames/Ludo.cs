@@ -208,7 +208,7 @@ public static class Ludo
             Input.TilemapSize = map.Size;
             Input.Update(
                 Mouse.IsButtonPressed(Mouse.Button.Left),
-                map.PointFrom(Mouse.CursorPosition, Window.Size),
+                Mouse.PixelToWorld(Mouse.CursorPosition),
                 Mouse.ScrollDelta,
                 Array.Empty<int>(),
                 "");

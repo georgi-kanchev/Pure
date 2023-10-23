@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Default\RenderersUserInterface\RenderersUserInterface.csproj"/>
+        <ProjectReference Include="..\..\Engine\Collision\Collision.csproj"/>
         <ProjectReference Include="..\..\Engine\Tilemap\Tilemap.csproj"/>
         <ProjectReference Include="..\..\Engine\UserInterface\UserInterface.csproj"/>
         <ProjectReference Include="..\..\Engine\Utilities\Utilities.csproj"/>

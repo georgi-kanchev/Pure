@@ -10,7 +10,8 @@ public static class Collision
     public static void Run()
     {
         Window.Create();
-        Mouse.CursorGraphics = Mouse.Cursor.None;
+        //Mouse.CursorGraphics = Mouse.Cursor.None;
+        Mouse.IsCursorTile = false;
 
         var aspectRatio = Window.MonitorAspectRatio;
         var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
@@ -30,7 +31,6 @@ public static class Collision
         var scale = 1f - 1f / 8f;
         var hitbox = new Hitbox((0, 0), (scale, scale), new Rectangle((1f, 1f)));
 
-        var zoom = 0.75f;
         while (Window.IsOpen)
         {
             Window.Activate(true);
@@ -50,16 +50,10 @@ public static class Collision
 
             collisionMap.Update(tilemap.Ids);
 
-            //zoom /= 1.001f;
-            Window.SetDrawLayer(offset: (0, 0), zoom: zoom);
             Window.DrawTiles(background);
             Window.DrawTiles(tilemap);
 
-            var mousePosition = tilemap.PointFrom(
-                Mouse.CursorPosition,
-                Window.WindowToMonitorRatio,
-                offset: (0, 0),
-                zoom: zoom);
+            var mousePosition = Mouse.PixelToWorld(Mouse.CursorPosition);
             hitbox.Position = mousePosition;
 
             var isOverlapping = collisionMap.IsOverlapping(hitbox);

@@ -13,7 +13,7 @@ public static class Program
         var editor = new EditorBase.Editor(
             title: "Pure - Map Editor",
             scaleUi: 5,
-            mapSize: (100, 100));
+            mapSize: (200, 200));
 
         editor.Run();
     }

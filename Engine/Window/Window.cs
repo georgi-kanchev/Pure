@@ -121,18 +121,15 @@ public static class Window
     }
     public static int MonitorCount
     {
-        get
-        {
-            TryNoWindowException();
-            return Monitor.posSizes.Count;
-        }
+        get;
+        private set;
     }
-    public static (float width, float height) WindowToMonitorRatio
+    public static (int width, int height) MonitorSize
     {
         get
         {
-            var (_, _, w, h) = Monitor.posSizes[(int)Monitor.current];
-            return ((float)w / Size.width, (float)h / Size.height);
+            var (_, _, w, h) = Monitor.posSizes[Monitor.current];
+            return (w, h);
         }
     }
 
@@ -148,10 +145,10 @@ public static class Window
         if (window != null)
             return;
 
-        Monitor.current = monitor;
-        InitialMode = mode;
-        scale = pixelScale;
         Monitor.Initialize();
+        MonitorCount = Monitor.posSizes.Count;
+        Monitor.current = (int)Math.Clamp(monitor, 0, MonitorCount - 1);
+        InitialMode = mode;
 
         if (monitor >= Monitor.posSizes.Count)
             monitor = (uint)Monitor.posSizes.Count - 1;
@@ -160,6 +157,9 @@ public static class Window
         var (x, y, w, h) = Monitor.posSizes[(int)monitor];
         aspectRatio = Monitor.GetAspectRatio(w, h);
         renderTexture = new((uint)(w / pixelScale), (uint)(h / pixelScale));
+        var view = renderTexture.GetView();
+        view.Center = new();
+        renderTexture.SetView(view);
 
         if (mode == Mode.Fullscreen) style = Styles.Fullscreen;
         else if (mode == Mode.Borderless) style = Styles.None;
@@ -209,6 +209,7 @@ public static class Window
         //var str = DefaultGraphics.PNGToBase64String("graphics.png");
 
         graphics["default"] = DefaultGraphics.CreateTexture();
+        SetDrawLayer();
     }
     /// <summary>
     /// Activates or deactivates the window for updates and drawing. Ideally, an application
@@ -232,14 +233,8 @@ public static class Window
         Vertices.DrawQueue();
         window.Display();
     }
-    /// <summary>
-    /// Sets the properties of the layer that the window should draw on.
-    /// </summary>
-    /// <param name="tilesetPath">The path to the tileset graphics file to use for the layer.</param>
-    /// <param name="tileSize">The size of each tile in the graphics.</param>
-    /// <param name="tileGap">The gap between each tile in the graphics.</param>
-    /// <param name="tileIdFull">The tile identifier of the fully opaque tile in the tileset.</param>
     public static void SetDrawLayer(
+        int id = 0,
         string? tilesetPath = null,
         (int width, int height) tileSize = default,
         (int x, int y) tileGap = default,
@@ -249,17 +244,20 @@ public static class Window
     {
         TryNoWindowException();
 
+        currentDrawLayer = id;
         tileSize = tileSize == default ? (8, 8) : tileSize;
         tilesetPath ??= "default";
+        layers[id] = new()
+        {
+            graphicsPath = tilesetPath,
+            tileSize = tileSize,
+            tileGap = tileGap,
+            tileIdFull = tileIdFull,
+            offset = offset,
+            zoom = zoom
+        };
 
         TryLoadGraphics(tilesetPath);
-
-        Vertices.graphicsPath = tilesetPath;
-        Vertices.tileSize = tileSize;
-        Vertices.tileGap = tileGap;
-        Vertices.tileIdFull = tileIdFull;
-        Vertices.offset = offset;
-        Vertices.zoom = zoom;
 
         Vertices.TryInitQueue();
     }
@@ -353,13 +351,27 @@ public static class Window
 
 #region Backend
     internal static bool isRetro, isClosing;
-    internal static float scale;
     private static string title = "Game";
     private static (int, int) aspectRatio;
+    internal static int currentDrawLayer;
+    internal static DrawLayer Layer
+    {
+        get => layers[currentDrawLayer];
+    }
 
+    internal static readonly Dictionary<int, DrawLayer> layers = new();
     internal static readonly Dictionary<string, Texture> graphics = new();
     internal static RenderWindow? window;
     internal static RenderTexture? renderTexture;
+
+    internal static (float width, float height) WindowToMonitorRatio
+    {
+        get
+        {
+            var (_, _, w, h) = Monitor.posSizes[Monitor.current];
+            return ((float)w / Size.width, (float)h / Size.height);
+        }
+    }
 
     private static void TryLoadGraphics(string path)
     {

@@ -149,6 +149,38 @@ public static class Mouse
         }
     }
 
+    public static (float x, float y) PixelToWorld((int x, int y) pixelPosition)
+    {
+        Window.TryNoWindowException();
+
+        var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
+        var (ww, wh) = (Window.Size.width, Window.Size.height);
+        var (cw, ch) = (Window.Layer.tilemapCellCount.w, Window.Layer.tilemapCellCount.h);
+        var viewSz = Window.renderTexture.GetView().Size;
+        var (mw, mh) = (Window.Layer.tilemapSize.w, Window.Layer.tilemapSize.h);
+        var (ox, oy) = Window.Layer.offset;
+
+        ox /= mw;
+        oy /= mh;
+
+        px -= ww / 2f;
+        py -= wh / 2f;
+
+        var x = Map(px, 0, ww, 0, cw);
+        var y = Map(py, 0, wh, 0, ch);
+
+        x *= viewSz.X / Window.Layer.zoom / mw;
+        y *= viewSz.Y / Window.Layer.zoom / mh;
+
+        x += cw / 2f;
+        y += ch / 2f;
+
+        x -= ox * cw / Window.Layer.zoom;
+        y -= oy * ch / Window.Layer.zoom;
+
+        return (x, y);
+    }
+
     public static void SetupCursorTile(int tile = 442, uint color = uint.MaxValue)
     {
         Window.TryNoWindowException();
@@ -251,8 +283,8 @@ public static class Mouse
 
         var (offX, offY) = cursorOffsets[(int)CursorGraphics];
 
-        Vertices.graphicsPath = "default";
-        Vertices.tileSize = (8, 8);
+        Window.Layer.graphicsPath = "default";
+        Window.Layer.tileSize = (8, 8);
 
         var cursorTile = Mouse.cursorTile;
         var ang = default(sbyte);
@@ -277,7 +309,8 @@ public static class Mouse
         tile.tint = cursorColor;
         tile.ang = ang;
 
-        Window.DrawTile((cursorPos.x - offX, cursorPos.y - offY), tile);
+        var (x, y) = PixelToWorld(cursorPos);
+        Window.DrawTile((x - offX, y - offY), tile);
     }
 
     private static void TryUpdateSystemCursor()
@@ -304,6 +337,12 @@ public static class Mouse
 
         if (IsCursorTile)
             Window.window.SetMouseCursorVisible(IsCursorHoveringWindow == false);
+    }
+
+    private static float Map(float number, float a1, float a2, float b1, float b2)
+    {
+        var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
+        return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
 #endregion
 }

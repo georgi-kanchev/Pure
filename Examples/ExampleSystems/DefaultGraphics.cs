@@ -22,7 +22,7 @@ public static class DefaultGraphics
                 for (var j = 0; j < 26; j++)
                     tilemap.SetTile((j, i), new Indices(i, j).ToIndex(26));
 
-            var (x, y) = tilemap.PointFrom(Mouse.CursorPosition, Window.Size);
+            var (x, y) = Mouse.PixelToWorld(Mouse.CursorPosition);
             var id = tilemap.TileAt(((int)x, (int)y)).Id;
             tilemap.SetTextLine((27, 13), $"{id}");
 

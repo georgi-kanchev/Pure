@@ -2,7 +2,7 @@
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
-global using static Pure.Default.RendererUserInterface.Default;
+using Pure.Engine.Collision;
 
 namespace Pure.Editors.EditorBase;
 
@@ -38,6 +38,11 @@ public class Editor
         get;
     }
 
+    public (float x, float y) MousePositionWorld
+    {
+        get;
+        private set;
+    }
     public (float x, float y) MousePosition
     {
         get;
@@ -59,17 +64,30 @@ public class Editor
         set;
     }
 
+    public float ViewZoom
+    {
+        get => viewZoom;
+        set => viewZoom = Math.Clamp(value, ZOOM_MIN, ZOOM_MAX);
+    }
+    public (float x, float y) ViewPosition
+    {
+        get => viewPosition;
+        set
+        {
+            var (cw, ch) = (UserMaps.Size.width * 4f * ViewZoom, UserMaps.Size.height * 4f * ViewZoom);
+            viewPosition = (Math.Clamp(value.x, -cw, cw), Math.Clamp(value.y, -ch, ch));
+        }
+    }
+
     public Editor(string title, int scaleUi, (int width, int height) mapSize)
     {
-        Window.Create();
+        Window.Create(PIXEL_SCALE);
         Window.Title = title;
 
         scaleUi = Math.Clamp(scaleUi, 4, 10);
         var (width, height) = Window.MonitorAspectRatio;
         UserMaps = new((int)UserLayer.Count, mapSize);
         UiMaps = new((int)UiLayer.Count, (width * scaleUi, height * scaleUi));
-
-        ClampView();
     }
 
     public void Run()
@@ -84,7 +102,7 @@ public class Editor
             Input.TilemapSize = (UiMaps.View.width, UiMaps.View.height);
             Input.Update(
                 Mouse.IsButtonPressed(Mouse.Button.Left),
-                MousePosition,
+                MousePositionWorld,
                 Mouse.ScrollDelta,
                 Keyboard.KeyIDsPressed,
                 Keyboard.KeyTyped);
@@ -96,13 +114,16 @@ public class Editor
 
             Mouse.CursorGraphics = (Mouse.Cursor)Input.MouseCursorResult;
 
+            prevMousePosWorld = MousePositionWorld;
             prevMousePos = MousePosition;
-            MousePosition = UserMaps.PointFrom(Mouse.CursorPosition, Window.Size);
+            MousePositionWorld = Mouse.PixelToWorld(Mouse.CursorPosition);
+            MousePosition = Mouse.CursorPosition;
 
-            var maps = UserMaps.ViewUpdate();
-            foreach (var t in maps)
-                Window.DrawTiles(t.ToBundle());
+            Window.SetDrawLayer(offset: ViewPosition, zoom: ViewZoom);
+            for (var i = 0; i < UserMaps.Count; i++)
+                Window.DrawTiles(UserMaps[i].ToBundle());
 
+            Window.SetDrawLayer(offset: (0, 0), zoom: 1f);
             for (var i = 0; i < UiMaps.Count; i++)
                 Window.DrawTiles(UiMaps[i].ToBundle());
 
@@ -135,12 +156,14 @@ public class Editor
     }
 
 #region Backend
-    private const int GRID_GAP = 10;
+    private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.3f, ZOOM_MAX = 6f;
+    private const int GRID_GAP = 9;
 
     private string infoText = "";
     private float infoTextTimer;
-    private float zoom = 1f;
-    private (float x, float y) prevMousePos;
+    private (float x, float y) prevMousePosWorld, prevMousePos;
+    private float viewZoom = 1f;
+    private (float x, float y) viewPosition;
 
     private void DrawGrid()
     {
@@ -153,13 +176,14 @@ public class Editor
         {
             var newX = x - (x + i) % GRID_GAP;
             UserMaps[LAYER].SetLine((newX + i, y), (newX + i, y + size.height),
-                new(Tile.SHADE_2, color));
+                new(Tile.SHADE_OPAQUE, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
-            UserMaps[LAYER].SetLine((x, newY + i), (x + size.width, newY + i), new(Tile.SHADE_2, color));
+            UserMaps[LAYER].SetLine((x, newY + i), (x + size.width, newY + i),
+                new(Tile.SHADE_OPAQUE, color));
         }
 
         //for (var i = 0; i < size.height; i += 20)
@@ -178,7 +202,7 @@ public class Editor
         var x = UiMaps.View.x + UiMaps.View.width / 2 - TEXT_WIDTH / 2;
         var topY = UiMaps.View.y;
         var bottomY = topY + UiMaps.View.height;
-        var (mx, my) = MousePosition;
+        var (mx, my) = MousePositionWorld;
 
         UiMaps[(int)UiLayer.EditFront]
             .SetTextRectangle((x, bottomY - 1), (TEXT_WIDTH, 1), $"Cursor {(int)mx}, {(int)my}",
@@ -200,85 +224,56 @@ public class Editor
         if (IsDisabledViewInteraction)
             return;
 
-        var prevSz = (UserMaps.View.width, UserMaps.View.height);
-        var prevPos = (UserMaps.View.x, UserMaps.View.y);
+        var prevZoom = ViewZoom;
+        var prevPos = ViewPosition;
 
         TryViewZoom();
         TryViewMove();
-        ClampView();
 
-        var (w, h) = (UserMaps.View.width, UserMaps.View.height);
-        if (prevPos != (UserMaps.View.x, UserMaps.View.y))
-            DisplayInfoText($"View {UserMaps.View.x + w / 2}, {UserMaps.View.y + h / 2}");
+        var (w, h) = ViewPosition;
+        if (prevPos != ViewPosition)
+            DisplayInfoText($"View Position {w}, {h}");
 
-        if (prevSz != (UserMaps.View.width, UserMaps.View.height))
-            DisplayInfoText($"View {UserMaps.View.width}x{UserMaps.View.height}");
+        if (Math.Abs(prevZoom - ViewZoom) > 0.01f)
+            DisplayInfoText($"View Zoom {ViewZoom * 100}%");
     }
     private void TryViewMove()
     {
-        if (IsDisabledViewMove)
-            return;
-
-        var mousePos = UserMaps.PointFrom(Mouse.CursorPosition, Window.Size, false);
-        var aspectX = (float)UserMaps.Size.width / UserMaps.View.width;
-        var aspectY = (float)UserMaps.Size.height / UserMaps.View.height;
-        var (mx, my) = ((int)(mousePos.x / aspectX), (int)(mousePos.y / aspectY));
-        var (px, py) = ((int)prevMousePos.x, (int)prevMousePos.y);
         var mmb = Mouse.IsButtonPressed(Mouse.Button.Middle);
 
-        mx += UserMaps.View.x;
-        my += UserMaps.View.y;
-
-        if (mmb == false || (px == mx && py == my))
+        if (IsDisabledViewMove || mmb == false)
             return;
 
-        var (deltaX, deltaY) = (mx - px, my - py);
+        var (mw, mh) = Window.MonitorSize;
+        var (ww, wh) = Window.Size;
+        var (aw, ah) = (mw / ww, mh / wh);
+        var (mx, my) = MousePosition;
+        var (px, py) = prevMousePos;
 
-        UserMaps.View = (
-            UserMaps.View.x - deltaX,
-            UserMaps.View.y - deltaY,
-            UserMaps.View.width,
-            UserMaps.View.height);
+        ViewPosition = (
+            ViewPosition.x + (mx - px) / PIXEL_SCALE * aw,
+            ViewPosition.y + (my - py) / PIXEL_SCALE * ah);
     }
     private void TryViewZoom()
     {
         if (Mouse.ScrollDelta == 0 || IsDisabledViewZoom)
             return;
 
-        var prevZoom = zoom;
-        zoom -= Mouse.ScrollDelta / 10f;
-        zoom = Math.Clamp(zoom, 0.1f, 1f);
+        var mousePos = (Point)MousePosition;
+        var viewPos = (Point)ViewPosition;
+        var (ww, wh) = Window.Size;
+        var pos = (Point)(ww / 2f, wh / 2f);
+        var zoomInDist = mousePos.Distance(pos);
+        var zoomInDir = (Direction)mousePos.Direction(pos);
+        var zoomInPos = viewPos.MoveIn(zoomInDir, zoomInDist / 5f * ViewZoom);
+        var zoomOutDist = viewPos.Distance(new());
+        var zoomOutPos = viewPos.MoveTo((0, 0), (30f + zoomOutDist / 50f) * ViewZoom);
 
-        var cx = (float)Mouse.CursorPosition.x;
-        var cy = (float)Mouse.CursorPosition.y;
-        cx = cx.Map((0, Window.Size.width), (0, 1)) * 16f;
-        cy = cy.Map((0, Window.Size.height), (0, 1)) * 9.5f;
-        var newX = UserMaps.View.x + cx;
-        var newY = UserMaps.View.y + cy;
+        if (Math.Abs(ViewZoom - ZOOM_MIN) > 0.01f &&
+            Math.Abs(ViewZoom - ZOOM_MAX) > 0.01f)
+            ViewPosition = Mouse.ScrollDelta > 0 ? zoomInPos : zoomOutPos;
 
-        if (Math.Abs(prevZoom - zoom) < 0.01f)
-            return;
-
-        var (x, y) = Mouse.ScrollDelta > 0 ?
-            ((int)newX, (int)newY) :
-            (UserMaps.View.x - 8, UserMaps.View.y - 5);
-        var (w, h) = (UserMaps.Size.width * zoom, UserMaps.Size.height * zoom);
-
-        UserMaps.View = (x, y, (int)w, (int)h);
-    }
-    private void ClampView()
-    {
-        var (w, h) = (UserMaps.View.width, UserMaps.View.height);
-        var x = Math.Clamp(UserMaps.View.x, -w / 2, UserMaps.Size.width - w + w / 2);
-        var y = Math.Clamp(UserMaps.View.y, -h / 2, UserMaps.Size.height - h + h / 2);
-        UserMaps.View = (x, y, UserMaps.View.width, UserMaps.View.height);
-    }
-
-    public static float Map(float number, (float a, float b) range, (float a, float b) targetRange)
-    {
-        var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) +
-                    targetRange.a;
-        return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
+        ViewZoom *= Mouse.ScrollDelta > 0 ? 1.1f : 0.9f;
     }
 #endregion
 }
