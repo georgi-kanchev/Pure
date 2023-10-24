@@ -294,7 +294,7 @@ public class List : Block
     protected override void OnInput()
     {
         if (Span == Span.Dropdown && IsCollapsed && IsHovered)
-            Input.MouseCursorResult = MouseCursor.Hand;
+            Input.CursorResult = MouseCursor.Hand;
     }
 
     public void OnItemDisplay(Action<Button> method)
@@ -430,7 +430,7 @@ public class List : Block
 
         // for in between items, overwrite mouse cursor (don't give it to the block bellow)
         if (IsDisabled == false && IsHovered)
-            Input.MouseCursorResult = MouseCursor.Arrow;
+            Input.CursorResult = MouseCursor.Arrow;
 
         if (Span != Span.Dropdown)
             LimitSizeMin((2, 2));

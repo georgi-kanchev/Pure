@@ -206,9 +206,9 @@ public static class Ludo
             Window.Activate(true);
 
             Input.TilemapSize = map.Size;
+            Input.Position = Mouse.PixelToWorld(Mouse.CursorPosition);
             Input.Update(
                 Mouse.IsButtonPressed(Mouse.Button.Left),
-                Mouse.PixelToWorld(Mouse.CursorPosition),
                 Mouse.ScrollDelta,
                 Array.Empty<int>(),
                 "");
@@ -227,7 +227,7 @@ public static class Ludo
             SetSlider(map, slider);
             SetButton(map, button);
 
-            Mouse.CursorGraphics = (Mouse.Cursor)Input.MouseCursorResult;
+            Mouse.CursorGraphics = (Mouse.Cursor)Input.CursorResult;
 
             Window.DrawTiles(map.ToBundle());
             foreach (var pawn in Pawns)

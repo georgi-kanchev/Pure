@@ -316,8 +316,11 @@ public class InputBox : Block
     public void CursorScroll()
     {
         var (cpx, cpy) = PositionFromIndices(CursorIndices);
-        while (IsOverlapping((cpx, cpy)) == false)
+        for (var i = 0; i < Value.Length; i++)
         {
+            if (IsOverlapping((cpx, cpy)) == false)
+                break;
+
             var (offX, offY) = (0, 0);
 
             if (cpx < Position.x) offX = -1;
@@ -932,10 +935,10 @@ public class InputBox : Block
     private void TrySetMouseCursor()
     {
         if (IsDisabled == false && (IsHovered || IsPressedAndHeld))
-            Input.MouseCursorResult = MouseCursor.Text;
+            Input.CursorResult = MouseCursor.Text;
 
         if (IsHovered && IsReadOnly && Value.Length == 0)
-            Input.MouseCursorResult = MouseCursor.Arrow;
+            Input.CursorResult = MouseCursor.Arrow;
     }
     private bool TryCopyPasteCut(
         ref bool justDeletedSelection,

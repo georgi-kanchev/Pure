@@ -4,27 +4,12 @@ global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
 global using static Pure.Editors.EditorUserInterface.Program;
 global using static Pure.Default.RendererUserInterface.Default;
+global using Pure.Editors.EditorBase;
 
 namespace Pure.Editors.EditorUserInterface;
 
 public static class Program
 {
-    internal enum Layer
-    {
-        Grid,
-        UiBack,
-        UiMiddle,
-        UiFront,
-        EditBack,
-        EditMiddle,
-        EditFront,
-        PromptFade,
-        PromptBack,
-        PromptMiddle,
-        PromptFront,
-        Count
-    }
-
     internal enum MenuType
     {
         Main,
@@ -32,113 +17,67 @@ public static class Program
         AddList
     }
 
-    internal static Block? Selected
-    {
-        get;
-        set;
-    }
+    internal static readonly Editor editor;
 
+    internal static readonly BlockPack ui, panels;
+    internal static readonly Inspector inspector;
     internal static readonly Dictionary<MenuType, Menu> menus = new();
-    internal static readonly TilemapPack maps;
-    internal static readonly BlockPack ui;
-    internal static readonly RendererEdit editUI;
-    internal static readonly Prompt prompt;
+
     internal static readonly Slider promptSlider;
-    internal static readonly EditPanel editPanel;
     internal static readonly FileViewer saveLoad;
     internal static readonly InputBox fileName;
 
-    internal static (float x, float y) MousePosition
-    {
-        get;
-        set;
-    }
-    internal static (int x, int y) CameraPosition
-    {
-        get;
-        set;
-    }
-    internal static (int w, int h) CameraSize
-    {
-        get;
-        set;
-    }
+    internal static Block? selected;
 
     public static void Run()
     {
-        while (Window.IsOpen)
+        editor.OnUpdateEditor = () =>
         {
-            Window.Activate(true);
-            Time.Update();
-            maps.Clear();
+            editor.MapsEditor.Clear();
 
-            //Window.LayerAdd(offset: offset, zoom: zoom);
-            Update();
-            RendererEdit.DrawGrid();
+            ui.Update();
+            panels.Update();
 
-            Mouse.CursorGraphics = (Mouse.Cursor)Input.MouseCursorResult;
-            for (var i = 0; i < maps.Count; i++)
-            {
-                var t = maps[i];
-                prevMousePos = MousePosition;
-                MousePosition = Mouse.PixelToWorld(Mouse.CursorPosition);
-                Window.DrawTiles(t.ToBundle());
-            }
-
-            Window.Activate(false);
-        }
-    }
-
-    internal static void DisplayInfoText(string text)
-    {
-        var infoTextSplit = infoText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-        if (infoTextSplit.Length > 0 && infoTextSplit[^1].Contains(text))
+            var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-deselect");
+            if (onLmbRelease && GetHovered() == null && inspector.IsHovered == false &&
+                editor.Prompt.IsHidden)
+                selected = null;
+        };
+        editor.OnUpdateUi = () =>
         {
-            var lastLine = infoTextSplit[^1];
-            if (lastLine.Contains(')'))
-            {
-                var split = lastLine.Split("(")[1].Replace(")", "");
-                var number = int.Parse(split) + 1;
-                text += $" ({number})";
-            }
-            else
-                text += " (2)";
-        }
+            inspector.IsHidden = selected == null;
+            if (inspector.IsHidden == false)
+                inspector.Update();
+        };
 
-        infoText += text + Environment.NewLine;
-        infoTextTimer = 2f;
+        editor.Run();
     }
 
 #region Backend
-    private static string infoText = "";
-    private static float infoTextTimer;
-    private static float zoom = 1f;
-    private static (float x, float y) prevMousePos, offset;
-
     static Program()
     {
-        Window.Create();
-        Window.Title = "Pure - User Interface Editor";
+        editor = new(title: "Pure - User Interface Editor", mapSize: (80, 27));
 
-        var (width, height) = Window.MonitorAspectRatio;
-        maps = new((int)Layer.Count, (width * 10, height * 10));
+        var maps = editor.MapsUi;
+        const int BACK = (int)Editor.LayerMapsUi.PromptBack;
+        const int MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
+
         ui = new();
-        editUI = new();
-        editPanel = new((int.MaxValue, int.MaxValue));
+        panels = new();
+        var (_, uh) = editor.MapsUi.Size;
+        inspector = new(default) { Size = (16, uh) };
+        inspector.Align((1f, 0.5f));
 
-        prompt = new() { ButtonCount = 2 };
-        prompt.OnDisplay(() => maps.SetPrompt(prompt, zOrder: (int)Layer.PromptFade));
-        prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: (int)Layer.PromptMiddle));
         promptSlider = new() { Size = (15, 1) };
-        promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, (int)Layer.PromptBack));
+        promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, BACK));
 
         saveLoad = new() { Size = (20, 10) };
-        saveLoad.OnDisplay(() => maps.SetFileViewer(saveLoad, (int)Layer.PromptBack));
+        saveLoad.OnDisplay(() => maps.SetFileViewer(saveLoad, BACK));
         saveLoad.FilesAndFolders.IsSingleSelecting = true;
-        saveLoad.FilesAndFolders.OnItemDisplay(item =>
-            maps.SetFileViewerItem(saveLoad, item, (int)Layer.PromptMiddle));
+        saveLoad.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(saveLoad, item, MIDDLE));
+
         fileName = new() { Size = (20, 1), IsSingleLine = true };
-        fileName.OnDisplay(() => maps.SetInputBox(fileName, (int)Layer.PromptBack));
+        fileName.OnDisplay(() => maps.SetInputBox(fileName, BACK));
 
         // submenus need higher update priority to not close upon parent menu opening them
         menus[MenuType.AddList] = new MenuAddList();
@@ -146,132 +85,215 @@ public static class Program
         menus[MenuType.Main] = new MenuMain();
     }
 
-    private static void Update()
+    internal static void BlockCreate(
+        string typeName,
+        (int x, int y) position,
+        Span type = default,
+        byte[]? bytes = default)
     {
-        Input.Update(
-            Mouse.IsButtonPressed(Mouse.Button.Left),
-            MousePosition,
-            Mouse.ScrollDelta,
-            Keyboard.KeyIDsPressed,
-            Keyboard.KeyTyped);
+        var block = default(Block);
+        var maps = editor.MapsEditor;
+        var panel = new Panel { IsRestricted = false, SizeMinimum = (3, 3) };
 
-        TryControlCamera();
+        switch (typeName)
+        {
+            case nameof(Button):
+            {
+                block = bytes != null ? new(bytes) : new Button(position);
+                block.OnDisplay(() => maps.SetButton((Button)block, isDisplayingSelection: true));
+                break;
+            }
+            case nameof(InputBox):
+            {
+                block = bytes != null ? new(bytes) : new InputBox(position);
+                block.OnDisplay(() => maps.SetInputBox((InputBox)block));
+                break;
+            }
+            case nameof(Pages):
+            {
+                block = bytes != null ? new(bytes) : new Pages(position);
+                var pages = (Pages)block;
+                panel.SizeMinimum = (8, 3);
+                block.OnDisplay(() => maps.SetPages(pages));
+                pages.OnItemDisplay(item => maps.SetPagesItem(pages, item));
+                break;
+            }
+            case nameof(Panel):
+            {
+                block = bytes != null ? new(bytes) : new Panel(position);
+                panel.SizeMinimum = (5, 5);
+                block.OnDisplay(() => maps.SetPanel((Panel)block));
+                break;
+            }
+            case nameof(Palette):
+            {
+                const int BACK = (int)Editor.LayerMapsEditor.Back;
+                block = bytes != null ? new(bytes) : new Palette(position);
+                var palette = (Palette)block;
+                panel.SizeMinimum = (15, 5);
 
-        editPanel.IsHidden = Selected == null;
+                block.OnDisplay(() => maps.SetPalette(palette));
+                block.OnDisplay(() => maps.SetPages(palette.Brightness));
 
-        IsInteractable = false;
-        ui.Update();
-        IsInteractable = true;
+                palette.Brightness.OnItemDisplay(item =>
+                    maps.SetPagesItem(palette.Brightness, item));
+                palette.OnColorSampleDisplay((btn, c) =>
+                    maps[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
+                break;
+            }
+            case nameof(Slider):
+            {
+                block = bytes != null ? new(bytes) : new Slider(position);
+                panel.SizeMinimum = (4, 3);
+                block.OnDisplay(() => maps.SetSlider((Slider)block));
+                break;
+            }
+            case nameof(Scroll):
+            {
+                block = bytes != null ? new(bytes) : new Scroll(position);
+                panel.SizeMinimum = (3, 4);
+                block.OnDisplay(() => maps.SetScroll((Scroll)block));
+                break;
+            }
+            case nameof(Stepper):
+            {
+                block = bytes != null ? new(bytes) : new Stepper(position);
+                panel.SizeMinimum = (6, 4);
+                block.OnDisplay(() => maps.SetStepper((Stepper)block));
+                break;
+            }
+            case nameof(Layout):
+            {
+                block = bytes != null ? new(bytes) : new Layout(position);
+                var layout = (Layout)block;
+                layout.OnDisplaySegment((s, i) => maps.SetLayoutSegment(s, i, true));
+                break;
+            }
+            case nameof(List):
+            {
+                block = bytes != null ? new(bytes) : new List(position, 10, type);
+                var list = (List)block;
+                panel.SizeMinimum = (4, 4);
+                list.OnDisplay(() => maps.SetList(list));
+                list.OnItemDisplay(item => maps.SetListItem(list, item));
+                break;
+            }
+            case nameof(FileViewer):
+            {
+                block = bytes != null ? new(bytes) : new FileViewer(position);
+                var fileViewer = (FileViewer)block;
 
-        editUI.Update();
-        editPanel.Update();
+                panel.SizeMinimum = (5, 5);
+                block.OnDisplay(() => maps.SetFileViewer(fileViewer));
+                fileViewer.FilesAndFolders.OnItemDisplay(item =>
+                    maps.SetFileViewerItem(fileViewer, item));
+                break;
+            }
+        }
 
-        if (prompt.IsHidden == false)
-            prompt.Update();
+        if (block == null)
+            return;
 
+        panel.OnInteraction(Interaction.Press, () => OnPanelPress(panel));
+        panel.OnDisplay(() => OnPanelDisplay(panel));
+        panel.OnResize(delta => OnPanelResize(panel, delta));
+        panel.OnDrag(delta => OnDragPanel(panel, delta));
+
+        panel.Size = (block.Size.width + 2, block.Size.height + 2);
+        panel.Text = block.Text;
+        panel.Position = (block.Position.x - 1, block.Position.y - 1);
+
+        ui.Add(block);
+        panels.Add(panel);
+
+        editor.DisplayInfoText("Added " + block.Text);
+        Input.Focused = null;
+    }
+    internal static void BlockRemove(Block block)
+    {
+        var panel = panels[ui.IndexOf(block)];
+        panels.Remove(panel);
+        ui.Remove(block);
+
+        if (selected == block)
+            selected = null;
+    }
+    internal static void BlockToTop(Block block)
+    {
+        var panel = panels[ui.IndexOf(block)];
+        panels.BringToTop(panel);
+        ui.BringToTop(block);
+        selected = block;
+    }
+
+    private static void OnPanelPress(Panel panel)
+    {
+        var notOverEditPanel = inspector.IsHovered == false || inspector.IsHidden;
+        var isHoveringMenu = false;
         foreach (var kvp in menus)
-            kvp.Value.Update();
+            if (kvp.Value is { IsHovered: true, IsHidden: false })
+            {
+                isHoveringMenu = true;
+                break;
+            }
 
-        UpdateInfoText();
-
-        var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("on-lmb-deselect");
-        if (onLmbRelease && GetHovered() == null && editPanel.IsHovered == false &&
-            prompt.IsHidden)
-            Selected = null;
-    }
-    private static void UpdateInfoText()
-    {
-        /*
-        infoTextTimer -= Time.Delta;
-
-        const int TEXT_WIDTH = 32;
-        const int TEXT_HEIGHT = 2;
-        var x = CameraPosition.x + CameraSize.w / 2 - TEXT_WIDTH / 2;
-        var topY = CameraPosition.y;
-        var bottomY = topY + CameraSize.h;
-        var (mx, my) = MousePosition;
-
-        maps[(int)Layer.EditFront]
-            .SetTextRectangle((x, bottomY - 1), (TEXT_WIDTH, 1), $"Cursor {(int)mx}, {(int)my}",
-                alignment: Alignment.Center);
-
-        if (infoTextTimer <= 0)
-        {
-            infoText = "";
-            return;
-        }
-
-        maps[(int)Layer.EditFront]
-            .SetTextRectangle((x, topY), (TEXT_WIDTH, TEXT_HEIGHT), infoText,
-                alignment: Alignment.Top, scrollProgress: 1f);
-        */
-    }
-
-    private static void TryControlCamera()
-    {
-        if (prompt.IsHidden == false)
+        if (editor.Prompt.IsHidden == false || notOverEditPanel == false || isHoveringMenu)
             return;
 
-        /*
-        var prevSz = CameraSize;
-        var prevPos = CameraPosition;
+        selected = ui[panels.IndexOf(panel)];
+        panel.IsHidden = false;
+    }
+    private static void OnPanelDisplay(Panel panel)
+    {
+        var index = panels.IndexOf(panel);
+        var e = ui[index];
 
-        if (Mouse.ScrollDelta != 0 && editPanel.IsHovered == false)
+        e.Position = (panel.Position.x + 1, panel.Position.y + 1);
+        e.Size = (panel.Size.width - 2, panel.Size.height - 2);
+
+        var offset = (panel.Size.width - panel.Text.Length) / 2;
+        offset = Math.Max(offset, 0);
+        var textPos = (panel.Position.x + offset, panel.Position.y);
+        const int CORNER = Tile.BOX_GRID_CORNER;
+        const int STRAIGHT = Tile.BOX_GRID_STRAIGHT;
+
+        if (selected != e)
+            return;
+
+        var back = editor.MapsEditor[(int)Editor.LayerMapsEditor.Back];
+        var middle = editor.MapsEditor[(int)Editor.LayerMapsEditor.Middle];
+        back.SetBox(panel.Position, panel.Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
+        back.SetRectangle(textPos, (panel.Text.Length, 1), default);
+        middle.SetTextLine(textPos, panel.Text, Color.Cyan);
+
+        var (x, y) = (panel.Position.x, panel.Position.y - 1);
+        var curX = 0;
+        if (selected.IsDisabled)
         {
-            var prevZoom = zoom;
-            zoom -= Mouse.ScrollDelta;
-            zoom = Math.Clamp(zoom, 0.3f, 2f);
-
-            var cx = (float)Mouse.CursorPosition.x;
-            var cy = (float)Mouse.CursorPosition.y;
-            cx = cx.Map((0, Window.Size.width), (0, 1)) * 16f;
-            cy = cy.Map((0, Window.Size.height), (0, 1)) * 9.5f;
-            var newX = CameraPosition.x + cx;
-            var newY = CameraPosition.y + cy;
-
-            if (prevZoom != zoom)
-                CameraPosition = Mouse.ScrollDelta > 0 ?
-                    ((int)newX, (int)newY) :
-                    (CameraPosition.x - 8, CameraPosition.y - 5);
+            back.SetTile((x, y), new(Tile.LOWERCASE_X, Color.Red));
+            curX++;
         }
 
-        var mousePos = Mouse.PixelToWorld(Mouse.CursorPosition);
-        var tmapCameraAspectX = (float)maps.Size.width / CameraSize.w;
-        var tmapCameraAspectY = (float)maps.Size.height / CameraSize.h;
-        mousePos.x /= tmapCameraAspectX;
-        mousePos.y /= tmapCameraAspectY;
-        var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
-        var (px, py) = ((int)prevMousePos.x, (int)prevMousePos.y);
-        var mmb = Mouse.IsButtonPressed(Mouse.Button.Middle);
+        if (selected.IsHidden == false)
+            return;
 
-        if (mmb && (px != mx || py != my))
-        {
-            var (deltaX, deltaY) = (mx - px, my - py);
-            CameraPosition = (CameraPosition.x - deltaX, CameraPosition.y - deltaY);
-        }
-
-        var (w, h) = CameraSize;
-        if (prevPos != CameraPosition)
-        {
-            DisplayInfoText($"Camera {CameraPosition.x + w / 2}, {CameraPosition.y + h / 2}");
-        }
-
-        if (prevSz != CameraSize)
-        {
-            DisplayInfoText($"Camera {CameraSize.w}x{CameraSize.h}");
-        }
-
-        prevMousePos = (mx, my);
-        */
+        var pos = (x + curX, y);
+        back.SetTile(pos, new(Tile.ICON_EYE_OPENED, Color.Red));
+    }
+    private static void OnPanelResize(Panel panel, (int width, int height) delta)
+    {
+        editor.DisplayInfoText($"{panel.Text} {panel.Size.width - 2}x{panel.Size.height - 2}");
+    }
+    private static void OnDragPanel(Panel panel, (int width, int height) delta)
+    {
+        editor.DisplayInfoText($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
     }
 
     private static Block? GetHovered()
     {
-        for (var i = editUI.Count - 1; i >= 0; i--)
-        {
-            if (editUI[i].IsOverlapping(MousePosition))
-                return editUI[i];
-        }
+        for (var i = ui.Count - 1; i >= 0; i--)
+            if (ui[i].IsOverlapping(editor.MousePositionWorld))
+                return ui[i];
 
         return null;
     }

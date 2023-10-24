@@ -89,7 +89,7 @@ public class Slider : Block
     protected override void OnInput()
     {
         if (IsHovered)
-            Input.MouseCursorResult = MouseCursor.Hand;
+            Input.CursorResult = MouseCursor.Hand;
     }
 
 #region Backend

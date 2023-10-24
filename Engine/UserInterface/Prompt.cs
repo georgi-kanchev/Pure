@@ -97,12 +97,9 @@ public class Prompt : Block
         currentBlock.position = (x, y + lines / 2);
     }
 
-    internal override void OnUpdate()
+    protected override void OnInput()
     {
-        if (isHidden)
-            return;
-
-        if (Input.IsKeyJustPressed(Key.Escape))
+        if (isHidden == false && Input.IsKeyJustPressed(Key.Escape))
             Close();
     }
     internal override void OnChildrenDisplay()

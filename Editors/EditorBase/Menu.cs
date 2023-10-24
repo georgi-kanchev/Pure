@@ -1,9 +1,11 @@
-namespace Pure.Editors.EditorUserInterface;
+namespace Pure.Editors.EditorBase;
 
-internal abstract class Menu : List
+public abstract class Menu : List
 {
-    protected Menu(params string[] options) : base((int.MaxValue, int.MaxValue), options.Length)
+    protected Menu(Editor editor, params string[] options)
+        : base((int.MaxValue, int.MaxValue), options.Length)
     {
+        this.editor = editor;
         Size = (15, 15);
         ItemSize = (Size.width, 1);
 
@@ -13,11 +15,11 @@ internal abstract class Menu : List
         OnDisplay(() =>
         {
             var scrollColor = Color.Gray;
-            var middle = maps[(int)Layer.EditMiddle];
-            var front = maps[(int)Layer.EditFront];
+            var middle = editor.MapsUi[(int)Editor.LayerMapsUi.Middle];
+            var front = editor.MapsUi[(int)Editor.LayerMapsUi.Front];
 
-            SetClear(Layer.EditBack, this);
-            SetClear(Layer.EditFront, this);
+            SetClear(Editor.LayerMapsUi.Back, this);
+            SetClear(Editor.LayerMapsUi.Front, this);
 
             middle.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
 
@@ -36,10 +38,12 @@ internal abstract class Menu : List
             Disable(item, item.Text.EndsWith(" "));
 
             var color = item.IsDisabled ? Color.Gray : Color.Gray.ToBright();
-            var front = maps[(int)Layer.EditFront];
+            var front = editor.MapsUi[(int)Editor.LayerMapsUi.Front];
 
             front.SetTextLine(item.Position, item.Text, GetColor(item, color));
         });
+
+        editor.Ui.Add(new Block[] { this });
     }
 
     public void Show((int x, int y) position)
@@ -72,6 +76,8 @@ internal abstract class Menu : List
     }
 
 #region Backend
+    private readonly Editor editor;
+
     private static Color GetColor(Block block, Color baseColor)
     {
         if (block.IsDisabled) return baseColor;
@@ -80,9 +86,9 @@ internal abstract class Menu : List
 
         return baseColor;
     }
-    private static void SetClear(Layer layer, Block block)
+    private void SetClear(Editor.LayerMapsUi layerMaps, Block block)
     {
-        maps[(int)layer].SetBox(block.Position, block.Size, 0, 0, 0, 0);
+        editor.MapsUi[(int)layerMaps].SetBox(block.Position, block.Size, 0, 0, 0, 0);
     }
 #endregion
 }

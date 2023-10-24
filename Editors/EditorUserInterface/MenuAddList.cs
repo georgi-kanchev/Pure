@@ -3,6 +3,7 @@ namespace Pure.Editors.EditorUserInterface;
 internal class MenuAddList : Menu
 {
     public MenuAddList() : base(
+        editor,
         $"{nameof(List)}… ",
         $"  {Span.Vertical}",
         $"  {Span.Horizontal}",
@@ -13,7 +14,7 @@ internal class MenuAddList : Menu
         OnItemInteraction(Interaction.Trigger, item =>
         {
             IsHidden = true;
-            editUI.BlockCreate(nameof(List), Position, (Span)(IndexOf(item) - 1));
+            BlockCreate(nameof(List), MenuMain.clickPositionWorld, (Span)(IndexOf(item) - 1));
         });
     }
 }

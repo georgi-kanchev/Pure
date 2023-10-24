@@ -180,7 +180,7 @@ public class Pages : Block
     {
         // for in between pages, overwrite mouse cursor (don't give it to the block bellow)
         if (IsDisabled == false && IsHovered)
-            Input.MouseCursorResult = MouseCursor.Arrow;
+            Input.CursorResult = MouseCursor.Arrow;
 
         LimitSizeMin((6, 1));
 

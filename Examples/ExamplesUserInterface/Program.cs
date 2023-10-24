@@ -28,17 +28,16 @@ public static class Program
             Time.Update();
             maps.Clear();
 
-            Input.TilemapSize = maps.Size;
+            Input.Position = Mouse.PixelToWorld(Mouse.CursorPosition);
             Input.Update(
                 isPressed: Mouse.IsButtonPressed(Mouse.Button.Left),
-                position: maps.PointFrom(Mouse.CursorPosition, Window.Size),
                 scrollDelta: Mouse.ScrollDelta,
                 keysPressed: KeyIDsPressed,
                 keysTyped: KeyTyped);
 
             blocks.Update();
 
-            Mouse.CursorGraphics = (Mouse.Cursor)Input.MouseCursorResult;
+            Mouse.CursorGraphics = (Mouse.Cursor)Input.CursorResult;
 
             for (var i = 0; i < maps.Count; i++)
                 Window.DrawTiles(maps[i].ToBundle());

@@ -130,21 +130,6 @@ public class TilemapPack
 
         return result;
     }
-    public (float x, float y) PointFrom(
-        (int x, int y) pixelPosition,
-        (int width, int height) windowSize,
-        bool isAccountingForCamera = true)
-    {
-        // cannot use first tilemap to not duplicate code since the used view props are
-        // the ones on the manager
-        var (w, h) = isAccountingForCamera ? (View.width, View.height) : Size;
-        var x = Map(pixelPosition.x, 0, windowSize.width, 0, w);
-        var y = Map(pixelPosition.y, 0, windowSize.height, 0, h);
-
-        return isAccountingForCamera == false ?
-            (x, y) :
-            (x + View.x, y + View.y);
-    }
 
     public void ConfigureText(
         int lowercase = Tile.LOWERCASE_A,

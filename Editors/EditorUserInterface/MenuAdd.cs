@@ -3,6 +3,7 @@ namespace Pure.Editors.EditorUserInterface;
 internal class MenuAdd : Menu
 {
     public MenuAdd() : base(
+        editor,
         "Add… ",
         $"  {nameof(Button)}",
         $"  {nameof(InputBox)}",
@@ -29,7 +30,7 @@ internal class MenuAdd : Menu
                 return;
             }
 
-            editUI.BlockCreate(item.Text.Trim(), Position);
+            BlockCreate(item.Text.Trim(), MenuMain.clickPositionWorld);
         });
     }
 }

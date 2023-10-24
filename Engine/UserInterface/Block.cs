@@ -299,20 +299,24 @@ public abstract class Block
     {
         LimitSizeMin((1, 1));
 
+        var (mw, mh) = Input.TilemapSize;
+        var (ix, iy) = Input.Position;
+        var isInputInsideMap = ix >= 0 && iy >= 0 && ix < mw && iy < mh;
+
         wasHovered = IsHovered;
-        IsHovered = IsOverlapping(Input.Position);
+        IsHovered = IsOverlapping(Input.Position) && isInputInsideMap;
 
         if (IsDisabled)
         {
             if (IsHovered && IsHidden == false)
-                Input.MouseCursorResult = MouseCursor.Disable;
+                Input.CursorResult = MouseCursor.Disable;
 
             OnUpdate();
             TryDisplaySelfAndProcessChildren();
             return;
         }
         else if (IsHovered)
-            Input.MouseCursorResult = MouseCursor.Arrow;
+            Input.CursorResult = MouseCursor.Arrow;
 
         var isJustPressed = Input.WasPressed == false && IsPressed;
         var isJustScrolled = Input.ScrollDelta != 0 && IsHovered;
@@ -354,7 +358,9 @@ public abstract class Block
         }
 
         OnUpdate();
-        OnInput();
+
+        if (isInputInsideMap)
+            OnInput();
 
         TryDisplaySelfAndProcessChildren();
 
@@ -381,6 +387,10 @@ public abstract class Block
 
     public bool IsOverlapping((float x, float y) point)
     {
+        if (point.x < 0 || point.x >= Input.TilemapSize.width ||
+            point.y < 0 || point.y >= Input.TilemapSize.height)
+            return false;
+
         return point.x >= Position.x && point.x < Position.x + Size.width &&
                point.y >= Position.y && point.y < Position.y + Size.height;
     }

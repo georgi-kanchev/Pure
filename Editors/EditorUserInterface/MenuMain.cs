@@ -2,7 +2,10 @@ namespace Pure.Editors.EditorUserInterface;
 
 internal class MenuMain : Menu
 {
+    public static (int x, int y) clickPositionWorld;
+
     public MenuMain() : base(
+        editor,
         "Block… ",
         "  Add",
         "------ ",
@@ -22,9 +25,9 @@ internal class MenuMain : Menu
                 menus[MenuType.Add].Show(Position);
             else if (index == 4)
             {
-                Selected = null;
+                selected = null;
                 ui.Clear();
-                editUI.Clear();
+                panels.Clear();
             }
             else if (index == 5)
                 OpenPromptFolder();
@@ -40,7 +43,9 @@ internal class MenuMain : Menu
         if (Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRMB") == false)
             return;
 
-        var (x, y) = MousePosition;
+        var (x, y) = editor.MousePositionUi;
+        var (wx, wy) = editor.MousePositionWorld;
+        clickPositionWorld = ((int)wx, (int)wy);
 
         foreach (var kvp in menus)
             kvp.Value.IsHidden = true;
@@ -52,6 +57,7 @@ internal class MenuMain : Menu
 #region Backend
     private static void OpenPromptFile()
     {
+        var prompt = editor.Prompt;
         saveLoad.IsSelectingFolders = false;
         prompt.Text = "Load from file:";
         prompt.Open(saveLoad, btnIndex =>
@@ -65,9 +71,9 @@ internal class MenuMain : Menu
             var bytes = File.ReadAllBytes(file);
             var loadedUi = new BlockPack(bytes);
 
-            Selected = null;
-            editUI.Clear();
+            selected = null;
             ui.Clear();
+            panels.Clear();
             for (var i = 0; i < loadedUi.Count; i++)
             {
                 var block = loadedUi[i];
@@ -77,14 +83,13 @@ internal class MenuMain : Menu
                 if (block is List l)
                     span = l.Span;
 
-                editUI.BlockCreate(block.GetType().Name, (0, 0), span, bBytes);
+                BlockCreate(block.GetType().Name, (0, 0), span, bBytes);
             }
         });
-        var (camX, camY) = CameraPosition;
-        saveLoad.Position = (saveLoad.Position.x + camX, saveLoad.Position.y + camY);
     }
     private static void OpenPromptFolder()
     {
+        var prompt = editor.Prompt;
         saveLoad.IsSelectingFolders = true;
         prompt.Text = "Save to directory:";
         prompt.Open(saveLoad, btnIndex =>
@@ -94,11 +99,10 @@ internal class MenuMain : Menu
             if (btnIndex == 0)
                 OpenPromptFileName();
         });
-        var (camX, camY) = CameraPosition;
-        saveLoad.Position = (saveLoad.Position.x + camX, saveLoad.Position.y + camY);
     }
     private static void OpenPromptFileName()
     {
+        var prompt = editor.Prompt;
         var directory = saveLoad.SelectedPaths.Length == 0 ?
             saveLoad.CurrentDirectory :
             saveLoad.SelectedPaths[0];
@@ -113,8 +117,6 @@ internal class MenuMain : Menu
             var bytes = ui.ToBytes();
             File.WriteAllBytes(Path.Join(directory, fileName.Value), bytes);
         });
-        var (camX, camY) = CameraPosition;
-        fileName.Position = (fileName.Position.x + camX, fileName.Position.y + camY);
     }
 #endregion
 }

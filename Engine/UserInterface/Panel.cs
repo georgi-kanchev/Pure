@@ -66,11 +66,9 @@ public class Panel : Block
 
     internal Action<(int deltaWidth, int deltaHeight)>? resize;
 
-    internal override void OnUpdate()
+    protected override void OnInput()
     {
-        LimitSizeMin((2, 2));
-
-        if (IsDisabled || (IsResizable == false && IsMovable == false))
+        if (IsResizable == false && IsMovable == false)
             return;
 
         var (x, y) = Position;
@@ -106,6 +104,10 @@ public class Panel : Block
 
         TryMoveAndResize(inputX, inputY, prevX, prevY);
     }
+    internal override void OnUpdate()
+    {
+        LimitSizeMin((2, 2));
+    }
 
     private void TrySetCursorAndCache(
         bool isHoveringSides,
@@ -119,7 +121,7 @@ public class Panel : Block
         var wasClicked = Input.IsPressed == false && Input.WasPressed;
 
         if (IsDisabled == false && IsHovered)
-            Input.MouseCursorResult = MouseCursor.Arrow;
+            Input.CursorResult = MouseCursor.Arrow;
 
         if (wasClicked)
         {
@@ -149,9 +151,9 @@ public class Panel : Block
             var bl = isHoveringBottom && isHoveringLeft;
 
             if (IsDisabled == false && (tl || br))
-                Input.MouseCursorResult = MouseCursor.ResizeDiagonal1;
+                Input.CursorResult = MouseCursor.ResizeDiagonal1;
             if (IsDisabled == false && (tr || bl))
-                Input.MouseCursorResult = MouseCursor.ResizeDiagonal2;
+                Input.CursorResult = MouseCursor.ResizeDiagonal2;
         }
 
         return;
@@ -165,7 +167,7 @@ public class Panel : Block
             }
 
             if (IsDisabled == false)
-                Input.MouseCursorResult = cursor;
+                Input.CursorResult = cursor;
         }
     }
     private void TryMoveAndResize(float inputX, float inputY, float prevX, float prevY)

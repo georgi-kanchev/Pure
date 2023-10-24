@@ -669,7 +669,10 @@ public class Tilemap
         if (h != 2)
         {
             SetRectangle((x, y + 1), (1, h - 2), new(borderTileId, borderTint, 3));
-            SetRectangle((x + 1, y + 1), (w - 2, h - 2), tileFill);
+
+            if (tileFill.Id != Tile.SHADE_TRANSPARENT)
+                SetRectangle((x + 1, y + 1), (w - 2, h - 2), tileFill);
+
             SetRectangle((x + w - 1, y + 1), (1, h - 2), new(borderTileId, borderTint, 1));
         }
 

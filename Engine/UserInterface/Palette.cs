@@ -74,7 +74,7 @@ public class Palette : Block
     protected override void OnInput()
     {
         if (isPicking)
-            Input.MouseCursorResult = MouseCursor.Crosshair;
+            Input.CursorResult = MouseCursor.Crosshair;
 
         if (Input.IsJustPressed && isPicking && IsHovered == false)
         {
