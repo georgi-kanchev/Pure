@@ -73,7 +73,7 @@ public static class Window
         get
         {
             TryNoWindowException();
-            return ((int)window.Size.X, (int)window.Size.Y);
+            return size;
         }
     }
     /// <summary>
@@ -108,6 +108,12 @@ public static class Window
         }
     }
 
+    public static uint BackgroundColor
+    {
+        get;
+        set;
+    }
+
     /// <summary>
     /// Gets the aspect ratio of the monitor the window was created on.
     /// </summary>
@@ -131,6 +137,12 @@ public static class Window
             var (_, _, w, h) = Monitor.posSizes[Monitor.current];
             return (w, h);
         }
+    }
+
+    public static int LayerCurrent
+    {
+        get => layerCurrent;
+        set => layerCurrent = Math.Clamp(value, 0, layers.Count - 1);
     }
 
     /// <summary>
@@ -159,6 +171,7 @@ public static class Window
         renderTexture = new((uint)(w / pixelScale), (uint)(h / pixelScale));
         var view = renderTexture.GetView();
         view.Center = new();
+        renderTextureViewSize = ((int)view.Size.X, (int)view.Size.Y);
         renderTexture.SetView(view);
 
         if (mode == Mode.Fullscreen) style = Styles.Fullscreen;
@@ -209,7 +222,7 @@ public static class Window
         //var str = DefaultGraphics.PNGToBase64String("graphics.png");
 
         graphics["default"] = DefaultGraphics.CreateTexture();
-        SetDrawLayer();
+        LayerAdd();
     }
     /// <summary>
     /// Activates or deactivates the window for updates and drawing. Ideally, an application
@@ -233,34 +246,6 @@ public static class Window
         Vertices.DrawQueue();
         window.Display();
     }
-    public static void SetDrawLayer(
-        int id = 0,
-        string? tilesetPath = null,
-        (int width, int height) tileSize = default,
-        (int x, int y) tileGap = default,
-        int tileIdFull = 10,
-        (float x, float y) offset = default,
-        float zoom = 1f)
-    {
-        TryNoWindowException();
-
-        currentDrawLayer = id;
-        tileSize = tileSize == default ? (8, 8) : tileSize;
-        tilesetPath ??= "default";
-        layers[id] = new()
-        {
-            graphicsPath = tilesetPath,
-            tileSize = tileSize,
-            tileGap = tileGap,
-            tileIdFull = tileIdFull,
-            offset = offset,
-            zoom = zoom
-        };
-
-        TryLoadGraphics(tilesetPath);
-
-        Vertices.TryInitQueue();
-    }
     /// <summary>
     /// Closes the window.
     /// </summary>
@@ -277,6 +262,42 @@ public static class Window
         }
 
         window.Close();
+    }
+
+    public static void LayerAdd(
+        int id = 0,
+        string? tilesetPath = null,
+        (int width, int height) tileSize = default,
+        (int x, int y) tileGap = default,
+        int tileIdFull = 10)
+    {
+        TryNoWindowException();
+
+        tileSize = tileSize == default ? (8, 8) : tileSize;
+        tilesetPath ??= "default";
+        TryLoadGraphics(tilesetPath);
+
+        layers[id] = new()
+        {
+            graphicsSize = graphics[tilesetPath].Size,
+            graphicsPath = tilesetPath,
+            tileSize = tileSize,
+            tileGap = tileGap,
+            tileIdFull = tileIdFull
+        };
+
+        Vertices.TryInitQueue();
+    }
+    public static void LayerUpdate(
+        int id = 0,
+        (float x, float y) offset = default,
+        float zoom = 1f)
+    {
+        if (layers.ContainsKey(id) == false)
+            return;
+
+        layers[id].offset = offset;
+        layers[id].zoom = zoom;
     }
 
     /// <summary>
@@ -345,7 +366,6 @@ public static class Window
         (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,] tiles)
     {
         TryNoWindowException();
-
         Vertices.QueueTilemap(tiles);
     }
 
@@ -353,16 +373,18 @@ public static class Window
     internal static bool isRetro, isClosing;
     private static string title = "Game";
     private static (int, int) aspectRatio;
-    internal static int currentDrawLayer;
     internal static DrawLayer Layer
     {
-        get => layers[currentDrawLayer];
+        get => layers[LayerCurrent];
     }
+    private static (int w, int h) size;
+    internal static (int w, int h) renderTextureViewSize;
 
     internal static readonly Dictionary<int, DrawLayer> layers = new();
     internal static readonly Dictionary<string, Texture> graphics = new();
     internal static RenderWindow? window;
     internal static RenderTexture? renderTexture;
+    private static int layerCurrent;
 
     internal static (float width, float height) WindowToMonitorRatio
     {
@@ -380,28 +402,10 @@ public static class Window
 
         graphics[path] = new(path) { Repeated = true };
     }
-
-    //private static int RoundToMultipleOfTwo(int n)
-    //{
-    //    var rem = n % 2;
-    //    var result = n - rem;
-    //    if (rem >= 1)
-    //        result += 2;
-    //    return result;
-    //}
-    private static float Map(float number, float a1, float a2, float b1, float b2)
-    {
-        var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
-        return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-    }
     private static void Resize()
     {
         TryNoWindowException();
-
-        //var view = window.GetView();
-        //view.Size = new(window.Size.X, window.Size.Y);
-        //view.Center = new(view.Size.X / 2, view.Size.Y / 2);
-        //window.SetView(view);
+        size = ((int)window.Size.X, (int)window.Size.Y);
     }
 
     [MemberNotNull(nameof(window))]

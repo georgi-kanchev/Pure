@@ -156,7 +156,7 @@ public static class Mouse
         var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
         var (ww, wh) = (Window.Size.width, Window.Size.height);
         var (cw, ch) = (Window.Layer.tilemapCellCount.w, Window.Layer.tilemapCellCount.h);
-        var viewSz = Window.renderTexture.GetView().Size;
+        var (vw, vh) = Window.renderTextureViewSize;
         var (mw, mh) = (Window.Layer.tilemapSize.w, Window.Layer.tilemapSize.h);
         var (ox, oy) = Window.Layer.offset;
 
@@ -169,8 +169,8 @@ public static class Mouse
         var x = Map(px, 0, ww, 0, cw);
         var y = Map(py, 0, wh, 0, ch);
 
-        x *= viewSz.X / Window.Layer.zoom / mw;
-        y *= viewSz.Y / Window.Layer.zoom / mh;
+        x *= vw / Window.Layer.zoom / mw;
+        y *= vh / Window.Layer.zoom / mh;
 
         x += cw / 2f;
         y += ch / 2f;

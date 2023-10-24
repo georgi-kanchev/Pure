@@ -109,7 +109,7 @@ public static class FlappyBird
                     Tile.BOX_DEFAULT_STRAIGHT, Color.Green);
             }
 
-            collisionMap.Update(foreground.Ids);
+            collisionMap.Update(foreground);
 
             // whether the bird fell out of the map or bonked into a pipe
             var birdRect = new Rectangle((1, 1), (BIRD_X, birdY), Color.Red);

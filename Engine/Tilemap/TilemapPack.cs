@@ -15,8 +15,18 @@ public class TilemapPack
     }
     public (int x, int y, int width, int height) View
     {
-        get;
-        set;
+        get => view;
+        set
+        {
+            var (x, y, w, h) = value;
+            var (sw, sh) = Size;
+
+            w = Math.Clamp(w, 1, sw);
+            h = Math.Clamp(h, 1, sh);
+            x = Math.Clamp(x, 0, sw - w);
+            y = Math.Clamp(y, 0, sh - h);
+            view = (x, y, w, h);
+        }
     }
 
     public Tilemap this[int index]
@@ -172,6 +182,7 @@ public class TilemapPack
 
 #region Backend
     private readonly Tilemap[] tilemaps;
+    private (int x, int y, int width, int height) view;
 
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {

@@ -48,7 +48,7 @@ public static class Collision
             SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
             SetBackgrounds();
 
-            collisionMap.Update(tilemap.Ids);
+            collisionMap.Update(tilemap);
 
             Window.DrawTiles(background);
             Window.DrawTiles(tilemap);

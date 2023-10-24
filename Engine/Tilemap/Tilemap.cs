@@ -42,22 +42,6 @@ public class Tilemap
         set;
     }
 
-    /// <summary>
-    /// Gets the identifiers of the tiles in the tilemap.
-    /// </summary>
-    public int[,] Ids
-    {
-        get
-        {
-            var result = new int[data.GetLength(0), data.GetLength(1)];
-            for (var j = 0; j < data.GetLength(1); j++)
-                for (var i = 0; i < data.GetLength(0); i++)
-                    result[i, j] = data[i, j].Id;
-
-            return result;
-        }
-    }
-
     public Tilemap(byte[] bytes)
     {
         var b = Decompress(bytes);
@@ -66,6 +50,8 @@ public class Tilemap
         var h = BitConverter.ToInt32(Get<int>());
 
         data = new Tile[w, h];
+        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
+        ids = new int[w, h];
         Size = (w, h);
         View = (BitConverter.ToInt32(Get<int>()),
             BitConverter.ToInt32(Get<int>()),
@@ -94,13 +80,13 @@ public class Tilemap
     public Tilemap((int width, int height) size)
     {
         var (w, h) = size;
-        Size = size;
-        if (w < 1)
-            w = 1;
-        if (h < 1)
-            h = 1;
+        w = Math.Max(w, 1);
+        h = Math.Max(h, 1);
 
+        Size = size;
         data = new Tile[w, h];
+        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
+        ids = new int[w, h];
         View = (0, 0, size.width, size.height);
     }
     /// <summary>
@@ -117,7 +103,16 @@ public class Tilemap
         var h = tileData.GetLength(1);
         Size = (w, h);
         data = Copy(tileData);
+        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
+        ids = new int[w, h];
         View = (0, 0, w, h);
+
+        for (var i = 0; i < h; i++)
+            for (var j = 0; j < w; j++)
+            {
+                bundleCache[j, i] = tileData[j, i];
+                ids[j, i] = tileData[j, i].Id;
+            }
     }
 
     public byte[] ToBytes()
@@ -145,14 +140,12 @@ public class Tilemap
     public Tilemap ViewUpdate()
     {
         var (cx, cy, w, h) = View;
-        var newData = new Tile[Math.Abs(w), Math.Abs(h)];
-        var xStep = w < 0 ? -1 : 1;
-        var yStep = h < 0 ? -1 : 1;
+        var newData = new Tile[w, h];
         var i = 0;
-        for (var x = cx; x != cx + w; x += xStep)
+        for (var x = cx; x != cx + w; x++)
         {
             var j = 0;
-            for (var y = cy; y != cy + h; y += yStep)
+            for (var y = cy; y != cy + h; y++)
             {
                 newData[i, j] = TileAt((x, y));
                 j++;
@@ -179,6 +172,8 @@ public class Tilemap
     {
         var (w, h) = Size;
         data = new Tile[w, h];
+        ids = new int[w, h];
+        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
     }
     /// <summary>
     /// Fills the entire tilemap with the specified tile.
@@ -255,6 +250,8 @@ public class Tilemap
             return;
 
         data[position.x, position.y] = tile;
+        ids[position.x, position.y] = tile.Id;
+        bundleCache[position.x, position.y] = tile;
     }
     /// <summary>
     /// Sets a rectangle region of tiles starting at the specified position with the 
@@ -809,24 +806,22 @@ public class Tilemap
     /// </summary>
     /// <param name="tilemap">The tilemap object to convert.</param>
     /// <returns>A new 2D array of tile bundles containing the tiles from the tilemap object.</returns>
-    public static implicit operator (int tile, uint tint, sbyte angle, bool isFlippedHorizontally,
+    public static implicit operator (int id, uint tint, sbyte angle, bool isFlippedHorizontally,
         bool isFlippedVertically)[,](Tilemap tilemap)
     {
-        var data = tilemap.data;
-        var result = new (int, uint, sbyte, bool, bool)[data.GetLength(0), data.GetLength(1)];
-        for (var j = 0; j < data.GetLength(1); j++)
-            for (var i = 0; i < data.GetLength(0); i++)
-                result[i, j] = data[i, j];
-
-        return result;
+        return tilemap.ToBundle();
+    }
+    public static implicit operator int[,](Tilemap tilemap)
+    {
+        return tilemap.ids;
     }
 
     /// <returns>
     /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-    public (int tile, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)
-        [,] ToBundle()
+    public (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,]
+        ToBundle()
     {
-        return this;
+        return bundleCache;
     }
 
 #region Backend
@@ -884,6 +879,8 @@ public class Tilemap
     };
 
     private Tile[,] data;
+    private (int, uint, sbyte, bool, bool)[,] bundleCache;
+    private int[,] ids;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)
     {

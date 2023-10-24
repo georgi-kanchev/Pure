@@ -6,7 +6,6 @@ using SFML.System;
 internal static class Vertices
 {
     public static Shader? retroScreen;
-    public static readonly SortedDictionary<string, VertexArray> vertexQueue = new();
 
     public static void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
     {
@@ -14,15 +13,15 @@ internal static class Vertices
 
         TryInitQueue();
 
+        var layer = Window.Layer;
         var (w, h) = size;
-        var (x, y) = (position.x * Window.Layer.tileSize.w,
-            position.y * Window.Layer.tileSize.h);
+        var (x, y) = (position.x * layer.tileSize.w,
+            position.y * layer.tileSize.h);
         var c = new Color(tint);
-        var verts = vertexQueue[Window.Layer.graphicsPath];
-        var (ttl, ttr, tbr, tbl) = GetTexCoords(Window.Layer.tileIdFull, (1, 1));
+        var verts = vertexQueue[Window.LayerCurrent];
+        var (ttl, ttr, tbr, tbl) = GetTexCoords(layer.tileIdFull, (1, 1), layer);
         var tl = new Vector2f((int)x, (int)y);
-        var br = new Vector2f((int)x + Window.Layer.tileSize.w * w,
-            (int)y + Window.Layer.tileSize.h * h);
+        var br = new Vector2f((int)x + layer.tileSize.w * w, (int)y + layer.tileSize.h * h);
         var tr = new Vector2f(br.X, tl.Y);
         var bl = new Vector2f(tl.X, br.Y);
 
@@ -114,25 +113,27 @@ internal static class Vertices
 
         TryInitQueue();
 
-        var (tilemapW, tilemapH) = (tilemap.GetLength(0), tilemap.GetLength(1));
-        Window.Layer.tilemapSize =
-            (tilemapW * Window.Layer.tileSize.w, tilemapH * Window.Layer.tileSize.h);
-        Window.Layer.tilemapCellCount = (tilemapW, tilemapH);
+        var layer = Window.Layer;
+        var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
+        var (tileW, tileH) = layer.tileSize;
+        layer.tilemapCellCount = (cellCountW, cellCountH);
+        layer.tilemapSize = (cellCountW * tileW, cellCountH * tileH);
+        var verts = vertexQueue[Window.LayerCurrent];
 
-        for (var y = 0; y < tilemapH; y++)
-            for (var x = 0; x < tilemapW; x++)
+        for (var y = 0; y < cellCountH; y++)
+            for (var x = 0; x < cellCountW; x++)
             {
                 var id = tilemap[x, y].tile;
                 if (id == 0)
                     continue;
 
                 var tint = new Color(tilemap[x, y].tint);
-                var tl = new Vector2f(x * Window.Layer.tileSize.w, y * Window.Layer.tileSize.h);
-                var tr = new Vector2f((x + 1) * Window.Layer.tileSize.w, y * Window.Layer.tileSize.h);
-                var br = new Vector2f((x + 1) * Window.Layer.tileSize.w,
-                    (y + 1) * Window.Layer.tileSize.h);
-                var bl = new Vector2f(x * Window.Layer.tileSize.w, (y + 1) * Window.Layer.tileSize.h);
-                var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (1, 1));
+                var tl = new Vector2f(x * layer.tileSize.w, y * layer.tileSize.h);
+                var tr = new Vector2f((x + 1) * layer.tileSize.w, y * layer.tileSize.h);
+                var br = new Vector2f((x + 1) * layer.tileSize.w,
+                    (y + 1) * layer.tileSize.h);
+                var bl = new Vector2f(x * layer.tileSize.w, (y + 1) * layer.tileSize.h);
+                var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (1, 1), layer);
                 var rotated = GetRotatedPoints(tilemap[x, y].angle, tl, tr, br, bl);
                 var (flipX, flipY) = (tilemap[x, y].isFlippedHorizontally,
                     tilemap[x, y].isFlippedVertically);
@@ -159,10 +160,10 @@ internal static class Vertices
                 br = new((int)br.X, (int)br.Y);
                 bl = new((int)bl.X, (int)bl.Y);
 
-                vertexQueue[Window.Layer.graphicsPath].Append(new(tl, tint, ttl));
-                vertexQueue[Window.Layer.graphicsPath].Append(new(tr, tint, ttr));
-                vertexQueue[Window.Layer.graphicsPath].Append(new(br, tint, tbr));
-                vertexQueue[Window.Layer.graphicsPath].Append(new(bl, tint, tbl));
+                verts.Append(new(tl, tint, ttl));
+                verts.Append(new(tr, tint, ttr));
+                verts.Append(new(br, tint, tbr));
+                verts.Append(new(bl, tint, tbl));
             }
     }
     public static void QueuePoint((float x, float y) position, uint tint)
@@ -176,24 +177,31 @@ internal static class Vertices
 
     public static void TryInitQueue()
     {
-        if (vertexQueue.ContainsKey(Window.Layer.graphicsPath) == false)
-            vertexQueue[Window.Layer.graphicsPath] = new(PrimitiveType.Quads);
+        if (vertexQueue.ContainsKey(Window.LayerCurrent) == false)
+            vertexQueue[Window.LayerCurrent] = new(PrimitiveType.Quads);
     }
     public static void DrawQueue()
     {
         Window.TryNoWindowException();
 
-        Window.renderTexture.Clear();
-        foreach (var kvp in vertexQueue)
+        Window.renderTexture.Clear(new(Window.BackgroundColor));
+        foreach (var kvp in Window.layers)
         {
-            var tex = Window.graphics[kvp.Key];
-            var tr = Transform.Identity;
-            var (centerX, centerY) = (Window.Layer.tilemapSize.w / 2f * Window.Layer.zoom,
-                Window.Layer.tilemapSize.h / 2f * Window.Layer.zoom);
-            tr.Translate(Window.Layer.offset.x - centerX, Window.Layer.offset.y - centerY);
-            tr.Scale(Window.Layer.zoom, Window.Layer.zoom);
-            var r = new RenderStates(BlendMode.Alpha, tr, tex, null);
-            Window.renderTexture.Draw(kvp.Value, r);
+            if (vertexQueue.ContainsKey(kvp.Key) == false)
+                continue;
+
+            var currVerts = vertexQueue[kvp.Key];
+            var lr = Window.layers[kvp.Key];
+
+            var tex = Window.graphics[lr.graphicsPath];
+            var centerX = lr.tilemapSize.w / 2f * lr.zoom;
+            var centerY = lr.tilemapSize.h / 2f * lr.zoom;
+            var r = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, null);
+
+            r.Transform.Translate(lr.offset.x - centerX, lr.offset.y - centerY);
+            r.Transform.Scale(lr.zoom, lr.zoom);
+
+            Window.renderTexture.Draw(currVerts, r);
         }
 
         Window.renderTexture.Display();
@@ -229,8 +237,7 @@ internal static class Vertices
     }
     public static void ClearQueue()
     {
-        foreach (var kvp in vertexQueue)
-            kvp.Value.Clear();
+        vertexQueue.Clear();
     }
 
     public static void StartRetroAnimation()
@@ -242,6 +249,8 @@ internal static class Vertices
     }
 
 #region Backend
+    private static readonly SortedDictionary<int, VertexArray> vertexQueue = new();
+
     private static readonly Random retroRand = new();
     private static readonly Clock retroScreenTimer = new();
     private static System.Timers.Timer? retroTurnoff;
@@ -323,9 +332,7 @@ internal static class Vertices
 
         for (var i = 0; i < rows; i++)
             for (var j = 0; j < cols / 2; j++)
-            {
                 (matrix[i, j], matrix[i, cols - j - 1]) = (matrix[i, cols - j - 1], matrix[i, j]);
-            }
     }
     private static void FlipVertically<T>(T[,] matrix)
     {
@@ -334,9 +341,7 @@ internal static class Vertices
 
         for (var i = 0; i < rows / 2; i++)
             for (var j = 0; j < cols; j++)
-            {
                 (matrix[i, j], matrix[rows - i - 1, j]) = (matrix[rows - i - 1, j], matrix[i, j]);
-            }
     }
     private static void QueueTile(
         (float x, float y) position,
@@ -348,20 +353,21 @@ internal static class Vertices
         if (Window.window == null || id == 0)
             return;
 
-        var verts = vertexQueue[Window.Layer.graphicsPath];
+        var verts = vertexQueue[Window.LayerCurrent];
+        var layer = Window.Layer;
         var (w, h) = size;
         w = Math.Abs(w);
         h = Math.Abs(h);
 
-        var (ttl, ttr, tbr, tbl) = GetTexCoords(id, size);
-        var (x, y) = (position.x * Window.Layer.tileSize.w, position.y * Window.Layer.tileSize.h);
+        var (ttl, ttr, tbr, tbl) = GetTexCoords(id, size, layer);
+        var (x, y) = (position.x * layer.tileSize.w, position.y * layer.tileSize.h);
         var c = new Color(tint);
         var tl = new Vector2f((int)x, (int)y);
-        var br = new Vector2f((int)(x + Window.Layer.tileSize.w * w),
-            (int)(y + Window.Layer.tileSize.h * h));
+        var br = new Vector2f((int)(x + layer.tileSize.w * w),
+            (int)(y + layer.tileSize.h * h));
 
         if (angle is 1 or 3)
-            br = new((int)(x + Window.Layer.tileSize.h * h), (int)(y + Window.Layer.tileSize.w * w));
+            br = new((int)(x + layer.tileSize.h * h), (int)(y + layer.tileSize.w * w));
 
         var tr = new Vector2f(br.X, tl.Y);
         var bl = new Vector2f(tl.X, br.Y);
@@ -390,18 +396,16 @@ internal static class Vertices
     }
     private static (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(
         int id,
-        (int, int) size)
+        (int, int) size,
+        DrawLayer layer)
     {
         var (w, h) = size;
-        var texture = Window.graphics[Window.Layer.graphicsPath];
-        var (tileW, tileH) = Window.Layer.tileSize;
-        var texSz = texture.Size;
-        var (tileGapW, tileGapH) = Window.Layer.tileGap;
+        var (tileW, tileH) = layer.tileSize;
+        var texSz = layer.graphicsSize;
+        var (tileGapW, tileGapH) = layer.tileGap;
         var tileCount = ((int)texSz.X / (tileW + tileGapW), (int)texSz.Y / (tileH + tileGapH));
         var (texX, texY) = IndexToCoords(id, tileCount);
-        var tl = new Vector2f(
-            (texX) * (tileW + tileGapW),
-            (texY) * (tileH + tileGapH));
+        var tl = new Vector2f(texX * (tileW + tileGapW), texY * (tileH + tileGapH));
         var tr = tl + new Vector2f(tileW * w, 0);
         var br = tl + new Vector2f(tileW * w, tileH * h);
         var bl = tl + new Vector2f(0, tileH * h);

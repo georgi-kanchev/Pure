@@ -72,7 +72,7 @@ public static class Program
             Time.Update();
             maps.Clear();
 
-            Window.SetDrawLayer(offset: offset, zoom: zoom);
+            //Window.LayerAdd(offset: offset, zoom: zoom);
             Update();
             RendererEdit.DrawGrid();
 

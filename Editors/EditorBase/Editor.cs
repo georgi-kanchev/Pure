@@ -2,26 +2,25 @@
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
-using Pure.Engine.Collision;
+global using static Pure.Default.RendererUserInterface.Default;
 
 namespace Pure.Editors.EditorBase;
 
 public class Editor
 {
-    public enum UserLayer
+    public enum LayerMaps
     {
-        Grid,
         Back,
         Middle,
         Front,
         Count
     }
 
-    public enum UiLayer
+    public enum LayerUi
     {
-        EditBack,
-        EditMiddle,
-        EditFront,
+        Back,
+        Middle,
+        Front,
         PromptFade,
         PromptBack,
         PromptMiddle,
@@ -29,11 +28,15 @@ public class Editor
         Count
     }
 
-    public TilemapPack UserMaps
+    public Tilemap Grid
     {
         get;
     }
-    public TilemapPack UiMaps
+    public TilemapPack Maps
+    {
+        get;
+    }
+    public TilemapPack Ui
     {
         get;
     }
@@ -48,6 +51,7 @@ public class Editor
         get;
         private set;
     }
+
     public bool IsDisabledViewZoom
     {
         get;
@@ -74,20 +78,31 @@ public class Editor
         get => viewPosition;
         set
         {
-            var (cw, ch) = (UserMaps.Size.width * 4f * ViewZoom, UserMaps.Size.height * 4f * ViewZoom);
+            var (cw, ch) = (Maps.View.width * 4f * ViewZoom, Maps.View.height * 4f * ViewZoom);
             viewPosition = (Math.Clamp(value.x, -cw, cw), Math.Clamp(value.y, -ch, ch));
         }
     }
 
-    public Editor(string title, int scaleUi, (int width, int height) mapSize)
+    public Editor(string title, (int width, int height) mapSize)
     {
         Window.Create(PIXEL_SCALE);
         Window.Title = title;
 
-        scaleUi = Math.Clamp(scaleUi, 4, 10);
         var (width, height) = Window.MonitorAspectRatio;
-        UserMaps = new((int)UserLayer.Count, mapSize);
-        UiMaps = new((int)UiLayer.Count, (width * scaleUi, height * scaleUi));
+        Grid = new(mapSize);
+        Maps = new((int)LayerMaps.Count, mapSize) { View = (0, 0, 50, 50) };
+        Ui = new((int)LayerUi.Count, (width * 5, height * 5));
+
+        Window.LayerAdd(id: 1);
+        Window.LayerAdd(id: 2);
+        Window.LayerUpdate(id: 2, zoom: 3f);
+
+        Input.TilemapSize = (Ui.View.width, Ui.View.height);
+
+        for (var i = 0; i < 5; i++)
+            CreateViewButton(i);
+
+        SetGrid();
     }
 
     public void Run()
@@ -96,10 +111,8 @@ public class Editor
         {
             Window.Activate(true);
             Time.Update();
-            UserMaps.Clear();
-            UiMaps.Clear();
+            Ui.Clear();
 
-            Input.TilemapSize = (UiMaps.View.width, UiMaps.View.height);
             Input.Update(
                 Mouse.IsButtonPressed(Mouse.Button.Left),
                 MousePositionWorld,
@@ -107,25 +120,32 @@ public class Editor
                 Keyboard.KeyIDsPressed,
                 Keyboard.KeyTyped);
 
+            ui.Update();
+
             TryViewInteract();
-            UpdateInfoText();
-            DrawGrid();
+            UpdateHud();
             OnUpdate();
 
             Mouse.CursorGraphics = (Mouse.Cursor)Input.MouseCursorResult;
-
-            prevMousePosWorld = MousePositionWorld;
+            
+            Window.LayerCurrent = 0;
+            Grid.View = Maps.View;
+            var gridView = Grid.ViewUpdate();
+            Window.LayerUpdate(0, ViewPosition, ViewZoom);
+            Window.DrawTiles(gridView.ToBundle());
+            
             prevMousePos = MousePosition;
             MousePositionWorld = Mouse.PixelToWorld(Mouse.CursorPosition);
             MousePosition = Mouse.CursorPosition;
 
-            Window.SetDrawLayer(offset: ViewPosition, zoom: ViewZoom);
-            for (var i = 0; i < UserMaps.Count; i++)
-                Window.DrawTiles(UserMaps[i].ToBundle());
+            Window.LayerCurrent = 1;
+            var view = Maps.ViewUpdate();
+            foreach (var t in view)
+                Window.DrawTiles(t.ToBundle());
 
-            Window.SetDrawLayer(offset: (0, 0), zoom: 1f);
-            for (var i = 0; i < UiMaps.Count; i++)
-                Window.DrawTiles(UiMaps[i].ToBundle());
+            Window.LayerCurrent = 2;
+            for (var i = 0; i < Ui.Count; i++)
+                Window.DrawTiles(Ui[i].ToBundle());
 
             Window.Activate(false);
         }
@@ -156,57 +176,71 @@ public class Editor
     }
 
 #region Backend
-    private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.3f, ZOOM_MAX = 6f;
-    private const int GRID_GAP = 9;
+    private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
+    private const int GRID_GAP = 10;
 
     private string infoText = "";
     private float infoTextTimer;
-    private (float x, float y) prevMousePosWorld, prevMousePos;
-    private float viewZoom = 1f;
+    private int fps;
+    private (float x, float y) prevMousePos;
+    private float viewZoom = 2f;
     private (float x, float y) viewPosition;
 
-    private void DrawGrid()
+    private readonly BlockPack ui = new();
+
+    private void SetGrid()
     {
-        const int LAYER = (int)UserLayer.Grid;
-        var size = (UserMaps.View.width, UserMaps.View.height);
+        var size = Maps.Size;
         var color = Color.Gray.ToDark(0.66f);
-        var (x, y) = (UserMaps.View.x, UserMaps.View.y);
+        var (x, y) = (0, 0);
 
         for (var i = 0; i < size.width + GRID_GAP; i += GRID_GAP)
         {
             var newX = x - (x + i) % GRID_GAP;
-            UserMaps[LAYER].SetLine((newX + i, y), (newX + i, y + size.height),
-                new(Tile.SHADE_OPAQUE, color));
+            Grid.SetLine(
+                pointA: (newX + i, y),
+                pointB: (newX + i, y + size.height),
+                tile: new(Tile.SHADE_OPAQUE, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
-            UserMaps[LAYER].SetLine((x, newY + i), (x + size.width, newY + i),
-                new(Tile.SHADE_OPAQUE, color));
+            Grid.SetLine(
+                pointA: (x, newY + i),
+                pointB: (x + size.width, newY + i),
+                tile: new(Tile.SHADE_OPAQUE, color));
         }
 
-        //for (var i = 0; i < size.height; i += 20)
-        //    for (var j = 0; j < size.width; j += 20)
-        //    {
-        //        Maps[LAYER].SetTile((j, i), new(Tile.SHADE_OPAQUE, color));
-        //        Maps[LAYER].SetTextLine((j + 1, i + 1), $"{j}, {i}", color);
-        //    }
+        for (var i = 0; i < size.height; i += 20)
+            for (var j = 0; j < size.width; j += 20)
+                Grid.SetTextLine(
+                    position: (j + 1, i + 1),
+                    text: $"{j}, {i}",
+                    color);
     }
-    private void UpdateInfoText()
+    private void UpdateHud()
     {
         infoTextTimer -= Time.Delta;
 
         const int TEXT_WIDTH = 32;
         const int TEXT_HEIGHT = 2;
-        var x = UiMaps.View.x + UiMaps.View.width / 2 - TEXT_WIDTH / 2;
-        var topY = UiMaps.View.y;
-        var bottomY = topY + UiMaps.View.height;
+        var x = Ui.Size.width / 2 - TEXT_WIDTH / 2;
+        var bottomY = Ui.Size.height - 1;
         var (mx, my) = MousePositionWorld;
+        var (w, h) = Maps.Size;
 
-        UiMaps[(int)UiLayer.EditFront]
-            .SetTextRectangle((x, bottomY - 1), (TEXT_WIDTH, 1), $"Cursor {(int)mx}, {(int)my}",
-                alignment: Alignment.Center);
+        if (Time.UpdateCount % 60 == 0)
+            fps = (int)Time.UpdatesPerSecond;
+
+        Ui[(int)LayerUi.Front].SetTextLine((0, 0), $"FPS:{fps}");
+        Ui[(int)LayerUi.Front].SetTextLine((0, bottomY), $"MAP VIEW ({w} x {h})");
+
+        Ui[(int)LayerUi.Front].SetTextRectangle(
+            position: (x, bottomY),
+            size: (TEXT_WIDTH, 1),
+            text: $"Cursor {(int)mx}, {(int)my}",
+            alignment: Alignment.Center);
 
         if (infoTextTimer <= 0)
         {
@@ -214,9 +248,12 @@ public class Editor
             return;
         }
 
-        UiMaps[(int)UiLayer.EditFront]
-            .SetTextRectangle((x, topY), (TEXT_WIDTH, TEXT_HEIGHT), infoText,
-                alignment: Alignment.Top, scrollProgress: 1f);
+        Ui[(int)LayerUi.Front].SetTextRectangle(
+            position: (x, 0),
+            size: (TEXT_WIDTH, TEXT_HEIGHT),
+            text: infoText,
+            alignment: Alignment.Top,
+            scrollProgress: 1f);
     }
 
     private void TryViewInteract()
@@ -225,17 +262,14 @@ public class Editor
             return;
 
         var prevZoom = ViewZoom;
-        var prevPos = ViewPosition;
 
         TryViewZoom();
         TryViewMove();
 
-        var (w, h) = ViewPosition;
-        if (prevPos != ViewPosition)
-            DisplayInfoText($"View Position {w}, {h}");
+        Window.LayerUpdate(1, ViewPosition, ViewZoom);
 
         if (Math.Abs(prevZoom - ViewZoom) > 0.01f)
-            DisplayInfoText($"View Zoom {ViewZoom * 100}%");
+            DisplayInfoText($"Zoom {ViewZoom * 100:F0}%");
     }
     private void TryViewMove()
     {
@@ -269,11 +303,49 @@ public class Editor
         var zoomOutDist = viewPos.Distance(new());
         var zoomOutPos = viewPos.MoveTo((0, 0), (30f + zoomOutDist / 50f) * ViewZoom);
 
+        ViewZoom *= Mouse.ScrollDelta > 0 ? 1.1f : 0.9f;
+
         if (Math.Abs(ViewZoom - ZOOM_MIN) > 0.01f &&
             Math.Abs(ViewZoom - ZOOM_MAX) > 0.01f)
             ViewPosition = Mouse.ScrollDelta > 0 ? zoomInPos : zoomOutPos;
+    }
 
-        ViewZoom *= Mouse.ScrollDelta > 0 ? 1.1f : 0.9f;
+    private void CreateViewButton(int rotations)
+    {
+        var offsets = new (int x, int y)[] { (1, 0), (0, 1), (-1, 0), (0, -1), (0, 0) };
+        var btn = new Button { Size = (1, 1) };
+        var (offX, offY) = offsets[rotations];
+        btn.Align((0.052f, 0.95f));
+        btn.Position = (btn.Position.x + offX, btn.Position.y + offY);
+
+        btn.OnInteraction(Interaction.Trigger, Trigger);
+        btn.OnInteraction(Interaction.PressAndHold, Trigger);
+        btn.OnDisplay(() =>
+        {
+            var color = GetInteractionColor(btn, Color.Gray);
+            var arrow = new Tile(Tile.ARROW_NO_TAIL, color, (sbyte)rotations);
+            var center = new Tile(Tile.SHAPE_CIRCLE, color);
+            Ui[(int)LayerUi.Back].SetTile(
+                btn.Position,
+                tile: rotations == 4 ? center : arrow);
+        });
+
+        ui.Add(btn);
+
+        void Trigger()
+        {
+            var (x, y, w, h) = Maps.View;
+            Maps.View = (x + offX * 10, y + offY * 10, w, h);
+
+            if (offX == 0 && offY == 0)
+            {
+                Maps.View = (0, 0, w, h);
+                DisplayInfoText("View Reset");
+            }
+
+            if (x != Maps.View.x || y != Maps.View.y)
+                DisplayInfoText($"View {Maps.View.x}, {Maps.View.y}");
+        }
     }
 #endregion
 }
