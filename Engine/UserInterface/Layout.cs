@@ -17,11 +17,13 @@ public class Layout : Block
 
     public Layout((int x, int y) position = default) : base(position)
     {
+        Init();
         Size = (12, 12);
         Restore();
     }
     public Layout(byte[] bytes) : base(bytes)
     {
+        Init();
         var count = GrabByte(bytes);
 
         // all segments need to be added before parent linking
@@ -106,7 +108,11 @@ public class Layout : Block
 
     internal Action<(int x, int y, int width, int height), int>? displaySegment;
 
-    internal override void OnUpdate()
+    private void Init()
+    {
+        OnUpdate(OnUpdate);
+    }
+    internal void OnUpdate()
     {
         // updates should be first since it's a hierarchy
         // and then callbacks (after everything is done)

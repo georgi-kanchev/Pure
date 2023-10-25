@@ -157,6 +157,8 @@ public class Pages : Block
     [MemberNotNull(nameof(First), nameof(Previous), nameof(Next), nameof(Last))]
     private void Init()
     {
+        OnUpdate(OnUpdate);
+
         First = new((int.MaxValue, int.MaxValue)) { hasParent = true };
         Previous = new((int.MaxValue, int.MaxValue)) { hasParent = true };
         Next = new((int.MaxValue, int.MaxValue)) { hasParent = true };
@@ -176,7 +178,7 @@ public class Pages : Block
         Last.OnInteraction(Interaction.Scroll, ApplyScroll);
     }
 
-    internal override void OnUpdate()
+    internal void OnUpdate()
     {
         // for in between pages, overwrite mouse cursor (don't give it to the block bellow)
         if (IsDisabled == false && IsHovered)

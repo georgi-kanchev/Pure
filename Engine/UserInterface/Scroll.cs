@@ -77,6 +77,8 @@ public class Scroll : Block
     [MemberNotNull(nameof(Slider), nameof(Increase), nameof(Decrease))]
     private void Init()
     {
+        OnUpdate(OnUpdate);
+
         Slider = new((int.MaxValue, int.MaxValue)) { hasParent = true };
         Increase = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
         Decrease = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
@@ -105,7 +107,7 @@ public class Scroll : Block
             Slider.ApplyScroll();
     }
 
-    internal override void OnUpdate()
+    internal void OnUpdate()
     {
         LimitSizeMin(IsVertical ? (1, 2) : (2, 1));
 

@@ -122,12 +122,13 @@ internal class Inspector : Panel
 
                 var prompt = editor.Prompt;
                 var panel = panels[ui.IndexOf(selected)];
-                var (vx, vy, _, _) = editor.MapsUi.View;
+                var (_, _, uw, uh) = editor.MapsUi.View;
+                var (_, _, ew, eh) = editor.MapsEditor.View;
 
                 if (Text == "Remove")
                 {
                     BlockRemove(selected);
-                    inspector.Position = (int.MaxValue, int.MaxValue);
+                    inspector.IsHidden = true;
                 }
                 else if (Text == "To Top")
                     BlockToTop(selected);
@@ -145,12 +146,11 @@ internal class Inspector : Panel
                         if (i != 0)
                             return;
 
+                        Input.TilemapSize = (ew, eh);
                         panel.Align((promptSlider.Progress, float.NaN));
-                        panel.Position = (promptSlider.Position.x + vx, panel.Position.y);
+                        panel.Position = (panel.Position.x + 1, panel.Position.y);
+                        Input.TilemapSize = (uw, uh);
                     });
-
-                    var (x, y) = promptSlider.Position;
-                    promptSlider.Position = (x + vx, y + vy);
                 }
                 else if (Text == "Align Y")
                 {
@@ -162,13 +162,11 @@ internal class Inspector : Panel
                         if (i != 0)
                             return;
 
+                        Input.TilemapSize = (ew, eh);
                         panel.Align((float.NaN, promptSlider.Progress));
-                        panel.Position = (panel.Position.x, panel.Position.y + vy);
+                        panel.Position = (panel.Position.x, panel.Position.y + 1);
+                        Input.TilemapSize = (uw, uh);
                     });
-
-                    var (camX, camY) = (cx: vx, cy: vy);
-                    var (x, y) = promptSlider.Position;
-                    promptSlider.Position = (x + camX, y + camY);
                 }
                 else if (Text == "ItemSelect")
                 {
@@ -180,7 +178,7 @@ internal class Inspector : Panel
                     var index = inspector.itemSelections.IndexOf(this);
                     var item = list[index + items.ScrollIndices.y];
 
-                    if (list.IsSingleSelecting && list.IndexesSelected[0] == index)
+                    if (list.IsSingleSelecting && list.IndexOf(list.ItemsSelected[0]) == index)
                         return;
 
                     list.Select(item, IsSelected);
@@ -394,9 +392,10 @@ internal class Inspector : Panel
 
             l.Clear();
             var split = items.Value.Split(Environment.NewLine);
-            l.Add(split.Length);
+            var newItems = new Button[split.Length];
             for (var index = 0; index < split.Length; index++)
-                l[index].Text = split[index];
+                newItems[index].Text = split[index];
+            l.Add(newItems);
 
             for (var j = 0; j < l.Count; j++)
             {

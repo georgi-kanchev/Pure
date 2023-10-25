@@ -416,6 +416,7 @@ public class InputBox : Block
     {
         isTextReadonly = true;
 
+        OnUpdate(OnUpdate);
         OnInteraction(Interaction.Press, () =>
         {
             cursorBlink.Restart();
@@ -457,7 +458,7 @@ public class InputBox : Block
         TryBackspaceDeleteEnter(isHolding, justDeletedSelected);
         TryMoveCursor(isHolding);
     }
-    internal override void OnUpdate()
+    internal void OnUpdate()
     {
         // reclamp despite scrolling or not cuz maybe the text changed
         CursorIndices = (cx, cy);

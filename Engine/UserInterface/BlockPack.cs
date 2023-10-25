@@ -6,12 +6,12 @@ public class BlockPack
 {
     public int Count
     {
-        get => blocks.Count;
+        get => data.Count;
     }
 
     public Block this[int index]
     {
-        get => blocks[index];
+        get => data[index];
     }
 
     public BlockPack()
@@ -60,9 +60,9 @@ public class BlockPack
     public byte[] ToBytes()
     {
         var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(blocks.Count));
+        result.AddRange(BitConverter.GetBytes(data.Count));
 
-        foreach (var block in blocks)
+        foreach (var block in data)
         {
             var bytes = block.ToBytes();
             result.AddRange(BitConverter.GetBytes(bytes.Length));
@@ -77,8 +77,14 @@ public class BlockPack
         if (blocks == null || blocks.Length == 0)
             return;
 
-        foreach (var block in blocks)
-            this.blocks.Add(block);
+        data.AddRange(blocks);
+    }
+    public void Insert(int index, params Block[]? blocks)
+    {
+        if (blocks == null || blocks.Length == 0)
+            return;
+
+        data.InsertRange(index, blocks);
     }
     public void Remove(params Block[]? blocks)
     {
@@ -86,11 +92,11 @@ public class BlockPack
             return;
 
         foreach (var block in blocks)
-            this.blocks.Remove(block);
+            data.Remove(block);
     }
     public void Clear()
     {
-        blocks.Clear();
+        data.Clear();
     }
     public void BringToTop(params Block[]? blocks)
     {
@@ -106,21 +112,21 @@ public class BlockPack
 
     public int IndexOf(Block? block)
     {
-        return block == null ? -1 : blocks.IndexOf(block);
+        return block == null ? -1 : data.IndexOf(block);
     }
     public bool IsContaining(Block? block)
     {
-        return block != null && blocks.Contains(block);
+        return block != null && data.Contains(block);
     }
 
     public void Update()
     {
-        foreach (var e in blocks)
+        foreach (var e in data)
             e.Update();
     }
 
 #region Backend
-    private readonly List<Block> blocks = new();
+    private readonly List<Block> data = new();
 
     private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
     {

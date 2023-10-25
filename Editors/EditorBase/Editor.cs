@@ -3,6 +3,7 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
 global using static Pure.Default.RendererUserInterface.Default;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Pure.Editors.EditorBase;
 
@@ -28,9 +29,15 @@ public class Editor
         Count
     }
 
+    public Tilemap Grid
+    {
+        get;
+        private set;
+    }
     public TilemapPack MapsEditor
     {
         get;
+        private set;
     }
     public TilemapPack MapsUi
     {
@@ -94,6 +101,11 @@ public class Editor
         }
     }
 
+    public Action? OnSetGrid
+    {
+        get;
+        set;
+    }
     public Action? OnUpdateEditor
     {
         get;
@@ -105,21 +117,28 @@ public class Editor
         set;
     }
 
-    public Editor(string title, (int width, int height) mapSize)
+    public Editor(string title, (int width, int height) mapSize, (int width, int height) viewSize)
     {
         Window.Create(PIXEL_SCALE);
         Window.Title = title;
 
         var (width, height) = Window.MonitorAspectRatio;
-        grid = new(mapSize);
-        MapsEditor = new((int)LayerMapsEditor.Count, mapSize) { View = (0, 0, 50, 50) };
+        ChangeMapSize(mapSize);
+        MapsEditor.View = (0, 0, viewSize.width, viewSize.height);
         MapsUi = new((int)LayerMapsUi.Count, (width * 5, height * 5));
 
         Ui = new();
         Prompt = new() { ButtonCount = 2 };
         Prompt.OnDisplay(() => MapsUi.SetPrompt(Prompt, zOrder: (int)LayerMapsUi.PromptFade));
-        Prompt.OnItemDisplay(item =>
-            MapsUi.SetPromptItem(Prompt, item, zOrder: (int)LayerMapsUi.PromptMiddle));
+        Prompt.OnItemDisplay(item => MapsUi.SetPromptItem(Prompt, item, (int)LayerMapsUi.PromptMiddle));
+        promptSize = new()
+        {
+            Value = "",
+            Size = (25, 1),
+            SymbolGroup = SymbolGroup.Digits | SymbolGroup.Space,
+            IsSingleLine = true
+        };
+        promptSize.OnDisplay(() => MapsUi.SetInputBox(promptSize, (int)LayerMapsUi.PromptBack));
 
         Window.LayerAdd(id: 1);
         Window.LayerAdd(id: 2);
@@ -129,16 +148,18 @@ public class Editor
         for (var i = 0; i < 5; i++)
             CreateViewButton(i);
 
-        SetGrid();
+        CreateResizeButtons();
     }
 
     public void Run()
     {
+        SetGrid();
+
         while (Window.IsOpen)
         {
             Window.Activate(true);
             Time.Update();
-            MapsUi.Clear();
+            MapsUi.Flush();
 
             Input.Update(
                 Mouse.IsButtonPressed(Mouse.Button.Left),
@@ -160,8 +181,8 @@ public class Editor
             Input.Position = MousePositionWorld;
             Input.TilemapSize = (ww, wh);
 
-            grid.View = MapsEditor.View;
-            var gridView = grid.ViewUpdate();
+            Grid.View = MapsEditor.View;
+            var gridView = Grid.ViewUpdate();
             Window.LayerUpdate(0, ViewPosition, ViewZoom);
             Window.DrawTiles(gridView.ToBundle());
 
@@ -204,6 +225,12 @@ public class Editor
         }
     }
 
+    [MemberNotNull(nameof(Grid), nameof(MapsEditor))]
+    public void ChangeMapSize((int width, int height) newMapSize)
+    {
+        Grid = new(newMapSize);
+        MapsEditor = new((int)LayerMapsEditor.Count, newMapSize);
+    }
     public void DisplayInfoText(string text)
     {
         var infoTextSplit = infoText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -227,15 +254,130 @@ public class Editor
 #region Backend
     private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
     private const int GRID_GAP = 10;
-
-    private readonly Tilemap grid;
+    private readonly InputBox promptSize;
 
     private string infoText = "";
     private float infoTextTimer;
-    private int fps;
+    private int fps = 60;
     private (float x, float y) prevRaw, prevWorld, prevUi;
     private float viewZoom = 2f;
     private (float x, float y) viewPosition;
+
+    private void CreateResizeButtons()
+    {
+        var btnMapSize = new Button { Text = "Resize Map", Size = (10, 1) };
+        var btnViewSize = new Button { Text = "Resize View", Size = (11, 1) };
+
+        btnMapSize.Align((0f, 0.98f));
+        btnMapSize.OnInteraction(Interaction.Trigger, () =>
+        {
+            Prompt.Text = $"Enter the new map size,{Environment.NewLine}" +
+                          $"example: '100 100'.";
+            Prompt.Open(promptSize, ResizePressMap);
+        });
+        btnMapSize.OnDisplay(() => MapsUi.SetButton(btnMapSize));
+
+        btnViewSize.Align((0f, 1f));
+        btnViewSize.OnInteraction(Interaction.Trigger, () =>
+        {
+            Prompt.Text = $"Enter the new view size,{Environment.NewLine}" +
+                          $"example: '100 100'.";
+            Prompt.Open(promptSize, ResizePressView);
+        });
+        btnViewSize.OnDisplay(() => MapsUi.SetButton(btnViewSize));
+
+        Ui.Add(btnMapSize, btnViewSize);
+
+        Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
+        {
+            if (Prompt.IsHidden)
+                return;
+
+            if (Prompt.Text.Contains("view"))
+                ResizePressView(0);
+            else
+                ResizePressMap(0);
+        });
+    }
+    private void ResizePressMap(int i)
+    {
+        Prompt.Close();
+        var text = promptSize.Value.Split();
+
+        if (i != 0 || text.Length != 2)
+            return;
+
+        var (_, _, vw, vh) = MapsEditor.View;
+        var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
+        var packCopy = MapsEditor.Copy();
+
+        ChangeMapSize((w, h));
+
+        for (var j = 0; j < packCopy.Count; j++)
+            MapsEditor[j].SetGroup((0, 0), packCopy[j]);
+        MapsEditor.View = (0, 0, vw, vh);
+
+        SetGrid();
+        DisplayInfoText($"Map {w}x{h}");
+    }
+    private void ResizePressView(int i)
+    {
+        Prompt.Close();
+        var text = promptSize.Value.Split();
+
+        if (i != 0 || text.Length != 2)
+            return;
+
+        var (x, y, _, _) = MapsEditor.View;
+        var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
+        MapsEditor.View = (x, y, w, h);
+        DisplayInfoText($"View {w}x{h}");
+    }
+    private void CreateViewButton(int rotations)
+    {
+        var offsets = new (int x, int y)[] { (1, 0), (0, 1), (-1, 0), (0, -1), (0, 0) };
+        var btn = new Button { Size = (1, 1) };
+        var (offX, offY) = offsets[rotations];
+        btn.Align((0.03f, 0.94f));
+        btn.Position = (btn.Position.x + offX, btn.Position.y + offY);
+
+        if (offX != 0 && offY != 0)
+            btn.OnInteraction(Interaction.PressAndHold, Trigger);
+
+        btn.OnInteraction(Interaction.Trigger, Trigger);
+        btn.OnUpdate(() =>
+        {
+            var (_, _, w, h) = MapsEditor.View;
+            btn.IsHidden = MapsEditor.Size == (w, h);
+            btn.IsDisabled = btn.IsHidden;
+        });
+        btn.OnDisplay(() =>
+        {
+            var color = GetInteractionColor(btn, Color.Gray);
+            var arrow = new Tile(Tile.ARROW_NO_TAIL, color, (sbyte)rotations);
+            var center = new Tile(Tile.SHAPE_CIRCLE, color);
+            MapsUi[(int)LayerMapsUi.Back].SetTile(
+                btn.Position,
+                tile: rotations == 4 ? center : arrow);
+        });
+
+        Ui.Add(btn);
+
+        void Trigger()
+        {
+            var (x, y, w, h) = MapsEditor.View;
+            MapsEditor.View = (x + offX * 10, y + offY * 10, w, h);
+
+            if (offX == 0 && offY == 0)
+            {
+                MapsEditor.View = (0, 0, w, h);
+                DisplayInfoText("View Reset");
+            }
+
+            if (x != MapsEditor.View.x || y != MapsEditor.View.y)
+                DisplayInfoText($"View {MapsEditor.View.x}, {MapsEditor.View.y}");
+        }
+    }
 
     private void SetGrid()
     {
@@ -243,30 +385,34 @@ public class Editor
         var color = Color.Gray.ToDark(0.66f);
         var (x, y) = (0, 0);
 
+        Grid.Fill(new(Tile.SHADE_OPAQUE, Color.Brown.ToDark(0.8f)));
+
         for (var i = 0; i < size.width + GRID_GAP; i += GRID_GAP)
         {
             var newX = x - (x + i) % GRID_GAP;
-            grid.SetLine(
+            Grid.SetLine(
                 pointA: (newX + i, y),
                 pointB: (newX + i, y + size.height),
-                tile: new(Tile.SHADE_OPAQUE, color));
+                tile: new(Tile.SHADE_2, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
-            grid.SetLine(
+            Grid.SetLine(
                 pointA: (x, newY + i),
                 pointB: (x + size.width, newY + i),
-                tile: new(Tile.SHADE_OPAQUE, color));
+                tile: new(Tile.SHADE_2, color));
         }
 
         for (var i = 0; i < size.height; i += 20)
             for (var j = 0; j < size.width; j += 20)
-                grid.SetTextLine(
+                Grid.SetTextLine(
                     position: (j + 1, i + 1),
                     text: $"{j}, {i}",
                     color);
+
+        OnSetGrid?.Invoke();
     }
     private void UpdateHud()
     {
@@ -284,8 +430,8 @@ public class Editor
             fps = (int)Time.UpdatesPerSecond;
 
         MapsUi[(int)LayerMapsUi.Front].SetTextLine((0, 0), $"FPS:{fps}");
-        MapsUi[(int)LayerMapsUi.Front].SetTextLine((0, bottomY - 1), $"MAP  {mw} x {mh}");
-        MapsUi[(int)LayerMapsUi.Front].SetTextLine((0, bottomY), $"VIEW {vw} x {vh}");
+        MapsUi[(int)LayerMapsUi.Front].SetTextLine((11, bottomY - 1), $"{mw} x {mh}");
+        MapsUi[(int)LayerMapsUi.Front].SetTextLine((12, bottomY), $"{vw} x {vh}");
 
         MapsUi[(int)LayerMapsUi.Front].SetTextRectangle(
             position: (x, bottomY),
@@ -359,48 +505,6 @@ public class Editor
         if (Math.Abs(ViewZoom - ZOOM_MIN) > 0.01f &&
             Math.Abs(ViewZoom - ZOOM_MAX) > 0.01f)
             ViewPosition = Mouse.ScrollDelta > 0 ? zoomInPos : zoomOutPos;
-    }
-
-    private void CreateViewButton(int rotations)
-    {
-        var offsets = new (int x, int y)[] { (1, 0), (0, 1), (-1, 0), (0, -1), (0, 0) };
-        var btn = new Button { Size = (1, 1) };
-        var (offX, offY) = offsets[rotations];
-        btn.Align((0.052f, 0.95f));
-        btn.Position = (btn.Position.x + offX, btn.Position.y + offY);
-
-        btn.OnInteraction(Interaction.Trigger, Trigger);
-        btn.OnInteraction(Interaction.PressAndHold, Trigger);
-        btn.OnDisplay(() =>
-        {
-            var (_, _, w, h) = MapsEditor.View;
-            btn.IsHidden = MapsEditor.Size == (w, h);
-            btn.IsDisabled = btn.IsHidden;
-
-            var color = GetInteractionColor(btn, Color.Gray);
-            var arrow = new Tile(Tile.ARROW_NO_TAIL, color, (sbyte)rotations);
-            var center = new Tile(Tile.SHAPE_CIRCLE, color);
-            MapsUi[(int)LayerMapsUi.Back].SetTile(
-                btn.Position,
-                tile: rotations == 4 ? center : arrow);
-        });
-
-        Ui.Add(btn);
-
-        void Trigger()
-        {
-            var (x, y, w, h) = MapsEditor.View;
-            MapsEditor.View = (x + offX * 10, y + offY * 10, w, h);
-
-            if (offX == 0 && offY == 0)
-            {
-                MapsEditor.View = (0, 0, w, h);
-                DisplayInfoText("View Reset");
-            }
-
-            if (x != MapsEditor.View.x || y != MapsEditor.View.y)
-                DisplayInfoText($"View {MapsEditor.View.x}, {MapsEditor.View.y}");
-        }
     }
 #endregion
 }

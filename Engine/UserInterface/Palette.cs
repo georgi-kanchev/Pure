@@ -112,6 +112,7 @@ public class Palette : Block
     [MemberNotNull(nameof(Opacity), nameof(Brightness), nameof(Pick))]
     private void Init(int brightnessPageCount, int brightnessCurrentPage, float opacityProgress)
     {
+        OnUpdate(OnUpdate);
         var (x, y) = Position;
         var (w, h) = Size;
         brightnessPageCount = Math.Clamp(brightnessPageCount, 1, 99);
@@ -137,7 +138,7 @@ public class Palette : Block
         }
     }
 
-    internal override void OnUpdate()
+    internal void OnUpdate()
     {
         sizeMinimum = (13, 3);
         LimitSizeMin((13, 3));

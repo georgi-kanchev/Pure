@@ -30,7 +30,6 @@ public class Tilemap
     public (int width, int height) Size
     {
         get;
-        private set;
     }
 
     /// <summary>
@@ -38,8 +37,18 @@ public class Tilemap
     /// </summary>
     public (int x, int y, int height, int width) View
     {
-        get;
-        set;
+        get => view;
+        set
+        {
+            var (x, y, w, h) = value;
+            var (sw, sh) = Size;
+
+            w = Math.Clamp(w, 1, sw);
+            h = Math.Clamp(h, 1, sh);
+            x = Math.Clamp(x, 0, sw - w);
+            y = Math.Clamp(y, 0, sh - h);
+            view = (x, y, w, h);
+        }
     }
 
     public Tilemap(byte[] bytes)
@@ -83,7 +92,7 @@ public class Tilemap
         w = Math.Max(w, 1);
         h = Math.Max(h, 1);
 
-        Size = size;
+        Size = (w, h);
         data = new Tile[w, h];
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
         ids = new int[w, h];
@@ -168,7 +177,7 @@ public class Tilemap
         return IndicesAreValid(position) ? data[position.x, position.y] : default;
     }
 
-    public void Clear()
+    public void Flush()
     {
         var (w, h) = Size;
         data = new Tile[w, h];
@@ -741,13 +750,10 @@ public class Tilemap
             symbolMap[symbols[i]] = startId + i;
     }
 
-    public bool IsContaining(
-        (int x, int y) position,
-        (int width, int height) outsideMargin = default)
+    public bool IsContaining((int x, int y) position)
     {
-        var (mx, my) = outsideMargin;
-        return position.x >= -mx && position.y >= -my &&
-               position.x <= Size.width - 1 + mx && position.y <= Size.height - 1 + my;
+        return position is { x: >= 0, y: >= 0 } &&
+               position.x <= Size.width - 1 && position.y <= Size.height - 1;
     }
 
     /// <summary>
@@ -884,6 +890,7 @@ public class Tilemap
     private Tile[,] data;
     private (int, uint, sbyte, bool, bool)[,] bundleCache;
     private int[,] ids;
+    private (int x, int y, int height, int width) view;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)
     {
@@ -909,11 +916,7 @@ public class Tilemap
         Array.Copy(array, copy, array.Length);
         return copy;
     }
-    private static float Random(
-        float rangeA,
-        float rangeB,
-        float precision = 0,
-        float seed = float.NaN)
+    private static float Random(float rangeA, float rangeB, float precision = 0, float seed = float.NaN)
     {
         if (rangeA > rangeB)
             (rangeA, rangeB) = (rangeB, rangeA);

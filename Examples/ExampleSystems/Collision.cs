@@ -75,7 +75,7 @@ public static class Collision
         void FillWithRandomGrass()
         {
             var color = Color.Green.ToDark(0.4f);
-            tilemap.Clear();
+            tilemap.Flush();
             tilemap.Replace((0, 0), tilemap.Size, 0, default,
                 new Tile(Tile.SHADE_1, color, 0),
                 new Tile(Tile.SHADE_1, color, 1),

@@ -311,7 +311,7 @@ public abstract class Block
             if (IsHovered && IsHidden == false)
                 Input.CursorResult = MouseCursor.Disable;
 
-            OnUpdate();
+            update?.Invoke();
             TryDisplaySelfAndProcessChildren();
             return;
         }
@@ -357,7 +357,7 @@ public abstract class Block
             drag?.Invoke(delta);
         }
 
-        OnUpdate();
+        update?.Invoke();
 
         if (isInputInsideMap)
             OnInput();
@@ -429,6 +429,10 @@ public abstract class Block
     public void OnDisplay(Action method)
     {
         display += method;
+    }
+    public void OnUpdate(Action method)
+    {
+        update += method;
     }
     public void OnDrag(Action<(int deltaX, int deltaY)> method)
     {
@@ -509,7 +513,7 @@ public abstract class Block
     private int byteOffset;
     private bool wasHovered, isReadyForDoubleClick;
 
-    internal Action? display;
+    internal Action? display, update;
     private readonly Dictionary<Interaction, Action> interactions = new();
     internal Action<(int deltaX, int deltaY)>? drag;
 
@@ -538,9 +542,6 @@ public abstract class Block
             size = (Size.width, maximumSize.height);
     }
 
-    internal virtual void OnUpdate()
-    {
-    }
     internal virtual void OnChildrenUpdate()
     {
     }

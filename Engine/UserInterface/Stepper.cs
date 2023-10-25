@@ -95,6 +95,8 @@ public class Stepper : Block
     [MemberNotNull(nameof(Increase), nameof(Decrease), nameof(Minimum), nameof(Middle), nameof(Maximum))]
     private void Init()
     {
+        OnUpdate(OnUpdate);
+
         Increase = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
         Decrease = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
         Minimum = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
@@ -134,7 +136,7 @@ public class Stepper : Block
     {
         Value += Input.ScrollDelta * Step;
     }
-    internal override void OnUpdate()
+    internal void OnUpdate()
     {
         LimitSizeMin((4, 2));
     }

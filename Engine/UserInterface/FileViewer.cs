@@ -168,6 +168,8 @@ public class FileViewer : Block
             CurrentDirectory = Path.GetDirectoryName(CurrentDirectory) ?? DefaultPath);
 
         CurrentDirectory = dir;
+
+        OnUpdate(OnUpdate);
     }
 
     private void Refresh()
@@ -214,10 +216,12 @@ public class FileViewer : Block
     }
     private void CreateItem(string path)
     {
-        FilesAndFolders.InternalAdd();
-        var item = FilesAndFolders[^1];
-        item.Text = $"{Path.GetFileName(path)}";
-        item.isTextReadonly = true;
+        var item = new Button
+        {
+            Text = $"{Path.GetFileName(path)}",
+            isTextReadonly = true
+        };
+        FilesAndFolders.InternalInsert(0, item);
 
         item.OnInteraction(Interaction.DoubleTrigger, () =>
         {
@@ -237,14 +241,16 @@ public class FileViewer : Block
         if (FilesAndFolders.IsHovered == false)
             FilesAndFolders.ApplyScroll();
     }
-    internal override void OnUpdate()
+    internal void OnUpdate()
     {
         LimitSizeMin((3, 3));
 
-        if (FilesAndFolders is not { IsSingleSelecting: true, IndexesSelected.Length: 1 })
+        if (FilesAndFolders is not { IsSingleSelecting: true, ItemsSelected.Length: 1 })
             return;
 
-        if (IsSelectingFolders ^ FilesAndFolders.IndexesSelected[0] < CountFolders)
+        var selected = FilesAndFolders.ItemsSelected;
+        var index = FilesAndFolders.IndexOf(selected[0]);
+        if (IsSelectingFolders ^ index < CountFolders)
             FilesAndFolders.Select(IsSelectingFolders ? 0 : CountFolders);
     }
     internal override void OnChildrenUpdate()

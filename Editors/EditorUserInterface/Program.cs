@@ -31,32 +31,13 @@ public static class Program
 
     public static void Run()
     {
-        editor.OnUpdateEditor = () =>
-        {
-            editor.MapsEditor.Clear();
-
-            ui.Update();
-            panels.Update();
-
-            var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-deselect");
-            if (onLmbRelease && GetHovered() == null && inspector.IsHovered == false &&
-                editor.Prompt.IsHidden)
-                selected = null;
-        };
-        editor.OnUpdateUi = () =>
-        {
-            inspector.IsHidden = selected == null;
-            if (inspector.IsHidden == false)
-                inspector.Update();
-        };
-
         editor.Run();
     }
 
 #region Backend
     static Program()
     {
-        editor = new(title: "Pure - User Interface Editor", mapSize: (80, 27));
+        editor = new(title: "Pure - User Interface Editor", mapSize: (48, 27), viewSize: (48, 27));
 
         var maps = editor.MapsUi;
         const int BACK = (int)Editor.LayerMapsUi.PromptBack;
@@ -83,6 +64,25 @@ public static class Program
         menus[MenuType.AddList] = new MenuAddList();
         menus[MenuType.Add] = new MenuAdd();
         menus[MenuType.Main] = new MenuMain();
+
+        editor.OnUpdateEditor = () =>
+        {
+            editor.MapsEditor.Flush();
+
+            IsInteractable = false;
+            ui.Update();
+            IsInteractable = true;
+            panels.Update();
+
+            if (CanDeselect())
+                selected = null;
+        };
+        editor.OnUpdateUi = () =>
+        {
+            inspector.IsHidden = selected == null;
+            if (inspector.IsHidden == false)
+                inspector.Update();
+        };
     }
 
     internal static void BlockCreate(
@@ -92,7 +92,6 @@ public static class Program
         byte[]? bytes = default)
     {
         var block = default(Block);
-        var maps = editor.MapsEditor;
         var panel = new Panel { IsRestricted = false, SizeMinimum = (3, 3) };
 
         switch (typeName)
@@ -100,13 +99,14 @@ public static class Program
             case nameof(Button):
             {
                 block = bytes != null ? new(bytes) : new Button(position);
-                block.OnDisplay(() => maps.SetButton((Button)block, isDisplayingSelection: true));
+                block.OnDisplay(() =>
+                    editor.MapsEditor.SetButton((Button)block, isDisplayingSelection: true));
                 break;
             }
             case nameof(InputBox):
             {
                 block = bytes != null ? new(bytes) : new InputBox(position);
-                block.OnDisplay(() => maps.SetInputBox((InputBox)block));
+                block.OnDisplay(() => editor.MapsEditor.SetInputBox((InputBox)block));
                 break;
             }
             case nameof(Pages):
@@ -114,15 +114,15 @@ public static class Program
                 block = bytes != null ? new(bytes) : new Pages(position);
                 var pages = (Pages)block;
                 panel.SizeMinimum = (8, 3);
-                block.OnDisplay(() => maps.SetPages(pages));
-                pages.OnItemDisplay(item => maps.SetPagesItem(pages, item));
+                block.OnDisplay(() => editor.MapsEditor.SetPages(pages));
+                pages.OnItemDisplay(item => editor.MapsEditor.SetPagesItem(pages, item));
                 break;
             }
             case nameof(Panel):
             {
                 block = bytes != null ? new(bytes) : new Panel(position);
                 panel.SizeMinimum = (5, 5);
-                block.OnDisplay(() => maps.SetPanel((Panel)block));
+                block.OnDisplay(() => editor.MapsEditor.SetPanel((Panel)block));
                 break;
             }
             case nameof(Palette):
@@ -132,41 +132,41 @@ public static class Program
                 var palette = (Palette)block;
                 panel.SizeMinimum = (15, 5);
 
-                block.OnDisplay(() => maps.SetPalette(palette));
-                block.OnDisplay(() => maps.SetPages(palette.Brightness));
+                block.OnDisplay(() => editor.MapsEditor.SetPalette(palette));
+                block.OnDisplay(() => editor.MapsEditor.SetPages(palette.Brightness));
 
                 palette.Brightness.OnItemDisplay(item =>
-                    maps.SetPagesItem(palette.Brightness, item));
+                    editor.MapsEditor.SetPagesItem(palette.Brightness, item));
                 palette.OnColorSampleDisplay((btn, c) =>
-                    maps[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
+                    editor.MapsEditor[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
                 break;
             }
             case nameof(Slider):
             {
                 block = bytes != null ? new(bytes) : new Slider(position);
                 panel.SizeMinimum = (4, 3);
-                block.OnDisplay(() => maps.SetSlider((Slider)block));
+                block.OnDisplay(() => editor.MapsEditor.SetSlider((Slider)block));
                 break;
             }
             case nameof(Scroll):
             {
                 block = bytes != null ? new(bytes) : new Scroll(position);
                 panel.SizeMinimum = (3, 4);
-                block.OnDisplay(() => maps.SetScroll((Scroll)block));
+                block.OnDisplay(() => editor.MapsEditor.SetScroll((Scroll)block));
                 break;
             }
             case nameof(Stepper):
             {
                 block = bytes != null ? new(bytes) : new Stepper(position);
                 panel.SizeMinimum = (6, 4);
-                block.OnDisplay(() => maps.SetStepper((Stepper)block));
+                block.OnDisplay(() => editor.MapsEditor.SetStepper((Stepper)block));
                 break;
             }
             case nameof(Layout):
             {
                 block = bytes != null ? new(bytes) : new Layout(position);
                 var layout = (Layout)block;
-                layout.OnDisplaySegment((s, i) => maps.SetLayoutSegment(s, i, true));
+                layout.OnDisplaySegment((s, i) => editor.MapsEditor.SetLayoutSegment(s, i, true));
                 break;
             }
             case nameof(List):
@@ -174,8 +174,8 @@ public static class Program
                 block = bytes != null ? new(bytes) : new List(position, 10, type);
                 var list = (List)block;
                 panel.SizeMinimum = (4, 4);
-                list.OnDisplay(() => maps.SetList(list));
-                list.OnItemDisplay(item => maps.SetListItem(list, item));
+                list.OnDisplay(() => editor.MapsEditor.SetList(list));
+                list.OnItemDisplay(item => editor.MapsEditor.SetListItem(list, item));
                 break;
             }
             case nameof(FileViewer):
@@ -184,9 +184,9 @@ public static class Program
                 var fileViewer = (FileViewer)block;
 
                 panel.SizeMinimum = (5, 5);
-                block.OnDisplay(() => maps.SetFileViewer(fileViewer));
+                block.OnDisplay(() => editor.MapsEditor.SetFileViewer(fileViewer));
                 fileViewer.FilesAndFolders.OnItemDisplay(item =>
-                    maps.SetFileViewerItem(fileViewer, item));
+                    editor.MapsEditor.SetFileViewerItem(fileViewer, item));
                 break;
             }
         }
@@ -289,13 +289,16 @@ public static class Program
         editor.DisplayInfoText($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
     }
 
-    private static Block? GetHovered()
+    private static bool CanDeselect()
     {
-        for (var i = ui.Count - 1; i >= 0; i--)
-            if (ui[i].IsOverlapping(editor.MousePositionWorld))
-                return ui[i];
+        var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-deselect");
+        var result = onLmbRelease && inspector.IsHovered == false && editor.Prompt.IsHidden;
 
-        return null;
+        for (var i = panels.Count - 1; i >= 0; i--)
+            if (panels[i].IsOverlapping(editor.MousePositionWorld))
+                return false;
+
+        return result;
     }
 #endregion
 }

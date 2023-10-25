@@ -32,9 +32,8 @@ public static class Default
         bool isDisplayingSelection = false)
     {
         var b = button;
-
         var (w, h) = b.Size;
-        var offsetW = w / 2 - Math.Min(b.Text.Length, w - 2) / 2;
+        var offsetW = w / 2 - Math.Min(b.Text.Length, h == 1 ? w : w - 2) / 2;
         var c = b.IsSelected && isDisplayingSelection ? Color.Green : Color.Yellow;
         var color = GetInteractionColor(b, c.ToDark());
         var colorBack = Color.Gray.ToDark(0.6f);
@@ -54,7 +53,7 @@ public static class Default
             position: (b.Position.x + offsetW, b.Position.y + h / 2),
             text: b.Text,
             tint: color,
-            maxLength: w - 2);
+            maxLength: h == 1 ? w : w - 2);
     }
     public static void SetButtonSelect(this TilemapPack maps, Button button, int zOrder = 0)
     {

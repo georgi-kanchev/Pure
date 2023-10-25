@@ -26,7 +26,7 @@ public static class Program
             Window.Activate(true);
 
             Time.Update();
-            maps.Clear();
+            maps.Flush();
 
             Input.Position = Mouse.PixelToWorld(Mouse.CursorPosition);
             Input.Update(

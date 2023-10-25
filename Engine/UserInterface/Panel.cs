@@ -38,12 +38,14 @@ public class Panel : Block
     public Panel((int x, int y) position = default) : base(position)
     {
         Size = (12, 8);
+        Init();
     }
     public Panel(byte[] bytes) : base(bytes)
     {
         IsResizable = GrabBool(bytes);
         IsMovable = GrabBool(bytes);
         IsRestricted = GrabBool(bytes);
+        Init();
     }
 
     public override byte[] ToBytes()
@@ -65,6 +67,15 @@ public class Panel : Block
     private (int x, int y) startBotR;
 
     internal Action<(int deltaWidth, int deltaHeight)>? resize;
+
+    private void Init()
+    {
+        OnUpdate(OnUpdate);
+    }
+    private void OnUpdate()
+    {
+        LimitSizeMin((2, 2));
+    }
 
     protected override void OnInput()
     {
@@ -103,10 +114,6 @@ public class Panel : Block
             return;
 
         TryMoveAndResize(inputX, inputY, prevX, prevY);
-    }
-    internal override void OnUpdate()
-    {
-        LimitSizeMin((2, 2));
     }
 
     private void TrySetCursorAndCache(
