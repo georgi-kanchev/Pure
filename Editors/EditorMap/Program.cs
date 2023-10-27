@@ -2,6 +2,7 @@
 global using Pure.Engine.UserInterface;
 global using static Pure.Default.RendererUserInterface.Default;
 global using Pure.Editors.EditorBase;
+global using Pure.Engine.Window;
 
 namespace Pure.Editors.EditorMap;
 
@@ -13,6 +14,7 @@ public static class Program
     internal static readonly List layers;
     internal static readonly InputBox rename, create;
     internal static readonly Button remove;
+    internal static readonly Menu menu;
 
     static Program()
     {
@@ -74,14 +76,34 @@ public static class Program
         layout.Cut(6, Side.Bottom, 0.85f);
 
         editor.Ui.Add(inspector, layout, create, rename, remove, layers);
+
+        menu = new(editor,
+            "Save… ",
+            "  Map",
+            "  Collisions",
+            "Load… ",
+            "  Tileset",
+            "  Map",
+            "  Collisions");
+        menu.OnItemInteraction(Interaction.Trigger, btn =>
+        {
+            var index = menu.IndexOf(btn);
+            if (index == 4)
+            {
+                //Window.
+            }
+        });
     }
 
     public static void Run()
     {
+        editor.OnUpdateLate += UpdatePalette;
         editor.Run();
     }
 
 #region Backend
+    private static readonly Tilemap palette;
+
     private static void OnLayerCreate()
     {
         var item = new Button { Text = create.Value };
@@ -128,6 +150,11 @@ public static class Program
 
         items.Position = (segment.x, segment.y);
         items.Size = (segment.width, segment.height);
+    }
+
+    private static void UpdatePalette()
+    {
+        Window.LayerCurrent = 3;
     }
 #endregion
 }

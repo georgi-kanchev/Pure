@@ -116,6 +116,11 @@ public class Editor
         get;
         set;
     }
+    public Action? OnUpdateLate
+    {
+        get;
+        set;
+    }
 
     public Editor(string title, (int width, int height) mapSize, (int width, int height) viewSize)
     {
@@ -215,12 +220,15 @@ public class Editor
             if (Prompt.IsHidden == false)
                 Prompt.Update();
 
+            Mouse.CursorGraphics = (Mouse.Cursor)Input.CursorResult;
+
             for (var i = 0; i < MapsUi.Count; i++)
                 Window.DrawTiles(MapsUi[i].ToBundle());
 
             //========
 
-            Mouse.CursorGraphics = (Mouse.Cursor)Input.CursorResult;
+            OnUpdateLate?.Invoke();
+
             Window.Activate(false);
         }
     }

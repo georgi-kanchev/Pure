@@ -1,9 +1,9 @@
 namespace Pure.Editors.EditorBase;
 
-public abstract class Menu : List
+public class Menu : List
 {
-    protected Menu(Editor editor, params string[] options)
-        : base((int.MaxValue, int.MaxValue), options.Length)
+    public Menu(Editor editor, params string[] options) : base((int.MaxValue, int.MaxValue),
+        options.Length)
     {
         this.editor = editor;
         Size = (15, 15);
