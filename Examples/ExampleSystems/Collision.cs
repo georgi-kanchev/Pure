@@ -26,44 +26,43 @@ public static class Collision
         // icon tiles are 7x7, not 8x8, cut one row & column,
         // hitbox and tile on screen might mismatch since the tile is pixel perfect
         // and the hitbox is not
-        var scale = 1f - 1f / 8f;
-        var hitbox = new Hitbox((0, 0), (scale, scale), new Rectangle((1f, 1f)));
+        const float SCALE = 1f - 1f / 8f;
+        var hitbox = new Hitbox((0, 0), (SCALE, SCALE), new Rectangle((1f, 1f)));
+        var layer = new Layer(tilemap.Size);
 
-        var layer = new Layer { TilemapSize = tilemap.Size };
+        tilemap.FillWithRandomGrass();
+        tilemap.SetLake((0, 0), (14, 9));
+        tilemap.SetLake((26, 18), (5, 7));
+        tilemap.SetLake((16, 24), (12, 6));
+        tilemap.SetHouses((30, 10), (34, 11), (33, 8));
+        tilemap.SetBridge((21, 16), (31, 16));
+        tilemap.SetRoad((32, 0), (32, 26));
+        tilemap.SetRoad((33, 10), (47, 10));
+        tilemap.SetRoad((20, 16), (0, 16));
+        tilemap.SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
+        tilemap.SetBackgrounds(background);
+
+        collisionMap.Update(tilemap);
+
         while (Window.IsOpen)
         {
             Window.Activate(true);
             Time.Update();
-            layer.Clear();
-
-            tilemap.FillWithRandomGrass();
-            tilemap.SetLake((0, 0), (14, 9));
-            tilemap.SetLake((26, 18), (5, 7));
-            tilemap.SetLake((16, 24), (12, 6));
-            tilemap.SetHouses((30, 10), (34, 11), (33, 8));
-            tilemap.SetBridge((21, 16), (31, 16));
-            tilemap.SetRoad((32, 0), (32, 26));
-            tilemap.SetRoad((33, 10), (47, 10));
-            tilemap.SetRoad((20, 16), (0, 16));
-            tilemap.SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
-            tilemap.SetBackgrounds(background);
-
-            collisionMap.Update(tilemap);
-
-            layer.DrawTilemap(background);
-            layer.DrawTilemap(tilemap);
 
             var mousePosition = layer.PixelToWorld(Mouse.CursorPosition);
-            hitbox.Position = mousePosition;
-
             var isOverlapping = collisionMap.IsOverlapping(hitbox);
             var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_SMILING;
             var tint = isOverlapping ? Color.Red : Color.Green;
             var tile = new Tile(id, tint);
             var line = new Line((mousePosition.x - 1, mousePosition.y), (15, 15), Color.Red);
             var crossPoints = line.CrossPoints(collisionMap);
+
+            hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
 
+            layer.Clear();
+            layer.DrawTilemap(background);
+            layer.DrawTilemap(tilemap);
             layer.DrawLines(line);
             layer.DrawPoints(crossPoints);
             layer.DrawTile(mousePosition, tile);

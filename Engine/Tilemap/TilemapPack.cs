@@ -14,13 +14,22 @@ public class TilemapPack
     {
         get => Count == 0 ? default : data[0].Size;
     }
-    public (int x, int y, int width, int height) View
+    public (int x, int y) ViewPosition
     {
-        get => Count == 0 ? default : data[0].View;
+        get => Count == 0 ? default : data[0].ViewPosition;
         set
         {
             foreach (var map in data)
-                map.View = value;
+                map.ViewPosition = value;
+        }
+    }
+    public (int width, int height) ViewSize
+    {
+        get => Count == 0 ? default : data[0].ViewSize;
+        set
+        {
+            foreach (var map in data)
+                map.ViewSize = value;
         }
     }
 
@@ -37,7 +46,7 @@ public class TilemapPack
         for (var i = 0; i < Math.Max(count, 1); i++)
             data.Add(new(size));
 
-        View = (0, 0, size.width, size.height);
+        ViewSize = (size.width, size.height);
     }
     public TilemapPack(byte[] bytes)
     {
@@ -182,7 +191,7 @@ public class TilemapPack
 
     public TilemapPack Copy()
     {
-        var result = new TilemapPack { View = View };
+        var result = new TilemapPack { ViewPosition = ViewPosition, ViewSize = ViewSize };
         result.data.Clear();
         result.data.AddRange(data);
         return result;
@@ -204,12 +213,13 @@ public class TilemapPack
             var map = tilemaps[i];
             if (Count > 0 && map.Size != Size)
             {
-                var newMap = new Tilemap(Size) { View = View };
+                var newMap = new Tilemap(Size) { ViewPosition = ViewPosition, ViewSize = ViewSize };
                 newMap.SetGroup((0, 0), map);
                 map = newMap;
             }
 
-            map.View = View;
+            map.ViewPosition = ViewPosition;
+            map.ViewSize = ViewSize;
         }
     }
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)

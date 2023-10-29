@@ -33,21 +33,36 @@ public class Tilemap
     }
 
     /// <summary>
-    /// Gets or sets the position and the size of the view.
+    /// Gets or sets the position of the view.
     /// </summary>
-    public (int x, int y, int height, int width) View
+    public (int x, int y) ViewPosition
     {
-        get => view;
+        get => viewPos;
         set
         {
-            var (x, y, w, h) = value;
+            var (w, h) = viewSz;
+            var (x, y) = value;
+            var (sw, sh) = Size;
+
+            x = Math.Clamp(x, 0, sw - w);
+            y = Math.Clamp(y, 0, sh - h);
+            viewPos = (x, y);
+        }
+    }
+    /// <summary>
+    /// Gets or sets the size of the view.
+    /// </summary>
+    public (int height, int width) ViewSize
+    {
+        get => viewSz;
+        set
+        {
+            var (w, h) = value;
             var (sw, sh) = Size;
 
             w = Math.Clamp(w, 1, sw);
             h = Math.Clamp(h, 1, sh);
-            x = Math.Clamp(x, 0, sw - w);
-            y = Math.Clamp(y, 0, sh - h);
-            view = (x, y, w, h);
+            viewSz = (w, h);
         }
     }
 
@@ -62,10 +77,8 @@ public class Tilemap
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
         ids = new int[w, h];
         Size = (w, h);
-        View = (BitConverter.ToInt32(Get<int>()),
-            BitConverter.ToInt32(Get<int>()),
-            BitConverter.ToInt32(Get<int>()),
-            BitConverter.ToInt32(Get<int>()));
+        ViewPosition = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+        ViewSize = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
 
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
@@ -96,7 +109,7 @@ public class Tilemap
         data = new Tile[w, h];
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
         ids = new int[w, h];
-        View = (0, 0, size.width, size.height);
+        ViewSize = (size.width, size.height);
     }
     /// <summary>
     /// Initializes a new tilemap instance with the specified tileData.
@@ -114,7 +127,7 @@ public class Tilemap
         data = Copy(tileData);
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
         ids = new int[w, h];
-        View = (0, 0, w, h);
+        ViewSize = (w, h);
 
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
@@ -128,10 +141,10 @@ public class Tilemap
     {
         var result = new List<byte>();
         var (w, h) = Size;
-        result.AddRange(BitConverter.GetBytes(View.x));
-        result.AddRange(BitConverter.GetBytes(View.y));
-        result.AddRange(BitConverter.GetBytes(View.width));
-        result.AddRange(BitConverter.GetBytes(View.height));
+        result.AddRange(BitConverter.GetBytes(ViewPosition.x));
+        result.AddRange(BitConverter.GetBytes(ViewPosition.y));
+        result.AddRange(BitConverter.GetBytes(ViewSize.width));
+        result.AddRange(BitConverter.GetBytes(ViewSize.height));
         result.AddRange(BitConverter.GetBytes(w));
         result.AddRange(BitConverter.GetBytes(h));
 
@@ -148,7 +161,8 @@ public class Tilemap
     /// <returns>The updated tilemap view.</returns>
     public Tilemap ViewUpdate()
     {
-        var (cx, cy, w, h) = View;
+        var (cx, cy) = ViewPosition;
+        var (w, h) = ViewSize;
         var newData = new Tile[w, h];
         var i = 0;
         for (var x = cx; x != cx + w; x++)
@@ -890,7 +904,8 @@ public class Tilemap
     private Tile[,] data;
     private (int, uint, sbyte, bool, bool)[,] bundleCache;
     private int[,] ids;
-    private (int x, int y, int height, int width) view;
+    private (int x, int y) viewPos;
+    private (int w, int h) viewSz;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)
     {

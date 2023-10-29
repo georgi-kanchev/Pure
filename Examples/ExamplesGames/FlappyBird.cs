@@ -51,7 +51,7 @@ public static class FlappyBird
             InitializePipes();
         });
 
-        var layer = new Layer();
+        var layer = new Layer(background.Size);
         while (Window.IsOpen) // the default game loop
         {
             Window.Activate(true);

@@ -13,7 +13,7 @@ public static class DefaultGraphics
 
         Window.Create();
 
-        var layer = new Layer { TilemapSize = tilemap.Size };
+        var layer = new Layer(tilemap.Size);
         while (Window.IsOpen)
         {
             Window.Activate(true);

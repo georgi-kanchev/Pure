@@ -23,11 +23,7 @@ public class Layer
             {
                 tilesets[value] = new(value) { Repeated = true };
                 tilesetPath = value;
-
-                var sz = tilesets[value].Size;
-                var (tw, th) = TileSize;
-                var (gw, gh) = TileSize;
-                tilesetSize = ((int)sz.X / (tw + gw), (int)sz.Y / (th + gh));
+                tilesetPixelSize = tilesets[value].Size;
             }
             catch (Exception)
             {
@@ -35,7 +31,7 @@ public class Layer
             }
         }
     }
-    public (int empty, int full) TileIds
+    public int TileIdFull
     {
         get;
         set;
@@ -55,6 +51,16 @@ public class Layer
         get => tilemapSize;
         set => tilemapSize = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
     }
+    public (int width, int height) TilesetSize
+    {
+        get
+        {
+            var (tsw, tsh) = ((int)tilesetPixelSize.X, (int)tilesetPixelSize.Y);
+            var (tw, th) = TileSize;
+            var (gw, gh) = TileGap;
+            return (tsw / (tw + gw), tsh / (th + gh));
+        }
+    }
 
     public (float x, float y) Offset
     {
@@ -67,19 +73,19 @@ public class Layer
         set => zoom = Math.Clamp(value, 0, 1000f);
     }
 
-    public Layer()
+    public Layer((int width, int height) tilemapSize)
     {
         Window.TryNoWindowException();
 
         Zoom = 1f;
 
-        TileIds = (0, 10);
+        TileIdFull = 10;
         TileSize = (8, 8);
-        TilemapSize = (100, 100);
+        tilesetPixelSize = new(208, 208);
+        TilemapSize = tilemapSize;
 
         tilesetPath = string.Empty;
         TilesetPath = string.Empty;
-        tilesetSize = (26, 26);
 
         verts = new(PrimitiveType.Quads);
     }
@@ -99,12 +105,12 @@ public class Layer
             tileId--;
             ang = 1;
         }
-        else if (Mouse.CursorCurrent == Mouse.Cursor.ResizeDiagonal1)
+        else if (Mouse.CursorCurrent == Mouse.Cursor.ResizeTopLeftBottomRight)
         {
             tileId--;
             ang = 1;
         }
-        else if ((int)Mouse.CursorCurrent >= (int)Mouse.Cursor.ResizeDiagonal2)
+        else if ((int)Mouse.CursorCurrent >= (int)Mouse.Cursor.ResizeBottomLeftTopRight)
         {
             tileId -= 2;
         }
@@ -253,7 +259,7 @@ public class Layer
             {
                 var (id, tint, angle, isFlippedHorizontally, isFlippedVertically) = tilemap[x, y];
 
-                if (id == TileIds.empty)
+                if (id == default)
                     continue;
 
                 var color = new Color(tint);
@@ -336,6 +342,7 @@ public class Layer
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
     };
 
+    internal Vector2u tilesetPixelSize;
     internal (int w, int h) TilemapPixelSize
     {
         get
@@ -345,7 +352,6 @@ public class Layer
             return (mw * tw, mh * th);
         }
     }
-    internal (int w, int h) tilesetSize;
 
     static Layer()
     {
@@ -368,7 +374,7 @@ public class Layer
         var (w, h) = size;
         var (x, y) = (position.x * tw, position.y * th);
         var color = new Color(tint);
-        var (ttl, ttr, tbr, tbl) = GetTexCoords(TileIds.full, (1, 1));
+        var (ttl, ttr, tbr, tbl) = GetTexCoords(TileIdFull, (1, 1));
         var tl = new Vector2f((int)x, (int)y);
         var br = new Vector2f((int)x + tw * w, (int)y + th * h);
         var tr = new Vector2f(br.X, tl.Y);
@@ -409,7 +415,7 @@ public class Layer
     }
     private (int, int) IndexToCoords(int index)
     {
-        var (tw, th) = tilesetSize;
+        var (tw, th) = TilesetSize;
         index = index < 0 ? 0 : index;
         index = index > tw * th - 1 ? tw * th - 1 : index;
 
@@ -417,7 +423,7 @@ public class Layer
     }
     private int CoordsToIndex(int x, int y)
     {
-        return y * tilesetSize.w + x;
+        return y * TilesetSize.width + x;
     }
     private static int Wrap(int number, int targetNumber)
     {

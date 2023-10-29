@@ -47,31 +47,31 @@ public static class Extensions
     /// Useful for triggering continuous checks only once, rather than every update.
     /// </summary>
     /// <param name="condition">The bool value to check for.</param>
-    /// <param name="uniqueID">The uniqueID to associate the check with.</param>
+    /// <param name="uniqueId">The uniqueID to associate the check with.</param>
     /// <param name="maximum">The maximum number of entries allowed.</param>
     /// <returns>True if the condition is true and the uniqueID has not been checked before,
     /// or if the condition is true and the number of entries is less than the maximum allowed. False otherwise.</returns>
-    public static bool Once(this bool condition, string uniqueID, uint maximum = uint.MaxValue)
+    public static bool Once(this bool condition, string uniqueId, uint maximum = uint.MaxValue)
     {
-        if (gates.ContainsKey(uniqueID) == false && condition == false)
+        if (gates.ContainsKey(uniqueId) == false && condition == false)
             return false;
-        else if (gates.ContainsKey(uniqueID) == false && condition)
+        else if (gates.ContainsKey(uniqueId) == false && condition)
         {
-            gates[uniqueID] = new Gate() { value = true, entries = 1 };
+            gates[uniqueId] = new Gate() { value = true, entries = 1 };
             return true;
         }
         else
         {
-            if (gates[uniqueID].value && condition)
+            if (gates[uniqueId].value && condition)
                 return false;
-            else if (gates[uniqueID].value == false && condition)
+            else if (gates[uniqueId].value == false && condition)
             {
-                gates[uniqueID].value = true;
-                gates[uniqueID].entries++;
+                gates[uniqueId].value = true;
+                gates[uniqueId].entries++;
                 return true;
             }
-            else if (gates[uniqueID].entries < maximum)
-                gates[uniqueID].value = false;
+            else if (gates[uniqueId].entries < maximum)
+                gates[uniqueId].value = false;
         }
 
         return false;
@@ -84,16 +84,16 @@ public static class Extensions
     /// Useful for turning a continuous input condition into the familiar "press and hold" key trigger.
     /// </summary>
     /// <param name="condition">The bool value to check for.</param>
-    /// <param name="uniqueID">The unique ID to associate the check with.</param>
+    /// <param name="uniqueId">The unique ID to associate the check with.</param>
     /// <param name="delay">The delay in seconds before the condition is considered held.</param>
     /// <param name="frequency">The frequency in seconds at which the result is true while held.</param>
     public static bool PressAndHold(
         this bool condition,
-        string uniqueID,
+        string uniqueId,
         float delay = 0.5f,
         float frequency = 0.06f)
     {
-        if (condition.Once(uniqueID))
+        if (condition.Once(uniqueId))
         {
             holdDelay.Restart();
             return true;

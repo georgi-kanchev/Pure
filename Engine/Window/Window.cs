@@ -180,6 +180,9 @@ public static class Window
             window.DispatchEvents();
             window.Clear();
             window.SetActive();
+
+            renderTexture.Clear(new(BackgroundColor));
+
             return;
         }
 
@@ -190,7 +193,6 @@ public static class Window
     public static void DrawLayer(Layer layer)
     {
         TryNoWindowException();
-        renderTexture.Clear(new(BackgroundColor));
 
         var tex = Layer.tilesets[layer.TilesetPath];
         var centerX = layer.TilemapPixelSize.w / 2f * layer.Zoom;

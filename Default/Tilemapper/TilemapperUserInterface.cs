@@ -375,7 +375,7 @@ public static class TilemapperUserInterface
             tileFill: new(Tile.SHADE_OPAQUE, colors[index]),
             cornerTileId: Tile.BOX_CORNER_ROUND,
             borderTileId: Tile.SHADE_OPAQUE,
-            borderTint: colors[index]);
+            borderTint: colors[index % colors.Length]);
 
         if (isIndexVisible)
             maps[zOrder + 1].SetTextRectangle(

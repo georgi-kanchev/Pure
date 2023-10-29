@@ -39,7 +39,7 @@ public static class Ludo
     {
         get;
     } = new();
-    private static Layer layer = new();
+    private static Layer layer;
 
     private enum Team
     {
@@ -196,6 +196,8 @@ public static class Ludo
         var dice = new Dice((map.Size.width / 2, map.Size.height / 2));
         var slider = new Slider((1, 1)) { Progress = 1f / 5f };
         var button = new Button((1, map.Size.height - 2)) { Text = "START" };
+
+        layer = new(map.Size);
 
         CreateHomePositions();
         CreateBasePositions();

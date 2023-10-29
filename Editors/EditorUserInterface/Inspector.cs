@@ -122,8 +122,8 @@ internal class Inspector : Panel
 
                 var prompt = editor.Prompt;
                 var panel = panels[ui.IndexOf(selected)];
-                var (_, _, uw, uh) = editor.MapsUi.View;
-                var (_, _, ew, eh) = editor.MapsEditor.View;
+                var (uw, uh) = editor.MapsUi.ViewSize;
+                var (ew, eh) = editor.MapsEditor.ViewSize;
 
                 if (Text == "Remove")
                 {

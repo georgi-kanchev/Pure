@@ -29,8 +29,8 @@ public static class Mouse
         Hand,
         ResizeHorizontal,
         ResizeVertical,
-        ResizeDiagonal1,
-        ResizeDiagonal2,
+        ResizeTopLeftBottomRight,
+        ResizeBottomLeftTopRight,
         Move,
         Crosshair,
         Help,
@@ -229,12 +229,13 @@ public static class Mouse
 
         if (sysCursor.CPointer == IntPtr.Zero)
             sysCursor.Dispose();
-        else
+        else if (IsCursorVisible)
         {
-            var sfmlEnum = (SFML.Window.Cursor.CursorType)cursor;
+            var cursorType = (SFML.Window.Cursor.CursorType)cursor;
             sysCursor.Dispose();
-            sysCursor = new(sfmlEnum);
-            Window.window.SetMouseCursor(sysCursor);
+            sysCursor = new(cursorType);
+            if (sysCursor.CPointer != IntPtr.Zero)
+                Window.window.SetMouseCursor(sysCursor);
         }
     }
 #endregion
