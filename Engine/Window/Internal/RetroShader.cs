@@ -1,7 +1,5 @@
 namespace Pure.Engine.Window;
 
-using SFML.Graphics;
-
 internal static class RetroShader
 {
     public static Shader? Create()

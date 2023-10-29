@@ -8,13 +8,16 @@ public static class DefaultGraphics
 {
     public static void Run()
     {
-        var tilemap = new Tilemap((16 * 3, 9 * 3));
+        var (w, h) = Monitor.AspectRatio;
+        var tilemap = new Tilemap((w * 3, h * 3));
 
         Window.Create();
 
+        var layer = new Layer { TilemapSize = tilemap.Size };
         while (Window.IsOpen)
         {
             Window.Activate(true);
+            layer.Clear();
 
             tilemap.Flush();
 
@@ -22,11 +25,12 @@ public static class DefaultGraphics
                 for (var j = 0; j < 26; j++)
                     tilemap.SetTile((j, i), new Indices(i, j).ToIndex(26));
 
-            var (x, y) = Mouse.PixelToWorld(Mouse.CursorPosition);
+            var (x, y) = layer.PixelToWorld(Mouse.CursorPosition);
             var id = tilemap.TileAt(((int)x, (int)y)).Id;
             tilemap.SetTextLine((27, 13), $"{id}");
 
-            Window.DrawTiles(tilemap.ToBundle());
+            layer.DrawTilemap(tilemap.ToBundle());
+            Window.DrawLayer(layer);
             Window.Activate(false);
         }
     }

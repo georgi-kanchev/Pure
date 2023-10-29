@@ -51,6 +51,7 @@ public static class FlappyBird
             InitializePipes();
         });
 
+        var layer = new Layer();
         while (Window.IsOpen) // the default game loop
         {
             Window.Activate(true);
@@ -125,10 +126,10 @@ public static class FlappyBird
             if (isGameOver)
                 foreground.SetTextLine((width / 2 - GAME_OVER.Length / 2, height / 2), GAME_OVER);
 
-            Window.DrawTiles(background.ToBundle());
-            Window.DrawTiles(foreground.ToBundle());
+            layer.DrawTilemap(background.ToBundle());
+            layer.DrawTilemap(foreground.ToBundle());
             var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
-            Window.DrawTile((BIRD_X, birdY), tile);
+            layer.DrawTile((BIRD_X, birdY), tile);
 
             //Window.DrawRectangles(collisionMap);
             //Window.DrawRectangles(birdRect);

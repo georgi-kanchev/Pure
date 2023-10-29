@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Default\RenderersUserInterface\RenderersUserInterface.csproj"/>
+        <ProjectReference Include="..\..\Default\Tilemapper\Tilemapper.csproj"/>
         <ProjectReference Include="..\..\Engine\Collision\Collision.csproj"/>
         <ProjectReference Include="..\..\Engine\Tilemap\Tilemap.csproj"/>
         <ProjectReference Include="..\..\Engine\UserInterface\UserInterface.csproj"/>

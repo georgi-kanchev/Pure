@@ -1,7 +1,5 @@
 ﻿namespace Pure.Engine.Window;
 
-using SFML.Window;
-
 /// <summary>
 /// Handles mouse input.
 /// </summary>
@@ -24,7 +22,6 @@ public static class Mouse
     /// </summary>
     public enum Cursor
     {
-        None = -1,
         Arrow,
         ArrowWait,
         Wait,
@@ -54,7 +51,7 @@ public static class Mouse
     /// <summary>
     /// Gets or sets the graphics for the mouse cursor.
     /// </summary>
-    public static Cursor CursorGraphics
+    public static Cursor CursorCurrent
     {
         get
         {
@@ -69,7 +66,6 @@ public static class Mouse
 
             cursor = value;
             TryUpdateSystemCursor();
-            UpdateCursorVisibility();
         }
     }
     /// <summary>
@@ -103,21 +99,14 @@ public static class Mouse
             return pos.X > -1 && pos.X < w.Size.X && pos.Y > -1 && pos.Y < w.Size.Y;
         }
     }
-    /// <summary>
-    /// Gets or sets whether the mouse cursor graphics are the system ones or custom tiles.
-    /// </summary>
-    public static bool IsCursorTile
+    public static bool IsCursorVisible
     {
-        get
-        {
-            Window.TryNoWindowException();
-            return isCursorTile;
-        }
+        get => isCursorVisible;
         set
         {
             Window.TryNoWindowException();
-            isCursorTile = value;
-            UpdateCursorVisibility();
+            isCursorVisible = value;
+            Window.window.SetMouseCursorVisible(value);
         }
     }
 
@@ -147,45 +136,6 @@ public static class Mouse
             Window.TryNoWindowException();
             scrollData = value;
         }
-    }
-
-    public static (float x, float y) PixelToWorld((int x, int y) pixelPosition)
-    {
-        Window.TryNoWindowException();
-
-        var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
-        var (ww, wh) = (Window.Size.width, Window.Size.height);
-        var (cw, ch) = (Window.Layer.tilemapCellCount.w, Window.Layer.tilemapCellCount.h);
-        var (vw, vh) = Window.renderTextureViewSize;
-        var (mw, mh) = (Window.Layer.tilemapSize.w, Window.Layer.tilemapSize.h);
-        var (ox, oy) = Window.Layer.offset;
-
-        ox /= mw;
-        oy /= mh;
-
-        px -= ww / 2f;
-        py -= wh / 2f;
-
-        var x = Map(px, 0, ww, 0, cw);
-        var y = Map(py, 0, wh, 0, ch);
-
-        x *= vw / Window.Layer.zoom / mw;
-        y *= vh / Window.Layer.zoom / mh;
-
-        x += cw / 2f;
-        y += ch / 2f;
-
-        x -= ox * cw / Window.Layer.zoom;
-        y -= oy * ch / Window.Layer.zoom;
-
-        return (x, y);
-    }
-
-    public static void SetupCursorTile(int tile = 442, uint color = uint.MaxValue)
-    {
-        Window.TryNoWindowException();
-        cursorColor = color;
-        cursorTile = tile;
     }
 
     /// <summary>
@@ -221,22 +171,16 @@ public static class Mouse
     }
 
 #region Backend
-    internal static bool isCursorTileVisible;
     private static readonly Dictionary<Button, Action> actionsPress = new(), actionsRelease = new();
     private static Action? actionScroll;
     private static readonly List<Button> pressed = new();
-    private static readonly List<(float, float)> cursorOffsets = new()
-    {
-        (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
-        (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
-    };
 
     private static (int x, int y) cursorPos;
-    private static int cursorTile = 442, scrollData;
+    private static int scrollData;
     private static Cursor cursor;
-    private static uint cursorColor = uint.MaxValue;
     private static SFML.Window.Cursor sysCursor = new(SFML.Window.Cursor.CursorType.Arrow);
-    private static bool isMouseGrabbed, isCursorTile = true;
+    private static bool isMouseGrabbed;
+    private static bool isCursorVisible;
 
     internal static void OnMove(object? s, MouseMoveEventArgs e)
     {
@@ -277,72 +221,21 @@ public static class Mouse
     internal static void Update()
     {
         ScrollDelta = 0;
-
-        if (IsCursorTile == false || isCursorTileVisible == false || CursorGraphics == Cursor.None)
-            return;
-
-        var (offX, offY) = cursorOffsets[(int)CursorGraphics];
-
-        Window.Layer.graphicsPath = "default";
-        Window.Layer.tileSize = (8, 8);
-
-        var cursorTile = Mouse.cursorTile;
-        var ang = default(sbyte);
-
-        if (CursorGraphics == Cursor.ResizeVertical)
-        {
-            cursorTile--;
-            ang = 1;
-        }
-        else if (CursorGraphics == Cursor.ResizeDiagonal1)
-        {
-            cursorTile--;
-            ang = 1;
-        }
-        else if ((int)CursorGraphics >= (int)Cursor.ResizeDiagonal2)
-        {
-            cursorTile -= 2;
-        }
-
-        (int id, uint tint, sbyte ang, bool h, bool v) tile = default;
-        tile.id = cursorTile + (int)CursorGraphics;
-        tile.tint = cursorColor;
-        tile.ang = ang;
-
-        var (x, y) = PixelToWorld(cursorPos);
-        Window.DrawTile((x - offX, y - offY), tile);
     }
 
     private static void TryUpdateSystemCursor()
     {
-        if (IsCursorTile)
-            return;
-
         Window.TryNoWindowException();
 
         if (sysCursor.CPointer == IntPtr.Zero)
             sysCursor.Dispose();
         else
         {
-            var sfmlEnum = (SFML.Window.Cursor.CursorType)(cursor);
+            var sfmlEnum = (SFML.Window.Cursor.CursorType)cursor;
             sysCursor.Dispose();
             sysCursor = new(sfmlEnum);
             Window.window.SetMouseCursor(sysCursor);
         }
-    }
-    internal static void UpdateCursorVisibility()
-    {
-        Window.TryNoWindowException();
-        Window.window.SetMouseCursorVisible(CursorGraphics != Cursor.None);
-
-        if (IsCursorTile)
-            Window.window.SetMouseCursorVisible(IsCursorHoveringWindow == false);
-    }
-
-    private static float Map(float number, float a1, float a2, float b1, float b2)
-    {
-        var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
-        return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
 #endregion
 }

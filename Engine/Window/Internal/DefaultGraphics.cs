@@ -1,7 +1,6 @@
 ﻿namespace Pure.Engine.Window;
 
 using System.IO.Compression;
-using SFML.Graphics;
 
 internal static class DefaultGraphics
 {

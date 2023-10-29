@@ -10,10 +10,8 @@ public static class Collision
     public static void Run()
     {
         Window.Create();
-        //Mouse.CursorGraphics = Mouse.Cursor.None;
-        Mouse.IsCursorTile = false;
 
-        var aspectRatio = Window.MonitorAspectRatio;
+        var aspectRatio = Monitor.AspectRatio;
         var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
         var background = new Tilemap(tilemap.Size);
 
@@ -31,29 +29,31 @@ public static class Collision
         var scale = 1f - 1f / 8f;
         var hitbox = new Hitbox((0, 0), (scale, scale), new Rectangle((1f, 1f)));
 
+        var layer = new Layer { TilemapSize = tilemap.Size };
         while (Window.IsOpen)
         {
             Window.Activate(true);
             Time.Update();
+            layer.Clear();
 
-            FillWithRandomGrass();
-            SetLake((0, 0), (14, 9));
-            SetLake((26, 18), (5, 7));
-            SetLake((16, 24), (12, 6));
-            SetHouses((30, 10), (34, 11), (33, 8));
-            SetBridge((21, 16), (31, 16));
-            SetRoad((32, 0), (32, 26));
-            SetRoad((33, 10), (47, 10));
-            SetRoad((20, 16), (0, 16));
-            SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
-            SetBackgrounds();
+            tilemap.FillWithRandomGrass();
+            tilemap.SetLake((0, 0), (14, 9));
+            tilemap.SetLake((26, 18), (5, 7));
+            tilemap.SetLake((16, 24), (12, 6));
+            tilemap.SetHouses((30, 10), (34, 11), (33, 8));
+            tilemap.SetBridge((21, 16), (31, 16));
+            tilemap.SetRoad((32, 0), (32, 26));
+            tilemap.SetRoad((33, 10), (47, 10));
+            tilemap.SetRoad((20, 16), (0, 16));
+            tilemap.SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
+            tilemap.SetBackgrounds(background);
 
             collisionMap.Update(tilemap);
 
-            Window.DrawTiles(background);
-            Window.DrawTiles(tilemap);
+            layer.DrawTilemap(background);
+            layer.DrawTilemap(tilemap);
 
-            var mousePosition = Mouse.PixelToWorld(Mouse.CursorPosition);
+            var mousePosition = layer.PixelToWorld(Mouse.CursorPosition);
             hitbox.Position = mousePosition;
 
             var isOverlapping = collisionMap.IsOverlapping(hitbox);
@@ -64,82 +64,85 @@ public static class Collision
             var crossPoints = line.CrossPoints(collisionMap);
             line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
 
-            Window.DrawLines(line);
-            Window.DrawPoints(crossPoints);
-            Window.DrawTile(mousePosition, tile);
+            layer.DrawLines(line);
+            layer.DrawPoints(crossPoints);
+            layer.DrawTile(mousePosition, tile);
+
+            Window.DrawLayer(layer);
             Window.Activate(false);
         }
+    }
 
-        return;
-
-        void FillWithRandomGrass()
-        {
-            var color = Color.Green.ToDark(0.4f);
-            tilemap.Flush();
-            tilemap.Replace((0, 0), tilemap.Size, 0, default,
-                new Tile(Tile.SHADE_1, color, 0),
-                new Tile(Tile.SHADE_1, color, 1),
-                new Tile(Tile.SHADE_1, color, 2),
-                new Tile(Tile.SHADE_1, color, 3),
-                new Tile(Tile.SHADE_2, color, 0),
-                new Tile(Tile.SHADE_2, color, 1),
-                new Tile(Tile.SHADE_2, color, 2),
-                new Tile(Tile.SHADE_2, color, 3));
-        }
-        void SetLake((int x, int y) position, (int width, int height) radius)
-        {
-            // every sec slight mutation times 3
-            var seed = (0, 0, (int)Time.RuntimeClock * 3);
-            tilemap.SetEllipse(position, radius, Tile.MATH_APPROXIMATE);
-            tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE, seed,
-                new Tile(Tile.ICON_WAVE, Color.Blue, 0),
-                new Tile(Tile.ICON_WAVE, Color.Blue, 2),
-                new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 0),
-                new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 2));
-        }
-        void SetHouses(params (int x, int y)[] positions)
-        {
-            foreach (var t in positions)
+    private static void SetBackgrounds(this Tilemap tilemap, Tilemap background)
+    {
+        for (var i = 0; i < tilemap.Size.height; i++)
+            for (var j = 0; j < tilemap.Size.width; j++)
             {
-                var (x, y) = t;
-                var roof = new Tile(Tile.GEOMETRY_ANGLE, Color.Red.ToDark());
-                var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Color.Brown.ToBright());
-
-                tilemap.SetTile((x, y), roof);
-                roof.Flips = (true, false);
-                tilemap.SetTile((x + 1, y), roof);
-
-                tilemap.SetTile((x, y + 1), walls);
-                walls.Flips = (true, false);
-                tilemap.SetTile((x + 1, y + 1), walls);
+                var color = (Color)tilemap.TileAt((j, i)).Tint;
+                background.SetTile((j, i), new(Tile.SHADE_OPAQUE, color.ToDark()));
             }
-        }
-        void SetRoad((int x, int y) pointA, (int x, int y) pointB)
+    }
+    private static void SetTrees(this Tilemap tilemap, params (int x, int y)[] positions)
+    {
+        foreach (var t in positions)
         {
-            var angle = pointA.x == pointB.x ? 1 : 0;
-            tilemap.SetLine(pointA, pointB, new(Tile.BAR_SPIKE_STRAIGHT, Color.Brown, (sbyte)angle));
+            var (x, y) = t;
+            tilemap.SetEllipse((x, y - 1), (1, 1), new(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
+            tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
         }
-        void SetBridge((int x, int y) pointA, (int x, int y) pointB)
+    }
+    private static void SetBridge(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
+    {
+        tilemap.SetLine(pointA, pointB, new(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
+    }
+    private static void SetRoad(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
+    {
+        var angle = pointA.x == pointB.x ? 1 : 0;
+        tilemap.SetLine(pointA, pointB, new(Tile.BAR_SPIKE_STRAIGHT, Color.Brown, (sbyte)angle));
+    }
+    private static void SetHouses(this Tilemap tilemap, params (int x, int y)[] positions)
+    {
+        foreach (var t in positions)
         {
-            tilemap.SetLine(pointA, pointB, new(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
+            var (x, y) = t;
+            var roof = new Tile(Tile.GEOMETRY_ANGLE, Color.Red.ToDark());
+            var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Color.Brown.ToBright());
+
+            tilemap.SetTile((x, y), roof);
+            roof.Flips = (true, false);
+            tilemap.SetTile((x + 1, y), roof);
+
+            tilemap.SetTile((x, y + 1), walls);
+            walls.Flips = (true, false);
+            tilemap.SetTile((x + 1, y + 1), walls);
         }
-        void SetTrees(params (int x, int y)[] positions)
-        {
-            foreach (var t in positions)
-            {
-                var (x, y) = t;
-                tilemap.SetEllipse((x, y - 1), (1, 1), new(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
-                tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
-            }
-        }
-        void SetBackgrounds()
-        {
-            for (var i = 0; i < tilemap.Size.height; i++)
-                for (var j = 0; j < tilemap.Size.width; j++)
-                {
-                    var color = (Color)tilemap.TileAt((j, i)).Tint;
-                    background.SetTile((j, i), new(Tile.SHADE_OPAQUE, color.ToDark()));
-                }
-        }
+    }
+    private static void SetLake(
+        this Tilemap tilemap,
+        (int x, int y) position,
+        (int width, int height) radius)
+    {
+        // every sec slight mutation times 3
+        var seed = (0, 0, (int)Time.RuntimeClock * 3);
+        tilemap.SetEllipse(position, radius, Tile.MATH_APPROXIMATE);
+        tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE, seed,
+            new Tile(Tile.ICON_WAVE, Color.Blue, 0),
+            new Tile(Tile.ICON_WAVE, Color.Blue, 2),
+            new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 0),
+            new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 2));
+    }
+    private static void FillWithRandomGrass(this Tilemap tilemap)
+    {
+        var color = Color.Green.ToDark(0.4f);
+        tilemap.Flush();
+        tilemap.Replace((0, 0), tilemap.Size, 0, default,
+            new Tile(Tile.SHADE_1, color, 0),
+            new Tile(Tile.SHADE_1, color, 1),
+            new Tile(Tile.SHADE_1, color, 2),
+            new Tile(Tile.SHADE_1, color, 3),
+            new Tile(Tile.SHADE_2, color, 0),
+            new Tile(Tile.SHADE_2, color, 1),
+            new Tile(Tile.SHADE_2, color, 2),
+            new Tile(Tile.SHADE_2, color, 3));
     }
 }

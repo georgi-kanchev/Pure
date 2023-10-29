@@ -1,10 +1,10 @@
-﻿namespace Pure.Default.RendererUserInterface;
+﻿namespace Pure.Default.Tilemapper;
 
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Utilities;
 
-public static class Default
+public static class TilemapperUserInterface
 {
     public static bool IsInteractable
     {

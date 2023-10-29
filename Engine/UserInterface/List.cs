@@ -160,7 +160,7 @@ public class List : Block
         var scrollIndex = GrabInt(bytes);
 
         var items = InternalCreateAmount(GrabInt(bytes));
-        InternalInsert(0, items);
+        InternalAdd(items);
 
         Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true };
 
@@ -384,6 +384,10 @@ public class List : Block
         });
     }
 
+    internal void InternalAdd(params Button[] items)
+    {
+        InternalInsert(data.Count, items);
+    }
     internal void InternalInsert(int index, params Button[] items)
     {
         for (var i = 0; i < items.Length; i++)

@@ -2,8 +2,9 @@
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
-global using static Pure.Default.RendererUserInterface.Default;
-using System.Diagnostics.CodeAnalysis;
+global using static Pure.Default.Tilemapper.TilemapperUserInterface;
+global using System.Diagnostics.CodeAnalysis;
+global using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Editors.EditorBase;
 
@@ -127,7 +128,7 @@ public class Editor
         Window.Create(PIXEL_SCALE);
         Window.Title = title;
 
-        var (width, height) = Window.MonitorAspectRatio;
+        var (width, height) = Monitor.AspectRatio;
         ChangeMapSize(mapSize);
         MapsEditor.View = (0, 0, viewSize.width, viewSize.height);
         MapsUi = new((int)LayerMapsUi.Count, (width * 5, height * 5));
@@ -145,9 +146,9 @@ public class Editor
         };
         promptSize.OnDisplay(() => MapsUi.SetInputBox(promptSize, (int)LayerMapsUi.PromptBack));
 
-        Window.LayerAdd(id: 1);
-        Window.LayerAdd(id: 2);
-        Window.LayerUpdate(id: 2, zoom: 3f);
+        grid = new();
+        map = new();
+        ui = new() { Zoom = 3f };
         Input.TilemapSize = (MapsUi.View.width, MapsUi.View.height);
 
         for (var i = 0; i < 5; i++)
@@ -177,8 +178,7 @@ public class Editor
 
             //========
 
-            Window.LayerCurrent = 0;
-            var (x, y) = Mouse.PixelToWorld(Mouse.CursorPosition);
+            var (x, y) = grid.PixelToWorld(Mouse.CursorPosition);
             var (wx, wy, ww, wh) = MapsEditor.View;
             prevWorld = MousePositionWorld;
             MousePositionWorld = (x + wx, y + wy);
@@ -188,27 +188,27 @@ public class Editor
 
             Grid.View = MapsEditor.View;
             var gridView = Grid.ViewUpdate();
-            Window.LayerUpdate(0, ViewPosition, ViewZoom);
-            Window.DrawTiles(gridView.ToBundle());
+            grid.Offset = ViewPosition;
+            grid.Zoom = ViewZoom;
+            grid.DrawTilemap(gridView.ToBundle());
 
             //========
 
+            IsDisabledViewInteraction = Prompt.IsHidden == false;
             TryViewInteract();
             OnUpdateEditor?.Invoke();
 
             //========
 
-            Window.LayerCurrent = 1;
             var view = MapsEditor.ViewUpdate();
             foreach (var t in view)
-                Window.DrawTiles(t.ToBundle());
+                map.DrawTilemap(t.ToBundle());
 
             //========
 
-            Window.LayerCurrent = 2;
             var (_, _, uw, uh) = MapsUi.View;
             prevUi = MousePositionUi;
-            MousePositionUi = Mouse.PixelToWorld(Mouse.CursorPosition);
+            MousePositionUi = ui.PixelToWorld(Mouse.CursorPosition);
             Input.Position = MousePositionUi;
             Input.PositionPrevious = prevUi;
             Input.TilemapSize = (uw, uh);
@@ -220,10 +220,10 @@ public class Editor
             if (Prompt.IsHidden == false)
                 Prompt.Update();
 
-            Mouse.CursorGraphics = (Mouse.Cursor)Input.CursorResult;
+            Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
             for (var i = 0; i < MapsUi.Count; i++)
-                Window.DrawTiles(MapsUi[i].ToBundle());
+                ui.DrawTilemap(MapsUi[i].ToBundle());
 
             //========
 
@@ -263,6 +263,7 @@ public class Editor
     private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
     private const int GRID_GAP = 10;
     private readonly InputBox promptSize;
+    private readonly Layer grid, map, ui;
 
     private string infoText = "";
     private float infoTextTimer;
@@ -310,7 +311,7 @@ public class Editor
     private void ResizePressMap(int i)
     {
         Prompt.Close();
-        var text = promptSize.Value.Split();
+        var text = promptSize.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
         if (i != 0 || text.Length != 2)
             return;
@@ -331,7 +332,7 @@ public class Editor
     private void ResizePressView(int i)
     {
         Prompt.Close();
-        var text = promptSize.Value.Split();
+        var text = promptSize.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
         if (i != 0 || text.Length != 2)
             return;
@@ -471,7 +472,8 @@ public class Editor
         TryViewZoom();
         TryViewMove();
 
-        Window.LayerUpdate(1, ViewPosition, ViewZoom);
+        map.Offset = ViewPosition;
+        map.Zoom = ViewZoom;
 
         if (Math.Abs(prevZoom - ViewZoom) > 0.01f)
             DisplayInfoText($"Zoom {ViewZoom * 100:F0}%");
@@ -483,7 +485,7 @@ public class Editor
         if (IsDisabledViewMove || mmb == false)
             return;
 
-        var (mw, mh) = Window.MonitorSize;
+        var (mw, mh) = Monitor.Size;
         var (ww, wh) = Window.Size;
         var (aw, ah) = (mw / ww, mh / wh);
         var (mx, my) = MousePositionRaw;

@@ -1,21 +1,15 @@
 ﻿global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
-global using static Pure.Default.RendererUserInterface.Default;
+global using static Pure.Default.Tilemapper.TilemapperUserInterface;
 global using Pure.Editors.EditorBase;
 global using Pure.Engine.Window;
+global using System.Diagnostics.CodeAnalysis;
+global using Pure.Engine.Utilities;
 
 namespace Pure.Editors.EditorMap;
 
 public static class Program
 {
-    internal static readonly Editor editor;
-    internal static readonly Panel inspector;
-    internal static readonly Layout layout;
-    internal static readonly List layers;
-    internal static readonly InputBox rename, create;
-    internal static readonly Button remove;
-    internal static readonly Menu menu;
-
     static Program()
     {
         var (mw, mh) = (50, 50);
@@ -26,8 +20,35 @@ public static class Program
         editor.MapsEditor.Add(new Tilemap((mw, mh)));
         editor.MapsEditor.View = (0, 0, mw, mh);
 
+        CreateInspector();
+        CreateMenu();
+        CreatePrompts();
+    }
+
+    public static void Run()
+    {
+        editor.OnUpdateLate += UpdatePalette;
+        editor.Run();
+    }
+
+#region Backend
+    private static string? promptFilePath;
+    private static (int w, int h) promptTileSize, promptTileGap;
+    private static int promptTileFull;
+
+    private static readonly Editor editor;
+    private static Menu menu;
+    private static List layers;
+    private static InputBox rename, create, promptPair;
+    private static FileViewer promptFileViewer;
+    private static Stepper promptStepper;
+    //private static Tilemap palette;
+
+    [MemberNotNull(nameof(layers), nameof(create), nameof(rename))]
+    private static void CreateInspector()
+    {
         var (w, h) = (16, editor.MapsUi.Size.height);
-        inspector = new()
+        var inspector = new Panel()
         {
             Text = "",
             Size = (w, h),
@@ -52,7 +73,7 @@ public static class Program
         rename.OnSubmit(OnLayersRename);
         rename.OnDisplay(() => editor.MapsUi.SetInputBox(rename));
 
-        remove = new() { Text = "Remove" };
+        var remove = new Button() { Text = "Remove" };
         remove.OnInteraction(Interaction.Trigger, OnLayersRemove);
         remove.OnUpdate(() =>
         {
@@ -67,7 +88,8 @@ public static class Program
         {
             layers, null, create, null, rename, null, remove
         };
-        layout = new((inspector.Position.x + 1, inspector.Position.y + 1)) { Size = (w - 2, h - 2) };
+        var layout = new Layout((inspector.Position.x + 1, inspector.Position.y + 1))
+            { Size = (w - 2, h - 2) };
         layout.OnDisplaySegment((segment, i) => UpdateInspectorItem(i, inspectorItems, segment));
 
         layout.Cut(0, Side.Bottom, 0.7f);
@@ -76,7 +98,10 @@ public static class Program
         layout.Cut(6, Side.Bottom, 0.85f);
 
         editor.Ui.Add(inspector, layout, create, rename, remove, layers);
-
+    }
+    [MemberNotNull(nameof(menu))]
+    private static void CreateMenu()
+    {
         menu = new(editor,
             "Save… ",
             "  Map",
@@ -84,25 +109,124 @@ public static class Program
             "Load… ",
             "  Tileset",
             "  Map",
-            "  Collisions");
+            "  Collisions") { Size = (12, 7) };
         menu.OnItemInteraction(Interaction.Trigger, btn =>
         {
+            menu.IsHidden = true;
+            menu.IsDisabled = true;
             var index = menu.IndexOf(btn);
             if (index == 4)
-            {
-                //Window.
-            }
+                PromptTileSet();
+        });
+
+        Mouse.OnButtonPress(Mouse.Button.Right, () =>
+        {
+            var (mx, my) = (0, 0); //Mouse.PixelToWorld(Mouse.CursorPosition);
+            menu.IsHidden = false;
+            menu.IsDisabled = false;
+            menu.Position = ((int)mx + 1, (int)my + 1);
         });
     }
-
-    public static void Run()
+    [MemberNotNull(nameof(promptPair), nameof(promptFileViewer), nameof(promptStepper))]
+    private static void CreatePrompts()
     {
-        editor.OnUpdateLate += UpdatePalette;
-        editor.Run();
+        const int BACK = (int)Editor.LayerMapsUi.PromptBack;
+        const int MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
+        var maps = editor.MapsUi;
+
+        promptStepper = new() { Range = (0, int.MaxValue), Size = (20, 2) };
+        promptStepper.OnDisplay(() => maps.SetStepper(promptStepper, BACK));
+
+        promptPair = new()
+        {
+            Size = (20, 1),
+            SymbolGroup = SymbolGroup.Digits | SymbolGroup.Space,
+            Value = ""
+        };
+        promptPair.OnDisplay(() => maps.SetInputBox(promptPair, BACK));
+
+        promptFileViewer = new()
+        {
+            FilesAndFolders = { IsSingleSelecting = true },
+            Size = (21, 10)
+        };
+        promptFileViewer.OnDisplay(() => maps.SetFileViewer(promptFileViewer, BACK));
+        promptFileViewer.FilesAndFolders.OnItemDisplay(btn =>
+            maps.SetFileViewerItem(promptFileViewer, btn, MIDDLE));
     }
 
-#region Backend
-    private static readonly Tilemap palette;
+    private static void PromptTileSet()
+    {
+        editor.Prompt.Text = "Select Image File:";
+        editor.Prompt.Open(promptFileViewer, i =>
+        {
+            editor.Prompt.Close();
+
+            var paths = promptFileViewer.SelectedPaths;
+            if (i != 0 || paths.Length == 0)
+                return;
+
+            promptFilePath = promptFileViewer.SelectedPaths[0];
+            PromptTileSize();
+        });
+    }
+    private static void PromptTileSize()
+    {
+        editor.Prompt.Text = $"Enter Tile Size{Environment.NewLine}" +
+                             $"example: '16 16'";
+        editor.Prompt.Open(promptPair, i =>
+        {
+            editor.Prompt.Close();
+
+            if (i != 0)
+                return;
+
+            var split = promptPair.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+            if (split.Length != 2)
+                return;
+
+            promptTileSize = ((int)split[0].ToNumber(), (int)split[1].ToNumber());
+            PromptTileGap();
+        });
+    }
+    private static void PromptTileGap()
+    {
+        editor.Prompt.Text = $"Enter Tile Gap{Environment.NewLine}" +
+                             $"example: '1 1'";
+        editor.Prompt.Open(promptPair, i =>
+        {
+            editor.Prompt.Close();
+
+            if (i != 0)
+                return;
+
+            var split = promptPair.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+            if (split.Length != 2)
+                return;
+
+            promptTileGap = ((int)split[0].ToNumber(), (int)split[1].ToNumber());
+            PromptTileFull();
+        });
+    }
+    private static void PromptTileFull()
+    {
+        editor.Prompt.Text = "Provide Full Tile Id";
+        editor.Prompt.Open(promptStepper, i =>
+        {
+            editor.Prompt.Close();
+
+            if (i != 0)
+                return;
+
+            promptTileFull = (int)promptStepper.Value;
+            PromptTileSetSuccessful();
+        });
+    }
+    private static void PromptTileSetSuccessful()
+    {
+        //Window.LayerAdd(1, promptFilePath, promptTileSize, promptTileGap, promptTileFull);
+        //Window.LayerAdd(3, promptFilePath, promptTileSize, promptTileGap, promptTileFull);
+    }
 
     private static void OnLayerCreate()
     {
@@ -154,7 +278,7 @@ public static class Program
 
     private static void UpdatePalette()
     {
-        Window.LayerCurrent = 3;
+        //Window.LayerCurrent = 3;
     }
 #endregion
 }

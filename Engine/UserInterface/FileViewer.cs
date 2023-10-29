@@ -221,7 +221,7 @@ public class FileViewer : Block
             Text = $"{Path.GetFileName(path)}",
             isTextReadonly = true
         };
-        FilesAndFolders.InternalInsert(0, item);
+        FilesAndFolders.InternalAdd(item);
 
         item.OnInteraction(Interaction.DoubleTrigger, () =>
         {

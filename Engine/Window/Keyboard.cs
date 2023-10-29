@@ -1,7 +1,5 @@
 ﻿namespace Pure.Engine.Window;
 
-using SFML.Window;
-
 /// <summary>
 /// Handles keyboard input.
 /// </summary>

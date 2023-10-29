@@ -39,6 +39,7 @@ public static class Ludo
     {
         get;
     } = new();
+    private static Layer layer = new();
 
     private enum Team
     {
@@ -139,8 +140,8 @@ public static class Ludo
         }
         public void Draw()
         {
-            Window.DrawTile(Position, (Tile.GAME_CHESS_ROOK, TeamColors[Team], 0, false, false));
-            Window.DrawTile(Position, (Tile.GAME_CHESS_ROOK_HOLLOW, Color.Black, 0, false, false));
+            layer.DrawTile(Position, (Tile.GAME_CHESS_ROOK, TeamColors[Team], 0, false, false));
+            layer.DrawTile(Position, (Tile.GAME_CHESS_ROOK_HOLLOW, Color.Black, 0, false, false));
         }
     }
 
@@ -183,7 +184,7 @@ public static class Ludo
 
             var frame = diceAnimation.CurrentValue;
             var id = IsRolling ? frame : Tile.GAME_DICE_1 + CurrentValue - 1;
-            Window.DrawTile(position, (id, Color.White, 0, false, false));
+            layer.DrawTile(position, (id, Color.White, 0, false, false));
         }
     }
 
@@ -206,7 +207,7 @@ public static class Ludo
             Window.Activate(true);
 
             Input.TilemapSize = map.Size;
-            Input.Position = Mouse.PixelToWorld(Mouse.CursorPosition);
+            Input.Position = layer.PixelToWorld(Mouse.CursorPosition);
             Input.Update(
                 Mouse.IsButtonPressed(Mouse.Button.Left),
                 Mouse.ScrollDelta,
@@ -227,9 +228,9 @@ public static class Ludo
             SetSlider(map, slider);
             SetButton(map, button);
 
-            Mouse.CursorGraphics = (Mouse.Cursor)Input.CursorResult;
+            Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-            Window.DrawTiles(map.ToBundle());
+            layer.DrawTilemap(map.ToBundle());
             foreach (var pawn in Pawns)
                 pawn.Draw();
 

@@ -2,26 +2,51 @@ namespace Pure.Engine.Window;
 
 using Raylib_cs;
 
-internal static class Monitor
+public static class Monitor
 {
-    internal static int current;
-    internal static readonly List<(int x, int y, int w, int h)> posSizes = new();
+    public static int Count
+    {
+        get;
+    }
+    public static string Name
+    {
+        get;
+    }
+    public static int RefreshRate
+    {
+        get;
+    }
+    public static (int width, int height) Size
+    {
+        get;
+    }
+    public static (int x, int y) Position
+    {
+        get;
+    }
+    public static (int width, int height) AspectRatio
+    {
+        get => GetAspectRatio(Size.width, Size.height);
+    }
 
-    internal static void Initialize()
+#region Backend
+    internal static int current;
+
+    static Monitor()
     {
         Raylib.SetTraceLogLevel(TraceLogLevel.LOG_NONE);
         Raylib.InitWindow(1, 1, "");
         Raylib.SetWindowState(ConfigFlags.FLAG_WINDOW_HIDDEN);
         Raylib.SetWindowPosition(-1000, -1000);
 
-        var monitorCount = Raylib.GetMonitorCount();
-        for (var i = 0; i < monitorCount; i++)
-        {
-            var p = Raylib.GetMonitorPosition(i);
-            var w = Raylib.GetMonitorWidth(i);
-            var h = Raylib.GetMonitorHeight(i);
-            posSizes.Add(((int)p.X, (int)p.Y, w, h));
-        }
+        Count = Raylib.GetMonitorCount();
+        current = Math.Min(current, Count - 1);
+
+        var p = Raylib.GetMonitorPosition(current);
+        Position = ((int)p.X, (int)p.Y);
+        Size = (Raylib.GetMonitorWidth(current), Raylib.GetMonitorHeight(current));
+        RefreshRate = Raylib.GetMonitorRefreshRate(current);
+        Name = Raylib.GetMonitorName_(current);
 
         Raylib.CloseWindow();
     }
@@ -34,7 +59,23 @@ internal static class Monitor
 
         int GetGreatestCommonDivisor(int a, int b)
         {
-            return b == 0 ? a : GetGreatestCommonDivisor(b, a % b);
+            while (true)
+            {
+                if (b == 0)
+                    return a;
+                var a1 = a;
+                a = b;
+                b = a1 % b;
+            }
         }
     }
+    internal static (float width, float height) WindowToMonitorRatio
+    {
+        get
+        {
+            var (w, h) = Size;
+            return ((float)w / Window.Size.width, (float)h / Window.Size.height);
+        }
+    }
+#endregion
 }
