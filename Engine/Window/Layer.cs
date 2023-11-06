@@ -1,494 +1,504 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Pure.Engine.Window;
 
 public class Layer
 {
-    public string TilesetPath
-    {
-        get => tilesetPath;
-        set
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                tilesetPath = "default";
-                return;
-            }
+	public string TilesetPath
+	{
+		get => tilesetPath;
+		set
+		{
+			if(string.IsNullOrWhiteSpace(value))
+			{
+				tilesetPath = "default";
+				Init();
+				return;
+			}
 
-            if (tilesets.ContainsKey(value))
-            {
-                tilesetPath = value;
-                return;
-            }
+			if(tilesets.ContainsKey(value))
+			{
+				tilesetPath = value;
+				tilesetPixelSize = tilesets[value].Size;
+				return;
+			}
 
-            try
-            {
-                tilesets[value] = new(value) { Repeated = true };
-                tilesetPath = value;
-                tilesetPixelSize = tilesets[value].Size;
-            }
-            catch (Exception)
-            {
-                tilesetPath = "default";
-            }
-        }
-    }
-    public int TileIdFull
-    {
-        get;
-        set;
-    }
-    public (int width, int height) TileGap
-    {
-        get => tileGap;
-        set => tileGap = (Math.Clamp(value.width, 0, 512), Math.Clamp(value.height, 0, 512));
-    }
-    public (int width, int height) TileSize
-    {
-        get => tileSize;
-        set => tileSize = (Math.Clamp(value.width, 0, 512), Math.Clamp(value.height, 0, 512));
-    }
-    public (int width, int height) TilemapSize
-    {
-        get => tilemapSize;
-        set => tilemapSize = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
-    }
-    public (int width, int height) TilesetSize
-    {
-        get
-        {
-            var (tsw, tsh) = ((int)tilesetPixelSize.X, (int)tilesetPixelSize.Y);
-            var (tw, th) = TileSize;
-            var (gw, gh) = TileGap;
-            return (tsw / (tw + gw), tsh / (th + gh));
-        }
-    }
+			try
+			{
+				tilesets[value] = new(value) { Repeated = true };
+				tilesetPath = value;
+				tilesetPixelSize = tilesets[value].Size;
+			}
+			catch(Exception)
+			{
+				tilesetPath = "default";
+				Init();
+			}
+		}
+	}
+	public int TileIdFull
+	{
+		get;
+		set;
+	}
+	public (int width, int height) TileGap
+	{
+		get => tileGap;
+		set => tileGap = (Math.Clamp(value.width, 0, 512), Math.Clamp(value.height, 0, 512));
+	}
+	public (int width, int height) TileSize
+	{
+		get => tileSize;
+		set => tileSize = (Math.Clamp(value.width, 0, 512), Math.Clamp(value.height, 0, 512));
+	}
+	public (int width, int height) TilemapSize
+	{
+		get => tilemapSize;
+		set => tilemapSize = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
+	}
+	public (int width, int height) TilesetSize
+	{
+		get
+		{
+			var (tsw, tsh) = ((int)tilesetPixelSize.X, (int)tilesetPixelSize.Y);
+			var (tw, th) = TileSize;
+			var (gw, gh) = TileGap;
+			return (tsw / (tw + gw), tsh / (th + gh));
+		}
+	}
 
-    public (float x, float y) Offset
-    {
-        get;
-        set;
-    }
-    public float Zoom
-    {
-        get => zoom;
-        set => zoom = Math.Clamp(value, 0, 1000f);
-    }
+	public (float x, float y) Offset
+	{
+		get;
+		set;
+	}
+	public float Zoom
+	{
+		get => zoom;
+		set => zoom = Math.Clamp(value, 0, 1000f);
+	}
 
-    public Layer((int width, int height) tilemapSize)
-    {
-        Window.TryNoWindowException();
+	public Layer((int width, int height) tilemapSize)
+	{
+		Window.TryNoWindowException();
+		Init();
+		TilemapSize = tilemapSize;
+		Zoom = 1f;
+		tilesetPath = string.Empty;
+		TilesetPath = string.Empty;
+		verts = new(PrimitiveType.Quads);
+	}
 
-        Zoom = 1f;
+	public void Clear()
+	{
+		verts.Clear();
+	}
 
-        TileIdFull = 10;
-        TileSize = (8, 8);
-        tilesetPixelSize = new(208, 208);
-        TilemapSize = tilemapSize;
+	public void DrawCursor(int tileId = 442, uint tint = uint.MaxValue)
+	{
+		if(Mouse.isOverWindow == false)
+			return;
 
-        tilesetPath = string.Empty;
-        TilesetPath = string.Empty;
+		var (offX, offY) = cursorOffsets[(int)Mouse.CursorCurrent];
+		var ang = default(sbyte);
 
-        verts = new(PrimitiveType.Quads);
-    }
+		if(Mouse.CursorCurrent == Mouse.Cursor.ResizeVertical)
+		{
+			tileId--;
+			ang = 1;
+		}
+		else if(Mouse.CursorCurrent == Mouse.Cursor.ResizeTopLeftBottomRight)
+		{
+			tileId--;
+			ang = 1;
+		}
+		else if((int)Mouse.CursorCurrent >= (int)Mouse.Cursor.ResizeBottomLeftTopRight)
+		{
+			tileId -= 2;
+		}
 
-    public void Clear()
-    {
-        verts.Clear();
-    }
+		(int id, uint tint, sbyte ang, bool h, bool v) tile = default;
+		tile.id = tileId + (int)Mouse.CursorCurrent;
+		tile.tint = tint;
+		tile.ang = ang;
 
-    public void DrawCursor(int tileId = 442, uint tint = uint.MaxValue)
-    {
-        var (offX, offY) = cursorOffsets[(int)Mouse.CursorCurrent];
-        var ang = default(sbyte);
+		var (x, y) = PixelToWorld(Mouse.CursorPosition);
+		DrawTile((x - offX, y - offY), tile);
+	}
+	public void DrawPoints(params (float x, float y, uint color)[]? points)
+	{
+		for(var i = 0; i < points?.Length; i++)
+		{
+			var p = points[i];
+			QueueRectangle((p.x, p.y), (1f / TileSize.width, 1f / TileSize.height), p.color);
+		}
+	}
+	public void DrawRectangles(
+		params (float x, float y, float width, float height, uint color)[]? rectangles)
+	{
+		for(var i = 0; i < rectangles?.Length; i++)
+		{
+			var (x, y, width, height, color) = rectangles[i];
+			QueueRectangle((x, y), (width, height), color);
+		}
+	}
+	public void DrawLines(params (float ax, float ay, float bx, float by, uint color)[]? lines)
+	{
+		for(var i = 0; i < lines?.Length; i++)
+		{
+			var l = lines[i];
+			var (tw, th) = TileSize;
+			var (ax, ay) = (l.ax, l.ay);
+			var (bx, by) = (l.bx, l.by);
+			var (dx, dy) = (MathF.Abs(bx - ax), -MathF.Abs(by - ay));
+			var (stepX, stepY) = (1f / tw * 0.999f, 1f / th * 0.999f);
+			var sx = ax < bx ? stepX : -stepY;
+			var sy = ay < by ? stepX : -stepY;
+			var err = dx + dy;
+			var steps = (int)MathF.Max(dx / stepX, -dy / stepY);
 
-        if (Mouse.CursorCurrent == Mouse.Cursor.ResizeVertical)
-        {
-            tileId--;
-            ang = 1;
-        }
-        else if (Mouse.CursorCurrent == Mouse.Cursor.ResizeTopLeftBottomRight)
-        {
-            tileId--;
-            ang = 1;
-        }
-        else if ((int)Mouse.CursorCurrent >= (int)Mouse.Cursor.ResizeBottomLeftTopRight)
-        {
-            tileId -= 2;
-        }
+			for(var t = 0; t <= steps; t++)
+			{
+				DrawPoints((ax, ay, l.color));
 
-        (int id, uint tint, sbyte ang, bool h, bool v) tile = default;
-        tile.id = tileId + (int)Mouse.CursorCurrent;
-        tile.tint = tint;
-        tile.ang = ang;
+				if(IsWithin(ax, bx, stepX) && IsWithin(ay, by, stepY))
+					break;
 
-        var (x, y) = PixelToWorld(Mouse.CursorPosition);
-        DrawTile((x - offX, y - offY), tile);
-    }
-    public void DrawPoints(params (float x, float y, uint color)[]? points)
-    {
-        for (var i = 0; i < points?.Length; i++)
-        {
-            var p = points[i];
-            QueueRectangle((p.x, p.y), (1f / TileSize.width, 1f / TileSize.height), p.color);
-        }
-    }
-    public void DrawRectangles(
-        params (float x, float y, float width, float height, uint color)[]? rectangles)
-    {
-        for (var i = 0; i < rectangles?.Length; i++)
-        {
-            var (x, y, width, height, color) = rectangles[i];
-            QueueRectangle((x, y), (width, height), color);
-        }
-    }
-    public void DrawLines(params (float ax, float ay, float bx, float by, uint color)[]? lines)
-    {
-        for (var i = 0; i < lines?.Length; i++)
-        {
-            var l = lines[i];
-            var (tw, th) = TileSize;
-            var (ax, ay) = (l.ax, l.ay);
-            var (bx, by) = (l.bx, l.by);
-            var (dx, dy) = (MathF.Abs(bx - ax), -MathF.Abs(by - ay));
-            var (stepX, stepY) = (1f / tw * 0.999f, 1f / th * 0.999f);
-            var sx = ax < bx ? stepX : -stepY;
-            var sy = ay < by ? stepX : -stepY;
-            var err = dx + dy;
-            var steps = (int)MathF.Max(dx / stepX, -dy / stepY);
+				var e2 = 2f * err;
 
-            for (var t = 0; t <= steps; t++)
-            {
-                DrawPoints((ax, ay, l.color));
+				if(e2 > dy)
+				{
+					err += dy;
+					ax += sx;
+				}
 
-                if (IsWithin(ax, bx, stepX) && IsWithin(ay, by, stepY))
-                    break;
+				if(e2 < dx == false)
+					continue;
 
-                var e2 = 2f * err;
+				err += dx;
+				ay += sy;
+			}
+		}
+	}
+	public void DrawTile(
+		(float x, float y) position,
+		(int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically) tile,
+		(int width, int height) size = default)
+	{
+		var (id, tint, angle, flipH, flipV) = tile;
+		var (w, h) = size;
+		w = w == 0 ? 1 : w;
+		h = h == 0 ? 1 : h;
 
-                if (e2 > dy)
-                {
-                    err += dy;
-                    ax += sx;
-                }
+		var tiles = new int[Math.Abs(w), Math.Abs(h)];
+		var (tileX, tileY) = IndexToCoords(id);
+		var (x, y) = position;
+		var (tw, th) = TileSize;
 
-                if (e2 < dx == false)
-                    continue;
+		for(var j = 0; j < Math.Abs(h); j++)
+			for(var i = 0; i < Math.Abs(w); i++)
+				tiles[i, j] = CoordsToIndex(tileX + i, tileY + j);
 
-                err += dx;
-                ay += sy;
-            }
-        }
-    }
-    public void DrawTile(
-        (float x, float y) position,
-        (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically) tile,
-        (int width, int height) size = default)
-    {
-        var (id, tint, angle, flipH, flipV) = tile;
-        var (w, h) = size;
-        w = w == 0 ? 1 : w;
-        h = h == 0 ? 1 : h;
+		if(w < 0)
+			FlipVertically(tiles);
+		if(h < 0)
+			FlipHorizontally(tiles);
+		if(flipH)
+			FlipVertically(tiles);
+		if(flipV)
+			FlipHorizontally(tiles);
 
-        var tiles = new int[Math.Abs(w), Math.Abs(h)];
-        var (tileX, tileY) = IndexToCoords(id);
-        var (x, y) = position;
-        var (tw, th) = TileSize;
+		w = Math.Abs(w);
+		h = Math.Abs(h);
 
-        for (var j = 0; j < Math.Abs(h); j++)
-            for (var i = 0; i < Math.Abs(w); i++)
-                tiles[i, j] = CoordsToIndex(tileX + i, tileY + j);
+		for(var i = 0; i < h; i++)
+			for(var j = 0; j < w; j++)
+			{
+				var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (w, h));
+				var (tx, ty) = ((x + j) * tw, (y + i) * th);
+				var c = new Color(tint);
+				var tl = new Vector2f((int)tx, (int)ty);
+				var br = new Vector2f((int)(tx + tw * w), (int)(ty + th * h));
 
-        if (w < 0)
-            FlipVertically(tiles);
-        if (h < 0)
-            FlipHorizontally(tiles);
-        if (flipH)
-            FlipVertically(tiles);
-        if (flipV)
-            FlipHorizontally(tiles);
+				if(angle is 1 or 3)
+					br = new((int)(tx + th * h), (int)(ty + tw * w));
 
-        w = Math.Abs(w);
-        h = Math.Abs(h);
+				var tr = new Vector2f(br.X, tl.Y);
+				var bl = new Vector2f(tl.X, br.Y);
+				var rotated = GetRotatedPoints((sbyte)-angle, ttl, ttr, tbr, tbl);
+				ttl = rotated[0];
+				ttr = rotated[1];
+				tbr = rotated[2];
+				tbl = rotated[3];
 
-        for (var i = 0; i < h; i++)
-            for (var j = 0; j < w; j++)
-            {
-                var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (w, h));
-                var (tx, ty) = ((x + j) * tw, (y + i) * th);
-                var c = new Color(tint);
-                var tl = new Vector2f((int)tx, (int)ty);
-                var br = new Vector2f((int)(tx + tw * w), (int)(ty + th * h));
+				if(size.width < 0)
+				{
+					(ttl, ttr) = (ttr, ttl);
+					(tbl, tbr) = (tbr, tbl);
+				}
 
-                if (angle is 1 or 3)
-                    br = new((int)(tx + th * h), (int)(ty + tw * w));
+				if(size.height < 0)
+				{
+					(ttl, tbl) = (tbl, ttl);
+					(ttr, tbr) = (tbr, ttr);
+				}
 
-                var tr = new Vector2f(br.X, tl.Y);
-                var bl = new Vector2f(tl.X, br.Y);
-                var rotated = GetRotatedPoints((sbyte)-angle, ttl, ttr, tbr, tbl);
-                ttl = rotated[0];
-                ttr = rotated[1];
-                tbr = rotated[2];
-                tbl = rotated[3];
+				verts.Append(new(tl, c, ttl));
+				verts.Append(new(tr, c, ttr));
+				verts.Append(new(br, c, tbr));
+				verts.Append(new(bl, c, tbl));
+			}
+	}
+	public void DrawTilemap(
+		(int id, uint tint, sbyte angle, bool isFlippedHorizontally,
+			bool isFlippedVertically)[,] tilemap)
+	{
+		var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
+		var (tw, th) = TileSize;
 
-                if (size.width < 0)
-                {
-                    (ttl, ttr) = (ttr, ttl);
-                    (tbl, tbr) = (tbr, tbl);
-                }
+		for(var y = 0; y < cellCountH; y++)
+			for(var x = 0; x < cellCountW; x++)
+			{
+				var (id, tint, angle, isFlippedHorizontally, isFlippedVertically) = tilemap[x, y];
 
-                if (size.height < 0)
-                {
-                    (ttl, tbl) = (tbl, ttl);
-                    (ttr, tbr) = (tbr, ttr);
-                }
+				if(id == default)
+					continue;
 
-                verts.Append(new(tl, c, ttl));
-                verts.Append(new(tr, c, ttr));
-                verts.Append(new(br, c, tbr));
-                verts.Append(new(bl, c, tbl));
-            }
-    }
-    public void DrawTilemap(
-        (int id, uint tint, sbyte angle, bool isFlippedHorizontally,
-            bool isFlippedVertically)[,] tilemap)
-    {
-        var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
-        var (tw, th) = TileSize;
+				var color = new Color(tint);
+				var tl = new Vector2f(x * tw, y * th);
+				var tr = new Vector2f((x + 1) * tw, y * th);
+				var br = new Vector2f((x + 1) * tw, (y + 1) * th);
+				var bl = new Vector2f(x * tw, (y + 1) * th);
+				var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (1, 1));
+				var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
+				var (flipX, flipY) = (isFlippedHorizontally, isFlippedVertically);
 
-        for (var y = 0; y < cellCountH; y++)
-            for (var x = 0; x < cellCountW; x++)
-            {
-                var (id, tint, angle, isFlippedHorizontally, isFlippedVertically) = tilemap[x, y];
+				if(flipX)
+				{
+					(ttl, ttr) = (ttr, ttl);
+					(tbl, tbr) = (tbr, tbl);
+				}
 
-                if (id == default)
-                    continue;
+				if(flipY)
+				{
+					(ttl, tbl) = (tbl, ttl);
+					(ttr, tbr) = (tbr, ttr);
+				}
 
-                var color = new Color(tint);
-                var tl = new Vector2f(x * tw, y * th);
-                var tr = new Vector2f((x + 1) * tw, y * th);
-                var br = new Vector2f((x + 1) * tw, (y + 1) * th);
-                var bl = new Vector2f(x * tw, (y + 1) * th);
-                var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (1, 1));
-                var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
-                var (flipX, flipY) = (isFlippedHorizontally, isFlippedVertically);
+				tl = rotated[0];
+				tr = rotated[1];
+				br = rotated[2];
+				bl = rotated[3];
 
-                if (flipX)
-                {
-                    (ttl, ttr) = (ttr, ttl);
-                    (tbl, tbr) = (tbr, tbl);
-                }
+				tl = new((int)tl.X, (int)tl.Y);
+				tr = new((int)tr.X, (int)tr.Y);
+				br = new((int)br.X, (int)br.Y);
+				bl = new((int)bl.X, (int)bl.Y);
 
-                if (flipY)
-                {
-                    (ttl, tbl) = (tbl, ttl);
-                    (ttr, tbr) = (tbr, ttr);
-                }
+				verts.Append(new(tl, color, ttl));
+				verts.Append(new(tr, color, ttr));
+				verts.Append(new(br, color, tbr));
+				verts.Append(new(bl, color, tbl));
+			}
+	}
 
-                tl = rotated[0];
-                tr = rotated[1];
-                br = rotated[2];
-                bl = rotated[3];
+	public (float x, float y) PixelToWorld((int x, int y) pixelPosition)
+	{
+		Window.TryNoWindowException();
 
-                tl = new((int)tl.X, (int)tl.Y);
-                tr = new((int)tr.X, (int)tr.Y);
-                br = new((int)br.X, (int)br.Y);
-                bl = new((int)bl.X, (int)bl.Y);
+		var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
+		var (ww, wh) = (Window.Size.width, Window.Size.height);
+		var (vw, vh) = Window.renderTextureViewSize;
+		var (cw, ch) = TilemapSize;
+		var (tw, th) = TileSize;
+		var (ox, oy) = Offset;
+		var (mw, mh) = (cw * tw, ch * th);
 
-                verts.Append(new(tl, color, ttl));
-                verts.Append(new(tr, color, ttr));
-                verts.Append(new(br, color, tbr));
-                verts.Append(new(bl, color, tbl));
-            }
-    }
+		ox /= mw;
+		oy /= mh;
 
-    public (float x, float y) PixelToWorld((int x, int y) pixelPosition)
-    {
-        Window.TryNoWindowException();
+		px -= ww / 2f;
+		py -= wh / 2f;
 
-        var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
-        var (ww, wh) = (Window.Size.width, Window.Size.height);
-        var (vw, vh) = Window.renderTextureViewSize;
-        var (cw, ch) = TilemapSize;
-        var (tw, th) = TileSize;
-        var (ox, oy) = Offset;
-        var (mw, mh) = (cw * tw, ch * th);
+		var x = Map(px, 0, ww, 0, cw);
+		var y = Map(py, 0, wh, 0, ch);
 
-        ox /= mw;
-        oy /= mh;
+		x *= vw / Zoom / mw;
+		y *= vh / Zoom / mh;
 
-        px -= ww / 2f;
-        py -= wh / 2f;
+		x += cw / 2f;
+		y += ch / 2f;
 
-        var x = Map(px, 0, ww, 0, cw);
-        var y = Map(py, 0, wh, 0, ch);
+		x -= ox * cw / Zoom;
+		y -= oy * ch / Zoom;
 
-        x *= vw / Zoom / mw;
-        y *= vh / Zoom / mh;
+		return (x, y);
+	}
 
-        x += cw / 2f;
-        y += ch / 2f;
+	#region Backend
+	internal static readonly Dictionary<string, Texture> tilesets = new();
+	internal readonly VertexArray verts;
+	private static readonly List<(float, float)> cursorOffsets = new()
+	{
+		(0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
+		(0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
+	};
 
-        x -= ox * cw / Zoom;
-        y -= oy * ch / Zoom;
+	internal Vector2u tilesetPixelSize;
+	internal (int w, int h) TilemapPixelSize
+	{
+		get
+		{
+			var (mw, mh) = TilemapSize;
+			var (tw, th) = TileSize;
+			return (mw * tw, mh * th);
+		}
+	}
 
-        return (x, y);
-    }
+	static Layer()
+	{
+		//var str = DefaultGraphics.PngToBase64String(
+		//    "/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
+		//var str = DefaultGraphics.PNGToBase64String("graphics.png");
 
-#region Backend
-    internal static readonly Dictionary<string, Texture> tilesets = new();
-    internal readonly VertexArray verts;
-    private static readonly List<(float, float)> cursorOffsets = new()
-    {
-        (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
-        (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
-    };
+		tilesets["default"] = DefaultGraphics.CreateTexture();
+	}
 
-    internal Vector2u tilesetPixelSize;
-    internal (int w, int h) TilemapPixelSize
-    {
-        get
-        {
-            var (mw, mh) = TilemapSize;
-            var (tw, th) = TileSize;
-            return (mw * tw, mh * th);
-        }
-    }
+	private string tilesetPath;
+	private (int width, int height) tileGap;
+	private (int width, int height) tileSize;
+	private float zoom;
+	private (int width, int height) tilemapSize;
 
-    static Layer()
-    {
-        //var str = DefaultGraphics.PngToBase64String(
-        //    "/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
-        //var str = DefaultGraphics.PNGToBase64String("graphics.png");
+	[MemberNotNull(nameof(TileIdFull), nameof(TileSize), nameof(tilesetPixelSize))]
+	private void Init()
+	{
+		TileIdFull = 10;
+		TileSize = (8, 8);
+		tilesetPixelSize = new(208, 208);
+	}
 
-        tilesets["default"] = DefaultGraphics.CreateTexture();
-    }
+	private void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
+	{
+		var (tw, th) = TileSize;
+		var (w, h) = size;
+		var (x, y) = (position.x * tw, position.y * th);
+		var color = new Color(tint);
+		var (ttl, ttr, tbr, tbl) = GetTexCoords(TileIdFull, (1, 1));
+		var tl = new Vector2f((int)x, (int)y);
+		var br = new Vector2f((int)x + tw * w, (int)y + th * h);
+		var tr = new Vector2f(br.X, tl.Y);
+		var bl = new Vector2f(tl.X, br.Y);
 
-    private string tilesetPath;
-    private (int width, int height) tileGap;
-    private (int width, int height) tileSize;
-    private float zoom;
-    private (int width, int height) tilemapSize;
+		verts.Append(new(tl, color, ttl));
+		verts.Append(new(tr, color, ttr));
+		verts.Append(new(br, color, tbr));
+		verts.Append(new(bl, color, tbl));
+	}
 
-    private void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
-    {
-        var (tw, th) = TileSize;
-        var (w, h) = size;
-        var (x, y) = (position.x * tw, position.y * th);
-        var color = new Color(tint);
-        var (ttl, ttr, tbr, tbl) = GetTexCoords(TileIdFull, (1, 1));
-        var tl = new Vector2f((int)x, (int)y);
-        var br = new Vector2f((int)x + tw * w, (int)y + th * h);
-        var tr = new Vector2f(br.X, tl.Y);
-        var bl = new Vector2f(tl.X, br.Y);
+	private static bool IsWithin(float number, float targetNumber, float range)
+	{
+		return IsBetween(number, targetNumber - range, targetNumber + range);
+	}
+	private static bool IsBetween(float number, float rangeA, float rangeB)
+	{
+		if(rangeA > rangeB)
+			(rangeA, rangeB) = (rangeB, rangeA);
 
-        verts.Append(new(tl, color, ttl));
-        verts.Append(new(tr, color, ttr));
-        verts.Append(new(br, color, tbr));
-        verts.Append(new(bl, color, tbl));
-    }
+		var l = rangeA <= number;
+		var u = rangeB >= number;
+		return l && u;
+	}
+	private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(
+		int tileId,
+		(int w, int h) size)
+	{
+		var (w, h) = size;
+		var (tw, th) = TileSize;
+		var (gw, gh) = TileGap;
+		var (tx, ty) = IndexToCoords(tileId);
+		var tl = new Vector2f(tx * (tw + gw), ty * (th + gh));
+		var tr = tl + new Vector2f(tw * w, 0);
+		var br = tl + new Vector2f(tw * w, th * h);
+		var bl = tl + new Vector2f(0, th * h);
+		return (tl, tr, br, bl);
+	}
+	private (int, int) IndexToCoords(int index)
+	{
+		var (tw, th) = TilesetSize;
+		index = index < 0 ? 0 : index;
+		index = index > tw * th - 1 ? tw * th - 1 : index;
 
-    private static bool IsWithin(float number, float targetNumber, float range)
-    {
-        return IsBetween(number, targetNumber - range, targetNumber + range);
-    }
-    private static bool IsBetween(float number, float rangeA, float rangeB)
-    {
-        if (rangeA > rangeB)
-            (rangeA, rangeB) = (rangeB, rangeA);
+		return (index % tw, index / tw);
+	}
+	private int CoordsToIndex(int x, int y)
+	{
+		return y * TilesetSize.width + x;
+	}
+	private static int Wrap(int number, int targetNumber)
+	{
+		return ((number % targetNumber) + targetNumber) % targetNumber;
+	}
+	private static void Shift<T>(IList<T> collection, int offset)
+	{
+		if(offset == default)
+			return;
 
-        var l = rangeA <= number;
-        var u = rangeB >= number;
-        return l && u;
-    }
-    private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(
-        int tileId,
-        (int w, int h) size)
-    {
-        var (w, h) = size;
-        var (tw, th) = TileSize;
-        var (gw, gh) = TileGap;
-        var (tx, ty) = IndexToCoords(tileId);
-        var tl = new Vector2f(tx * (tw + gw), ty * (th + gh));
-        var tr = tl + new Vector2f(tw * w, 0);
-        var br = tl + new Vector2f(tw * w, th * h);
-        var bl = tl + new Vector2f(0, th * h);
-        return (tl, tr, br, bl);
-    }
-    private (int, int) IndexToCoords(int index)
-    {
-        var (tw, th) = TilesetSize;
-        index = index < 0 ? 0 : index;
-        index = index > tw * th - 1 ? tw * th - 1 : index;
+		if(offset < 0)
+		{
+			offset = Math.Abs(offset);
+			for(var j = 0; j < offset; j++)
+			{
+				var temp = new T[collection.Count];
+				for(var i = 0; i < collection.Count - 1; i++)
+					temp[i] = collection[i + 1];
+				temp[^1] = collection[0];
 
-        return (index % tw, index / tw);
-    }
-    private int CoordsToIndex(int x, int y)
-    {
-        return y * TilesetSize.width + x;
-    }
-    private static int Wrap(int number, int targetNumber)
-    {
-        return ((number % targetNumber) + targetNumber) % targetNumber;
-    }
-    private static void Shift<T>(IList<T> collection, int offset)
-    {
-        if (offset == default)
-            return;
+				for(var i = 0; i < temp.Length; i++)
+					collection[i] = temp[i];
+			}
 
-        if (offset < 0)
-        {
-            offset = Math.Abs(offset);
-            for (var j = 0; j < offset; j++)
-            {
-                var temp = new T[collection.Count];
-                for (var i = 0; i < collection.Count - 1; i++)
-                    temp[i] = collection[i + 1];
-                temp[^1] = collection[0];
+			return;
+		}
 
-                for (var i = 0; i < temp.Length; i++)
-                    collection[i] = temp[i];
-            }
+		for(var j = 0; j < offset; j++)
+		{
+			var tmp = new T[collection.Count];
+			for(var i = 1; i < collection.Count; i++)
+				tmp[i] = collection[i - 1];
+			tmp[0] = collection[tmp.Length - 1];
 
-            return;
-        }
+			for(var i = 0; i < tmp.Length; i++)
+				collection[i] = tmp[i];
+		}
+	}
+	private static Vector2f[] GetRotatedPoints(sbyte angle, params Vector2f[] points)
+	{
+		Shift(points, Wrap(-angle, 4));
+		return points;
+	}
+	private static void FlipHorizontally<T>(T[,] matrix)
+	{
+		var rows = matrix.GetLength(0);
+		var cols = matrix.GetLength(1);
 
-        for (var j = 0; j < offset; j++)
-        {
-            var tmp = new T[collection.Count];
-            for (var i = 1; i < collection.Count; i++)
-                tmp[i] = collection[i - 1];
-            tmp[0] = collection[tmp.Length - 1];
+		for(var i = 0; i < rows; i++)
+			for(var j = 0; j < cols / 2; j++)
+				(matrix[i, j], matrix[i, cols - j - 1]) = (matrix[i, cols - j - 1], matrix[i, j]);
+	}
+	private static void FlipVertically<T>(T[,] matrix)
+	{
+		var rows = matrix.GetLength(0);
+		var cols = matrix.GetLength(1);
 
-            for (var i = 0; i < tmp.Length; i++)
-                collection[i] = tmp[i];
-        }
-    }
-    private static Vector2f[] GetRotatedPoints(sbyte angle, params Vector2f[] points)
-    {
-        Shift(points, Wrap(-angle, 4));
-        return points;
-    }
-    private static void FlipHorizontally<T>(T[,] matrix)
-    {
-        var rows = matrix.GetLength(0);
-        var cols = matrix.GetLength(1);
-
-        for (var i = 0; i < rows; i++)
-            for (var j = 0; j < cols / 2; j++)
-                (matrix[i, j], matrix[i, cols - j - 1]) = (matrix[i, cols - j - 1], matrix[i, j]);
-    }
-    private static void FlipVertically<T>(T[,] matrix)
-    {
-        var rows = matrix.GetLength(0);
-        var cols = matrix.GetLength(1);
-
-        for (var i = 0; i < rows / 2; i++)
-            for (var j = 0; j < cols; j++)
-                (matrix[i, j], matrix[rows - i - 1, j]) = (matrix[rows - i - 1, j], matrix[i, j]);
-    }
-    private static float Map(float number, float a1, float a2, float b1, float b2)
-    {
-        var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
-        return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-    }
-#endregion
+		for(var i = 0; i < rows / 2; i++)
+			for(var j = 0; j < cols; j++)
+				(matrix[i, j], matrix[rows - i - 1, j]) = (matrix[rows - i - 1, j], matrix[i, j]);
+	}
+	private static float Map(float number, float a1, float a2, float b1, float b2)
+	{
+		var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
+		return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+	}
+	#endregion
 }
