@@ -8,6 +8,6 @@ public static class UtilityExtensions
     {
         var expression = "(5 + 7) % 3 ^ 2".Calculate();
         var numbers = new[] { "1", "2", "3", "4", "5", "6" };
-        numbers.Shift(99, "4", "5", "6");
+        numbers.Shift(99, "4", "3", "2");
     }
 }

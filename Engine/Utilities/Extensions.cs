@@ -231,21 +231,29 @@ public static class Extensions
     }
     public static void Shift<T>(this IList<T> collection, int offset, params T[]? items)
     {
-        if (items == null || items.Length == 0 || offset == 0)
+        if (items == null || items.Length == 0 || items.Length == collection.Count || offset == 0)
             return;
 
         if (collection is List<T> list)
         {
             var results = new List<int>();
-            var prevTargetIndex = -1;
+            var indexes = new List<int>();
             var itemList = items.ToList();
+            var prevTargetIndex = -1;
             var max = list.Count - 1;
 
-            if (offset > 0)
-                itemList.Reverse();
+            foreach (var item in items)
+                indexes.Add(list.IndexOf(item));
 
-            foreach (var item in itemList)
+            indexes.Sort();
+
+            if (offset > 0)
+                indexes.Reverse();
+
+            foreach (var currIndex in indexes)
             {
+                var item = list[currIndex];
+
                 if (item == null || list.Contains(item) == false)
                     continue;
 
@@ -261,7 +269,7 @@ public static class Extensions
                 var isOvershooting = (targetIndex == 0 && prevTargetIndex == 0) ||
                                      (targetIndex == max && prevTargetIndex == max) ||
                                      results.Contains(targetIndex);
-                var i = itemList.IndexOf(item);
+                var i = indexes.IndexOf(list.IndexOf(item));
                 var result = isOvershooting ? offset < 0 ? i : max - i : targetIndex;
 
                 list.Remove(item);
@@ -275,7 +283,7 @@ public static class Extensions
 
         // if not a list then convert it
         var tempList = collection.ToList();
-        tempList.Shift(offset, items);
+        Shift(tempList, offset, items);
 
         for (var i = 0; i < tempList.Count; i++)
             collection[i] = tempList[i];
