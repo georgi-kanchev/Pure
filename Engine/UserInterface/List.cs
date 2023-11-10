@@ -206,6 +206,8 @@ public class List : Block
 
     public void Shift(int offset, params Button[]? items)
     {
+        // this implementation is from Utility.Extensions with some adjustments
+
         if (items == null || items.Length == 0 || items.Length == data.Count || offset == 0)
             return;
 
