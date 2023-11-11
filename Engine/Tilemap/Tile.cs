@@ -1,66 +1,45 @@
 ﻿namespace Pure.Engine.Tilemap;
 
-/// <summary>
-/// Represents a tile in a tilemap.
-/// </summary>
 public struct Tile
 {
-    /// <summary>
-    /// Gets or sets the identifier of the tile.
-    /// </summary>
     public int Id
     {
         get;
         set;
     }
-    /// <summary>
-    /// Gets or sets the tint of the tile.
-    /// </summary>
     public uint Tint
     {
         get;
         set;
     }
-    /// <summary>
-    /// Gets or sets the amount of 90 degree rotations, wrapping in intervals of 4.
-    /// Positive values indicate clockwise rotation,
-    /// negative values indicate counter-clockwise rotation.
-    /// </summary>
-    public sbyte Angle
+    public sbyte Turns
     {
         get;
         set;
     }
-    /// <summary>
-    /// Gets or sets a tuple indicating whether the tile is flipped horizontally or vertically.
-    /// </summary>
-    public (bool isHorizontal, bool isVertical) Flips
+    public bool IsMirrored
+    {
+        get;
+        set;
+    }
+    public bool IsFlipped
     {
         get;
         set;
     }
 
-    /// <summary>
-    /// Initializes a new tile instance with the specified identifier, 
-    /// tint, angle, and flips.
-    /// </summary>
-    /// <param name="id">The identifier of the tile.</param>
-    /// <param name="tint">The tint of the tile (defaults to white).</param>
-    /// <param name="angle">The amount of 90 degree rotations, wrapping in intervals of 4.
-    /// Positive values indicate clockwise rotation,
-    /// negative values indicate counter-clockwise rotation.</param>
-    /// <param name="flips">A tuple indicating whether the tile is flipped 
-    /// horizontally or vertically.</param>
     public Tile(
         int id,
         uint tint = uint.MaxValue,
-        sbyte angle = default,
-        (bool isHorizontal, bool isVertical) flips = default)
+        sbyte turns = default,
+        bool isMirrored = false,
+        bool isFlipped = false)
     {
         Id = id;
         Tint = tint;
-        Angle = angle;
-        Flips = flips;
+        Turns = turns;
+        IsMirrored = isMirrored;
+        IsFlipped = isFlipped;
     }
     public Tile(byte[] bytes)
     {
@@ -68,24 +47,18 @@ public struct Tile
 
         Id = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
         Tint = BitConverter.ToUInt32(GetBytesFrom(bytes, 4, ref offset));
-        Angle = (sbyte)GetBytesFrom(bytes, 1, ref offset)[0];
-        Flips = (
-            BitConverter.ToBoolean(GetBytesFrom(bytes, 1, ref offset)),
-            BitConverter.ToBoolean(GetBytesFrom(bytes, 1, ref offset)));
+        Turns = (sbyte)GetBytesFrom(bytes, 1, ref offset)[0];
+        IsMirrored = BitConverter.ToBoolean(GetBytesFrom(bytes, 1, ref offset));
+        IsFlipped = BitConverter.ToBoolean(GetBytesFrom(bytes, 1, ref offset));
     }
 
-    /// <returns>
-    /// A bundle tuple containing the identifier, tint, angle and flips of the tile.</returns>
-    public (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)
-        ToBundle()
+    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) ToBundle()
     {
         return this;
     }
-    /// <returns>
-    /// A string representation of this tile.".</returns>
     public override string ToString()
     {
-        return $"ID({Id}) Tint({Tint}) Angle({Angle}) Flips{Flips}";
+        return $"Tile {Id}";
     }
     public byte[] ToBytes()
     {
@@ -93,9 +66,9 @@ public struct Tile
 
         result.AddRange(BitConverter.GetBytes(Id));
         result.AddRange(BitConverter.GetBytes(Tint));
-        result.Add((byte)Angle);
-        result.AddRange(BitConverter.GetBytes(Flips.isHorizontal));
-        result.AddRange(BitConverter.GetBytes(Flips.isVertical));
+        result.Add((byte)Turns);
+        result.AddRange(BitConverter.GetBytes(IsMirrored));
+        result.AddRange(BitConverter.GetBytes(IsFlipped));
 
         return result.ToArray();
     }
@@ -109,54 +82,38 @@ public struct Tile
         return base.Equals(obj);
     }
 
-    /// <summary>
-    /// Implicitly converts an identifier to a white, not rotated and not flipped tile.
-    /// </summary>
-    /// <param name="id">The identifier of the tile.</param>
     public static implicit operator Tile(int id)
     {
         return new(id);
     }
-    /// <summary>
-    /// Implicitly converts a bundle tuple of values to a tile with the 
-    /// specified identifier, tint, angle, and flips.
-    /// </summary>
-    /// <param name="bundle">A bundle tuple of values representing the identifier, 
-    /// tint, angle, and flips of the tile.</param>
     public static implicit operator Tile(
-        (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)
-            bundle)
+        (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) bundle)
     {
         var (tile, tint, angle, flipH, flipV) = bundle;
-        return new(tile, tint, angle, (flipH, flipV));
+        return new(tile, tint, angle, flipH, flipV);
     }
-    /// <summary>
-    /// Implicitly converts a tile to a bundle tuple of values representing its 
-    /// identifier, tint, angle, and flips.
-    /// </summary>
-    /// <param name="tile">The tile to convert.</param>
-    public static implicit operator (int id, uint tint, sbyte angle, bool isFlippedHorizontally,
-        bool isFlippedVertically)(Tile tile)
+    public static implicit operator (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)(
+        Tile tile)
     {
         return (
             tile.Id,
             tile.Tint,
-            tile.Angle,
-            tile.Flips.isHorizontal,
-            tile.Flips.isVertical);
+            tile.Turns,
+            tile.IsMirrored,
+            tile.IsFlipped);
     }
 
     public static bool operator ==(Tile a, Tile b)
     {
-        return a.Id == b.Id && a.Tint == b.Tint && a.Angle == b.Angle &&
-               a.Flips.isHorizontal == b.Flips.isHorizontal &&
-               a.Flips.isVertical == b.Flips.isVertical;
+        return a.Id == b.Id && a.Tint == b.Tint && a.Turns == b.Turns &&
+               a.IsMirrored == b.IsMirrored &&
+               a.IsFlipped == b.IsFlipped;
     }
     public static bool operator !=(Tile a, Tile b)
     {
-        return a.Id != b.Id || a.Tint != b.Tint || a.Angle != b.Angle ||
-               a.Flips.isHorizontal != b.Flips.isHorizontal ||
-               a.Flips.isVertical != b.Flips.isVertical;
+        return a.Id != b.Id || a.Tint != b.Tint || a.Turns != b.Turns ||
+               a.IsMirrored != b.IsMirrored ||
+               a.IsFlipped != b.IsFlipped;
     }
 
 #region General

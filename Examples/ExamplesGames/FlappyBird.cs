@@ -129,7 +129,7 @@ public static class FlappyBird
             layer.DrawTilemap(background.ToBundle());
             layer.DrawTilemap(foreground.ToBundle());
             var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
-            layer.DrawTile((BIRD_X, birdY), tile);
+            layer.DrawTiles((BIRD_X, birdY), tile);
 
             //Window.DrawRectangles(collisionMap);
             //Window.DrawRectangles(birdRect);

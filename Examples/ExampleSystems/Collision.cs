@@ -65,7 +65,7 @@ public static class Collision
             layer.DrawTilemap(tilemap);
             layer.DrawLines(line);
             layer.DrawPoints(crossPoints);
-            layer.DrawTile(mousePosition, tile);
+            layer.DrawTiles(mousePosition, tile);
 
             Window.DrawLayer(layer);
             Window.Activate(false);
@@ -108,11 +108,11 @@ public static class Collision
             var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Color.Brown.ToBright());
 
             tilemap.SetTile((x, y), roof);
-            roof.Flips = (true, false);
+            roof.IsMirrored = true;
             tilemap.SetTile((x + 1, y), roof);
 
             tilemap.SetTile((x, y + 1), walls);
-            walls.Flips = (true, false);
+            walls.IsMirrored = true;
             tilemap.SetTile((x + 1, y + 1), walls);
         }
     }

@@ -192,10 +192,10 @@ public static class TilemapperUserInterface
 
         maps[zOrder + 1].SetTile(
             position: s.Decrease.Position,
-            tile: new(Tile.ARROW_NO_TAIL, GetInteractionColor(s.Decrease, color), angle: 1));
+            tile: new(Tile.ARROW_NO_TAIL, GetInteractionColor(s.Decrease, color), turns: 1));
         maps[zOrder + 1].SetTile(
             s.Increase.Position,
-            tile: new(Tile.ARROW_NO_TAIL, GetInteractionColor(s.Increase, color), angle: 3));
+            tile: new(Tile.ARROW_NO_TAIL, GetInteractionColor(s.Increase, color), turns: 3));
         maps[zOrder + 1].SetTextLine(
             position: (x + (int)MathF.Ceiling(w / 2f - maxTextSize / 2f), y),
             s.Text,
@@ -343,7 +343,7 @@ public static class TilemapperUserInterface
             maps[zOrder + 2].SetTile(
                 position: (list.Position.x + list.Size.width - 1, list.Position.y),
                 tile: new(Tile.MATH_GREATER, GetInteractionColor(list, Color.Gray.ToBright()),
-                    angle: 1));
+                    turns: 1));
     }
     public static void SetListItem(this TilemapPack maps, List list, Button item, int zOrder = 1)
     {

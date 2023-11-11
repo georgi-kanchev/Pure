@@ -12,6 +12,7 @@ public static class Program
 {
     public static void Run()
     {
+        editor.OnUpdateUi += tilePalette.TryDraw;
         editor.OnUpdateEditor += UpdateEditor;
         editor.OnUpdateLate += () => tilePalette.Update(inspector);
         editor.Run();
@@ -23,7 +24,7 @@ public static class Program
     private static readonly TilePalette tilePalette;
     private static readonly TilesetPrompt tilesetPrompt;
 
-    private static Menu menu;
+    internal static Menu menu;
 
     static Program()
     {

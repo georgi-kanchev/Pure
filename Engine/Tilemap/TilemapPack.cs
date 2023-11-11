@@ -184,7 +184,7 @@ public class TilemapPack
 
     public bool IsInside((int x, int y) position)
     {
-        return data[0].IsContaining(position);
+        return data[0].IsOverlapping(position);
     }
 
     public int TileIdFrom(char symbol)

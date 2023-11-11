@@ -407,28 +407,22 @@ public static class Extensions
         direction++;
         return Rotate(rotated, direction);
     }
-    public static void Flip<T>(this T[,] matrix, (bool horizontally, bool vertically) isFlipped)
+    public static void Flip<T>(this T[,] matrix, bool isMirrored, bool isFlipped)
     {
         var rows = matrix.GetLength(0);
         var cols = matrix.GetLength(1);
 
-        if (isFlipped.horizontally)
-        {
+        if (isMirrored)
             for (var i = 0; i < rows; i++)
                 for (var j = 0; j < cols / 2; j++)
-                {
                     (matrix[i, cols - j - 1], matrix[i, j]) = (matrix[i, j], matrix[i, cols - j - 1]);
-                }
-        }
 
-        if (isFlipped.vertically)
-        {
-            for (var i = 0; i < rows / 2; i++)
-                for (var j = 0; j < cols; j++)
-                {
-                    (matrix[rows - i - 1, j], matrix[i, j]) = (matrix[i, j], matrix[rows - i - 1, j]);
-                }
-        }
+        if (isFlipped == false)
+            return;
+
+        for (var i = 0; i < rows / 2; i++)
+            for (var j = 0; j < cols; j++)
+                (matrix[rows - i - 1, j], matrix[i, j]) = (matrix[i, j], matrix[rows - i - 1, j]);
     }
 
     public static float Calculate(this string mathExpression)

@@ -140,8 +140,8 @@ public static class Ludo
         }
         public void Draw()
         {
-            layer.DrawTile(Position, (Tile.GAME_CHESS_ROOK, TeamColors[Team], 0, false, false));
-            layer.DrawTile(Position, (Tile.GAME_CHESS_ROOK_HOLLOW, Color.Black, 0, false, false));
+            layer.DrawTiles(Position, (Tile.GAME_CHESS_ROOK, TeamColors[Team], 0, false, false));
+            layer.DrawTiles(Position, (Tile.GAME_CHESS_ROOK_HOLLOW, Color.Black, 0, false, false));
         }
     }
 
@@ -184,7 +184,7 @@ public static class Ludo
 
             var frame = diceAnimation.CurrentValue;
             var id = IsRolling ? frame : Tile.GAME_DICE_1 + CurrentValue - 1;
-            layer.DrawTile(position, (id, Color.White, 0, false, false));
+            layer.DrawTiles(position, (id, Color.White, 0, false, false));
         }
     }
 

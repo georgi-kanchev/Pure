@@ -3,7 +3,7 @@ namespace Pure.Editors.EditorMap;
 internal class Inspector : Panel
 {
     public readonly List layers;
-    public readonly Palette tilePaletteColor;
+    public readonly Palette paletteColor;
     public readonly Scroll paletteScrollV, paletteScrollH;
 
     public Inspector(Editor editor, TilePalette tilePalette)
@@ -58,19 +58,19 @@ internal class Inspector : Panel
 
         //========
 
-        tilePaletteColor = new();
-        tilePaletteColor.OnDisplay(() =>
+        paletteColor = new();
+        paletteColor.OnDisplay(() =>
         {
-            editor.MapsUi.SetPalette(tilePaletteColor, zOrder: 1);
-            editor.MapsUi.SetSlider(tilePaletteColor.Opacity, zOrder: 1);
-            editor.MapsUi.SetPages(tilePaletteColor.Brightness, zOrder: 1);
+            editor.MapsUi.SetPalette(paletteColor, zOrder: 1);
+            editor.MapsUi.SetSlider(paletteColor.Opacity, zOrder: 1);
+            editor.MapsUi.SetPages(paletteColor.Brightness, zOrder: 1);
         });
-        tilePaletteColor.OnColorSampleDisplay((btn, color) =>
+        paletteColor.OnColorSampleDisplay((btn, color) =>
         {
             editor.MapsUi[1].SetTile(btn.Position, new Tile(Tile.SHADE_OPAQUE, color));
         });
-        tilePaletteColor.Brightness.OnItemDisplay(btn =>
-            editor.MapsUi.SetPagesItem(tilePaletteColor.Brightness, btn));
+        paletteColor.Brightness.OnItemDisplay(btn =>
+            editor.MapsUi.SetPagesItem(paletteColor.Brightness, btn));
 
         paletteScrollH = new(isVertical: false) { Size = (14, 1) };
         paletteScrollV = new(isVertical: true) { Size = (1, 14) };
@@ -82,7 +82,7 @@ internal class Inspector : Panel
         var inspectorItems = new Block?[]
         {
             layers, create, null, remove, up, down, null, rename,
-            null, paletteScrollV, paletteScrollH, null, tilePaletteColor
+            null, paletteScrollV, paletteScrollH, null, paletteColor
         };
         var layout = new Layout((Position.x + 1, Position.y + 1))
             { Size = (w - 2, h - 2) };
@@ -105,7 +105,7 @@ internal class Inspector : Panel
         layout.Cut(2, Side.Bottom, 0.15f);
 
         editor.Ui.Add(this, layout, create, up, down, rename, remove,
-            tilePaletteColor, paletteScrollV, paletteScrollH, layers);
+            paletteColor, paletteScrollV, paletteScrollH, layers);
     }
 
 #region Backend

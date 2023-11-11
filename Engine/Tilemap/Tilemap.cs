@@ -190,6 +190,31 @@ public class Tilemap
     {
         return IndicesAreValid(position) ? data[position.x, position.y] : default;
     }
+    public Tile[,] TilesIn((float x, float y, float width, float height) rectangle)
+    {
+        var (rx, ry) = ((int)rectangle.x, (int)rectangle.y);
+        var (rw, rh) = ((int)rectangle.width, (int)rectangle.height);
+        var xStep = rw < 0 ? -1 : 1;
+        var yStep = rh < 0 ? -1 : 1;
+        var result = new Tile[Math.Abs(rw), Math.Abs(rh)]; // Fixed array dimensions
+
+        for (var x = 0; x < Math.Abs(rw); x++)
+        {
+            for (var y = 0; y < Math.Abs(rh); y++)
+            {
+                var currentX = rx + x * xStep - (rw < 0 ? 1 : 0);
+                var currentY = ry + y * yStep - (rh < 0 ? 1 : 0);
+
+                result[x, y] = TileAt((currentX, currentY));
+            }
+        }
+
+        return result;
+    }
+    public Tile[,] TilesIn((float x, float y, float width, float height, uint color) rectangle)
+    {
+        return TilesIn((rectangle.x, rectangle.y, rectangle.width, rectangle.height));
+    }
 
     public void Flush()
     {
@@ -209,6 +234,11 @@ public class Tilemap
                 SetTile((x, y), tile);
     }
 
+    /// <summary>
+    /// Floods the tilemap with the given tile starting from the specified position.
+    /// </summary>
+    /// <param name="position">The starting position for the flood.</param>
+    /// <param name="tile">The tile to flood the tilemap with.</param>
     public void Flood((int x, int y) position, Tile tile)
     {
         var stack = new Stack<(int x, int y)>();
@@ -233,6 +263,7 @@ public class Tilemap
             stack.Push((currentPosition.x, currentPosition.y + 1));
         }
     }
+
     public void Replace(
         (int x, int y) position,
         (int width, int height) size,
@@ -311,7 +342,7 @@ public class Tilemap
 
         for (var i = 0; i < tiles.GetLength(1); i++)
             for (var j = 0; j < tiles.GetLength(0); j++)
-                SetTile((position.x + i, position.y + j), tiles[j, i]);
+                SetTile((position.x + j, position.y + i), tiles[j, i]);
     }
 
     /// <summary>
@@ -764,7 +795,7 @@ public class Tilemap
             symbolMap[symbols[i]] = startId + i;
     }
 
-    public bool IsContaining((int x, int y) position)
+    public bool IsOverlapping((int x, int y) position)
     {
         return position is { x: >= 0, y: >= 0 } &&
                position.x <= Size.width - 1 && position.y <= Size.height - 1;
@@ -829,8 +860,8 @@ public class Tilemap
     /// </summary>
     /// <param name="tilemap">The tilemap object to convert.</param>
     /// <returns>A new 2D array of tile bundles containing the tiles from the tilemap object.</returns>
-    public static implicit operator (int id, uint tint, sbyte angle, bool isFlippedHorizontally,
-        bool isFlippedVertically)[,](Tilemap tilemap)
+    public static implicit operator (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,](
+        Tilemap tilemap)
     {
         return tilemap.ToBundle();
     }
@@ -841,7 +872,7 @@ public class Tilemap
 
     /// <returns>
     /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-    public (int id, uint tint, sbyte angle, bool isFlippedHorizontally, bool isFlippedVertically)[,]
+    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,]
         ToBundle()
     {
         return bundleCache;
