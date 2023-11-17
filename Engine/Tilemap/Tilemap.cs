@@ -190,25 +190,42 @@ public class Tilemap
     {
         return IndicesAreValid(position) ? data[position.x, position.y] : default;
     }
+    /// <summary>
+    /// Retrieves a rectangular region of tiles from the tilemap.
+    /// </summary>
+    /// <param name="rectangle">A tuple representing the rectangle's position and size. 
+    /// The x and y values represent the top-left corner of the rectangle, 
+    /// while the width and height represent the size of the rectangle.</param>
+    /// <returns>A 2D array of tiles representing the specified rectangular region in the tilemap. 
+    /// If the rectangle's dimensions are negative, the method will reverse the direction of the iteration.</returns>
     public Tile[,] TilesIn((float x, float y, float width, float height) rectangle)
     {
+        // Convert the rectangle's position and size to integers
         var (rx, ry) = ((int)rectangle.x, (int)rectangle.y);
         var (rw, rh) = ((int)rectangle.width, (int)rectangle.height);
+
+        // Determine the direction of the iteration based on the sign of the rectangle's dimensions
         var xStep = rw < 0 ? -1 : 1;
         var yStep = rh < 0 ? -1 : 1;
+
+        // Create a new 2D array of tiles to store the result
         var result = new Tile[Math.Abs(rw), Math.Abs(rh)]; // Fixed array dimensions
 
+        // Iterate over the rectangle's width and height
         for (var x = 0; x < Math.Abs(rw); x++)
         {
             for (var y = 0; y < Math.Abs(rh); y++)
             {
+                // Calculate the current position in the tilemap
                 var currentX = rx + x * xStep - (rw < 0 ? 1 : 0);
                 var currentY = ry + y * yStep - (rh < 0 ? 1 : 0);
 
+                // Retrieve the tile at the current position and store it in the result array
                 result[x, y] = TileAt((currentX, currentY));
             }
         }
 
+        // Return the result array
         return result;
     }
     public Tile[,] TilesIn((float x, float y, float width, float height, uint color) rectangle)
@@ -274,22 +291,17 @@ public class Tilemap
         if (tiles.Length == 0)
             return;
 
-        var xStep = size.width < 0 ? -1 : 1;
-        var yStep = size.height < 0 ? -1 : 1;
-        var i = 0;
         var (sx, sy, sz) = seedOffset;
-        for (var x = position.x; x != position.x + size.width; x += xStep)
-            for (var y = position.y; y != position.y + size.height; y += yStep)
-            {
-                if (i > Math.Abs(size.width * size.height))
-                    return;
+        for (var i = 0; i < Math.Abs(size.width * size.height); i++)
+        {
+            var x = position.x + i % Math.Abs(size.width) * (size.width < 0 ? -1 : 1);
+            var y = position.y + i / Math.Abs(size.width) * (size.height < 0 ? -1 : 1);
 
-                if (TileAt((x, y)).Id != targetTile.Id)
-                    continue;
+            if (TileAt((x, y)).Id != targetTile.Id)
+                continue;
 
-                SetTile((x, y), ChooseOne(tiles, HashCode.Combine(x + sx, y + sy) + sz));
-                i++;
-            }
+            SetTile((x, y), ChooseOne(tiles, HashCode.Combine(x + sx, y + sy) + sz));
+        }
     }
 
     /// <summary>
@@ -780,6 +792,12 @@ public class Tilemap
             SetRectangle((x + off, y), (size - 2, 1), new(tileId, tint));
     }
 
+    /// <summary>
+    /// Configures the tile identifiers for text characters.
+    /// </summary>
+    /// <param name="lowercase">The tile identifier for the lowercase 'a' character.</param>
+    /// <param name="uppercase">The tile identifier for the uppercase 'A' character.</param>
+    /// <param name="numbers">The tile identifier for the '0' character.</param>
     public void ConfigureText(
         int lowercase = Tile.LOWERCASE_A,
         int uppercase = Tile.UPPERCASE_A,
@@ -789,12 +807,23 @@ public class Tilemap
         textIdUppercase = uppercase;
         textIdNumbers = numbers;
     }
+
+    /// <summary>
+    /// Configures the tile identifiers for a set of symbols.
+    /// </summary>
+    /// <param name="symbols">The string of symbols to configure.</param>
+    /// <param name="startId">The starting tile identifier for the symbols.</param>
     public void ConfigureText(string symbols, int startId)
     {
         for (var i = 0; i < symbols.Length; i++)
             symbolMap[symbols[i]] = startId + i;
     }
 
+    /// <summary>
+    /// Checks if a position is overlapping with the tilemap.
+    /// </summary>
+    /// <param name="position">The position to check.</param>
+    /// <returns>True if the position is overlapping with the tilemap, false otherwise.</returns>
     public bool IsOverlapping((int x, int y) position)
     {
         return position is { x: >= 0, y: >= 0 } &&
