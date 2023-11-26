@@ -1052,7 +1052,7 @@ public class Tilemap
     private int ToSeed((int a, int b) parameters)
     {
         var (x, y, z) = SeedOffset;
-        return HashCode.Combine(parameters.a + x, parameters.b + y) * z;
+        return HashCode.Combine(parameters.a + x, parameters.b + y, z);
     }
 #endregion
 }
