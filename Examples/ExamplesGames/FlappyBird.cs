@@ -98,10 +98,10 @@ public static class FlappyBird
 
                 var size = (PIPE_WIDTH, PIPE_HEIGHT);
                 var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
-                background.SetRectangle(((int)pipeX, pipeY), size,
-                    new(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
-                background.SetRectangle(((int)pipeX, lowerPipeY), size,
-                    new(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
+                background.SetRectangle(((int)pipeX, pipeY, size.PIPE_WIDTH, size.PIPE_WIDTH),
+                    new Tile(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
+                background.SetRectangle(((int)pipeX, lowerPipeY, size.PIPE_WIDTH, size.PIPE_WIDTH),
+                    new Tile(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
                 foreground.SetBox(((int)pipeX, pipeY), size, Tile.SHADE_TRANSPARENT,
                     Tile.BOX_DEFAULT_CORNER,
                     Tile.BOX_DEFAULT_STRAIGHT, Color.Green);

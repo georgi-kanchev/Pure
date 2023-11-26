@@ -36,11 +36,7 @@ public class Layer
             }
         }
     }
-    public int TileIdFull
-    {
-        get;
-        set;
-    }
+    public int TileIdFull { get; set; }
     public (int width, int height) TileGap
     {
         get => tileGap;
@@ -66,17 +62,9 @@ public class Layer
             return (tsw / (tw + gw), tsh / (th + gh));
         }
     }
-    public bool IsOverflowing
-    {
-        get;
-        set;
-    }
+    public bool IsOverflowing { get; set; }
 
-    public (float x, float y) Offset
-    {
-        get;
-        set;
-    }
+    public (float x, float y) Offset { get; set; }
     public float Zoom
     {
         get => zoom;
@@ -229,8 +217,8 @@ public class Layer
                 if (angle is 1 or 3)
                     br = new((int)(tx + th), (int)(ty + tw));
 
-                var tr = new Vector2f(br.X, tl.Y);
-                var bl = new Vector2f(tl.X, br.Y);
+                var tr = new Vector2f((int)br.X, (int)tl.Y);
+                var bl = new Vector2f((int)tl.X, (int)br.Y);
                 var rotated = GetRotatedPoints((sbyte)-angle, ttl, ttr, tbr, tbl);
                 ttl = rotated[0];
                 ttr = rotated[1];
@@ -345,6 +333,16 @@ public class Layer
         return (x, y);
     }
 
+    public void ResetToDefaults()
+    {
+        Init();
+        Zoom = 1f;
+        TileGap = (0, 0);
+        tilesetPath = string.Empty;
+        TilesetPath = string.Empty;
+        TileIdFull = 10;
+    }
+
 #region Backend
     internal static readonly Dictionary<string, Texture> tilesets = new();
     internal readonly VertexArray verts;
@@ -396,9 +394,9 @@ public class Layer
         var color = new Color(tint);
         var (ttl, ttr, tbr, tbl) = GetTexCoords(TileIdFull, (1, 1));
         var tl = new Vector2f((int)x, (int)y);
-        var br = new Vector2f((int)x + tw * w, (int)y + th * h);
-        var tr = new Vector2f(br.X, tl.Y);
-        var bl = new Vector2f(tl.X, br.Y);
+        var br = new Vector2f((int)(x + tw * w), (int)(y + th * h));
+        var tr = new Vector2f((int)br.X, (int)tl.Y);
+        var bl = new Vector2f((int)tl.X, (int)br.Y);
 
         verts.Append(TryCropVertex(new(tl, color, ttl), true));
         verts.Append(TryCropVertex(new(tr, color, ttr), true));

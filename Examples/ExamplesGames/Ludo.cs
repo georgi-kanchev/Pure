@@ -15,30 +15,12 @@ public static class Ludo
         { Team.Yellow, Color.Yellow },
         { Team.Green, Color.Green },
     };
-    private static Dictionary<(int x, int y), Corner> Corners
-    {
-        get;
-    } = new();
-    private static Dictionary<Team, Corner> CornersStart
-    {
-        get;
-    } = new();
-    private static Dictionary<Team, Corner> CornersFinish
-    {
-        get;
-    } = new();
-    private static Dictionary<Team, (int x, int y)> PositionsHome
-    {
-        get;
-    } = new();
-    private static Dictionary<Team, List<(int x, int y)>> PositionsBase
-    {
-        get;
-    } = new();
-    private static List<Pawn> Pawns
-    {
-        get;
-    } = new();
+    private static Dictionary<(int x, int y), Corner> Corners { get; } = new();
+    private static Dictionary<Team, Corner> CornersStart { get; } = new();
+    private static Dictionary<Team, Corner> CornersFinish { get; } = new();
+    private static Dictionary<Team, (int x, int y)> PositionsHome { get; } = new();
+    private static Dictionary<Team, List<(int x, int y)>> PositionsBase { get; } = new();
+    private static List<Pawn> Pawns { get; } = new();
     private static Layer layer;
 
     private enum Team
@@ -69,31 +51,12 @@ public static class Ludo
         private int remainingMoves;
         private readonly (int x, int y) basePosition;
 
-        public Team Team
-        {
-            get;
-        }
-        public bool IsInBase
-        {
-            get;
-            private set;
-        } = true;
-        public bool IsInHome
-        {
-            get;
-            private set;
-        }
+        public Team Team { get; }
+        public bool IsInBase { get; private set; } = true;
+        public bool IsInHome { get; private set; }
 
-        public (int x, int y) Position
-        {
-            get;
-            private set;
-        }
-        public (int x, int y) Direction
-        {
-            get;
-            private set;
-        }
+        public (int x, int y) Position { get; private set; }
+        public (int x, int y) Direction { get; private set; }
 
         public Pawn(Team team, (int x, int y) position)
         {
@@ -163,16 +126,8 @@ public static class Ludo
             this.position = position;
         }
 
-        public int CurrentValue
-        {
-            get;
-            private set;
-        }
-        public bool IsRolling
-        {
-            get;
-            set;
-        }
+        public int CurrentValue { get; private set; }
+        public bool IsRolling { get; set; }
 
         public void Update()
         {
@@ -316,35 +271,35 @@ public static class Ludo
         var teamColorBlue = TeamColors[Team.Blue];
         var teamColorYellow = TeamColors[Team.Yellow];
 
-        map.SetRectangle((cellsHorX, cellsHorY), (mapHeight, 3), Tile.SHAPE_SQUARE);
-        map.SetRectangle((cellsVertX, cellsVertY), (3, mapHeight), Tile.SHAPE_SQUARE);
+        map.SetRectangle((cellsHorX, cellsHorY, mapHeight, 3), Tile.SHAPE_SQUARE);
+        map.SetRectangle((cellsVertX, cellsVertY, 3, mapHeight), Tile.SHAPE_SQUARE);
         map.SetTile((centerX, centerY), Tile.SHADE_TRANSPARENT);
 
         map.SetTile((centerX, centerY - 1), new(Tile.ICON_HOME, teamColorGreen, 2));
-        map.SetRectangle((cellsVertX + 1, cellsVertY + 1), (1, 11),
-            new(Tile.SHAPE_SQUARE, teamColorGreen));
+        map.SetRectangle((cellsVertX + 1, cellsVertY + 1, 1, 11),
+            new Tile(Tile.SHAPE_SQUARE, teamColorGreen));
         map.SetEllipse((cellsVertX + 8, cellsVertY + 6), (4, 4),
             new(Tile.SHADE_OPAQUE, teamColorGreen.ToDark()));
         map.SetEllipse((cellsVertX + 8, cellsVertY + 6), (4, 4),
             new(Tile.SHADE_OPAQUE, teamColorGreen), false);
 
         map.SetTile((centerX + 1, centerY), new(Tile.ICON_HOME, teamColorRed, 3));
-        map.SetRectangle((centerX + 2, centerY), (11, 1), new(Tile.SHAPE_SQUARE, teamColorRed));
+        map.SetRectangle((centerX + 2, centerY, 11, 1), new Tile(Tile.SHAPE_SQUARE, teamColorRed));
         map.SetEllipse((centerX + 7, centerY + 7), (4, 4),
             new(Tile.SHADE_OPAQUE, teamColorRed.ToDark()));
         map.SetEllipse((centerX + 7, centerY + 7), (4, 4),
             new(Tile.SHADE_OPAQUE, teamColorRed), false);
 
         map.SetTile((centerX, centerY + 1), new(Tile.ICON_HOME, teamColorBlue, 0));
-        map.SetRectangle((centerX, centerY + 2), (1, 11), new(Tile.SHAPE_SQUARE, teamColorBlue));
+        map.SetRectangle((centerX, centerY + 2, 1, 11), new Tile(Tile.SHAPE_SQUARE, teamColorBlue));
         map.SetEllipse((cellsHorX + 6, cellsHorY + 8), (4, 4),
             new(Tile.SHADE_OPAQUE, teamColorBlue.ToDark()));
         map.SetEllipse((cellsHorX + 6, cellsHorY + 8), (4, 4),
             new(Tile.SHADE_OPAQUE, teamColorBlue), false);
 
         map.SetTile((centerX - 1, centerY), new(Tile.ICON_HOME, teamColorYellow, 1));
-        map.SetRectangle((cellsHorX + 1, cellsHorY + 1), (11, 1),
-            new(Tile.SHAPE_SQUARE, teamColorYellow));
+        map.SetRectangle((cellsHorX + 1, cellsHorY + 1, 11, 1),
+            new Tile(Tile.SHAPE_SQUARE, teamColorYellow));
         map.SetEllipse((cellsHorX + 6, cellsVertY + 6), (4, 4),
             new(Tile.SHADE_OPAQUE, teamColorYellow.ToDark(0.3f)));
         map.SetEllipse((cellsHorX + 6, cellsVertY + 6), (4, 4),

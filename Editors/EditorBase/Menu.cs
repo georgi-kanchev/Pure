@@ -17,11 +17,13 @@ public class Menu : List
             var scrollColor = Color.Gray;
             var middle = editor.MapsUi[(int)Editor.LayerMapsUi.Middle];
             var front = editor.MapsUi[(int)Editor.LayerMapsUi.Front];
+            var (x, y) = Position;
+            var (w, h) = Size;
 
             SetClear(Editor.LayerMapsUi.Back, this);
             SetClear(Editor.LayerMapsUi.Front, this);
 
-            middle.SetRectangle(Position, Size, new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
+            middle.SetRectangle((x, y, w, h), new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.66f)));
 
             if (Scroll.IsHidden)
                 return;

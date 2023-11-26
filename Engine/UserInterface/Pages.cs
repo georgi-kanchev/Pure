@@ -4,26 +4,10 @@ using System.Diagnostics.CodeAnalysis;
 
 public class Pages : Block
 {
-    public Button First
-    {
-        get;
-        private set;
-    }
-    public Button Previous
-    {
-        get;
-        private set;
-    }
-    public Button Next
-    {
-        get;
-        private set;
-    }
-    public Button Last
-    {
-        get;
-        private set;
-    }
+    public Button First { get; private set; }
+    public Button Previous { get; private set; }
+    public Button Next { get; private set; }
+    public Button Last { get; private set; }
 
     public int Count
     {
@@ -104,6 +88,12 @@ public class Pages : Block
         return result.ToArray();
     }
 
+    public int IndexOf(Button button)
+    {
+        var index = visiblePages.IndexOf(button);
+        return index == -1 ? -1 : index + scrollIndex - 1;
+    }
+
     public void OnItemDisplay(Action<Button> method)
     {
         itemDisplays += method;
@@ -124,7 +114,7 @@ public class Pages : Block
 
     private int VisibleWidth
     {
-        get => Size.width - 4;
+        get => Count <= Size.width ? Size.width : Size.width - 4;
     }
     private int VisiblePageCount
     {
@@ -184,7 +174,8 @@ public class Pages : Block
         if (IsDisabled == false && IsHovered)
             Input.CursorResult = MouseCursor.Arrow;
 
-        LimitSizeMin((6, 1));
+        if (Count > Size.width)
+            LimitSizeMin((5, 1));
 
         if (Size != prevSize)
         {
@@ -203,37 +194,42 @@ public class Pages : Block
     {
         var (x, y) = Position;
         var visibleWidth = VisibleWidth;
+        var hasNavigation = Count > Size.width;
 
-        First.position = (x, y);
-        Previous.position = (x + 1, y);
-        Next.position = (Previous.Position.x + visibleWidth + 1, y);
-        Last.position = (Next.Position.x + 1, y);
+        if (hasNavigation)
+        {
+            First.position = (x, y);
+            Previous.position = (x + 1, y);
+            Next.position = (Previous.Position.x + visibleWidth + 1, y);
+            Last.position = (Next.Position.x + 1, y);
 
-        First.size = (1, Size.height);
-        Previous.size = (1, Size.height);
-        Next.size = (1, Size.height);
-        Last.size = (1, Size.height);
+            First.size = (1, Size.height);
+            Previous.size = (1, Size.height);
+            Next.size = (1, Size.height);
+            Last.size = (1, Size.height);
 
-        First.InheritParent(this);
-        Previous.InheritParent(this);
-        Next.InheritParent(this);
-        Last.InheritParent(this);
+            First.InheritParent(this);
+            Previous.InheritParent(this);
+            Next.InheritParent(this);
+            Last.InheritParent(this);
 
-        First.Update();
-        Previous.Update();
-        Next.Update();
-        Last.Update();
+            First.Update();
+            Previous.Update();
+            Next.Update();
+            Last.Update();
+        }
 
         var hasFreeSpace = HasFreeSpace;
         var range = hasFreeSpace ? (Position.x + 2, Position.x + Size.width - 2) : (0, 0);
         var xs = Distribute(hasFreeSpace ? visiblePages.Count : 0, range);
+        var navOff = hasNavigation ? 2 : 0;
 
         for (var i = 0; i < visiblePages.Count; i++)
         {
             var page = visiblePages[i];
-            var pos = (x + 2 + (ItemWidth + ItemGap) * i, y);
+            var pos = (x + navOff + (ItemWidth + ItemGap) * i, y);
 
-            if (hasFreeSpace)
+            if (hasFreeSpace && hasNavigation)
                 pos = ((int)xs[i], y);
 
             page.position = pos;

@@ -5,6 +5,7 @@ internal class Inspector : Panel
     public readonly List layers;
     public readonly Palette paletteColor;
     public readonly Scroll paletteScrollV, paletteScrollH;
+    public readonly Pages tools;
 
     public Inspector(Editor editor, TilePalette tilePalette)
     {
@@ -35,7 +36,7 @@ internal class Inspector : Panel
         remove.OnInteraction(Interaction.Trigger, LayersRemove);
         remove.OnUpdate(() => ShowWhenLayerSelected(remove));
         remove.OnDisplay(() =>
-            editor.MapsUi.SetButtonIcon(remove, new(Tile.PUNCTUATION_DASH, Color.Gray), 1));
+            editor.MapsUi.SetButtonIcon(remove, new(Tile.ICON_DELETE, Color.Gray), 1));
 
         var rename = new InputBox { Value = "", Placeholder = "Rename…", IsSingleLine = true };
         rename.OnSubmit(() =>
@@ -57,6 +58,19 @@ internal class Inspector : Panel
         down.OnDisplay(() => editor.MapsUi.SetButtonIcon(down, new(Tile.ARROW, Color.Gray, 1), 1));
 
         //========
+
+        tools = new(count: 7) { ItemWidth = 1, ItemGap = 0 };
+        tools.OnDisplay(() => editor.MapsUi.SetPages(tools, 1));
+        tools.OnItemDisplay(item =>
+        {
+            var graphics = new[]
+            {
+                Tile.SHAPE_SQUARE_SMALL_HOLLOW, Tile.GAME_DICE_6, Tile.SHAPE_SQUARE,
+                Tile.PUNCTUATION_SLASH, Tile.SHAPE_CIRCLE, Tile.ICON_LOOP, Tile.ICON_SIZE_INCREASE
+            };
+            var id = graphics[tools.IndexOf(item)];
+            editor.MapsUi.SetButtonIcon(item, new(id, item.IsSelected ? Color.Green : Color.Gray), 1);
+        });
 
         paletteColor = new();
         paletteColor.OnDisplay(() =>
@@ -82,10 +96,9 @@ internal class Inspector : Panel
         var inspectorItems = new Block?[]
         {
             layers, create, null, remove, up, down, null, rename,
-            null, paletteScrollV, paletteScrollH, null, paletteColor
+            null, paletteScrollV, paletteScrollH, null, paletteColor, null, tools
         };
-        var layout = new Layout((Position.x + 1, Position.y + 1))
-            { Size = (w - 2, h - 2) };
+        var layout = new Layout((Position.x + 1, Position.y + 1)) { Size = (w - 2, h - 2) };
         layout.OnDisplaySegment((segment, i) =>
             UpdateInspectorItem(i, inspectorItems, segment, tilePalette));
 
@@ -103,9 +116,11 @@ internal class Inspector : Panel
 
         layout.Cut(2, Side.Bottom, 0.02f);
         layout.Cut(2, Side.Bottom, 0.15f);
+        layout.Cut(2, Side.Bottom, 0.02f);
+        layout.Cut(13, Side.Right, 0.6f);
 
         editor.Ui.Add(this, layout, create, up, down, rename, remove,
-            paletteColor, paletteScrollV, paletteScrollH, layers);
+            tools, paletteColor, paletteScrollV, paletteScrollH, layers);
     }
 
 #region Backend
@@ -157,6 +172,14 @@ internal class Inspector : Panel
     {
         //editor.MapsUi.SetLayoutSegment(segment, i, true, 5);
 
+        if (i == 13)
+        {
+            editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetTextLine(
+                position: (segment.x, segment.y),
+                text: "Tool:");
+            return;
+        }
+
         if (i >= inspectorItems.Length)
             return;
 
@@ -171,12 +194,12 @@ internal class Inspector : Panel
             return;
         }
 
-        var items = inspectorItems[i];
-        if (items == null)
+        var item = inspectorItems[i];
+        if (item == null)
             return;
 
-        items.Position = (segment.x, segment.y);
-        items.Size = (segment.width, segment.height);
+        item.Position = (segment.x, segment.y);
+        item.Size = (segment.width, segment.height);
     }
 
     private void ShowWhenLayerSelected(Block block)

@@ -123,8 +123,9 @@ public static class Collision
     {
         // every sec slight mutation times 3
         var seed = (0, 0, (int)Time.RuntimeClock * 3);
+        tilemap.SeedOffset = seed;
         tilemap.SetEllipse(position, radius, Tile.MATH_APPROXIMATE);
-        tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE, seed,
+        tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE,
             new Tile(Tile.ICON_WAVE, Color.Blue, 0),
             new Tile(Tile.ICON_WAVE, Color.Blue, 2),
             new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 0),

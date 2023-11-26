@@ -577,6 +577,8 @@ internal class Inspector : Panel
         var front = editor.MapsUi[(int)Editor.LayerMapsUi.Front];
         var color = Color.Gray;
         var isListItems = e.Placeholder.Contains("Items");
+        var (x, y) = e.Position;
+        var (w, h) = e.Size;
 
         position = isListItems ? (position.x + 1, position.y) : position;
 
@@ -585,7 +587,7 @@ internal class Inspector : Panel
 
         e.Update();
 
-        back.SetRectangle(e.Position, e.Size, new(Tile.SHADE_OPAQUE, color.ToDark()));
+        back.SetRectangle((x, y, w, h), new Tile(Tile.SHADE_OPAQUE, color.ToDark()));
         SetClear(Editor.LayerMapsUi.Middle, e);
 
         back.SetTextRectangle(e.Position, e.Size, e.Selection,

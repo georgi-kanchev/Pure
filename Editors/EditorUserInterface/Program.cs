@@ -263,7 +263,7 @@ public static class Program
         var back = editor.MapsEditor[(int)Editor.LayerMapsEditor.Back];
         var middle = editor.MapsEditor[(int)Editor.LayerMapsEditor.Middle];
         back.SetBox(panel.Position, panel.Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
-        back.SetRectangle(textPos, (panel.Text.Length, 1), default);
+        back.SetRectangle((textPos.Item1, textPos.y, panel.Text.Length, 1), default);
         middle.SetTextLine(textPos, panel.Text, Color.Cyan);
 
         var (x, y) = (panel.Position.x, panel.Position.y - 1);

@@ -4,6 +4,8 @@ namespace Pure.Editors.EditorMap;
 
 internal class TilePalette
 {
+    public const float ZOOM_DEFAULT = 3.8f;
+
     public Tilemap map;
     public Layer layer;
     public (int x, int y) mousePos;
@@ -31,7 +33,7 @@ internal class TilePalette
     public void Create((int width, int height) size)
     {
         map = new(size) { ViewSize = (10, 10) };
-        layer = new(map.ViewSize) { Zoom = 3.8f, Offset = (755, 340) };
+        layer = new(map.ViewSize) { Zoom = ZOOM_DEFAULT, Offset = (755, 340) };
     }
 
     public void Update(Inspector inspector)
@@ -91,26 +93,62 @@ internal class TilePalette
 
         var (mx, my) = editor.MousePositionWorld;
         var drawLayer = inspector.layers.ItemsSelected;
+        var tool = inspector.tools.Current;
         var (sx, sy) = selected.Position;
         sx += map.ViewPosition.x;
         sy += map.ViewPosition.y;
         var (sw, sh) = selected.Size;
         var tile = map.TileAt(((int)sx, (int)sy));
         var color = new Color(tile.Tint) { A = 200 };
+        var seed = ((int)mx, (int)my).ToSeed() + clickSeed;
+        var selectedTiles = map.TilesIn((sx, sy, sw, sh));
+        var tiles = selectedTiles.Flatten();
+        var randomTile = tiles.ChooseOne(seed);
+        var index = drawLayer.Length != 1 ? -1 : inspector.layers.IndexOf(drawLayer[0]);
+        var tilemap = index == -1 ? null : editor.MapsEditor[index];
+        var (szw, szh) = (end.x - start.x, end.y - start.y);
         tile.Tint = color;
-        editor.LayerMap.DrawTiles(((int)mx, (int)my), tile, ((int)sw, (int)sh));
 
-        if (Mouse.IsButtonPressed(Mouse.Button.Left) == false)
-            return;
-
-        if (drawLayer.Length != 1)
+        if (Mouse.IsButtonPressed(Mouse.Button.Left).Once("lmb-press-paint"))
         {
-            Program.PromptMessage("Select one layer to draw on.");
-            return;
+            start = ((int)mx, (int)my);
+            end = start;
+
+            if (drawLayer.Length != 1)
+            {
+                Program.PromptMessage("Select a single layer to draw on.");
+                return;
+            }
+
+            if (tilemap != null)
+                tilemap.SeedOffset = (0, 0, clickSeed);
         }
 
-        var index = inspector.layers.IndexOf(drawLayer[0]);
-        editor.MapsEditor[index].SetGroup(((int)mx, (int)my), map.TilesIn((sx, sy, sw, sh)));
+        if (tool == 1) // group of tiles
+            editor.LayerMap.DrawTiles(((int)mx, (int)my), tile, ((int)sw, (int)sh));
+        else if (tool == 2) // single random tile of tiles
+            editor.LayerMap.DrawTiles(((int)mx, (int)my), randomTile);
+        else if (tool == 3) // rectangle of random tiles
+            editor.LayerMap.DrawRectangles((start.x, start.y, szw, szh, color));
+
+        if (Mouse.IsButtonPressed(Mouse.Button.Left))
+        {
+            end = ((int)mx + 1, (int)my + 1);
+
+            var pos = ((int)mx, (int)my);
+
+            if (tool == 1) // group of tiles
+                tilemap?.SetGroup(pos, selectedTiles);
+            else if (tool == 2) // single random tile of tiles
+                tilemap?.SetTile(pos, randomTile);
+        }
+
+        if (tool == 3 && // rectangle of random tiles
+            (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-release-square"))
+            tilemap?.SetRectangle((start.x, start.y, szw, szh), selectedTiles.Flatten());
+
+        if ((Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-release-paint"))
+            start = end;
     }
 
 #region Backend
@@ -119,9 +157,15 @@ internal class TilePalette
     private readonly Editor editor;
     private (float x, float y) selectedPos;
     private (float w, float h) selectedSz = (1, 1);
+    private static int clickSeed;
 
     private Rectangle selected;
+    private (int x, int y) start, end;
 
+    static TilePalette()
+    {
+        Mouse.OnButtonPress(Mouse.Button.Left, () => clickSeed++);
+    }
     private void UpdateSelected()
     {
         if (Mouse.IsHovering(layer) &&
@@ -137,6 +181,9 @@ internal class TilePalette
         var (ox, oy) = (sw < 0 ? 1 : 0, sh < 0 ? 1 : 0);
         var (vx, vy) = map.ViewPosition;
         selected = new((sw, sh), (sx + ox - vx, sy + oy - vy));
+
+        if (inspector is { tools.Current: 6 or 7 }) // fill or replace
+            selectedSz = (1, 1);
     }
 #endregion
 }

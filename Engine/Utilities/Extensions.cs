@@ -110,6 +110,18 @@ public static class Extensions
         return false;
     }
 
+    public static T[] Flatten<T>(this T[,] matrix)
+    {
+        var rows = matrix.GetLength(0);
+        var cols = matrix.GetLength(1);
+        var result = new T[rows * cols];
+
+        for (var i = 0; i < rows; i++)
+            for (var j = 0; j < cols; j++)
+                result[i * cols + j] = matrix[i, j];
+
+        return result;
+    }
     /// <summary>
     /// Randomly shuffles the elements in the given collection.
     /// </summary>
@@ -124,24 +136,15 @@ public static class Extensions
             (collection[j], collection[i]) = (collection[i], collection[j]);
         }
     }
-    /// <typeparam name="T">
-    /// The type of objects in the collection.</typeparam>
-    /// <param name="collection">The collection to choose from.</param>
-    /// <returns>A randomly selected value from the collection.</returns>
-    public static T ChooseOne<T>(this IList<T> collection)
+    public static T ChooseOne<T>(this IList<T> collection, float seed = float.NaN)
     {
-        return collection[Random((0, collection.Count - 1))];
+        return collection[Random((0, collection.Count - 1), seed)];
     }
-    /// <typeparam name="T">
-    /// The type of objects in the choices.</typeparam>
-    /// <param name="choice">The first choice to include in the selection.</param>
-    /// <param name="choices">Additional choices to include in the selection.</param>
-    /// <returns>A randomly selected <typeparamref name="T"/> value from the given choices.</returns>
-    public static T ChooseOneFrom<T>(this T choice, params T[]? choices)
+    public static T ChooseOneFrom<T>(this T choice, float seed = float.NaN, params T[]? choices)
     {
         var list = choices == null ? new() : choices.ToList();
         list.Add(choice);
-        return ChooseOne(list);
+        return ChooseOne(list, seed);
     }
     /// <summary>
     /// Calculates the average number out of a collection of numbers and returns it.
@@ -1079,6 +1082,23 @@ public static class Extensions
     public static bool HasChance(this int percent, float seed = float.NaN)
     {
         return HasChance((float)percent, seed);
+    }
+
+    public static int ToSeed(this (float a, float b) parameters)
+    {
+        return HashCode.Combine(parameters.a, parameters.b);
+    }
+    public static int ToSeed(this (float a, float b, float c) parameters)
+    {
+        return HashCode.Combine(parameters.a, parameters.b, parameters.c);
+    }
+    public static int ToSeed(this (int a, int b) parameters)
+    {
+        return HashCode.Combine(parameters.a, parameters.b);
+    }
+    public static int ToSeed(this (int a, int b, int c) parameters)
+    {
+        return HashCode.Combine(parameters.a, parameters.b, parameters.c);
     }
 
 #region Backend

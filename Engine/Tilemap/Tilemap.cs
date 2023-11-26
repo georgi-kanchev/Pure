@@ -24,13 +24,12 @@ public enum Alignment
 /// </summary>
 public class Tilemap
 {
+    public (int x, int y, int z) SeedOffset { get; set; }
+
     /// <summary>
     /// Gets the size of the tilemap in tiles.
     /// </summary>
-    public (int width, int height) Size
-    {
-        get;
-    }
+    public (int width, int height) Size { get; }
 
     /// <summary>
     /// Gets or sets the position of the view.
@@ -250,7 +249,6 @@ public class Tilemap
             for (var x = 0; x < Size.width; x++)
                 SetTile((x, y), tile);
     }
-
     /// <summary>
     /// Floods the tilemap with the given tile starting from the specified position.
     /// </summary>
@@ -280,18 +278,15 @@ public class Tilemap
             stack.Push((currentPosition.x, currentPosition.y + 1));
         }
     }
-
     public void Replace(
         (int x, int y) position,
         (int width, int height) size,
         Tile targetTile,
-        (int x, int y, int z) seedOffset = default,
         params Tile[] tiles)
     {
         if (tiles.Length == 0)
             return;
 
-        var (sx, sy, sz) = seedOffset;
         for (var i = 0; i < Math.Abs(size.width * size.height); i++)
         {
             var x = position.x + i % Math.Abs(size.width) * (size.width < 0 ? -1 : 1);
@@ -300,7 +295,7 @@ public class Tilemap
             if (TileAt((x, y)).Id != targetTile.Id)
                 continue;
 
-            SetTile((x, y), ChooseOne(tiles, HashCode.Combine(x + sx, y + sy) + sz));
+            SetTile((x, y), ChooseOne(tiles, ToSeed((x, y))));
         }
     }
 
@@ -319,25 +314,22 @@ public class Tilemap
         ids[position.x, position.y] = tile.Id;
         bundleCache[position.x, position.y] = tile;
     }
-    /// <summary>
-    /// Sets a rectangle region of tiles starting at the specified position with the 
-    /// specified size to the specified tile.
-    /// </summary>
-    /// <param name="position">The position to start setting tiles from.</param>
-    /// <param name="size">The size of the rectangle region to set tiles for.</param>
-    /// <param name="tile">The tile to set the rectangle region to.</param>
-    public void SetRectangle((int x, int y) position, (int width, int height) size, Tile tile)
+    public void SetRectangle((int x, int y, int width, int height) rectangle, params Tile[]? tiles)
     {
-        var xStep = size.width < 0 ? -1 : 1;
-        var yStep = size.height < 0 ? -1 : 1;
+        if (tiles == null || tiles.Length == 0)
+            return;
+
+        var xStep = rectangle.width < 0 ? -1 : 1;
+        var yStep = rectangle.height < 0 ? -1 : 1;
         var i = 0;
-        for (var x = position.x; x != position.x + size.width; x += xStep)
-            for (var y = position.y; y != position.y + size.height; y += yStep)
+        for (var x = rectangle.x; x != rectangle.x + rectangle.width; x += xStep)
+            for (var y = rectangle.y; y != rectangle.y + rectangle.height; y += yStep)
             {
-                if (i > Math.Abs(size.width * size.height))
+                if (i > Math.Abs(rectangle.width * rectangle.height))
                     return;
 
-                SetTile((x, y), tile);
+                var seed = ToSeed((x, y));
+                SetTile((x, y), tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, seed));
                 i++;
             }
     }
@@ -356,7 +348,6 @@ public class Tilemap
             for (var j = 0; j < tiles.GetLength(0); j++)
                 SetTile((position.x + j, position.y + i), tiles[j, i]);
     }
-
     /// <summary>
     /// Sets a single line of text starting from a position with optional tint and optional shortening.
     /// </summary>
@@ -591,7 +582,6 @@ public class Tilemap
                 }
             }
     }
-
     public void SetEllipse(
         (int x, int y) center,
         (int width, int height) radius,
@@ -695,7 +685,6 @@ public class Tilemap
             }
         }
     }
-
     /// <summary>
     /// Sets the tiles in a rectangular area of the tilemap to create a box with corners, borders
     /// and filling.
@@ -724,27 +713,27 @@ public class Tilemap
 
         if (w == 1 || h == 1)
         {
-            SetRectangle(position, size, tileFill);
+            SetRectangle((position.x, position.y, size.width, size.height), tileFill);
             return;
         }
 
         SetTile(position, new(cornerTileId, borderTint));
-        SetRectangle((x + 1, y), (w - 2, 1), new(borderTileId, borderTint));
+        SetRectangle((x + 1, y, w - 2, 1), new Tile(borderTileId, borderTint));
         SetTile((x + w - 1, y), new(cornerTileId, borderTint, 1));
 
         if (h != 2)
         {
-            SetRectangle((x, y + 1), (1, h - 2), new(borderTileId, borderTint, 3));
+            SetRectangle((x, y + 1, 1, h - 2), new Tile(borderTileId, borderTint, 3));
 
             if (tileFill.Id != Tile.SHADE_TRANSPARENT)
-                SetRectangle((x + 1, y + 1), (w - 2, h - 2), tileFill);
+                SetRectangle((x + 1, y + 1, w - 2, h - 2), tileFill);
 
-            SetRectangle((x + w - 1, y + 1), (1, h - 2), new(borderTileId, borderTint, 1));
+            SetRectangle((x + w - 1, y + 1, 1, h - 2), new Tile(borderTileId, borderTint, 1));
         }
 
         SetTile((x, y + h - 1), new(cornerTileId, borderTint, 3));
         SetTile((x + w - 1, y + h - 1), new(cornerTileId, borderTint, 2));
-        SetRectangle((x + 1, y + h - 1), (w - 2, 1), new(borderTileId, borderTint, 2));
+        SetRectangle((x + 1, y + h - 1, w - 2, 1), new Tile(borderTileId, borderTint, 2));
     }
     /// <summary>
     /// Sets the tiles in a rectangular area of the tilemap to create a vertical or horizontal bar.
@@ -777,7 +766,7 @@ public class Tilemap
             }
 
             if (size != 2)
-                SetRectangle((x, y + off), (1, size - 2), new(tileId, tint, 1));
+                SetRectangle((x, y + off, 1, size - 2), new Tile(tileId, tint, 1));
 
             return;
         }
@@ -789,7 +778,7 @@ public class Tilemap
         }
 
         if (size != 2)
-            SetRectangle((x + off, y), (size - 2, 1), new(tileId, tint));
+            SetRectangle((x + off, y, size - 2, 1), new Tile(tileId, tint));
     }
 
     /// <summary>
@@ -1058,6 +1047,12 @@ public class Tilemap
         var result = fromBytes[offset..(offset + amount)];
         offset += amount;
         return result;
+    }
+
+    private int ToSeed((int a, int b) parameters)
+    {
+        var (x, y, z) = SeedOffset;
+        return HashCode.Combine(parameters.a + x, parameters.b + y) * z;
     }
 #endregion
 }

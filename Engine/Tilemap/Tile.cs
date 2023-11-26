@@ -2,31 +2,11 @@
 
 public struct Tile
 {
-    public int Id
-    {
-        get;
-        set;
-    }
-    public uint Tint
-    {
-        get;
-        set;
-    }
-    public sbyte Turns
-    {
-        get;
-        set;
-    }
-    public bool IsMirrored
-    {
-        get;
-        set;
-    }
-    public bool IsFlipped
-    {
-        get;
-        set;
-    }
+    public int Id { get; set; }
+    public uint Tint { get; set; }
+    public sbyte Turns { get; set; }
+    public bool IsMirrored { get; set; }
+    public bool IsFlipped { get; set; }
 
     public Tile(
         int id,
@@ -487,6 +467,7 @@ public struct Tile
         ICON_FILE = 317,
         ICON_FOLDER = 318,
         ICON_DELETE = 319,
+        ICON_REMOVE = 319,
         ICON_LOCK = 320,
         ICON_KEY = 321,
         ICON_PIN = 322,

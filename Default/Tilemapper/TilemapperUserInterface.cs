@@ -6,11 +6,7 @@ using Engine.Utilities;
 
 public static class TilemapperUserInterface
 {
-    public static bool IsInteractable
-    {
-        get;
-        set;
-    } = true;
+    public static bool IsInteractable { get; set; } = true;
 
     public static void SetCheckbox(this TilemapPack maps, Button checkbox, int zOrder = 0)
     {
@@ -86,9 +82,11 @@ public static class TilemapperUserInterface
         var ib = inputBox;
         var bgColor = Color.Gray.ToDark(0.4f);
         var selectColor = ib.IsFocused ? Color.Blue : Color.Blue.ToBright();
+        var (x, y) = ib.Position;
+        var (w, h) = ib.Size;
 
         Clear(maps, inputBox, zOrder);
-        maps[zOrder].SetRectangle(ib.Position, ib.Size, new(Tile.SHADE_OPAQUE, bgColor));
+        maps[zOrder].SetRectangle((x, y, w, h), new Tile(Tile.SHADE_OPAQUE, bgColor));
         maps[zOrder].SetTextRectangle(ib.Position, ib.Size, ib.Selection, selectColor, false);
         maps[zOrder + 1].SetTextRectangle(ib.Position, ib.Size, ib.Text, isWordWrapping: false);
 
@@ -222,7 +220,7 @@ public static class TilemapperUserInterface
         if (prompt.IsHidden == false)
         {
             var tile = new Tile(Tile.SHADE_OPAQUE, new Color(0, 0, 0, 127));
-            maps[zOrder].SetRectangle((0, 0), maps.Size, tile);
+            maps[zOrder].SetRectangle((0, 0, maps.Size.width, maps.Size.height), tile);
             maps[zOrder + 1].SetBox(prompt.Position, prompt.Size,
                 tileFill: new(Tile.SHADE_OPAQUE, Color.Gray.ToDark(0.6f)),
                 cornerTileId: Tile.BOX_CORNER_ROUND,
@@ -268,12 +266,13 @@ public static class TilemapperUserInterface
     {
         var p = palette;
         var tile = new Tile(Tile.SHADE_OPAQUE, GetInteractionColor(p.Opacity, Color.Gray.ToBright()));
+        var (x, y) = p.Opacity.Position;
+        var (w, h) = p.Opacity.Size;
 
         Clear(maps, p, zOrder);
         maps[zOrder].SetRectangle(
-            position: p.Opacity.Position,
-            size: p.Opacity.Size,
-            tile: new(Tile.SHADE_5, Color.Gray.ToDark()));
+            rectangle: (x, y, w, h),
+            tiles: new Tile(Tile.SHADE_5, Color.Gray.ToDark()));
         maps[zOrder + 1].SetBar(
             p.Opacity.Position,
             tileIdEdge: Tile.BAR_BIG_EDGE,
@@ -332,9 +331,8 @@ public static class TilemapperUserInterface
     {
         Clear(maps, list, zOrder);
         maps[zOrder].SetRectangle(
-            list.Position,
-            list.Size,
-            tile: new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
+            rectangle: (list.Position.x, list.Position.y, list.Size.width, list.Size.height),
+            tiles: new Tile(Tile.SHADE_OPAQUE, Color.Gray.ToDark()));
 
         if (list.Scroll.IsHidden == false)
             SetScroll(maps, list.Scroll, zOrder + 1);
@@ -417,9 +415,12 @@ public static class TilemapperUserInterface
     }
     private static void Clear(TilemapPack maps, Block block, int zOrder)
     {
+        var (x, y) = block.Position;
+        var (w, h) = block.Size;
+
         for (var i = zOrder; i < zOrder + 3; i++)
             if (i < maps.Count)
-                maps[i].SetRectangle(block.Position, block.Size, Tile.SHADE_TRANSPARENT);
+                maps[i].SetRectangle((x, y, w, h), Tile.SHADE_TRANSPARENT);
     }
 #endregion
 }

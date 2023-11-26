@@ -61,6 +61,12 @@ internal class TilesetPrompt
 
             PromptTilesetAccept();
         });
+        fileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger,
+            btn =>
+            {
+                if (fileViewer.IsFolder(btn) == false)
+                    PromptTilesetAccept();
+            });
     }
 
 #region Backend
@@ -81,11 +87,14 @@ internal class TilesetPrompt
         }
 
         var path = fileViewer.SelectedPaths[0];
+        editor.LayerGrid.TilesetPath = path;
         editor.LayerMap.TilesetPath = path;
         tilePalette.layer.TilesetPath = path;
 
         if (editor.LayerMap.TilesetPath == "default")
         {
+            editor.LayerGrid.ResetToDefaults();
+            editor.LayerMap.ResetToDefaults();
             tilePalette.Create(tilePalette.layer.TilesetSize);
             Program.PromptMessage("Could not load image!");
             return;
@@ -118,6 +127,7 @@ internal class TilesetPrompt
         }
 
         var result = ((int)split[0].ToNumber(), (int)split[1].ToNumber());
+        editor.LayerGrid.TileSize = result;
         editor.LayerMap.TileSize = result;
         tilePalette.layer.TileSize = result;
         PromptTileGap();
@@ -147,10 +157,9 @@ internal class TilesetPrompt
         }
 
         var result = ((int)split[0].ToNumber(), (int)split[1].ToNumber());
+        editor.LayerGrid.TileGap = result;
         editor.LayerMap.TileGap = result;
         tilePalette.layer.TileGap = result;
-
-        tilePalette.Create(tilePalette.layer.TilesetSize);
 
         PromptTileFull();
     }
@@ -169,9 +178,20 @@ internal class TilesetPrompt
     }
     private void PromptTileFullAccept()
     {
+        var result = (int)stepper.Value;
+
         editor.Prompt.Close();
-        editor.LayerMap.TileIdFull = (int)stepper.Value;
-        tilePalette.layer.TileIdFull = (int)stepper.Value;
+        editor.LayerGrid.TileIdFull = result;
+        editor.LayerMap.TileIdFull = result;
+        tilePalette.layer.TileIdFull = result;
+
+        var (tw, th) = tilePalette.layer.TileSize;
+        var ratio = MathF.Max(tw / 8f, th / 8f);
+        var zoom = TilePalette.ZOOM_DEFAULT / ratio;
+        tilePalette.layer.Zoom = zoom;
+        tilePalette.map = new(tilePalette.layer.TilesetSize) { ViewSize = (10, 10) };
+
+        editor.SetGrid();
     }
 #endregion
 }
