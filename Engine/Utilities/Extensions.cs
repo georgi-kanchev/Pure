@@ -455,7 +455,8 @@ public static class Extensions
                     if (Process())
                         return float.NaN;
 
-                operators.Pop(); // Pop the '('
+                if (operators.Count > 0)
+                    operators.Pop(); // Pop the '('
             }
             else if (IsOperator(c))
             {
@@ -1041,7 +1042,7 @@ public static class Extensions
         var s = new Random(float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed);
         var randInt = s.Next((int)range.a, (int)range.b + 1).Limit(((int)range.a, (int)range.b + 1));
 
-        return randInt / (precision);
+        return randInt / precision;
     }
     /// <summary>
     /// Returns a random int value between the given inclusive range of values.

@@ -124,12 +124,18 @@ internal class TilePalette
                 tilemap.SeedOffset = (0, 0, clickSeed);
         }
 
-        if (tool == 1) // group of tiles
+        if (tool is 1) // group of tiles
             editor.LayerMap.DrawTiles(((int)mx, (int)my), tile, ((int)sw, (int)sh));
-        else if (tool == 2) // single random tile of tiles
+        else if (tool is 2 or 7 or 8) // single random tile of tiles/replace/fill
             editor.LayerMap.DrawTiles(((int)mx, (int)my), randomTile);
-        else if (tool == 3) // rectangle of random tiles
+        else if (tool is 3 or 5 or 6) // rectangle/ellipse of random tiles
             editor.LayerMap.DrawRectangles((start.x, start.y, szw, szh, color));
+        else if (tool == 4 && start != end) // line of random tiles
+            editor.LayerMap.DrawLines(
+                (start.x, start.y, end.x - 1, end.y - 1, color),
+                (start.x + 1, start.y, end.x, end.y - 1, color),
+                (start.x + 1, start.y + 1, end.x, end.y, color),
+                (start.x, start.y + 1, end.x - 1, end.y, color));
 
         if (Mouse.IsButtonPressed(Mouse.Button.Left))
         {
@@ -143,12 +149,26 @@ internal class TilePalette
                 tilemap?.SetTile(pos, randomTile);
         }
 
-        if (tool == 3 && // rectangle of random tiles
-            (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-release-square"))
-            tilemap?.SetRectangle((start.x, start.y, szw, szh), selectedTiles.Flatten());
+        if ((Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-release") == false)
+            return;
 
-        if ((Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-release-paint"))
-            start = end;
+        if (tool == 3) // rectangle of random tiles
+            tilemap?.SetRectangle((start.x, start.y, szw, szh), tiles);
+        else if (tool == 4) // line of random tiles
+            tilemap?.SetLine(start, (end.x - 1, end.y - 1), tiles);
+        else if (tool is 5 or 6) // ellipse of random tiles
+        {
+            var center = new Point(start).ToTarget((end.x - 1, end.y - 1), (0.5f, 0.5f));
+            var radius = ((int)((end.x - start.x - 1) / 2f), (int)((end.y - start.y - 1) / 2f));
+
+            tilemap?.SetEllipse(center, radius, tool == 5, tiles);
+        }
+        else if (tool == 7)
+            tilemap?.Replace((0, 0), tilemap.Size, tilemap.TileAt(start), tiles);
+        else if (tool == 8)
+            tilemap?.Flood(((int)mx, (int)my), tiles);
+
+        start = end;
     }
 
 #region Backend
@@ -164,7 +184,8 @@ internal class TilePalette
 
     static TilePalette()
     {
-        Mouse.OnButtonPress(Mouse.Button.Left, () => clickSeed++);
+        Mouse.OnButtonPress(Mouse.Button.Left, () =>
+            clickSeed = (-10000, 10000).Random());
     }
     private void UpdateSelected()
     {
@@ -181,9 +202,6 @@ internal class TilePalette
         var (ox, oy) = (sw < 0 ? 1 : 0, sh < 0 ? 1 : 0);
         var (vx, vy) = map.ViewPosition;
         selected = new((sw, sh), (sx + ox - vx, sy + oy - vy));
-
-        if (inspector is { tools.Current: 6 or 7 }) // fill or replace
-            selectedSz = (1, 1);
     }
 #endregion
 }

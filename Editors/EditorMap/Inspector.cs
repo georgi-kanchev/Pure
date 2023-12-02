@@ -59,17 +59,19 @@ internal class Inspector : Panel
 
         //========
 
-        tools = new(count: 7) { ItemWidth = 1, ItemGap = 0 };
+        tools = new(count: 8) { ItemWidth = 1, ItemGap = 0 };
         tools.OnDisplay(() => editor.MapsUi.SetPages(tools, 1));
         tools.OnItemDisplay(item =>
         {
             var graphics = new[]
             {
                 Tile.SHAPE_SQUARE_SMALL_HOLLOW, Tile.GAME_DICE_6, Tile.SHAPE_SQUARE,
-                Tile.PUNCTUATION_SLASH, Tile.SHAPE_CIRCLE, Tile.ICON_LOOP, Tile.ICON_SIZE_INCREASE
+                Tile.PUNCTUATION_SLASH, Tile.SHAPE_CIRCLE_BIG, Tile.SHAPE_CIRCLE_BIG_HOLLOW,
+                Tile.ICON_LOOP, Tile.ICON_SIZE_INCREASE
             };
             var id = graphics[tools.IndexOf(item)];
-            editor.MapsUi.SetButtonIcon(item, new(id, item.IsSelected ? Color.Green : Color.Gray), 1);
+            editor.MapsUi.SetButtonIcon(item,
+                new(id, item.IsSelected ? Color.Green : Color.Gray), 1);
         });
 
         paletteColor = new();
@@ -157,11 +159,23 @@ internal class Inspector : Panel
     }
     private void LayersUp()
     {
+        var selected = layers.ItemsSelected;
+        var maps = new Tilemap[selected.Length];
+        for (var i = 0; i < selected.Length; i++)
+            maps[i] = editor.MapsEditor[layers.IndexOf(selected[i])];
+
         layers.Shift(-1, layers.ItemsSelected);
+        editor.MapsEditor.Shift(-1, maps);
     }
     private void LayersDown()
     {
+        var selected = layers.ItemsSelected;
+        var maps = new Tilemap[selected.Length];
+        for (var i = 0; i < selected.Length; i++)
+            maps[i] = editor.MapsEditor[layers.IndexOf(selected[i])];
+
         layers.Shift(1, layers.ItemsSelected);
+        editor.MapsEditor.Shift(1, maps);
     }
 
     private void UpdateInspectorItem(

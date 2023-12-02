@@ -249,33 +249,32 @@ public class Tilemap
             for (var x = 0; x < Size.width; x++)
                 SetTile((x, y), tile);
     }
-    /// <summary>
-    /// Floods the tilemap with the given tile starting from the specified position.
-    /// </summary>
-    /// <param name="position">The starting position for the flood.</param>
-    /// <param name="tile">The tile to flood the tilemap with.</param>
-    public void Flood((int x, int y) position, Tile tile)
+    public void Flood((int x, int y) position, params Tile[]? tiles)
     {
+        if (tiles == null || tiles.Length == 0)
+            return;
+
         var stack = new Stack<(int x, int y)>();
         var initialTile = TileAt(position);
         stack.Push(position);
 
         while (stack.Count > 0)
         {
-            var currentPosition = stack.Pop();
-            var curTile = TileAt(currentPosition);
+            var (x, y) = stack.Pop();
+            var curTile = TileAt((x, y));
+            var tile = ChooseOne(tiles, ToSeed((x, y)));
 
-            if (currentPosition.x < 0 || currentPosition.x >= Size.width ||
-                currentPosition.y < 0 || currentPosition.y >= Size.height ||
+            if (x < 0 || x >= Size.width ||
+                y < 0 || y >= Size.height ||
                 curTile == tile || curTile != initialTile)
                 continue;
 
-            SetTile(currentPosition, tile);
+            SetTile((x, y), tile);
 
-            stack.Push((currentPosition.x - 1, currentPosition.y));
-            stack.Push((currentPosition.x + 1, currentPosition.y));
-            stack.Push((currentPosition.x, currentPosition.y - 1));
-            stack.Push((currentPosition.x, currentPosition.y + 1));
+            stack.Push((x - 1, y));
+            stack.Push((x + 1, y));
+            stack.Push((x, y - 1));
+            stack.Push((x, y + 1));
         }
     }
     public void Replace(
@@ -585,51 +584,54 @@ public class Tilemap
     public void SetEllipse(
         (int x, int y) center,
         (int width, int height) radius,
-        Tile tile,
-        bool isFilled = true)
+        bool isFilled,
+        params Tile[]? tiles)
     {
-        var sqrRX = radius.width * radius.width;
-        var sqrRY = radius.height * radius.height;
+        if (tiles == null || tiles.Length == 0)
+            return;
+
+        var sqrRx = radius.width * radius.width;
+        var sqrRy = radius.height * radius.height;
         var x = 0;
         var y = radius.height;
         var px = 0;
-        var py = (sqrRX * 2) * y;
+        var py = sqrRx * 2 * y;
 
         // Region 1
-        var p = (int)(sqrRY - (sqrRX * radius.height) + (0.25f * sqrRX));
+        var p = (int)(sqrRy - sqrRx * radius.height + 0.25f * sqrRx);
         while (px < py)
         {
             Set();
 
             x++;
-            px += (sqrRY * 2);
+            px += sqrRy * 2;
 
             if (p < 0)
-                p += sqrRY + px;
+                p += sqrRy + px;
             else
             {
                 y--;
-                py -= (sqrRX * 2);
-                p += sqrRY + px - py;
+                py -= sqrRx * 2;
+                p += sqrRy + px - py;
             }
         }
 
         // Region 2
-        p = (int)(sqrRY * (x + 0.5f) * (x + 0.5f) + sqrRX * (y - 1) * (y - 1) - sqrRX * sqrRY);
+        p = (int)(sqrRy * (x + 0.5f) * (x + 0.5f) + sqrRx * (y - 1) * (y - 1) - sqrRx * sqrRy);
         while (y >= 0)
         {
             Set();
 
             y--;
-            py -= (sqrRX * 2);
+            py -= sqrRx * 2;
 
             if (p > 0)
-                p += sqrRX - py;
+                p += sqrRx - py;
             else
             {
                 x++;
-                px += (sqrRY * 2);
-                p += sqrRX - py + px;
+                px += sqrRy * 2;
+                p += sqrRx - py + px;
             }
         }
 
@@ -637,24 +639,29 @@ public class Tilemap
 
         void Set()
         {
+            var c = center;
             if (isFilled == false)
             {
-                SetTile((center.x + x, center.y - y), tile);
-                SetTile((center.x - x, center.y - y), tile);
-                SetTile((center.x - x, center.y + y), tile);
-                SetTile((center.x + x, center.y + y), tile);
+                SetTile((c.x + x, c.y - y), ChooseOne(tiles, ToSeed((c.x + x, c.y - y))));
+                SetTile((c.x - x, c.y - y), ChooseOne(tiles, ToSeed((c.x - x, c.y - y))));
+                SetTile((c.x - x, c.y + y), ChooseOne(tiles, ToSeed((c.x - x, c.y + y))));
+                SetTile((c.x + x, c.y + y), ChooseOne(tiles, ToSeed((c.x + x, c.y + y))));
                 return;
             }
 
-            for (var i = center.x - x; i <= center.x + x; i++)
+            for (var i = c.x - x; i <= c.x + x; i++)
             {
-                SetTile((i, center.y - y), tile);
-                SetTile((i, center.y + y), tile);
+                SetTile((i, c.y - y), ChooseOne(tiles, ToSeed((i, c.y - y))));
+                SetTile((i, c.y + y), ChooseOne(tiles, ToSeed((i, c.y + y))));
             }
         }
     }
-    public void SetLine((int x, int y) pointA, (int x, int y) pointB, Tile tile)
+
+    public void SetLine((int x, int y) pointA, (int x, int y) pointB, params Tile[]? tiles)
     {
+        if (tiles == null || tiles.Length == 0)
+            return;
+
         var (x0, y0) = pointA;
         var (x1, y1) = pointB;
         var dx = Math.Abs(x1 - x0);
@@ -665,7 +672,7 @@ public class Tilemap
 
         while (true)
         {
-            SetTile((x0, y0), tile);
+            SetTile((x0, y0), ChooseOne(tiles, ToSeed((x0, y0))));
 
             if (x0 == x1 && y0 == y1)
                 break;

@@ -232,7 +232,7 @@ public class Editor
             MapGrid.SetLine(
                 pointA: (newX + i, y),
                 pointB: (newX + i, y + size.height),
-                tile: new(LayerMap.TileIdFull, color));
+                tiles: new Tile(LayerMap.TileIdFull, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
@@ -241,7 +241,7 @@ public class Editor
             MapGrid.SetLine(
                 pointA: (x, newY + i),
                 pointB: (x + size.width, newY + i),
-                tile: new(LayerMap.TileIdFull, color));
+                tiles: new Tile(LayerMap.TileIdFull, color));
         }
 
         OnSetGrid?.Invoke();

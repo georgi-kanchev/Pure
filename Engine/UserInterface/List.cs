@@ -13,10 +13,7 @@ public enum Span
 /// </summary>
 public class List : Block
 {
-    public Scroll Scroll
-    {
-        get;
-    }
+    public Scroll Scroll { get; }
 
     /// <summary>
     /// Gets the number of items in the list.
@@ -95,10 +92,7 @@ public class List : Block
     /// <summary>
     /// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
     /// </summary>
-    public Span Span
-    {
-        get;
-    }
+    public Span Span { get; }
 
     public (int width, int height) ItemSize
     {
@@ -415,7 +409,7 @@ public class List : Block
     private bool isSingleSelecting, isCollapsed;
     private readonly bool isInitialized;
     private int itemGap;
-    internal (int width, int height) itemSize = (5, 1);
+    internal (int width, int height) itemSize = (6, 1);
     private readonly List<int> indexesDisabled = new(), indexesSelected = new();
     internal bool isReadOnly;
 
@@ -480,13 +474,12 @@ public class List : Block
         data.Clear();
         TrySingleSelectOneItem();
     }
-    private Button[] InternalCreateAmount(int count)
+    private static Button[] InternalCreateAmount(int count)
     {
         var result = new Button[count];
         for (var i = 0; i < count; i++)
         {
             var item = new Button();
-            InitItem(item, i);
             result[i] = item;
         }
 

@@ -278,32 +278,32 @@ public static class Ludo
         map.SetTile((centerX, centerY - 1), new(Tile.ICON_HOME, teamColorGreen, 2));
         map.SetRectangle((cellsVertX + 1, cellsVertY + 1, 1, 11),
             new Tile(Tile.SHAPE_SQUARE, teamColorGreen));
-        map.SetEllipse((cellsVertX + 8, cellsVertY + 6), (4, 4),
-            new(Tile.SHADE_OPAQUE, teamColorGreen.ToDark()));
-        map.SetEllipse((cellsVertX + 8, cellsVertY + 6), (4, 4),
-            new(Tile.SHADE_OPAQUE, teamColorGreen), false);
+        map.SetEllipse((cellsVertX + 8, cellsVertY + 6), (4, 4), true,
+            new Tile(Tile.SHADE_OPAQUE, teamColorGreen.ToDark()));
+        map.SetEllipse((cellsVertX + 8, cellsVertY + 6), (4, 4), false,
+            new Tile(Tile.SHADE_OPAQUE, teamColorGreen));
 
         map.SetTile((centerX + 1, centerY), new(Tile.ICON_HOME, teamColorRed, 3));
         map.SetRectangle((centerX + 2, centerY, 11, 1), new Tile(Tile.SHAPE_SQUARE, teamColorRed));
-        map.SetEllipse((centerX + 7, centerY + 7), (4, 4),
-            new(Tile.SHADE_OPAQUE, teamColorRed.ToDark()));
-        map.SetEllipse((centerX + 7, centerY + 7), (4, 4),
-            new(Tile.SHADE_OPAQUE, teamColorRed), false);
+        map.SetEllipse((centerX + 7, centerY + 7), (4, 4), true,
+            new Tile(Tile.SHADE_OPAQUE, teamColorRed.ToDark()));
+        map.SetEllipse((centerX + 7, centerY + 7), (4, 4), false,
+            new Tile(Tile.SHADE_OPAQUE, teamColorRed));
 
         map.SetTile((centerX, centerY + 1), new(Tile.ICON_HOME, teamColorBlue, 0));
         map.SetRectangle((centerX, centerY + 2, 1, 11), new Tile(Tile.SHAPE_SQUARE, teamColorBlue));
-        map.SetEllipse((cellsHorX + 6, cellsHorY + 8), (4, 4),
-            new(Tile.SHADE_OPAQUE, teamColorBlue.ToDark()));
-        map.SetEllipse((cellsHorX + 6, cellsHorY + 8), (4, 4),
-            new(Tile.SHADE_OPAQUE, teamColorBlue), false);
+        map.SetEllipse((cellsHorX + 6, cellsHorY + 8), (4, 4), true,
+            new Tile(Tile.SHADE_OPAQUE, teamColorBlue.ToDark()));
+        map.SetEllipse((cellsHorX + 6, cellsHorY + 8), (4, 4), false,
+            new Tile(Tile.SHADE_OPAQUE, teamColorBlue));
 
         map.SetTile((centerX - 1, centerY), new(Tile.ICON_HOME, teamColorYellow, 1));
         map.SetRectangle((cellsHorX + 1, cellsHorY + 1, 11, 1),
             new Tile(Tile.SHAPE_SQUARE, teamColorYellow));
-        map.SetEllipse((cellsHorX + 6, cellsVertY + 6), (4, 4),
-            new(Tile.SHADE_OPAQUE, teamColorYellow.ToDark(0.3f)));
-        map.SetEllipse((cellsHorX + 6, cellsVertY + 6), (4, 4),
-            new(Tile.SHADE_OPAQUE, teamColorYellow), false);
+        map.SetEllipse((cellsHorX + 6, cellsVertY + 6), (4, 4), true,
+            new Tile(Tile.SHADE_OPAQUE, teamColorYellow.ToDark(0.3f)));
+        map.SetEllipse((cellsHorX + 6, cellsVertY + 6), (4, 4), false,
+            new Tile(Tile.SHADE_OPAQUE, teamColorYellow));
 
         foreach (var kvp in PositionsBase)
             foreach (var position in kvp.Value)

@@ -30,6 +30,7 @@ public static class DefaultGraphics
             tilemap.SetTextLine((27, 13), $"{id}");
 
             layer.DrawTilemap(tilemap.ToBundle());
+            layer.DrawCursor();
             Window.DrawLayer(layer);
             Window.Activate(false);
         }

@@ -86,18 +86,19 @@ public static class Collision
         foreach (var t in positions)
         {
             var (x, y) = t;
-            tilemap.SetEllipse((x, y - 1), (1, 1), new(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
+            tilemap.SetEllipse((x, y - 1), (1, 1), true,
+                new Tile(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
             tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
         }
     }
     private static void SetBridge(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
-        tilemap.SetLine(pointA, pointB, new(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
+        tilemap.SetLine(pointA, pointB, new Tile(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
     }
     private static void SetRoad(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
         var angle = pointA.x == pointB.x ? 1 : 0;
-        tilemap.SetLine(pointA, pointB, new(Tile.BAR_SPIKE_STRAIGHT, Color.Brown, (sbyte)angle));
+        tilemap.SetLine(pointA, pointB, new Tile(Tile.BAR_SPIKE_STRAIGHT, Color.Brown, (sbyte)angle));
     }
     private static void SetHouses(this Tilemap tilemap, params (int x, int y)[] positions)
     {
@@ -121,10 +122,7 @@ public static class Collision
         (int x, int y) position,
         (int width, int height) radius)
     {
-        // every sec slight mutation times 3
-        var seed = (0, 0, (int)Time.RuntimeClock * 3);
-        tilemap.SeedOffset = seed;
-        tilemap.SetEllipse(position, radius, Tile.MATH_APPROXIMATE);
+        tilemap.SetEllipse(position, radius, true, Tile.MATH_APPROXIMATE);
         tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE,
             new Tile(Tile.ICON_WAVE, Color.Blue, 0),
             new Tile(Tile.ICON_WAVE, Color.Blue, 2),
@@ -134,8 +132,7 @@ public static class Collision
     private static void FillWithRandomGrass(this Tilemap tilemap)
     {
         var color = Color.Green.ToDark(0.4f);
-        tilemap.Flush();
-        tilemap.Replace((0, 0), tilemap.Size, 0, default,
+        tilemap.Replace((0, 0), tilemap.Size, 0,
             new Tile(Tile.SHADE_1, color, 0),
             new Tile(Tile.SHADE_1, color, 1),
             new Tile(Tile.SHADE_1, color, 2),

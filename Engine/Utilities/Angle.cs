@@ -72,6 +72,15 @@ public struct Angle
         return angle;
     }
 
+    public Angle Dot(Angle targetAngle)
+    {
+        return MathF.Cos(ToRadians()) * MathF.Cos(targetAngle.ToRadians());
+    }
+    public Angle Reflect(Angle surfaceAngle)
+    {
+        return 2 * surfaceAngle - Value + 180;
+    }
+
     /// <summary>
     /// Calculates the angle between two points.
     /// </summary>
@@ -80,12 +89,12 @@ public struct Angle
     /// <returns>The angle between the two points.</returns>
     public static Angle FromPoints((float x, float y) point, (float x, float y) targetPoint)
     {
-        var dir = (targetPoint.Item1 - point.Item1, targetPoint.Item2 - point.Item2);
-        var m = MathF.Sqrt(dir.Item1 * dir.Item1 + dir.Item2 * dir.Item2);
+        var (x, y) = (targetPoint.x - point.x, targetPoint.y - point.y);
+        var m = MathF.Sqrt(x * x + y * y);
 
-        return (dir.Item1 / m, dir.Item2 / m);
+        return (x / m, y / m);
     }
-    public static float FromRadians(float radians)
+    public static Angle FromRadians(float radians)
     {
         return radians * (180f / MathF.PI);
     }
@@ -112,7 +121,7 @@ public struct Angle
     /// <returns>The angle instance representing the direction vector.</returns>
     public static implicit operator Angle((int x, int y) direction)
     {
-        var result = MathF.Atan2(direction.Item2, direction.Item1) * (180f / MathF.PI);
+        var result = MathF.Atan2(direction.y, direction.x) * (180f / MathF.PI);
         return new() { Value = result };
     }
     /// <summary>
@@ -132,7 +141,7 @@ public struct Angle
     /// <returns>The angle instance representing the direction vector.</returns>
     public static implicit operator Angle((float x, float y) direction)
     {
-        var result = MathF.Atan2(direction.Item2, direction.Item1) * (180f / MathF.PI);
+        var result = MathF.Atan2(direction.y, direction.x) * (180f / MathF.PI);
         return new() { Value = result };
     }
     /// <summary>

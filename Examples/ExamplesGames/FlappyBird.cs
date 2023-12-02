@@ -32,13 +32,13 @@ public static class FlappyBird
         collisionMap.AddRectangle(new((1, 1)), Tile.BOX_DEFAULT_STRAIGHT);
 
         Window.Create();
-        //Window.IsRetro = true;
+        Window.IsRetro = true;
 
         InitializePipes();
 
         Keyboard.OnKeyPress(Keyboard.Key.Space, asText =>
         {
-            birdVelocity = -0.08f;
+            birdVelocity = -0.1f;
             birdAnimation.CurrentProgress = 0;
 
             if (isGameOver == false)
@@ -98,9 +98,9 @@ public static class FlappyBird
 
                 var size = (PIPE_WIDTH, PIPE_HEIGHT);
                 var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
-                background.SetRectangle(((int)pipeX, pipeY, size.PIPE_WIDTH, size.PIPE_WIDTH),
+                background.SetRectangle(((int)pipeX, pipeY, size.PIPE_WIDTH, size.PIPE_HEIGHT),
                     new Tile(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
-                background.SetRectangle(((int)pipeX, lowerPipeY, size.PIPE_WIDTH, size.PIPE_WIDTH),
+                background.SetRectangle(((int)pipeX, lowerPipeY, size.PIPE_WIDTH, size.PIPE_HEIGHT),
                     new Tile(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
                 foreground.SetBox(((int)pipeX, pipeY), size, Tile.SHADE_TRANSPARENT,
                     Tile.BOX_DEFAULT_CORNER,
@@ -128,12 +128,14 @@ public static class FlappyBird
 
             layer.DrawTilemap(background.ToBundle());
             layer.DrawTilemap(foreground.ToBundle());
-            var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
+            var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile,
+                Color.Yellow, birdAngle);
             layer.DrawTiles((BIRD_X, birdY), tile);
 
             //Window.DrawRectangles(collisionMap);
             //Window.DrawRectangles(birdRect);
 
+            Window.DrawLayer(layer);
             Window.Activate(false);
         }
 

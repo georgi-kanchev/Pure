@@ -92,17 +92,12 @@ public class TilemapPack
         return result;
     }
 
-    public void Shift(int offset, params int[]? indexes)
+    public void Shift(int offset, params Tilemap[]? tilemaps)
     {
-        if (indexes == null || indexes.Length == 0 || offset == 0)
+        if (tilemaps == null || tilemaps.Length == 0 || offset == 0)
             return;
 
-        var items = new Tilemap[indexes.Length];
-        for (var i = 0; i < indexes.Length; i++)
-            if (indexes[i] >= 0 && indexes[i] < data.Count)
-                items[i] = data[indexes[i]];
-
-        Shift(data, offset, items);
+        Shift(data, offset, tilemaps);
     }
 
     public void Add(params Tilemap[]? tilemaps)

@@ -30,6 +30,7 @@ public static class Program
             Time.Update();
             maps.Flush();
 
+            Input.PositionPrevious = Input.Position;
             Input.Position = layer.PixelToWorld(Mouse.CursorPosition);
             Input.Update(
                 isPressed: Mouse.IsButtonPressed(Mouse.Button.Left),
@@ -45,6 +46,7 @@ public static class Program
             for (var i = 0; i < maps.Count; i++)
                 layer.DrawTilemap(maps[i].ToBundle());
 
+            layer.DrawCursor();
             Window.DrawLayer(layer);
             Window.Activate(false);
         }
