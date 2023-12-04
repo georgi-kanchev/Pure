@@ -23,6 +23,7 @@ public static class Program
     private static readonly Inspector inspector;
     private static readonly TilePalette tilePalette;
     private static readonly TilesetPrompt tilesetPrompt;
+    private static readonly FileViewer mapSaveLoad;
 
     internal static Menu menu;
 
@@ -49,18 +50,20 @@ public static class Program
         menu = new(editor,
                 "Save… ",
                 "  Map",
-                "  Collisions",
                 "Load… ",
                 "  Tileset",
-                "  Map",
-                "  Collisions")
-            { Size = (12, 7) };
+                "  Map")
+            { Size = (9, 5) };
         menu.OnItemInteraction(Interaction.Trigger, btn =>
         {
             menu.IsHidden = true;
             menu.IsDisabled = true;
             var index = menu.IndexOf(btn);
-            if (index == 4)
+
+            if (index == 1)
+            {
+            }
+            else if (index == 3)
                 tilesetPrompt.Open();
         });
 

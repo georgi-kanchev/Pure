@@ -85,8 +85,7 @@ internal class TilePalette
 
     public void TryDraw()
     {
-        if (Mouse.IsHovering(editor.LayerMap) == false ||
-            inspector == null || inspector.IsHovered ||
+        if (inspector == null || inspector.IsHovered ||
             editor.Prompt.IsHidden == false ||
             Program.menu.IsHidden == false)
             return;

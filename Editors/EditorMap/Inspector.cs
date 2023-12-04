@@ -98,28 +98,30 @@ internal class Inspector : Panel
         var inspectorItems = new Block?[]
         {
             layers, create, null, remove, up, down, null, rename,
-            null, paletteScrollV, paletteScrollH, null, paletteColor, null, tools
+            null, paletteScrollV, paletteScrollH, null, paletteColor, null, tools, null
         };
         var layout = new Layout((Position.x + 1, Position.y + 1)) { Size = (w - 2, h - 2) };
         layout.OnDisplaySegment((segment, i) =>
             UpdateInspectorItem(i, inspectorItems, segment, tilePalette));
 
-        layout.Cut(0, Side.Bottom, 0.85f);
-        layout.Cut(1, Side.Bottom, 0.95f);
-        layout.Cut(1, Side.Right, 0.9f);
-        layout.Cut(3, Side.Right, 0.9f);
-        layout.Cut(4, Side.Right, 0.9f);
-        layout.Cut(5, Side.Right, 0.9f);
-        layout.Cut(2, Side.Top, 0.05f);
+        layout.Cut(0, Side.Bottom, 0.65f); // layers
+        layout.Cut(1, Side.Bottom, 0.95f); // create
+        layout.Cut(1, Side.Right, 0.9f); // empty
+        layout.Cut(3, Side.Right, 0.9f); // remove
+        layout.Cut(4, Side.Right, 0.9f); // up
+        layout.Cut(5, Side.Right, 0.9f); // down
+        layout.Cut(2, Side.Top, 0.05f); // rename
 
-        layout.Cut(2, Side.Bottom, 0.4f);
-        layout.Cut(8, Side.Right, 0.05f);
-        layout.Cut(8, Side.Bottom, 0.05f);
+        layout.Cut(2, Side.Bottom, 0.52f); // tileset
+        layout.Cut(8, Side.Right, 0.05f); // scroll V
+        layout.Cut(8, Side.Bottom, 0.05f); // scroll H
+        layout.Cut(2, Side.Bottom, 0.3f); // empty
 
-        layout.Cut(2, Side.Bottom, 0.02f);
-        layout.Cut(2, Side.Bottom, 0.15f);
-        layout.Cut(2, Side.Bottom, 0.02f);
-        layout.Cut(13, Side.Right, 0.6f);
+        layout.Cut(2, Side.Bottom, 0.5f); // colors
+        layout.Cut(2, Side.Bottom, 0.02f); // tools text
+        layout.Cut(13, Side.Right, 0.6f); // tools
+        layout.Cut(11, Side.Bottom, 0.1f); // hover info
+        layout.Cut(12, Side.Top, 0.3f); // empty
 
         editor.Ui.Add(this, layout, create, up, down, rename, remove,
             tools, paletteColor, paletteScrollV, paletteScrollH, layers);
@@ -197,7 +199,7 @@ internal class Inspector : Panel
         if (i >= inspectorItems.Length)
             return;
 
-        if (i == 11 && Mouse.IsHovering(palette.layer) && editor.Prompt.IsHidden)
+        if (i == 15 && Mouse.IsHovering(palette.layer) && editor.Prompt.IsHidden)
         {
             var (mx, my) = palette.mousePos;
             var index = new Indices(my, mx).ToIndex(palette.map.Size.width);

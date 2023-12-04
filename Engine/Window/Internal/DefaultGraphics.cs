@@ -136,7 +136,7 @@ internal static class DefaultGraphics
                 if (isLast)
                 {
                     var lastLength = total - decodedBits.Length;
-                    var lastRawBits = bits[^lastLength..^0];
+                    var lastRawBits = bits[^lastLength..];
                     decodedBits += lastRawBits;
                     break;
                 }
@@ -156,7 +156,7 @@ internal static class DefaultGraphics
             img.SetPixel(x, y, color);
         }
 
-        //img.SaveToFile("graphics.png");
+        img.SaveToFile("graphics.png");
         return new(img) { Repeated = true };
     }
 

@@ -21,18 +21,10 @@ public class FileViewer : Block
         Fonts // 78
     }
 
-    public Button Back
-    {
-        get;
-        private set;
-    }
-    public List FilesAndFolders
-    {
-        get;
-        private set;
-    }
+    public Button Back { get; private set; }
+    public List FilesAndFolders { get; private set; }
 
-    public string CurrentDirectory
+    public string? CurrentDirectory
     {
         get => dir;
         set
@@ -66,16 +58,8 @@ public class FileViewer : Block
         }
     }
 
-    public int CountFiles
-    {
-        get;
-        private set;
-    }
-    public int CountFolders
-    {
-        get;
-        private set;
-    }
+    public int CountFiles { get; private set; }
+    public int CountFolders { get; private set; }
 
     public string[] SelectedPaths
     {
@@ -90,6 +74,15 @@ public class FileViewer : Block
             return result.ToArray();
         }
     }
+    public string? FileFilter
+    {
+        get => fileFilter;
+        set
+        {
+            fileFilter = value;
+            Refresh();
+        }
+    }
 
     public FileViewer((int x, int y) position = default) : base(position)
     {
@@ -101,12 +94,14 @@ public class FileViewer : Block
     {
         Init();
         IsSelectingFolders = GrabBool(bytes);
+        FileFilter = GrabString(bytes);
     }
 
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
         PutBool(result, IsSelectingFolders);
+        PutString(result, FileFilter ?? "");
         return result.ToArray();
     }
 
@@ -142,6 +137,7 @@ public class FileViewer : Block
     }
 
     private bool isSelectingFolders;
+    private string? fileFilter;
 
     [MemberNotNull(nameof(Back), nameof(FilesAndFolders), nameof(watcher))]
     private void Init()
@@ -174,7 +170,7 @@ public class FileViewer : Block
 
     private void Refresh()
     {
-        var path = CurrentDirectory;
+        var path = CurrentDirectory ?? DefaultPath;
         string[] directories;
         string[] files;
 
@@ -204,8 +200,10 @@ public class FileViewer : Block
         if (IsSelectingFolders)
             return;
 
+        var filters = FileFilter?.Split("/");
         foreach (var file in files)
-            CreateItem(file);
+            if (IsShowingFile(filters, file))
+                CreateItem(file);
 
         CountFiles = files.Length;
 
@@ -266,6 +264,19 @@ public class FileViewer : Block
         FilesAndFolders.position = (x, y + 1);
         FilesAndFolders.itemSize = (w, 1);
         FilesAndFolders.Update();
+    }
+
+    private static bool IsShowingFile(string[]? filters, string filePath)
+    {
+        if (filters == null || filters.Length == 0)
+            return true;
+
+        foreach (var filter in filters)
+            if (string.IsNullOrWhiteSpace(filter) == false &&
+                filePath.EndsWith(filter) == false)
+                return false;
+
+        return true;
     }
 #endregion
 }

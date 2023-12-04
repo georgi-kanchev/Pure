@@ -9,12 +9,12 @@ public static class Run
         //Examples.ExamplesGames.Pong.Run();
         //Examples.ExamplesGames.FlappyBird.Run();
 
-        Editors.EditorMap.Program.Run();
+        //Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
 
         //RunExampleUserInterface();
 
-        //Examples.ExamplesSystems.DefaultGraphics.Run();
+        Examples.ExamplesSystems.DefaultGraphics.Run();
         //Examples.ExamplesSystems.Collision.Run();
         //Examples.ExamplesSystems.UtilityExtensions.Run();
     }

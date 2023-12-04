@@ -2,11 +2,7 @@ namespace Pure.Engine.UserInterface;
 
 public class Prompt : Block
 {
-    public int ButtonCount
-    {
-        get;
-        set;
-    } = 1;
+    public int ButtonCount { get; set; } = 1;
 
     public Prompt()
     {
@@ -128,10 +124,15 @@ public class Prompt : Block
         if (currentBlock != null)
         {
             currentBlock.Update();
-            w = currentBlock.Size.width;
-            h = currentBlock.Size.height;
-            x = currentBlock.Position.x;
-            y = currentBlock.Position.y;
+
+            // update might call Close which invalidates the previous check
+            if (currentBlock != null)
+            {
+                w = currentBlock.Size.width;
+                h = currentBlock.Size.height;
+                x = currentBlock.Position.x;
+                y = currentBlock.Position.y;
+            }
         }
 
         position = isHidden ? (int.MaxValue, int.MaxValue) : (x, y - lines);

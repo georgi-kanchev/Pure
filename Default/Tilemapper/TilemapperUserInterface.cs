@@ -107,9 +107,52 @@ public static class TilemapperUserInterface
     {
         var color = item.IsSelected ? Color.Green : Color.Gray.ToBright();
         var (x, y) = item.Position;
-        var icon = fileViewer.IsFolder(item) ?
-            new Tile(Tile.ICON_FOLDER, GetInteractionColor(item, Color.Yellow)) :
-            new(Tile.ICON_FILE, GetInteractionColor(item, Color.Gray.ToBright()));
+        var isFolder = fileViewer.IsFolder(item);
+        var icon = new Tile(Tile.ICON_FOLDER, GetInteractionColor(item, Color.Yellow));
+
+        if (isFolder == false)
+        {
+            var id = Tile.ICON_FILE;
+            var file = item.Text;
+            var iconColor = Color.Gray.ToBright();
+
+            if (Ext(".png") || Ext(".jpg") || Ext(".bmp") || Ext(".jpeg") || Ext(".svg") ||
+                Ext(".gif") || Ext(".psd") || Ext(".tif") || Ext(".tiff") || Ext(".webp"))
+            {
+                id = 59;
+                iconColor = Color.Cyan;
+            }
+            else if (Ext(".wav") || Ext(".ogg") || Ext(".flac") || Ext(".mp3") ||
+                     Ext(".aiff") || Ext(".aac") || Ext(".mid") || Ext(".cda") ||
+                     Ext(".mpa") || Ext(".wma"))
+            {
+                id = Tile.ICON_MUSIC_NOTES_BEAMED_EIGHT;
+                iconColor = Color.Purple;
+            }
+            else if (Ext(".ttf") || Ext(".otf"))
+            {
+                id = Tile.UPPERCASE_F;
+                iconColor = Color.Gray.ToDark();
+            }
+            else if (Ext(".txt") || Ext(".xml") || Ext(".json") || Ext(".log") || Ext(".csv"))
+            {
+                id = Tile.UPPERCASE_T;
+                iconColor = Color.Blue.ToBright(0.25f);
+            }
+            else if (Ext(".zip") || Ext(".rar") || Ext(".7z") || Ext(".arj") || Ext(".deb") ||
+                     Ext(".pkg") || Ext(".tar.gz") || Ext(".z"))
+            {
+                id = Tile.ICON_SORT_LIST;
+                iconColor = Color.Brown;
+            }
+            else if (Ext(".mp4") || Ext(".avi") || Ext(".flv") || Ext(".mkv"))
+            {
+            }
+
+            icon = new(id, GetInteractionColor(item, iconColor));
+
+            bool Ext(string ext) => file.EndsWith(ext);
+        }
 
         maps[zOrder].SetTile((x, y), icon);
         maps[zOrder].SetTextLine(
@@ -398,7 +441,7 @@ public static class TilemapperUserInterface
     }
 
 #region Backend
-    private static int seed;
+    private static readonly int seed;
 
     static TilemapperUserInterface()
     {
