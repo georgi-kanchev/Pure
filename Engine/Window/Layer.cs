@@ -87,7 +87,7 @@ public class Layer
         verts.Clear();
     }
 
-    public void DrawCursor(int tileId = 442, uint tint = uint.MaxValue)
+    public void DrawCursor(int tileId = 546, uint tint = uint.MaxValue)
     {
         if (Mouse.isOverWindow == false)
             return;
@@ -367,7 +367,7 @@ public class Layer
     {
         //var str = DefaultGraphics.PngToBase64String(
         //    "/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
-        //var str = DefaultGraphics.PNGToBase64String("graphics.png");
+        //var str = DefaultGraphics.PngToBase64String("graphics.png");
 
         tilesets["default"] = DefaultGraphics.CreateTexture();
     }

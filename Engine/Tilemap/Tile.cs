@@ -599,17 +599,17 @@ public struct Tile
 #endregion
 
 #region Cursor
-        CURSOR_ARROW = 442,
-        CURSOR_ARROW_WAIT = 443,
-        CURSOR_WAIT = 444,
-        CURSOR_TEXT = 445,
-        CURSOR_HAND = 446,
-        CURSOR_RESIZE = 447,
-        CURSOR_RESIZE_DIAGONAL = 448,
-        CURSOR_MOVE = 459,
-        CURSOR_CROSSHAIR = 450,
-        CURSOR_HELP = 451,
-        CURSOR_DISABLE = 452;
+        CURSOR_ARROW = 546,
+        CURSOR_ARROW_WAIT = 547,
+        CURSOR_WAIT = 548,
+        CURSOR_TEXT = 549,
+        CURSOR_HAND = 550,
+        CURSOR_RESIZE = 551,
+        CURSOR_RESIZE_DIAGONAL = 552,
+        CURSOR_MOVE = 553,
+        CURSOR_CROSSHAIR = 554,
+        CURSOR_HELP = 555,
+        CURSOR_DISABLE = 556;
 #endregion
 
 #region Backend
