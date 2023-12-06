@@ -117,17 +117,18 @@ public static class TilemapperUserInterface
             var iconColor = Color.Gray.ToBright();
 
             if (Ext(".png") || Ext(".jpg") || Ext(".bmp") || Ext(".jpeg") || Ext(".svg") ||
-                Ext(".gif") || Ext(".psd") || Ext(".tif") || Ext(".tiff") || Ext(".webp"))
+                Ext(".gif") || Ext(".psd") || Ext(".tif") || Ext(".tiff") || Ext(".webp") ||
+                Ext(".pdf") || Ext(".ico"))
             {
-                id = 59;
+                id = Tile.ICON_PICTURE;
                 iconColor = Color.Cyan;
             }
             else if (Ext(".wav") || Ext(".ogg") || Ext(".flac") || Ext(".mp3") ||
                      Ext(".aiff") || Ext(".aac") || Ext(".mid") || Ext(".cda") ||
                      Ext(".mpa") || Ext(".wma"))
             {
-                id = Tile.ICON_MUSIC_NOTES_BEAMED_EIGHT;
-                iconColor = Color.Purple;
+                id = Tile.AUDIO_NOTES_BEAMED_EIGHT;
+                iconColor = Color.Purple.ToBright(0.35f);
             }
             else if (Ext(".ttf") || Ext(".otf"))
             {
@@ -136,22 +137,34 @@ public static class TilemapperUserInterface
             }
             else if (Ext(".txt") || Ext(".xml") || Ext(".json") || Ext(".log") || Ext(".csv"))
             {
-                id = Tile.UPPERCASE_T;
-                iconColor = Color.Blue.ToBright(0.25f);
+                id = Tile.ALIGN_HORIZONTAL_LEFT;
+                iconColor = Color.Azure;
             }
             else if (Ext(".zip") || Ext(".rar") || Ext(".7z") || Ext(".arj") || Ext(".deb") ||
                      Ext(".pkg") || Ext(".tar.gz") || Ext(".z"))
             {
-                id = Tile.ICON_SORT_LIST;
+                id = Tile.ICON_STACK_2;
                 iconColor = Color.Brown;
             }
             else if (Ext(".mp4") || Ext(".avi") || Ext(".flv") || Ext(".mkv"))
             {
+                id = Tile.ICON_CAMERA_MOVIE;
+                iconColor = Color.Red;
+            }
+            else if (Ext(".dll") || Ext(".cfg") || Ext(".ini"))
+            {
+                id = Tile.ICON_SETTINGS;
+                iconColor = Color.Yellow.ToDark();
+            }
+            else if (Ext(".exe") || Ext(".bin") || Ext(".bat") || Ext(".jar") || Ext(".msi"))
+            {
+                id = Tile.FLOW_PLAY;
+                iconColor = Color.Orange;
             }
 
             icon = new(id, GetInteractionColor(item, iconColor));
 
-            bool Ext(string ext) => file.EndsWith(ext);
+            bool Ext(string ext) => file.ToLower().EndsWith(ext);
         }
 
         maps[zOrder].SetTile((x, y), icon);
@@ -233,10 +246,10 @@ public static class TilemapperUserInterface
 
         maps[zOrder + 1].SetTile(
             position: s.Decrease.Position,
-            tile: new(Tile.ARROW_NO_TAIL, GetInteractionColor(s.Decrease, color), turns: 1));
+            tile: new(Tile.ARROW_TAILLESS_ROUND, GetInteractionColor(s.Decrease, color), 1));
         maps[zOrder + 1].SetTile(
             s.Increase.Position,
-            tile: new(Tile.ARROW_NO_TAIL, GetInteractionColor(s.Increase, color), turns: 3));
+            tile: new(Tile.ARROW_TAILLESS_ROUND, GetInteractionColor(s.Increase, color), 3));
         maps[zOrder + 1].SetTextLine(
             position: (x + (int)MathF.Ceiling(w / 2f - maxTextSize / 2f), y),
             s.Text,

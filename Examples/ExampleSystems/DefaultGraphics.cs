@@ -8,12 +8,13 @@ public static class DefaultGraphics
 {
     public static void Run()
     {
+        Window.Create();
+        Window.Title = "Pure - Default Graphics Example";
+
         var (w, h) = Monitor.AspectRatio;
         var tilemap = new Tilemap((w * 3, h * 3));
-
-        Window.Create();
-
         var layer = new Layer(tilemap.Size);
+
         while (Window.IsOpen)
         {
             Window.Activate(true);

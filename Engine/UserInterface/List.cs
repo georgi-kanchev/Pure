@@ -28,14 +28,7 @@ public class List : Block
     public bool IsSingleSelecting
     {
         get => isSingleSelecting || Span == Span.Dropdown;
-        set
-        {
-            var was = isSingleSelecting;
-            isSingleSelecting = value || Span == Span.Dropdown;
-
-            if (was != isSingleSelecting)
-                TrySingleSelectOneItem();
-        }
+        set => isSingleSelecting = value || Span == Span.Dropdown;
     }
     public bool IsCollapsed
     {
@@ -311,6 +304,11 @@ public class List : Block
         return data.IndexOf(item);
     }
 
+    public void Deselect()
+    {
+        for (var i = 0; i < data.Count; i++)
+            Select(i, false);
+    }
     public void Select(int index, bool isSelected = true)
     {
         if (HasIndex(index) == false)
@@ -442,6 +440,17 @@ public class List : Block
                 IsCollapsed = false;
         });
     }
+    private void InitItem(Button item, int i)
+    {
+        item.size = (Span == Span.Horizontal ? text.Length : Size.width, 1);
+        item.hasParent = true;
+        item.OnInteraction(Interaction.Trigger, () => OnInternalItemTrigger(item));
+        item.OnInteraction(Interaction.Select, () => OnInternalItemSelect(item));
+        item.OnInteraction(Interaction.Scroll, ApplyScroll);
+
+        foreach (var kvp in itemInteractions)
+            item.OnInteraction(kvp.Key, () => kvp.Value.Invoke(item));
+    }
 
     internal void InternalAdd(params Button[] items)
     {
@@ -453,8 +462,6 @@ public class List : Block
             InitItem(items[i], i);
 
         data.InsertRange(index, items);
-
-        TrySingleSelectOneItem();
     }
     internal void InternalRemove(params Button[] items)
     {
@@ -464,15 +471,12 @@ public class List : Block
             indexesSelected.Remove(IndexOf(item));
             data.Remove(item);
         }
-
-        TrySingleSelectOneItem();
     }
     internal void InternalClear()
     {
         indexesDisabled.Clear();
         indexesSelected.Clear();
         data.Clear();
-        TrySingleSelectOneItem();
     }
     private static Button[] InternalCreateAmount(int count)
     {
@@ -485,23 +489,9 @@ public class List : Block
 
         return result;
     }
-    private void InitItem(Button item, int i)
-    {
-        item.size = (Span == Span.Horizontal ? text.Length : Size.width, 1);
-        item.hasParent = true;
-        item.OnInteraction(Interaction.Trigger, () => OnInternalItemTrigger(item));
-        item.OnInteraction(Interaction.Select, TrySingleSelectOneItem);
-        item.OnInteraction(Interaction.Scroll, ApplyScroll);
-
-        foreach (var kvp in itemInteractions)
-            item.OnInteraction(kvp.Key, () => kvp.Value.Invoke(item));
-    }
 
     internal void OnUpdate()
     {
-        if (IsSingleSelecting && singleSelectedIndex == -1)
-            TrySingleSelectOneItem();
-
         if (Input.IsJustPressed && IsHovered == false)
             IsCollapsed = true;
 
@@ -636,20 +626,6 @@ public class List : Block
             }
     }
 
-    internal void TrySingleSelectOneItem()
-    {
-        if (IsSingleSelecting == false || data.Count == 0)
-        {
-            singleSelectedIndex = -1;
-            return;
-        }
-
-        if (indexesSelected.Count == 1)
-            return;
-
-        Select(0);
-    }
-
     private void OnInternalItemTrigger(Button item)
     {
         if (IsSingleSelecting)
@@ -668,6 +644,9 @@ public class List : Block
 
         IsCollapsed = IsCollapsed == false;
         Select(item);
+    }
+    private void OnInternalItemSelect(Button item)
+    {
     }
 
     private bool HasIndex(int index)

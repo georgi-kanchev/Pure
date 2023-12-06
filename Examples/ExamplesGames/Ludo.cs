@@ -146,6 +146,7 @@ public static class Ludo
     public static void Run()
     {
         Window.Create();
+        Window.Title = "Pure - Ludo Game Example";
 
         var map = new Tilemap((48, 27));
         var dice = new Dice((map.Size.width / 2, map.Size.height / 2));

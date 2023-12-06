@@ -349,7 +349,7 @@ public class Editor
         btn.OnDisplay(() =>
         {
             var color = btn.GetInteractionColor(Color.Gray);
-            var arrow = new Tile(Tile.ARROW_NO_TAIL, color, (sbyte)rotations);
+            var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (sbyte)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
             MapsUi[(int)LayerMapsUi.Back].SetTile(
                 btn.Position,

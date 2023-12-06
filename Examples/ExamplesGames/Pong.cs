@@ -14,8 +14,9 @@ public static class Pong
     public static void Run()
     {
         Window.Create();
-        var tilemap = new Tilemap((48, 27));
+        Window.Title = "Pure - Pong Game Example";
 
+        var tilemap = new Tilemap((48, 27));
         var center = new Point(x: tilemap.Size.width / 2f, y: tilemap.Size.height / 2f);
         var ballAngle = new Angle(45f);
         var ballPosition = center;

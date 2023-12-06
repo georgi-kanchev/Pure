@@ -27,11 +27,17 @@ internal class TilesetPrompt
         {
             FilesAndFolders = { IsSingleSelecting = true },
             Size = (21, 10),
-            //FileFilter = ".png"
+            FileFilter = ".png"
         };
         fileViewer.OnDisplay(() => maps.SetFileViewer(fileViewer, BACK));
         fileViewer.FilesAndFolders.OnItemDisplay(btn =>
             maps.SetFileViewerItem(fileViewer, btn, MIDDLE));
+        fileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger,
+            btn =>
+            {
+                if (fileViewer.IsFolder(btn) == false)
+                    PromptTilesetAccept();
+            });
 
         Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
         {
@@ -62,12 +68,6 @@ internal class TilesetPrompt
 
             PromptTilesetAccept();
         });
-        fileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger,
-            btn =>
-            {
-                if (fileViewer.IsFolder(btn) == false)
-                    PromptTilesetAccept();
-            });
     }
 
 #region Backend

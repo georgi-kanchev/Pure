@@ -10,6 +10,10 @@ public static class FlappyBird
 {
     public static void Run()
     {
+        Window.Create();
+        Window.Title = "Pure - Flappy Bird Game Example";
+        Window.IsRetro = true;
+
         // some data needed throughout the game
         const int SCROLL_SPEED = 4, BIRD_X = 10, PIPE_WIDTH = 2, PIPE_HEIGHT = 20;
         const string GAME_OVER = "Game Over! <Space> to play again.";
@@ -30,9 +34,6 @@ public static class FlappyBird
         var collisionMap = new Map();
         collisionMap.AddRectangle(new((1, 1)), Tile.BOX_DEFAULT_CORNER);
         collisionMap.AddRectangle(new((1, 1)), Tile.BOX_DEFAULT_STRAIGHT);
-
-        Window.Create();
-        Window.IsRetro = true;
 
         InitializePipes();
 

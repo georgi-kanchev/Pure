@@ -625,8 +625,10 @@ internal class Inspector : Panel
         SetBackground(middle, stepper, color.ToDark());
         SetBackground(front, stepper, color.ToDark());
 
-        front.SetTile(e.Increase.Position, new(Tile.ARROW_NO_TAIL, GetColor(e.Increase, color), 3));
-        front.SetTile(e.Decrease.Position, new(Tile.ARROW_NO_TAIL, GetColor(e.Decrease, color), 1));
+        front.SetTile(e.Increase.Position,
+            new(Tile.ARROW_TAILLESS_ROUND, GetColor(e.Increase, color), 3));
+        front.SetTile(e.Decrease.Position,
+            new(Tile.ARROW_TAILLESS_ROUND, GetColor(e.Decrease, color), 1));
         front.SetTextLine((e.Position.x + 2, e.Position.y), e.Text, color);
         front.SetTextLine((e.Position.x + 2, e.Position.y + 1), value);
 

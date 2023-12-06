@@ -10,6 +10,7 @@ public static class Collision
     public static void Run()
     {
         Window.Create();
+        Window.Title = "Pure - Collision Example";
 
         var aspectRatio = Monitor.AspectRatio;
         var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
@@ -17,7 +18,7 @@ public static class Collision
 
         var collisionMap = new Map();
         collisionMap.AddRectangle(new((1, 1), (0, 0), Color.Red), Tile.ICON_WAVE); // lake
-        collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVE_DOUBLE); // lake
+        collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVES); // lake
         collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE); // house roof
         collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE_RIGHT); // house wall
         collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
@@ -126,8 +127,8 @@ public static class Collision
         tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE,
             new Tile(Tile.ICON_WAVE, Color.Blue, 0),
             new Tile(Tile.ICON_WAVE, Color.Blue, 2),
-            new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 0),
-            new Tile(Tile.ICON_WAVE_DOUBLE, Color.Blue, 2));
+            new Tile(Tile.ICON_WAVES, Color.Blue, 0),
+            new Tile(Tile.ICON_WAVES, Color.Blue, 2));
     }
     private static void FillWithRandomGrass(this Tilemap tilemap)
     {

@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Pure.Engine.UserInterface;
 
 using System.Diagnostics.CodeAnalysis;
@@ -7,18 +9,17 @@ public class FileViewer : Block
 {
     public enum Directory
     {
-        // tiles
-        Desktop, // 312
-        Programs, // 313
-        LocalApplicationData, // 344
-        Favorites, // 334
-        Recent, // 322
-        UserProfile, // 331
-        MyDocuments, // 318
-        MyMusic, // 359
-        MyVideos, // 353
-        MyPictures, // 347
-        Fonts // 78
+        Desktop,
+        Programs,
+        LocalApplicationData,
+        Favorites,
+        Recent,
+        UserProfile,
+        MyDocuments,
+        MyMusic,
+        MyVideos,
+        MyPictures,
+        Fonts
     }
 
     public Button Back { get; private set; }
@@ -200,17 +201,16 @@ public class FileViewer : Block
         if (IsSelectingFolders)
             return;
 
-        var filters = FileFilter?.Split("/");
+        var filters = FileFilter?.Split(Path.DirectorySeparatorChar);
         foreach (var file in files)
             if (IsShowingFile(filters, file))
                 CreateItem(file);
 
         CountFiles = files.Length;
-
+        Back.Text = path;
         FilesAndFolders.Scroll.Slider.Progress = 0;
 
-        if (FilesAndFolders.IsSingleSelecting)
-            FilesAndFolders.Select(IsSelectingFolders ? 0 : CountFolders);
+        var drives = GetHardDrives();
     }
     private void CreateItem(string path)
     {
@@ -229,8 +229,8 @@ public class FileViewer : Block
 
         item.OnInteraction(Interaction.Select, () =>
         {
-            if (IsSelectingFolders ^ IsFolder(item))
-                item.isSelected = false;
+            if (IsSelectingFolders ^ IsFolder(item) || item.IsSelected)
+                FilesAndFolders.Select(item, false);
         });
     }
 
@@ -249,7 +249,7 @@ public class FileViewer : Block
         var selected = FilesAndFolders.ItemsSelected;
         var index = FilesAndFolders.IndexOf(selected[0]);
         if (IsSelectingFolders ^ index < CountFolders)
-            FilesAndFolders.Select(IsSelectingFolders ? 0 : CountFolders);
+            FilesAndFolders.Deselect();
     }
     internal override void OnChildrenUpdate()
     {
@@ -277,6 +277,50 @@ public class FileViewer : Block
                 return false;
 
         return true;
+    }
+
+    private static List<(string path, float totalGb, float percentFilled)> GetHardDrives()
+    {
+        var result = new List<(string path, float totalGb, float percentFilled)>();
+        var drives = DriveInfo.GetDrives();
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            foreach (var drive in drives)
+                if (drive.DriveType == DriveType.Fixed)
+                    AddDrive(drive);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            var sep = Path.DirectorySeparatorChar.ToString();
+            var uuids = System.IO.Directory.GetFiles($"{sep}dev{sep}disk{sep}by-uuid{sep}");
+
+            foreach (var drive in drives)
+            {
+                if (drive.Name == sep)
+                    AddDrive(drive);
+
+                foreach (var id in uuids)
+                    if (drive.RootDirectory.Name == Path.GetFileName(id))
+                        AddDrive(drive);
+            }
+        }
+
+        return result;
+
+        void AddDrive(DriveInfo drive)
+        {
+            var total = drive.TotalSize / MathF.Pow(1024, 3);
+            var free = drive.AvailableFreeSpace / MathF.Pow(1024, 3);
+            result.Add((drive.Name, total, Map(free, (0f, total), (100f, 0f))));
+        }
+    }
+
+    private static float Map(float number, (float a, float b) range, (float a, float b) targetRange)
+    {
+        var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) +
+                    targetRange.a;
+        return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
 #endregion
 }
