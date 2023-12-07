@@ -55,7 +55,6 @@ public static class Program
         saveLoad = new() { Size = (20, 10) };
         saveLoad.OnDisplay(() => maps.SetFileViewer(saveLoad, BACK));
         saveLoad.FilesAndFolders.IsSingleSelecting = true;
-        saveLoad.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(saveLoad, item, MIDDLE));
 
         fileName = new() { Size = (20, 1), IsSingleLine = true };
         fileName.OnDisplay(() => maps.SetInputBox(fileName, BACK));
@@ -186,6 +185,8 @@ public static class Program
                 panel.SizeMinimum = (5, 5);
                 block.OnDisplay(() => editor.MapsEditor.SetFileViewer(fileViewer));
                 fileViewer.FilesAndFolders.OnItemDisplay(item =>
+                    editor.MapsEditor.SetFileViewerItem(fileViewer, item));
+                fileViewer.HardDrives.OnItemDisplay(item =>
                     editor.MapsEditor.SetFileViewerItem(fileViewer, item));
                 break;
             }

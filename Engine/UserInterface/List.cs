@@ -288,7 +288,7 @@ public class List : Block
     /// </summary>
     /// <param name="item">The item to locate in the list.</param>
     /// <returns>True if the item is found in the list; otherwise, false.</returns>
-    public bool Contains(Button item)
+    public bool IsContaining(Button item)
     {
         return data.Contains(item);
     }

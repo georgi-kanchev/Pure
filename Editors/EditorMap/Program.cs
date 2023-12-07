@@ -50,6 +50,8 @@ public static class Program
         mapSaveLoad.OnDisplay(() => editor.MapsUi.SetFileViewer(mapSaveLoad, BACK));
         mapSaveLoad.FilesAndFolders.OnItemDisplay(btn =>
             editor.MapsUi.SetFileViewerItem(mapSaveLoad, btn, MIDDLE));
+        mapSaveLoad.HardDrives.OnItemDisplay(btn =>
+            editor.MapsUi.SetFileViewerItem(mapSaveLoad, btn, MIDDLE));
         mapSaveLoad.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, btn =>
         {
             if (mapSaveLoad.IsSelectingFolders == false && mapSaveLoad.IsFolder(btn) == false)
@@ -78,7 +80,7 @@ public static class Program
             if (index == 1) // save map
             {
                 editor.Prompt.Text = "Select a Directory:";
-                mapSaveLoad.IsSelectingFolders = false;
+                mapSaveLoad.IsSelectingFolders = true;
                 editor.Prompt.Open(mapSaveLoad, i =>
                 {
                     editor.Prompt.Close();
@@ -98,8 +100,8 @@ public static class Program
                 tilesetPrompt.Open();
             else if (index == 4) // load map
             {
-                editor.Prompt.Text = "Select a Directory:";
-                mapSaveLoad.IsSelectingFolders = true;
+                editor.Prompt.Text = "Select a Map File:";
+                mapSaveLoad.IsSelectingFolders = false;
                 editor.Prompt.Open(mapSaveLoad, i =>
                 {
                     editor.Prompt.Close();
@@ -157,7 +159,7 @@ public static class Program
         }
         catch (Exception e)
         {
-            PromptMessage("Could not save map!");
+            PromptMessage("Could not load map!");
         }
     }
 #endregion

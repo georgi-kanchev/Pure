@@ -108,9 +108,26 @@ public static class TilemapperUserInterface
         var color = item.IsSelected ? Color.Green : Color.Gray.ToBright();
         var (x, y) = item.Position;
         var isFolder = fileViewer.IsFolder(item);
+        var isHardDrive = fileViewer.HardDrives.IsContaining(item);
         var icon = new Tile(Tile.ICON_FOLDER, GetInteractionColor(item, Color.Yellow));
+        var isRight = isHardDrive || item == fileViewer.Back || item == fileViewer.User;
 
-        if (isFolder == false)
+        if (isHardDrive)
+        {
+            color = Color.Gray.ToBright(0.2f);
+            icon = new(Tile.ICON_HOME, GetInteractionColor(item, color));
+        }
+        else if (item == fileViewer.Back)
+        {
+            color = Color.Gray.ToBright(0.2f);
+            icon = new(Tile.ICON_BACK, GetInteractionColor(item, color));
+        }
+        else if (item == fileViewer.User)
+        {
+            color = Color.Gray.ToBright(0.2f);
+            icon = new(Tile.ICON_PERSON, GetInteractionColor(item, color));
+        }
+        else if (isFolder == false)
         {
             var id = Tile.ICON_FILE;
             var file = item.Text;
@@ -172,26 +189,18 @@ public static class TilemapperUserInterface
             position: (x + 1, y),
             item.Text,
             GetInteractionColor(item, color),
-            maxLength: item.Size.width - 1);
+            maxLength: isRight ? -fileViewer.Size.width + 1 : item.Size.width - 1);
     }
     public static void SetFileViewer(this TilemapPack maps, FileViewer fileViewer, int zOrder = 0)
     {
-        var f = fileViewer;
-        var color = GetInteractionColor(f.Back, Color.Gray);
-        var (x, y) = f.Back.Position;
+        Clear(maps, fileViewer, zOrder);
+        SetBackground(maps[zOrder], fileViewer);
 
-        Clear(maps, f, zOrder);
-        SetBackground(maps[zOrder], f);
+        if (fileViewer.FilesAndFolders.Scroll.IsHidden == false)
+            SetScroll(maps, fileViewer.FilesAndFolders.Scroll, zOrder);
 
-        if (f.FilesAndFolders.Scroll.IsHidden == false)
-            SetScroll(maps, f.FilesAndFolders.Scroll, zOrder);
-
-        maps[zOrder + 1].SetTile((x, y), new(Tile.ICON_BACK, color));
-        maps[zOrder + 1].SetTextLine(
-            position: (x + 1, y),
-            text: f.CurrentDirectory,
-            color,
-            maxLength: -f.Back.Size.width + 1);
+        SetFileViewerItem(maps, fileViewer, fileViewer.User, zOrder + 1);
+        SetFileViewerItem(maps, fileViewer, fileViewer.Back, zOrder + 1);
     }
     public static void SetSlider(this TilemapPack maps, Slider slider, int zOrder = 0)
     {

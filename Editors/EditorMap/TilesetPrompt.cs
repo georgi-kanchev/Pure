@@ -32,12 +32,13 @@ internal class TilesetPrompt
         fileViewer.OnDisplay(() => maps.SetFileViewer(fileViewer, BACK));
         fileViewer.FilesAndFolders.OnItemDisplay(btn =>
             maps.SetFileViewerItem(fileViewer, btn, MIDDLE));
-        fileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger,
-            btn =>
-            {
-                if (fileViewer.IsFolder(btn) == false)
-                    PromptTilesetAccept();
-            });
+        fileViewer.HardDrives.OnItemDisplay(btn =>
+            maps.SetFileViewerItem(fileViewer, btn, MIDDLE));
+        fileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, btn =>
+        {
+            if (fileViewer.IsFolder(btn) == false)
+                PromptTilesetAccept();
+        });
 
         Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
         {

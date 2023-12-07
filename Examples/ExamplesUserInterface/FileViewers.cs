@@ -21,8 +21,8 @@ public static class FileViewers
             DisplayExtra(maps, fileViewer);
             maps.SetFileViewer(fileViewer);
         });
-        fileViewer.FilesAndFolders.OnItemDisplay(item =>
-            maps.SetFileViewerItem(fileViewer, item));
+        fileViewer.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(fileViewer, item));
+        fileViewer.HardDrives.OnItemDisplay(item => maps.SetFileViewerItem(fileViewer, item));
 
         //================
 
@@ -31,8 +31,8 @@ public static class FileViewers
             DisplayExtra(maps, folderViewer);
             maps.SetFileViewer(folderViewer);
         });
-        folderViewer.FilesAndFolders.OnItemDisplay(item =>
-            maps.SetFileViewerItem(folderViewer, item));
+        folderViewer.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(folderViewer, item));
+        folderViewer.HardDrives.OnItemDisplay(item => maps.SetFileViewerItem(folderViewer, item));
 
         return new Block[] { fileViewer, folderViewer };
     }

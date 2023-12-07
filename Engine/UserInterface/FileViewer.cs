@@ -22,7 +22,9 @@ public class FileViewer : Block
         Fonts
     }
 
+    public Button User { get; private set; }
     public Button Back { get; private set; }
+    public List HardDrives { get; private set; }
     public List FilesAndFolders { get; private set; }
 
     public string? CurrentDirectory
@@ -140,7 +142,7 @@ public class FileViewer : Block
     private bool isSelectingFolders;
     private string? fileFilter;
 
-    [MemberNotNull(nameof(Back), nameof(FilesAndFolders), nameof(watcher))]
+    [MemberNotNull(nameof(Back), nameof(HardDrives), nameof(FilesAndFolders), nameof(watcher))]
     private void Init()
     {
         watcher = new(DefaultPath)
@@ -153,20 +155,44 @@ public class FileViewer : Block
         watcher.Created += (_, _) => Refresh();
         watcher.Renamed += (_, _) => Refresh();
 
+        var drives = GetHardDrives();
+        HardDrives = new(position, drives.Count)
+        {
+            isReadOnly = true,
+            hasParent = true,
+            IsSingleSelecting = true,
+        };
         FilesAndFolders = new(position, 0)
         {
             isReadOnly = true,
             hasParent = true,
         };
 
-        Back = new(position) { hasParent = true };
+        Back = new(position) { hasParent = true, isTextReadonly = true };
         Back.OnInteraction(Interaction.Scroll, ApplyScroll);
         Back.OnInteraction(Interaction.Trigger, () =>
             CurrentDirectory = Path.GetDirectoryName(CurrentDirectory) ?? DefaultPath);
 
+        User = new(position)
+        {
+            hasParent = true,
+            isTextReadonly = true,
+            text = GetPath(Directory.UserProfile)
+        };
+        User.OnInteraction(Interaction.Scroll, ApplyScroll);
+        User.OnInteraction(Interaction.Trigger, () => CurrentDirectory = User.text);
+
         CurrentDirectory = dir;
 
         OnUpdate(OnUpdate);
+
+        for (var i = 0; i < drives.Count; i++)
+        {
+            var drive = HardDrives[i];
+            drive.OnInteraction(Interaction.Scroll, ApplyScroll);
+            drive.OnInteraction(Interaction.Select, () => CurrentDirectory = drive.Text);
+            drive.text = drives[i];
+        }
     }
 
     private void Refresh()
@@ -207,10 +233,8 @@ public class FileViewer : Block
                 CreateItem(file);
 
         CountFiles = files.Length;
-        Back.Text = path;
+        Back.text = path;
         FilesAndFolders.Scroll.Slider.Progress = 0;
-
-        var drives = GetHardDrives();
     }
     private void CreateItem(string path)
     {
@@ -241,7 +265,7 @@ public class FileViewer : Block
     }
     internal void OnUpdate()
     {
-        LimitSizeMin((3, 3));
+        LimitSizeMin((3, 3 + HardDrives.Count));
 
         if (FilesAndFolders is not { IsSingleSelecting: true, ItemsSelected.Length: 1 })
             return;
@@ -255,13 +279,23 @@ public class FileViewer : Block
     {
         var (x, y) = Position;
         var (w, h) = Size;
+        var hds = HardDrives.Count;
+
+        HardDrives.size = (w, hds);
+        HardDrives.position = (x, y);
+        HardDrives.itemSize = (w, 1);
+        HardDrives.Update();
+
+        User.size = (w, 1);
+        User.position = (x, y + hds);
+        User.Update();
 
         Back.size = (w, 1);
-        Back.position = (x, y);
+        Back.position = (x, y + hds + 1);
         Back.Update();
 
-        FilesAndFolders.size = (w, h - 1);
-        FilesAndFolders.position = (x, y + 1);
+        FilesAndFolders.size = (w, h - hds - 2);
+        FilesAndFolders.position = (x, y + hds + 2);
         FilesAndFolders.itemSize = (w, 1);
         FilesAndFolders.Update();
     }
@@ -279,16 +313,16 @@ public class FileViewer : Block
         return true;
     }
 
-    private static List<(string path, float totalGb, float percentFilled)> GetHardDrives()
+    private static List<string> GetHardDrives()
     {
-        var result = new List<(string path, float totalGb, float percentFilled)>();
+        var result = new List<string>();
         var drives = DriveInfo.GetDrives();
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             foreach (var drive in drives)
                 if (drive.DriveType == DriveType.Fixed)
-                    AddDrive(drive);
+                    result.Add(drive.Name);
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
@@ -298,29 +332,15 @@ public class FileViewer : Block
             foreach (var drive in drives)
             {
                 if (drive.Name == sep)
-                    AddDrive(drive);
+                    result.Add(drive.Name);
 
                 foreach (var id in uuids)
                     if (drive.RootDirectory.Name == Path.GetFileName(id))
-                        AddDrive(drive);
+                        result.Add(drive.Name);
             }
         }
 
         return result;
-
-        void AddDrive(DriveInfo drive)
-        {
-            var total = drive.TotalSize / MathF.Pow(1024, 3);
-            var free = drive.AvailableFreeSpace / MathF.Pow(1024, 3);
-            result.Add((drive.Name, total, Map(free, (0f, total), (100f, 0f))));
-        }
-    }
-
-    private static float Map(float number, (float a, float b) range, (float a, float b) targetRange)
-    {
-        var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) +
-                    targetRange.a;
-        return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
 #endregion
 }
