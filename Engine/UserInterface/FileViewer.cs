@@ -142,7 +142,8 @@ public class FileViewer : Block
     private bool isSelectingFolders;
     private string? fileFilter;
 
-    [MemberNotNull(nameof(Back), nameof(HardDrives), nameof(FilesAndFolders), nameof(watcher))]
+    [MemberNotNull(nameof(User), nameof(Back), nameof(HardDrives), nameof(FilesAndFolders),
+        nameof(watcher))]
     private void Init()
     {
         watcher = new(DefaultPath)
