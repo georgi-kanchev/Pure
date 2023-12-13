@@ -84,7 +84,7 @@ internal class TilesetPrompt
         var paths = fileViewer.SelectedPaths;
         if (paths.Length == 0)
         {
-            Program.PromptMessage("Could not load image!");
+            editor.PromptMessage("Could not load image!");
             return;
         }
 
@@ -98,7 +98,7 @@ internal class TilesetPrompt
             editor.LayerGrid.ResetToDefaults();
             editor.LayerMap.ResetToDefaults();
             tilePalette.Create(tilePalette.layer.TilesetSize);
-            Program.PromptMessage("Could not load image!");
+            editor.PromptMessage("Could not load image!");
             return;
         }
 
@@ -124,7 +124,7 @@ internal class TilesetPrompt
         var split = pair.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
         if (split.Length != 2)
         {
-            Program.PromptMessage("Only 2 values allowed!");
+            editor.PromptMessage("Only 2 values allowed!");
             return;
         }
 
@@ -154,7 +154,7 @@ internal class TilesetPrompt
         var split = pair.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
         if (split.Length != 2)
         {
-            Program.PromptMessage("Only 2 values allowed!");
+            editor.PromptMessage("Only 2 values allowed!");
             return;
         }
 

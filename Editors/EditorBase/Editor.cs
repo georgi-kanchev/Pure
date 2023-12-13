@@ -198,7 +198,7 @@ public class Editor
         MapGrid = new(newMapSize);
         MapsEditor = new((int)LayerMapsEditor.Count, newMapSize);
     }
-    public void DisplayInfoText(string text)
+    public void Log(string text)
     {
         var infoTextSplit = infoText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         if (infoTextSplit.Length > 0 && infoTextSplit[^1].Contains(text))
@@ -218,13 +218,32 @@ public class Editor
         infoTextTimer = 2f;
     }
 
+    public void PromptMessage(string message)
+    {
+        Prompt.Text = message;
+        Prompt.ButtonCount = 1;
+        Prompt.Open(onButtonTrigger: _ => Prompt.Close());
+        Prompt.ButtonCount = 2;
+    }
+    public void PromptYesNo(string message, Action onAccept)
+    {
+        Prompt.Text = message;
+        Prompt.Open(onButtonTrigger: i =>
+        {
+            Prompt.Close();
+
+            if (i == 0)
+                onAccept?.Invoke();
+        });
+    }
+
     public void SetGrid()
     {
         var size = MapsEditor.Size;
         var color = Color.Gray.ToDark(0.66f);
         var (x, y) = (0, 0);
 
-        MapGrid.Fill(new(LayerMap.TileIdFull, Color.Brown.ToDark(0.8f)));
+        MapGrid.Fill(new Tile(LayerMap.TileIdFull, Color.Brown.ToDark(0.8f)));
 
         for (var i = 0; i < size.width + GRID_GAP; i += GRID_GAP)
         {
@@ -314,7 +333,7 @@ public class Editor
         MapsEditor.ViewSize = (vw, vh);
 
         SetGrid();
-        DisplayInfoText($"Map {w}x{h}");
+        Log($"Map {w}x{h}");
     }
     private void ResizePressView(int i)
     {
@@ -326,7 +345,7 @@ public class Editor
 
         var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
         MapsEditor.ViewSize = (w, h);
-        DisplayInfoText($"View {w}x{h}");
+        Log($"View {w}x{h}");
     }
     private void CreateViewButton(int rotations)
     {
@@ -366,11 +385,11 @@ public class Editor
             if (offX == 0 && offY == 0)
             {
                 MapsEditor.ViewPosition = default;
-                DisplayInfoText("View Reset");
+                Log("View Reset");
             }
 
             if (x != MapsEditor.ViewPosition.x || y != MapsEditor.ViewPosition.y)
-                DisplayInfoText($"View {MapsEditor.ViewPosition.x}, {MapsEditor.ViewPosition.y}");
+                Log($"View {MapsEditor.ViewPosition.x}, {MapsEditor.ViewPosition.y}");
         }
     }
 
@@ -427,7 +446,7 @@ public class Editor
         LayerMap.Zoom = ViewZoom;
 
         if (Math.Abs(prevZoom - ViewZoom) > 0.01f)
-            DisplayInfoText($"Zoom {ViewZoom * 100:F0}%");
+            Log($"Zoom {ViewZoom * 100:F0}%");
     }
     private void TryViewMove()
     {

@@ -207,7 +207,7 @@ public static class Program
         ui.Add(block);
         panels.Add(panel);
 
-        editor.DisplayInfoText("Added " + block.Text);
+        editor.Log("Added " + block.Text);
         Input.Focused = null;
     }
     internal static void BlockRemove(Block block)
@@ -282,11 +282,11 @@ public static class Program
     }
     private static void OnPanelResize(Panel panel, (int width, int height) delta)
     {
-        editor.DisplayInfoText($"{panel.Text} {panel.Size.width - 2}x{panel.Size.height - 2}");
+        editor.Log($"{panel.Text} {panel.Size.width - 2}x{panel.Size.height - 2}");
     }
     private static void OnDragPanel(Panel panel, (int width, int height) delta)
     {
-        editor.DisplayInfoText($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
+        editor.Log($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
     }
 
     private static bool CanDeselect()
