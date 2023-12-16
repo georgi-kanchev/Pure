@@ -445,7 +445,6 @@ public class List : Block
         item.size = (Span == Span.Horizontal ? text.Length : Size.width, 1);
         item.hasParent = true;
         item.OnInteraction(Interaction.Trigger, () => OnInternalItemTrigger(item));
-        item.OnInteraction(Interaction.Select, () => OnInternalItemSelect(item));
         item.OnInteraction(Interaction.Scroll, ApplyScroll);
 
         foreach (var kvp in itemInteractions)
@@ -459,16 +458,21 @@ public class List : Block
     internal void InternalInsert(int index, params Button[] items)
     {
         for (var i = 0; i < items.Length; i++)
+        {
             InitItem(items[i], i);
-
-        data.InsertRange(index, items);
+            data.Insert(index, items[i]);
+            AdjustIndexesAbove(index, 1);
+        }
     }
     internal void InternalRemove(params Button[] items)
     {
         foreach (var item in items)
         {
-            indexesDisabled.Remove(IndexOf(item));
-            indexesSelected.Remove(IndexOf(item));
+            var index = IndexOf(item);
+            indexesDisabled.Remove(index);
+            indexesSelected.Remove(index);
+
+            AdjustIndexesAbove(index, -1);
             data.Remove(item);
         }
     }
@@ -645,9 +649,6 @@ public class List : Block
         IsCollapsed = IsCollapsed == false;
         Select(item);
     }
-    private void OnInternalItemSelect(Button item)
-    {
-    }
 
     private bool HasIndex(int index)
     {
@@ -688,6 +689,17 @@ public class List : Block
         }
 
         item.size = (newWidth, newHeight);
+    }
+
+    private void AdjustIndexesAbove(int index, int offset)
+    {
+        for (var i = 0; i < indexesSelected.Count; i++)
+            if (index <= indexesSelected[i])
+                indexesSelected[i] += offset;
+
+        for (var i = 0; i < indexesDisabled.Count; i++)
+            if (index <= indexesDisabled[i])
+                indexesDisabled[i] += offset;
     }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)

@@ -3,8 +3,10 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
-global using static Pure.Default.Tilemapper.TilemapperUserInterface;
+global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
 global using Monitor = Pure.Engine.Window.Monitor;
+using SFML.Graphics;
+using Color = Pure.Engine.Utilities.Color;
 
 namespace Pure.Editors.EditorBase;
 
@@ -40,6 +42,8 @@ public class Editor
 
     public BlockPack Ui { get; }
     public Prompt Prompt { get; }
+
+    public Panel MapPanel { get; }
 
     public (float x, float y) MousePositionUi { get; private set; }
     public (float x, float y) MousePositionWorld { get; private set; }
@@ -80,6 +84,8 @@ public class Editor
         ChangeMapSize(mapSize);
         MapsEditor.ViewSize = (viewSize.width, viewSize.height);
         MapsUi = new((int)LayerMapsUi.Count, (width * 5, height * 5));
+
+        MapPanel = new() { IsResizable = false, IsMovable = false };
 
         Ui = new();
         Prompt = new() { ButtonCount = 2 };
@@ -283,7 +289,7 @@ public class Editor
         var btnMapSize = new Button { Text = "Resize Map", Size = (10, 1) };
         var btnViewSize = new Button { Text = "Resize View", Size = (11, 1) };
 
-        btnMapSize.Align((0f, 0.98f));
+        btnMapSize.Align((0f, 0.96f));
         btnMapSize.OnInteraction(Interaction.Trigger, () =>
         {
             Prompt.Text = $"Enter Map Size,{Environment.NewLine}" +
@@ -303,7 +309,7 @@ public class Editor
 
         Ui.Add(btnMapSize, btnViewSize);
 
-        Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
+        Keyboard.OnKeyPress(Keyboard.Key.Enter, _ =>
         {
             if (Prompt.IsHidden)
                 return;
@@ -333,6 +339,7 @@ public class Editor
         MapsEditor.ViewSize = (vw, vh);
 
         SetGrid();
+        ViewMove(); // reclamp view position
         Log($"Map {w}x{h}");
     }
     private void ResizePressView(int i)
@@ -345,6 +352,7 @@ public class Editor
 
         var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
         MapsEditor.ViewSize = (w, h);
+        ViewMove(); // reclamp view position
         Log($"View {w}x{h}");
     }
     private void CreateViewButton(int rotations)
@@ -352,7 +360,7 @@ public class Editor
         var offsets = new (int x, int y)[] { (1, 0), (0, 1), (-1, 0), (0, -1), (0, 0) };
         var btn = new Button { Size = (1, 1) };
         var (offX, offY) = offsets[rotations];
-        btn.Align((0.03f, 0.94f));
+        btn.Align((0.26f, 0.98f));
         btn.Position = (btn.Position.x + offX, btn.Position.y + offY);
 
         if (offX != 0 && offY != 0)
@@ -370,7 +378,7 @@ public class Editor
             var color = btn.GetInteractionColor(Color.Gray);
             var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (sbyte)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
-            MapsUi[(int)LayerMapsUi.Back].SetTile(
+            MapsUi[(int)LayerMapsUi.Front].SetTile(
                 btn.Position,
                 tile: rotations == 4 ? center : arrow);
         });
@@ -404,15 +412,28 @@ public class Editor
         var (mx, my) = MousePositionWorld;
         var (mw, mh) = MapsEditor.Size;
         var (vw, vh) = MapsEditor.ViewSize;
+        const int FRONT = (int)LayerMapsUi.Front;
 
         if (Time.UpdateCount % 60 == 0)
             fps = (int)Time.UpdatesPerSecond;
 
-        MapsUi[(int)LayerMapsUi.Front].SetTextLine((0, 0), $"FPS:{fps}");
-        MapsUi[(int)LayerMapsUi.Front].SetTextLine((11, bottomY - 1), $"{mw} x {mh}");
-        MapsUi[(int)LayerMapsUi.Front].SetTextLine((12, bottomY), $"{vw} x {vh}");
+        MapPanel.Position = (0, bottomY - 2);
+        MapPanel.Size = (22, 3);
+        MapPanel.Update();
 
-        MapsUi[(int)LayerMapsUi.Front].SetTextRectangle(
+        MapsUi[(int)LayerMapsUi.Back].SetBox(
+            position: MapPanel.Position,
+            size: MapPanel.Size,
+            tileFill: new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()),
+            cornerTileId: Tile.BOX_CORNER_ROUND,
+            borderTileId: Tile.SHADE_OPAQUE,
+            borderTint: Color.Gray.ToDark());
+
+        MapsUi[FRONT].SetTextLine((0, 0), $"FPS:{fps}");
+        MapsUi[FRONT].SetTextLine((11, bottomY - 2), $"{mw} x {mh}");
+        MapsUi[FRONT].SetTextLine((12, bottomY), $"{vw} x {vh}");
+
+        MapsUi[FRONT].SetTextRectangle(
             position: (x, bottomY),
             size: (TEXT_WIDTH, 1),
             text: $"Cursor {(int)mx}, {(int)my}",
@@ -424,7 +445,7 @@ public class Editor
             return;
         }
 
-        MapsUi[(int)LayerMapsUi.Front].SetTextRectangle(
+        MapsUi[FRONT].SetTextRectangle(
             position: (x, 0),
             size: (TEXT_WIDTH, TEXT_HEIGHT),
             text: infoText,
@@ -455,15 +476,7 @@ public class Editor
         if (IsDisabledViewMove || mmb == false)
             return;
 
-        var (mw, mh) = Monitor.Size;
-        var (ww, wh) = Window.Size;
-        var (aw, ah) = (mw / ww, mh / wh);
-        var (mx, my) = MousePositionRaw;
-        var (px, py) = prevRaw;
-
-        ViewPosition = (
-            ViewPosition.x + (mx - px) / PIXEL_SCALE * aw,
-            ViewPosition.y + (my - py) / PIXEL_SCALE * ah);
+        ViewMove();
     }
     private void TryViewZoom()
     {
@@ -485,6 +498,18 @@ public class Editor
         if (Math.Abs(ViewZoom - ZOOM_MIN) > 0.01f &&
             Math.Abs(ViewZoom - ZOOM_MAX) > 0.01f)
             ViewPosition = Mouse.ScrollDelta > 0 ? zoomInPos : zoomOutPos;
+    }
+    private void ViewMove()
+    {
+        var (mw, mh) = Monitor.Size;
+        var (ww, wh) = Window.Size;
+        var (aw, ah) = (mw / ww, mh / wh);
+        var (mx, my) = MousePositionRaw;
+        var (px, py) = prevRaw;
+
+        ViewPosition = (
+            ViewPosition.x + (mx - px) / PIXEL_SCALE * aw,
+            ViewPosition.y + (my - py) / PIXEL_SCALE * ah);
     }
 #endregion
 }

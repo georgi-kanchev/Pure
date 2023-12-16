@@ -4,9 +4,12 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
-global using static Pure.Default.Tilemapper.TilemapperUserInterface;
+global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
 
 namespace Pure.Editors.EditorMap;
+
+using System.Text;
+using Tools.TiledLoader;
 
 public static class Program
 {
@@ -64,11 +67,11 @@ public static class Program
             editor.MapsUi.SetFileViewerItem(mapSaveLoad, btn, MIDDLE));
         mapSaveLoad.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, btn =>
         {
-            if (mapSaveLoad.IsSelectingFolders == false && mapSaveLoad.IsFolder(btn) == false)
-            {
-                editor.Prompt.Close();
-                Load(mapSaveLoad.SelectedPaths);
-            }
+            if (mapSaveLoad.IsSelectingFolders || mapSaveLoad.IsFolder(btn))
+                return;
+
+            editor.Prompt.Close();
+            Load(mapSaveLoad);
         });
 
         CreateMenu();
@@ -106,7 +109,7 @@ public static class Program
                     {
                         editor.Prompt.Close();
                         if (btnIndex == 0)
-                            Save(mapSaveLoad.SelectedPaths, mapSaveName.Value);
+                            Save(mapSaveLoad, mapSaveName.Value);
                     });
                 });
             }
@@ -123,7 +126,7 @@ public static class Program
                     if (i != 0)
                         return;
 
-                    Load(mapSaveLoad.SelectedPaths);
+                    Load(mapSaveLoad);
                 });
             }
         });
@@ -145,24 +148,59 @@ public static class Program
         editor.IsDisabledViewInteraction = inspector.IsHovered;
     }
 
-    private static void Save(string[] selectedPaths, string name)
+    private static void Save(FileViewer fileViewer, string name)
     {
         try
         {
-            File.WriteAllBytes($"{selectedPaths[0]}{Path.DirectorySeparatorChar}{name}",
-                editor.MapsEditor.ToBytes());
+            var selectedPaths = fileViewer.SelectedPaths;
+            var directory = selectedPaths.Length == 1 ? selectedPaths[0] : fileViewer.CurrentDirectory;
+            var layers = inspector.layers;
+            var bytes = new List<byte>();
+            var path = $"{directory}{Path.DirectorySeparatorChar}{name}";
+
+            PutInt(bytes, layers.Count);
+            for (var i = 0; i < layers.Count; i++)
+                PutString(bytes, layers[i].Text);
+
+            bytes.AddRange(editor.MapsEditor.ToBytes());
+
+            File.WriteAllBytes(path, bytes.ToArray());
         }
         catch (Exception e)
         {
             editor.PromptMessage("Could not save map!");
         }
     }
-    private static void Load(string[] selectedPaths)
+    private static void Load(FileViewer fileViewer)
     {
         try
         {
-            var bytes = File.ReadAllBytes(selectedPaths[0]);
-            var maps = new TilemapPack(bytes);
+            var selectedPaths = fileViewer.SelectedPaths;
+            var file = selectedPaths.Length == 1 ? selectedPaths[0] : fileViewer.CurrentDirectory;
+            var maps = default(TilemapPack);
+
+            if (Path.GetExtension(file) == ".tmx" && file != null)
+            {
+                maps = TiledLoader.Load(file, out var layers);
+                inspector.layers.Clear();
+                foreach (var layer in layers)
+                    inspector.layers.Add(new Button { Text = $"{layer}" });
+            }
+            else
+            {
+                var bytes = File.ReadAllBytes($"{file}");
+                var byteOffset = 0;
+
+                var layerCount = GrabInt(bytes, ref byteOffset);
+                inspector.layers.Clear();
+                for (var i = 0; i < layerCount; i++)
+                {
+                    var layerName = GrabString(bytes, ref byteOffset);
+                    inspector.layers.Add(new Button { Text = layerName });
+                }
+
+                maps = new(bytes[byteOffset..]);
+            }
 
             editor.MapsEditor.Clear();
             for (var i = 0; i < maps.Count; i++)
@@ -172,6 +210,33 @@ public static class Program
         {
             editor.PromptMessage("Could not load map!");
         }
+    }
+
+    private static void PutInt(List<byte> intoBytes, int value)
+    {
+        intoBytes.AddRange(BitConverter.GetBytes(value));
+    }
+    private static void PutString(List<byte> intoBytes, string value)
+    {
+        var bytes = Encoding.UTF8.GetBytes(value);
+        PutInt(intoBytes, bytes.Length);
+        intoBytes.AddRange(bytes);
+    }
+    private static string GrabString(byte[] fromBytes, ref int byteOffset)
+    {
+        var textBytesLength = GrabInt(fromBytes, ref byteOffset);
+        var bText = GetBytes(fromBytes, textBytesLength, ref byteOffset);
+        return Encoding.UTF8.GetString(bText);
+    }
+    private static int GrabInt(byte[] fromBytes, ref int byteOffset)
+    {
+        return BitConverter.ToInt32(GetBytes(fromBytes, 4, ref byteOffset));
+    }
+    private static byte[] GetBytes(byte[] fromBytes, int amount, ref int byteOffset)
+    {
+        var result = fromBytes[byteOffset..(byteOffset + amount)];
+        byteOffset += amount;
+        return result;
     }
 #endregion
 }

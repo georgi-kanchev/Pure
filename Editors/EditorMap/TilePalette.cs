@@ -161,7 +161,8 @@ internal class TilePalette
     [MemberNotNullWhen(true, nameof(inspector))]
     private bool IsPaintAllowed()
     {
-        return inspector is { IsHovered: false } && editor.Prompt.IsHidden && Program.menu.IsHidden;
+        return inspector is { IsHovered: false } && editor.Prompt.IsHidden && Program.menu.IsHidden &&
+               editor.MapPanel.IsHovered == false;
     }
     private void OnMousePressed()
     {

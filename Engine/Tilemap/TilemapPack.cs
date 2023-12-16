@@ -10,10 +10,7 @@ public class TilemapPack
     {
         get => data.Count;
     }
-    public (int width, int height) Size
-    {
-        get => Count == 0 ? default : data[0].Size;
-    }
+    public (int width, int height) Size { get; }
     public (int x, int y) ViewPosition
     {
         get => viewPos;
@@ -54,6 +51,7 @@ public class TilemapPack
         for (var i = 0; i < Math.Max(count, 1); i++)
             data.Add(new(size));
 
+        Size = size;
         ViewSize = (size.width, size.height);
     }
     public TilemapPack(byte[] bytes)

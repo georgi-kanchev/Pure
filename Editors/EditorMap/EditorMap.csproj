@@ -13,6 +13,7 @@
         <ProjectReference Include="..\..\Engine\UserInterface\UserInterface.csproj"/>
         <ProjectReference Include="..\..\Engine\Utilities\Utilities.csproj"/>
         <ProjectReference Include="..\..\Engine\Window\Window.csproj"/>
+        <ProjectReference Include="..\..\TiledLoader\TiledLoader.csproj"/>
         <ProjectReference Include="..\EditorBase\EditorBase.csproj"/>
     </ItemGroup>
 
