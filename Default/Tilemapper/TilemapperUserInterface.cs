@@ -363,6 +363,9 @@ public static class TilemapperUserInterface
 
         void Button(Button button, int tileId, Color color)
         {
+            if (button.IsHidden)
+                return;
+
             maps[zOrder].SetBar(
                 button.Position,
                 tileIdEdge: Tile.BAR_BIG_EDGE,

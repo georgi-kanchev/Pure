@@ -206,7 +206,7 @@ internal class TilePalette
         }
 
         if (tool == 3) // rectangle of random tiles
-            tilemap.SetRectangle((start.x, start.y, szw, szh), tiles);
+            tilemap.SetRectangle((start.x, start.y, Math.Abs(szw), Math.Abs(szh)), tiles);
         else if (tool == 4) // line of random tiles
             tilemap.SetLine(start, (end.x - 1, end.y - 1), tiles);
         else if (tool is 5 or 6) // ellipse of random tiles

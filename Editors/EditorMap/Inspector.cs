@@ -152,6 +152,7 @@ internal class Inspector : Panel
 
         layout.Cut(6, Side.Right, 0.1f); // remove
         layout.Cut(6, Side.Right, 0.1f); // flush
+        layout.Cut(15, Side.Bottom, 0.5f); // empty
 
         editor.Ui.Add(this, layout, create, up, down, rename, remove, flush,
             tools, paletteColor, paletteScrollV, paletteScrollH, layers);

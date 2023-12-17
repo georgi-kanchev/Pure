@@ -26,11 +26,7 @@ public class InputBox : Block
     /// The text that should be displayed in the input box when it is empty.
     /// Defaults to "Type…".
     /// </summary>
-    public string Placeholder
-    {
-        get;
-        set;
-    }
+    public string Placeholder { get; set; }
     public string Value
     {
         get => value;
@@ -51,16 +47,8 @@ public class InputBox : Block
             CursorIndices = (cx, cy);
         }
     }
-    public bool IsReadOnly
-    {
-        get;
-        set;
-    }
-    public bool IsSingleLine
-    {
-        get;
-        set;
-    }
+    public bool IsReadOnly { get; set; }
+    public bool IsSingleLine { get; set; }
     public SymbolGroup SymbolGroup
     {
         get => symbolGroup;
@@ -318,7 +306,7 @@ public class InputBox : Block
         var (cpx, cpy) = PositionFromIndices(CursorIndices);
         for (var i = 0; i < Value.Length; i++)
         {
-            if (IsOverlapping((cpx, cpy)) == false)
+            if (IsOverlapping((cpx, cpy)))
                 break;
 
             var (offX, offY) = (0, 0);
