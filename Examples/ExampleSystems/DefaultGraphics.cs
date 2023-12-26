@@ -11,7 +11,7 @@ public static class DefaultGraphics
         Window.Create();
         Window.Title = "Pure - Default Graphics Example";
 
-        var (w, h) = Monitor.AspectRatio;
+        var (w, h) = Monitor.Current.AspectRatio;
         var tilemap = new Tilemap((w * 3, h * 3));
         var layer = new Layer(tilemap.Size);
 

@@ -12,7 +12,7 @@ public static class Collision
         Window.Create();
         Window.Title = "Pure - Collision Example";
 
-        var aspectRatio = Monitor.AspectRatio;
+        var aspectRatio = Monitor.Current.AspectRatio;
         var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
         var background = new Tilemap(tilemap.Size);
 

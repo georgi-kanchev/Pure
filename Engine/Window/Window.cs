@@ -125,8 +125,8 @@ public static class Window
 		Monitor.current = (int)monitor;
 
 		var style = Styles.Default;
-		var (x, y) = Monitor.Position;
-		var (w, h) = Monitor.Size;
+		var (x, y) = Monitor.Current.Position;
+		var (w, h) = Monitor.Current.Size;
 		renderTexture = new((uint)(w / pixelScale), (uint)(h / pixelScale));
 		var view = renderTexture.GetView();
 		view.Center = new();

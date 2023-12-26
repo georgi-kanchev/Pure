@@ -1,57 +1,69 @@
 namespace Pure.Engine.Window;
 
-using Raylib_cs;
-
-public static class Monitor
+public class Monitor
 {
-    public static int Count
+    public static Monitor[] Monitors
     {
         get;
     }
-    public static string Name
+    public static Monitor Current
+    {
+        get => Monitors[current];
+    }
+    
+    public string Name
     {
         get;
+        private set;
     }
-    public static int RefreshRate
+    public (int width, int height) AspectRatio
     {
         get;
+        private set;
     }
-    public static (int width, int height) Size
+    public (int width, int height) Size
     {
         get;
-    }
-    public static (int x, int y) Position
-    {
-        get;
-    }
-    public static (int width, int height) AspectRatio
-    {
-        get => GetAspectRatio(Size.width, Size.height);
+        private init;
     }
 
-#region Backend
+    public override string ToString()
+    {
+        return Name;
+    }
+
+    #region Backend
     internal static int current;
-
+    
+    internal (int x, int y) Position
+    {
+        get;
+        private set;
+    }
+    
     static Monitor()
     {
-        Raylib.SetTraceLogLevel(TraceLogLevel.LOG_NONE);
-        Raylib.InitWindow(1, 1, "");
-        Raylib.SetWindowState(ConfigFlags.FLAG_WINDOW_HIDDEN);
-        Raylib.SetWindowPosition(-1000, -1000);
+        var data = new MonitorDetails.Reader().GetMonitorDetails();
+        var monitors = new List<Monitor>();
+        foreach (var monitor in data)
+        {
+            var m = new Monitor
+            {
+                Size = (monitor.Resolution.Width, monitor.Resolution.Height),
+                Position = (monitor.Resolution.X, monitor.Resolution.Y),
+            };
+            m.AspectRatio = GetAspectRatio(m.Size.width, m.Size.height);
+            m.Name = $"{monitor.Description} ({m.Size.width}x{m.Size.height} | " +
+                     $"{m.AspectRatio.width}:{m.AspectRatio.height} | {monitor.Frequency}Hz)";
+            
+            monitors.Add(m);
+        }
 
-        Count = Raylib.GetMonitorCount();
-        current = Math.Min(current, Count - 1);
-
-        var p = Raylib.GetMonitorPosition(current);
-        Position = ((int)p.X, (int)p.Y);
-        Size = (Raylib.GetMonitorWidth(current), Raylib.GetMonitorHeight(current));
-        RefreshRate = Raylib.GetMonitorRefreshRate(current);
-        Name = Raylib.GetMonitorName_(current);
-
-        Raylib.CloseWindow();
+        current = Math.Min(current, monitors.Count - 1);
+        Monitors = monitors.ToArray();
     }
 
-    internal static (int width, int height) GetAspectRatio(int width, int height)
+    private static (int width, int height) GetAspectRatio(int width, int height)
     {
         var gcd = height == 0 ? width : GetGreatestCommonDivisor(height, width % height);
 
@@ -67,14 +79,6 @@ public static class Monitor
                 a = b;
                 b = a1 % b;
             }
-        }
-    }
-    internal static (float width, float height) WindowToMonitorRatio
-    {
-        get
-        {
-            var (w, h) = Size;
-            return ((float)w / Window.Size.width, (float)h / Window.Size.height);
         }
     }
 #endregion

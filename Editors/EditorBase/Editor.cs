@@ -80,7 +80,7 @@ public class Editor
         Window.Title = title;
         Mouse.IsCursorVisible = false;
 
-        var (width, height) = Monitor.AspectRatio;
+        var (width, height) = Monitor.Current.AspectRatio;
         ChangeMapSize(mapSize);
         MapsEditor.ViewSize = (viewSize.width, viewSize.height);
         MapsUi = new((int)LayerMapsUi.Count, (width * 5, height * 5));
@@ -501,7 +501,7 @@ public class Editor
     }
     private void ViewMove()
     {
-        var (mw, mh) = Monitor.Size;
+        var (mw, mh) = Monitor.Current.Size;
         var (ww, wh) = Window.Size;
         var (aw, ah) = (mw / ww, mh / wh);
         var (mx, my) = MousePositionRaw;

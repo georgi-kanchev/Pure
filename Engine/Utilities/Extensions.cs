@@ -1025,22 +1025,29 @@ public static class Extensions
     /// <param name="seed">The seed to use for the random generator (default is NaN, 
     /// meaning randomly chosen).</param>
     /// <returns>A random float value between the specified range of values.</returns>
-    public static float Random(
-        this (float a, float b) range,
-        float precision = 0,
-        float seed = float.NaN)
+    public static float Random(this (float a, float b) range, float precision = 0, float seed = float.NaN)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
 
-        precision = (int)precision.Limit((0, 5));
+        precision = (int)Limit(precision, (0f, 5f));
         precision = MathF.Pow(10, precision);
 
         range.a *= precision;
         range.b *= precision;
 
-        var s = new Random(float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed);
-        var randInt = s.Next((int)range.a, (int)range.b + 1).Limit(((int)range.a, (int)range.b + 1));
+        var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
+        Random random;
+
+        if (randomCache.TryGetValue(s, out var r))
+            random = r;
+        else
+        {
+            random = new(s);
+            randomCache[s] = random;
+        }
+        
+        var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
 
         return randInt / precision;
     }
@@ -1111,7 +1118,8 @@ public static class Extensions
 
     private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
     private static readonly Dictionary<string, Gate> gates = new();
-
+    private static readonly Dictionary<int, Random> randomCache = new();
+    
     static Extensions()
     {
         holdFrequency.Start();

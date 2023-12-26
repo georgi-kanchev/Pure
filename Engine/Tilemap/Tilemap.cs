@@ -336,7 +336,7 @@ public class Tilemap
                 if (i > Math.Abs(rectangle.width * rectangle.height))
                     return;
 
-                var tile = tiles.Length == 0 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
+                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
                 SetTile((x, y), tile);
                 i++;
             }
@@ -362,7 +362,7 @@ public class Tilemap
     /// <param name="position">The starting position to place the text.</param>
     /// <param name="text">The text to display.</param>
     /// <param name="tint">Optional tint color value (defaults to white).</param>
-    /// <param name="maxLength">Optional shortening that adds ellipis '…' if exceeded
+    /// <param name="maxLength">Optional shortening that adds ellipsis '…' if exceeded
     /// (defaults to none). Negative values reduce the text from the back.</param>
     public void SetTextLine(
         (int x, int y) position,
@@ -682,7 +682,7 @@ public class Tilemap
 
         while (true)
         {
-            var tile = tiles.Length == 0 ? tiles[0] : ChooseOne(tiles, ToSeed((x0, y0)));
+            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x0, y0)));
             SetTile((x0, y0), tile);
 
             if (x0 == x1 && y0 == y1)
@@ -967,7 +967,8 @@ public class Tilemap
 
         { '▕', 432 },
     };
-
+    private static readonly Dictionary<int, Random> randomCache = new();
+    
     private Tile[,] data;
     private (int, uint, sbyte, bool, bool)[,] bundleCache;
     private int[,] ids;
@@ -1009,10 +1010,20 @@ public class Tilemap
         rangeA *= precision;
         rangeB *= precision;
 
-        var s = new Random(float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed);
-        var randInt = s.Next((int)rangeA, Limit((int)rangeB, (int)rangeA, (int)rangeB) + 1);
+        var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
+        Random random;
 
-        return randInt / (precision);
+        if (randomCache.TryGetValue(s, out var r))
+            random = r;
+        else
+        {
+            random = new(s);
+            randomCache[s] = random;
+        }
+        
+        var randInt = random.Next((int)rangeA, Limit((int)rangeB, (int)rangeA, (int)rangeB) + 1);
+
+        return randInt / precision;
     }
     private static float Limit(float number, float rangeA, float rangeB, bool isOverflowing = false)
     {
@@ -1037,7 +1048,7 @@ public class Tilemap
     {
         return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
     }
-    private T ChooseOne<T>(IList<T> collection, float seed)
+    private static T ChooseOne<T>(IList<T> collection, float seed)
     {
         return collection[(int)Random(0, collection.Count - 1, 0, seed)];
     }
