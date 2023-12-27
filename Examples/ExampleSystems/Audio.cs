@@ -34,14 +34,10 @@ public static class Audio
         playlist.AddTrack(null, track1, track2);
         playlist.Play();
 
-        while (Window.IsOpen)
+        while (Window.KeepOpen())
         {
-            Window.Activate(true);
             Time.Update();
-
             playlist.Update(Time.Delta);
-
-            Window.Activate(false);
         }
     }
 }

@@ -37,7 +37,7 @@ public static class FlappyBird
 
         InitializePipes();
 
-        Keyboard.OnKeyPress(Keyboard.Key.Space, asText =>
+        Keyboard.OnKeyPress(Keyboard.Key.Space, _ =>
         {
             birdVelocity = -0.1f;
             birdAnimation.CurrentProgress = 0;
@@ -53,10 +53,8 @@ public static class FlappyBird
         });
 
         var layer = new Layer(background.Size);
-        while (Window.IsOpen) // the default game loop
+        while (Window.KeepOpen()) // the default game loop
         {
-            Window.Activate(true);
-
             // update some of the systems
             Time.Update();
             birdAnimation.Update(Time.Delta);
@@ -137,7 +135,6 @@ public static class FlappyBird
             //Window.DrawRectangles(birdRect);
 
             Window.DrawLayer(layer);
-            Window.Activate(false);
         }
 
         return;

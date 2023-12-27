@@ -5,8 +5,7 @@ global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
 global using Monitor = Pure.Engine.Window.Monitor;
-using SFML.Graphics;
-using Color = Pure.Engine.Utilities.Color;
+global using Color = Pure.Engine.Utilities.Color;
 
 namespace Pure.Editors.EditorBase;
 
@@ -115,15 +114,11 @@ public class Editor
     {
         SetGrid();
 
-        while (Window.IsOpen)
+        while (Window.KeepOpen())
         {
-            Window.Activate(true);
             Time.Update();
             MapsUi.Flush();
 
-            LayerGrid.Clear();
-            LayerMap.Clear();
-            LayerUi.Clear();
             LayerGrid.TilemapSize = MapGrid.ViewSize;
             LayerMap.TilemapSize = MapsEditor.ViewSize;
             LayerUi.TilemapSize = MapsUi.ViewSize;
@@ -193,8 +188,6 @@ public class Editor
             Window.DrawLayer(LayerUi);
 
             OnUpdateLate?.Invoke();
-
-            Window.Activate(false);
         }
     }
 

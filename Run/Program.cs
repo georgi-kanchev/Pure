@@ -1,4 +1,7 @@
-﻿namespace Pure;
+﻿using Pure.Engine.Utilities;
+using Pure.Engine.Window;
+
+namespace Pure;
 
 using Examples.ExamplesUserInterface;
 
@@ -9,7 +12,7 @@ public static class Run
         //Examples.ExamplesGames.Pong.Run();
         //Examples.ExamplesGames.FlappyBird.Run();
 
-        Editors.EditorMap.Program.Run();
+        //Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
 
         //RunExampleUserInterface();

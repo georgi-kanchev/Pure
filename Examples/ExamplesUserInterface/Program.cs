@@ -23,10 +23,8 @@ public static class Program
     public static void Run(TilemapPack maps, BlockPack blocks)
     {
         var layer = new Layer(maps.Size);
-        while (Window.IsOpen)
+        while (Window.KeepOpen())
         {
-            Window.Activate(true);
-
             Time.Update();
             maps.Flush();
 
@@ -42,13 +40,11 @@ public static class Program
 
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-            layer.Clear();
             for (var i = 0; i < maps.Count; i++)
                 layer.DrawTilemap(maps[i].ToBundle());
 
             layer.DrawCursor();
             Window.DrawLayer(layer);
-            Window.Activate(false);
         }
     }
 }

@@ -24,12 +24,10 @@ public static class Pong
         var paddleRightPosition = new Point(x: tilemap.Size.width - 1, y: 0);
         var layer = new Layer(tilemap.Size);
 
-        while (Window.IsOpen)
+        while (Window.KeepOpen())
         {
-            Window.Activate(true);
             Time.Update();
 
-            layer.Clear();
             ballPosition = ballPosition.MoveAt(ballAngle, BALL_SPEED, Time.Delta);
 
             TryToScorePoint();
@@ -46,7 +44,6 @@ public static class Pong
             layer.DrawTiles(ballPosition, new Tile(Tile.SHAPE_CIRCLE), (1, 1), true);
             layer.DrawCursor();
             Window.DrawLayer(layer);
-            Window.Activate(false);
         }
 
         void TryToBounceBallOffWindow()

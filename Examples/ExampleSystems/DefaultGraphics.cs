@@ -15,11 +15,8 @@ public static class DefaultGraphics
         var tilemap = new Tilemap((w * 3, h * 3));
         var layer = new Layer(tilemap.Size);
 
-        while (Window.IsOpen)
+        while (Window.KeepOpen())
         {
-            Window.Activate(true);
-            layer.Clear();
-
             tilemap.Flush();
 
             for (var i = 0; i < 26; i++)
@@ -33,7 +30,6 @@ public static class DefaultGraphics
             layer.DrawTilemap(tilemap.ToBundle());
             layer.DrawCursor();
             Window.DrawLayer(layer);
-            Window.Activate(false);
         }
     }
 }

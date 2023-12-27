@@ -43,8 +43,6 @@ internal class TilePalette
         if (editor.Prompt.IsHidden == false)
             return;
 
-        layer.Clear();
-
         var (tw, th) = layer.TilesetSize;
         map.ViewSize = (Math.Min(10, tw), Math.Min(10, th));
         layer.TilemapSize = map.ViewSize;

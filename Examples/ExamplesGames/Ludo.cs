@@ -160,10 +160,8 @@ public static class Ludo
         SetCorners(map.Size);
         SetPawns();
 
-        while (Window.IsOpen)
+        while (Window.KeepOpen())
         {
-            Window.Activate(true);
-
             Input.TilemapSize = map.Size;
             Input.Position = layer.PixelToWorld(Mouse.CursorPosition);
             Input.Update(
@@ -191,8 +189,6 @@ public static class Ludo
             layer.DrawTilemap(map.ToBundle());
             foreach (var pawn in Pawns)
                 pawn.Draw();
-
-            Window.Activate(false);
         }
     }
 

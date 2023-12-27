@@ -70,21 +70,15 @@ public class Layer
 		get => zoom;
 		set => zoom = Math.Clamp(value, 0, 1000f);
 	}
-
+	
 	public Layer((int width, int height) tilemapSize)
 	{
-		Window.TryNoWindowException();
 		Init();
 		TilemapSize = tilemapSize;
 		Zoom = 1f;
 		tilesetPath = string.Empty;
 		TilesetPath = string.Empty;
 		verts = new(PrimitiveType.Quads);
-	}
-
-	public void Clear()
-	{
-		verts.Clear();
 	}
 
 	public void DrawCursor(int tileId = 546, uint tint = uint.MaxValue)
@@ -300,8 +294,9 @@ public class Layer
 	}
 	public (float x, float y) PixelToWorld((int x, int y) pixelPosition)
 	{
-		Window.TryNoWindowException();
-
+		if (Window.window == null)
+			return (float.NaN, float.NaN);
+		
 		var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
 		var (ww, wh) = (Window.Size.width, Window.Size.height);
 		var (vw, vh) = Window.renderTextureViewSize;

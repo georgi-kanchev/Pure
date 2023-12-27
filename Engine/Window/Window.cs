@@ -30,40 +30,18 @@ public static class Window
 		private set;
 	}
 	/// <summary>
-	/// Gets or sets a value indicating whether the window is open.
-	/// </summary>
-	public static bool IsOpen
-	{
-		get
-		{
-			TryNoWindowException();
-			return window.IsOpen;
-		}
-		set
-		{
-			if(value == false)
-				Close();
-		}
-	}
-	/// <summary>
 	/// Gets or sets the title of the window.
 	/// </summary>
 	public static string Title
 	{
-		get
-		{
-			TryNoWindowException();
-			return title;
-		}
+		get => title;
 		set
 		{
-			TryNoWindowException();
-
 			if(string.IsNullOrWhiteSpace(value))
 				value = "Game";
 
 			title = value;
-			window.SetTitle(title);
+			window?.SetTitle(title);
 		}
 	}
 	/// <summary>
@@ -71,37 +49,23 @@ public static class Window
 	/// </summary>
 	public static (int width, int height) Size
 	{
-		get
-		{
-			TryNoWindowException();
-			return size;
-		}
+		get => size;
 	}
 	/// <summary>
 	/// Gets a value indicating whether the window is focused.
 	/// </summary>
 	public static bool IsFocused
 	{
-		get
-		{
-			TryNoWindowException();
-			return window.HasFocus();
-		}
+		get => window != null && window.HasFocus();
 	}
 	/// <summary>
 	/// Gets or sets a value indicating whether the window should use retro TV graphics.
 	/// </summary>
 	public static bool IsRetro
 	{
-		get
-		{
-			TryNoWindowException();
-			return isRetro;
-		}
+		get => isRetro;
 		set
 		{
-			TryNoWindowException();
-
 			if(value && retroScreen == null && Shader.IsAvailable)
 				retroScreen = RetroShader.Create();
 
@@ -114,10 +78,10 @@ public static class Window
 		set;
 	}
 
-	[MemberNotNull(nameof(window))]
+	[MemberNotNull(nameof(window), nameof(renderTexture))]
 	public static void Create(float pixelScale = 5f, Mode mode = Mode.Windowed, uint monitor = 0)
 	{
-		if(window != null)
+		if(window != null && renderTexture != null)
 			return;
 
 		Mode = mode;
@@ -161,41 +125,38 @@ public static class Window
 		window.MouseEntered += Mouse.OnEnter;
 		window.MouseLeft += Mouse.OnLeft;
 
+		window.SetTitle(title);
+		window.SetMouseCursorGrabbed(Mouse.IsCursorBounded);
 		window.DispatchEvents();
 		window.Clear();
 		window.Display();
 		window.SetVerticalSyncEnabled(true);
 
 		Resize();
+
+		Mouse.TryUpdateSystemCursor(); // in case it was set before window creation
 	}
-	/// <summary>
-	/// Activates or deactivates the window for updates and drawing. Ideally, an application
-	/// loop would start with activating and end with deactivating the window.
-	/// </summary>
-	/// <param name="isActive">Whether the window should be activated for updates and drawing.</param>
-	public static void Activate(bool isActive)
+
+	public static bool KeepOpen()
 	{
-		TryNoWindowException();
-
-		if(isActive)
-		{
-			window.DispatchEvents();
-			window.Clear();
-			window.SetActive();
-
-			renderTexture.Clear(new(BackgroundColor));
-
-			return;
-		}
+		Create();
 
 		Mouse.Update();
 		FinishDraw();
 		window.Display();
+
+		window.DispatchEvents();
+		window.Clear();
+		window.SetActive();
+
+		renderTexture.Clear(new(BackgroundColor));
+		return window.IsOpen;
 	}
 	public static void DrawLayer(Layer layer)
 	{
-		TryNoWindowException();
-
+		if (window == null || renderTexture == null)
+			return;
+		
 		var tex = Layer.tilesets[layer.TilesetPath];
 		var centerX = layer.TilemapPixelSize.w / 2f * layer.Zoom;
 		var centerY = layer.TilemapPixelSize.h / 2f * layer.Zoom;
@@ -205,14 +166,16 @@ public static class Window
 		r.Transform.Scale(layer.Zoom, layer.Zoom);
 
 		renderTexture.Draw(layer.verts, r);
+		layer.verts.Clear();
 	}
 	/// <summary>
 	/// Closes the window.
 	/// </summary>
 	public static void Close()
 	{
-		TryNoWindowException();
-
+		if (window == null || renderTexture == null)
+			return;
+		
 		if(IsRetro || isClosing)
 		{
 			isClosing = true;
@@ -249,7 +212,7 @@ public static class Window
 	}
 	private static void FinishDraw()
 	{
-		TryNoWindowException();
+		Create();
 		renderTexture.Display();
 
 		var sz = window.GetView().Size;
@@ -283,17 +246,9 @@ public static class Window
 
 	private static void Resize()
 	{
-		TryNoWindowException();
+		Create();
 		size = ((int)window.Size.X, (int)window.Size.Y);
 	}
 
-	[MemberNotNull(nameof(window))]
-	[MemberNotNull(nameof(renderTexture))]
-	internal static void TryNoWindowException()
-	{
-		if(window == null || renderTexture == null)
-			throw new MemberAccessException(
-				$"{nameof(Window)} is not created. Use {nameof(Create)}(...).");
-	}
 	#endregion
 }

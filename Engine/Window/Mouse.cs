@@ -40,27 +40,16 @@ public static class Mouse
     /// <summary>
     /// Gets the current position of the mouse cursor.
     /// </summary>
-    public static (int x, int y) CursorPosition
-    {
-        get
-        {
-            Window.TryNoWindowException();
-            return cursorPos;
-        }
-    }
+    public static (int x, int y) CursorPosition { get; private set; }
+
     /// <summary>
     /// Gets or sets the graphics for the mouse cursor.
     /// </summary>
     public static Cursor CursorCurrent
     {
-        get
-        {
-            Window.TryNoWindowException();
-            return cursor;
-        }
+        get => cursor;
         set
         {
-            Window.TryNoWindowException();
             if (cursor == value)
                 return;
 
@@ -71,57 +60,28 @@ public static class Mouse
     /// <summary>
     /// Gets or sets whether the mouse cursor is restricted to the window.
     /// </summary>
-    public static bool IsCursorRestricted
+    public static bool IsCursorBounded
     {
-        get
-        {
-            Window.TryNoWindowException();
-            return isGrabbed;
-        }
+        get => Window.window != null && isGrabbed;
         set
         {
-            Window.TryNoWindowException();
             isGrabbed = value;
-            Window.window.SetMouseCursorGrabbed(value);
+            Window.window?.SetMouseCursorGrabbed(value);
         }
     }
-    public static bool IsCursorVisible
-    {
-        get => isVisible;
-        set
-        {
-            Window.TryNoWindowException();
-            isVisible = value;
-        }
-    }
+    public static bool IsCursorVisible { get; set; }
 
     /// <summary>
     /// Gets an array of currently pressed mouse buttons, in order.
     /// </summary>
     public static Button[] ButtonsPressed
     {
-        get
-        {
-            Window.TryNoWindowException();
-            return pressed.ToArray();
-        }
+        get => pressed.ToArray();
     }
     /// <summary>
     /// Gets the scroll delta of the mouse.
     /// </summary>
-    public static int ScrollDelta
-    {
-        get
-        {
-            Window.TryNoWindowException();
-            return scrollData;
-        }
-        private set
-        {
-            Window.TryNoWindowException();
-            scrollData = value;
-        }
-    }
+    public static int ScrollDelta { get; private set; }
 
     public static bool IsHovering(Layer layer)
     {
@@ -135,7 +95,6 @@ public static class Mouse
     /// <returns>True if the button is currently pressed, false otherwise.</returns>
     public static bool IsButtonPressed(Button button)
     {
-        Window.TryNoWindowException();
         return pressed.Contains(button);
     }
 
@@ -165,19 +124,16 @@ public static class Mouse
     private static Action? actionScroll;
     private static readonly List<Button> pressed = new();
 
-    private static (int x, int y) cursorPos;
-    private static int scrollData;
     private static Cursor cursor;
     private static SFML.Window.Cursor sysCursor = new(SFML.Window.Cursor.CursorType.Arrow);
     private static bool isGrabbed;
-    private static bool isVisible;
 
     internal static bool isOverWindow;
 
     internal static void OnMove(object? s, MouseMoveEventArgs e)
     {
         isOverWindow = true;
-        cursorPos = (e.X, e.Y);
+        CursorPosition = (e.X, e.Y);
     }
     internal static void OnButtonPressed(object? s, MouseButtonEventArgs e)
     {
@@ -228,10 +184,11 @@ public static class Mouse
         Window.window?.SetMouseCursorVisible(isOverWindow == false || IsCursorVisible);
     }
 
-    private static void TryUpdateSystemCursor()
+    internal static void TryUpdateSystemCursor()
     {
-        Window.TryNoWindowException();
-
+        if (Window.window == null)
+            return;
+        
         if (sysCursor.CPointer == IntPtr.Zero)
             sysCursor.Dispose();
         else if (IsCursorVisible)

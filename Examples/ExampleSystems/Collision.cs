@@ -45,9 +45,8 @@ public static class Collision
 
         collisionMap.Update(tilemap);
 
-        while (Window.IsOpen)
+        while (Window.KeepOpen())
         {
-            Window.Activate(true);
             Time.Update();
 
             var mousePosition = layer.PixelToWorld(Mouse.CursorPosition);
@@ -61,7 +60,6 @@ public static class Collision
             hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
 
-            layer.Clear();
             layer.DrawTilemap(background);
             layer.DrawTilemap(tilemap);
             layer.DrawLines(line);
@@ -69,7 +67,6 @@ public static class Collision
             layer.DrawTiles(mousePosition, tile);
 
             Window.DrawLayer(layer);
-            Window.Activate(false);
         }
     }
 
