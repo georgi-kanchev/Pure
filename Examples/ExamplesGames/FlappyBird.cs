@@ -32,8 +32,8 @@ public static class FlappyBird
             (Tile.ARROW_DIAGONAL, 1)); // rotated 1 time (90 degrees clockwise)
         var pipes = new List<(float, int, int)>();
         var collisionMap = new Map();
-        collisionMap.AddRectangle(new((1, 1)), Tile.BOX_DEFAULT_CORNER);
-        collisionMap.AddRectangle(new((1, 1)), Tile.BOX_DEFAULT_STRAIGHT);
+        collisionMap.SolidsAdd(Tile.BOX_DEFAULT_CORNER, new Rectangle((1, 1)));
+        collisionMap.SolidsAdd(Tile.BOX_DEFAULT_STRAIGHT, new Rectangle((1, 1)));
 
         InitializePipes();
 
@@ -148,7 +148,7 @@ public static class FlappyBird
                 (width + 10, (-15, -3).Random(), (3, 10).Random()),
                 (width + 20, (-15, -3).Random(), (3, 10).Random()),
                 (width + 30, (-15, -3).Random(), (3, 10).Random()),
-                (width + 40, (-15, -3).Random(), (3, 10).Random()),
+                (width + 40, (-15, -3).Random(), (3, 10).Random())
             };
         }
     }

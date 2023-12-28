@@ -5,11 +5,11 @@ global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
+global using System.Text;
+global using Pure.Tools.TiledLoader;
 
 namespace Pure.Editors.EditorMap;
 
-using System.Text;
-using Tools.TiledLoader;
 
 public static class Program
 {

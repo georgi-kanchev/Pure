@@ -11,19 +11,11 @@ public struct Line
     /// <summary>
     /// Gets or sets the start point of the line.
     /// </summary>
-    public (float x, float y) A
-    {
-        get;
-        set;
-    }
+    public (float x, float y) A { get; set; }
     /// <summary>
     /// Gets or sets the end point of the line.
     /// </summary>
-    public (float x, float y) B
-    {
-        get;
-        set;
-    }
+    public (float x, float y) B { get; set; }
     /// <summary>
     /// Gets the length of the line.
     /// </summary>
@@ -48,11 +40,7 @@ public struct Line
     /// <summary>
     /// Gets or sets the color of the line.
     /// </summary>
-    public uint Color
-    {
-        get;
-        set;
-    }
+    public uint Color { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the line with the specified start and end points.
@@ -89,7 +77,7 @@ public struct Line
     /// </returns>
     public bool IsCrossing(Hitbox hitbox)
     {
-        for (var i = 0; i < hitbox.RectangleCount; i++)
+        for (var i = 0; i < hitbox.SolidsCount; i++)
             if (IsCrossing(hitbox[i]))
                 return true;
 
@@ -223,7 +211,7 @@ public struct Line
     public (float x, float y, uint color)[] CrossPoints(Hitbox hitbox)
     {
         var result = new List<(float, float, uint)>();
-        for (var i = 0; i < hitbox.RectangleCount; i++)
+        for (var i = 0; i < hitbox.SolidsCount; i++)
             result.AddRange(CrossPoints(hitbox[i]));
 
         return result.ToArray();
@@ -326,7 +314,8 @@ public struct Line
         return (line.A.x, line.A.y, line.B.x, line.B.y, line.Color);
     }
 
-#region Backend
+    #region Backend
+
     private const int MAX_ITERATIONS = 1000;
 
     private static (float, float, uint) CrossPoint(
@@ -398,5 +387,6 @@ public struct Line
         var (bx, by) = b;
         return ax * bx + ay * by;
     }
-#endregion
+
+    #endregion
 }

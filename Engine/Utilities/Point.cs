@@ -1,6 +1,14 @@
 ﻿namespace Pure.Engine.Utilities;
 
-public enum NoiseType { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value };
+public enum NoiseType
+{
+    OpenSimplex2,
+    OpenSimplex2S,
+    Cellular,
+    Perlin,
+    ValueCubic,
+    Value
+};
 
 public struct Point
 {
@@ -19,11 +27,7 @@ public struct Point
         get => val.Item2;
         set => val = (val.Item1, value);
     }
-    public uint Color
-    {
-        get;
-        set;
-    }
+    public uint Color { get; set; }
 
     public bool IsNaN
     {
@@ -124,7 +128,7 @@ public struct Point
     }
     public (float x, float y) Direction(Point targetPoint)
     {
-        var dir = (targetPoint - this);
+        var dir = targetPoint - this;
         var x = dir.X;
         var y = dir.Y;
         var m = MathF.Sqrt(x * x + y * y);
@@ -217,7 +221,8 @@ public struct Point
         return a.val != b.val;
     }
 
-#region Backend
+    #region Backend
+
     private (float, float) val;
 
     private static float ToAngle((float, float) direction)
@@ -226,12 +231,13 @@ public struct Point
     }
     private static float Wrap(float number, float range)
     {
-        return ((number % range) + range) % range;
+        return (number % range + range) % range;
     }
     private static float Map(float number, float a1, float a2, float b1, float b2)
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-#endregion
+
+    #endregion
 }

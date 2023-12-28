@@ -17,12 +17,12 @@ public static class Collision
         var background = new Tilemap(tilemap.Size);
 
         var collisionMap = new Map();
-        collisionMap.AddRectangle(new((1, 1), (0, 0), Color.Red), Tile.ICON_WAVE); // lake
-        collisionMap.AddRectangle(new((1, 1)), Tile.ICON_WAVES); // lake
-        collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE); // house roof
-        collisionMap.AddRectangle(new((1, 1)), Tile.GEOMETRY_ANGLE_RIGHT); // house wall
-        collisionMap.AddRectangle(new((1, 1)), Tile.UPPERCASE_I); // tree trunk
-        collisionMap.AddRectangle(new((1, 1)), Tile.PATTERN_33); // tree top
+        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Rectangle((0.5f, 1), (0, 0), Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Rectangle((1, 0.5f), (0, 0), Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE, new Rectangle((1, 1))); // house roof
+        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Rectangle((1, 1))); // house wall
+        collisionMap.SolidsAdd(Tile.UPPERCASE_I, new Rectangle((1, 1))); // tree trunk
+        collisionMap.SolidsAdd(Tile.PATTERN_33, new Rectangle((1, 1))); // tree top
 
         // icon tiles are 7x7, not 8x8, cut one row & column,
         // hitbox and tile on screen might mismatch since the tile is pixel perfect
@@ -44,6 +44,13 @@ public static class Collision
         tilemap.SetBackgrounds(background);
 
         collisionMap.Update(tilemap);
+        Keyboard.OnKeyPress(Keyboard.Key.A, _ =>
+        {
+            var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
+            var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
+            collisionMap.IgnoredCellsAdd(new Rectangle((3, 3), (mx - 1, my - 1)));
+        });
+        Keyboard.OnKeyPress(Keyboard.Key.S, _ => collisionMap.IgnoredCellsClear());
 
         while (Window.KeepOpen())
         {
@@ -62,6 +69,7 @@ public static class Collision
 
             layer.DrawTilemap(background);
             layer.DrawTilemap(tilemap);
+            layer.DrawRectangles(collisionMap);
             layer.DrawLines(line);
             layer.DrawPoints(crossPoints);
             layer.DrawTiles(mousePosition, tile);
@@ -122,20 +130,20 @@ public static class Collision
     {
         tilemap.SetEllipse(position, radius, true, Tile.MATH_APPROXIMATE);
         tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE,
-            new Tile(Tile.ICON_WAVE, Color.Blue, 0),
+            new Tile(Tile.ICON_WAVE, Color.Blue),
             new Tile(Tile.ICON_WAVE, Color.Blue, 2),
-            new Tile(Tile.ICON_WAVES, Color.Blue, 0),
+            new Tile(Tile.ICON_WAVES, Color.Blue),
             new Tile(Tile.ICON_WAVES, Color.Blue, 2));
     }
     private static void FillWithRandomGrass(this Tilemap tilemap)
     {
         var color = Color.Green.ToDark(0.4f);
         tilemap.Replace((0, 0), tilemap.Size, 0,
-            new Tile(Tile.SHADE_1, color, 0),
+            new Tile(Tile.SHADE_1, color),
             new Tile(Tile.SHADE_1, color, 1),
             new Tile(Tile.SHADE_1, color, 2),
             new Tile(Tile.SHADE_1, color, 3),
-            new Tile(Tile.SHADE_2, color, 0),
+            new Tile(Tile.SHADE_2, color),
             new Tile(Tile.SHADE_2, color, 1),
             new Tile(Tile.SHADE_2, color, 2),
             new Tile(Tile.SHADE_2, color, 3));
