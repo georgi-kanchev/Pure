@@ -5,10 +5,39 @@ using System.Runtime.InteropServices;
 
 public class Map
 {
-    public int SolidsCount { get; private set; }
-    public int IgnoredCellsCount
+    public int CountSolids { get; private set; }
+    public int CountIgnoredCells
     {
         get => ignoredCells.Count;
+    }
+
+    public Rectangle[] Solids
+    {
+        get
+        {
+            var result = new List<Rectangle>();
+            foreach (var kvp in tileIndices)
+            {
+                if (ignoredCells.Contains(kvp.Key))
+                    continue;
+
+                var rects = cellRects[kvp.Value];
+                var (cellX, cellY) = kvp.Key;
+                foreach (var rect in rects)
+                {
+                    var rectangle = rect;
+                    var (x, y) = rectangle.Position;
+                    rectangle.Position = (cellX + x, cellY + y);
+                    result.Add(rectangle);
+                }
+            }
+
+            return result.ToArray();
+        }
+    }
+    public (int x, int y)[] IgnoredCells
+    {
+        get => ignoredCells.ToArray();
     }
 
     public Map()
@@ -19,11 +48,14 @@ public class Map
         var b = Decompress(bytes);
         var offset = 0;
 
-        var sectorCount = BitConverter.ToInt32(Get<int>());
+        var ignoredCount = BitConverter.ToInt32(Get<int>());
+        for (var i = 0; i < ignoredCount; i++)
+            AddIgnoredCells((BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>())));
 
+        var sectorCount = BitConverter.ToInt32(Get<int>());
         for (var i = 0; i < sectorCount; i++)
         {
-            var tile = BitConverter.ToInt32(Get<int>());
+            var tileId = BitConverter.ToInt32(Get<int>());
             var rectAmount = BitConverter.ToInt32(Get<int>());
 
             for (var j = 0; j < rectAmount; j++)
@@ -34,7 +66,7 @@ public class Map
                 var h = BitConverter.ToSingle(Get<float>());
                 var color = BitConverter.ToUInt32(Get<uint>());
 
-                SolidsAdd(tile, new Rectangle((w, h), (x, y), color));
+                AddSolids(tileId, new Rectangle((w, h), (x, y), color));
             }
         }
 
@@ -49,8 +81,15 @@ public class Map
     public byte[] ToBytes()
     {
         var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(cellRects.Count));
 
+        result.AddRange(BitConverter.GetBytes(ignoredCells.Count));
+        foreach (var cell in ignoredCells)
+        {
+            result.AddRange(BitConverter.GetBytes(cell.x));
+            result.AddRange(BitConverter.GetBytes(cell.y));
+        }
+
+        result.AddRange(BitConverter.GetBytes(cellRects.Count));
         foreach (var kvp in cellRects)
         {
             result.AddRange(BitConverter.GetBytes(kvp.Key));
@@ -69,7 +108,7 @@ public class Map
         return Compress(result.ToArray());
     }
 
-    public void SolidsAdd(int tileId, params Rectangle[]? solids)
+    public void AddSolids(int tileId, params Rectangle[]? solids)
     {
         if (solids == null || solids.Length == 0)
             return;
@@ -78,9 +117,9 @@ public class Map
             cellRects[tileId] = new List<Rectangle>();
 
         cellRects[tileId].AddRange(solids);
-        SolidsCount += solids.Length;
+        CountSolids += solids.Length;
     }
-    public void SolidsRemove(int tileId, params Rectangle[]? solids)
+    public void RemoveSolids(int tileId, params Rectangle[]? solids)
     {
         if (solids == null || solids.Length == 0 || cellRects.ContainsKey(tileId) == false)
             return;
@@ -88,9 +127,9 @@ public class Map
         var rects = cellRects[tileId];
         foreach (var solid in solids)
             if (rects.Remove(solid))
-                SolidsCount--;
+                CountSolids--;
     }
-    public Rectangle[] SolidsGet((int x, int y) cell)
+    public Rectangle[] SolidsAt((int x, int y) cell)
     {
         if (tileIndices.ContainsKey(cell) == false || ignoredCells.Contains(cell))
             return Array.Empty<Rectangle>();
@@ -104,46 +143,26 @@ public class Map
 
         return result.ToArray();
     }
-    public Rectangle[] SolidsGet(int tileId)
+    public Rectangle[] SolidsIn(int tileId)
     {
         return cellRects.ContainsKey(tileId) == false ? Array.Empty<Rectangle>() : cellRects[tileId].ToArray();
     }
-    public Rectangle[] SolidsGet()
-    {
-        var result = new List<Rectangle>();
-        foreach (var kvp in tileIndices)
-        {
-            if (ignoredCells.Contains(kvp.Key))
-                continue;
 
-            var rects = cellRects[kvp.Value];
-            var (cellX, cellY) = kvp.Key;
-            foreach (var rect in rects)
-            {
-                var rectangle = rect;
-                var (x, y) = rectangle.Position;
-                rectangle.Position = (cellX + x, cellY + y);
-                result.Add(rectangle);
-            }
-        }
-
-        return result.ToArray();
-    }
-    public void SolidsClear()
+    public void ClearSolids()
     {
-        SolidsCount = 0;
+        CountSolids = 0;
         cellRects.Clear();
     }
-    public void SolidsClear(int tileId)
+    public void ClearSolids(int tileId)
     {
         if (cellRects.ContainsKey(tileId) == false)
             return;
 
-        SolidsCount -= cellRects[tileId].Count;
+        CountSolids -= cellRects[tileId].Count;
         cellRects.Remove(tileId);
     }
 
-    public void IgnoredCellsAdd(params (int x, int y)[]? cells)
+    public void AddIgnoredCells(params (int x, int y)[]? cells)
     {
         if (cells == null || cells.Length == 0)
             return;
@@ -152,7 +171,7 @@ public class Map
             if (ignoredCells.Contains(cell) == false)
                 ignoredCells.Add(cell);
     }
-    public void IgnoredCellsAdd(params Rectangle[]? cellRegions)
+    public void AddIgnoredCells(params Rectangle[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -170,12 +189,12 @@ public class Map
                     if (i > Math.Abs(rw * rh))
                         return;
 
-                    IgnoredCellsAdd((x, y));
+                    AddIgnoredCells((x, y));
                     i++;
                 }
         }
     }
-    public void IgnoredCellsRemove(params (int x, int y)[]? cells)
+    public void RemoveIgnoredCells(params (int x, int y)[]? cells)
     {
         if (cells == null || cells.Length == 0)
             return;
@@ -183,7 +202,7 @@ public class Map
         foreach (var t in cells)
             ignoredCells.Remove(t);
     }
-    public void IgnoredCellsRemove(params Rectangle[]? cellRegions)
+    public void RemoveIgnoredCells(params Rectangle[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -201,16 +220,12 @@ public class Map
                     if (i > Math.Abs(rw * rh))
                         return;
 
-                    IgnoredCellsRemove((x, y));
+                    RemoveIgnoredCells((x, y));
                     i++;
                 }
         }
     }
-    public (int x, int y)[] IgnoredCellsGet()
-    {
-        return ignoredCells.ToArray();
-    }
-    public (int x, int y)[] IgnoredCellsGet(params Rectangle[]? cellRegions)
+    public (int x, int y)[] IgnoredCellsIn(params Rectangle[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return Array.Empty<(int x, int y)>();
@@ -239,7 +254,7 @@ public class Map
 
         return result.ToArray();
     }
-    public void IgnoredCellsClear()
+    public void ClearIgnoredCells()
     {
         ignoredCells.Clear();
     }
@@ -301,11 +316,11 @@ public class Map
 
     public static implicit operator Rectangle[](Map map)
     {
-        return map.SolidsGet();
+        return map.Solids;
     }
     public static implicit operator (float x, float y, float width, float height, uint color)[](Map map)
     {
-        var solids = map.SolidsGet();
+        var solids = map.Solids;
         var result = new (float x, float y, float width, float height, uint color)[solids.Length];
         for (var i = 0; i < solids.Length; i++)
             result[i] = solids[i];
@@ -313,7 +328,6 @@ public class Map
     }
 
     #region Backend
-
     // save format in sectors
     // [amount of bytes]		- data
     // --------------------------------
@@ -383,22 +397,15 @@ public class Map
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal)) stream.Write(data, 0, data.Length);
         return output.ToArray();
     }
     private static byte[] Decompress(byte[] data)
     {
         var input = new MemoryStream(data);
         var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
+        using var stream = new DeflateStream(input, CompressionMode.Decompress);
+        stream.CopyTo(output);
         return output.ToArray();
     }
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
@@ -407,6 +414,5 @@ public class Map
         offset += amount;
         return result;
     }
-
     #endregion
 }

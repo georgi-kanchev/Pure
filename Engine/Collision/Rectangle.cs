@@ -8,27 +8,15 @@ public struct Rectangle
     /// <summary>
     /// Gets or sets the position of the top-left corner of the rectangle.
     /// </summary>
-    public (float x, float y) Position
-    {
-        get;
-        set;
-    }
+    public (float x, float y) Position { get; set; }
     /// <summary>
     /// Gets or sets the size of the rectangle.
     /// </summary>
-    public (float width, float height) Size
-    {
-        get;
-        set;
-    }
+    public (float width, float height) Size { get; set; }
     /// <summary>
     /// Gets or sets the color of the rectangle.
     /// </summary>
-    public uint Color
-    {
-        get;
-        set;
-    }
+    public uint Color { get; set; }
 
     /// <summary>
     /// Initializes a new rectangle instance with the specified 
@@ -46,6 +34,11 @@ public struct Rectangle
         Position = position;
         Size = size;
         Color = color;
+    }
+    public Rectangle(float width, float height, float x = default, float y = default,
+        uint color = uint.MaxValue)
+        : this((width, height), (x, y), color)
+    {
     }
 
     /// <param name="hitbox">

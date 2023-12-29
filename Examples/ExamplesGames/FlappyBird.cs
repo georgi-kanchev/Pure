@@ -11,7 +11,7 @@ public static class FlappyBird
     public static void Run()
     {
         Window.Create();
-        Window.Title = "Pure - Flappy Bird Game Example";
+        Window.Title = "Pure - Flappy Bird Example";
         Window.IsRetro = true;
 
         // some data needed throughout the game
@@ -32,8 +32,8 @@ public static class FlappyBird
             (Tile.ARROW_DIAGONAL, 1)); // rotated 1 time (90 degrees clockwise)
         var pipes = new List<(float, int, int)>();
         var collisionMap = new Map();
-        collisionMap.SolidsAdd(Tile.BOX_DEFAULT_CORNER, new Rectangle((1, 1)));
-        collisionMap.SolidsAdd(Tile.BOX_DEFAULT_STRAIGHT, new Rectangle((1, 1)));
+        collisionMap.AddSolids(Tile.BOX_DEFAULT_CORNER, new Rectangle((1, 1)));
+        collisionMap.AddSolids(Tile.BOX_DEFAULT_STRAIGHT, new Rectangle((1, 1)));
 
         InitializePipes();
 

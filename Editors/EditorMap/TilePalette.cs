@@ -73,8 +73,8 @@ internal class TilePalette
 
         if (Mouse.IsHovering(layer))
             layer.DrawTiles(
-                position: ((int)mx, (int)my),
-                tile: new Tile(layer.TileIdFull, new Color(50, 100, 255, 100)));
+                ((int)mx, (int)my),
+                new Tile(layer.TileIdFull, new Color(50, 100, 255, 100)));
 
         UpdateSelected();
         var s = selected.ToBundle();
@@ -122,7 +122,7 @@ internal class TilePalette
             OnMouseHold(randomTile, tilemap);
     }
 
-#region Backend
+    #region Backend
     private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12 };
     private Inspector? inspector;
     private (int x, int y) prevMousePos;
@@ -204,44 +204,60 @@ internal class TilePalette
         }
 
         if (tool == 3) // rectangle of random tiles
+        {
             tilemap.SetRectangle((start.x, start.y, Math.Abs(szw), Math.Abs(szh)), tiles);
+        }
         else if (tool == 4) // line of random tiles
+        {
             tilemap.SetLine(start, (end.x - 1, end.y - 1), tiles);
+        }
         else if (tool is 5 or 6) // ellipse of random tiles
         {
-            var center = new Point(start).ToTarget((end.x - 1, end.y - 1), (0.5f, 0.5f));
+            var center = ((Point)start).ToTarget((end.x - 1, end.y - 1), (0.5f, 0.5f));
             var radius = ((int)((end.x - start.x - 1) / 2f), (int)((end.y - start.y - 1) / 2f));
 
             tilemap.SetEllipse(center, radius, tool == 5, tiles);
         }
         else if (tool == 7) // replace
+        {
             tilemap.Replace((0, 0), tilemap.Size, tilemap.TileAt(start), tiles);
+        }
         else if (tool == 8) // fill
+        {
             tilemap.Flood((mx, my), false, tiles);
+        }
         else if (tool == 9) // rotate
+        {
             ProcessRegion(tile =>
             {
                 tile.Turns++;
                 return tile;
             });
+        }
         else if (tool == 10) // mirror
+        {
             ProcessRegion(tile =>
             {
                 tile.IsMirrored = tile.IsMirrored == false;
                 return tile;
             });
+        }
         else if (tool == 11) // flip
+        {
             ProcessRegion(tile =>
             {
                 tile.IsFlipped = tile.IsFlipped == false;
                 return tile;
             });
+        }
         else if (tool == 12) // color
+        {
             ProcessRegion(tile =>
             {
                 tile.Tint = inspector.paletteColor.SelectedColor;
                 return tile;
             });
+        }
 
         start = end;
 
@@ -291,5 +307,5 @@ internal class TilePalette
         var (sw, sh) = selected.Size;
         return map.TilesIn((sx, sy, sw, sh));
     }
-#endregion
+    #endregion
 }

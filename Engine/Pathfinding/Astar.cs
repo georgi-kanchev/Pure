@@ -24,73 +24,82 @@
 
 namespace Pure.Engine.Pathfinding;
 
-using System.IO.Compression;
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 internal class Node
 {
-    public Node? Parent;
-    public (int, int) Position;
+    public Node? parent;
+    public (float x, float y) position;
     public float distanceToTarget, cost;
-    public int weight;
+    public float penalty;
     public float F
     {
-        get => distanceToTarget == -1 || cost == -1 ? -1 : distanceToTarget + cost;
+        get => MathF.Abs(distanceToTarget + 1) < 0.1f || MathF.Abs(cost + 1) < 0.1f ? -1 : distanceToTarget + cost;
     }
-    public bool isWalkable;
 
-    public Node((int, int) pos, int weight, bool walkable)
+    public Node((float x, float y) pos, int penalty)
     {
-        Parent = null;
-        Position = pos;
+        parent = null;
+        position = pos;
         distanceToTarget = -1;
         cost = 1;
-        this.weight = weight;
-        isWalkable = walkable;
+        this.penalty = penalty;
     }
     public override string ToString()
     {
-        return $"{Position} {isWalkable}";
+        return $"{position} | {nameof(penalty)}: {penalty}";
     }
 }
 
 internal class Astar
 {
-    public (int, int) Size
+    public (int width, int height) Size
     {
         get => (grid.GetLength(0), grid.GetLength(1));
-        set => grid = ResizeArray(grid, value);
+        set
+        {
+            var (rows, cols) = value;
+            grid = new Node[rows, cols];
+
+            for (var i = 0; i < rows; i++)
+                for (var j = 0; j < cols; j++)
+                    grid[i, j] = GetNode((i, j)) ?? new((i, j), 0);
+        }
+    }
+    public int CountObstacles { get; private set; }
+    public int CountSolids { get; private set; }
+    public int CountEmpty
+    {
+        get => Size.width * Size.height - (CountObstacles + CountSolids);
     }
 
-    public void SetNode((int, int) pos, int weight, bool isWalkable)
+    public void SetNode((int x, int y) pos, float penalty)
     {
         if (HasPosition(pos) == false)
             return;
 
-        var n = grid[pos.Item1, pos.Item2];
-        n.Position = pos;
-        n.weight = weight;
-        n.isWalkable = isWalkable;
+        var n = grid[pos.x, pos.y];
+        n.position = pos;
+        n.penalty = penalty;
     }
-    public Node? GetNode((int, int) pos)
+    public Node? GetNode((int x, int y) pos)
     {
-        return HasPosition(pos) ? grid[pos.Item1, pos.Item2] : null;
+        return HasPosition(pos) ? grid[pos.x, pos.y] : null;
     }
-    public (int, int)[] FindPath((int, int) a, (int, int) b)
+    public (float x, float y)[] FindPath((float x, float y) a, (float x, float y) b, bool includeColors,
+        out (float x, float y, uint color)[] withColors, uint color = uint.MaxValue)
     {
-        var start = new Node(a, 0, true);
-        var end = new Node(b, 0, true);
-        var path = new Stack<Node>();
+        var start = new Node(a, 0);
+        var end = new Node(b, 0);
         var open = new PriorityQueue<Node, float>();
         var closed = new List<Node>();
         var neighbours = new List<Node>();
         var current = start;
-        var maxIter = Size.Item1 * Size.Item2;
+        var maxIter = Size.width * Size.height;
 
         open.Enqueue(start, start.F);
 
-        for (int i = 0; i < maxIter; i++)
+        for (var i = 0; i < maxIter; i++)
         {
             if (open.Count == 0)
                 break;
@@ -98,123 +107,69 @@ internal class Astar
             current = open.Dequeue();
             closed.Add(current);
 
-            if (current.Position == b)
+            if (current.position == b)
                 break;
 
             neighbours = GetAdjacentNodes(current);
 
             foreach (var n in neighbours)
             {
-                if (closed.Contains(n) || n.isWalkable == false || Contains(open, n))
+                if (Contains(open, n) || closed.Contains(n) || float.IsInfinity(n.penalty) || float.IsNaN(n.penalty))
                     continue;
 
-                n.Parent = current;
+                n.parent = current;
 
-                var (nx, ny) = n.Position;
-                var (ex, ey) = end.Position;
-                var nPos = new Vector2((float)nx, (float)ny);
-                var endPos = new Vector2((float)ex, (float)ey);
+                var (nx, ny) = n.position;
+                var (ex, ey) = end.position;
+                var nPos = new Vector2(nx, ny);
+                var endPos = new Vector2(ex, ey);
 
                 n.distanceToTarget = Vector2.Distance(nPos, endPos);
-                n.cost = n.weight + n.Parent.cost;
+                n.cost = n.penalty + n.parent.cost;
                 open.Enqueue(n, n.F);
             }
         }
 
-        if (closed.Exists(x => x.Position == end.Position) == false)
-            return Array.Empty<(int, int)>();
+        if (closed.Exists(x => x.position == end.position) == false)
+        {
+            withColors = Array.Empty<(float x, float y, uint color)>();
+            return Array.Empty<(float x, float y)>();
+        }
 
-        var temp = closed[closed.IndexOf(current)];
-        if (temp == null)
-            return Array.Empty<(int, int)>();
+        var index = closed.IndexOf(current);
+        if (index == -1)
+        {
+            withColors = Array.Empty<(float x, float y, uint color)>();
+            return Array.Empty<(float x, float y)>();
+        }
 
-        var result = new List<(int, int)>() { start.Position };
-        for (int i = closed.Count - 1; i >= 0; i--)
+        var temp = closed[index];
+        var result = new List<(float x, float y)> { start.position };
+        var resultWithColors = new List<(float x, float y, uint color)>
+        {
+            (start.position.x, start.position.y, color)
+        };
+        for (var i = closed.Count - 1; i >= 0; i--)
         {
             if (temp == null || temp == start)
                 break;
 
-            result.Add(temp.Position);
-            temp = temp.Parent;
+            result.Insert(1, (temp.position.x + 0.5f, temp.position.y + 0.5f));
+
+            if (includeColors)
+                resultWithColors.Insert(1, (temp.position.x + 0.5f, temp.position.y + 0.5f, color));
+
+            temp = temp.parent;
         }
 
+        withColors = includeColors ? resultWithColors.ToArray() : Array.Empty<(float x, float y, uint color)>();
         return result.ToArray();
     }
 
-    public void Load(string path)
-    {
-        var bytes = Decompress(File.ReadAllBytes(path));
-        var offset = 0;
-
-        var cellCount = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-        var w = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-        var h = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-
-        Size = (w, h);
-    }
-    public void Save(string path)
-    {
-        var (w, h) = Size;
-        var bytes = new List<byte>();
-
-        //for (int y = 0; y < h; y++)
-        //	for (int x = 0; x < w; x++)
-        //	{
-        //		var node = grid[x, y];
-        //		if (node.weight == 0 && node.isWalkable) // skip saving default cells
-        //			continue;
-        //		
-        //		xs.Add(x);
-        //		ys.Add(y);
-        //		weights.Add(node.weight);
-        //		solids.Add(node.isWalkable);
-        //	}
-        //
-        //var bC = BitConverter.GetBytes(xs.Count);
-        //var bW = BitConverter.GetBytes(w);
-        //var bH = BitConverter.GetBytes(h);
-        //var bXs = ToBytes(xs.ToArray());
-        //var bYs = ToBytes(ys.ToArray());
-        //var bWs = ToBytes(weights.ToArray());
-        //var bSs = BoolsToBytes(solids);
-        //
-        //var result = new byte[bC.Length + bW.Length + bH.Length +
-        //	bXs.Length + bYs.Length + bWs.Length + bSs.Length];
-        //
-        //Array.Copy(bC, 0, result, 0,
-        //	bC.Length);
-        //Array.Copy(bW, 0, result,
-        //	bC.Length, bW.Length);
-        //Array.Copy(bH, 0, result,
-        //	bC.Length + bW.Length, bH.Length);
-        //Array.Copy(bXs, 0, result,
-        //	bC.Length + bW.Length + bH.Length, bXs.Length);
-        //Array.Copy(bYs, 0, result,
-        //	bC.Length + bW.Length + bH.Length + bXs.Length, bYs.Length);
-        //Array.Copy(bWs, 0, result,
-        //	bC.Length + bW.Length + bH.Length + bXs.Length + bYs.Length, bWs.Length);
-        //Array.Copy(bSs, 0, result,
-        //	bC.Length + bW.Length + bH.Length + bXs.Length + bYs.Length + bWs.Length, bSs.Length);
-        //
-        //File.WriteAllBytes(path, Compress(result));
-    }
-
     #region Backend
+    internal Node[,] grid = new Node[0, 0];
 
-    // save format
-    // [amount of bytes]		- data
-    // --------------------------------
-    // [4]						- width
-    // [4]						- height
-    // [4]						- non-default cells count
-    // [width * height * 4]		- xs
-    // [width * height * 4]		- ys
-    // [width * height * 4]		- weights
-    // [remaining]				- is walkable bools (1 bit per bool)
-
-    private Node[,] grid = new Node[0, 0];
-
-    private bool Contains(PriorityQueue<Node, float> prioQueue, Node item)
+    private static bool Contains(PriorityQueue<Node, float> prioQueue, Node item)
     {
         foreach (var i in prioQueue.UnorderedItems)
             if (i.Element == item)
@@ -222,12 +177,10 @@ internal class Astar
 
         return false;
     }
-    private bool HasPosition((int, int) pos)
+    private bool HasPosition((int x, int y) pos)
     {
-        var (x, y) = pos;
-        return
-            x >= 0 && x < Size.Item1 &&
-            y >= 0 && y < Size.Item2;
+        return pos.x >= 0 && pos.x < Size.width &&
+               pos.y >= 0 && pos.y < Size.height;
     }
     private List<Node> GetAdjacentNodes(Node n)
     {
@@ -240,117 +193,15 @@ internal class Astar
 
         return result;
 
-        void TryAdd(int offX, int offY)
+        void TryAdd(float offX, float offY)
         {
-            var (x, y) = n.Position;
-            var p = (x + offX, y + offY);
-            var node = GetNode(p);
+            var (x, y) = n.position;
+            var (px, py) = (x + offX, y + offY);
+            var node = GetNode(((int)MathF.Round(px), (int)MathF.Round(py)));
 
             if (node != null)
                 result.Add(node);
         }
     }
-    private Node[,] ResizeArray(Node[,] original, (int, int) size)
-    {
-        var (rows, cols) = size;
-        var result = new Node[rows, cols];
-
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-            {
-                var o = GetNode((i, j));
-                result[i, j] = o == null ? new((i, j), 0, true) : o;
-            }
-
-        return result;
-    }
-
-    private static byte[] BoolsToBytes(List<bool> bools)
-    {
-        if (bools == null || bools.Count == 0)
-            return Array.Empty<byte>();
-
-        var result = new List<byte>();
-        var bitCount = 0;
-        var curByte = default(byte);
-        for (int i = 0; i < bools.Count; i++)
-        {
-            var curBool = bools[i];
-            var curBoolBit = (byte)(curBool ? 1 : 0);
-
-            curByte <<= 1;
-            curByte |= curBoolBit;
-
-            bitCount++;
-
-            if (bitCount == 8 || i == bools.Count - 1)
-            {
-                result.Add(curByte);
-                curByte = 0;
-                bitCount = 0;
-            }
-        }
-
-        return result.ToArray();
-    }
-    private static bool[] BytesToBools(byte[] bytes, int boolCount)
-    {
-        if (bytes == null || bytes.Length == 0)
-            return Array.Empty<bool>();
-
-        var result = new List<bool>();
-        var curBoolCount = 0;
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            var curByte = bytes[i];
-            var curBools = new List<bool>();
-            for (int j = 0; j < 8; j++)
-            {
-                curBoolCount++;
-
-                var singleBit = curByte & 1;
-                curByte >>= 1;
-
-                curBools.Insert(0, singleBit == 1);
-
-                if (curBoolCount == boolCount)
-                    break;
-            }
-
-            result.AddRange(curBools);
-        }
-
-        return result.ToArray();
-    }
-
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
-    }
-
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
-    }
-
     #endregion
 }

@@ -14,6 +14,7 @@
         <ProjectReference Include="..\..\Engine\LocalAreaNetwork\LocalAreaNetwork.csproj"/>
         <ProjectReference Include="..\..\Engine\Modding\Modding.csproj"/>
         <ProjectReference Include="..\..\Engine\Particles\Particles.csproj"/>
+        <ProjectReference Include="..\..\Engine\Pathfinding\Pathfinding.csproj"/>
         <ProjectReference Include="..\..\Engine\Storage\Storage.csproj"/>
         <ProjectReference Include="..\..\Engine\Tilemap\Tilemap.csproj"/>
         <ProjectReference Include="..\..\Engine\UserInterface\UserInterface.csproj"/>

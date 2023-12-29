@@ -45,12 +45,12 @@ public struct Point
         : this(xy, xy, color)
     {
     }
-    public Point((float x, float y) position, uint color = uint.MaxValue)
-        : this(position.x, position.y, color)
+    public Point((float x, float y, uint color) bundle)
+        : this(bundle.x, bundle.y, bundle.color)
     {
     }
-    public Point(((float x, float y) position, uint color) bundle)
-        : this(bundle.position.x, bundle.position.y, bundle.color)
+    public Point((float x, float y) position, uint color)
+        : this(position.x, position.y, color)
     {
     }
 
@@ -137,7 +137,7 @@ public struct Point
         return (x, y);
     }
 
-    public ((float x, float y) position, uint color) ToBundle()
+    public (float x, float y, uint color) ToBundle()
     {
         return this;
     }
@@ -171,11 +171,11 @@ public struct Point
     {
         return point.val;
     }
-    public static implicit operator Point(((float x, float y) position, uint color) bundle)
+    public static implicit operator Point((float x, float y, uint color) bundle)
     {
         return new(bundle);
     }
-    public static implicit operator ((float x, float y) position, uint color)(Point point)
+    public static implicit operator (float x, float y, uint color)(Point point)
     {
         return point.ToBundle();
     }
@@ -222,7 +222,6 @@ public struct Point
     }
 
     #region Backend
-
     private (float, float) val;
 
     private static float ToAngle((float, float) direction)
@@ -238,6 +237,5 @@ public struct Point
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-
     #endregion
 }

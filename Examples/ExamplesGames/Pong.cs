@@ -14,14 +14,14 @@ public static class Pong
     public static void Run()
     {
         Window.Create();
-        Window.Title = "Pure - Pong Game Example";
+        Window.Title = "Pure - Pong Example";
 
         var tilemap = new Tilemap((48, 27));
-        var center = new Point(x: tilemap.Size.width / 2f, y: tilemap.Size.height / 2f);
+        var center = new Point(tilemap.Size.width / 2f, tilemap.Size.height / 2f);
         var ballAngle = new Angle(45f);
         var ballPosition = center;
-        var paddleLeftPosition = new Point(x: 0, y: 0);
-        var paddleRightPosition = new Point(x: tilemap.Size.width - 1, y: 0);
+        var paddleLeftPosition = new Point(0, y: 0);
+        var paddleRightPosition = new Point(tilemap.Size.width - 1, y: 0);
         var layer = new Layer(tilemap.Size);
 
         while (Window.KeepOpen())
@@ -59,6 +59,7 @@ public static class Pong
                 ballPosition = ballPosition.MoveAt(270, 0.5f);
             }
         }
+
         void TryToBounceBallOffPaddle(ref Point paddlePosition)
         {
             var paddle = new Rectangle((1, PADDLE_HEIGHT), paddlePosition);
@@ -71,12 +72,14 @@ public static class Pong
             ballAngle = ballAngle.Reflect(angle);
             ballPosition = ballPosition.MoveAt(angle, 1f);
         }
+
         void FollowBall(ref Point paddlePosition)
         {
             var ballIsAbove = ballPosition.Y < paddlePosition.Y + PADDLE_HEIGHT / 2f;
             var angle = ballIsAbove ? 270 : 90;
             paddlePosition = paddlePosition.MoveAt(angle, PADDLE_SPEED, Time.Delta);
         }
+
         void ControlPaddle(ref Point paddlePosition)
         {
             if (Keyboard.IsKeyPressed(Keyboard.Key.ArrowUp))
@@ -84,12 +87,14 @@ public static class Pong
             if (Keyboard.IsKeyPressed(Keyboard.Key.ArrowDown))
                 paddlePosition = paddlePosition.MoveAt(90, PADDLE_SPEED, Time.Delta);
         }
+
         void LimitPaddleToWindow(ref Point paddlePosition)
         {
             paddlePosition = (
                 x: paddlePosition.X,
                 y: Math.Clamp(paddlePosition.Y, 0, tilemap.Size.height - PADDLE_HEIGHT));
         }
+
         void TryToScorePoint()
         {
             if (ballPosition.X < 0 == false &&

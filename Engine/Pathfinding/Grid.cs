@@ -1,136 +1,177 @@
-﻿namespace Pure.Engine.Pathfinding;
+﻿using System.IO.Compression;
 
-/// <summary>
-/// Represents a grid used for pathfinding on a 2D plane.
-/// </summary>
+namespace Pure.Engine.Pathfinding;
+
 public class Grid
 {
-    /// <summary>
-    /// Gets or sets the size of the grid.
-    /// </summary>
     public (int width, int height) Size
     {
         get => pathfind.Size;
         set => pathfind.Size = value;
     }
 
-    /// <summary>
-    /// Initializes a new grid instance using the specified file path.
-    /// </summary>
-    /// <param name="path">The path of the file containing grid data.</param>
-    public Grid(string path)
+    public int CountObstacles
     {
-        pathfind.Load(path);
+        get => pathfind.CountObstacles;
     }
-    /// <summary>
-    /// Initializes a new grid instance using the specified size.
-    /// </summary>
-    /// <param name="size">The size of the grid.</param>
+    public int CountSolids
+    {
+        get => pathfind.CountSolids;
+    }
+    public int CountEmpty
+    {
+        get => pathfind.CountEmpty;
+    }
+
     public Grid((int width, int height) size)
     {
         Size = size;
     }
-
-    /// <summary>
-    /// Saves the grid data to the specified file.
-    /// </summary>
-    /// <param name="path">The path of the file to save to.</param>
-    public void Save(string path)
+    public Grid(byte[] bytes)
     {
-        pathfind.Save(path);
     }
 
-    /// <summary>
-    /// Determines whether the cell at the specified position is solid (non-walkable).
-    /// </summary>
-    /// <param name="position">The position of the cell to check.</param>
-    /// <returns>True if the cell is solid; otherwise, false.</returns>
-    public bool IsSolid((int x, int y) position)
+    public byte[] ToBytes()
     {
-        var n = pathfind.GetNode(position);
-        return n == null || n.isWalkable == false;
-    }
-    /// <summary>
-    /// Determines whether the cell at the specified position is an obstacle 
-    /// (walkable but with a non-zero penalty).
-    /// </summary>
-    /// <param name="position">The position of the cell to check.</param>
-    /// <returns>True if the cell is an obstacle; otherwise, false.</returns>
-    public bool IsObstacle((int x, int y) position)
-    {
-        var n = pathfind.GetNode(position);
-        return n is { isWalkable: true, weight: > 0 };
-    }
-    /// <summary>
-    /// Gets the penalty value of the cell at the specified position.
-    /// </summary>
-    /// <param name="position">The position of the cell to check.</param>
-    /// <returns>The penalty value of the cell.</returns>
-    public int PenaltyAt((int x, int y) position)
-    {
-        var n = pathfind.GetNode(position);
-        return n?.weight ?? 0;
-    }
-    /// <summary>
-    /// Sets the cell at the specified position 
-    /// as solid or non-solid (walkable or non-walkable).
-    /// </summary>
-    /// <param name="position">The position of the cell to set.</param>
-    /// <param name="isSolid">The value indicating whether the cell is solid or not.</param>
-    public void SetSolid((int x, int y) position, bool isSolid = true)
-    {
-        pathfind.SetNode(position, 0, isSolid == false);
+        var result = new List<byte>();
+        var (w, h) = Size;
+
+        result.AddRange(BitConverter.GetBytes(w));
+        result.AddRange(BitConverter.GetBytes(h));
+
+        for (var y = 0; y < h; y++)
+            for (var x = 0; x < w; x++)
+            {
+                var node = pathfind.grid[x, y];
+                if (node.penalty == 0) // skip saving non-solid & non-obstacle (fully empty) cells
+                    continue;
+
+                //xs.Add(x);
+                //ys.Add(y);
+                //weights.Add(node.weight);
+                //solids.Add(node.isSolid);
+            }
+        //
+        //var bC = BitConverter.GetBytes(xs.Count);
+        //var bW = BitConverter.GetBytes(w);
+        //var bH = BitConverter.GetBytes(h);
+        //var bXs = ToBytes(xs.ToArray());
+        //var bYs = ToBytes(ys.ToArray());
+        //var bWs = ToBytes(weights.ToArray());
+        //var bSs = BoolsToBytes(solids);
+        //
+        //var result = new byte[bC.Length + bW.Length + bH.Length +
+        //	bXs.Length + bYs.Length + bWs.Length + bSs.Length];
+        //
+        //Array.Copy(bC, 0, result, 0,
+        //	bC.Length);
+        //Array.Copy(bW, 0, result,
+        //	bC.Length, bW.Length);
+        //Array.Copy(bH, 0, result,
+        //	bC.Length + bW.Length, bH.Length);
+        //Array.Copy(bXs, 0, result,
+        //	bC.Length + bW.Length + bH.Length, bXs.Length);
+        //Array.Copy(bYs, 0, result,
+        //	bC.Length + bW.Length + bH.Length + bXs.Length, bYs.Length);
+        //Array.Copy(bWs, 0, result,
+        //	bC.Length + bW.Length + bH.Length + bXs.Length + bYs.Length, bWs.Length);
+        //Array.Copy(bSs, 0, result,
+        //	bC.Length + bW.Length + bH.Length + bXs.Length + bYs.Length + bWs.Length, bSs.Length);
+        //
+        //File.WriteAllBytes(path, Compress(result));
+
+        return Compress(result.ToArray());
     }
 
-    /// <summary>
-    /// Sets the cell at the specified position 
-    /// as an obstacle with the given penalty value.
-    /// </summary>
-    /// <param name="cell">The position of the cell to set as an obstacle.</param>
-    /// <param name="penalty">The penalty value
-    /// of the obstacle.</param>
-    public void SetObstacle((int x, int y) cell, int penalty = 1)
+    public void SetObstacle(float penalty, params (int x, int y)[]? cells)
     {
-        pathfind.SetNode(cell, penalty, false);
-    }
-    /// <summary>
-    /// Sets the penalties of the specified tile in the provided 
-    /// tiles to the given penalty value 
-    /// and marks the corresponding cells as obstacles.
-    /// </summary>
-    /// <param name="tile">The tile to set as an obstacle.</param>
-    /// <param name="tiles">The tilemap to use as reference.</param>
-    /// <param name="penalty">The penalty value to set for the obstacles.</param>
-    public void SetObstacle(int tile, int[,]? tiles, int penalty = 1)
-    {
-        if (tiles == null)
+        if (cells == null || cells.Length == 0)
             return;
 
-        for (var i = 0; i < tiles.GetLength(1); i++)
-            for (var j = 0; j < tiles.GetLength(0); j++)
-                if (tiles[j, i] == tile)
-                    SetObstacle((j, i), penalty);
+        foreach (var cell in cells)
+            pathfind.SetNode(cell, penalty);
+    }
+    public void SetObstacle(float penalty, int tileId, int[,]? tileIds)
+    {
+        if (tileIds == null)
+            return;
+
+        for (var i = 0; i < tileIds.GetLength(1); i++)
+            for (var j = 0; j < tileIds.GetLength(0); j++)
+                if (tileIds[j, i] == tileId)
+                    pathfind.SetNode((j, i), penalty);
     }
 
-    /// <summary>
-    /// Calculates a path from the start to the goal 
-    /// position using the A* algorithm.
-    /// </summary>
-    /// <param name="start">The position of the starting cell.</param>
-    /// <param name="goal">The position of the goal cell.</param>
-    /// <returns>Array of positions representing the calculated path, or an empty one
-    /// if no path could be found.</returns>
-    public (int x, int y)[] FindPath((int x, int y) start, (int x, int y) goal)
+    public bool IsSolid((int x, int y) cell)
     {
-        if (Size.Item1 < 1 || Size.Item2 < 1)
-            return Array.Empty<(int, int)>();
+        return float.IsNaN(PenaltyAt(cell)) || float.IsInfinity(PenaltyAt(cell));
+    }
+    public bool IsObstacle((int x, int y) cell)
+    {
+        return float.IsFinite(PenaltyAt(cell));
+    }
+    public bool IsEmpty((int x, int y) cell)
+    {
+        return PenaltyAt(cell) == 0;
+    }
 
-        return pathfind.FindPath(start, goal);
+    public float PenaltyAt((int x, int y) cell)
+    {
+        return pathfind.GetNode(cell)?.penalty ?? float.NaN;
+    }
+
+    public (float x, float y)[] FindPath((float x, float y) start, (float x, float y) goal)
+    {
+        if (Size.width < 1 || Size.height < 1)
+            return Array.Empty<(float x, float y)>();
+
+        return pathfind.FindPath(start, goal, false, out _);
+    }
+    public (float x, float y, uint color)[] FindPath((float x, float y) start, (float x, float y) goal, uint color)
+    {
+        if (Size.width < 1 || Size.height < 1)
+            return Array.Empty<(float x, float y, uint color)>();
+
+        pathfind.FindPath(start, goal, true, out var withColors, color);
+        return withColors;
     }
 
     #region Backend
+    // save format
+    // [amount of bytes]		- data
+    // --------------------------------
+    // [4]						- width
+    // [4]						- height
+    // [4]						- non-default cells count
+    // [width * height * 4]		- xs
+    // [width * height * 4]		- ys
+    // [width * height * 4]		- weights
+    // [remaining]				- is walkable bools (1 bit per bool)
 
     private readonly Astar pathfind = new();
 
+    internal static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using var stream = new DeflateStream(output, CompressionLevel.Optimal);
+        stream.Write(data, 0, data.Length);
+
+        return output.ToArray();
+    }
+    internal static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using var stream = new DeflateStream(input, CompressionMode.Decompress);
+        stream.CopyTo(output);
+        return output.ToArray();
+    }
+
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
+    }
     #endregion
 }
