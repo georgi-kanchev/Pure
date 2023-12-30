@@ -15,23 +15,26 @@ public static class Pathfinding
         var (w, h) = Monitor.Current.AspectRatio;
         var tilemap = new Tilemap((w * 3, h * 3));
         var layer = new Layer(tilemap.Size);
-        var grid = new Grid(tilemap.Size);
+        var pathMap = new PathMap(tilemap.Size);
 
-        tilemap.SetEllipse((21, 8), (10, 7), true, Tile.SHAPE_SQUARE_HOLLOW);
-        tilemap.SetEllipse((5, 9), (4, 7), true, Tile.SHAPE_SQUARE_HOLLOW);
-        tilemap.SetEllipse((32, 20), (9, 3), true, Tile.SHAPE_SQUARE_HOLLOW);
-        tilemap.SetLine((0, 0), (48, 27), Tile.SHADE_TRANSPARENT);
-        tilemap.SetLine((0, 1), (48, 27), Tile.SHADE_TRANSPARENT);
-        tilemap.SetLine((1, 0), (48, 27), Tile.SHADE_TRANSPARENT);
-        grid.SetObstacle(float.PositiveInfinity, Tile.SHAPE_SQUARE_HOLLOW, tilemap);
+        tilemap.SetEllipse((21, 8), (10, 7), true, Tile.SHADE_OPAQUE);
+        tilemap.SetEllipse((5, 9), (4, 7), true, Tile.SHADE_OPAQUE);
+        tilemap.SetEllipse((32, 20), (9, 3), true, Tile.SHADE_OPAQUE);
+        tilemap.SetLine((0, 0), (48, 27), Tile.SHADE_1);
+        tilemap.SetLine((0, 1), (48, 27), Tile.SHADE_1);
+        tilemap.SetLine((1, 0), (48, 27), Tile.SHADE_1);
+        pathMap.SetObstacle(float.PositiveInfinity, Tile.SHADE_OPAQUE, tilemap);
+        //grid.SetObstacle(10, Tile.SHADE_1, tilemap);
 
         while (Window.KeepOpen())
         {
             var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
-            var path = grid.FindPath((0.5f, 0.5f), ((int)mx, (int)my), Color.Red);
+            var lines = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Red);
+            var points = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Green);
 
-            layer.DrawLines(path);
             layer.DrawTilemap(tilemap);
+            layer.DrawLines(lines);
+            layer.DrawPoints(points);
             layer.DrawCursor();
             Window.DrawLayer(layer);
         }

@@ -2,7 +2,7 @@
 
 namespace Pure.Engine.Pathfinding;
 
-public class Grid
+public class PathMap
 {
     public (int width, int height) Size
     {
@@ -10,24 +10,11 @@ public class Grid
         set => pathfind.Size = value;
     }
 
-    public int CountObstacles
-    {
-        get => pathfind.CountObstacles;
-    }
-    public int CountSolids
-    {
-        get => pathfind.CountSolids;
-    }
-    public int CountEmpty
-    {
-        get => pathfind.CountEmpty;
-    }
-
-    public Grid((int width, int height) size)
+    public PathMap((int width, int height) size)
     {
         Size = size;
     }
-    public Grid(byte[] bytes)
+    public PathMap(byte[] bytes)
     {
     }
 
@@ -120,19 +107,20 @@ public class Grid
         return pathfind.GetNode(cell)?.penalty ?? float.NaN;
     }
 
-    public (float x, float y)[] FindPath((float x, float y) start, (float x, float y) goal)
+    public (float x, float y)[] FindPath((float x, float y) start, (float x, float y) goal, int slopeFactor = 1)
     {
         if (Size.width < 1 || Size.height < 1)
             return Array.Empty<(float x, float y)>();
 
-        return pathfind.FindPath(start, goal, false, out _);
+        return pathfind.FindPath(start, goal, false, out _, slopeFactor, uint.MaxValue);
     }
-    public (float x, float y, uint color)[] FindPath((float x, float y) start, (float x, float y) goal, uint color)
+    public (float x, float y, uint color)[] FindPath((float x, float y) start, (float x, float y) goal,
+        uint color, int slopeFactor = 1)
     {
         if (Size.width < 1 || Size.height < 1)
             return Array.Empty<(float x, float y, uint color)>();
 
-        pathfind.FindPath(start, goal, true, out var withColors, color);
+        pathfind.FindPath(start, goal, true, out var withColors, slopeFactor, color);
         return withColors;
     }
 

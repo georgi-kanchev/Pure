@@ -2,34 +2,14 @@
 
 using System.Globalization;
 
-public class CommandManager
+public class Commander
 {
-    public bool IsDisabled
-    {
-        get;
-        set;
-    }
+    public bool IsDisabled { get; set; }
 
-    public char Divider
-    {
-        get;
-        set;
-    } = ';';
-    public char DividerValue
-    {
-        get;
-        set;
-    } = ' ';
-    public char DividerText
-    {
-        get;
-        set;
-    } = '`';
-    public char DividerArray
-    {
-        get;
-        set;
-    } = '|';
+    public char Divider { get; set; } = ';';
+    public char DividerValue { get; set; } = ' ';
+    public char DividerText { get; set; } = '`';
+    public char DividerArray { get; set; } = '|';
 
     public void Add(string commandName, Func<string?> onExecute)
     {
@@ -90,7 +70,7 @@ public class CommandManager
         return obj is "" or null ? default : (T)obj;
     }
 
-#region Backend
+    #region Backend
     private const string STR_PLACEHOLDER = "—";
     private static int parameterIndex;
     private static readonly Dictionary<string, Func<string?>> commands = new();
@@ -199,5 +179,5 @@ public class CommandManager
 
         return result;
     }
-#endregion
+    #endregion
 }

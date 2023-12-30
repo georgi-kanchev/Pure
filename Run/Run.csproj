@@ -22,7 +22,7 @@
         <ProjectReference Include="..\Engine\Utilities\Utilities.csproj"/>
         <ProjectReference Include="..\Engine\Window\Window.csproj"/>
         <ProjectReference Include="..\Engine\LocalAreaNetwork\LocalAreaNetwork.csproj"/>
-        <ProjectReference Include="..\Examples\ExamplesGames\ExamplesGames.csproj"/>
+        <ProjectReference Include="..\Examples\ExamplesApplications\ExamplesApplications.csproj"/>
         <ProjectReference Include="..\Examples\ExamplesUserInterface\ExamplesUserInterface.csproj"/>
         <ProjectReference Include="..\Examples\ExampleSystems\ExampleSystems.csproj"/>
         <ProjectReference Include="..\Editors\EditorUserInterface\EditorUserInterface.csproj"/>

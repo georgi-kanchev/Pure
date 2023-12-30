@@ -58,13 +58,13 @@ public struct Line
     /// <summary>
     /// Checks if this line is crossing any rectangles in the given map.
     /// </summary>
-    /// <param name="map">The map to check for crossing.</param>
+    /// <param name="solidMap">The map to check for crossing.</param>
     /// <returns>
     /// True if this line is crossing with the specified map, otherwise false.
     /// </returns>
-    public bool IsCrossing(Map map)
+    public bool IsCrossing(SolidMap solidMap)
     {
-        return CrossPoints(map).Length > 0;
+        return CrossPoints(solidMap).Length > 0;
     }
     /// <summary>
     ///     Checks if this line is crossing with any of the rectangles in the
@@ -143,11 +143,11 @@ public struct Line
     /// Calculates all points of intersection between this line and the rectangles of the
     /// specified map.
     /// </summary>
-    /// <param name="map">The map to calculate the intersection points with.</param>
+    /// <param name="solidMap">The map to calculate the intersection points with.</param>
     /// <returns>
     /// An array of all points of intersection between this line and the specified map.
     /// </returns>
-    public (float x, float y, uint color)[] CrossPoints(Map map)
+    public (float x, float y, uint color)[] CrossPoints(SolidMap solidMap)
     {
         var (x0, y0) = ((int)A.Item1, (int)A.Item2);
         var (x1, y1) = ((int)B.Item1, (int)B.Item2);
@@ -163,7 +163,7 @@ public struct Line
             var ix = x0;
             var iy = y0;
 
-            var neighbourCells = map.GetNeighborRects(new((1, 1), (ix, iy)));
+            var neighbourCells = solidMap.GetNeighborRects(new((1, 1), (ix, iy)));
             foreach (var cell in neighbourCells)
                 if (rects.Contains(cell) == false)
                     rects.Add(cell);
@@ -315,7 +315,6 @@ public struct Line
     }
 
     #region Backend
-
     private const int MAX_ITERATIONS = 1000;
 
     private static (float, float, uint) CrossPoint(
@@ -387,6 +386,5 @@ public struct Line
         var (bx, by) = b;
         return ax * bx + ay * by;
     }
-
     #endregion
 }

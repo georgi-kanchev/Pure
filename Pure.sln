@@ -39,7 +39,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExamplesUserInterface", "Ex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleSystems", "Examples\ExampleSystems\ExampleSystems.csproj", "{1FAF4CBC-051E-48BF-886D-2BD0B4433270}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExamplesGames", "Examples\ExamplesGames\ExamplesGames.csproj", "{8DB34788-CD0C-4CDC-9F62-5DC7BCD5987B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExamplesApplications", "Examples\ExamplesApplications\ExamplesApplications.csproj", "{8DB34788-CD0C-4CDC-9F62-5DC7BCD5987B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Run", "Run\Run.csproj", "{FA0C1689-C04C-444E-846F-94AC2E748FBC}"
 EndProject

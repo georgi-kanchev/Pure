@@ -9,8 +9,8 @@ public static class Run
 {
     public static void Main()
     {
-        //Examples.ExamplesGames.Pong.Run();
-        //Examples.ExamplesGames.FlappyBird.Run();
+        //Examples.ExamplesApplications.Pong.Run();
+        //Examples.ExamplesApplications.FlappyBird.Run();
 
         //Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
@@ -19,7 +19,8 @@ public static class Run
 
         //Examples.ExamplesSystems.DefaultGraphics.Run();
         //Examples.ExamplesSystems.Collision.Run();
-        Examples.ExamplesSystems.Pathfinding.Run();
+        //Examples.ExamplesSystems.Pathfinding.Run();
+        Examples.ExamplesSystems.Chat.Run();
         //Examples.ExamplesSystems.UtilityExtensions.Run();
     }
 

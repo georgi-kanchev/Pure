@@ -3,7 +3,7 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 
-public class Map
+public class SolidMap
 {
     public int CountSolids { get; private set; }
     public int CountIgnoredCells
@@ -40,10 +40,10 @@ public class Map
         get => ignoredCells.ToArray();
     }
 
-    public Map()
+    public SolidMap()
     {
     }
-    public Map(byte[] bytes)
+    public SolidMap(byte[] bytes)
     {
         var b = Decompress(bytes);
         var offset = 0;
@@ -314,13 +314,13 @@ public class Map
         return this;
     }
 
-    public static implicit operator Rectangle[](Map map)
+    public static implicit operator Rectangle[](SolidMap solidMap)
     {
-        return map.Solids;
+        return solidMap.Solids;
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)[](Map map)
+    public static implicit operator (float x, float y, float width, float height, uint color)[](SolidMap solidMap)
     {
-        var solids = map.Solids;
+        var solids = solidMap.Solids;
         var result = new (float x, float y, float width, float height, uint color)[solids.Length];
         for (var i = 0; i < solids.Length; i++)
             result[i] = solids[i];

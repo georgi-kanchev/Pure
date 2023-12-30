@@ -5,45 +5,27 @@ using System.Text;
 
 internal class Message
 {
-    public byte FromID
-    {
-        get;
-    }
-    public byte ToID
-    {
-        get;
-    }
-    public byte Tag
-    {
-        get;
-    }
-    public byte TagSystem
-    {
-        get;
-    }
-    public string Value
-    {
-        get;
-    }
-    public byte[] Data
-    {
-        get;
-    }
+    public byte FromId { get; }
+    public byte ToId { get; }
+    public byte Tag { get; }
+    public byte TagSystem { get; }
+    public string Value { get; }
+    public byte[] Data { get; }
 
-    public Message(byte fromID, byte toID, byte sysTag, byte userTag, string value)
+    public Message(byte fromId, byte toId, byte sysTag, byte userTag, string value)
     {
-        this.TagSystem = sysTag;
-        this.Tag = userTag;
-        this.FromID = fromID;
-        this.ToID = toID;
-        this.Value = value;
+        TagSystem = sysTag;
+        Tag = userTag;
+        FromId = fromId;
+        ToId = toId;
+        Value = value;
 
         var message = Encoding.UTF8.GetBytes(value);
         var bytes = new byte[4 + message.Length];
         bytes[0] = sysTag;
         bytes[1] = userTag;
-        bytes[2] = fromID;
-        bytes[3] = toID;
+        bytes[2] = fromId;
+        bytes[3] = toId;
         Array.Copy(message, 0, bytes, 4, message.Length);
 
         var msg = Compress(bytes);
@@ -69,20 +51,20 @@ internal class Message
         var decoded = Decompress(myBytes);
         var sysTag = decoded[0];
         var userTag = decoded[1];
-        var fromID = decoded[2];
-        var toID = decoded[3];
+        var fromId = decoded[2];
+        var toId = decoded[3];
         var value = Encoding.UTF8.GetString(decoded[4..]);
 
         // and store
-        this.TagSystem = sysTag;
-        this.Tag = userTag;
-        this.FromID = fromID;
-        this.ToID = toID;
-        this.Value = value;
-        this.Data = bytes[..(4 + byteAmount)];
+        TagSystem = sysTag;
+        Tag = userTag;
+        FromId = fromId;
+        ToId = toId;
+        Value = value;
+        Data = bytes[..(4 + byteAmount)];
     }
 
-#region Backend
+    #region Backend
     // format
     // [amount of bytes]		- data
     // --------------------------------
@@ -101,9 +83,7 @@ internal class Message
         using var compressedStream = new MemoryStream();
         using (var compressorStream =
                new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
-        {
             uncompressedStream.CopyTo(compressorStream);
-        }
 
         var compressedBytes = compressedStream.ToArray();
 
@@ -121,5 +101,5 @@ internal class Message
 
         return decompressedBytes;
     }
-#endregion
+    #endregion
 }

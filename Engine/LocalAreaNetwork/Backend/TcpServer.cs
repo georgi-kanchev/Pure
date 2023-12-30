@@ -41,7 +41,7 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="address">IP address</param>
     /// <param name="port">Port number</param>
-    public TcpServer(IPAddress address, int port)
+    protected TcpServer(IPAddress address, int port)
         : this(new IPEndPoint(address, port))
     {
     }
@@ -59,7 +59,7 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="endpoint">DNS endpoint</param>
     public TcpServer(DnsEndPoint endpoint)
-        : this(endpoint as EndPoint, endpoint.Host, endpoint.Port)
+        : this(endpoint, endpoint.Host, endpoint.Port)
     {
     }
     /// <summary>
@@ -67,7 +67,7 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="endpoint">IP endpoint</param>
     public TcpServer(IPEndPoint endpoint)
-        : this(endpoint as EndPoint, endpoint.Address.ToString(),
+        : this(endpoint, endpoint.Address.ToString(),
             endpoint.Port)
     {
     }
@@ -88,61 +88,48 @@ internal class TcpServer : IDisposable
     /// <summary>
     /// Server Id
     /// </summary>
-    public Guid Id
-    {
-        get;
-    }
+    public Guid Id { get; }
 
     /// <summary>
     /// TCP server address
     /// </summary>
-    public string Address
-    {
-        get;
-    }
+    public string Address { get; }
     /// <summary>
     /// TCP server port
     /// </summary>
-    public int Port
-    {
-        get;
-    }
+    public int Port { get; }
     /// <summary>
     /// Endpoint
     /// </summary>
-    public EndPoint Endpoint
-    {
-        get;
-        private set;
-    }
+    public EndPoint Endpoint { get; private set; }
 
     /// <summary>
     /// Number of sessions connected to the server
     /// </summary>
     public long ConnectedSessions
     {
-        get => Sessions.Count;
+        get => sessions.Count;
     }
     /// <summary>
     /// Number of bytes pending sent by the server
     /// </summary>
     public long BytesPending
     {
-        get => _bytesPending;
+        get => bytesPending;
     }
     /// <summary>
     /// Number of bytes sent by the server
     /// </summary>
     public long BytesSent
     {
-        get => _bytesSent;
+        get => bytesSent;
     }
     /// <summary>
     /// Number of bytes received by the server
     /// </summary>
     public long BytesReceived
     {
-        get => _bytesReceived;
+        get => bytesReceived;
     }
 
     /// <summary>
@@ -151,11 +138,7 @@ internal class TcpServer : IDisposable
     /// <remarks>
     /// This option will set the listening socket's backlog size
     /// </remarks>
-    public int OptionAcceptorBacklog
-    {
-        get;
-        set;
-    } = 1024;
+    public int OptionAcceptorBacklog { get; set; } = 1024;
     /// <summary>
     /// Option: dual mode socket
     /// </summary>
@@ -163,131 +146,83 @@ internal class TcpServer : IDisposable
     /// Specifies whether the Socket is a dual-mode socket used for both IPv4 and IPv6.
     /// Will work only if socket is bound on IPv6 address.
     /// </remarks>
-    public bool OptionDualMode
-    {
-        get;
-        set;
-    }
+    public bool OptionDualMode { get; set; }
     /// <summary>
     /// Option: keep alive
     /// </summary>
     /// <remarks>
     /// This option will setup SO_KEEPALIVE if the OS support this feature
     /// </remarks>
-    public bool OptionKeepAlive
-    {
-        get;
-        set;
-    }
+    public bool OptionKeepAlive { get; set; }
     /// <summary>
     /// Option: TCP keep alive time
     /// </summary>
     /// <remarks>
     /// The number of seconds a TCP connection will remain alive/idle before keepalive probes are sent to the remote
     /// </remarks>
-    public int OptionTcpKeepAliveTime
-    {
-        get;
-        set;
-    } = -1;
+    public int OptionTcpKeepAliveTime { get; set; } = -1;
     /// <summary>
     /// Option: TCP keep alive interval
     /// </summary>
     /// <remarks>
     /// The number of seconds a TCP connection will wait for a keepalive response before sending another keepalive probe
     /// </remarks>
-    public int OptionTcpKeepAliveInterval
-    {
-        get;
-        set;
-    } = -1;
+    public int OptionTcpKeepAliveInterval { get; set; } = -1;
     /// <summary>
     /// Option: TCP keep alive retry count
     /// </summary>
     /// <remarks>
     /// The number of TCP keep alive probes that will be sent before the connection is terminated
     /// </remarks>
-    public int OptionTcpKeepAliveRetryCount
-    {
-        get;
-        set;
-    } = -1;
+    public int OptionTcpKeepAliveRetryCount { get; set; } = -1;
     /// <summary>
     /// Option: no delay
     /// </summary>
     /// <remarks>
     /// This option will enable/disable Nagle's algorithm for TCP protocol
     /// </remarks>
-    public bool OptionNoDelay
-    {
-        get;
-        set;
-    }
+    public bool OptionNoDelay { get; set; }
     /// <summary>
     /// Option: reuse address
     /// </summary>
     /// <remarks>
     /// This option will enable/disable SO_REUSEADDR if the OS support this feature
     /// </remarks>
-    public bool OptionReuseAddress
-    {
-        get;
-        set;
-    }
+    public bool OptionReuseAddress { get; set; }
     /// <summary>
     /// Option: enables a socket to be bound for exclusive access
     /// </summary>
     /// <remarks>
     /// This option will enable/disable SO_EXCLUSIVEADDRUSE if the OS support this feature
     /// </remarks>
-    public bool OptionExclusiveAddressUse
-    {
-        get;
-        set;
-    }
+    public bool OptionExclusiveAddressUse { get; set; }
     /// <summary>
     /// Option: receive buffer size
     /// </summary>
-    public int OptionReceiveBufferSize
-    {
-        get;
-        set;
-    } = 8192;
+    public int OptionReceiveBufferSize { get; set; } = 8192;
     /// <summary>
     /// Option: send buffer size
     /// </summary>
-    public int OptionSendBufferSize
-    {
-        get;
-        set;
-    } = 8192;
+    public int OptionSendBufferSize { get; set; } = 8192;
 
-#region Start/Stop server
+    #region Start/Stop server
     // Server acceptor
-    private Socket _acceptorSocket;
-    private SocketAsyncEventArgs _acceptorEventArg;
+    private Socket acceptorSocket;
+    private SocketAsyncEventArgs acceptorEventArg;
 
     // Server statistic
-    internal long _bytesPending;
-    internal long _bytesSent;
-    internal long _bytesReceived;
+    internal long bytesPending;
+    internal long bytesSent;
+    internal long bytesReceived;
 
     /// <summary>
     /// Is the server started?
     /// </summary>
-    public bool IsStarted
-    {
-        get;
-        private set;
-    }
+    public bool IsStarted { get; private set; }
     /// <summary>
     /// Is the server accepting new clients?
     /// </summary>
-    public bool IsAccepting
-    {
-        get;
-        private set;
-    }
+    public bool IsAccepting { get; private set; }
 
     /// <summary>
     /// Create a new socket object
@@ -312,40 +247,40 @@ internal class TcpServer : IDisposable
             return false;
 
         // Setup acceptor event arg
-        _acceptorEventArg = new SocketAsyncEventArgs();
-        _acceptorEventArg.Completed += OnAsyncCompleted;
+        acceptorEventArg = new SocketAsyncEventArgs();
+        acceptorEventArg.Completed += OnAsyncCompleted;
 
         // Create a new acceptor socket
-        _acceptorSocket = CreateSocket();
+        acceptorSocket = CreateSocket();
 
         // Update the acceptor socket disposed flag
         IsSocketDisposed = false;
 
         // Apply the option: reuse address
-        _acceptorSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress,
+        acceptorSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress,
             OptionReuseAddress);
         // Apply the option: exclusive address use
-        _acceptorSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse,
+        acceptorSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse,
             OptionExclusiveAddressUse);
         // Apply the option: dual mode (this option must be applied before listening)
-        if (_acceptorSocket.AddressFamily == AddressFamily.InterNetworkV6)
-            _acceptorSocket.DualMode = OptionDualMode;
+        if (acceptorSocket.AddressFamily == AddressFamily.InterNetworkV6)
+            acceptorSocket.DualMode = OptionDualMode;
 
         // Bind the acceptor socket to the endpoint
-        _acceptorSocket.Bind(Endpoint);
+        acceptorSocket.Bind(Endpoint);
         // Refresh the endpoint property based on the actual endpoint created
-        Endpoint = _acceptorSocket.LocalEndPoint;
+        Endpoint = acceptorSocket.LocalEndPoint;
 
         // Call the server starting handler
         OnStarting();
 
         // Start listen to the acceptor socket with the given accepting backlog size
-        _acceptorSocket.Listen(OptionAcceptorBacklog);
+        acceptorSocket.Listen(OptionAcceptorBacklog);
 
         // Reset statistic
-        _bytesPending = 0;
-        _bytesSent = 0;
-        _bytesReceived = 0;
+        bytesPending = 0;
+        bytesSent = 0;
+        bytesReceived = 0;
 
         // Update the started flag
         IsStarted = true;
@@ -355,7 +290,7 @@ internal class TcpServer : IDisposable
 
         // Perform the first server accept
         IsAccepting = true;
-        StartAccept(_acceptorEventArg);
+        StartAccept(acceptorEventArg);
 
         return true;
     }
@@ -374,7 +309,7 @@ internal class TcpServer : IDisposable
         IsAccepting = false;
 
         // Reset acceptor event arg
-        _acceptorEventArg.Completed -= OnAsyncCompleted;
+        acceptorEventArg.Completed -= OnAsyncCompleted;
 
         // Call the server stopping handler
         OnStopping();
@@ -382,13 +317,13 @@ internal class TcpServer : IDisposable
         try
         {
             // Close the acceptor socket
-            _acceptorSocket.Close();
+            acceptorSocket.Close();
 
             // Dispose the acceptor socket
-            _acceptorSocket.Dispose();
+            acceptorSocket.Dispose();
 
             // Dispose event arguments
-            _acceptorEventArg.Dispose();
+            acceptorEventArg.Dispose();
 
             // Update the acceptor socket disposed flag
             IsSocketDisposed = true;
@@ -423,9 +358,9 @@ internal class TcpServer : IDisposable
 
         return Start();
     }
-#endregion
+    #endregion
 
-#region Accepting clients
+    #region Accepting clients
     /// <summary>
     /// Start accept a new client connection
     /// </summary>
@@ -435,7 +370,7 @@ internal class TcpServer : IDisposable
         e.AcceptSocket = null;
 
         // Async accept a new client connection
-        if (!_acceptorSocket.AcceptAsync(e))
+        if (!acceptorSocket.AcceptAsync(e))
             ProcessAccept(e);
     }
 
@@ -474,9 +409,9 @@ internal class TcpServer : IDisposable
 
         ProcessAccept(e);
     }
-#endregion
+    #endregion
 
-#region Session factory
+    #region Session factory
     /// <summary>
     /// Create TCP session factory method
     /// </summary>
@@ -485,24 +420,23 @@ internal class TcpServer : IDisposable
     {
         return new TcpSession(this);
     }
-#endregion
+    #endregion
 
-#region Session management
+    #region Session management
     // Server sessions
-    protected readonly ConcurrentDictionary<Guid, TcpSession> Sessions =
-        new ConcurrentDictionary<Guid, TcpSession>();
+    private readonly ConcurrentDictionary<Guid, TcpSession> sessions = new();
 
     /// <summary>
     /// Disconnect all connected sessions
     /// </summary>
     /// <returns>'true' if all sessions were successfully disconnected, 'false' if the server is not started</returns>
-    public virtual bool DisconnectAll()
+    protected virtual bool DisconnectAll()
     {
         if (!IsStarted)
             return false;
 
         // Disconnect all sessions
-        foreach (var session in Sessions.Values)
+        foreach (var session in sessions.Values)
             session.Disconnect();
 
         return true;
@@ -516,7 +450,7 @@ internal class TcpServer : IDisposable
     public TcpSession FindSession(Guid id)
     {
         // Try to find the required session
-        return Sessions.TryGetValue(id, out var result) ? result : null;
+        return sessions.GetValueOrDefault(id);
     }
 
     /// <summary>
@@ -526,7 +460,7 @@ internal class TcpServer : IDisposable
     internal void RegisterSession(TcpSession session)
     {
         // Register a new session
-        Sessions.TryAdd(session.Id, session);
+        sessions.TryAdd(session.Id, session);
     }
 
     /// <summary>
@@ -536,11 +470,11 @@ internal class TcpServer : IDisposable
     internal void UnregisterSession(Guid id)
     {
         // Unregister session by Id
-        Sessions.TryRemove(id, out var _);
+        sessions.TryRemove(id, out var _);
     }
-#endregion
+    #endregion
 
-#region Multicasting
+    #region Multicasting
     /// <summary>
     /// Multicast data to all connected sessions
     /// </summary>
@@ -568,7 +502,7 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="buffer">Buffer to send as a span of bytes</param>
     /// <returns>'true' if the data was successfully multicasted, 'false' if the data was not multicasted</returns>
-    public virtual bool Multicast(ReadOnlySpan<byte> buffer)
+    protected virtual bool Multicast(ReadOnlySpan<byte> buffer)
     {
         if (!IsStarted)
             return false;
@@ -577,7 +511,7 @@ internal class TcpServer : IDisposable
             return true;
 
         // Multicast data to all sessions
-        foreach (var session in Sessions.Values)
+        foreach (var session in sessions.Values)
             session.SendAsync(buffer);
 
         return true;
@@ -602,9 +536,9 @@ internal class TcpServer : IDisposable
     {
         return Multicast(Encoding.UTF8.GetBytes(text.ToArray()));
     }
-#endregion
+    #endregion
 
-#region Server handlers
+    #region Server handlers
     /// <summary>
     /// Handle server starting notification
     /// </summary>
@@ -683,9 +617,9 @@ internal class TcpServer : IDisposable
     {
         OnDisconnected(session);
     }
-#endregion
+    #endregion
 
-#region Error handling
+    #region Error handling
     /// <summary>
     /// Send error notification
     /// </summary>
@@ -693,35 +627,27 @@ internal class TcpServer : IDisposable
     private void SendError(SocketError error)
     {
         // Skip disconnect errors
-        if ((error == SocketError.ConnectionAborted) ||
-            (error == SocketError.ConnectionRefused) ||
-            (error == SocketError.ConnectionReset) ||
-            (error == SocketError.OperationAborted) ||
-            (error == SocketError.Shutdown))
+        if (error == SocketError.ConnectionAborted ||
+            error == SocketError.ConnectionRefused ||
+            error == SocketError.ConnectionReset ||
+            error == SocketError.OperationAborted ||
+            error == SocketError.Shutdown)
             return;
 
         OnError(error);
     }
-#endregion
+    #endregion
 
-#region IDisposable implementation
+    #region IDisposable implementation
     /// <summary>
     /// Disposed flag
     /// </summary>
-    public bool IsDisposed
-    {
-        get;
-        private set;
-    }
+    public bool IsDisposed { get; private set; }
 
     /// <summary>
     /// Acceptor socket disposed flag
     /// </summary>
-    public bool IsSocketDisposed
-    {
-        get;
-        private set;
-    } = true;
+    public bool IsSocketDisposed { get; private set; } = true;
 
     // Implement IDisposable.
     public void Dispose()
@@ -760,5 +686,5 @@ internal class TcpServer : IDisposable
             IsDisposed = true;
         }
     }
-#endregion
+    #endregion
 }

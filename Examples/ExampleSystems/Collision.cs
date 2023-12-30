@@ -16,7 +16,7 @@ public static class Collision
         var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
         var background = new Tilemap(tilemap.Size);
 
-        var collisionMap = new Map();
+        var collisionMap = new SolidMap();
         collisionMap.AddSolids(Tile.ICON_WAVE, new Rectangle((0.5f, 1), (0, 0), Color.Yellow)); // lake
         collisionMap.AddSolids(Tile.ICON_WAVES, new Rectangle((1, 0.5f), (0, 0), Color.Yellow)); // lake
         collisionMap.AddSolids(Tile.GEOMETRY_ANGLE, new Rectangle((1, 1))); // house roof

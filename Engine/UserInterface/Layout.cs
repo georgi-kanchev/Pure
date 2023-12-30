@@ -77,16 +77,12 @@ public class Layout : Block
         segments.Add(new(0, Side.Top, null));
     }
 
-    protected virtual void OnSegmentUpdate((int x, int y, int width, int height) segment, int index)
-    {
-    }
-
     public void OnDisplaySegment(Action<(int x, int y, int width, int height), int> method)
     {
         displaySegment += method;
     }
 
-#region Backend
+    #region Backend
     private class Segment
     {
         public readonly float rate;
@@ -133,7 +129,6 @@ public class Layout : Block
         for (var i = 0; i < segments.Count; i++)
         {
             var seg = segments[i];
-            OnSegmentUpdate((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
             displaySegment?.Invoke((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
         }
     }
@@ -190,11 +185,5 @@ public class Layout : Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-    private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
-    }
-#endregion
+    #endregion
 }

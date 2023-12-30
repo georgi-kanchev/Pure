@@ -29,7 +29,7 @@ using System.Numerics;
 internal class Node
 {
     public Node? parent;
-    public (float x, float y) position;
+    public (int x, int y) position;
     public float distanceToTarget, cost;
     public float penalty;
     public float F
@@ -37,7 +37,7 @@ internal class Node
         get => MathF.Abs(distanceToTarget + 1) < 0.1f || MathF.Abs(cost + 1) < 0.1f ? -1 : distanceToTarget + cost;
     }
 
-    public Node((float x, float y) pos, int penalty)
+    public Node((int x, int y) pos, int penalty)
     {
         parent = null;
         position = pos;
@@ -66,12 +66,6 @@ internal class Astar
                     grid[i, j] = GetNode((i, j)) ?? new((i, j), 0);
         }
     }
-    public int CountObstacles { get; private set; }
-    public int CountSolids { get; private set; }
-    public int CountEmpty
-    {
-        get => Size.width * Size.height - (CountObstacles + CountSolids);
-    }
 
     public void SetNode((int x, int y) pos, float penalty)
     {
@@ -87,10 +81,13 @@ internal class Astar
         return HasPosition(pos) ? grid[pos.x, pos.y] : null;
     }
     public (float x, float y)[] FindPath((float x, float y) a, (float x, float y) b, bool includeColors,
-        out (float x, float y, uint color)[] withColors, uint color = uint.MaxValue)
+        out (float x, float y, uint color)[] withColors, int maxZigzag, uint color)
     {
-        var start = new Node(a, 0);
-        var end = new Node(b, 0);
+        a = ((int)a.x, (int)a.y);
+        b = ((int)b.x, (int)b.y);
+
+        var start = new Node(((int)a.x, (int)a.y), 0);
+        var end = new Node(((int)b.x, (int)b.y), 0);
         var open = new PriorityQueue<Node, float>();
         var closed = new List<Node>();
         var neighbours = new List<Node>();
@@ -144,10 +141,10 @@ internal class Astar
         }
 
         var temp = closed[index];
-        var result = new List<(float x, float y)> { start.position };
+        var result = new List<(float x, float y)> { (start.position.x + 0.5f, start.position.y + 0.5f) };
         var resultWithColors = new List<(float x, float y, uint color)>
         {
-            (start.position.x, start.position.y, color)
+            (start.position.x + 0.5f, start.position.y + 0.5f, color)
         };
         for (var i = closed.Count - 1; i >= 0; i--)
         {
@@ -161,6 +158,9 @@ internal class Astar
 
             temp = temp.parent;
         }
+
+        SmoothZigzag(result, resultWithColors, maxZigzag);
+        RemoveRedundantPoints(result, resultWithColors);
 
         withColors = includeColors ? resultWithColors.ToArray() : Array.Empty<(float x, float y, uint color)>();
         return result.ToArray();
@@ -193,15 +193,55 @@ internal class Astar
 
         return result;
 
-        void TryAdd(float offX, float offY)
+        void TryAdd(int offX, int offY)
         {
             var (x, y) = n.position;
-            var (px, py) = (x + offX, y + offY);
-            var node = GetNode(((int)MathF.Round(px), (int)MathF.Round(py)));
+            var node = GetNode((x + offX, y + offY));
 
             if (node != null)
                 result.Add(node);
         }
+    }
+
+    private static void SmoothZigzag(
+        List<(float x, float y)> points,
+        List<(float x, float y, uint color)> withColor,
+        int maxZigzag)
+    {
+        if (points.Count < 2)
+            return;
+
+        for (var i = 1; i < points.Count - 1; i++)
+        {
+            var horDiff = Math.Abs(points[i - 1].x - points[i + 1].x);
+            var verDiff = Math.Abs(points[i - 1].y - points[i + 1].y);
+
+            if (horDiff > maxZigzag || verDiff > maxZigzag)
+                continue;
+
+            points.RemoveAt(i);
+            withColor.RemoveAt(i);
+            i--;
+        }
+    }
+    private static void RemoveRedundantPoints(
+        List<(float x, float y)> points,
+        List<(float x, float y, uint color)> withColor)
+    {
+        if (points.Count < 3)
+            return;
+
+        for (var i = 1; i < points.Count - 1; i++)
+            if (IsLine(points[i - 1], points[i], points[i + 1]))
+            {
+                points.RemoveAt(i);
+                withColor.RemoveAt(i);
+                i--;
+            }
+    }
+    private static bool IsLine((float x, float y) a, (float x, float y) b, (float x, float y) c)
+    {
+        return Math.Abs((a.x - b.x) * (b.y - c.y) - (b.x - c.x) * (a.y - b.y)) < 0.01f;
     }
     #endregion
 }

@@ -7,46 +7,42 @@ using System.Text;
 /// <summary>
 /// Dynamic byte buffer
 /// </summary>
-public class Buffer
+internal class Buffer
 {
-    private byte[] _data;
-    private long _size;
-    private long _offset;
+    private long size;
+    private long offset;
 
     /// <summary>
     /// Is the buffer empty?
     /// </summary>
     public bool IsEmpty
     {
-        get => (_data == null) || (_size == 0);
+        get => Data == null || size == 0;
     }
     /// <summary>
     /// Bytes memory buffer
     /// </summary>
-    public byte[] Data
-    {
-        get => _data;
-    }
+    public byte[] Data { get; private set; }
     /// <summary>
     /// Bytes memory buffer capacity
     /// </summary>
     public long Capacity
     {
-        get => _data.Length;
+        get => Data.Length;
     }
     /// <summary>
     /// Bytes memory buffer size
     /// </summary>
     public long Size
     {
-        get => _size;
+        get => size;
     }
     /// <summary>
     /// Bytes memory buffer offset
     /// </summary>
     public long Offset
     {
-        get => _offset;
+        get => offset;
     }
 
     /// <summary>
@@ -54,7 +50,7 @@ public class Buffer
     /// </summary>
     public byte this[long index]
     {
-        get => _data[index];
+        get => Data[index];
     }
 
     /// <summary>
@@ -62,36 +58,36 @@ public class Buffer
     /// </summary>
     public Buffer()
     {
-        _data = new byte[0];
-        _size = 0;
-        _offset = 0;
+        Data = Array.Empty<byte>();
+        size = 0;
+        offset = 0;
     }
     /// <summary>
     /// Initialize a new expandable buffer with the given capacity
     /// </summary>
     public Buffer(long capacity)
     {
-        _data = new byte[capacity];
-        _size = 0;
-        _offset = 0;
+        Data = new byte[capacity];
+        size = 0;
+        offset = 0;
     }
     /// <summary>
     /// Initialize a new expandable buffer with the given data
     /// </summary>
     public Buffer(byte[] data)
     {
-        _data = data;
-        _size = data.Length;
-        _offset = 0;
+        Data = data;
+        size = data.Length;
+        offset = 0;
     }
 
-#region Memory buffer methods
+    #region Memory buffer methods
     /// <summary>
     /// Get a span of bytes from the current buffer
     /// </summary>
     public Span<byte> AsSpan()
     {
-        return new Span<byte>(_data, (int)_offset, (int)_size);
+        return new Span<byte>(Data, (int)offset, (int)size);
     }
 
     /// <summary>
@@ -99,46 +95,46 @@ public class Buffer
     /// </summary>
     public override string ToString()
     {
-        return ExtractString(0, _size);
+        return ExtractString(0, size);
     }
 
     // Clear the current buffer and its offset
     public void Clear()
     {
-        _size = 0;
-        _offset = 0;
+        size = 0;
+        offset = 0;
     }
 
     /// <summary>
     /// Extract the string from buffer of the given offset and size
     /// </summary>
-    public string ExtractString(long offset, long size)
+    public string ExtractString(long off, long sz)
     {
-        Debug.Assert(((offset + size) <= Size), "Invalid offset & size!");
-        if ((offset + size) > Size)
-            throw new ArgumentException("Invalid offset & size!", nameof(offset));
+        Debug.Assert(off + sz <= Size, "Invalid offset & size!");
+        if (off + sz > Size)
+            throw new ArgumentException("Invalid offset & size!", nameof(off));
 
-        return Encoding.UTF8.GetString(_data, (int)offset, (int)size);
+        return Encoding.UTF8.GetString(Data, (int)off, (int)sz);
     }
 
     /// <summary>
     /// Remove the buffer of the given offset and size
     /// </summary>
-    public void Remove(long offset, long size)
+    public void Remove(long off, long sz)
     {
-        Debug.Assert(((offset + size) <= Size), "Invalid offset & size!");
-        if ((offset + size) > Size)
-            throw new ArgumentException("Invalid offset & size!", nameof(offset));
+        Debug.Assert(off + sz <= Size, "Invalid offset & size!");
+        if (off + sz > Size)
+            throw new ArgumentException("Invalid offset & size!", nameof(off));
 
-        Array.Copy(_data, offset + size, _data, offset, _size - size - offset);
-        _size -= size;
-        if (_offset >= (offset + size))
-            _offset -= size;
-        else if (_offset >= offset)
+        Array.Copy(Data, off + sz, Data, off, size - sz - off);
+        size -= sz;
+        if (offset >= off + sz)
+            offset -= sz;
+        else if (offset >= off)
         {
-            _offset -= _offset - offset;
-            if (_offset > Size)
-                _offset = Size;
+            offset -= offset - off;
+            if (offset > Size)
+                offset = Size;
         }
     }
 
@@ -147,40 +143,38 @@ public class Buffer
     /// </summary>
     public void Reserve(long capacity)
     {
-        Debug.Assert((capacity >= 0), "Invalid reserve capacity!");
-        if (capacity < 0)
-            throw new ArgumentException("Invalid reserve capacity!", nameof(capacity));
+        Debug.Assert(capacity >= 0, "Invalid reserve capacity!");
 
-        if (capacity > Capacity)
-        {
-            var data = new byte[Math.Max(capacity, 2 * Capacity)];
-            Array.Copy(_data, 0, data, 0, _size);
-            _data = data;
-        }
+        if (capacity <= Capacity)
+            return;
+
+        var data = new byte[Math.Max(capacity, 2 * Capacity)];
+        Array.Copy(Data, 0, data, 0, size);
+        Data = data;
     }
 
     // Resize the current buffer
-    public void Resize(long size)
+    public void Resize(long sz)
     {
-        Reserve(size);
-        _size = size;
-        if (_offset > _size)
-            _offset = _size;
+        Reserve(sz);
+        size = sz;
+        if (offset > size)
+            offset = size;
     }
 
     // Shift the current buffer offset
-    public void Shift(long offset)
+    public void Shift(long off)
     {
-        _offset += offset;
+        offset += off;
     }
     // Unshift the current buffer offset
-    public void Unshift(long offset)
+    public void Unshift(long off)
     {
-        _offset -= offset;
+        offset -= off;
     }
-#endregion
+    #endregion
 
-#region Buffer I/O methods
+    #region Buffer I/O methods
     /// <summary>
     /// Append the single byte
     /// </summary>
@@ -188,9 +182,9 @@ public class Buffer
     /// <returns>Count of append bytes</returns>
     public long Append(byte value)
     {
-        Reserve(_size + 1);
-        _data[_size] = value;
-        _size += 1;
+        Reserve(size + 1);
+        Data[size] = value;
+        size += 1;
         return 1;
     }
 
@@ -201,9 +195,9 @@ public class Buffer
     /// <returns>Count of append bytes</returns>
     public long Append(byte[] buffer)
     {
-        Reserve(_size + buffer.Length);
-        Array.Copy(buffer, 0, _data, _size, buffer.Length);
-        _size += buffer.Length;
+        Reserve(size + buffer.Length);
+        Array.Copy(buffer, 0, Data, size, buffer.Length);
+        size += buffer.Length;
         return buffer.Length;
     }
 
@@ -211,15 +205,15 @@ public class Buffer
     /// Append the given buffer fragment
     /// </summary>
     /// <param name="buffer">Buffer to append</param>
-    /// <param name="offset">Buffer offset</param>
-    /// <param name="size">Buffer size</param>
+    /// <param name="off">Buffer offset</param>
+    /// <param name="sz">Buffer size</param>
     /// <returns>Count of append bytes</returns>
-    public long Append(byte[] buffer, long offset, long size)
+    public long Append(byte[] buffer, long off, long sz)
     {
-        Reserve(_size + size);
-        Array.Copy(buffer, offset, _data, _size, size);
-        _size += size;
-        return size;
+        Reserve(size + sz);
+        Array.Copy(buffer, off, Data, size, sz);
+        size += sz;
+        return sz;
     }
 
     /// <summary>
@@ -229,9 +223,9 @@ public class Buffer
     /// <returns>Count of append bytes</returns>
     public long Append(ReadOnlySpan<byte> buffer)
     {
-        Reserve(_size + buffer.Length);
-        buffer.CopyTo(new Span<byte>(_data, (int)_size, buffer.Length));
-        _size += buffer.Length;
+        Reserve(size + buffer.Length);
+        buffer.CopyTo(new Span<byte>(Data, (int)size, buffer.Length));
+        size += buffer.Length;
         return buffer.Length;
     }
 
@@ -253,9 +247,9 @@ public class Buffer
     public long Append(string text)
     {
         var length = Encoding.UTF8.GetMaxByteCount(text.Length);
-        Reserve(_size + length);
-        long result = Encoding.UTF8.GetBytes(text, 0, text.Length, _data, (int)_size);
-        _size += result;
+        Reserve(size + length);
+        long result = Encoding.UTF8.GetBytes(text, 0, text.Length, Data, (int)size);
+        size += result;
         return result;
     }
 
@@ -267,10 +261,10 @@ public class Buffer
     public long Append(ReadOnlySpan<char> text)
     {
         var length = Encoding.UTF8.GetMaxByteCount(text.Length);
-        Reserve(_size + length);
-        long result = Encoding.UTF8.GetBytes(text, new Span<byte>(_data, (int)_size, length));
-        _size += result;
+        Reserve(size + length);
+        long result = Encoding.UTF8.GetBytes(text, new Span<byte>(Data, (int)size, length));
+        size += result;
         return result;
     }
-#endregion
+    #endregion
 }

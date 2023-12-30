@@ -48,102 +48,56 @@ internal class TcpSession : IDisposable
     /// <summary>
     /// Session Id
     /// </summary>
-    public Guid Id
-    {
-        get;
-    }
+    public Guid Id { get; }
 
     /// <summary>
     /// Server
     /// </summary>
-    public TcpServer Server
-    {
-        get;
-    }
+    public TcpServer Server { get; }
     /// <summary>
     /// Socket
     /// </summary>
-    public Socket Socket
-    {
-        get;
-        private set;
-    }
+    public Socket Socket { get; private set; }
 
     /// <summary>
     /// Number of bytes pending sent by the session
     /// </summary>
-    public long BytesPending
-    {
-        get;
-        private set;
-    }
+    public long BytesPending { get; private set; }
     /// <summary>
     /// Number of bytes sending by the session
     /// </summary>
-    public long BytesSending
-    {
-        get;
-        private set;
-    }
+    public long BytesSending { get; private set; }
     /// <summary>
     /// Number of bytes sent by the session
     /// </summary>
-    public long BytesSent
-    {
-        get;
-        private set;
-    }
+    public long BytesSent { get; private set; }
     /// <summary>
     /// Number of bytes received by the session
     /// </summary>
-    public long BytesReceived
-    {
-        get;
-        private set;
-    }
+    public long BytesReceived { get; private set; }
 
     /// <summary>
     /// Option: receive buffer limit
     /// </summary>
-    public int OptionReceiveBufferLimit
-    {
-        get;
-        set;
-    } = 0;
+    public int OptionReceiveBufferLimit { get; set; } = 0;
     /// <summary>
     /// Option: receive buffer size
     /// </summary>
-    public int OptionReceiveBufferSize
-    {
-        get;
-        set;
-    } = 8192;
+    public int OptionReceiveBufferSize { get; set; }
     /// <summary>
     /// Option: send buffer limit
     /// </summary>
-    public int OptionSendBufferLimit
-    {
-        get;
-        set;
-    } = 0;
+    public int OptionSendBufferLimit { get; set; } = 0;
     /// <summary>
     /// Option: send buffer size
     /// </summary>
-    public int OptionSendBufferSize
-    {
-        get;
-        set;
-    } = 8192;
+    public int OptionSendBufferSize { get; set; }
 
-#region Connect/Disconnect session
+    #region Connect/Disconnect session
     /// <summary>
     /// Is the session connected?
     /// </summary>
-    public bool IsConnected
-    {
-        get;
-        private set;
-    }
+    public bool IsConnected { get; private set; }
 
     /// <summary>
     /// Connect the session
@@ -157,36 +111,45 @@ internal class TcpSession : IDisposable
         IsSocketDisposed = false;
 
         // Setup buffers
-        _receiveBuffer = new Buffer();
-        _sendBufferMain = new Buffer();
-        _sendBufferFlush = new Buffer();
+        receiveBuffer = new Buffer();
+        sendBufferMain = new Buffer();
+        sendBufferFlush = new Buffer();
 
         // Setup event args
-        _receiveEventArg = new SocketAsyncEventArgs();
-        _receiveEventArg.Completed += OnAsyncCompleted;
-        _sendEventArg = new SocketAsyncEventArgs();
-        _sendEventArg.Completed += OnAsyncCompleted;
+        receiveEventArg = new SocketAsyncEventArgs();
+        receiveEventArg.Completed += OnAsyncCompleted;
+        sendEventArg = new SocketAsyncEventArgs();
+        sendEventArg.Completed += OnAsyncCompleted;
 
         // Apply the option: keep alive
         if (Server.OptionKeepAlive)
             Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
         if (Server.OptionTcpKeepAliveTime >= 0)
+        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime,
                 Server.OptionTcpKeepAliveTime);
+        }
+
         if (Server.OptionTcpKeepAliveInterval >= 0)
+        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval,
                 Server.OptionTcpKeepAliveInterval);
+        }
+
         if (Server.OptionTcpKeepAliveRetryCount >= 0)
+        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount,
                 Server.OptionTcpKeepAliveRetryCount);
+        }
+
         // Apply the option: no delay
         if (Server.OptionNoDelay)
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
 
         // Prepare receive & send buffers
-        _receiveBuffer.Reserve(OptionReceiveBufferSize);
-        _sendBufferMain.Reserve(OptionSendBufferSize);
-        _sendBufferFlush.Reserve(OptionSendBufferSize);
+        receiveBuffer.Reserve(OptionReceiveBufferSize);
+        sendBufferMain.Reserve(OptionSendBufferSize);
+        sendBufferFlush.Reserve(OptionSendBufferSize);
 
         // Reset statistic
         BytesPending = 0;
@@ -217,7 +180,7 @@ internal class TcpSession : IDisposable
         Server.OnConnectedInternal(this);
 
         // Call the empty send buffer handler
-        if (_sendBufferMain.IsEmpty)
+        if (sendBufferMain.IsEmpty)
             OnEmpty();
     }
 
@@ -231,8 +194,8 @@ internal class TcpSession : IDisposable
             return false;
 
         // Reset event args
-        _receiveEventArg.Completed -= OnAsyncCompleted;
-        _sendEventArg.Completed -= OnAsyncCompleted;
+        receiveEventArg.Completed -= OnAsyncCompleted;
+        sendEventArg.Completed -= OnAsyncCompleted;
 
         // Call the session disconnecting handler
         OnDisconnecting();
@@ -258,8 +221,8 @@ internal class TcpSession : IDisposable
             Socket.Dispose();
 
             // Dispose event arguments
-            _receiveEventArg.Dispose();
-            _sendEventArg.Dispose();
+            receiveEventArg.Dispose();
+            sendEventArg.Dispose();
 
             // Update the session socket disposed flag
             IsSocketDisposed = true;
@@ -272,8 +235,8 @@ internal class TcpSession : IDisposable
         IsConnected = false;
 
         // Update sending/receiving flags
-        _receiving = false;
-        _sending = false;
+        receiving = false;
+        sending = false;
 
         // Clear send/receive buffers
         ClearBuffers();
@@ -289,27 +252,27 @@ internal class TcpSession : IDisposable
 
         return true;
     }
-#endregion
+    #endregion
 
-#region Send/Recieve data
+    #region Send/Recieve data
     // Receive buffer
-    private bool _receiving;
-    private Buffer _receiveBuffer;
-    private SocketAsyncEventArgs _receiveEventArg;
+    private bool receiving;
+    private Buffer receiveBuffer;
+    private SocketAsyncEventArgs receiveEventArg;
     // Send buffer
-    private readonly object _sendLock = new object();
-    private bool _sending;
-    private Buffer _sendBufferMain;
-    private Buffer _sendBufferFlush;
-    private SocketAsyncEventArgs _sendEventArg;
-    private long _sendBufferFlushOffset;
+    private readonly object sendLock = new();
+    private bool sending;
+    private Buffer sendBufferMain;
+    private Buffer sendBufferFlush;
+    private SocketAsyncEventArgs sendEventArg;
+    private long sendBufferFlushOffset;
 
     /// <summary>
     /// Send data to the client (synchronous)
     /// </summary>
     /// <param name="buffer">Buffer to send</param>
     /// <returns>Size of sent data</returns>
-    public virtual long Send(byte[] buffer)
+    protected virtual long Send(byte[] buffer)
     {
         return Send(buffer.AsSpan());
     }
@@ -331,7 +294,7 @@ internal class TcpSession : IDisposable
     /// </summary>
     /// <param name="buffer">Buffer to send as a span of bytes</param>
     /// <returns>Size of sent data</returns>
-    public virtual long Send(ReadOnlySpan<byte> buffer)
+    protected virtual long Send(ReadOnlySpan<byte> buffer)
     {
         if (!IsConnected)
             return 0;
@@ -345,7 +308,7 @@ internal class TcpSession : IDisposable
         {
             // Update statistic
             BytesSent += sent;
-            Interlocked.Add(ref Server._bytesSent, sent);
+            Interlocked.Add(ref Server.bytesSent, sent);
 
             // Call the buffer sent handler
             OnSent(sent, BytesPending + BytesSending);
@@ -386,7 +349,7 @@ internal class TcpSession : IDisposable
     /// </summary>
     /// <param name="buffer">Buffer to send</param>
     /// <returns>'true' if the data was successfully sent, 'false' if the session is not connected</returns>
-    public virtual bool SendAsync(byte[] buffer)
+    protected virtual bool SendAsync(byte[] buffer)
     {
         return SendAsync(buffer.AsSpan());
     }
@@ -416,27 +379,27 @@ internal class TcpSession : IDisposable
         if (buffer.IsEmpty)
             return true;
 
-        lock (_sendLock)
+        lock (sendLock)
         {
             // Check the send buffer limit
-            if (((_sendBufferMain.Size + buffer.Length) > OptionSendBufferLimit) &&
-                (OptionSendBufferLimit > 0))
+            if (sendBufferMain.Size + buffer.Length > OptionSendBufferLimit &&
+                OptionSendBufferLimit > 0)
             {
                 SendError(SocketError.NoBufferSpaceAvailable);
                 return false;
             }
 
             // Fill the main send buffer
-            _sendBufferMain.Append(buffer);
+            sendBufferMain.Append(buffer);
 
             // Update statistic
-            BytesPending = _sendBufferMain.Size;
+            BytesPending = sendBufferMain.Size;
 
             // Avoid multiple send handlers
-            if (_sending)
+            if (sending)
                 return true;
             else
-                _sending = true;
+                sending = true;
 
             // Try to send the main buffer
             TrySend();
@@ -470,7 +433,7 @@ internal class TcpSession : IDisposable
     /// </summary>
     /// <param name="buffer">Buffer to receive</param>
     /// <returns>Size of received data</returns>
-    public virtual long Receive(byte[] buffer)
+    protected virtual long Receive(byte[] buffer)
     {
         return Receive(buffer, 0, buffer.Length);
     }
@@ -482,7 +445,7 @@ internal class TcpSession : IDisposable
     /// <param name="offset">Buffer offset</param>
     /// <param name="size">Buffer size</param>
     /// <returns>Size of received data</returns>
-    public virtual long Receive(byte[] buffer, long offset, long size)
+    protected virtual long Receive(byte[] buffer, long offset, long size)
     {
         if (!IsConnected)
             return 0;
@@ -496,7 +459,7 @@ internal class TcpSession : IDisposable
         {
             // Update statistic
             BytesReceived += received;
-            Interlocked.Add(ref Server._bytesReceived, received);
+            Interlocked.Add(ref Server.bytesReceived, received);
 
             // Call the buffer received handler
             OnReceived(buffer, 0, received);
@@ -538,7 +501,7 @@ internal class TcpSession : IDisposable
     /// </summary>
     private void TryReceive()
     {
-        if (_receiving)
+        if (receiving)
             return;
 
         if (!IsConnected)
@@ -553,10 +516,10 @@ internal class TcpSession : IDisposable
             try
             {
                 // Async receive with the receive handler
-                _receiving = true;
-                _receiveEventArg.SetBuffer(_receiveBuffer.Data, 0, (int)_receiveBuffer.Capacity);
-                if (!Socket.ReceiveAsync(_receiveEventArg))
-                    process = ProcessReceive(_receiveEventArg);
+                receiving = true;
+                receiveEventArg.SetBuffer(receiveBuffer.Data, 0, (int)receiveBuffer.Capacity);
+                if (!Socket.ReceiveAsync(receiveEventArg))
+                    process = ProcessReceive(receiveEventArg);
             }
             catch (ObjectDisposedException)
             {
@@ -579,27 +542,27 @@ internal class TcpSession : IDisposable
         {
             process = false;
 
-            lock (_sendLock)
+            lock (sendLock)
             {
                 // Is previous socket send in progress?
-                if (_sendBufferFlush.IsEmpty)
+                if (sendBufferFlush.IsEmpty)
                 {
                     // Swap flush and main buffers
-                    _sendBufferFlush = Interlocked.Exchange(ref _sendBufferMain, _sendBufferFlush);
-                    _sendBufferFlushOffset = 0;
+                    sendBufferFlush = Interlocked.Exchange(ref sendBufferMain, sendBufferFlush);
+                    sendBufferFlushOffset = 0;
 
                     // Update statistic
                     BytesPending = 0;
-                    BytesSending += _sendBufferFlush.Size;
+                    BytesSending += sendBufferFlush.Size;
 
                     // Check if the flush buffer is empty
-                    if (_sendBufferFlush.IsEmpty)
+                    if (sendBufferFlush.IsEmpty)
                     {
                         // Need to call empty send buffer handler
                         empty = true;
 
                         // End sending process
-                        _sending = false;
+                        sending = false;
                     }
                 }
                 else
@@ -616,10 +579,10 @@ internal class TcpSession : IDisposable
             try
             {
                 // Async write with the write handler
-                _sendEventArg.SetBuffer(_sendBufferFlush.Data, (int)_sendBufferFlushOffset,
-                    (int)(_sendBufferFlush.Size - _sendBufferFlushOffset));
-                if (!Socket.SendAsync(_sendEventArg))
-                    process = ProcessSend(_sendEventArg);
+                sendEventArg.SetBuffer(sendBufferFlush.Data, (int)sendBufferFlushOffset,
+                    (int)(sendBufferFlush.Size - sendBufferFlushOffset));
+                if (!Socket.SendAsync(sendEventArg))
+                    process = ProcessSend(sendEventArg);
             }
             catch (ObjectDisposedException)
             {
@@ -632,21 +595,21 @@ internal class TcpSession : IDisposable
     /// </summary>
     private void ClearBuffers()
     {
-        lock (_sendLock)
+        lock (sendLock)
         {
             // Clear send buffers
-            _sendBufferMain.Clear();
-            _sendBufferFlush.Clear();
-            _sendBufferFlushOffset = 0;
+            sendBufferMain.Clear();
+            sendBufferFlush.Clear();
+            sendBufferFlushOffset = 0;
 
             // Update statistic
             BytesPending = 0;
             BytesSending = 0;
         }
     }
-#endregion
+    #endregion
 
-#region IO processing
+    #region IO processing
     /// <summary>
     /// This method is called whenever a receive or send operation is completed on a socket
     /// </summary>
@@ -691,27 +654,27 @@ internal class TcpSession : IDisposable
             // Update statistic
             BytesReceived += size;
 
-            Interlocked.Add(ref Server._bytesReceived, size);
+            Interlocked.Add(ref Server.bytesReceived, size);
 
             // Call the buffer received handler
-            OnReceived(_receiveBuffer.Data, 0, size);
+            OnReceived(receiveBuffer.Data, 0, size);
 
             // If the receive buffer is full increase its size
-            if (_receiveBuffer.Capacity == size)
+            if (receiveBuffer.Capacity == size)
             {
                 // Check the receive buffer limit
-                if (((2 * size) > OptionReceiveBufferLimit) && (OptionReceiveBufferLimit > 0))
+                if (2 * size > OptionReceiveBufferLimit && OptionReceiveBufferLimit > 0)
                 {
                     SendError(SocketError.NoBufferSpaceAvailable);
                     Disconnect();
                     return false;
                 }
 
-                _receiveBuffer.Reserve(2 * size);
+                receiveBuffer.Reserve(2 * size);
             }
         }
 
-        _receiving = false;
+        receiving = false;
 
         // Try to receive again if the session is valid
         if (e.SocketError == SocketError.Success)
@@ -747,17 +710,17 @@ internal class TcpSession : IDisposable
             // Update statistic
             BytesSending -= size;
             BytesSent += size;
-            Interlocked.Add(ref Server._bytesSent, size);
+            Interlocked.Add(ref Server.bytesSent, size);
 
             // Increase the flush buffer offset
-            _sendBufferFlushOffset += size;
+            sendBufferFlushOffset += size;
 
             // Successfully send the whole flush buffer
-            if (_sendBufferFlushOffset == _sendBufferFlush.Size)
+            if (sendBufferFlushOffset == sendBufferFlush.Size)
             {
                 // Clear the flush buffer
-                _sendBufferFlush.Clear();
-                _sendBufferFlushOffset = 0;
+                sendBufferFlush.Clear();
+                sendBufferFlushOffset = 0;
             }
 
             // Call the buffer sent handler
@@ -774,9 +737,9 @@ internal class TcpSession : IDisposable
             return false;
         }
     }
-#endregion
+    #endregion
 
-#region Session handlers
+    #region Session handlers
     /// <summary>
     /// Handle client connecting notification
     /// </summary>
@@ -845,9 +808,9 @@ internal class TcpSession : IDisposable
     protected virtual void OnError(SocketError error)
     {
     }
-#endregion
+    #endregion
 
-#region Error handling
+    #region Error handling
     /// <summary>
     /// Send error notification
     /// </summary>
@@ -855,35 +818,27 @@ internal class TcpSession : IDisposable
     private void SendError(SocketError error)
     {
         // Skip disconnect errors
-        if ((error == SocketError.ConnectionAborted) ||
-            (error == SocketError.ConnectionRefused) ||
-            (error == SocketError.ConnectionReset) ||
-            (error == SocketError.OperationAborted) ||
-            (error == SocketError.Shutdown))
+        if (error == SocketError.ConnectionAborted ||
+            error == SocketError.ConnectionRefused ||
+            error == SocketError.ConnectionReset ||
+            error == SocketError.OperationAborted ||
+            error == SocketError.Shutdown)
             return;
 
         OnError(error);
     }
-#endregion
+    #endregion
 
-#region IDisposable implementation
+    #region IDisposable implementation
     /// <summary>
     /// Disposed flag
     /// </summary>
-    public bool IsDisposed
-    {
-        get;
-        private set;
-    }
+    public bool IsDisposed { get; private set; }
 
     /// <summary>
     /// Session socket disposed flag
     /// </summary>
-    public bool IsSocketDisposed
-    {
-        get;
-        private set;
-    } = true;
+    public bool IsSocketDisposed { get; private set; } = true;
 
     // Implement IDisposable.
     public void Dispose()
@@ -922,5 +877,5 @@ internal class TcpSession : IDisposable
             IsDisposed = true;
         }
     }
-#endregion
+    #endregion
 }
