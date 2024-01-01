@@ -1,4 +1,4 @@
-namespace Pure.Examples.ExamplesGames;
+namespace Pure.Examples.ExampleApplications;
 
 using Engine.Animation;
 using Engine.UserInterface;
@@ -13,7 +13,7 @@ public static class Ludo
         { Team.Blue, Color.Blue },
         { Team.Red, Color.Red },
         { Team.Yellow, Color.Yellow },
-        { Team.Green, Color.Green },
+        { Team.Green, Color.Green }
     };
     private static Dictionary<(int x, int y), Corner> Corners { get; } = new();
     private static Dictionary<Team, Corner> CornersStart { get; } = new();
@@ -117,7 +117,7 @@ public static class Ludo
                 Tile.GAME_DICE_1, Tile.GAME_DICE_6, Tile.SHAPE_SQUARE, Tile.GAME_CARD_DIAMOND)
             {
                 Duration = 1.5f,
-                IsRepeating = true
+                IsLooping = true
             };
         private readonly (int x, int y) position;
 
@@ -319,9 +319,9 @@ public static class Ludo
                     break;
                 }
 
-            var tile = hasPawn ?
-                (Tile.SHAPE_SQUARE, (uint)Color.White, (sbyte)0, false, false) :
-                (Tile.ARROW, (uint)TeamColors[kvp.Key], (sbyte)i, false, false);
+            var tile = hasPawn
+                ? (Tile.SHAPE_SQUARE, (uint)Color.White, (sbyte)0, false, false)
+                : (Tile.ARROW, (uint)TeamColors[kvp.Key], (sbyte)i, false, false);
             map.SetTile(kvp.Value.position, tile);
             i++;
         }

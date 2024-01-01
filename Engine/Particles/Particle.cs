@@ -8,36 +8,20 @@ public class Particle
     /// <summary>
     /// Gets or sets the position of the particle.
     /// </summary>
-    public (float x, float y) Position
-    {
-        get;
-        set;
-    }
+    public (float x, float y) Position { get; set; }
     /// <summary>
     /// Gets or sets the movement (angle and speed) of the particle.
     /// </summary>
-    public (float angle, float speed) Movement
-    {
-        get;
-        set;
-    }
+    public (float angle, float speed) Movement { get; set; }
 
     /// <summary>
     /// Gets or sets the age of the particle, in seconds.
     /// </summary>
-    public float Age
-    {
-        get;
-        set;
-    } = 1;
+    public float Age { get; set; }
     /// <summary>
     /// Gets or sets the color of the particle.
     /// </summary>
-    public uint Color
-    {
-        get;
-        set;
-    } = uint.MaxValue;
+    public uint Color { get; set; }
 
     /// <summary>
     /// Initializes a new particle instance with the specified position, 
@@ -62,7 +46,7 @@ public class Particle
 
     /// <returns>
     /// A point bundle tuple containing the position and color of the particle.</returns>
-    public (float x, float y, uint color) ToPointBundle()
+    public (float x, float y, uint color) ToBundlePoint()
     {
         return this;
     }

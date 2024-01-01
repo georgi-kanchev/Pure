@@ -17,18 +17,18 @@ public static class Collision
         var background = new Tilemap(tilemap.Size);
 
         var collisionMap = new SolidMap();
-        collisionMap.AddSolids(Tile.ICON_WAVE, new Rectangle((0.5f, 1), (0, 0), Color.Yellow)); // lake
-        collisionMap.AddSolids(Tile.ICON_WAVES, new Rectangle((1, 0.5f), (0, 0), Color.Yellow)); // lake
-        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE, new Rectangle((1, 1))); // house roof
-        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE_RIGHT, new Rectangle((1, 1))); // house wall
-        collisionMap.AddSolids(Tile.UPPERCASE_I, new Rectangle((1, 1))); // tree trunk
-        collisionMap.AddSolids(Tile.PATTERN_33, new Rectangle((1, 1))); // tree top
+        collisionMap.AddSolids(Tile.ICON_WAVE, new Solid((0.5f, 1), (0, 0), Color.Yellow)); // lake
+        collisionMap.AddSolids(Tile.ICON_WAVES, new Solid((1, 0.5f), (0, 0), Color.Yellow)); // lake
+        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE, new Solid((1, 1))); // house roof
+        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE_RIGHT, new Solid((1, 1))); // house wall
+        collisionMap.AddSolids(Tile.UPPERCASE_I, new Solid((1, 1))); // tree trunk
+        collisionMap.AddSolids(Tile.PATTERN_33, new Solid((1, 1))); // tree top
 
         // icon tiles are 7x7, not 8x8, cut one row & column,
         // hitbox and tile on screen might mismatch since the tile is pixel perfect
         // and the hitbox is not
         const float SCALE = 1f - 1f / 8f;
-        var hitbox = new Hitbox((0, 0), (SCALE, SCALE), new Rectangle((1f, 1f)));
+        var hitbox = new SolidPack((0, 0), (SCALE, SCALE), new Solid((1f, 1f)));
         var layer = new Layer(tilemap.Size);
 
         tilemap.FillWithRandomGrass();
@@ -48,7 +48,7 @@ public static class Collision
         {
             var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
             var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
-            collisionMap.AddIgnoredCells(new Rectangle((3, 3), (mx - 1, my - 1)));
+            collisionMap.AddIgnoredCells(new Solid((3, 3), (mx - 1, my - 1)));
         });
         Keyboard.OnKeyPress(Keyboard.Key.S, _ => collisionMap.ClearIgnoredCells());
 

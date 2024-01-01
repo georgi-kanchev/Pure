@@ -3,7 +3,7 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 
-public class Hitbox
+public class SolidPack
 {
     public (float x, float y) Position { get; set; }
     public (float width, float height) Scale { get; set; }
@@ -12,13 +12,13 @@ public class Hitbox
         get => data.Count;
     }
 
-    public Rectangle this[int index]
+    public Solid this[int index]
     {
         get => LocalToGlobalRectangle(data[index]);
         set => data[index] = value;
     }
 
-    public Hitbox(byte[] bytes) : this((0, 0), (0, 0))
+    public SolidPack(byte[] bytes) : this((0, 0), (0, 0))
     {
         var b = Decompress(bytes);
         var offset = 0;
@@ -36,7 +36,7 @@ public class Hitbox
             var h = BitConverter.ToSingle(Get<float>());
             var color = BitConverter.ToUInt32(Get<uint>());
 
-            SolidsAdd(new Rectangle((w, h), (x, y), color));
+            SolidsAdd(new Solid((w, h), (x, y), color));
         }
 
         return;
@@ -46,17 +46,17 @@ public class Hitbox
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
         }
     }
-    public Hitbox((float x, float y) position, (float width, float height) scale = default)
+    public SolidPack((float x, float y) position, (float width, float height) scale = default)
     {
         scale = scale == default ? (1f, 1f) : scale;
 
         Position = position;
         Scale = scale;
     }
-    public Hitbox(
+    public SolidPack(
         (float x, float y) position,
         (float width, float height) scale = default,
-        params Rectangle[] solids)
+        params Solid[] solids)
         : this(position, scale)
     {
         SolidsAdd(solids);
@@ -89,7 +89,7 @@ public class Hitbox
         return Compress(result.ToArray());
     }
 
-    public void SolidsAdd(params Rectangle[]? solids)
+    public void SolidsAdd(params Solid[]? solids)
     {
         if (solids == null || solids.Length == 0)
             return;
@@ -97,18 +97,18 @@ public class Hitbox
         data.AddRange(solids);
     }
 
-    public bool IsOverlapping(Hitbox hitbox)
+    public bool IsOverlapping(SolidPack solidPack)
     {
         for (var i = 0; i < SolidsCount; i++)
-            if (hitbox.IsOverlapping(this[i]))
+            if (solidPack.IsOverlapping(this[i]))
                 return true;
 
         return false;
     }
-    public bool IsOverlapping(Rectangle rectangle)
+    public bool IsOverlapping(Solid solid)
     {
         for (var i = 0; i < SolidsCount; i++)
-            if (this[i].IsOverlapping(rectangle))
+            if (this[i].IsOverlapping(solid))
                 return true;
 
         return false;
@@ -130,7 +130,7 @@ public class Hitbox
         return false;
     }
 
-    public Rectangle[] ToArray()
+    public Solid[] ToArray()
     {
         return this;
     }
@@ -139,34 +139,33 @@ public class Hitbox
         return this;
     }
 
-    public static implicit operator Hitbox(Rectangle[] solids)
+    public static implicit operator SolidPack(Solid[] solids)
     {
         return new(default, default, solids);
     }
-    public static implicit operator Rectangle[](Hitbox hitbox)
+    public static implicit operator Solid[](SolidPack solidPack)
     {
-        return hitbox.data.ToArray();
+        return solidPack.data.ToArray();
     }
     public static implicit operator (float x, float y, float width, float height, uint color)[]
-        (Hitbox hitbox)
+        (SolidPack solidPack)
     {
         var result =
-            new (float x, float y, float width, float height, uint color)[hitbox.data.Count];
+            new (float x, float y, float width, float height, uint color)[solidPack.data.Count];
         for (var i = 0; i < result.Length; i++)
-            result[i] = hitbox[i];
+            result[i] = solidPack[i];
         return result;
     }
-    public static implicit operator Hitbox(
+    public static implicit operator SolidPack(
         (float x, float y, float width, float height, uint color)[] solids)
     {
-        var result = new Rectangle[solids.Length];
+        var result = new Solid[solids.Length];
         for (var i = 0; i < result.Length; i++)
             result[i] = solids[i];
         return result;
     }
 
     #region Backend
-
     // save format in sectors
     // [amount of bytes]	- data
     // --------------------------------
@@ -190,15 +189,12 @@ public class Hitbox
     // = = = = = = (sector 3)
     // ... up to sector [count]
 
-    private readonly List<Rectangle> data = new();
+    private readonly List<Solid> data = new();
 
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal)) stream.Write(data, 0, data.Length);
 
         return output.ToArray();
     }
@@ -206,10 +202,7 @@ public class Hitbox
     {
         var input = new MemoryStream(data);
         var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress)) stream.CopyTo(output);
 
         return output.ToArray();
     }
@@ -220,7 +213,7 @@ public class Hitbox
         return result;
     }
 
-    private Rectangle LocalToGlobalRectangle(Rectangle localRect)
+    private Solid LocalToGlobalRectangle(Solid localRect)
     {
         var (x, y) = localRect.Position;
         var (w, h) = localRect.Size;
@@ -228,6 +221,5 @@ public class Hitbox
         localRect.Size = (w * Scale.width, h * Scale.height);
         return localRect;
     }
-
     #endregion
 }

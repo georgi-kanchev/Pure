@@ -15,9 +15,8 @@ public class AnimationPack<TKey, T>
     /// </summary>
     public TKey[] Keys
     {
-        get;
-        private set;
-    } = Array.Empty<TKey>();
+        get => animations.Keys.ToArray();
+    }
 
     /// <summary>
     /// Gets or sets the animation at the specified index.
@@ -33,16 +32,10 @@ public class AnimationPack<TKey, T>
             if (value == null)
             {
                 animations.Remove(key);
-                keys.Remove(key);
-                Keys = keys.ToArray();
                 return;
             }
 
-            if (keys.Contains(key) == false)
-                keys.Add(key);
-
             animations[key] = value;
-            Keys = keys.ToArray();
         }
     }
 
@@ -56,8 +49,7 @@ public class AnimationPack<TKey, T>
             kvp.Value.Update(deltaTime);
     }
 
-#region Backend
+    #region Backend
     private readonly Dictionary<TKey, T> animations = new();
-    private readonly List<TKey> keys = new();
-#endregion
+    #endregion
 }

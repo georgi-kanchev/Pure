@@ -6,7 +6,7 @@ public static class Commands
 {
     public static void Run()
     {
-        var cmd = new Commander();
+        var cmd = new CommandPack();
 
         cmd.Add("log", () =>
         {

@@ -70,29 +70,29 @@ public struct Line
     ///     Checks if this line is crossing with any of the rectangles in the
     ///     specified hitbox.
     /// </summary>
-    /// <param name="hitbox">The hitbox to check for crossing.</param>
+    /// <param name="solidPack">The hitbox to check for crossing.</param>
     /// <returns>
     ///     True if this line is crossing with the specified hitbox,
     ///     otherwise false.
     /// </returns>
-    public bool IsCrossing(Hitbox hitbox)
+    public bool IsCrossing(SolidPack solidPack)
     {
-        for (var i = 0; i < hitbox.SolidsCount; i++)
-            if (IsCrossing(hitbox[i]))
+        for (var i = 0; i < solidPack.SolidsCount; i++)
+            if (IsCrossing(solidPack[i]))
                 return true;
 
         return false;
     }
-    /// <param name="rectangle">
+    /// <param name="solid">
     ///     The rectangle to check for crossing.
     /// </param>
     /// <returns>
     ///     True if this line is crossing with the specified
     ///     rectangle, otherwise false.
     /// </returns>
-    public bool IsCrossing(Rectangle rectangle)
+    public bool IsCrossing(Solid solid)
     {
-        return CrossPoints(rectangle).Length > 0;
+        return CrossPoints(solid).Length > 0;
     }
     /// <summary>
     /// Determines if this line is crossing another line.
@@ -156,7 +156,7 @@ public struct Line
         var sx = x0 < x1 ? 1 : -1;
         var sy = y0 < y1 ? 1 : -1;
         var err = dx + dy;
-        var rects = new List<Rectangle>();
+        var rects = new List<Solid>();
 
         for (var k = 0; k < MAX_ITERATIONS; k++)
         {
@@ -205,28 +205,28 @@ public struct Line
     /// Calculates all points of intersection between this line and the rectangles of the
     /// specified hitbox.
     /// </summary>
-    /// <param name="hitbox">The hitbox to calculate the intersection points with.</param>
+    /// <param name="solidPack">The hitbox to calculate the intersection points with.</param>
     /// <returns> An array of all points of intersection between this line and the specified hitbox.
     /// </returns>
-    public (float x, float y, uint color)[] CrossPoints(Hitbox hitbox)
+    public (float x, float y, uint color)[] CrossPoints(SolidPack solidPack)
     {
         var result = new List<(float, float, uint)>();
-        for (var i = 0; i < hitbox.SolidsCount; i++)
-            result.AddRange(CrossPoints(hitbox[i]));
+        for (var i = 0; i < solidPack.SolidsCount; i++)
+            result.AddRange(CrossPoints(solidPack[i]));
 
         return result.ToArray();
     }
-    /// <param name="rectangle">
+    /// <param name="solid">
     ///     The rectangle to calculate the intersection points with.
     /// </param>
     /// <returns>
     ///     An array of all points of intersection between this line and the specified
     ///     rectangle.
     /// </returns>
-    public (float x, float y, uint color)[] CrossPoints(Rectangle rectangle)
+    public (float x, float y, uint color)[] CrossPoints(Solid solid)
     {
-        var (x, y) = rectangle.Position;
-        var (w, h) = rectangle.Size;
+        var (x, y) = solid.Position;
+        var (w, h) = solid.Size;
         var tl = (x, y);
         var tr = (x + w, y);
         var br = (x + w, y + h);

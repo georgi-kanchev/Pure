@@ -1,4 +1,4 @@
-﻿namespace Pure.Examples.ExamplesSystems;
+﻿namespace Pure.Examples.ExampleApplications;
 
 using Engine.LocalAreaNetwork;
 

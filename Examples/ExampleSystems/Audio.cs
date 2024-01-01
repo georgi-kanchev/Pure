@@ -30,9 +30,13 @@ public static class Audio
 
         var track1 = new Notes(jingleBells, 0.2f, Wave.Square, (0.5f, 0.5f)) { Volume = 0.2f };
         var track2 = new Notes(titanic, 0.2f, Wave.Sine, (1f, 1f)) { Volume = 0.7f, Pitch = 1.2f };
-        var playlist = new Playlist();
+        var playlist = new AudioPack(isLooping: true);
         playlist.AddTrack(null, track1, track2);
         playlist.Play();
+        playlist.OnEnd(() => Console.WriteLine($"Playlist ended"));
+        playlist.OnEndAudioAny(audio => Console.WriteLine($"Any Index {audio.index} ended"));
+        playlist.OnEndAudioIndex(0, audio => Console.WriteLine($"Index {audio.index} ended"));
+        playlist.OnEndAudioIndex(1, audio => Console.WriteLine($"Index {audio.index} ended"));
 
         while (Window.KeepOpen())
         {

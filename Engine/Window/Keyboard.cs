@@ -123,11 +123,7 @@ public static class Keyboard
     /// <summary>
     /// Gets the text representation of the latest key typed by the user.
     /// </summary>
-    public static string KeyTyped
-    {
-        get;
-        internal set;
-    }
+    public static string KeyTyped { get; internal set; }
     /// <summary>
     /// Gets an array of currently pressed keys.
     /// </summary>
@@ -142,10 +138,10 @@ public static class Keyboard
     {
         get
         {
-            var pressed = KeysPressed;
-            var result = new int[pressed.Length];
-            for (var i = 0; i < pressed.Length; i++)
-                result[i] = (int)pressed[i];
+            var press = KeysPressed;
+            var result = new int[press.Length];
+            for (var i = 0; i < press.Length; i++)
+                result[i] = (int)press[i];
 
             return result;
         }
@@ -164,20 +160,30 @@ public static class Keyboard
         KeyTyped = "";
     }
 
+    public static void OnKeyPressAny(Action<string> method)
+    {
+        onKeyPressAny += method;
+    }
+    public static void OnKeyReleaseAny(Action method)
+    {
+        onKeyReleaseAny += method;
+    }
     public static void OnKeyPress(Key key, Action<string> method)
     {
-        if (pressedCallbacks.TryAdd(key, method) == false)
-            pressedCallbacks[key] += method;
+        if (onKeyPress.TryAdd(key, method) == false)
+            onKeyPress[key] += method;
     }
     public static void OnKeyRelease(Key key, Action method)
     {
-        if (releasedCallbacks.TryAdd(key, method) == false)
-            releasedCallbacks[key] += method;
+        if (onKeyRelease.TryAdd(key, method) == false)
+            onKeyRelease[key] += method;
     }
 
-#region Backend
-    private static readonly Dictionary<Key, Action<string>> pressedCallbacks = new();
-    private static readonly Dictionary<Key, Action> releasedCallbacks = new();
+    #region Backend
+    private static Action<string>? onKeyPressAny;
+    private static Action? onKeyReleaseAny;
+    private static readonly Dictionary<Key, Action<string>> onKeyPress = new();
+    private static readonly Dictionary<Key, Action> onKeyRelease = new();
     private static readonly List<Key> pressed;
     private static readonly Dictionary<Key, (string, string)> symbols;
     private static readonly string[] shiftNumbers;
@@ -242,8 +248,10 @@ public static class Keyboard
         if (KeyTyped.Contains(symbol) == false)
             KeyTyped += symbol;
 
-        if (pressedCallbacks.TryGetValue(key, out var callback))
+        if (onKeyPress.TryGetValue(key, out var callback))
             callback.Invoke(symbol);
+
+        onKeyPressAny?.Invoke(symbol);
     }
     internal static void OnKeyRelease(object? s, KeyEventArgs e)
     {
@@ -251,8 +259,10 @@ public static class Keyboard
 
         pressed.Remove(key);
 
-        if (releasedCallbacks.TryGetValue(key, out var callback))
+        if (onKeyRelease.TryGetValue(key, out var callback))
             callback.Invoke();
+
+        onKeyReleaseAny?.Invoke();
 
         if (pressed.Count == 0)
         {
@@ -264,9 +274,11 @@ public static class Keyboard
         // lowercase and uppercase, shift + 1 = !, so releasing shift would
         // never removes the !
         if (key is Key.ShiftLeft or Key.ShiftRight && KeyTyped != "")
+        {
             foreach (var k in pressed)
                 // get symbol as if shift was pressed
                 KeyTyped = KeyTyped.Replace(GetSymbol(k, true), "");
+        }
 
         if (KeyTyped.Length == 0)
             return;
@@ -278,5 +290,5 @@ public static class Keyboard
         KeyTyped = KeyTyped.Replace(symbol.ToLower(), "");
         KeyTyped = KeyTyped.Replace(symbol.ToUpper(), "");
     }
-#endregion
+    #endregion
 }

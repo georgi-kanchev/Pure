@@ -1,7 +1,4 @@
-﻿using Pure.Engine.Utilities;
-using Pure.Engine.Window;
-
-namespace Pure;
+﻿namespace Pure;
 
 using Examples.ExamplesUserInterface;
 
@@ -9,8 +6,10 @@ public static class Run
 {
     public static void Main()
     {
-        //Examples.ExamplesApplications.Pong.Run();
         //Examples.ExamplesApplications.FlappyBird.Run();
+        //Examples.ExampleApplications.Ludo.Run();
+        //Examples.ExamplesApplications.Pong.Run();
+        //Examples.ExampleApplications.Chat.Run();
 
         //Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
@@ -20,7 +19,7 @@ public static class Run
         //Examples.ExamplesSystems.DefaultGraphics.Run();
         //Examples.ExamplesSystems.Collision.Run();
         //Examples.ExamplesSystems.Pathfinding.Run();
-        Examples.ExamplesSystems.Chat.Run();
+        //Examples.ExamplesSystems.Audio.Run();
         //Examples.ExamplesSystems.UtilityExtensions.Run();
     }
 

@@ -11,11 +11,11 @@ public class SolidMap
         get => ignoredCells.Count;
     }
 
-    public Rectangle[] Solids
+    public Solid[] Solids
     {
         get
         {
-            var result = new List<Rectangle>();
+            var result = new List<Solid>();
             foreach (var kvp in tileIndices)
             {
                 if (ignoredCells.Contains(kvp.Key))
@@ -66,7 +66,7 @@ public class SolidMap
                 var h = BitConverter.ToSingle(Get<float>());
                 var color = BitConverter.ToUInt32(Get<uint>());
 
-                AddSolids(tileId, new Rectangle((w, h), (x, y), color));
+                AddSolids(tileId, new Solid((w, h), (x, y), color));
             }
         }
 
@@ -108,18 +108,18 @@ public class SolidMap
         return Compress(result.ToArray());
     }
 
-    public void AddSolids(int tileId, params Rectangle[]? solids)
+    public void AddSolids(int tileId, params Solid[]? solids)
     {
         if (solids == null || solids.Length == 0)
             return;
 
         if (cellRects.ContainsKey(tileId) == false)
-            cellRects[tileId] = new List<Rectangle>();
+            cellRects[tileId] = new List<Solid>();
 
         cellRects[tileId].AddRange(solids);
         CountSolids += solids.Length;
     }
-    public void RemoveSolids(int tileId, params Rectangle[]? solids)
+    public void RemoveSolids(int tileId, params Solid[]? solids)
     {
         if (solids == null || solids.Length == 0 || cellRects.ContainsKey(tileId) == false)
             return;
@@ -129,23 +129,23 @@ public class SolidMap
             if (rects.Remove(solid))
                 CountSolids--;
     }
-    public Rectangle[] SolidsAt((int x, int y) cell)
+    public Solid[] SolidsAt((int x, int y) cell)
     {
         if (tileIndices.ContainsKey(cell) == false || ignoredCells.Contains(cell))
-            return Array.Empty<Rectangle>();
+            return Array.Empty<Solid>();
 
         var id = tileIndices[cell];
         var rects = cellRects[id];
-        var result = new List<Rectangle>();
+        var result = new List<Solid>();
 
         foreach (var r in rects)
             result.Add(r);
 
         return result.ToArray();
     }
-    public Rectangle[] SolidsIn(int tileId)
+    public Solid[] SolidsIn(int tileId)
     {
-        return cellRects.ContainsKey(tileId) == false ? Array.Empty<Rectangle>() : cellRects[tileId].ToArray();
+        return cellRects.ContainsKey(tileId) == false ? Array.Empty<Solid>() : cellRects[tileId].ToArray();
     }
 
     public void ClearSolids()
@@ -171,7 +171,7 @@ public class SolidMap
             if (ignoredCells.Contains(cell) == false)
                 ignoredCells.Add(cell);
     }
-    public void AddIgnoredCells(params Rectangle[]? cellRegions)
+    public void AddIgnoredCells(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -202,7 +202,7 @@ public class SolidMap
         foreach (var t in cells)
             ignoredCells.Remove(t);
     }
-    public void RemoveIgnoredCells(params Rectangle[]? cellRegions)
+    public void RemoveIgnoredCells(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -225,7 +225,7 @@ public class SolidMap
                 }
         }
     }
-    public (int x, int y)[] IgnoredCellsIn(params Rectangle[]? cellRegions)
+    public (int x, int y)[] IgnoredCellsIn(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return Array.Empty<(int x, int y)>();
@@ -277,10 +277,10 @@ public class SolidMap
             }
     }
 
-    public bool IsOverlapping(Hitbox hitbox)
+    public bool IsOverlapping(SolidPack solidPack)
     {
-        for (var i = 0; i < hitbox.SolidsCount; i++)
-            if (IsOverlapping(hitbox[i]))
+        for (var i = 0; i < solidPack.SolidsCount; i++)
+            if (IsOverlapping(solidPack[i]))
                 return true;
 
         return false;
@@ -289,12 +289,12 @@ public class SolidMap
     {
         return line.CrossPoints(this).Length > 0;
     }
-    public bool IsOverlapping(Rectangle rectangle)
+    public bool IsOverlapping(Solid solid)
     {
-        var neighborRects = GetNeighborRects(rectangle);
+        var neighborRects = GetNeighborRects(solid);
 
         for (var i = 0; i < neighborRects.Count; i++)
-            if (neighborRects[i].IsOverlapping(rectangle))
+            if (neighborRects[i].IsOverlapping(solid))
                 return true;
 
         return false;
@@ -314,7 +314,7 @@ public class SolidMap
         return this;
     }
 
-    public static implicit operator Rectangle[](SolidMap solidMap)
+    public static implicit operator Solid[](SolidMap solidMap)
     {
         return solidMap.Solids;
     }
@@ -356,12 +356,12 @@ public class SolidMap
     // and rectangles for each tile [tile, list of rectangles]
 
     private readonly Dictionary<(int x, int y), int> tileIndices = new();
-    private readonly Dictionary<int, List<Rectangle>> cellRects = new();
+    private readonly Dictionary<int, List<Solid>> cellRects = new();
     private readonly List<(int x, int y)> ignoredCells = new();
 
-    internal List<Rectangle> GetNeighborRects(Rectangle rect)
+    internal List<Solid> GetNeighborRects(Solid rect)
     {
-        var result = new List<Rectangle>();
+        var result = new List<Solid>();
         var (x, y) = rect.Position;
         var (chW, chH) = GetChunkSizeForRect(rect);
 
@@ -386,7 +386,7 @@ public class SolidMap
 
         return result;
     }
-    private static (int, int) GetChunkSizeForRect(Rectangle globalRect)
+    private static (int, int) GetChunkSizeForRect(Solid globalRect)
     {
         var (w, h) = globalRect.Size;
         var resultW = Math.Max((int)MathF.Ceiling(w * 2f), 1);

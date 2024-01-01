@@ -1,4 +1,4 @@
-namespace Pure.Examples.ExamplesGames;
+namespace Pure.Examples.ExampleApplications;
 
 using Engine.Tilemap;
 using Engine.Utilities;
@@ -62,8 +62,8 @@ public static class Pong
 
         void TryToBounceBallOffPaddle(ref Point paddlePosition)
         {
-            var paddle = new Rectangle((1, PADDLE_HEIGHT), paddlePosition);
-            var ball = new Rectangle((1, 1), ballPosition);
+            var paddle = new Solid((1, PADDLE_HEIGHT), paddlePosition);
+            var ball = new Solid((1, 1), ballPosition);
 
             if (paddle.IsOverlapping(ball) == false)
                 return;

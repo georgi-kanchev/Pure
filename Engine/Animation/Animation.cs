@@ -25,11 +25,7 @@ public class Animation<T>
     /// <summary>
     /// Gets or sets the duration of the animation in seconds.
     /// </summary>
-    public float Duration
-    {
-        get;
-        set;
-    }
+    public float Duration { get; set; }
     /// <summary>
     /// Gets or sets the speed of the animation.
     /// </summary>
@@ -41,19 +37,11 @@ public class Animation<T>
     /// <summary>
     /// Gets or sets a value indicating whether the animation should repeat.
     /// </summary>
-    public bool IsRepeating
-    {
-        get;
-        set;
-    }
+    public bool IsLooping { get; set; }
     /// <summary>
     /// Gets or sets a value indicating whether the animation is paused.
     /// </summary>
-    public bool IsPaused
-    {
-        get;
-        set;
-    }
+    public bool IsPaused { get; set; }
     /// <summary>
     /// Gets or sets the current progress of the animation as a value between 0 and 1.
     /// </summary>
@@ -79,10 +67,10 @@ public class Animation<T>
     /// repetition, and values.
     /// </summary>
     /// <param name="duration">The duration of the animation in seconds.</param>
-    /// <param name="isRepeating">A value indicating whether the animation should repeat from the beginning
+    /// <param name="isLooping">A value indicating whether the animation should repeat from the beginning
     /// after it has finished playing through all the values.</param>
     /// <param name="values">The values of the animation.</param>
-    public Animation(float duration, bool isRepeating, params T[] values)
+    public Animation(float duration, bool isLooping, params T[] values)
     {
         if (values == null)
             throw new ArgumentNullException(nameof(values));
@@ -90,20 +78,20 @@ public class Animation<T>
         this.values = Copy(values);
         rawIndex = 0;
         Duration = duration;
-        IsRepeating = isRepeating;
+        IsLooping = isLooping;
         RawIndex = LOWER_BOUND;
     }
     /// <summary>
     /// Initializes a new instance of the animation with the specified values, 
     /// repeating and speed properties set.
     /// </summary>
-    /// <param name="isRepeating">A value indicating whether the animation should repeat 
+    /// <param name="isLooping">A value indicating whether the animation should repeat 
     /// from the beginning after it has finished playing through all the values.</param>
     /// <param name="speed">The speed at which the animation should play, as values
     /// per second.</param>
     /// <param name="values">The values to be animated.</param>
-    public Animation(bool isRepeating, float speed, params T[] values)
-        : this(0f, isRepeating, values)
+    public Animation(bool isLooping, float speed, params T[] values)
+        : this(0f, isLooping, values)
     {
         Speed = speed;
     }
@@ -127,8 +115,16 @@ public class Animation<T>
             return;
 
         RawIndex += deltaTime / Speed;
-        if ((int)MathF.Round(RawIndex) >= values.Length)
-            RawIndex = IsRepeating ? LOWER_BOUND : values.Length - 1;
+
+        if ((int)MathF.Round(RawIndex) < values.Length)
+            return;
+
+        RawIndex = IsLooping ? LOWER_BOUND : values.Length - 1;
+
+        if (IsLooping)
+            onLoop?.Invoke();
+        else
+            onEnd?.Invoke();
     }
 
     /// <summary>
@@ -155,11 +151,21 @@ public class Animation<T>
         return this;
     }
 
-#region Backend
+    public void OnEnd(Action method)
+    {
+        onEnd += method;
+    }
+    public void OnLoop(Action method)
+    {
+        onLoop += method;
+    }
+
+    #region Backend
+    private Action? onEnd, onLoop;
     private readonly T[] values;
 
     private float rawIndex;
-    private const float LOWER_BOUND = -0.49f;
+    private const float LOWER_BOUND = -0.499f;
 
     private float RawIndex
     {
@@ -178,5 +184,5 @@ public class Animation<T>
         Array.Copy(array, copy, array.Length);
         return copy;
     }
-#endregion
+    #endregion
 }

@@ -1,20 +1,24 @@
 ﻿namespace Pure.Engine.Audio;
 
 using SFML.Audio;
-using static System.MathF;
+
+using static MathF;
 
 /// <summary>
 /// Represents the type of waveform used in generating audio from notes.
 /// </summary>
-public enum Wave { Sine, Square, Triangle, Sawtooth, Noise }
+public enum Wave
+{
+    Sine,
+    Square,
+    Triangle,
+    Sawtooth,
+    Noise
+}
 
 public class Notes : Audio
 {
-    public static (char separator, char pause, char repeat) Symbols
-    {
-        get;
-        set;
-    } = ('_', '.', '~');
+    public (char separator, char pause, char repeat) Symbols { get; set; } = ('_', '.', '~');
 
     public Notes(
         string notes,
@@ -42,7 +46,7 @@ public class Notes : Audio
         buffer?.SaveToFile(path);
     }
 
-#region Backend
+    #region Backend
     private readonly SoundBuffer? buffer;
     private readonly (float start, float end) fade;
     private static readonly Random rand = new();
@@ -54,13 +58,13 @@ public class Notes : Audio
         { Wave.Square, (i, f) => (Sin(A(f) * i) > 0 ? 1f : -1f) * 0.5f },
         { Wave.Triangle, (i, f) => Asin(Sin(A(f) * i)) * 2f / PI },
         { Wave.Sawtooth, (i, f) => 2f * f * i % (1f / f) - 1f },
-        { Wave.Noise, (_, _) => 2f * (rand.Next(1000) / 1000f) - 1f },
+        { Wave.Noise, (_, _) => 2f * (rand.Next(1000) / 1000f) - 1f }
     };
 
     private const uint SAMPLE_RATE = 11025;
     private const float AMPLITUDE = 1f * short.MaxValue;
 
-    private static float GetFrequency(string chord)
+    private float GetFrequency(string chord)
     {
         chord = chord.Trim();
 
@@ -80,9 +84,7 @@ public class Notes : Audio
         if (hasOctave == false || keyNumber == -1)
             return float.NaN;
 
-        keyNumber = keyNumber < 3 ?
-            keyNumber + 12 + ((octave - 1) * 12) + 1 :
-            keyNumber + ((octave - 1) * 12) + 1;
+        keyNumber = keyNumber < 3 ? keyNumber + 12 + (octave - 1) * 12 + 1 : keyNumber + (octave - 1) * 12 + 1;
         var result = 440f * Pow(2f, (keyNumber - 49f) / 12f);
 
         return result;
@@ -112,23 +114,18 @@ public class Notes : Audio
                 var noteProgress = Map(j, (0f, time), (0f, 1f));
                 var fadeValue = 1f;
 
-                fadeValue *= isStarting && noteProgress <= noteA ?
-                    Map(noteProgress, (0f, noteA), (0f, 1f)) :
-                    1f;
-                fadeValue *= isStopping && noteProgress > noteB ?
-                    Map(noteProgress, (noteB, 1f), (1f, 0f)) :
-                    1f;
+                fadeValue *= isStarting && noteProgress <= noteA ? Map(noteProgress, (0f, noteA), (0f, 1f)) : 1f;
+                fadeValue *= isStopping && noteProgress > noteB ? Map(noteProgress, (noteB, 1f), (1f, 0f)) : 1f;
 
-                samples[sampleIndex] = (short)(frequency == 0 ?
-                    0 :
-                    GetWaveSample(sampleIndex, frequency, wave) * fadeValue);
+                samples[sampleIndex] =
+                    (short)(frequency == 0 ? 0 : GetWaveSample(sampleIndex, frequency, wave) * fadeValue);
                 sampleIndex++;
             }
         }
 
         return samples;
     }
-    private static List<string> GetValidNotes(string notes)
+    private List<string> GetValidNotes(string notes)
     {
         var chordsSplit = notes.Split(Symbols.separator, StringSplitOptions.RemoveEmptyEntries);
         var validChords = new List<string>();
@@ -172,5 +169,5 @@ public class Notes : Audio
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-#endregion
+    #endregion
 }

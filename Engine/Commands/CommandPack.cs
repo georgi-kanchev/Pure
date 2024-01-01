@@ -2,35 +2,32 @@
 
 using System.Globalization;
 
-public class Commander
+public class CommandPack
 {
     public bool IsDisabled { get; set; }
 
-    public char Divider { get; set; } = ';';
-    public char DividerValue { get; set; } = ' ';
-    public char DividerText { get; set; } = '`';
-    public char DividerArray { get; set; } = '|';
+    public (char command, char value, char text, char array) Dividers { get; set; } = (';', ' ', '`', '|');
 
     public void Add(string commandName, Func<string?> onExecute)
     {
         if (string.IsNullOrWhiteSpace(commandName))
             return;
 
-        commandName = commandName.Replace(DividerValue, char.MinValue);
-        commandName = commandName.Replace(DividerText, char.MinValue);
-        commandName = commandName.Replace(Divider, char.MinValue);
-        commandName = commandName.Replace(DividerArray, char.MinValue);
+        commandName = commandName.Replace(Dividers.value, char.MinValue);
+        commandName = commandName.Replace(Dividers.text, char.MinValue);
+        commandName = commandName.Replace(Dividers.command, char.MinValue);
+        commandName = commandName.Replace(Dividers.array, char.MinValue);
 
         commands[commandName] = onExecute;
     }
-    public string[] Execute(string command)
+    public string[] Execute(string commandName)
     {
         if (IsDisabled)
             return Array.Empty<string>();
 
-        var strings = GetStrings(ref command);
+        var strings = GetStrings(ref commandName);
         var results = new List<string>();
-        var cmds = command.Trim().Split(Divider);
+        var cmds = commandName.Trim().Split(Dividers.command);
 
         foreach (var cmd in cmds)
         {
@@ -117,7 +114,7 @@ public class Commander
         if (arrayType == null)
             return default;
 
-        var result = dataAsText.Split(DividerArray);
+        var result = dataAsText.Split(Dividers.array);
         var resultArray = Array.CreateInstance(arrayType, result.Length);
         for (var i = 0; i < result.Length; i++)
         {
@@ -149,7 +146,7 @@ public class Commander
 
     private bool IsArray(string dataAsText)
     {
-        return dataAsText.Contains(DividerArray);
+        return dataAsText.Contains(Dividers.array);
     }
 
     private List<string> GetStrings(ref string input)
@@ -157,13 +154,13 @@ public class Commander
         var result = new List<string>();
         var count = 0;
 
-        while (input.Contains(DividerText))
+        while (input.Contains(Dividers.text))
         {
-            var openIndex = input.IndexOf(DividerText, 0);
+            var openIndex = input.IndexOf(Dividers.text, 0);
             if (openIndex == -1)
                 break;
 
-            var closeIndex = input.IndexOf(DividerText, openIndex + 1);
+            var closeIndex = input.IndexOf(Dividers.text, openIndex + 1);
 
             if (closeIndex == -1)
                 closeIndex = openIndex + 1;

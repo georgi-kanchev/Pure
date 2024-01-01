@@ -9,11 +9,7 @@ public class ParticlePack
     /// Gets or sets a value indicating whether the particle pack has paused the updates
     /// of the particles.
     /// </summary>
-    public bool IsPaused
-    {
-        get;
-        set;
-    }
+    public bool IsPaused { get; set; }
     /// <summary>
     /// Gets the number of particles currently in the particle pack.
     /// </summary>
@@ -32,7 +28,7 @@ public class ParticlePack
         {
             var p = new Particle(default, default);
             particles.Add(p);
-            OnSpawn(p);
+            onSpawn?.Invoke(p);
         }
     }
     /// <summary>
@@ -60,37 +56,25 @@ public class ParticlePack
                 continue;
             }
 
-            OnUpdate(p);
+            onUpdate?.Invoke(p);
         }
 
         foreach (var p in toRemove)
             particles.Remove(p);
     }
 
-    /// <summary>
-    /// Called when a particle is spawned into the particle pack.
-    /// </summary>
-    /// <param name="particle">The particle that was spawned.</param>
-    protected virtual void OnSpawn(Particle particle)
+    public void OnSpawn(Action<Particle> method)
     {
+        onSpawn += method;
     }
-    /// <summary>
-    /// Called when a particle is updated in the particle pack.
-    /// </summary>
-    /// <param name="particle">The particle that was updated.</param>
-    protected virtual void OnUpdate(Particle particle)
+    public void OnUpdate(Action<Particle> method)
     {
+        onUpdate += method;
     }
 
     /// <returns>
-    /// An array of particles in the particle pack.</returns>
-    public Particle[] ToArray()
-    {
-        return this;
-    }
-    /// <returns>
     /// An array of particle bundle tuples in the particle pack.</returns>
-    public (float x, float y, uint color)[] ToPointsBundle()
+    public (float x, float y, uint color)[] ToBundle()
     {
         var result = new (float x, float y, uint color)[particles.Count];
         for (var i = 0; i < particles.Count; i++)
@@ -123,7 +107,8 @@ public class ParticlePack
         return pack.particles.ToArray();
     }
 
-#region Backend
+    #region Backend
+    private Action<Particle>? onSpawn, onUpdate;
     private readonly List<Particle> particles = new();
-#endregion
+    #endregion
 }

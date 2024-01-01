@@ -1,32 +1,32 @@
 ﻿namespace Pure.Engine.Collision;
 
 /// <summary>
-/// Represents a rectangle in 2D space defined by its position and size.
+/// Represents a solid in 2D space defined by its position and size.
 /// </summary>
-public struct Rectangle
+public struct Solid
 {
     /// <summary>
-    /// Gets or sets the position of the top-left corner of the rectangle.
+    /// Gets or sets the position of the top-left corner of the solid.
     /// </summary>
     public (float x, float y) Position { get; set; }
     /// <summary>
-    /// Gets or sets the size of the rectangle.
+    /// Gets or sets the size of the solid.
     /// </summary>
     public (float width, float height) Size { get; set; }
     /// <summary>
-    /// Gets or sets the color of the rectangle.
+    /// Gets or sets the color of the solid.
     /// </summary>
     public uint Color { get; set; }
 
     /// <summary>
-    /// Initializes a new rectangle instance with the specified 
+    /// Initializes a new solid instance with the specified 
     /// position, size and color.
     /// </summary>
-    /// <param name="position">The position of the top-left corner of the rectangle. 
+    /// <param name="position">The position of the top-left corner of the solid. 
     /// The default value is (0, 0).</param>
-    /// <param name="size">The size of the rectangle.</param>
-    /// <param name="color">The color of the rectangle.</param>
-    public Rectangle(
+    /// <param name="size">The size of the solid.</param>
+    /// <param name="color">The color of the solid.</param>
+    public Solid(
         (float width, float height) size,
         (float x, float y) position = default,
         uint color = uint.MaxValue)
@@ -35,32 +35,32 @@ public struct Rectangle
         Size = size;
         Color = color;
     }
-    public Rectangle(float width, float height, float x = default, float y = default,
+    public Solid(float width, float height, float x = default, float y = default,
         uint color = uint.MaxValue)
         : this((width, height), (x, y), color)
     {
     }
 
-    /// <param name="hitbox">
+    /// <param name="solidPack">
     /// The hitbox to test for overlap with.</param>
-    /// <returns>True if this rectangle overlaps with the specified 
+    /// <returns>True if this solid overlaps with the specified 
     /// hitbox; otherwise, false.</returns>
-    public bool IsOverlapping(Hitbox hitbox)
+    public bool IsOverlapping(SolidPack solidPack)
     {
-        return hitbox.IsOverlapping(this);
+        return solidPack.IsOverlapping(this);
     }
     /// <summary>
-    /// Determines whether this rectangle is overlapping with the specified 
-    /// rectangle.
+    /// Determines whether this solid is overlapping with the specified 
+    /// solid.
     /// </summary>
-    /// <param name="rectangle">The rectangle to test for overlap with.</param>
-    /// <returns>True if this rectangles overlap; otherwise, false.</returns>
-    public bool IsOverlapping(Rectangle rectangle)
+    /// <param name="solid">The solid to test for overlap with.</param>
+    /// <returns>True if this solids overlap; otherwise, false.</returns>
+    public bool IsOverlapping(Solid solid)
     {
         var (x1, y1) = Position;
         var (w1, h1) = Size;
-        var (x2, y2) = rectangle.Position;
-        var (w2, h2) = rectangle.Size;
+        var (x2, y2) = solid.Position;
+        var (w2, h2) = solid.Size;
 
         return x1 < x2 + w2 &&
                x1 + w1 > x2 &&
@@ -69,7 +69,7 @@ public struct Rectangle
     }
     /// <param name="line"> 
     /// The line to test for overlap with.</param>
-    /// <returns>True if this rectangle overlaps with the specified 
+    /// <returns>True if this solid overlaps with the specified 
     /// line; otherwise, false.</returns>
     public bool IsOverlapping(Line line)
     {
@@ -77,7 +77,7 @@ public struct Rectangle
     }
     /// <param name="point">
     /// The line to test for overlap with.</param>
-    /// <returns>True if this rectangle overlaps with the specified 
+    /// <returns>True if this solid overlaps with the specified 
     /// point; otherwise, false.</returns>
     public bool IsOverlapping((float x, float y) point)
     {
@@ -91,14 +91,14 @@ public struct Rectangle
     }
 
     /// <returns>
-    /// A bundle tuple containing the position, size and the color of the rectangle.</returns>
+    /// A bundle tuple containing the position, size and the color of the solid.</returns>
     public (float x, float y, float width, float height, uint color) ToBundle()
     {
         return this;
     }
 
     /// <returns>
-    /// A string that represents this rectangle. 
+    /// A string that represents this solid. 
     /// The string has the format: "Position[x y] Size[width height]".</returns>
     public override string ToString()
     {
@@ -108,24 +108,24 @@ public struct Rectangle
     }
 
     /// <summary>
-    /// Implicitly converts a bundle tuple of position, size and color into a rectangle.
+    /// Implicitly converts a bundle tuple of position, size and color into a solid.
     /// </summary>
     /// <param name="bundle">The bundle tuple to convert.</param>
-    /// <returns>A new rectangle instance.</returns>
+    /// <returns>A new solid instance.</returns>
     public static implicit operator
-        Rectangle((float x, float y, float width, float height, uint color) bundle)
+        Solid((float x, float y, float width, float height, uint color) bundle)
     {
         return new((bundle.x, bundle.y), (bundle.width, bundle.height), bundle.color);
     }
     /// <summary>
-    /// Implicitly converts a rectangle into a bundle tuple of position, size and color.
+    /// Implicitly converts a solid into a bundle tuple of position, size and color.
     /// </summary>
-    /// <param name="rectangle">The rectangle to convert.</param>
-    /// <returns>A bundle tuple containing the position, size and color of the rectangle.</returns>
+    /// <param name="solid">The solid to convert.</param>
+    /// <returns>A bundle tuple containing the position, size and color of the solid.</returns>
     public static implicit operator (float x, float y, float width, float height, uint color
-        )(Rectangle rectangle)
+        )(Solid solid)
     {
-        return (rectangle.Position.x, rectangle.Position.y, rectangle.Size.width, rectangle.Size.height,
-            rectangle.Color);
+        return (solid.Position.x, solid.Position.y, solid.Size.width, solid.Size.height,
+            solid.Color);
     }
 }

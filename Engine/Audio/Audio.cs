@@ -5,19 +5,13 @@ using SFML.System;
 
 public class Audio
 {
-    static Audio()
-    {
-        GlobalVolume = 0.5f;
-    }
-    protected Audio()
-    {
-    }
     public Audio(string path, bool isStreaming)
     {
         if (isStreaming)
             music = new(path);
         else
             sound = new(new SoundBuffer(path));
+
         Volume = 0.5f;
         Pitch = 1;
     }
@@ -109,7 +103,15 @@ public class Audio
     }
     public bool IsPlaying
     {
-        get => Get().pl;
+        get => Get().st == SoundStatus.Playing;
+    }
+    public bool IsPaused
+    {
+        get => Get().st == SoundStatus.Paused;
+    }
+    public bool IsStopped
+    {
+        get => Get().st == SoundStatus.Stopped;
     }
 
     public void Play()
@@ -128,10 +130,11 @@ public class Audio
         sound?.Stop();
     }
 
-#region Backend
+    #region Backend
     private class Settings
     {
-        public bool loop, gl, pl;
+        public SoundStatus st;
+        public bool loop, gl;
         public (float x, float y) pos;
         public float vol, pch, att, minDist, dur, pr;
     }
@@ -140,9 +143,17 @@ public class Audio
     private Sound? sound;
     private Settings settings = new();
 
-    protected void Initialize(Sound sound)
+    static Audio()
     {
-        this.sound = sound;
+        GlobalVolume = 0.5f;
+    }
+    internal Audio()
+    {
+    }
+
+    internal void Initialize(Sound snd)
+    {
+        sound = snd;
         Volume = 0.5f;
         Pitch = 1f;
     }
@@ -183,7 +194,7 @@ public class Audio
             result.minDist = music.MinDistance;
             result.loop = music.Loop;
             result.gl = music.RelativeToListener;
-            result.pl = music.Status == SoundStatus.Playing;
+            result.st = music.Status;
             result.dur = music.Duration.AsSeconds();
             result.pr = music.PlayingOffset.AsSeconds() / result.dur;
         }
@@ -196,7 +207,7 @@ public class Audio
             result.minDist = sound.MinDistance;
             result.loop = sound.Loop;
             result.gl = sound.RelativeToListener;
-            result.pl = sound.Status == SoundStatus.Playing;
+            result.st = sound.Status;
             result.dur = sound.SoundBuffer.Duration.AsSeconds();
             result.pr = sound.PlayingOffset.AsSeconds() / result.dur;
         }
@@ -204,5 +215,5 @@ public class Audio
         settings = result;
         return result;
     }
-#endregion
+    #endregion
 }

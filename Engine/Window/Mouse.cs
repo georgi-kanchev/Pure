@@ -104,23 +104,32 @@ public static class Mouse
         pressed.Clear();
     }
 
+    public static void OnButtonPressAny(Action method)
+    {
+        onButtonPressAny += method;
+    }
+    public static void OnButtonReleaseAny(Action method)
+    {
+        onButtonReleaseAny += method;
+    }
     public static void OnButtonPress(Button button, Action method)
     {
-        if (actionsPress.TryAdd(button, method) == false)
-            actionsPress[button] += method;
+        if (onButtonPress.TryAdd(button, method) == false)
+            onButtonPress[button] += method;
     }
     public static void OnButtonRelease(Button button, Action method)
     {
-        if (actionsRelease.TryAdd(button, method) == false)
-            actionsRelease[button] += method;
+        if (onButtonRelease.TryAdd(button, method) == false)
+            onButtonRelease[button] += method;
     }
     public static void OnWheelScroll(Action method)
     {
         actionScroll += method;
     }
 
-#region Backend
-    private static readonly Dictionary<Button, Action> actionsPress = new(), actionsRelease = new();
+    #region Backend
+    private static Action? onButtonPressAny, onButtonReleaseAny;
+    private static readonly Dictionary<Button, Action> onButtonPress = new(), onButtonRelease = new();
     private static Action? actionScroll;
     private static readonly List<Button> pressed = new();
 
@@ -146,8 +155,10 @@ public static class Mouse
 
         pressed.Add(btn);
 
-        if (actionsPress.TryGetValue(btn, out var value))
+        if (onButtonPress.TryGetValue(btn, out var value))
             value.Invoke();
+
+        onButtonPressAny?.Invoke();
     }
     internal static void OnButtonReleased(object? s, MouseButtonEventArgs e)
     {
@@ -160,8 +171,10 @@ public static class Mouse
 
         pressed.Remove(btn);
 
-        if (actionsRelease.TryGetValue(btn, out var value))
+        if (onButtonRelease.TryGetValue(btn, out var value))
             value.Invoke();
+
+        onButtonReleaseAny?.Invoke();
     }
     internal static void OnWheelScrolled(object? s, MouseWheelScrollEventArgs e)
     {
@@ -188,7 +201,7 @@ public static class Mouse
     {
         if (Window.window == null)
             return;
-        
+
         if (sysCursor.CPointer == IntPtr.Zero)
             sysCursor.Dispose();
         else if (IsCursorVisible)
@@ -200,5 +213,5 @@ public static class Mouse
                 Window.window.SetMouseCursor(sysCursor);
         }
     }
-#endregion
+    #endregion
 }

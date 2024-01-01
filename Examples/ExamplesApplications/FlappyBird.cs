@@ -1,4 +1,4 @@
-namespace Pure.Examples.ExamplesGames;
+namespace Pure.Examples.ExampleApplications;
 
 using Engine.Animation;
 using Engine.Collision;
@@ -32,8 +32,8 @@ public static class FlappyBird
             (Tile.ARROW_DIAGONAL, 1)); // rotated 1 time (90 degrees clockwise)
         var pipes = new List<(float, int, int)>();
         var collisionMap = new SolidMap();
-        collisionMap.AddSolids(Tile.BOX_DEFAULT_CORNER, new Rectangle((1, 1)));
-        collisionMap.AddSolids(Tile.BOX_DEFAULT_STRAIGHT, new Rectangle((1, 1)));
+        collisionMap.AddSolids(Tile.BOX_DEFAULT_CORNER, new Solid((1, 1)));
+        collisionMap.AddSolids(Tile.BOX_DEFAULT_STRAIGHT, new Solid((1, 1)));
 
         InitializePipes();
 
@@ -112,7 +112,7 @@ public static class FlappyBird
             collisionMap.Update(foreground);
 
             // whether the bird fell out of the map or bonked into a pipe
-            var birdRect = new Rectangle((1, 1), (BIRD_X, birdY), Color.Red);
+            var birdRect = new Solid((1, 1), (BIRD_X, birdY), Color.Red);
             if (birdY + 1 >= height || collisionMap.IsOverlapping(birdRect))
                 isGameOver = true;
 
