@@ -11,7 +11,7 @@ public static class Run
         //Examples.ExamplesApplications.Pong.Run();
         //Examples.ExampleApplications.Chat.Run();
 
-        //Editors.EditorMap.Program.Run();
+        Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
 
         //RunExampleUserInterface();
