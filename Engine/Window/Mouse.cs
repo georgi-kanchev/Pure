@@ -83,17 +83,16 @@ public static class Mouse
     /// </summary>
     public static int ScrollDelta { get; private set; }
 
-    public static bool IsHovering(Layer layer)
+    public static bool IsHovered(this Layer layer)
     {
         return layer.IsOverlapping(layer.PixelToWorld(CursorPosition));
     }
-
     /// <summary>
     /// Gets whether the specified mouse button is currently pressed.
     /// </summary>
     /// <param name="button">The button to check.</param>
     /// <returns>True if the button is currently pressed, false otherwise.</returns>
-    public static bool IsButtonPressed(Button button)
+    public static bool IsPressed(this Button button)
     {
         return pressed.Contains(button);
     }
@@ -104,20 +103,20 @@ public static class Mouse
         pressed.Clear();
     }
 
-    public static void OnButtonPressAny(Action method)
+    public static void OnPressAny(Action<Button> method)
     {
         onButtonPressAny += method;
     }
-    public static void OnButtonReleaseAny(Action method)
+    public static void OnReleaseAny(Action<Button> method)
     {
         onButtonReleaseAny += method;
     }
-    public static void OnButtonPress(Button button, Action method)
+    public static void OnPress(this Button button, Action method)
     {
         if (onButtonPress.TryAdd(button, method) == false)
             onButtonPress[button] += method;
     }
-    public static void OnButtonRelease(Button button, Action method)
+    public static void OnRelease(this Button button, Action method)
     {
         if (onButtonRelease.TryAdd(button, method) == false)
             onButtonRelease[button] += method;
@@ -127,8 +126,8 @@ public static class Mouse
         actionScroll += method;
     }
 
-    #region Backend
-    private static Action? onButtonPressAny, onButtonReleaseAny;
+#region Backend
+    private static Action<Button>? onButtonPressAny, onButtonReleaseAny;
     private static readonly Dictionary<Button, Action> onButtonPress = new(), onButtonRelease = new();
     private static Action? actionScroll;
     private static readonly List<Button> pressed = new();
@@ -158,7 +157,7 @@ public static class Mouse
         if (onButtonPress.TryGetValue(btn, out var value))
             value.Invoke();
 
-        onButtonPressAny?.Invoke();
+        onButtonPressAny?.Invoke(btn);
     }
     internal static void OnButtonReleased(object? s, MouseButtonEventArgs e)
     {
@@ -174,7 +173,7 @@ public static class Mouse
         if (onButtonRelease.TryGetValue(btn, out var value))
             value.Invoke();
 
-        onButtonReleaseAny?.Invoke();
+        onButtonReleaseAny?.Invoke(btn);
     }
     internal static void OnWheelScrolled(object? s, MouseWheelScrollEventArgs e)
     {
@@ -213,5 +212,5 @@ public static class Mouse
                 Window.window.SetMouseCursor(sysCursor);
         }
     }
-    #endregion
+#endregion
 }

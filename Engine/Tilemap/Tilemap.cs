@@ -34,35 +34,14 @@ public class Tilemap
     /// <summary>
     /// Gets or sets the position of the view.
     /// </summary>
-    public (int x, int y) ViewPosition
-    {
-        get => viewPos;
-        set
-        {
-            var (w, h) = viewSz;
-            var (x, y) = value;
-            var (sw, sh) = Size;
-
-            x = Math.Clamp(x, 0, sw - w);
-            y = Math.Clamp(y, 0, sh - h);
-            viewPos = (x, y);
-        }
-    }
+    public (int x, int y) ViewPosition { get; set; }
     /// <summary>
     /// Gets or sets the size of the view.
     /// </summary>
     public (int height, int width) ViewSize
     {
         get => viewSz;
-        set
-        {
-            var (w, h) = value;
-            var (sw, sh) = Size;
-
-            w = Math.Clamp(w, 1, sw);
-            h = Math.Clamp(h, 1, sh);
-            viewSz = (w, h);
-        }
+        set => viewSz = (Math.Max(value.width, 1), Math.Max(value.height, 1));
     }
 
     public Tilemap(byte[] bytes)
@@ -968,11 +947,10 @@ public class Tilemap
         { '▕', 432 },
     };
     private static readonly Dictionary<int, Random> randomCache = new();
-    
+
     private Tile[,] data;
     private (int, uint, sbyte, bool, bool)[,] bundleCache;
     private int[,] ids;
-    private (int x, int y) viewPos;
     private (int w, int h) viewSz;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)
@@ -1020,7 +998,7 @@ public class Tilemap
             random = new(s);
             randomCache[s] = random;
         }
-        
+
         var randInt = random.Next((int)rangeA, Limit((int)rangeB, (int)rangeA, (int)rangeB) + 1);
 
         return randInt / precision;

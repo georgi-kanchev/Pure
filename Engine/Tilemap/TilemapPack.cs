@@ -26,12 +26,8 @@ public class TilemapPack
         get => viewSz;
         set
         {
-            var (w, h) = value;
-            var (sw, sh) = Size;
-
-            w = Math.Clamp(w, 1, sw);
-            h = Math.Clamp(h, 1, sh);
-            viewSz = (w, h);
+            viewSz = (Math.Max(value.width, 1),
+                Math.Max(value.height, 1));
 
             foreach (var map in data)
                 map.ViewSize = value;

@@ -168,11 +168,7 @@ public abstract class Block
     /// <summary>
     /// Gets or sets the text that has been copied to the user interface clipboard.
     /// </summary>
-    public static string? TextCopied
-    {
-        get;
-        set;
-    } = "";
+    public static string? TextCopied { get; set; } = "";
     /// <summary>
     /// Gets or sets a value indicating whether the user interface block is hidden.
     /// </summary>
@@ -210,11 +206,7 @@ public abstract class Block
     /// Gets a value indicating whether the input position is currently hovering 
     /// over the user interface block.
     /// </summary>
-    public bool IsHovered
-    {
-        get;
-        private set;
-    }
+    public bool IsHovered { get; private set; }
     /// <summary>
     /// Gets a value indicating whether the user interface block is currently 
     /// being pressed and hovered by the input.
@@ -227,11 +219,7 @@ public abstract class Block
     /// Gets a value indicating whether the user interface block is currently held by the input,
     /// regardless of being hovered or not.
     /// </summary>
-    public bool IsPressedAndHeld
-    {
-        get;
-        private set;
-    }
+    public bool IsPressedAndHeld { get; private set; }
 
     internal bool IsScrollable
     {
@@ -295,7 +283,7 @@ public abstract class Block
         return $"{GetType().Name} \"{Text}\"";
     }
 
-    public virtual void Update()
+    public void Update()
     {
         LimitSizeMin((1, 1));
 
@@ -411,6 +399,29 @@ public abstract class Block
         Position = (
             float.IsNaN(alignment.horizontal) ? Position.x : (int)newX,
             float.IsNaN(alignment.vertical) ? Position.y : (int)newY);
+    }
+    public void Fit()
+    {
+        var (w, h) = Size;
+        var (tw, th) = Input.TilemapSize;
+        var x = tw - w < 0 ? 0 : Math.Clamp(Position.x, 0, tw - w);
+        var y = th - h < 0 ? 0 : Math.Clamp(Position.y, 0, th - h);
+        var hasOverflown = false;
+
+        if (tw - w < 0)
+        {
+            Align((0.5f, float.NaN));
+            hasOverflown = true;
+        }
+
+        if (tw - h < 0)
+        {
+            Align((float.NaN, 0.5f));
+            hasOverflown = true;
+        }
+
+        if (hasOverflown == false)
+            Position = (x, y);
     }
 
     public void SimulateInteraction(Interaction interaction)

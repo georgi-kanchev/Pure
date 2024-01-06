@@ -146,13 +146,6 @@ public static class Keyboard
             return result;
         }
     }
-    /// <param name="key">
-    /// The key to check.</param>
-    /// <returns>True if the key is currently pressed, otherwise false.</returns>
-    public static bool IsKeyPressed(Key key)
-    {
-        return pressed.Contains(key);
-    }
 
     public static void CancelInput()
     {
@@ -160,29 +153,60 @@ public static class Keyboard
         KeyTyped = "";
     }
 
-    public static void OnKeyPressAny(Action<string> method)
+    /// <param name="key">
+    /// The key to check.</param>
+    /// <returns>True if the key is currently pressed, otherwise false.</returns>
+    public static bool IsPressed(this Key key)
+    {
+        return pressed.Contains(key);
+    }
+    public static string ToText(this Key key, bool isShifted)
+    {
+        var i = key;
+
+        if (IsBetween((int)i, (int)Key.A, (int)Key.Z))
+        {
+            var str = ((char)('A' + i)).ToString();
+            return isShifted ? str : str.ToLower();
+        }
+        else if (IsBetween((int)i, (int)Key.Number0, (int)Key.Number9))
+        {
+            var n = i - Key.Number0;
+            return isShifted ? shiftNumbers[n] : ((char)('0' + n)).ToString();
+        }
+        else if (IsBetween((int)i, (int)Key.Numpad0, (int)Key.Numpad9))
+        {
+            var n = i - Key.Numpad0;
+            return ((char)('0' + n)).ToString();
+        }
+        else if (symbols.ContainsKey(key))
+            return isShifted ? symbols[key].Item2 : symbols[key].Item1;
+
+        return "";
+    }
+
+    public static void OnPressAny(Action<Key> method)
     {
         onKeyPressAny += method;
     }
-    public static void OnKeyReleaseAny(Action method)
+    public static void OnReleaseAny(Action<Key> method)
     {
         onKeyReleaseAny += method;
     }
-    public static void OnKeyPress(Key key, Action<string> method)
+    public static void OnPress(this Key key, Action method)
     {
         if (onKeyPress.TryAdd(key, method) == false)
             onKeyPress[key] += method;
     }
-    public static void OnKeyRelease(Key key, Action method)
+    public static void OnRelease(this Key key, Action method)
     {
         if (onKeyRelease.TryAdd(key, method) == false)
             onKeyRelease[key] += method;
     }
 
-    #region Backend
-    private static Action<string>? onKeyPressAny;
-    private static Action? onKeyReleaseAny;
-    private static readonly Dictionary<Key, Action<string>> onKeyPress = new();
+#region Backend
+    private static Action<Key>? onKeyPressAny, onKeyReleaseAny;
+    private static readonly Dictionary<Key, Action> onKeyPress = new();
     private static readonly Dictionary<Key, Action> onKeyRelease = new();
     private static readonly List<Key> pressed;
     private static readonly Dictionary<Key, (string, string)> symbols;
@@ -197,7 +221,7 @@ public static class Keyboard
             { Key.Semicolon, (";", ":") }, { Key.Comma, (",", "<") }, { Key.Dot, (".", ">") },
             { Key.Quote, ("'", "\"") }, { Key.Slash, ("/", "?") }, { Key.Backslash, ("\\", "|") },
             { Key.Tilde, ("`", "~") }, { Key.Equal, ("=", "+") }, { Key.Hyphen, ("-", "_") },
-            { Key.Space, (" ", " ") }, { Key.Enter, ("\n", "\n") },
+            { Key.Space, (" ", " ") }, { Key.Enter, (Environment.NewLine, Environment.NewLine) },
             { Key.Tab, ("\t", "") }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
             { Key.Asterisk, ("*", "*") }, { Key.Divide, ("/", "/") }
         };
@@ -211,32 +235,8 @@ public static class Keyboard
     {
         return a <= number && number <= b;
     }
-    private static string GetSymbol(Key input, bool shift)
-    {
-        var i = input;
 
-        if (IsBetween((int)i, (int)Key.A, (int)Key.Z))
-        {
-            var str = ((char)('A' + i)).ToString();
-            return shift ? str : str.ToLower();
-        }
-        else if (IsBetween((int)i, (int)Key.Number0, (int)Key.Number9))
-        {
-            var n = i - Key.Number0;
-            return shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
-        }
-        else if (IsBetween((int)i, (int)Key.Numpad0, (int)Key.Numpad9))
-        {
-            var n = i - Key.Numpad0;
-            return ((char)('0' + n)).ToString();
-        }
-        else if (symbols.ContainsKey(input))
-            return shift ? symbols[input].Item2 : symbols[input].Item1;
-
-        return "";
-    }
-
-    internal static void OnKeyPress(object? s, KeyEventArgs e)
+    internal static void OnPress(object? s, KeyEventArgs e)
     {
         var key = (Key)e.Code;
 
@@ -244,16 +244,16 @@ public static class Keyboard
         if (onPress)
             pressed.Add(key);
 
-        var symbol = GetSymbol(key, IsKeyPressed(Key.ShiftLeft) || IsKeyPressed(Key.ShiftRight));
+        var symbol = key.ToText(IsPressed(Key.ShiftLeft) || IsPressed(Key.ShiftRight));
         if (KeyTyped.Contains(symbol) == false)
             KeyTyped += symbol;
 
         if (onKeyPress.TryGetValue(key, out var callback))
-            callback.Invoke(symbol);
+            callback.Invoke();
 
-        onKeyPressAny?.Invoke(symbol);
+        onKeyPressAny?.Invoke(key);
     }
-    internal static void OnKeyRelease(object? s, KeyEventArgs e)
+    internal static void OnRelease(object? s, KeyEventArgs e)
     {
         var key = (Key)e.Code;
 
@@ -262,7 +262,7 @@ public static class Keyboard
         if (onKeyRelease.TryGetValue(key, out var callback))
             callback.Invoke();
 
-        onKeyReleaseAny?.Invoke();
+        onKeyReleaseAny?.Invoke(key);
 
         if (pressed.Count == 0)
         {
@@ -277,18 +277,18 @@ public static class Keyboard
         {
             foreach (var k in pressed)
                 // get symbol as if shift was pressed
-                KeyTyped = KeyTyped.Replace(GetSymbol(k, true), "");
+                KeyTyped = KeyTyped.Replace(k.ToText(true), "");
         }
 
         if (KeyTyped.Length == 0)
             return;
 
-        var symbol = GetSymbol(key, IsKeyPressed(Key.ShiftLeft) || IsKeyPressed(Key.ShiftRight));
+        var symbol = key.ToText(IsPressed(Key.ShiftLeft) || IsPressed(Key.ShiftRight));
         if (symbol == "")
             return;
 
         KeyTyped = KeyTyped.Replace(symbol.ToLower(), "");
         KeyTyped = KeyTyped.Replace(symbol.ToUpper(), "");
     }
-    #endregion
+#endregion
 }

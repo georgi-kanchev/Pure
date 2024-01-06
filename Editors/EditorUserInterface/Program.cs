@@ -291,7 +291,7 @@ public static class Program
 
     private static bool CanDeselect()
     {
-        var onLmbRelease = (Mouse.IsButtonPressed(Mouse.Button.Left) == false).Once("lmb-deselect");
+        var onLmbRelease = (Mouse.Button.Left.IsPressed() == false).Once("lmb-deselect");
         var result = onLmbRelease && inspector.IsHovered == false && editor.Prompt.IsHidden;
 
         for (var i = panels.Count - 1; i >= 0; i--)

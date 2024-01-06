@@ -6,11 +6,11 @@ using Engine.Tilemap;
 
 public static class TiledLoader
 {
-    public static TilemapPack Load(string tmxPath, out string?[] layers)
+    public static (string[] layers, TilemapPack maps) Load(string tmxPath)
     {
         var layerList = LoadLayers(tmxPath);
         var result = new TilemapPack();
-        var names = new List<string?>();
+        var names = new List<string>();
 
         foreach (XmlElement element in layerList)
         {
@@ -18,11 +18,10 @@ public static class TiledLoader
             var (layer, data) = GetLayer(layerList, tmxPath, name);
 
             result.Add(ParseData(layer, data));
-            names.Add(name);
+            names.Add(name ?? string.Empty);
         }
 
-        layers = names.ToArray();
-        return result;
+        return (names.ToArray(), result);
     }
     public static Tilemap Load(string tmxPath, string layerName)
     {

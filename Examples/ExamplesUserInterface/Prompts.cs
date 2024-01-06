@@ -27,7 +27,7 @@ public static class Prompts
         prompt.OnDisplay(() => maps.SetPrompt(prompt, zOrder: 3));
         prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: 5));
 
-        OnKeyPress(Key.Enter, asText =>
+        Key.Enter.OnPress(() =>
         {
             var shouldLog = input.IsHidden == false && prompt.IsHidden == false;
             prompt.Close();
@@ -35,7 +35,7 @@ public static class Prompts
             if (shouldLog)
                 Console.WriteLine(input.Value);
         });
-        OnKeyPress(HOTKEY_LOG, asText =>
+        HOTKEY_LOG.OnPress(() =>
         {
             input.IsFocused = true;
             input.IsHidden = false;
@@ -50,7 +50,7 @@ public static class Prompts
                     Console.WriteLine(input.Value);
             });
         });
-        OnKeyPress(HOTKEY_MSG, asText =>
+        HOTKEY_MSG.OnPress(() =>
         {
             input.IsHidden = true;
 

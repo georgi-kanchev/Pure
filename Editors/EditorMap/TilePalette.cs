@@ -15,12 +15,12 @@ internal class TilePalette
         this.editor = editor;
         Create((26, 26));
 
-        Mouse.OnButtonPress(Mouse.Button.Left, () =>
+        Mouse.Button.Left.OnPress(() =>
         {
             if (Program.menu.IsHidden == false ||
                 editor.Prompt.IsHidden == false ||
                 inspector is { IsHovered: false } ||
-                Mouse.IsHovering(layer) == false)
+                layer.IsHovered() == false)
                 return;
 
             var pos = layer.PixelToWorld(Mouse.CursorPosition);
@@ -28,8 +28,8 @@ internal class TilePalette
             selectedPos = ((int)pos.x + vx, (int)pos.y + vy);
             selectedSz = (1, 1);
         });
-        Mouse.OnButtonPress(Mouse.Button.Left, OnMousePressed);
-        Mouse.OnButtonRelease(Mouse.Button.Left, OnMouseRelease);
+        Mouse.Button.Left.OnPress(OnMousePressed);
+        Mouse.Button.Left.OnRelease(OnMouseRelease);
     }
     [MemberNotNull(nameof(map), nameof(layer))]
     public void Create((int width, int height) size)
@@ -71,7 +71,7 @@ internal class TilePalette
         var view = map.ViewUpdate();
         layer.DrawTilemap(view);
 
-        if (Mouse.IsHovering(layer))
+        if (layer.IsHovered())
         {
             layer.DrawTiles(
                 ((int)mx, (int)my),
@@ -122,11 +122,11 @@ internal class TilePalette
                 (start.x, start.y + 1, end.x - 1, end.y, color));
         }
 
-        if (Mouse.IsButtonPressed(Mouse.Button.Left))
+        if (Mouse.Button.Left.IsPressed())
             OnMouseHold(randomTile, tilemap);
     }
 
-    #region Backend
+#region Backend
     private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12 };
     private Inspector? inspector;
     private (int x, int y) prevMousePos;
@@ -140,13 +140,13 @@ internal class TilePalette
 
     static TilePalette()
     {
-        Mouse.OnButtonPress(Mouse.Button.Left, () =>
+        Mouse.Button.Left.OnPress(() =>
             clickSeed = (-10000, 10000).Random());
     }
     private void UpdateSelected()
     {
-        if (Mouse.IsHovering(layer) &&
-            Mouse.IsButtonPressed(Mouse.Button.Left) &&
+        if (layer.IsHovered() &&
+            Mouse.Button.Left.IsPressed() &&
             prevMousePos != mousePos)
         {
             var (szx, szy) = (mousePos.x - selectedPos.x, mousePos.y - selectedPos.y);
@@ -278,7 +278,7 @@ internal class TilePalette
         var (mx, my) = ((int)editor.MousePositionWorld.x, (int)editor.MousePositionWorld.y);
         var pos = (mx, my);
         var tool = inspector.tools.Current;
-        var lmb = Mouse.IsButtonPressed(Mouse.Button.Left);
+        var lmb = Mouse.Button.Left.IsPressed();
         var (szw, szh) = (end.x - start.x, end.y - start.y);
         var (offX, offY) = (1, 1);
 
@@ -303,5 +303,5 @@ internal class TilePalette
         var (sw, sh) = selected.Size;
         return map.TilesIn((sx, sy, sw, sh));
     }
-    #endregion
+#endregion
 }

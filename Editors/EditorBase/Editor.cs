@@ -6,6 +6,8 @@ global using Pure.Engine.Window;
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
+using System.Text;
+using Pure.Tools.TiledLoader;
 
 namespace Pure.Editors.EditorBase;
 
@@ -43,6 +45,7 @@ public class Editor
     public Prompt Prompt { get; }
 
     public Panel MapPanel { get; }
+    public FileViewer MapFileViewer { get; }
 
     public (float x, float y) MousePositionUi { get; private set; }
     public (float x, float y) MousePositionWorld { get; private set; }
@@ -108,6 +111,21 @@ public class Editor
             CreateViewButton(i);
 
         CreateResizeButtons();
+
+        const int BACK = (int)LayerMapsUi.PromptBack;
+        const int MIDDLE = (int)LayerMapsUi.PromptMiddle;
+        MapFileViewer = new()
+        {
+            FilesAndFolders = { IsSingleSelecting = true },
+            Size = (21, 10)
+        };
+        MapFileViewer.OnDisplay(() => MapsUi.SetFileViewer(MapFileViewer, BACK));
+        MapFileViewer.FilesAndFolders.OnItemDisplay(btn =>
+            MapsUi.SetFileViewerItem(MapFileViewer, btn, MIDDLE));
+        MapFileViewer.HardDrives.OnItemDisplay(btn =>
+            MapsUi.SetFileViewerItem(MapFileViewer, btn, MIDDLE));
+
+        tilesetPrompt = new(this);
     }
 
     public void Run()
@@ -124,7 +142,7 @@ public class Editor
             LayerUi.TilemapSize = MapsUi.ViewSize;
 
             Input.Update(
-                Mouse.IsButtonPressed(Mouse.Button.Left),
+                Mouse.Button.Left.IsPressed(),
                 Mouse.ScrollDelta,
                 Keyboard.KeyIDsPressed,
                 Keyboard.KeyTyped);
@@ -224,7 +242,7 @@ public class Editor
         Prompt.Open(onButtonTrigger: _ => Prompt.Close());
         Prompt.ButtonCount = 2;
     }
-    public void PromptYesNo(string message, Action onAccept)
+    public void PromptYesNo(string message, Action? onAccept)
     {
         Prompt.Text = message;
         Prompt.Open(onButtonTrigger: i =>
@@ -265,10 +283,58 @@ public class Editor
         OnSetGrid?.Invoke();
     }
 
+    public string[] LoadMap()
+    {
+        try
+        {
+            var selectedPaths = MapFileViewer.SelectedPaths;
+            var file = selectedPaths.Length == 1 ? selectedPaths[0] : MapFileViewer.CurrentDirectory;
+            var maps = default(TilemapPack);
+            var result = Array.Empty<string>();
+
+            if (Path.GetExtension(file) == ".tmx" && file != null)
+            {
+                var (layers, tilemapPack) = TiledLoader.Load(file);
+                maps = tilemapPack;
+                result = layers;
+            }
+            else
+            {
+                var bytes = File.ReadAllBytes($"{file}");
+                var byteOffset = 0;
+                var layerCount = GrabInt(bytes, ref byteOffset);
+
+                result = new string[layerCount];
+                for (var i = 0; i < layerCount; i++)
+                    result[i] = GrabString(bytes, ref byteOffset);
+
+                maps = new(bytes[byteOffset..]);
+            }
+
+            MapsEditor.Clear();
+            for (var i = 0; i < maps.Count; i++)
+                MapsEditor.Add(maps[i]);
+
+            return result;
+        }
+        catch (Exception)
+        {
+            PromptMessage("Could not load map!");
+            return Array.Empty<string>();
+        }
+    }
+    public void OpenTilesetPrompt(Action<Layer, Tilemap>? onSuccess, Action? onFail)
+    {
+        tilesetPrompt.OnSuccess = onSuccess;
+        tilesetPrompt.OnFail = onFail;
+        tilesetPrompt.Open();
+    }
+
 #region Backend
     private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
     private const int GRID_GAP = 10;
     private readonly InputBox promptSize;
+    private readonly TilesetPrompt tilesetPrompt;
 
     private string infoText = "";
     private float infoTextTimer;
@@ -302,7 +368,7 @@ public class Editor
 
         Ui.Add(btnMapSize, btnViewSize);
 
-        Keyboard.OnKeyPress(Keyboard.Key.Enter, _ =>
+        Keyboard.Key.Enter.OnPress(() =>
         {
             if (Prompt.IsHidden)
                 return;
@@ -360,15 +426,10 @@ public class Editor
             btn.OnInteraction(Interaction.PressAndHold, Trigger);
 
         btn.OnInteraction(Interaction.Trigger, Trigger);
-        btn.OnUpdate(() =>
-        {
-            var (w, h) = MapsEditor.ViewSize;
-            btn.IsHidden = MapsEditor.Size == (w, h);
-            btn.IsDisabled = btn.IsHidden;
-        });
+        btn.OnInteraction(Interaction.PressAndHold, Trigger);
         btn.OnDisplay(() =>
         {
-            var color = btn.GetInteractionColor(Color.Gray);
+            var color = btn.GetInteractionColor(Color.Gray.ToBright());
             var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (sbyte)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
             MapsUi[(int)LayerMapsUi.Front].SetTile(
@@ -381,7 +442,7 @@ public class Editor
         void Trigger()
         {
             var (x, y) = MapsEditor.ViewPosition;
-            MapsEditor.ViewPosition = (x + offX * 10, y + offY * 10);
+            MapsEditor.ViewPosition = (x + offX * 5, y + offY * 5);
 
             if (offX == 0 && offY == 0)
             {
@@ -464,7 +525,7 @@ public class Editor
     }
     private void TryViewMove()
     {
-        var mmb = Mouse.IsButtonPressed(Mouse.Button.Middle);
+        var mmb = Mouse.Button.Middle.IsPressed();
 
         if (IsDisabledViewMove || mmb == false)
             return;
@@ -503,6 +564,23 @@ public class Editor
         ViewPosition = (
             ViewPosition.x + (mx - px) / PIXEL_SCALE * aw,
             ViewPosition.y + (my - py) / PIXEL_SCALE * ah);
+    }
+
+    private static string GrabString(byte[] fromBytes, ref int byteOffset)
+    {
+        var textBytesLength = GrabInt(fromBytes, ref byteOffset);
+        var bText = GetBytes(fromBytes, textBytesLength, ref byteOffset);
+        return Encoding.UTF8.GetString(bText);
+    }
+    private static int GrabInt(byte[] fromBytes, ref int byteOffset)
+    {
+        return BitConverter.ToInt32(GetBytes(fromBytes, 4, ref byteOffset));
+    }
+    private static byte[] GetBytes(byte[] fromBytes, int amount, ref int byteOffset)
+    {
+        var result = fromBytes[byteOffset..(byteOffset + amount)];
+        byteOffset += amount;
+        return result;
     }
 #endregion
 }

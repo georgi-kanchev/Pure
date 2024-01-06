@@ -37,7 +37,7 @@ public static class FlappyBird
 
         InitializePipes();
 
-        Keyboard.OnKeyPress(Keyboard.Key.Space, _ =>
+        Keyboard.Key.Space.OnPress(() =>
         {
             birdVelocity = -0.1f;
             birdAnimation.CurrentProgress = 0;

@@ -82,9 +82,9 @@ public static class Pong
 
         void ControlPaddle(ref Point paddlePosition)
         {
-            if (Keyboard.IsKeyPressed(Keyboard.Key.ArrowUp))
+            if (Keyboard.Key.ArrowUp.IsPressed())
                 paddlePosition = paddlePosition.MoveAt(270, PADDLE_SPEED, Time.Delta);
-            if (Keyboard.IsKeyPressed(Keyboard.Key.ArrowDown))
+            if (Keyboard.Key.ArrowDown.IsPressed())
                 paddlePosition = paddlePosition.MoveAt(90, PADDLE_SPEED, Time.Delta);
         }
 

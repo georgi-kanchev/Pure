@@ -410,15 +410,22 @@ public static class TilemapperUserInterface
                 tile: new(Tile.MATH_GREATER, GetInteractionColor(list, Color.Gray.ToBright()),
                     turns: 1));
     }
-    public static void SetListItem(this TilemapPack maps, List list, Button item, int zOrder = 1)
+    public static void SetListItem(
+        this TilemapPack maps,
+        List list,
+        Button item,
+        int zOrder = 1,
+        bool isSelectHighlighting = true)
     {
-        var color = item.IsSelected ? Color.Green : Color.Gray.ToBright(0.3f);
+        var color = item.IsSelected && isSelectHighlighting ? Color.Green : Color.Gray.ToBright(0.3f);
         var (x, y) = item.Position;
         var (_, h) = item.Size;
         var isLeftCrop =
             list.Span == Span.Horizontal &&
             item.Size.width < list.ItemSize.width &&
             item.Position == list.Position;
+
+        color = item.IsDisabled ? Color.Gray : color;
 
         SetBackground(maps[zOrder], item, 0.25f);
         maps[zOrder + 1].SetTextLine(

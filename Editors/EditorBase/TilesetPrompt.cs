@@ -1,11 +1,10 @@
-namespace Pure.Editors.EditorMap;
+namespace Pure.Editors.EditorBase;
 
 internal class TilesetPrompt
 {
-    public TilesetPrompt(Editor editor, TilePalette tilePalette)
+    public TilesetPrompt(Editor editor)
     {
         this.editor = editor;
-        this.tilePalette = tilePalette;
 
         const int BACK = (int)Editor.LayerMapsUi.PromptBack;
         const int MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
@@ -40,7 +39,7 @@ internal class TilesetPrompt
                 PromptTilesetAccept();
         });
 
-        Keyboard.OnKeyPress(Keyboard.Key.Enter, asText =>
+        Keyboard.Key.Enter.OnPress(() =>
         {
             if (editor.Prompt.IsHidden)
                 return;
@@ -57,6 +56,9 @@ internal class TilesetPrompt
         });
     }
 
+    public Action<Layer, Tilemap>? OnSuccess { get; set; }
+    public Action? OnFail { get; set; }
+
     public void Open()
     {
         editor.Prompt.Text = "Select Image File:";
@@ -72,8 +74,9 @@ internal class TilesetPrompt
     }
 
 #region Backend
+    private readonly Layer layer = new((1, 1));
+    private Tilemap? map;
     private readonly Editor editor;
-    private readonly TilePalette tilePalette;
     private readonly InputBox pair;
     private readonly FileViewer fileViewer;
     private readonly Stepper stepper;
@@ -91,13 +94,13 @@ internal class TilesetPrompt
         var path = fileViewer.SelectedPaths[0];
         editor.LayerGrid.TilesetPath = path;
         editor.LayerMap.TilesetPath = path;
-        tilePalette.layer.TilesetPath = path;
+        layer.TilesetPath = path;
 
         if (editor.LayerMap.TilesetPath == "default")
         {
             editor.LayerGrid.ResetToDefaults();
             editor.LayerMap.ResetToDefaults();
-            tilePalette.Create(tilePalette.layer.TilesetSize);
+            OnFail?.Invoke();
             editor.PromptMessage("Could not load image!");
             return;
         }
@@ -131,7 +134,7 @@ internal class TilesetPrompt
         var result = ((int)split[0].ToNumber(), (int)split[1].ToNumber());
         editor.LayerGrid.TileSize = result;
         editor.LayerMap.TileSize = result;
-        tilePalette.layer.TileSize = result;
+        layer.TileSize = result;
         PromptTileGap();
     }
     private void PromptTileGap()
@@ -161,7 +164,7 @@ internal class TilesetPrompt
         var result = ((int)split[0].ToNumber(), (int)split[1].ToNumber());
         editor.LayerGrid.TileGap = result;
         editor.LayerMap.TileGap = result;
-        tilePalette.layer.TileGap = result;
+        layer.TileGap = result;
 
         PromptTileFull();
     }
@@ -185,15 +188,17 @@ internal class TilesetPrompt
         editor.Prompt.Close();
         editor.LayerGrid.TileIdFull = result;
         editor.LayerMap.TileIdFull = result;
-        tilePalette.layer.TileIdFull = result;
+        layer.TileIdFull = result;
 
-        var (tw, th) = tilePalette.layer.TileSize;
+        var (tw, th) = layer.TileSize;
         var ratio = MathF.Max(tw / 8f, th / 8f);
-        var zoom = TilePalette.ZOOM_DEFAULT / ratio;
-        tilePalette.layer.Zoom = zoom;
-        tilePalette.map = new(tilePalette.layer.TilesetSize) { ViewSize = (10, 10) };
+        var zoom = 3.8f / ratio;
+        layer.Zoom = zoom;
+        map = new(layer.TilesetSize) { ViewSize = (10, 10) };
 
         editor.SetGrid();
+
+        OnSuccess?.Invoke(layer, map);
     }
 #endregion
 }

@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Editors\EditorCollision\EditorCollision.csproj"/>
         <ProjectReference Include="..\Editors\EditorMap\EditorMap.csproj"/>
         <ProjectReference Include="..\Engine\Animation\Animation.csproj"/>
         <ProjectReference Include="..\Engine\Audio\Audio.csproj"/>

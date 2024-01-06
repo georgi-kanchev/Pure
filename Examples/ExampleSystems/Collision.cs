@@ -44,13 +44,13 @@ public static class Collision
         tilemap.SetBackgrounds(background);
 
         collisionMap.Update(tilemap);
-        Keyboard.OnKeyPress(Keyboard.Key.A, _ =>
+        Keyboard.Key.A.OnPress(() =>
         {
             var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
             var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
             collisionMap.AddIgnoredCells(new Solid((3, 3), (mx - 1, my - 1)));
         });
-        Keyboard.OnKeyPress(Keyboard.Key.S, _ => collisionMap.ClearIgnoredCells());
+        Keyboard.Key.S.OnPress(() => collisionMap.ClearIgnoredCells());
 
         while (Window.KeepOpen())
         {

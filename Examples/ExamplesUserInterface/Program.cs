@@ -31,7 +31,7 @@ public static class Program
             Input.PositionPrevious = Input.Position;
             Input.Position = layer.PixelToWorld(Mouse.CursorPosition);
             Input.Update(
-                isPressed: Mouse.IsButtonPressed(Mouse.Button.Left),
+                isPressed: Mouse.Button.Left.IsPressed(),
                 scrollDelta: Mouse.ScrollDelta,
                 keysPressed: KeyIDsPressed,
                 keysTyped: KeyTyped);

@@ -371,9 +371,9 @@ public class InputBox : Block
     private static readonly Dictionary<SymbolGroup, string> symbolSets = new()
     {
         { SymbolGroup.Letters, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" },
-        { SymbolGroup.Digits, "0123456789" },
+        { SymbolGroup.Digits, "0123456789." },
         { SymbolGroup.Punctuation, ",.;:!?-()[]{}\"'" },
-        { SymbolGroup.Math, "+-*/=<>%(),.^" },
+        { SymbolGroup.Math, "+-*/=<>%(),^" },
         { SymbolGroup.Special, "@#&_|\\/^" },
         { SymbolGroup.Space, " " }
     };

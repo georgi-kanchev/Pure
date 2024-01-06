@@ -34,24 +34,19 @@ internal class MenuMain : Menu
             else if (index == 6)
                 OpenPromptFile();
         });
-    }
 
-    public override void Update()
-    {
-        base.Update();
+        Mouse.Button.Right.OnPress(() =>
+        {
+            var (x, y) = editor.MousePositionUi;
+            var (wx, wy) = editor.MousePositionWorld;
+            clickPositionWorld = ((int)wx, (int)wy);
 
-        if (Mouse.IsButtonPressed(Mouse.Button.Right).Once("onRMB") == false)
-            return;
+            foreach (var kvp in menus)
+                kvp.Value.IsHidden = true;
 
-        var (x, y) = editor.MousePositionUi;
-        var (wx, wy) = editor.MousePositionWorld;
-        clickPositionWorld = ((int)wx, (int)wy);
-
-        foreach (var kvp in menus)
-            kvp.Value.IsHidden = true;
-
-        Position = ((int)x + 1, (int)y + 1);
-        IsHidden = false;
+            Position = ((int)x + 1, (int)y + 1);
+            IsHidden = false;
+        });
     }
 
 #region Backend
