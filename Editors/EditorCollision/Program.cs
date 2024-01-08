@@ -1,22 +1,55 @@
-﻿global using Pure.Editors.EditorBase;
-global using Pure.Engine.Tilemap;
-global using System.Diagnostics.CodeAnalysis;
-global using Pure.Engine.UserInterface;
-global using Pure.Engine.Window;
-global using Pure.Tools.Tilemapper;
+﻿using Pure.Engine.Collision;
+using Pure.Engine.Utilities;
 
 namespace Pure.Editors.EditorCollision;
+
+using System.Diagnostics.CodeAnalysis;
+using EditorBase;
+using Engine.Tilemap;
+using Engine.UserInterface;
+using Tools.Tilemapper;
+using Engine.Window;
 
 public static class Program
 {
     public static void Run()
     {
+        editor.OnUpdateUi += () =>
+        {
+            if (isDragging)
+            {
+                solid.Size = (MousePos.x - solid.Position.x, MousePos.y - solid.Position.y);
+                solid.Color = new Color(0, 255, 0, 100);
+                editor.LayerMap.DrawRectangles(solid);
+            }
+
+            editor.LayerMap.DrawRectangles(solidPack);
+        };
         editor.Run();
     }
 
 #region Backend
     private static readonly Editor editor;
-    internal static Menu menu;
+    private static Menu menu;
+    private static readonly List tools;
+    private static Layer layerGlobal = new(), layerPerTile = new();
+    private static bool isDragging;
+    private static readonly SolidPack solidPack = new();
+    private static Solid solid;
+
+    private static bool CanEditGlobal
+    {
+        get => editor.LayerMap.IsHovered &&
+               editor.Prompt.IsHidden &&
+               editor.MapPanel.IsHovered == false &&
+               menu.IsHovered == false &&
+               tools.IsHovered == false &&
+               tools[0].IsSelected;
+    }
+    private static (float x, float y) MousePos
+    {
+        get => editor.LayerMap.PixelToWorld(Mouse.CursorPosition);
+    }
 
     static Program()
     {
@@ -24,7 +57,7 @@ public static class Program
 
         editor = new(title: "Pure - Collision Editor", mapSize: (mw, mh), viewSize: (mw, mh));
         editor.MapsEditor.Clear();
-        editor.MapsEditor.Add(new Tilemap((mw, mh)));
+        editor.MapsEditor.Add(new Tilemap((mw, mh)), new Tilemap((mw, mh)));
         editor.MapsEditor.ViewSize = (mw, mh);
         CreateMenu();
 
@@ -37,7 +70,8 @@ public static class Program
             editor.LoadMap();
         });
 
-        var tools = new List(itemCount: 0)
+        const int FRONT = (int)Editor.LayerMapsUi.Front;
+        tools = new(itemCount: 0)
         {
             Size = (8, 2),
             ItemSize = (8, 1),
@@ -48,29 +82,67 @@ public static class Program
             new Button { Text = "Global" });
         tools.Select(0);
         tools.Align((1f, 0f));
-        tools.OnDisplay(() => editor.MapsUi.SetList(tools, (int)Editor.LayerMapsUi.Front));
-        tools.OnItemDisplay(
-            item => editor.MapsUi.SetListItem(tools, item, (int)Editor.LayerMapsUi.Front));
+        tools.OnDisplay(() => editor.MapsUi.SetList(tools, FRONT));
+        tools.OnItemDisplay(item => editor.MapsUi.SetListItem(tools, item, FRONT));
         editor.Ui.Add(new Block[] { tools });
+
+        Mouse.Button.Left.OnPress(() =>
+        {
+            if (CanEditGlobal == false)
+                return;
+
+            isDragging = true;
+            solid.Position = MousePos;
+        });
+        Mouse.Button.Left.OnRelease(() =>
+        {
+            if (CanEditGlobal == false || isDragging == false)
+                return;
+
+            isDragging = false;
+
+            var (mx, my) = MousePos;
+            if (solid.Size.width < 0)
+                solid.Position = (mx, solid.Position.y);
+
+            if (solid.Size.height < 0)
+                solid.Position = (solid.Position.x, my);
+
+            solid.Size = (Math.Abs(solid.Size.width), Math.Abs(solid.Size.height));
+            solidPack.Add(solid);
+        });
+        Mouse.Button.Right.OnPress(() =>
+        {
+            if (CanEditGlobal == false)
+                return;
+
+            for (var i = 0; i < solidPack.Count; i++)
+                if (solidPack[i].IsOverlapping(MousePos))
+                {
+                    solidPack.Remove(solidPack[i]);
+                    i--;
+                }
+        });
     }
 
     [MemberNotNull(nameof(menu))]
     private static void CreateMenu()
     {
         menu = new(editor,
-                "Save… ",
-                " Solids Map",
-                " Solids Pack",
-                "Load… ",
-                " Solids Map",
-                " Solids Pack",
-                " Tileset",
-                " Tilemap")
-            { Size = (12, 8) };
+            "Save… ",
+            " Solids Global",
+            " Solids Map",
+            "Load… ",
+            " Solids Global",
+            " Solids Map",
+            " Tileset",
+            " Tilemap")
+        {
+            Size = (14, 8),
+            IsHidingOnClick = false
+        };
         menu.OnItemInteraction(Interaction.Trigger, btn =>
         {
-            menu.IsHidden = true;
-            menu.IsDisabled = true;
             var index = menu.IndexOf(btn);
 
             if (index == 1)
@@ -80,7 +152,7 @@ public static class Program
                 editor.OpenTilesetPrompt(null, null);
             else if (index == 7) // load map
             {
-                editor.Prompt.Text = "Select a Map File:";
+                editor.Prompt.Text = "Select Map File:";
                 editor.MapFileViewer.IsSelectingFolders = false;
                 editor.Prompt.Open(editor.MapFileViewer, i =>
                 {
@@ -93,17 +165,11 @@ public static class Program
                 });
             }
         });
-
-        Mouse.Button.Right.OnPress(() =>
+        menu.OnUpdate(() =>
         {
-            if (editor.Prompt.IsHidden == false)
-                return;
-
-            var (mx, my) = editor.LayerUi.PixelToWorld(Mouse.CursorPosition);
-            menu.IsHidden = false;
-            menu.IsDisabled = false;
-            menu.Position = ((int)mx + 1, (int)my + 1);
+            menu.IsHidden = editor.Prompt.IsHidden == false;
+            menu.Align((1f, 1f));
         });
-#endregion
     }
+#endregion
 }

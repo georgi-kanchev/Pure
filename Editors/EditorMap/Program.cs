@@ -109,7 +109,7 @@ public static class Program
                     onFail: () => tilePalette.Create(tilePalette.layer.TilesetSize));
             else if (index == 4) // load map
             {
-                editor.Prompt.Text = "Select a Map File:";
+                editor.Prompt.Text = "Select Map File:";
                 editor.MapFileViewer.IsSelectingFolders = false;
                 editor.Prompt.Open(editor.MapFileViewer, i =>
                 {

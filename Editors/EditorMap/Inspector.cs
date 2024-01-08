@@ -237,7 +237,7 @@ internal class Inspector : Panel
         if (i >= inspectorItems.Length)
             return;
 
-        if (i == 14 && palette.layer.IsHovered() && editor.Prompt.IsHidden)
+        if (i == 14 && palette.layer.IsHovered && editor.Prompt.IsHidden)
         {
             var (mx, my) = palette.mousePos;
             var index = new Indices(my, mx).ToIndex(palette.map.Size.width);

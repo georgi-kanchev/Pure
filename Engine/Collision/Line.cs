@@ -77,7 +77,7 @@ public struct Line
     /// </returns>
     public bool IsCrossing(SolidPack solidPack)
     {
-        for (var i = 0; i < solidPack.SolidsCount; i++)
+        for (var i = 0; i < solidPack.Count; i++)
             if (IsCrossing(solidPack[i]))
                 return true;
 
@@ -193,7 +193,8 @@ public struct Line
             foreach (var p in crossPoints)
             {
                 var (x, y, _) = p;
-                if (float.IsNaN(x) == false && float.IsNaN(y) == false &&
+                if (float.IsNaN(x) == false &&
+                    float.IsNaN(y) == false &&
                     result.Contains((x, y, uint.MaxValue)) == false)
                     result.Add((x, y, uint.MaxValue));
             }
@@ -211,7 +212,7 @@ public struct Line
     public (float x, float y, uint color)[] CrossPoints(SolidPack solidPack)
     {
         var result = new List<(float, float, uint)>();
-        for (var i = 0; i < solidPack.SolidsCount; i++)
+        for (var i = 0; i < solidPack.Count; i++)
             result.AddRange(CrossPoints(solidPack[i]));
 
         return result.ToArray();
@@ -314,7 +315,7 @@ public struct Line
         return (line.A.x, line.A.y, line.B.x, line.B.y, line.Color);
     }
 
-    #region Backend
+#region Backend
     private const int MAX_ITERATIONS = 1000;
 
     private static (float, float, uint) CrossPoint(
@@ -386,5 +387,5 @@ public struct Line
         var (bx, by) = b;
         return ax * bx + ay * by;
     }
-    #endregion
+#endregion
 }

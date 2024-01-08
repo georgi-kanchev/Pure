@@ -145,7 +145,9 @@ public class SolidMap
     }
     public Solid[] SolidsIn(int tileId)
     {
-        return cellRects.ContainsKey(tileId) == false ? Array.Empty<Solid>() : cellRects[tileId].ToArray();
+        return cellRects.ContainsKey(tileId) == false ?
+            Array.Empty<Solid>() :
+            cellRects[tileId].ToArray();
     }
 
     public void ClearSolids()
@@ -279,7 +281,7 @@ public class SolidMap
 
     public bool IsOverlapping(SolidPack solidPack)
     {
-        for (var i = 0; i < solidPack.SolidsCount; i++)
+        for (var i = 0; i < solidPack.Count; i++)
             if (IsOverlapping(solidPack[i]))
                 return true;
 
@@ -318,7 +320,8 @@ public class SolidMap
     {
         return solidMap.Solids;
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)[](SolidMap solidMap)
+    public static implicit operator (float x, float y, float width, float height, uint color)[](
+        SolidMap solidMap)
     {
         var solids = solidMap.Solids;
         var result = new (float x, float y, float width, float height, uint color)[solids.Length];
@@ -327,7 +330,7 @@ public class SolidMap
         return result;
     }
 
-    #region Backend
+#region Backend
     // save format in sectors
     // [amount of bytes]		- data
     // --------------------------------
@@ -397,7 +400,8 @@ public class SolidMap
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal)) stream.Write(data, 0, data.Length);
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
         return output.ToArray();
     }
     private static byte[] Decompress(byte[] data)
@@ -414,5 +418,5 @@ public class SolidMap
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

@@ -4,6 +4,8 @@ using Tools.Tilemapper;
 
 public class Menu : List
 {
+    public bool IsHidingOnClick { get; set; } = true;
+
     public Menu(Editor editor, params string[] options) : base((int.MaxValue, int.MaxValue),
         options.Length)
     {
@@ -19,30 +21,34 @@ public class Menu : List
             Disable(item, item.Text.EndsWith(" "));
             editor.MapsUi.SetListItem(this, item, 3, false);
         });
+        OnUpdate(() =>
+        {
+            IsDisabled = IsHidden;
+            Fit();
+        });
+
+        Mouse.OnWheelScroll(() =>
+        {
+            if (IsHidingOnClick)
+                IsHidden = true;
+        });
+        Mouse.Button.Middle.OnPress(() =>
+        {
+            if (IsHidingOnClick)
+                IsHidden = true;
+        });
+        Mouse.Button.Left.OnRelease(() =>
+        {
+            if (IsHidingOnClick && IsHovered == false)
+                IsHidden = true;
+        });
 
         editor.Ui.Add(new Block[] { this });
-
-        OnUpdate(() => IsDisabled = IsHidden);
     }
 
     public void Show((int x, int y) position)
     {
         Position = position;
         IsHidden = false;
-    }
-
-    protected override void OnInput()
-    {
-        base.OnInput();
-
-        Fit();
-
-        if (Mouse.ScrollDelta != 0 || Mouse.Button.Middle.IsPressed())
-            IsHidden = true;
-
-        var key = "on-lmb-deselect" + GetHashCode();
-        var onLmbRelease = (Mouse.Button.Left.IsPressed() == false).Once(key);
-        if (onLmbRelease && IsHovered == false)
-            IsHidden = true;
     }
 }

@@ -83,10 +83,6 @@ public static class Mouse
     /// </summary>
     public static int ScrollDelta { get; private set; }
 
-    public static bool IsHovered(this Layer layer)
-    {
-        return layer.IsOverlapping(layer.PixelToWorld(CursorPosition));
-    }
     /// <summary>
     /// Gets whether the specified mouse button is currently pressed.
     /// </summary>

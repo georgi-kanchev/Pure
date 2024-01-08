@@ -7,7 +7,7 @@ public class SolidPack
 {
     public (float x, float y) Position { get; set; }
     public (float width, float height) Scale { get; set; }
-    public int SolidsCount
+    public int Count
     {
         get => data.Count;
     }
@@ -36,7 +36,7 @@ public class SolidPack
             var h = BitConverter.ToSingle(Get<float>());
             var color = BitConverter.ToUInt32(Get<uint>());
 
-            SolidsAdd(new Solid((w, h), (x, y), color));
+            Add(new Solid((w, h), (x, y), color));
         }
 
         return;
@@ -46,7 +46,7 @@ public class SolidPack
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
         }
     }
-    public SolidPack((float x, float y) position, (float width, float height) scale = default)
+    public SolidPack((float x, float y) position = default, (float width, float height) scale = default)
     {
         scale = scale == default ? (1f, 1f) : scale;
 
@@ -54,12 +54,12 @@ public class SolidPack
         Scale = scale;
     }
     public SolidPack(
-        (float x, float y) position,
+        (float x, float y) position = default,
         (float width, float height) scale = default,
         params Solid[] solids)
         : this(position, scale)
     {
-        SolidsAdd(solids);
+        Add(solids);
     }
 
     public byte[] ToBytes()
@@ -89,17 +89,25 @@ public class SolidPack
         return Compress(result.ToArray());
     }
 
-    public void SolidsAdd(params Solid[]? solids)
+    public void Add(params Solid[]? solids)
     {
         if (solids == null || solids.Length == 0)
             return;
 
         data.AddRange(solids);
     }
+    public void Remove(params Solid[]? solids)
+    {
+        if (solids == null || solids.Length == 0)
+            return;
+
+        foreach (var solid in solids)
+            data.Remove(solid);
+    }
 
     public bool IsOverlapping(SolidPack solidPack)
     {
-        for (var i = 0; i < SolidsCount; i++)
+        for (var i = 0; i < Count; i++)
             if (solidPack.IsOverlapping(this[i]))
                 return true;
 
@@ -107,7 +115,7 @@ public class SolidPack
     }
     public bool IsOverlapping(Solid solid)
     {
-        for (var i = 0; i < SolidsCount; i++)
+        for (var i = 0; i < Count; i++)
             if (this[i].IsOverlapping(solid))
                 return true;
 
@@ -123,7 +131,7 @@ public class SolidPack
     }
     public bool IsOverlapping((float x, float y) point)
     {
-        for (var i = 0; i < SolidsCount; i++)
+        for (var i = 0; i < Count; i++)
             if (this[i].IsOverlapping(point))
                 return true;
 
@@ -147,8 +155,8 @@ public class SolidPack
     {
         return solidPack.data.ToArray();
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)[]
-        (SolidPack solidPack)
+    public static implicit operator (float x, float y, float width, float height, uint color)[](
+        SolidPack solidPack)
     {
         var result =
             new (float x, float y, float width, float height, uint color)[solidPack.data.Count];
@@ -165,7 +173,7 @@ public class SolidPack
         return result;
     }
 
-    #region Backend
+#region Backend
     // save format in sectors
     // [amount of bytes]	- data
     // --------------------------------
@@ -194,7 +202,8 @@ public class SolidPack
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal)) stream.Write(data, 0, data.Length);
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
 
         return output.ToArray();
     }
@@ -221,5 +230,5 @@ public class SolidPack
         localRect.Size = (w * Scale.width, h * Scale.height);
         return localRect;
     }
-    #endregion
+#endregion
 }

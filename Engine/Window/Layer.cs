@@ -63,6 +63,10 @@ public class Layer
         }
     }
     public bool IsOverflowing { get; set; }
+    public bool IsHovered
+    {
+        get => IsOverlapping(PixelToWorld(Mouse.CursorPosition));
+    }
 
     public (float x, float y) Offset { get; set; }
     public float Zoom
@@ -71,7 +75,7 @@ public class Layer
         set => zoom = Math.Clamp(value, 0, 1000f);
     }
 
-    public Layer((int width, int height) tilemapSize)
+    public Layer((int width, int height) tilemapSize = default)
     {
         Init();
         TilemapSize = tilemapSize;
@@ -120,7 +124,8 @@ public class Layer
             QueueRectangle((p.x, p.y), (1f / TileSize.width, 1f / TileSize.height), p.color);
         }
     }
-    public void DrawRectangles(params (float x, float y, float width, float height, uint color)[]? rectangles)
+    public void DrawRectangles(
+        params (float x, float y, float width, float height, uint color)[]? rectangles)
     {
         for (var i = 0; i < rectangles?.Length; i++)
         {
@@ -302,7 +307,8 @@ public class Layer
     public bool IsOverlapping((float x, float y) position)
     {
         return position is { x: >= 0, y: >= 0 } &&
-               position.x <= TilemapSize.width && position.y <= TilemapSize.height;
+               position.x <= TilemapSize.width &&
+               position.y <= TilemapSize.height;
     }
     public (float x, float y) PixelToWorld((int x, int y) pixelPosition)
     {
@@ -353,7 +359,7 @@ public class Layer
         tilesets["default"].CopyToImage().SaveToFile(filePath);
     }
 
-    #region Backend
+#region Backend
     internal static readonly Dictionary<string, Texture> tilesets = new();
     internal readonly VertexArray verts;
     private static readonly List<(float, float)> cursorOffsets = new()
@@ -541,5 +547,5 @@ public class Layer
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }

@@ -20,7 +20,7 @@ internal class TilePalette
             if (Program.menu.IsHidden == false ||
                 editor.Prompt.IsHidden == false ||
                 inspector is { IsHovered: false } ||
-                layer.IsHovered() == false)
+                layer.IsHovered == false)
                 return;
 
             var pos = layer.PixelToWorld(Mouse.CursorPosition);
@@ -71,7 +71,7 @@ internal class TilePalette
         var view = map.ViewUpdate();
         layer.DrawTilemap(view);
 
-        if (layer.IsHovered())
+        if (layer.IsHovered)
         {
             layer.DrawTiles(
                 ((int)mx, (int)my),
@@ -145,7 +145,7 @@ internal class TilePalette
     }
     private void UpdateSelected()
     {
-        if (layer.IsHovered() &&
+        if (layer.IsHovered &&
             Mouse.Button.Left.IsPressed() &&
             prevMousePos != mousePos)
         {
@@ -163,7 +163,9 @@ internal class TilePalette
     [MemberNotNullWhen(true, nameof(inspector))]
     private bool IsPaintAllowed()
     {
-        return inspector is { IsHovered: false } && editor.Prompt.IsHidden && Program.menu.IsHidden &&
+        return inspector is { IsHovered: false } &&
+               editor.Prompt.IsHidden &&
+               Program.menu.IsHidden &&
                editor.MapPanel.IsHovered == false;
     }
     private void OnMousePressed()
