@@ -17,12 +17,12 @@ public static class Collision
         var background = new Tilemap(tilemap.Size);
 
         var collisionMap = new SolidMap();
-        collisionMap.AddSolids(Tile.ICON_WAVE, new Solid((0.5f, 1), (0, 0), Color.Yellow)); // lake
-        collisionMap.AddSolids(Tile.ICON_WAVES, new Solid((1, 0.5f), (0, 0), Color.Yellow)); // lake
-        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE, new Solid((1, 1))); // house roof
-        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE_RIGHT, new Solid((1, 1))); // house wall
-        collisionMap.AddSolids(Tile.UPPERCASE_I, new Solid((1, 1))); // tree trunk
-        collisionMap.AddSolids(Tile.PATTERN_33, new Solid((1, 1))); // tree top
+        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid((0.5f, 1), (0, 0), Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Solid((1, 0.5f), (0, 0), Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE, new Solid((1, 1))); // house roof
+        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Solid((1, 1))); // house wall
+        collisionMap.SolidsAdd(Tile.UPPERCASE_I, new Solid((1, 1))); // tree trunk
+        collisionMap.SolidsAdd(Tile.PATTERN_33, new Solid((1, 1))); // tree top
 
         // icon tiles are 7x7, not 8x8, cut one row & column,
         // hitbox and tile on screen might mismatch since the tile is pixel perfect
@@ -48,9 +48,9 @@ public static class Collision
         {
             var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
             var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
-            collisionMap.AddIgnoredCells(new Solid((3, 3), (mx - 1, my - 1)));
+            collisionMap.IgnoredCellsAdd(new Solid((3, 3), (mx - 1, my - 1)));
         });
-        Keyboard.Key.S.OnPress(() => collisionMap.ClearIgnoredCells());
+        Keyboard.Key.S.OnPress(() => collisionMap.IgnoredCellsClear());
 
         while (Window.KeepOpen())
         {
@@ -74,7 +74,7 @@ public static class Collision
             layer.DrawPoints(crossPoints);
             layer.DrawTiles(mousePosition, tile);
 
-            Window.DrawLayer(layer);
+            layer.Draw();
         }
     }
 

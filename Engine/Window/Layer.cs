@@ -85,7 +85,7 @@ public class Layer
         verts = new(PrimitiveType.Quads);
     }
 
-    public void DrawCursor(int tileId = 546, uint tint = uint.MaxValue)
+    public void DrawCursor(int tileId = 546, uint tint = 3789677055)
     {
         if (Mouse.isOverWindow == false)
             return;

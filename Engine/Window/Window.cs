@@ -144,7 +144,7 @@ public static class Window
         renderTexture.Clear(new(BackgroundColor));
         return window.IsOpen;
     }
-    public static void DrawLayer(Layer layer)
+    public static void Draw(this Layer layer)
     {
         if (window == null || renderTexture == null)
             return;

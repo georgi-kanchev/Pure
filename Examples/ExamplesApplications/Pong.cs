@@ -43,7 +43,7 @@ public static class Pong
             layer.DrawTiles(paddleRightPosition, new Tile(Tile.SHADE_4), (1, PADDLE_HEIGHT), true);
             layer.DrawTiles(ballPosition, new Tile(Tile.SHAPE_CIRCLE), (1, 1), true);
             layer.DrawCursor();
-            Window.DrawLayer(layer);
+            layer.Draw();
         }
 
         void TryToBounceBallOffWindow()

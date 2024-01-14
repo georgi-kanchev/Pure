@@ -44,7 +44,7 @@ public static class Program
                 layer.DrawTilemap(maps[i].ToBundle());
 
             layer.DrawCursor();
-            Window.DrawLayer(layer);
+            layer.Draw();
         }
     }
 }

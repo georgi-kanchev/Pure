@@ -264,7 +264,8 @@ public static class Extensions
                 var targetIndex = Math.Clamp(index + offset, 0, max);
 
                 // prevent items order change
-                if (index > 0 && index < max &&
+                if (index > 0 &&
+                    index < max &&
                     itemList.Contains(list[index + (offset > 0 ? 1 : -1)]))
                     continue;
 
@@ -691,13 +692,12 @@ public static class Extensions
     /// <returns>The nearest multiple of the specified interval.</returns>
     public static float Snap(this float number, float interval)
     {
-        if (float.IsInfinity(number) || Math.Abs(interval) < 0.001f)
+        if (float.IsNaN(interval) || float.IsInfinity(number) || Math.Abs(interval) < 0.001f)
             return number;
 
         // this prevents -0
-        var value = number - (number < 0 ? interval : 0);
-        value -= number % interval;
-        return value;
+        //var value = number - (number < 0 ? interval : 0);
+        return number - number % interval;
     }
     /// <summary>
     /// Wraps a value within a range of 0 to target number inclusive. Useful for
@@ -780,18 +780,25 @@ public static class Extensions
                     : curve == AnimationCurve.Forward ? x == 0 ? 0 :
                     Math.Abs((int)(x - 1)) < 0.001f ? 1 :
                     MathF.Pow(2, -10 * x) *
-                    MathF.Sin((x * 10 - 0.75f) * (2 * MathF.PI) / 3) + 1
+                    MathF.Sin((x * 10 - 0.75f) * (2 * MathF.PI) / 3) +
+                    1
                     : x == 0 ? 0
                     : Math.Abs((int)(x - 1)) < 0.001f ? 1
-                    : x < 0.5f ? -(MathF.Pow(2, 20 * x - 10) * MathF.Sin((20f * x - 11.125f) *
-                        (2 * MathF.PI) / 4.5f)) / 2
+                    : x < 0.5f ? -(MathF.Pow(2, 20 * x - 10) *
+                                   MathF.Sin((20f * x - 11.125f) *
+                                             (2 * MathF.PI) /
+                                             4.5f)) /
+                                 2
                     : MathF.Pow(2, -20 * x + 10) *
-                    MathF.Sin((20 * x - 11.125f) * (2 * MathF.PI) / 4.5f) / 2 + 1;
+                      MathF.Sin((20 * x - 11.125f) * (2 * MathF.PI) / 4.5f) /
+                      2 +
+                      1;
             }
             case Animation.Swing:
             {
                 return curve == AnimationCurve.Backward ? 2.70158f * x * x * x - 1.70158f * x * x :
-                    curve == AnimationCurve.Forward ? 1 + 2.70158f * MathF.Pow(x - 1, 3) +
+                    curve == AnimationCurve.Forward ? 1 +
+                                                      2.70158f * MathF.Pow(x - 1, 3) +
                                                       1.70158f * MathF.Pow(x - 1, 2) :
                     (x < 0.5 ?
                         (MathF.Pow(2 * x, 2) * ((2.59491f + 1) * 2 * x - 2.59491f)) / 2 :
@@ -830,7 +837,7 @@ public static class Extensions
         if (isOverflowing)
         {
             var d = range.b - range.a;
-            return ((number - range.a) % d + d) % d + range.a;
+            return d == 0 ? range.a : ((number - range.a) % d + d) % d + range.a;
         }
         else
         {
@@ -1025,7 +1032,10 @@ public static class Extensions
     /// <param name="seed">The seed to use for the random generator (default is NaN, 
     /// meaning randomly chosen).</param>
     /// <returns>A random float value between the specified range of values.</returns>
-    public static float Random(this (float a, float b) range, float precision = 0, float seed = float.NaN)
+    public static float Random(
+        this (float a, float b) range,
+        float precision = 0,
+        float seed = float.NaN)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
@@ -1046,7 +1056,7 @@ public static class Extensions
             random = new(s);
             randomCache[s] = random;
         }
-        
+
         var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
 
         return randInt / precision;
@@ -1119,7 +1129,7 @@ public static class Extensions
     private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
     private static readonly Dictionary<string, Gate> gates = new();
     private static readonly Dictionary<int, Random> randomCache = new();
-    
+
     static Extensions()
     {
         holdFrequency.Start();

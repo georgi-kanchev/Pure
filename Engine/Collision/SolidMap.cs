@@ -5,8 +5,8 @@ using System.Runtime.InteropServices;
 
 public class SolidMap
 {
-    public int CountSolids { get; private set; }
-    public int CountIgnoredCells
+    public int SolidsCount { get; private set; }
+    public int IgnoredCellsCount
     {
         get => ignoredCells.Count;
     }
@@ -50,7 +50,7 @@ public class SolidMap
 
         var ignoredCount = BitConverter.ToInt32(Get<int>());
         for (var i = 0; i < ignoredCount; i++)
-            AddIgnoredCells((BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>())));
+            IgnoredCellsAdd((BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>())));
 
         var sectorCount = BitConverter.ToInt32(Get<int>());
         for (var i = 0; i < sectorCount; i++)
@@ -66,7 +66,7 @@ public class SolidMap
                 var h = BitConverter.ToSingle(Get<float>());
                 var color = BitConverter.ToUInt32(Get<uint>());
 
-                AddSolids(tileId, new Solid((w, h), (x, y), color));
+                SolidsAdd(tileId, new Solid((w, h), (x, y), color));
             }
         }
 
@@ -108,7 +108,7 @@ public class SolidMap
         return Compress(result.ToArray());
     }
 
-    public void AddSolids(int tileId, params Solid[]? solids)
+    public void SolidsAdd(int tileId, params Solid[]? solids)
     {
         if (solids == null || solids.Length == 0)
             return;
@@ -117,9 +117,9 @@ public class SolidMap
             cellRects[tileId] = new List<Solid>();
 
         cellRects[tileId].AddRange(solids);
-        CountSolids += solids.Length;
+        SolidsCount += solids.Length;
     }
-    public void RemoveSolids(int tileId, params Solid[]? solids)
+    public void SolidsRemove(int tileId, params Solid[]? solids)
     {
         if (solids == null || solids.Length == 0 || cellRects.ContainsKey(tileId) == false)
             return;
@@ -127,7 +127,7 @@ public class SolidMap
         var rects = cellRects[tileId];
         foreach (var solid in solids)
             if (rects.Remove(solid))
-                CountSolids--;
+                SolidsCount--;
     }
     public Solid[] SolidsAt((int x, int y) cell)
     {
@@ -150,21 +150,21 @@ public class SolidMap
             cellRects[tileId].ToArray();
     }
 
-    public void ClearSolids()
+    public void SolidsClear()
     {
-        CountSolids = 0;
+        SolidsCount = 0;
         cellRects.Clear();
     }
-    public void ClearSolids(int tileId)
+    public void SolidsClear(int tileId)
     {
         if (cellRects.ContainsKey(tileId) == false)
             return;
 
-        CountSolids -= cellRects[tileId].Count;
+        SolidsCount -= cellRects[tileId].Count;
         cellRects.Remove(tileId);
     }
 
-    public void AddIgnoredCells(params (int x, int y)[]? cells)
+    public void IgnoredCellsAdd(params (int x, int y)[]? cells)
     {
         if (cells == null || cells.Length == 0)
             return;
@@ -173,7 +173,7 @@ public class SolidMap
             if (ignoredCells.Contains(cell) == false)
                 ignoredCells.Add(cell);
     }
-    public void AddIgnoredCells(params Solid[]? cellRegions)
+    public void IgnoredCellsAdd(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -191,12 +191,12 @@ public class SolidMap
                     if (i > Math.Abs(rw * rh))
                         return;
 
-                    AddIgnoredCells((x, y));
+                    IgnoredCellsAdd((x, y));
                     i++;
                 }
         }
     }
-    public void RemoveIgnoredCells(params (int x, int y)[]? cells)
+    public void IgnoredCellsRemove(params (int x, int y)[]? cells)
     {
         if (cells == null || cells.Length == 0)
             return;
@@ -204,7 +204,7 @@ public class SolidMap
         foreach (var t in cells)
             ignoredCells.Remove(t);
     }
-    public void RemoveIgnoredCells(params Solid[]? cellRegions)
+    public void IgnoredCellsRemove(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -222,7 +222,7 @@ public class SolidMap
                     if (i > Math.Abs(rw * rh))
                         return;
 
-                    RemoveIgnoredCells((x, y));
+                    IgnoredCellsRemove((x, y));
                     i++;
                 }
         }
@@ -256,7 +256,7 @@ public class SolidMap
 
         return result.ToArray();
     }
-    public void ClearIgnoredCells()
+    public void IgnoredCellsClear()
     {
         ignoredCells.Clear();
     }

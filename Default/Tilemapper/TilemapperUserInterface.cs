@@ -133,16 +133,32 @@ public static class TilemapperUserInterface
             var file = item.Text;
             var iconColor = Color.Gray.ToBright();
 
-            if (Ext(".png") || Ext(".jpg") || Ext(".bmp") || Ext(".jpeg") || Ext(".svg") ||
-                Ext(".gif") || Ext(".psd") || Ext(".tif") || Ext(".tiff") || Ext(".webp") ||
-                Ext(".pdf") || Ext(".ico"))
+            if (Ext(".png") ||
+                Ext(".jpg") ||
+                Ext(".bmp") ||
+                Ext(".jpeg") ||
+                Ext(".svg") ||
+                Ext(".gif") ||
+                Ext(".psd") ||
+                Ext(".tif") ||
+                Ext(".tiff") ||
+                Ext(".webp") ||
+                Ext(".pdf") ||
+                Ext(".ico"))
             {
                 id = Tile.ICON_PICTURE;
                 iconColor = Color.Cyan;
             }
-            else if (Ext(".wav") || Ext(".ogg") || Ext(".flac") || Ext(".mp3") ||
-                     Ext(".aiff") || Ext(".aac") || Ext(".mid") || Ext(".cda") ||
-                     Ext(".mpa") || Ext(".wma"))
+            else if (Ext(".wav") ||
+                     Ext(".ogg") ||
+                     Ext(".flac") ||
+                     Ext(".mp3") ||
+                     Ext(".aiff") ||
+                     Ext(".aac") ||
+                     Ext(".mid") ||
+                     Ext(".cda") ||
+                     Ext(".mpa") ||
+                     Ext(".wma"))
             {
                 id = Tile.AUDIO_NOTES_BEAMED_EIGHT;
                 iconColor = Color.Purple.ToBright(0.35f);
@@ -157,8 +173,14 @@ public static class TilemapperUserInterface
                 id = Tile.ALIGN_HORIZONTAL_LEFT;
                 iconColor = Color.Azure;
             }
-            else if (Ext(".zip") || Ext(".rar") || Ext(".7z") || Ext(".arj") || Ext(".deb") ||
-                     Ext(".pkg") || Ext(".tar.gz") || Ext(".z"))
+            else if (Ext(".zip") ||
+                     Ext(".rar") ||
+                     Ext(".7z") ||
+                     Ext(".arj") ||
+                     Ext(".deb") ||
+                     Ext(".pkg") ||
+                     Ext(".tar.gz") ||
+                     Ext(".z"))
             {
                 id = Tile.ICON_STACK_2;
                 iconColor = Color.Brown;
@@ -300,13 +322,23 @@ public static class TilemapperUserInterface
             prompt.Text,
             alignment: Alignment.Center);
     }
-    public static void SetPromptItem(this TilemapPack maps, Prompt prompt, Button item, int zOrder = 2)
+    public static void SetPromptItem(
+        this TilemapPack maps,
+        Prompt prompt,
+        Button item,
+        int zOrder = 2,
+        params Tile[]? tiles)
     {
-        var tile = new Tile(Tile.ICON_TICK, GetInteractionColor(item, Color.Green));
-        if (prompt.IndexOf(item) == 1)
+        var index = prompt.IndexOf(item);
+        var tile = new Tile(
+            index == 0 ? Tile.ICON_TICK : Tile.ICON_CANCEL,
+            GetInteractionColor(item, index == 0 ? Color.Green : Color.Red));
+
+        if (tiles is { Length: > 0 } && index < tiles.Length)
         {
-            tile.Id = Tile.ICON_CANCEL;
-            tile.Tint = GetInteractionColor(item, Color.Red);
+            var curTile = tiles[index];
+            curTile.Tint = GetInteractionColor(item, curTile.Tint);
+            tile = curTile;
         }
 
         maps[zOrder].SetTile(item.Position, tile);

@@ -66,12 +66,15 @@ public static class Program
     private static void CreateMenu()
     {
         menu = new(editor,
-                "Save… ",
-                " Tilemap",
-                "Load… ",
-                " Tileset",
-                " Tilemap")
-            { Size = (9, 5) };
+            "Save… ",
+            " Tilemap",
+            "Load… ",
+            " Tileset",
+            " Tilemap")
+        {
+            Size = (9, 5),
+            IsHidden = true
+        };
         menu.OnItemInteraction(Interaction.Trigger, btn =>
         {
             menu.IsHidden = true;

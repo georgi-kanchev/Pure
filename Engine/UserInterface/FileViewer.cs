@@ -89,7 +89,7 @@ public class FileViewer : Block
 
     public FileViewer((int x, int y) position = default) : base(position)
     {
-        Size = (12, 8);
+        Size = (16, 16);
         Init();
         IsSelectingFolders = isSelectingFolders;
     }

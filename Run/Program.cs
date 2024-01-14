@@ -17,7 +17,6 @@ public static class Run
 
         //RunExampleUserInterface();
 
-        //Examples.ExamplesSystems.DefaultGraphics.Run();
         //Examples.ExamplesSystems.Collision.Run();
         //Examples.ExamplesSystems.Pathfinding.Run();
         //Examples.ExamplesSystems.Audio.Run();

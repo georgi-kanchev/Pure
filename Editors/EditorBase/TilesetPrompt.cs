@@ -25,7 +25,7 @@ internal class TilesetPrompt
         fileViewer = new()
         {
             FilesAndFolders = { IsSingleSelecting = true },
-            Size = (21, 10),
+            Size = (21, 16),
             FileFilter = ".png"
         };
         fileViewer.OnDisplay(() => maps.SetFileViewer(fileViewer, BACK));

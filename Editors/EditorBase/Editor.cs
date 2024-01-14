@@ -76,6 +76,8 @@ public class Editor
     public Action? OnUpdateUi { get; set; }
     public Action? OnUpdateLate { get; set; }
 
+    public Action<Button>? OnPromptItemDisplay { get; set; }
+
     public Editor(string title, (int width, int height) mapSize, (int width, int height) viewSize)
     {
         Window.Create(PIXEL_SCALE);
@@ -92,7 +94,8 @@ public class Editor
         Ui = new();
         Prompt = new() { ButtonCount = 2 };
         Prompt.OnDisplay(() => MapsUi.SetPrompt(Prompt, zOrder: (int)LayerMapsUi.PromptFade));
-        Prompt.OnItemDisplay(item => MapsUi.SetPromptItem(Prompt, item, (int)LayerMapsUi.PromptMiddle));
+        OnPromptItemDisplay = item => MapsUi.SetPromptItem(Prompt, item, (int)LayerMapsUi.PromptMiddle);
+        Prompt.OnItemDisplay(item => OnPromptItemDisplay?.Invoke(item));
         promptSize = new()
         {
             Value = "",
@@ -117,7 +120,7 @@ public class Editor
         MapFileViewer = new()
         {
             FilesAndFolders = { IsSingleSelecting = true },
-            Size = (21, 10)
+            Size = (21, 16)
         };
         MapFileViewer.OnDisplay(() => MapsUi.SetFileViewer(MapFileViewer, BACK));
         MapFileViewer.FilesAndFolders.OnItemDisplay(btn =>
@@ -201,9 +204,9 @@ public class Editor
 
             //========
 
-            Window.DrawLayer(LayerGrid);
-            Window.DrawLayer(LayerMap);
-            Window.DrawLayer(LayerUi);
+            LayerGrid.Draw();
+            LayerMap.Draw();
+            LayerUi.Draw();
 
             OnUpdateLate?.Invoke();
         }
@@ -245,6 +248,7 @@ public class Editor
     public void PromptYesNo(string message, Action? onAccept)
     {
         Prompt.Text = message;
+        Prompt.ButtonCount = 2;
         Prompt.Open(onButtonTrigger: i =>
         {
             Prompt.Close();
@@ -327,6 +331,7 @@ public class Editor
     {
         tilesetPrompt.OnSuccess = onSuccess;
         tilesetPrompt.OnFail = onFail;
+        Prompt.ButtonCount = 2;
         tilesetPrompt.Open();
     }
 
@@ -353,6 +358,7 @@ public class Editor
         {
             Prompt.Text = $"Enter Map Size,{Environment.NewLine}" +
                           $"example: '100 100'.";
+            Prompt.ButtonCount = 2;
             Prompt.Open(promptSize, ResizePressMap);
         });
         btnMapSize.OnDisplay(() => MapsUi.SetButton(btnMapSize));
@@ -362,6 +368,7 @@ public class Editor
         {
             Prompt.Text = $"Enter View Size,{Environment.NewLine}" +
                           $"example: '100 100'.";
+            Prompt.ButtonCount = 2;
             Prompt.Open(promptSize, ResizePressView);
         });
         btnViewSize.OnDisplay(() => MapsUi.SetButton(btnViewSize));

@@ -36,7 +36,7 @@ public static class Pathfinding
             layer.DrawLines(lines);
             layer.DrawPoints(points);
             layer.DrawCursor();
-            Window.DrawLayer(layer);
+            layer.Draw();
         }
     }
 }
