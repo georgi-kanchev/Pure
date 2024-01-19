@@ -43,6 +43,7 @@ public class Editor
 
     public BlockPack Ui { get; }
     public Prompt Prompt { get; }
+    public InputBox PromptInput { get; }
 
     public Panel MapPanel { get; }
     public FileViewer MapFileViewer { get; }
@@ -127,6 +128,25 @@ public class Editor
             MapsUi.SetFileViewerItem(MapFileViewer, btn, MIDDLE));
         MapFileViewer.HardDrives.OnItemDisplay(btn =>
             MapsUi.SetFileViewerItem(MapFileViewer, btn, MIDDLE));
+        MapFileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, item =>
+        {
+            if (MapFileViewer.IsFolder(item) == false)
+                Prompt.TriggerButton(0);
+        });
+
+        PromptInput = new()
+        {
+            Size = (20, 1),
+            Value = "",
+            IsSingleLine = true
+        };
+        PromptInput.OnDisplay(() => MapsUi.SetInputBox(PromptInput, BACK));
+
+        Keyboard.Key.Enter.OnPress(() =>
+        {
+            if (Prompt.IsHidden == false)
+                Prompt.TriggerButton(0);
+        });
 
         tilesetPrompt = new(this);
     }

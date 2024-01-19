@@ -50,7 +50,7 @@ public class Button : Block
             isSelected = isSelected == false;
 
             if (IsSelected)
-                SimulateInteraction(Interaction.Select);
+                Interact(Interaction.Select);
         });
     }
     protected override void OnInput()

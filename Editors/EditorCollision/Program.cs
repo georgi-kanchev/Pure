@@ -15,6 +15,11 @@ public static class Program
     {
         editor.OnUpdateUi += () =>
         {
+            if (prevViewPos != editor.MapsEditor.ViewPosition)
+                UpdateSolidMapOffset();
+
+            prevViewPos = editor.MapsEditor.ViewPosition;
+
             if (CanDrawLayer)
             {
                 layer.DrawTilemap(map);
@@ -47,14 +52,18 @@ public static class Program
     }
 
 #region Backend
+    private static (int x, int y) prevViewPos;
+    private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
-    private static Menu menu;
     private static readonly List tools;
     private static readonly Layer layer = new();
     private static readonly Tilemap map = new((3, 3));
+    private static readonly FileViewer saveLoad = new();
+    private static readonly Panel promptPanel;
+    private static SolidPack solidPack = new();
+    private static SolidMap solidMap = new();
+    private static Menu menu;
     private static bool isDragging;
-    private static readonly SolidPack solidPack = new();
-    private static readonly SolidMap solidMap = new();
     private static Solid solid;
     private static string[] layers = { "Layer1" };
     private static int currentLayer;
@@ -146,7 +155,7 @@ public static class Program
                 CanDrawLayer ? tiles : null);
         };
 
-        var promptPanel = new Panel
+        promptPanel = new()
         {
             Size = (30, 30),
             IsResizable = false,
@@ -157,10 +166,28 @@ public static class Program
         layer.TilemapSize = map.Size;
         layer.Offset = (0f, -10f);
 
-        SubscribeToClicks(promptPanel);
+        const int BACK = (int)Editor.LayerMapsUi.PromptBack;
+        const int MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
+        saveLoad = new()
+        {
+            FilesAndFolders = { IsSingleSelecting = true },
+            Size = (21, 16)
+        };
+        saveLoad.OnDisplay(() => editor.MapsUi.SetFileViewer(saveLoad, BACK));
+        saveLoad.FilesAndFolders.OnItemDisplay(btn =>
+            editor.MapsUi.SetFileViewerItem(saveLoad, btn, MIDDLE));
+        saveLoad.HardDrives.OnItemDisplay(btn =>
+            editor.MapsUi.SetFileViewerItem(saveLoad, btn, MIDDLE));
+        saveLoad.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, item =>
+        {
+            if (saveLoad.IsFolder(item) == false)
+                editor.Prompt.TriggerButton(0);
+        });
+
+        SubscribeToClicks();
     }
 
-    private static void SubscribeToClicks(Panel promptPanel)
+    private static void SubscribeToClicks()
     {
         Mouse.Button.Left.OnPress(() =>
         {
@@ -184,6 +211,8 @@ public static class Program
                 return;
 
             var (x, y) = MousePos;
+            x += editor.MapsEditor.ViewPosition.x;
+            y += editor.MapsEditor.ViewPosition.y;
             editor.Prompt.ButtonCount = 3;
             currentTile = editor.MapsEditor[currentLayer].TileAt(((int)x, (int)y));
 
@@ -303,8 +332,65 @@ public static class Program
         {
             var index = menu.IndexOf(btn);
 
-            if (index == 1)
+            if (index is 1 or 2) // save solids
             {
+                saveLoad.IsSelectingFolders = true;
+                editor.Prompt.Text = "Select a Directory:";
+                editor.Prompt.ButtonCount = 2;
+                editor.Prompt.Open(saveLoad, i =>
+                {
+                    editor.Prompt.Close();
+
+                    if (i != 0)
+                        return;
+
+                    editor.Prompt.Text = "Provide a File Name:";
+                    editor.Prompt.Open(editor.PromptInput, btnIndex =>
+                    {
+                        editor.Prompt.Close();
+                        if (btnIndex != 0)
+                            return;
+
+                        var paths = saveLoad.SelectedPaths;
+                        var directory = paths.Length == 1 ? paths[0] : saveLoad.CurrentDirectory;
+                        var path = Path.Combine($"{directory}", editor.PromptInput.Value);
+
+                        // ignore editor offset, keep original tilemap's view
+                        var prevOffset = solidMap.Offset;
+                        if (index == 2)
+                            solidMap.Offset = originalMapViewPos;
+
+                        var data = index == 1 ? solidPack.ToBytes() : solidMap.ToBytes();
+                        File.WriteAllBytes(path, data);
+
+                        solidMap.Offset = prevOffset;
+                    });
+                });
+            }
+            else if (index is 4 or 5) // load solids
+            {
+                saveLoad.IsSelectingFolders = false;
+                editor.Prompt.Text = "Select Solids File:";
+                editor.Prompt.ButtonCount = 2;
+                editor.Prompt.Open(saveLoad, i =>
+                {
+                    editor.Prompt.Close();
+
+                    if (i != 0)
+                        return;
+
+                    var selectedPaths = saveLoad.SelectedPaths;
+                    var file = selectedPaths.Length == 1 ? selectedPaths[0] : saveLoad.CurrentDirectory;
+                    var bytes = File.ReadAllBytes($"{file}");
+
+                    if (index == 4)
+                        solidPack = new(bytes);
+                    else
+                    {
+                        solidMap = new(bytes);
+                        UpdateSolidMapOffset();
+                    }
+                });
             }
             else if (index == 6) // load tileset
                 editor.OpenTilesetPrompt(null, null);
@@ -321,6 +407,8 @@ public static class Program
                         return;
 
                     layers = editor.LoadMap();
+                    originalMapViewPos = editor.MapsEditor.ViewPosition;
+                    solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
             }
         });
@@ -341,6 +429,13 @@ public static class Program
             return;
 
         currentLayer = (currentLayer + offset).Limit((0, layers.Length - 1), true);
+    }
+
+    private static void UpdateSolidMapOffset()
+    {
+        var (x, y) = editor.MapsEditor.ViewPosition;
+        solidMap.Offset = (-x, -y);
+        solidMap.Update(editor.MapsEditor[currentLayer]);
     }
 
     private static (float x, float y) Snap((float x, float y) pair)

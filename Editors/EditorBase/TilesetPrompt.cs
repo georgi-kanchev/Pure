@@ -38,22 +38,6 @@ internal class TilesetPrompt
             if (fileViewer.IsFolder(btn) == false)
                 PromptTilesetAccept();
         });
-
-        Keyboard.Key.Enter.OnPress(() =>
-        {
-            if (editor.Prompt.IsHidden)
-                return;
-
-            var text = editor.Prompt.Text;
-            if (text.Contains("Image File"))
-                PromptTilesetAccept();
-            else if (text.Contains("Tile Size"))
-                PromptTileSizeAccept();
-            else if (text.Contains("Tile Gap"))
-                PromptTileGapAccept();
-            else if (text.Contains("Full Tile Id"))
-                PromptTileFullAccept();
-        });
     }
 
     public Action<Layer, Tilemap>? OnSuccess { get; set; }

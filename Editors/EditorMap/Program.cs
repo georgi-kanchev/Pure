@@ -23,7 +23,6 @@ public static class Program
     private static readonly Editor editor;
     private static readonly Inspector inspector;
     private static readonly TilePalette tilePalette;
-    private static readonly InputBox mapSaveName;
 
     internal static Menu menu;
 
@@ -38,16 +37,6 @@ public static class Program
 
         tilePalette = new(editor);
         inspector = new(editor, tilePalette);
-
-        const int BACK = (int)Editor.LayerMapsUi.PromptBack;
-
-        mapSaveName = new()
-        {
-            Size = (20, 1),
-            Value = "cool.tmap",
-            IsSingleLine = true
-        };
-        mapSaveName.OnDisplay(() => editor.MapsUi.SetInputBox(mapSaveName, BACK));
 
         editor.MapFileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, btn =>
         {
@@ -93,11 +82,11 @@ public static class Program
                         return;
 
                     editor.Prompt.Text = "Provide a File Name:";
-                    editor.Prompt.Open(mapSaveName, btnIndex =>
+                    editor.Prompt.Open(editor.PromptInput, btnIndex =>
                     {
                         editor.Prompt.Close();
                         if (btnIndex == 0)
-                            Save(mapSaveName.Value);
+                            Save(editor.PromptInput.Value);
                     });
                 });
             }
@@ -148,20 +137,17 @@ public static class Program
     {
         try
         {
-            var selectedPaths = editor.MapFileViewer.SelectedPaths;
-            var directory = selectedPaths.Length == 1 ?
-                selectedPaths[0] :
-                editor.MapFileViewer.CurrentDirectory;
+            var paths = editor.MapFileViewer.SelectedPaths;
+            var directory = paths.Length == 1 ? paths[0] : editor.MapFileViewer.CurrentDirectory;
             var layers = inspector.layers;
             var bytes = new List<byte>();
-            var path = $"{directory}{Path.DirectorySeparatorChar}{name}";
+            var path = Path.Combine($"{directory}", name);
 
             PutInt(bytes, layers.Count);
             for (var i = 0; i < layers.Count; i++)
                 PutString(bytes, layers[i].Text);
 
             bytes.AddRange(editor.MapsEditor.ToBytes());
-
             File.WriteAllBytes(path, bytes.ToArray());
         }
         catch (Exception)

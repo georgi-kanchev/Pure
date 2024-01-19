@@ -34,7 +34,7 @@ public class Pages : Block
             UpdatePages();
 
             if (prev != current)
-                SimulateInteraction(Interaction.Select);
+                Interact(Interaction.Select);
         }
     }
 

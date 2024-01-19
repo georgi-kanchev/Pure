@@ -72,11 +72,11 @@ public class SolidPack
         var bCount = BitConverter.GetBytes(c);
         var result = new List<byte>();
 
+        result.AddRange(bCount);
         result.AddRange(bX);
         result.AddRange(bY);
         result.AddRange(bScW);
         result.AddRange(bScH);
-        result.AddRange(bCount);
         foreach (var r in data)
         {
             result.AddRange(BitConverter.GetBytes(r.Position.x));

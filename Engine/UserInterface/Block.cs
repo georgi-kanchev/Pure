@@ -318,19 +318,19 @@ public abstract class Block
         TryTrigger();
 
         if (IsFocused && Input.FocusedPrevious != this)
-            SimulateInteraction(Interaction.Focus);
+            Interact(Interaction.Focus);
         if (IsFocused == false && Input.FocusedPrevious == this)
-            SimulateInteraction(Interaction.Unfocus);
+            Interact(Interaction.Unfocus);
         if (IsHovered && wasHovered == false)
-            SimulateInteraction(Interaction.Hover);
+            Interact(Interaction.Hover);
         if (IsHovered == false && wasHovered)
-            SimulateInteraction(Interaction.Unhover);
+            Interact(Interaction.Unhover);
         if (IsPressed && Input.WasPressed == false)
-            SimulateInteraction(Interaction.Press);
+            Interact(Interaction.Press);
         if (IsHovered && IsPressed == false && Input.WasPressed)
-            SimulateInteraction(Interaction.Release);
+            Interact(Interaction.Release);
         if (IsPressedAndHeld && Input.IsJustHeld)
-            SimulateInteraction(Interaction.PressAndHold);
+            Interact(Interaction.PressAndHold);
 
         var p = Input.Position;
         var pp = Input.PositionPrevious;
@@ -355,7 +355,7 @@ public abstract class Block
         if (Input.ScrollDelta == 0 || IsScrollable == false)
             return; // scroll even when hovering children
 
-        SimulateInteraction(Interaction.Scroll);
+        Interact(Interaction.Scroll);
         ApplyScroll();
 
         return;
@@ -375,12 +375,16 @@ public abstract class Block
 
     public bool IsOverlapping((float x, float y) point)
     {
-        if (point.x < 0 || point.x >= Input.TilemapSize.width ||
-            point.y < 0 || point.y >= Input.TilemapSize.height)
+        if (point.x < 0 ||
+            point.x >= Input.TilemapSize.width ||
+            point.y < 0 ||
+            point.y >= Input.TilemapSize.height)
             return false;
 
-        return point.x >= Position.x && point.x < Position.x + Size.width &&
-               point.y >= Position.y && point.y < Position.y + Size.height;
+        return point.x >= Position.x &&
+               point.x < Position.x + Size.width &&
+               point.y >= Position.y &&
+               point.y < Position.y + Size.height;
     }
     public bool IsOverlapping(Block block)
     {
@@ -424,7 +428,7 @@ public abstract class Block
             Position = (x, y);
     }
 
-    public void SimulateInteraction(Interaction interaction)
+    public void Interact(Interaction interaction)
     {
         if (interactions.ContainsKey(interaction) == false)
             return;
@@ -578,7 +582,7 @@ public abstract class Block
         if (IsHovered && Input.IsJustReleased && IsPressedAndHeld)
         {
             IsPressedAndHeld = false;
-            SimulateInteraction(Interaction.Trigger);
+            Interact(Interaction.Trigger);
 
             if (isReadyForDoubleClick == false)
             {
@@ -588,7 +592,7 @@ public abstract class Block
             }
 
             if (isReadyForDoubleClick && isAllowed)
-                SimulateInteraction(Interaction.DoubleTrigger);
+                Interact(Interaction.DoubleTrigger);
 
             isReadyForDoubleClick = false;
         }

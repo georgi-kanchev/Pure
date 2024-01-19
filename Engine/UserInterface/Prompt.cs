@@ -61,6 +61,13 @@ public class Prompt : Block
     {
         itemDisplay += method;
     }
+    public void TriggerButton(int index)
+    {
+        if (index < 0 || index >= buttons.Count || IsDisabled)
+            return;
+
+        buttons[index].Interact(Interaction.Trigger);
+    }
 
 #region Backend
     private readonly List<Button> buttons = new();

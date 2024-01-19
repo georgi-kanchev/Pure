@@ -4,21 +4,9 @@ using System.Diagnostics.CodeAnalysis;
 
 public class Palette : Block
 {
-    public Slider Opacity
-    {
-        get;
-        private set;
-    }
-    public Pages Brightness
-    {
-        get;
-        private set;
-    }
-    public Button Pick
-    {
-        get;
-        private set;
-    }
+    public Slider Opacity { get; private set; }
+    public Pages Brightness { get; private set; }
+    public Button Pick { get; private set; }
 
     public uint SelectedColor
     {
@@ -29,7 +17,7 @@ public class Palette : Block
             selectedColor = value;
 
             if (prev != selectedColor)
-                SimulateInteraction(Interaction.Select);
+                Interact(Interaction.Select);
         }
     }
 
