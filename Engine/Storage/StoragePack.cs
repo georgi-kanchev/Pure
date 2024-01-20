@@ -3,7 +3,7 @@ namespace Pure.Engine.Storage;
 using System.IO.Compression;
 using System.Text;
 
-public class StorageRaw
+public class StoragePack
 {
     public byte[] this[string key]
     {
@@ -11,7 +11,34 @@ public class StorageRaw
         set => data[key] = value;
     }
 
-    public void ToFile(string path)
+    public StoragePack()
+    {
+    }
+    public StoragePack(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+        var sectorCount = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+
+        for (var i = 0; i < sectorCount; i++)
+        {
+            var keyLength = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+            var key = BytesToText(GetBytesFrom(b, keyLength, ref offset));
+            var dataLength = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+            var dataBytes = GetBytesFrom(b, dataLength, ref offset);
+
+            data[key] = dataBytes;
+        }
+    }
+    public StoragePack(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
+
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
     {
         var result = new List<byte>();
         result.AddRange(BitConverter.GetBytes(data.Count));
@@ -25,23 +52,16 @@ public class StorageRaw
             result.AddRange(kvp.Value);
         }
 
-        File.WriteAllBytes(path, Compress(result.ToArray()));
+        return Compress(result.ToArray());
     }
-    public void FromFile(string path)
+
+    public static implicit operator StoragePack(byte[] bytes)
     {
-        var bytes = Decompress(File.ReadAllBytes(path));
-        var offset = 0;
-        var sectorCount = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-
-        for (var i = 0; i < sectorCount; i++)
-        {
-            var keyLength = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-            var key = BytesToText(GetBytesFrom(bytes, keyLength, ref offset));
-            var dataLength = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-            var dataBytes = GetBytesFrom(bytes, dataLength, ref offset);
-
-            this.data[key] = dataBytes;
-        }
+        return new(bytes);
+    }
+    public static implicit operator byte[](StoragePack storage)
+    {
+        return storage.ToBytes();
     }
 
 #region Backend

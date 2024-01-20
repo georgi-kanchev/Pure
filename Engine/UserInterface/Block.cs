@@ -256,7 +256,14 @@ public abstract class Block
         IsDisabled = GrabBool(bytes);
         hasParent = GrabBool(bytes);
     }
+    public Block(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public virtual string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public virtual byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -277,7 +284,6 @@ public abstract class Block
 
         return result.ToArray();
     }
-
     public override string ToString()
     {
         return $"{GetType().Name} \"{Text}\"";
@@ -515,6 +521,15 @@ public abstract class Block
         var textBytesLength = GrabInt(fromBytes);
         var bText = GetBytes(fromBytes, textBytesLength);
         return Encoding.UTF8.GetString(bText);
+    }
+
+    public static implicit operator string(Block block)
+    {
+        return block.ToBase64();
+    }
+    public static implicit operator byte[](Block block)
+    {
+        return block.ToBytes();
     }
 
 #region Backend

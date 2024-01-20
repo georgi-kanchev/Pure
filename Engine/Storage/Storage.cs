@@ -9,7 +9,7 @@ using System.Text;
 
 /// <summary>
 /// Provides a simple key-value storage system that can serialize and deserialize objects 
-/// to and from text or binary files. Supported types include:<br></br>
+/// to and from text/bytes. The supported types are:<br></br>
 /// A. Primitives and Strings<br></br>
 /// B. Tuples of A<br></br>
 /// C. Arrays of A and B<br></br>
@@ -43,6 +43,52 @@ public class Storage
     {
         Dividers = default;
         DividersCollection = default;
+    }
+    public Storage(byte[] bytes)
+    {
+        var text = Encoding.UTF8.GetString(Decompress(bytes));
+        LoadFromText(text);
+    }
+    public Storage(string text, bool isBase64 = false)
+    {
+        if (isBase64)
+        {
+            var bytes = Decompress(Convert.FromBase64String(text));
+            LoadFromText(Encoding.UTF8.GetString(bytes));
+            return;
+        }
+
+        LoadFromText(text);
+    }
+
+    public string ToText()
+    {
+        if (string.IsNullOrEmpty(Dividers.common))
+            return string.Empty;
+
+        var result = new StringBuilder();
+        foreach (var kvp in data)
+        {
+            result.Append(kvp.Key);
+            result.Append(Dividers.common);
+            result.Append(kvp.Value.typeId);
+            result.Append(Dividers.common);
+            result.Append(kvp.Value.data);
+            result.Append(Dividers.common + Environment.NewLine);
+        }
+
+        var length = Dividers.common.Length + Environment.NewLine.Length;
+        result.Remove(result.Length - length, length);
+
+        return result.ToString();
+    }
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        return Compress(Encoding.UTF8.GetBytes(ToText()));
     }
 
     /// <summary>
@@ -97,38 +143,33 @@ public class Storage
         return obj is "" or null ? default : (T)obj;
     }
 
-    /// <summary>
-    /// Saves the storage data to a file.
-    /// </summary>
-    /// <param name="path">The path of the file.</param>
-    /// <param name="isBinary">A value indicating whether the data should be saved as binary.</param>
-    public void ToFile(string path, bool isBinary = false)
+    public void OnObjectFromText(Func<(int typeId, string dataAsText), object> method)
     {
-        if (isBinary)
-        {
-            File.WriteAllBytes(path, ToBytes());
-            return;
-        }
-
-        File.WriteAllText(path, ToText());
+        onObjectFromText = method;
     }
-    /// <summary>
-    /// Loads the storage data from a file.
-    /// </summary>
-    /// <param name="path">The path to the file to load.</param>
-    /// <param name="isBinary">Whether the file is binary or text-based. Defaults to false.</param>
-    public void FromFile(string path, bool isBinary = false)
+    public void OnObjectToText(Func<(int typeId, object instance), string> method)
     {
-        if (isBinary)
-        {
-            FromBytes(File.ReadAllBytes(path));
-            return;
-        }
-
-        FromText(File.ReadAllText(path));
+        onObjectToText = method;
     }
 
-    public void FromText(string text)
+    public static implicit operator Storage(byte[] bytes)
+    {
+        return new(bytes);
+    }
+    public static implicit operator byte[](Storage storage)
+    {
+        return storage.ToBytes();
+    }
+
+#region Backend
+    private Func<(int typeId, string dataAsText), object>? onObjectFromText;
+    private Func<(int typeId, object instance), string>? onObjectToText;
+    private const string STR_PLACEHOLDER = "—";
+    private string? sep1D, sep2D, sepTuple, sepDict, sep, sepStr;
+    private readonly Dictionary<string, (int typeId, string? data)> data = new();
+    private List<string>? strings;
+
+    private void LoadFromText(string text)
     {
         strings = GetStrings(ref text);
         var split = text.Split(Dividers.common);
@@ -155,56 +196,6 @@ public class Storage
             index = 0;
         }
     }
-    public string ToText()
-    {
-        if (string.IsNullOrEmpty(Dividers.common))
-            return string.Empty;
-
-        var result = new StringBuilder();
-        foreach (var kvp in data)
-        {
-            result.Append(kvp.Key);
-            result.Append(Dividers.common);
-            result.Append(kvp.Value.typeId);
-            result.Append(Dividers.common);
-            result.Append(kvp.Value.data);
-            result.Append(Dividers.common + Environment.NewLine);
-        }
-
-        var length = Dividers.common.Length + Environment.NewLine.Length;
-        result.Remove(result.Length - length, length);
-
-        return result.ToString();
-    }
-
-    public void FromBytes(byte[] bytes)
-    {
-        var text = Decompress(Convert.ToBase64String(Decompress(bytes)));
-        FromText(text);
-    }
-    public byte[] ToBytes()
-    {
-        var base64 = Compress(ToText());
-        var bytes = Compress(Convert.FromBase64String(base64));
-        return bytes;
-    }
-
-    public void OnObjectFromText(Func<(int typeId, string dataAsText), object> method)
-    {
-        onObjectFromText = method;
-    }
-    public void OnObjectToText(Func<(int typeId, object instance), string> method)
-    {
-        onObjectToText = method;
-    }
-
-    #region Backend
-    private Func<(int typeId, string dataAsText), object>? onObjectFromText;
-    private Func<(int typeId, object instance), string>? onObjectToText;
-    private const string STR_PLACEHOLDER = "—";
-    private string? sep1D, sep2D, sepTuple, sepDict, sep, sepStr;
-    private readonly Dictionary<string, (int typeId, string? data)> data = new();
-    private List<string>? strings;
 
     private string? TextFromObject(int typeId, object? instance)
     {
@@ -518,7 +509,9 @@ public class Storage
     }
     private object? TextToPrimitiveOrTuple(string dataAsText, Type type)
     {
-        return IsPrimitiveTuple(type) ? TextToTuple(dataAsText, type) : TextToPrimitive(dataAsText, type);
+        return IsPrimitiveTuple(type) ?
+            TextToTuple(dataAsText, type) :
+            TextToPrimitive(dataAsText, type);
     }
 
     private static T Wrap<T>(decimal value, T minValue, T maxValue)
@@ -558,7 +551,8 @@ public class Storage
     }
     private static bool IsGenericList(Type type)
     {
-        return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>) &&
+        return type.IsGenericType &&
+               type.GetGenericTypeDefinition() == typeof(List<>) &&
                (type.GenericTypeArguments[0].IsPrimitive ||
                 IsPrimitiveTuple(type.GenericTypeArguments[0]));
     }
@@ -623,39 +617,6 @@ public class Storage
         return items;
     }
 
-    private static string Compress(string text)
-    {
-        byte[] compressedBytes;
-
-        using (var uncompressedStream = new MemoryStream(Encoding.UTF8.GetBytes(text)))
-        {
-            using var compressedStream = new MemoryStream();
-            using (var compressorStream =
-                   new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
-                uncompressedStream.CopyTo(compressorStream);
-
-            compressedBytes = compressedStream.ToArray();
-        }
-
-        return Convert.ToBase64String(compressedBytes);
-    }
-    private static string Decompress(string compressedText)
-    {
-        byte[] decompressedBytes;
-
-        var compressedStream = new MemoryStream(Convert.FromBase64String(compressedText));
-
-        using (var decompressorStream = new DeflateStream(compressedStream, CompressionMode.Decompress))
-        {
-            using var decompressedStream = new MemoryStream();
-            decompressorStream.CopyTo(decompressedStream);
-
-            decompressedBytes = decompressedStream.ToArray();
-        }
-
-        return Encoding.UTF8.GetString(decompressedBytes);
-    }
-
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
@@ -705,5 +666,5 @@ public class Storage
 
         return result;
     }
-    #endregion
+#endregion
 }

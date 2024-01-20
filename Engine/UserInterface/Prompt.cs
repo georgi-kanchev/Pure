@@ -13,7 +13,14 @@ public class Prompt : Block
         Init();
         ButtonCount = GrabByte(bytes);
     }
+    public Prompt(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -67,6 +74,23 @@ public class Prompt : Block
             return;
 
         buttons[index].Interact(Interaction.Trigger);
+    }
+
+    public static implicit operator string(Prompt prompt)
+    {
+        return prompt.ToBase64();
+    }
+    public static implicit operator Prompt(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Prompt prompt)
+    {
+        return prompt.ToBytes();
+    }
+    public static implicit operator Prompt(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

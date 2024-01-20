@@ -25,12 +25,10 @@ public enum Alignment
 public class Tilemap
 {
     public (int x, int y, int z) SeedOffset { get; set; }
-
     /// <summary>
     /// Gets the size of the tilemap in tiles.
     /// </summary>
     public (int width, int height) Size { get; }
-
     /// <summary>
     /// Gets or sets the position of the view.
     /// </summary>
@@ -44,35 +42,6 @@ public class Tilemap
         set => viewSz = (Math.Max(value.width, 1), Math.Max(value.height, 1));
     }
 
-    public Tilemap(byte[] bytes)
-    {
-        var b = Decompress(bytes);
-        var offset = 0;
-        var w = BitConverter.ToInt32(Get<int>());
-        var h = BitConverter.ToInt32(Get<int>());
-
-        data = new Tile[w, h];
-        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
-        ids = new int[w, h];
-        Size = (w, h);
-        ViewPosition = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-        ViewSize = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-
-        for (var i = 0; i < h; i++)
-            for (var j = 0; j < w; j++)
-            {
-                var bTile = b[offset..(offset + Tile.BYTE_SIZE)];
-                SetTile((j, i), new Tile(bTile));
-                offset += Tile.BYTE_SIZE;
-            }
-
-        return;
-
-        byte[] Get<T>()
-        {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
-        }
-    }
     /// <summary>
     /// Initializes a new tilemap instance with the specified size.
     /// </summary>
@@ -114,7 +83,43 @@ public class Tilemap
                 ids[j, i] = tileData[j, i].Id;
             }
     }
+    public Tilemap(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+        var w = BitConverter.ToInt32(Get<int>());
+        var h = BitConverter.ToInt32(Get<int>());
 
+        data = new Tile[w, h];
+        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
+        ids = new int[w, h];
+        Size = (w, h);
+        ViewPosition = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+        ViewSize = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+
+        for (var i = 0; i < h; i++)
+            for (var j = 0; j < w; j++)
+            {
+                var bTile = b[offset..(offset + Tile.BYTE_SIZE)];
+                SetTile((j, i), new Tile(bTile));
+                offset += Tile.BYTE_SIZE;
+            }
+
+        return;
+
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
+    }
+    public Tilemap(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
+
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -131,6 +136,13 @@ public class Tilemap
                 result.AddRange(TileAt((j, i)).ToBytes());
 
         return Compress(result.ToArray());
+    }
+    /// <returns>
+    /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
+    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,]
+        ToBundle()
+    {
+        return bundleCache;
     }
 
     /// <summary>
@@ -250,8 +262,10 @@ public class Tilemap
             var exactTile = curTile == tile || curTile != initialTile;
             var onlyId = curTile.Id == tile.Id || curTile.Id != initialTile.Id;
 
-            if (x < 0 || x >= Size.width ||
-                y < 0 || y >= Size.height ||
+            if (x < 0 ||
+                x >= Size.width ||
+                y < 0 ||
+                y >= Size.height ||
                 (isExactTile && exactTile) ||
                 (isExactTile == false && onlyId))
                 continue;
@@ -813,7 +827,8 @@ public class Tilemap
     public bool IsOverlapping((int x, int y) position)
     {
         return position is { x: >= 0, y: >= 0 } &&
-               position.x <= Size.width - 1 && position.y <= Size.height - 1;
+               position.x <= Size.width - 1 &&
+               position.y <= Size.height - 1;
     }
 
     /// <summary>
@@ -884,13 +899,21 @@ public class Tilemap
     {
         return tilemap.ids;
     }
-
-    /// <returns>
-    /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,]
-        ToBundle()
+    public static implicit operator string(Tilemap tilemap)
     {
-        return bundleCache;
+        return tilemap.ToBase64();
+    }
+    public static implicit operator Tilemap(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Tilemap tilemap)
+    {
+        return tilemap.ToBytes();
+    }
+    public static implicit operator Tilemap(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend
@@ -963,7 +986,8 @@ public class Tilemap
     private bool IndicesAreValid((int, int) indices)
     {
         return indices is { Item1: >= 0, Item2: >= 0 } &&
-               indices.Item1 < Size.width && indices.Item2 < Size.height;
+               indices.Item1 < Size.width &&
+               indices.Item2 < Size.height;
     }
     private static string PadLeftAndRight(string text, int length)
     {

@@ -28,8 +28,8 @@ internal class Session : TcpSession
         parent.parent.onClientDisconnect?.Invoke(clientNickname);
 
         // notify everybody that someone disconnected
-        var msg = new Message(0, 0, Tag.DISCONNECT, 0, clientId);
-        parent.Multicast(msg.Data);
+        var msg = new Message(0, 0, Tag.DISCONNECT, 0, clientId, Array.Empty<byte>());
+        parent.Multicast(msg.Total);
     }
     protected override void OnReceived(byte[] buffer, long offset, long size)
     {
@@ -54,7 +54,7 @@ internal class Session : TcpSession
         parent.parent.onError?.Invoke(error.ToString());
     }
 
-    #region Backend
+#region Backend
     private readonly BackendServer parent;
-    #endregion
+#endregion
 }

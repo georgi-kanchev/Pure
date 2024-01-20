@@ -1,5 +1,8 @@
 ﻿namespace Pure.Engine.Collision;
 
+using System.IO.Compression;
+using System.Runtime.InteropServices;
+
 /// <summary>
 /// Represents a solid in 2D space defined by its position and size.
 /// </summary>
@@ -35,10 +38,61 @@ public struct Solid
         Size = size;
         Color = color;
     }
-    public Solid(float width, float height, float x = default, float y = default,
+    public Solid(
+        float width,
+        float height,
+        float x = default,
+        float y = default,
         uint color = uint.MaxValue)
         : this((width, height), (x, y), color)
     {
+    }
+    public Solid(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+
+        Position = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        Size = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        Color = BitConverter.ToUInt32(Get<uint>());
+
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
+    }
+    public Solid(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
+
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+        result.AddRange(BitConverter.GetBytes(Position.x));
+        result.AddRange(BitConverter.GetBytes(Position.y));
+        result.AddRange(BitConverter.GetBytes(Size.width));
+        result.AddRange(BitConverter.GetBytes(Size.height));
+        result.AddRange(BitConverter.GetBytes(Color));
+        return Compress(result.ToArray());
+    }
+    /// <returns>
+    /// A bundle tuple containing the position, size and the color of the solid.</returns>
+    public (float x, float y, float width, float height, uint color) ToBundle()
+    {
+        return (Position.x, Position.y, Size.width, Size.height, Color);
+    }
+    /// <returns>
+    /// A string that represents this solid. 
+    /// The string has the format: "Position[x y] Size[width height]".</returns>
+    public override string ToString()
+    {
+        var (x, y) = Position;
+        var (w, h) = Size;
+        return $"{nameof(Position)}[{x} {y}] {nameof(Size)}[{w} {h}]";
     }
 
     /// <param name="solidPack">
@@ -90,23 +144,6 @@ public struct Solid
         return containsX && containsY;
     }
 
-    /// <returns>
-    /// A bundle tuple containing the position, size and the color of the solid.</returns>
-    public (float x, float y, float width, float height, uint color) ToBundle()
-    {
-        return this;
-    }
-
-    /// <returns>
-    /// A string that represents this solid. 
-    /// The string has the format: "Position[x y] Size[width height]".</returns>
-    public override string ToString()
-    {
-        var (x, y) = Position;
-        var (w, h) = Size;
-        return $"{nameof(Position)}[{x} {y}] {nameof(Size)}[{w} {h}]";
-    }
-
     /// <summary>
     /// Implicitly converts a bundle tuple of position, size and color into a solid.
     /// </summary>
@@ -122,10 +159,49 @@ public struct Solid
     /// </summary>
     /// <param name="solid">The solid to convert.</param>
     /// <returns>A bundle tuple containing the position, size and color of the solid.</returns>
-    public static implicit operator (float x, float y, float width, float height, uint color
-        )(Solid solid)
+    public static implicit operator (float x, float y, float width, float height, uint color)(
+        Solid solid)
     {
-        return (solid.Position.x, solid.Position.y, solid.Size.width, solid.Size.height,
-            solid.Color);
+        return solid.ToBundle();
     }
+    public static implicit operator string(Solid solid)
+    {
+        return solid.ToBase64();
+    }
+    public static implicit operator Solid(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Solid solid)
+    {
+        return solid.ToBytes();
+    }
+    public static implicit operator Solid(byte[] base64)
+    {
+        return new(base64);
+    }
+
+#region Backend
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using var stream = new DeflateStream(input, CompressionMode.Decompress);
+        stream.CopyTo(output);
+        return output.ToArray();
+    }
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
+    }
+#endregion
 }

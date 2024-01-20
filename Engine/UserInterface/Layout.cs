@@ -46,7 +46,14 @@ public class Layout : Block
             segments[i].parent = parentIndex == -1 ? null : segments[parentIndex];
         }
     }
+    public Layout(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var bytes = base.ToBytes().ToList();
@@ -82,7 +89,24 @@ public class Layout : Block
         displaySegment += method;
     }
 
-    #region Backend
+    public static implicit operator string(Layout layout)
+    {
+        return layout.ToBase64();
+    }
+    public static implicit operator Layout(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Layout layout)
+    {
+        return layout.ToBytes();
+    }
+    public static implicit operator Layout(byte[] base64)
+    {
+        return new(base64);
+    }
+
+#region Backend
     private class Segment
     {
         public readonly float rate;
@@ -185,5 +209,5 @@ public class Layout : Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-    #endregion
+#endregion
 }

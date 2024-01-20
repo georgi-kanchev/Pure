@@ -77,7 +77,14 @@ public class Pages : Block
 
         Init();
     }
+    public Pages(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -105,6 +112,23 @@ public class Pages : Block
 
         foreach (var item in visiblePages)
             item.OnInteraction(interaction, () => method.Invoke(item));
+    }
+
+    public static implicit operator string(Pages pages)
+    {
+        return pages.ToBase64();
+    }
+    public static implicit operator Pages(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Pages pages)
+    {
+        return pages.ToBytes();
+    }
+    public static implicit operator Pages(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

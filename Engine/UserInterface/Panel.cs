@@ -8,28 +8,16 @@ public class Panel : Block
     /// <summary>
     /// Gets or sets a value indicating whether this panel can be resized by the user.
     /// </summary>
-    public bool IsResizable
-    {
-        get;
-        set;
-    } = true;
+    public bool IsResizable { get; set; } = true;
     /// <summary>
     /// Gets or sets a value indicating whether this panel can be moved by the user.
     /// </summary>
-    public bool IsMovable
-    {
-        get;
-        set;
-    } = true;
+    public bool IsMovable { get; set; } = true;
     /// <summary>
     /// Gets or sets a value indicating whether this panel can be moved or resized by the user 
     /// outside of the tilemap.
     /// </summary>
-    public bool IsRestricted
-    {
-        get;
-        set;
-    } = true;
+    public bool IsRestricted { get; set; } = true;
 
     /// <summary>
     /// Initializes a new panel instance with the specified position.
@@ -47,7 +35,14 @@ public class Panel : Block
         IsRestricted = GrabBool(bytes);
         Init();
     }
+    public Panel(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -62,6 +57,23 @@ public class Panel : Block
         resize += method;
     }
 
+    public static implicit operator string(Panel panel)
+    {
+        return panel.ToBase64();
+    }
+    public static implicit operator Panel(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Panel panel)
+    {
+        return panel.ToBytes();
+    }
+    public static implicit operator Panel(byte[] base64)
+    {
+        return new(base64);
+    }
+
 #region Backend
     private bool isMoving, isResizingL, isResizingR, isResizingU, isResizingD;
     private (int x, int y) startBotR;
@@ -74,7 +86,7 @@ public class Panel : Block
     }
     private void OnUpdate()
     {
-        LimitSizeMin((2, 2));
+        LimitSizeMin(IsResizable ? (2, 2) : (1, 1));
     }
 
     protected override void OnInput()
@@ -100,16 +112,20 @@ public class Panel : Block
         var isHovL = Math.Abs(inputX - x) < E && IsBetween(inputY, y, y + h - 1);
         var isHovR = Math.Abs(inputX - (x + w - 1)) < E && IsBetween(inputY, y, y + h - 1);
         var isHovB = IsBetween(inputX, x, x + w - 1) && Math.Abs(inputY - (y + h - 1)) < E;
-        var isHovInside = IsHovered && isHovT == false &&
-                          isHovL == false && isHovR == false &&
+        var isHovInside = IsHovered &&
+                          isHovT == false &&
+                          isHovL == false &&
+                          isHovR == false &&
                           isHovB == false;
-        var isHoveringSides = isHovInside || isHovT ||
+        var isHoveringSides = isHovInside ||
+                              isHovT ||
                               ((isHovL || isHovR || isHovB) &&
                                IsResizable == false);
 
         TrySetCursorAndCache(isHoveringSides, isHovL, isHovR, isHovB, isHovCornersT, isHovT);
 
-        if (IsFocused == false || Input.IsPressed == false ||
+        if (IsFocused == false ||
+            Input.IsPressed == false ||
             Input.Position == Input.PositionPrevious)
             return;
 
@@ -232,7 +248,8 @@ public class Panel : Block
         var isOutsideScreen =
             newX + newW > Input.TilemapSize.width ||
             newY + newH > Input.TilemapSize.height ||
-            newX < 0 || newY < 0;
+            newX < 0 ||
+            newY < 0;
         var isBelowMinimumSize = newW < Math.Abs(minX) || newH < Math.Abs(minY);
 
         if (isBelowMinimumSize || (isOutsideScreen && IsRestricted))

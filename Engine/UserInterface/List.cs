@@ -167,7 +167,14 @@ public class List : Block
         if (Span == Span.Dropdown)
             IsCollapsed = true;
     }
+    public List(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -223,7 +230,8 @@ public class List : Block
             var targetIndex = Math.Clamp(index + offset, 0, max);
 
             // prevent items order change
-            if (index > 0 && index < max &&
+            if (index > 0 &&
+                index < max &&
                 itemList.Contains(data[index + (offset > 0 ? 1 : -1)]))
                 continue;
 
@@ -399,6 +407,23 @@ public class List : Block
     public static implicit operator Button[](List list)
     {
         return list.data.ToArray();
+    }
+
+    public static implicit operator string(List list)
+    {
+        return list.ToBase64();
+    }
+    public static implicit operator List(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](List list)
+    {
+        return list.ToBytes();
+    }
+    public static implicit operator List(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend
@@ -593,8 +618,10 @@ public class List : Block
             var botEdgeTrim = Span == Span.Horizontal && HasScroll.horizontal ? 1 : 0;
             //var rightEdgeTrim = Type == Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
             var (iw, ih) = (item.Size.width + offW, item.Size.height + offH);
-            if (ix + iw <= x || ix >= x + w ||
-                iy + ih <= y || iy >= y + h - botEdgeTrim)
+            if (ix + iw <= x ||
+                ix >= x + w ||
+                iy + ih <= y ||
+                iy >= y + h - botEdgeTrim)
             {
                 item.isHidden = true;
                 item.isDisabled = true;

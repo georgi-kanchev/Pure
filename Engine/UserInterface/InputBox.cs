@@ -167,7 +167,8 @@ public class InputBox : Block
     public bool IsCursorVisible
     {
         get =>
-            IsFocused && IsReadOnly == false &&
+            IsFocused &&
+            IsReadOnly == false &&
             cursorBlink.Elapsed.TotalSeconds <= CURSOR_BLINK / 2f &&
             IsOverlapping(PositionFromIndices(CursorIndices));
     }
@@ -227,7 +228,14 @@ public class InputBox : Block
         Value = GrabString(bytes);
         SymbolGroup = (SymbolGroup)GrabByte(bytes);
     }
+    public InputBox(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -364,6 +372,23 @@ public class InputBox : Block
         submit += method;
     }
 
+    public static implicit operator string(InputBox inputBox)
+    {
+        return inputBox.ToBase64();
+    }
+    public static implicit operator InputBox(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](InputBox inputBox)
+    {
+        return inputBox.ToBytes();
+    }
+    public static implicit operator InputBox(byte[] base64)
+    {
+        return new(base64);
+    }
+
 #region Backend
     private readonly List<string> lines = new() { string.Empty };
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
@@ -432,7 +457,8 @@ public class InputBox : Block
         TryResetHoldTimers(out var isHolding, isJustTyped);
 
         var isAllowedType = isJustTyped || (isHolding && Input.Typed != string.Empty);
-        var shouldDelete = isAllowedType || Allowed(Key.Backspace, isHolding) ||
+        var shouldDelete = isAllowedType ||
+                           Allowed(Key.Backspace, isHolding) ||
                            Allowed(Key.Delete, isHolding) ||
                            (Allowed(Key.Enter, isHolding) && IsSingleLine == false);
 
@@ -607,7 +633,9 @@ public class InputBox : Block
         }
 
         // hold & drag outside
-        if (hasMoved || !IsPressedAndHeld || IsHovered ||
+        if (hasMoved ||
+            !IsPressedAndHeld ||
+            IsHovered ||
             scrollHold.Elapsed.TotalSeconds > 0.15f == false)
             return;
 
@@ -1014,9 +1042,12 @@ public class InputBox : Block
     {
         var isAnyJustPressed = isJustTyped ||
                                JustPressed(Key.Enter) ||
-                               JustPressed(Key.Backspace) || JustPressed(Key.Delete) ||
-                               JustPressed(Key.ArrowLeft) || JustPressed(Key.ArrowRight) ||
-                               JustPressed(Key.ArrowUp) || JustPressed(Key.ArrowDown);
+                               JustPressed(Key.Backspace) ||
+                               JustPressed(Key.Delete) ||
+                               JustPressed(Key.ArrowLeft) ||
+                               JustPressed(Key.ArrowRight) ||
+                               JustPressed(Key.ArrowUp) ||
+                               JustPressed(Key.ArrowDown);
 
         if (isAnyJustPressed)
             holdDelay.Restart();

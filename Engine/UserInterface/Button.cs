@@ -31,12 +31,36 @@ public class Button : Block
         Init();
         IsSelected = GrabBool(bytes);
     }
+    public Button(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
         PutBool(result, IsSelected);
         return result.ToArray();
+    }
+
+    public static implicit operator string(Button button)
+    {
+        return button.ToBase64();
+    }
+    public static implicit operator Button(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Button button)
+    {
+        return button.ToBytes();
+    }
+    public static implicit operator Button(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

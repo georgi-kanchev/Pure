@@ -18,6 +18,17 @@ public class ParticlePack
         get => particles.Count;
     }
 
+    /// <returns>
+    /// An array of particle bundle tuples in the particle pack.</returns>
+    public (float x, float y, uint color)[] ToBundle()
+    {
+        var result = new (float x, float y, uint color)[particles.Count];
+        for (var i = 0; i < particles.Count; i++)
+            result[i] = particles[i];
+
+        return result;
+    }
+
     /// <summary>
     /// Spawns a specified number of particles into the particle pack.
     /// </summary>
@@ -72,17 +83,6 @@ public class ParticlePack
         onUpdate += method;
     }
 
-    /// <returns>
-    /// An array of particle bundle tuples in the particle pack.</returns>
-    public (float x, float y, uint color)[] ToBundle()
-    {
-        var result = new (float x, float y, uint color)[particles.Count];
-        for (var i = 0; i < particles.Count; i++)
-            result[i] = particles[i];
-
-        return result;
-    }
-
     /// <summary>
     /// Implicitly converts an array of particles to a base particle pack instance.
     /// </summary>
@@ -107,8 +107,8 @@ public class ParticlePack
         return pack.particles.ToArray();
     }
 
-    #region Backend
+#region Backend
     private Action<Particle>? onSpawn, onUpdate;
     private readonly List<Particle> particles = new();
-    #endregion
+#endregion
 }

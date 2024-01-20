@@ -1,5 +1,7 @@
 ﻿namespace Pure.Engine.Collision;
 
+using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Numerics;
 
 /// <summary>
@@ -53,6 +55,52 @@ public struct Line
         A = a;
         B = b;
         Color = color;
+    }
+    public Line(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+
+        A = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        B = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        Color = BitConverter.ToUInt32(Get<uint>());
+
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
+    }
+    public Line(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
+
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+        result.AddRange(BitConverter.GetBytes(A.x));
+        result.AddRange(BitConverter.GetBytes(A.y));
+        result.AddRange(BitConverter.GetBytes(B.x));
+        result.AddRange(BitConverter.GetBytes(B.y));
+        result.AddRange(BitConverter.GetBytes(Color));
+        return Compress(result.ToArray());
+    }
+    /// <returns>
+    ///     A bundle tuple containing the two points and the color of the line.
+    /// </returns>
+    public (float ax, float ay, float bx, float by, uint color) ToBundle()
+    {
+        return this;
+    }
+    /// <returns>
+    ///     A string representation of this line in the format of its bundle tuple.".
+    /// </returns>
+    public override string ToString()
+    {
+        return $"A{A} B{B} Color{Color}";
     }
 
     /// <summary>
@@ -281,21 +329,6 @@ public struct Line
             (A.Item1 + ab.Item1 * distance, A.Item2 + ab.Item2 * distance, uint.MaxValue);
     }
 
-    /// <returns>
-    ///     A bundle tuple containing the two points and the color of the line.
-    /// </returns>
-    public (float ax, float ay, float bx, float by, uint color) ToBundle()
-    {
-        return this;
-    }
-    /// <returns>
-    ///     A string representation of this line in the format of its bundle tuple.".
-    /// </returns>
-    public override string ToString()
-    {
-        return $"A{A} B{B} Color{Color}";
-    }
-
     /// <summary>
     /// Implicitly converts a tuple of two points and a color into a line.
     /// </summary>
@@ -313,6 +346,22 @@ public struct Line
     public static implicit operator (float ax, float ay, float bx, float by, uint color)(Line line)
     {
         return (line.A.x, line.A.y, line.B.x, line.B.y, line.Color);
+    }
+    public static implicit operator string(Line line)
+    {
+        return line.ToBase64();
+    }
+    public static implicit operator Line(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Line line)
+    {
+        return line.ToBytes();
+    }
+    public static implicit operator Line(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend
@@ -386,6 +435,28 @@ public struct Line
         var (ax, ay) = a;
         var (bx, by) = b;
         return ax * bx + ay * by;
+    }
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using var stream = new DeflateStream(input, CompressionMode.Decompress);
+        stream.CopyTo(output);
+        return output.ToArray();
+    }
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
     }
 #endregion
 }

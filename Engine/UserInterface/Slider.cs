@@ -30,11 +30,7 @@ public class Slider : Block
     /// <summary>
     /// Gets the handle button of the slider.
     /// </summary>
-    public Button Handle
-    {
-        get;
-        private set;
-    }
+    public Button Handle { get; private set; }
 
     public Slider((int x, int y) position = default, bool isVertical = false) : base(position)
     {
@@ -50,7 +46,14 @@ public class Slider : Block
         Progress = GrabFloat(bytes);
         index = GrabInt(bytes);
     }
+    public Slider(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -90,6 +93,23 @@ public class Slider : Block
     {
         if (IsHovered)
             Input.CursorResult = MouseCursor.Hand;
+    }
+
+    public static implicit operator string(Slider slider)
+    {
+        return slider.ToBase64();
+    }
+    public static implicit operator Slider(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Slider slider)
+    {
+        return slider.ToBytes();
+    }
+    public static implicit operator Slider(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

@@ -13,30 +13,6 @@ public class SolidMap
         get => ignoredCells.Count;
     }
 
-    public Solid[] Solids
-    {
-        get
-        {
-            var result = new List<Solid>();
-            foreach (var kvp in tileIndices)
-            {
-                if (ignoredCells.Contains(kvp.Key))
-                    continue;
-
-                var rects = cellRects[kvp.Value];
-                var (cellX, cellY) = kvp.Key;
-                foreach (var rect in rects)
-                {
-                    var rectangle = rect;
-                    var (x, y) = rectangle.Position;
-                    rectangle.Position = (cellX + x, cellY + y);
-                    result.Add(rectangle);
-                }
-            }
-
-            return result.ToArray();
-        }
-    }
     public (int x, int y)[] IgnoredCells
     {
         get => ignoredCells.ToArray();
@@ -74,14 +50,19 @@ public class SolidMap
             }
         }
 
-        return;
-
         byte[] Get<T>()
         {
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
         }
     }
+    public SolidMap(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -113,6 +94,35 @@ public class SolidMap
         }
 
         return Compress(result.ToArray());
+    }
+    public (float x, float y, float width, float height, uint color)[] ToBundle()
+    {
+        var solids = ToArray();
+        var result = new (float x, float y, float width, float height, uint color)[solids.Length];
+        for (var i = 0; i < solids.Length; i++)
+            result[i] = solids[i];
+        return result;
+    }
+    public Solid[] ToArray()
+    {
+        var result = new List<Solid>();
+        foreach (var kvp in tileIndices)
+        {
+            if (ignoredCells.Contains(kvp.Key))
+                continue;
+
+            var rects = cellRects[kvp.Value];
+            var (cellX, cellY) = kvp.Key;
+            foreach (var rect in rects)
+            {
+                var rectangle = rect;
+                var (x, y) = rectangle.Position;
+                rectangle.Position = (cellX + x, cellY + y);
+                result.Add(rectangle);
+            }
+        }
+
+        return result.ToArray();
     }
 
     public void SolidsAdd(int tileId, params Solid[]? solids)
@@ -319,23 +329,30 @@ public class SolidMap
         return false;
     }
 
-    public (float x, float y, float width, float height, uint color)[] ToBundle()
-    {
-        return this;
-    }
-
     public static implicit operator Solid[](SolidMap solidMap)
     {
-        return solidMap.Solids;
+        return solidMap.ToArray();
     }
     public static implicit operator (float x, float y, float width, float height, uint color)[](
         SolidMap solidMap)
     {
-        var solids = solidMap.Solids;
-        var result = new (float x, float y, float width, float height, uint color)[solids.Length];
-        for (var i = 0; i < solids.Length; i++)
-            result[i] = solids[i];
-        return result;
+        return solidMap.ToBundle();
+    }
+    public static implicit operator string(SolidMap solidMap)
+    {
+        return solidMap.ToBase64();
+    }
+    public static implicit operator SolidMap(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](SolidMap solidMap)
+    {
+        return solidMap.ToBytes();
+    }
+    public static implicit operator SolidMap(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

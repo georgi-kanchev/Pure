@@ -34,7 +34,9 @@ internal class Node
     public float penalty;
     public float F
     {
-        get => MathF.Abs(distanceToTarget + 1) < 0.1f || MathF.Abs(cost + 1) < 0.1f ? -1 : distanceToTarget + cost;
+        get => MathF.Abs(distanceToTarget + 1) < 0.1f || MathF.Abs(cost + 1) < 0.1f ?
+            -1 :
+            distanceToTarget + cost;
     }
 
     public Node((int x, int y) pos, int penalty)
@@ -53,35 +55,44 @@ internal class Node
 
 internal class Astar
 {
+    public int NodeCount
+    {
+        get => grid.Count;
+    }
     public (int width, int height) Size
     {
-        get => (grid.GetLength(0), grid.GetLength(1));
-        set
-        {
-            var (rows, cols) = value;
-            grid = new Node[rows, cols];
-
-            for (var i = 0; i < rows; i++)
-                for (var j = 0; j < cols; j++)
-                    grid[i, j] = GetNode((i, j)) ?? new((i, j), 0);
-        }
+        get => size;
+        set => size = (Math.Max(value.width, 1), Math.Max(value.height, 1));
     }
 
     public void SetNode((int x, int y) pos, float penalty)
     {
-        if (HasPosition(pos) == false)
+        if (IsInside(pos) == false)
             return;
 
-        var n = grid[pos.x, pos.y];
-        n.position = pos;
-        n.penalty = penalty;
+        if (penalty == 0)
+        {
+            grid.Remove(pos);
+            return;
+        }
+
+        if (grid.ContainsKey(pos) == false)
+            grid.Add(pos, new(pos, 0));
+
+        grid[pos].position = pos;
+        grid[pos].penalty = penalty;
     }
     public Node? GetNode((int x, int y) pos)
     {
-        return HasPosition(pos) ? grid[pos.x, pos.y] : null;
+        return IsInside(pos) && grid.TryGetValue(pos, out var value) ? value : null;
     }
-    public (float x, float y)[] FindPath((float x, float y) a, (float x, float y) b, bool includeColors,
-        out (float x, float y, uint color)[] withColors, int maxZigzag, uint color)
+    public (float x, float y)[] FindPath(
+        (float x, float y) a,
+        (float x, float y) b,
+        bool includeColors,
+        out (float x, float y, uint color)[] withColors,
+        int maxZigzag,
+        uint color)
     {
         a = ((int)a.x, (int)a.y);
         b = ((int)b.x, (int)b.y);
@@ -92,11 +103,11 @@ internal class Astar
         var closed = new List<Node>();
         var neighbours = new List<Node>();
         var current = start;
-        var maxIter = Size.width * Size.height;
+        var max = Size.width * Size.height;
 
         open.Enqueue(start, start.F);
 
-        for (var i = 0; i < maxIter; i++)
+        for (var i = 0; i < max; i++)
         {
             if (open.Count == 0)
                 break;
@@ -111,7 +122,10 @@ internal class Astar
 
             foreach (var n in neighbours)
             {
-                if (Contains(open, n) || closed.Contains(n) || float.IsInfinity(n.penalty) || float.IsNaN(n.penalty))
+                if (Contains(open, n) ||
+                    closed.Contains(n) ||
+                    float.IsInfinity(n.penalty) ||
+                    float.IsNaN(n.penalty))
                     continue;
 
                 n.parent = current;
@@ -162,25 +176,30 @@ internal class Astar
         SmoothZigzag(result, resultWithColors, maxZigzag);
         RemoveRedundantPoints(result, resultWithColors);
 
-        withColors = includeColors ? resultWithColors.ToArray() : Array.Empty<(float x, float y, uint color)>();
+        withColors = includeColors ?
+            resultWithColors.ToArray() :
+            Array.Empty<(float x, float y, uint color)>();
         return result.ToArray();
     }
 
-    #region Backend
-    internal Node[,] grid = new Node[0, 0];
+#region Backend
+    internal readonly Dictionary<(int x, int y), Node> grid = new();
+    private (int width, int height) size;
 
-    private static bool Contains(PriorityQueue<Node, float> prioQueue, Node item)
+    private static bool Contains(PriorityQueue<Node, float> queue, Node item)
     {
-        foreach (var i in prioQueue.UnorderedItems)
+        foreach (var i in queue.UnorderedItems)
             if (i.Element == item)
                 return true;
 
         return false;
     }
-    private bool HasPosition((int x, int y) pos)
+    private bool IsInside((int x, int y) pos)
     {
-        return pos.x >= 0 && pos.x < Size.width &&
-               pos.y >= 0 && pos.y < Size.height;
+        return pos.x >= 0 &&
+               pos.x < Size.width &&
+               pos.y >= 0 &&
+               pos.y < Size.height;
     }
     private List<Node> GetAdjacentNodes(Node n)
     {
@@ -243,5 +262,5 @@ internal class Astar
     {
         return Math.Abs((a.x - b.x) * (b.y - c.y) - (b.x - c.x) * (a.y - b.y)) < 0.01f;
     }
-    #endregion
+#endregion
 }

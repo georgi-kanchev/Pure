@@ -1,8 +1,7 @@
-using System.Runtime.InteropServices;
-
 namespace Pure.Engine.UserInterface;
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using static Environment;
 
 public class FileViewer : Block
@@ -99,7 +98,14 @@ public class FileViewer : Block
         IsSelectingFolders = GrabBool(bytes);
         FileFilter = GrabString(bytes);
     }
+    public FileViewer(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -129,6 +135,23 @@ public class FileViewer : Block
             case Directory.MyPictures: return GetFolderPath(SpecialFolder.MyPictures);
             case Directory.Fonts: return GetFolderPath(SpecialFolder.Fonts);
         }
+    }
+
+    public static implicit operator string(FileViewer button)
+    {
+        return button.ToBase64();
+    }
+    public static implicit operator FileViewer(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](FileViewer button)
+    {
+        return button.ToBytes();
+    }
+    public static implicit operator FileViewer(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

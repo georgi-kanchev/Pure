@@ -83,8 +83,13 @@ public class Client : Communication
     /// <param name="tag">The tag of the message.</param>
     public void SendToServer(string message, byte tag = default)
     {
-        var msg = new Message(Id, 0, Tag.CLIENT_TO_SERVER, tag, message);
-        backendClient?.SendAsync(msg.Data);
+        var msg = new Message(Id, 0, Tag.CLIENT_TO_SERVER, tag, message, Array.Empty<byte>());
+        backendClient?.SendAsync(msg.Total);
+    }
+    public void SendToServer(byte[] data, byte tag = default)
+    {
+        var msg = new Message(Id, 0, Tag.CLIENT_TO_SERVER, tag, "", data);
+        backendClient?.SendAsync(msg.Total);
     }
     /// <summary>
     /// Sends a message to the server and all clients.
@@ -93,8 +98,13 @@ public class Client : Communication
     /// <param name="tag">The tag of the message.</param>
     public void SendToAll(string message, byte tag = default)
     {
-        var msg = new Message(Id, 0, Tag.CLIENT_TO_ALL, tag, message);
-        backendClient?.SendAsync(msg.Data);
+        var msg = new Message(Id, 0, Tag.CLIENT_TO_ALL, tag, message, Array.Empty<byte>());
+        backendClient?.SendAsync(msg.Total);
+    }
+    public void SendToAll(byte[] data, byte tag = default)
+    {
+        var msg = new Message(Id, 0, Tag.CLIENT_TO_ALL, tag, "", data);
+        backendClient?.SendAsync(msg.Total);
     }
     /// <summary>
     /// Sends a message to a specific client with the specified nickname.
@@ -106,8 +116,15 @@ public class Client : Communication
     public void SendToClient(string toNickname, string message, byte tag = default)
     {
         // self message is possible / goes through server
-        var msg = new Message(Id, GetId(toNickname), Tag.CLIENT_TO_CLIENT, tag, message);
-        backendClient?.SendAsync(msg.Data);
+        var msg = new Message(Id, GetId(toNickname), Tag.CLIENT_TO_CLIENT, tag, message,
+            Array.Empty<byte>());
+        backendClient?.SendAsync(msg.Total);
+    }
+    public void SendToClient(string toNickname, byte[] data, byte tag = default)
+    {
+        // self message is possible / goes through server
+        var msg = new Message(Id, GetId(toNickname), Tag.CLIENT_TO_CLIENT, tag, "", data);
+        backendClient?.SendAsync(msg.Total);
     }
 
     public void OnLostConnection(Action method)
@@ -119,7 +136,7 @@ public class Client : Communication
         onReconnectionAttempt += method;
     }
 
-    #region Backend
+#region Backend
     internal Action onReconnectionAttempt, onLostConnection;
     internal BackendClient backendClient;
     internal readonly ConcurrentDictionary<byte, string> clients = new();
@@ -177,7 +194,11 @@ public class Client : Communication
 
         void TriggerEvent()
         {
-            onReceive?.Invoke((fromId == 0 ? "" : clients[fromId], message.Tag, message.Value));
+            var from = fromId == 0 ? "" : clients[fromId];
+            if (message.Data == null || message.Data.Length == 0)
+                onReceiveMsg?.Invoke((from, message.Tag, message.Value));
+            else
+                onReceiveData?.Invoke((from, message.Tag, message.Data));
         }
     }
     private byte GetId(string nickname)
@@ -188,5 +209,5 @@ public class Client : Communication
 
         return 0;
     }
-    #endregion
+#endregion
 }

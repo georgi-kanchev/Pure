@@ -7,22 +7,10 @@ public class Scroll : Block
     /// <summary>
     /// Gets the slider part of the scroll.
     /// </summary>
-    public Slider Slider
-    {
-        get;
-        private set;
-    }
+    public Slider Slider { get; private set; }
 
-    public Button Increase
-    {
-        get;
-        private set;
-    }
-    public Button Decrease
-    {
-        get;
-        private set;
-    }
+    public Button Increase { get; private set; }
+    public Button Decrease { get; private set; }
 
     public bool IsVertical
     {
@@ -59,7 +47,14 @@ public class Scroll : Block
         Slider.progress = GrabFloat(bytes);
         Slider.index = GrabInt(bytes);
     }
+    public Scroll(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -68,6 +63,23 @@ public class Scroll : Block
         PutFloat(result, Slider.Progress);
         PutInt(result, Slider.index);
         return result.ToArray();
+    }
+
+    public static implicit operator string(Scroll scroll)
+    {
+        return scroll.ToBase64();
+    }
+    public static implicit operator Scroll(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Scroll scroll)
+    {
+        return scroll.ToBytes();
+    }
+    public static implicit operator Scroll(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

@@ -32,8 +32,8 @@ internal class BackendClient : TcpClient
         // their new nick & id at a later point
 
         // sending my nickname
-        var msg = new Message(0, 0, Tag.NICKNAME_ASK, 0, parent.Nickname);
-        parent.backendClient.SendAsync(msg.Data);
+        var msg = new Message(0, 0, Tag.NICKNAME_ASK, 0, parent.Nickname, Array.Empty<byte>());
+        parent.backendClient.SendAsync(msg.Total);
     }
     protected override void OnDisconnected()
     {
@@ -92,8 +92,8 @@ internal class BackendClient : TcpClient
         parent.onError?.Invoke(error.ToString());
     }
 
-    #region Backend
+#region Backend
     private readonly Client parent;
     private bool shouldDisconnect;
-    #endregion
+#endregion
 }

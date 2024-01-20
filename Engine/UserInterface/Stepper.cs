@@ -5,31 +5,11 @@ using System.Globalization;
 
 public class Stepper : Block
 {
-    public Button Increase
-    {
-        get;
-        private set;
-    }
-    public Button Decrease
-    {
-        get;
-        private set;
-    }
-    public Button Minimum
-    {
-        get;
-        private set;
-    }
-    public Button Middle
-    {
-        get;
-        private set;
-    }
-    public Button Maximum
-    {
-        get;
-        private set;
-    }
+    public Button Increase { get; private set; }
+    public Button Decrease { get; private set; }
+    public Button Minimum { get; private set; }
+    public Button Middle { get; private set; }
+    public Button Maximum { get; private set; }
 
     public float Value
     {
@@ -56,11 +36,7 @@ public class Stepper : Block
                 Value = this.value; // reclamp with new range
         }
     }
-    public float Step
-    {
-        get;
-        set;
-    } = 1f;
+    public float Step { get; set; } = 1f;
 
     public Stepper((int x, int y) position = default, float value = 0) : base(position)
     {
@@ -77,7 +53,14 @@ public class Stepper : Block
 
         Init();
     }
+    public Stepper(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -86,6 +69,23 @@ public class Stepper : Block
         PutFloat(result, Step);
         PutFloat(result, Value);
         return result.ToArray();
+    }
+
+    public static implicit operator string(Stepper stepper)
+    {
+        return stepper.ToBase64();
+    }
+    public static implicit operator Stepper(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Stepper stepper)
+    {
+        return stepper.ToBytes();
+    }
+    public static implicit operator Stepper(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

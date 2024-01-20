@@ -18,7 +18,22 @@ public class SolidPack
         set => data[index] = value;
     }
 
-    public SolidPack(byte[] bytes) : this((0, 0), (0, 0))
+    public SolidPack((float x, float y) position = default, (float width, float height) scale = default)
+    {
+        scale = scale == default ? (1f, 1f) : scale;
+
+        Position = position;
+        Scale = scale;
+    }
+    public SolidPack(
+        (float x, float y) position = default,
+        (float width, float height) scale = default,
+        params Solid[] solids)
+        : this(position, scale)
+    {
+        Add(solids);
+    }
+    public SolidPack(byte[] bytes)
     {
         var b = Decompress(bytes);
         var offset = 0;
@@ -39,44 +54,28 @@ public class SolidPack
             Add(new Solid((w, h), (x, y), color));
         }
 
-        return;
-
         byte[] Get<T>()
         {
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
         }
     }
-    public SolidPack((float x, float y) position = default, (float width, float height) scale = default)
+    public SolidPack(string base64) : this(Convert.FromBase64String(base64))
     {
-        scale = scale == default ? (1f, 1f) : scale;
-
-        Position = position;
-        Scale = scale;
-    }
-    public SolidPack(
-        (float x, float y) position = default,
-        (float width, float height) scale = default,
-        params Solid[] solids)
-        : this(position, scale)
-    {
-        Add(solids);
     }
 
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public byte[] ToBytes()
     {
-        var c = data.Count;
-        var bX = BitConverter.GetBytes(Position.x);
-        var bY = BitConverter.GetBytes(Position.y);
-        var bScW = BitConverter.GetBytes(Scale.width);
-        var bScH = BitConverter.GetBytes(Scale.height);
-        var bCount = BitConverter.GetBytes(c);
         var result = new List<byte>();
+        result.AddRange(BitConverter.GetBytes(data.Count));
+        result.AddRange(BitConverter.GetBytes(Position.x));
+        result.AddRange(BitConverter.GetBytes(Position.y));
+        result.AddRange(BitConverter.GetBytes(Scale.width));
+        result.AddRange(BitConverter.GetBytes(Scale.height));
 
-        result.AddRange(bCount);
-        result.AddRange(bX);
-        result.AddRange(bY);
-        result.AddRange(bScW);
-        result.AddRange(bScH);
         foreach (var r in data)
         {
             result.AddRange(BitConverter.GetBytes(r.Position.x));
@@ -87,6 +86,17 @@ public class SolidPack
         }
 
         return Compress(result.ToArray());
+    }
+    public Solid[] ToArray()
+    {
+        return data.ToArray();
+    }
+    public (float x, float y, float width, float height, uint color)[] ToBundle()
+    {
+        var result = new (float x, float y, float width, float height, uint color)[data.Count];
+        for (var i = 0; i < result.Length; i++)
+            result[i] = this[i];
+        return result;
     }
 
     public void Add(params Solid[]? solids)
@@ -138,31 +148,18 @@ public class SolidPack
         return false;
     }
 
-    public Solid[] ToArray()
-    {
-        return this;
-    }
-    public (float x, float y, float width, float height, uint color)[] ToBundle()
-    {
-        return this;
-    }
-
     public static implicit operator SolidPack(Solid[] solids)
     {
         return new(default, default, solids);
     }
     public static implicit operator Solid[](SolidPack solidPack)
     {
-        return solidPack.data.ToArray();
+        return solidPack.ToArray();
     }
     public static implicit operator (float x, float y, float width, float height, uint color)[](
         SolidPack solidPack)
     {
-        var result =
-            new (float x, float y, float width, float height, uint color)[solidPack.data.Count];
-        for (var i = 0; i < result.Length; i++)
-            result[i] = solidPack[i];
-        return result;
+        return solidPack.ToBundle();
     }
     public static implicit operator SolidPack(
         (float x, float y, float width, float height, uint color)[] solids)
@@ -171,6 +168,22 @@ public class SolidPack
         for (var i = 0; i < result.Length; i++)
             result[i] = solids[i];
         return result;
+    }
+    public static implicit operator string(SolidPack solidPack)
+    {
+        return solidPack.ToBase64();
+    }
+    public static implicit operator SolidPack(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](SolidPack solidPack)
+    {
+        return solidPack.ToBytes();
+    }
+    public static implicit operator SolidPack(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend
@@ -199,6 +212,15 @@ public class SolidPack
 
     private readonly List<Solid> data = new();
 
+    private Solid LocalToGlobalRectangle(Solid localRect)
+    {
+        var (x, y) = localRect.Position;
+        var (w, h) = localRect.Size;
+        localRect.Position = (Position.x + x * Scale.width, Position.y + y * Scale.height);
+        localRect.Size = (w * Scale.width, h * Scale.height);
+        return localRect;
+    }
+
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
@@ -220,15 +242,6 @@ public class SolidPack
         var result = fromBytes[offset..(offset + amount)];
         offset += amount;
         return result;
-    }
-
-    private Solid LocalToGlobalRectangle(Solid localRect)
-    {
-        var (x, y) = localRect.Position;
-        var (w, h) = localRect.Size;
-        localRect.Position = (Position.x + x * Scale.width, Position.y + y * Scale.height);
-        localRect.Size = (w * Scale.width, h * Scale.height);
-        return localRect;
     }
 #endregion
 }

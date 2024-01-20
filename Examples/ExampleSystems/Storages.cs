@@ -13,12 +13,14 @@ public static class Storages
         storage.Set("dict", new Dictionary<string, int> { { "key1", 25 }, { "key2", 39 } });
 
         var text = storage.ToText();
-        var load = new Storage();
-        load.FromText(text);
+        var load = new Storage(text);
 
         var test = load.GetAsObject<string>("test");
         var test2 = load.GetAsObject<string[]>("test2");
         var test3 = load.GetAsObject<int>("test3");
         var dict = load.GetAsObject<Dictionary<string, int>>("dict");
+
+        var rawStorage = new StoragePack();
+        rawStorage["storage"] = storage;
     }
 }

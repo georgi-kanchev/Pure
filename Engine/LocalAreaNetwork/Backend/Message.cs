@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Pure.Engine.LocalAreaNetwork;
 
 using System.IO.Compression;
@@ -11,8 +13,9 @@ internal class Message
     public byte TagSystem { get; }
     public string Value { get; }
     public byte[] Data { get; }
+    public byte[] Total { get; }
 
-    public Message(byte fromId, byte toId, byte sysTag, byte userTag, string value)
+    public Message(byte fromId, byte toId, byte sysTag, byte userTag, string value, byte[] raw)
     {
         TagSystem = sysTag;
         Tag = userTag;
@@ -20,63 +23,73 @@ internal class Message
         ToId = toId;
         Value = value;
 
+        // [size of compressed data] | [compressed data]
+        // this is because some messages may arrive back to back in the same byte[]
+
+        var bytes = new List<byte>();
         var message = Encoding.UTF8.GetBytes(value);
-        var bytes = new byte[4 + message.Length];
-        bytes[0] = sysTag;
-        bytes[1] = userTag;
-        bytes[2] = fromId;
-        bytes[3] = toId;
-        Array.Copy(message, 0, bytes, 4, message.Length);
+        bytes.AddRange(new[] { sysTag, userTag, fromId, toId });
+        bytes.AddRange(BitConverter.GetBytes(message.Length));
+        bytes.AddRange(message);
+        bytes.AddRange(BitConverter.GetBytes(raw.Length));
+        bytes.AddRange(raw);
 
-        var msg = Compress(bytes);
-        var result = new byte[4 + msg.Length];
-        var msgSize = BitConverter.GetBytes(msg.Length);
-        result[0] = msgSize[0];
-        result[1] = msgSize[1];
-        result[2] = msgSize[2];
-        result[3] = msgSize[3];
-        Array.Copy(msg, 0, result, 4, msg.Length);
+        var result = new List<byte>();
+        var compressed = Compress(bytes.ToArray());
+        result.AddRange(BitConverter.GetBytes(compressed.Length));
+        result.AddRange(compressed);
 
-        Data = result;
+        Total = result.ToArray();
     }
     public Message(byte[] bytes, out byte[] remaining)
     {
-        // take a chunk of the bytes just for this message, maybe there are multiple messages
-        var byteAmount = BitConverter.ToInt32(bytes[..4]);
-        var myBytes = bytes[4..(4 + byteAmount)];
+        if (bytes == null)
+        {
+            remaining = null;
+            return;
+        }
 
-        remaining = bytes[(4 + myBytes.Length)..];
+        var offset = 0;
+        // take a chunk of the bytes just for this message
+        // since maybe there are multiple messages back to back
+        var byteAmount = BitConverter.ToInt32(Get<int>());
+        var myBytes = GetBytesFrom(bytes, byteAmount, ref offset);
 
-        // decompress
+        // send the remaining bytes back
+        remaining = bytes[offset..];
+
+        // and keep parsing the message...
+        var offsetDecoded = 0;
         var decoded = Decompress(myBytes);
-        var sysTag = decoded[0];
-        var userTag = decoded[1];
-        var fromId = decoded[2];
-        var toId = decoded[3];
-        var value = Encoding.UTF8.GetString(decoded[4..]);
+        var sysTag = GetByte();
+        var userTag = GetByte();
+        var fromId = GetByte();
+        var toId = GetByte();
+        var strByteLength = BitConverter.ToInt32(Get<int>());
+        var value = Encoding.UTF8.GetString(GetBytesFrom(decoded, strByteLength, ref offsetDecoded));
+        var rawByteLength = BitConverter.ToInt32(Get<int>());
+        var raw = GetBytesFrom(decoded, rawByteLength, ref offsetDecoded);
 
-        // and store
+        // then store
         TagSystem = sysTag;
         Tag = userTag;
         FromId = fromId;
         ToId = toId;
         Value = value;
-        Data = bytes[..(4 + byteAmount)];
+        Data = raw;
+        Total = bytes[..(4 + byteAmount)];
+
+        byte GetByte()
+        {
+            return GetBytesFrom(decoded, 1, ref offsetDecoded)[0];
+        }
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(bytes, Marshal.SizeOf(typeof(T)), ref offset);
+        }
     }
 
-    #region Backend
-    // format
-    // [amount of bytes]		- data
-    // --------------------------------
-    // [4]						- total amount of bytes for this message (after compression)
-    // --------------------------------
-    // compressed:
-    // [1]						- system tag
-    // [1]						- user tag
-    // [1]						- fromID
-    // [1]						- toID
-    // [rest]					- string message
-
+#region Backend
     private static byte[] Compress(byte[] bytes)
     {
         using var uncompressedStream = new MemoryStream(bytes);
@@ -101,5 +114,11 @@ internal class Message
 
         return decompressedBytes;
     }
-    #endregion
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
+    }
+#endregion
 }

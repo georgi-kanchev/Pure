@@ -70,7 +70,14 @@ public class TilemapPack
             return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
         }
     }
+    public TilemapPack(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -212,6 +219,22 @@ public class TilemapPack
     {
         return tilemapPack.data.ToArray();
     }
+    public static implicit operator string(TilemapPack tilemapPack)
+    {
+        return tilemapPack.ToBase64();
+    }
+    public static implicit operator TilemapPack(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](TilemapPack tilemapPack)
+    {
+        return tilemapPack.ToBytes();
+    }
+    public static implicit operator TilemapPack(byte[] base64)
+    {
+        return new(base64);
+    }
 
 #region Backend
     private (int, int) viewSz, viewPos;
@@ -272,7 +295,8 @@ public class TilemapPack
                 var targetIndex = Math.Clamp(index + offset, 0, max);
 
                 // prevent items order change
-                if (index > 0 && index < max &&
+                if (index > 0 &&
+                    index < max &&
                     itemList.Contains(list[index + (offset > 0 ? 1 : -1)]))
                     continue;
 

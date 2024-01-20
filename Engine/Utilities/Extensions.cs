@@ -8,36 +8,71 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 /// <summary>
+/// The type of number animations used by <see cref="Extensions.Animate"/>.
+/// Also known as 'easing functions'.
+/// </summary>
+public enum Animation
+{
+    /// <summary>
+    /// Represents a linear/lerp animation, characterized by a constant rate of change.
+    /// </summary>
+    Line,
+    /// <summary>
+    /// Corresponds to a sine easing function, creating a gentle bending effect.
+    /// </summary>
+    BendWeak,
+    /// <summary>
+    /// Indicates a cubic easing function, resulting in a moderate bending motion.
+    /// </summary>
+    Bend,
+    /// <summary>
+    /// Represents a quintic easing function, producing a strong bending effect.
+    /// </summary>
+    BendStrong,
+    /// <summary>
+    /// Refers to a circular easing function, often denoted as Circ, creating a circular motion.
+    /// </summary>
+    Circle,
+    /// <summary>
+    /// Describes an elastic easing function, simulating an elastic or rubber-band-like motion.
+    /// </summary>
+    Elastic,
+    /// <summary>
+    /// Represents a back easing function, generating a swinging or backward motion.
+    /// </summary>
+    Swing,
+    /// <summary>
+    /// Represents a bounce easing function, creating a bouncing effect.
+    /// </summary>
+    Bounce
+}
+
+/// <summary>
+/// The type of number animation direction used by <see cref="Extensions.Animate"/>.
+/// </summary>
+public enum AnimationCurve
+{
+    /// <summary>
+    /// Eases in for a gradual start.
+    /// </summary>
+    In,
+    /// <summary>
+    /// Eases out for a gradual slowdown or stop.
+    /// </summary>
+    Out,
+    /// <summary>
+    /// Eases in first and then eases out, combining characteristics of both
+    /// <see cref="In"/> and <see cref="Out"/>.
+    /// </summary>
+    InOut
+}
+
+/// <summary>
 /// Various methods that extend the primitive types, structs and collections.
 /// These serve as shortcuts for frequently used expressions/algorithms/calculations/systems.
 /// </summary>
 public static class Extensions
 {
-    /// <summary>
-    /// The type of number animations used by <see cref="Animate"/>. Also known as 'easing functions'.
-    /// </summary>
-    public enum Animation
-    {
-        Line, // Linear, lerp
-        BendWeak, // Sine
-        Bend, // Cubic
-        BendStrong, // Quint
-        Circle, // Circ
-        Elastic, // Elastic
-        Swing, // Back
-        Bounce // Bounce
-    }
-
-    /// <summary>
-    /// The type of number animation direction used by <see cref="Animate"/>.
-    /// </summary>
-    public enum AnimationCurve
-    {
-        Backward,
-        Forward,
-        BackwardThenForward
-    }
-
     /// <summary>
     /// Returns true only the first time a condition is true.
     /// This is reset whenever the condition becomes false.
@@ -740,44 +775,44 @@ public static class Extensions
         {
             case Animation.Line:
             {
-                return curve == AnimationCurve.Backward ? 1f - unit :
-                    curve == AnimationCurve.Forward ? unit :
+                return curve == AnimationCurve.In ? 1f - unit :
+                    curve == AnimationCurve.Out ? unit :
                     unit < 0.5f ? unit.Map((0, 0.5f), (1f, 0)) : unit.Map((0.5f, 1f), (0, 1f));
             }
             case Animation.BendWeak:
             {
-                return curve == AnimationCurve.Backward ? 1 - MathF.Cos(x * MathF.PI / 2) :
-                    curve == AnimationCurve.Forward ? 1 - MathF.Sin(x * MathF.PI / 2) :
+                return curve == AnimationCurve.In ? 1 - MathF.Cos(x * MathF.PI / 2) :
+                    curve == AnimationCurve.Out ? 1 - MathF.Sin(x * MathF.PI / 2) :
                     -(MathF.Cos(MathF.PI * x) - 1) / 2;
             }
             case Animation.Bend:
             {
-                return curve == AnimationCurve.Backward ? x * x * x :
-                    curve == AnimationCurve.Forward ? 1 - MathF.Pow(1 - x, 3) :
+                return curve == AnimationCurve.In ? x * x * x :
+                    curve == AnimationCurve.Out ? 1 - MathF.Pow(1 - x, 3) :
                     (x < 0.5 ? 4 * x * x * x : 1 - MathF.Pow(-2 * x + 2, 3) / 2);
             }
             case Animation.BendStrong:
             {
-                return curve == AnimationCurve.Backward ? x * x * x * x :
-                    curve == AnimationCurve.Forward ? 1 - MathF.Pow(1 - x, 5) :
+                return curve == AnimationCurve.In ? x * x * x * x :
+                    curve == AnimationCurve.Out ? 1 - MathF.Pow(1 - x, 5) :
                     (x < 0.5 ? 16 * x * x * x * x * x : 1 - MathF.Pow(-2 * x + 2, 5) / 2);
             }
             case Animation.Circle:
             {
-                return curve == AnimationCurve.Backward ? 1 - MathF.Sqrt(1 - MathF.Pow(x, 2)) :
-                    curve == AnimationCurve.Forward ? MathF.Sqrt(1 - MathF.Pow(x - 1, 2)) :
+                return curve == AnimationCurve.In ? 1 - MathF.Sqrt(1 - MathF.Pow(x, 2)) :
+                    curve == AnimationCurve.Out ? MathF.Sqrt(1 - MathF.Pow(x - 1, 2)) :
                     (x < 0.5 ?
                         (1 - MathF.Sqrt(1 - MathF.Pow(2 * x, 2))) / 2 :
                         (MathF.Sqrt(1 - MathF.Pow(-2 * x + 2, 2)) + 1) / 2);
             }
             case Animation.Elastic:
             {
-                return curve == AnimationCurve.Backward ? x == 0 ? 0 :
+                return curve == AnimationCurve.In ? x == 0 ? 0 :
                     Math.Abs((int)(x - 1)) < 0.001f ? 1 :
                     -MathF.Pow(2, 10 * x - 10) *
                     MathF.Sin((x * 10 - 10.75f) *
                               (2 * MathF.PI / 3))
-                    : curve == AnimationCurve.Forward ? x == 0 ? 0 :
+                    : curve == AnimationCurve.Out ? x == 0 ? 0 :
                     Math.Abs((int)(x - 1)) < 0.001f ? 1 :
                     MathF.Pow(2, -10 * x) *
                     MathF.Sin((x * 10 - 0.75f) * (2 * MathF.PI) / 3) +
@@ -796,18 +831,18 @@ public static class Extensions
             }
             case Animation.Swing:
             {
-                return curve == AnimationCurve.Backward ? 2.70158f * x * x * x - 1.70158f * x * x :
-                    curve == AnimationCurve.Forward ? 1 +
-                                                      2.70158f * MathF.Pow(x - 1, 3) +
-                                                      1.70158f * MathF.Pow(x - 1, 2) :
+                return curve == AnimationCurve.In ? 2.70158f * x * x * x - 1.70158f * x * x :
+                    curve == AnimationCurve.Out ? 1 +
+                                                  2.70158f * MathF.Pow(x - 1, 3) +
+                                                  1.70158f * MathF.Pow(x - 1, 2) :
                     (x < 0.5 ?
                         (MathF.Pow(2 * x, 2) * ((2.59491f + 1) * 2 * x - 2.59491f)) / 2 :
                         (MathF.Pow(2 * x - 2, 2) * ((2.59491f + 1) * (x * 2 - 2) + 2.59491f) + 2) / 2);
             }
             case Animation.Bounce:
             {
-                return curve == AnimationCurve.Backward ? 1 - EaseOutBounce(1 - x) :
-                    curve == AnimationCurve.Forward ? EaseOutBounce(x) :
+                return curve == AnimationCurve.In ? 1 - EaseOutBounce(1 - x) :
+                    curve == AnimationCurve.Out ? EaseOutBounce(x) :
                     (x < 0.5f ? (1 - EaseOutBounce(1 - 2 * x)) / 2 : (1 + EaseOutBounce(2 * x - 1)) / 2);
 
                 static float EaseOutBounce(float x)
@@ -848,6 +883,18 @@ public static class Extensions
             return number;
         }
     }
+    /// <summary>
+    /// Limits an int number to a specified range.
+    /// </summary>
+    /// <param name="number">The number to limit.</param>
+    /// <param name="range">The range value.</param>
+    /// <param name="isOverflowing">Indicates whether the range is treated as circular, 
+    /// allowing overflow.</param>
+    /// <returns>The limited int number.</returns>
+    public static int Limit(this int number, (int a, int b) range, bool isOverflowing = false)
+    {
+        return (int)Limit((float)number, range, isOverflowing);
+    }
     /// <param name="amount">
     /// The number of values to distribute.</param>
     /// <param name="range">The range of values (inclusive). The order is maintained.</param>
@@ -865,18 +912,6 @@ public static class Extensions
             result[i - 1] = range.a + i * spacing;
 
         return result;
-    }
-    /// <summary>
-    /// Limits an int number to a specified range.
-    /// </summary>
-    /// <param name="number">The number to limit.</param>
-    /// <param name="range">The range value.</param>
-    /// <param name="isOverflowing">Indicates whether the range is treated as circular, 
-    /// allowing overflow.</param>
-    /// <returns>The limited int number.</returns>
-    public static int Limit(this int number, (int a, int b) range, bool isOverflowing = false)
-    {
-        return (int)Limit((float)number, range, isOverflowing);
     }
     /// <param name="number">
     /// The number whose sign to adjust.</param>

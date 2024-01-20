@@ -1,7 +1,10 @@
-﻿namespace Pure.Engine.Audio;
+﻿using System.Text;
 
+namespace Pure.Engine.Audio;
+
+using System.Runtime.InteropServices;
+using System.IO.Compression;
 using SFML.Audio;
-
 using static MathF;
 
 /// <summary>
@@ -26,29 +29,94 @@ public class Notes : Audio
         Wave wave = Wave.Square,
         (float start, float end) fade = default)
     {
-        var validChords = GetValidNotes(notes);
-        if (validChords.Count == 0)
-            return;
+        this.notes = notes;
+        this.duration = duration;
+        this.wave = wave;
+        this.fade = (Math.Clamp(fade.start, 0, 1), Math.Clamp(fade.end, 0, 1));
 
-        fade.start = Math.Clamp(fade.start, 0, 1);
-        fade.end = Math.Clamp(fade.end, 0, 1);
+        Generate();
+    }
+    public Notes(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
 
-        this.fade = fade;
+        fade = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        duration = BitConverter.ToSingle(Get<float>());
+        wave = (Wave)BitConverter.ToInt32(Get<int>());
 
-        var samples = GetSamplesFromNotes(validChords, duration, wave);
-        var sound = new Sound(new SoundBuffer(samples, 1, SAMPLE_RATE));
-        Initialize(sound);
-        buffer = sound.SoundBuffer;
+        var dataLength = BitConverter.ToInt32(Get<int>());
+        notes = Encoding.UTF8.GetString(GetBytesFrom(b, dataLength, ref offset));
+
+        Generate();
+
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
+    }
+    public Notes(string base64) : this(Convert.FromBase64String(base64))
+    {
     }
 
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        if (buffer == null)
+            return Array.Empty<byte>();
+
+        var result = new List<byte>();
+
+        result.AddRange(BitConverter.GetBytes(fade.start));
+        result.AddRange(BitConverter.GetBytes(fade.end));
+        result.AddRange(BitConverter.GetBytes(duration));
+        result.AddRange(BitConverter.GetBytes((int)wave));
+
+        var data = Encoding.UTF8.GetBytes(notes);
+        result.AddRange(BitConverter.GetBytes(data.Length));
+        result.AddRange(data);
+
+        return Compress(result.ToArray());
+    }
+    /// <summary>
+    /// Save the notes to an audio file. Here is a complete list of all the supported
+    /// audio formats: <br></br>
+    /// ogg, wav, flac, aiff, au, raw, paf, svx, nist, voc, ircam, w64,
+    /// mat4, mat5 pvf, htk, sds, avr, sd2, caf, wve, mpc2k, rf64.
+    /// </summary>
+    /// <param name="path"></param>
     public void ToFile(string path)
     {
         buffer?.SaveToFile(path);
     }
 
-    #region Backend
-    private readonly SoundBuffer? buffer;
+    public static implicit operator string(Notes notes)
+    {
+        return notes.ToBase64();
+    }
+    public static implicit operator Notes(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Notes notes)
+    {
+        return notes.ToBytes();
+    }
+    public static implicit operator Notes(byte[] base64)
+    {
+        return new(base64);
+    }
+
+#region Backend
+    private readonly string notes;
+    private readonly float duration;
+    private readonly Wave wave;
     private readonly (float start, float end) fade;
+
+    private SoundBuffer? buffer;
     private static readonly Random rand = new();
 
     // this avoids switch or if chain to determine the wave, results in generating the sounds a bit faster
@@ -63,6 +131,18 @@ public class Notes : Audio
 
     private const uint SAMPLE_RATE = 11025;
     private const float AMPLITUDE = 1f * short.MaxValue;
+
+    private void Generate()
+    {
+        var validChords = GetValidNotes(notes);
+        if (validChords.Count == 0)
+            return;
+
+        var samples = GetSamplesFromNotes(validChords, duration, wave);
+        var sound = new Sound(new SoundBuffer(samples, 1, SAMPLE_RATE));
+        Initialize(sound);
+        buffer = sound.SoundBuffer;
+    }
 
     private float GetFrequency(string chord)
     {
@@ -84,7 +164,9 @@ public class Notes : Audio
         if (hasOctave == false || keyNumber == -1)
             return float.NaN;
 
-        keyNumber = keyNumber < 3 ? keyNumber + 12 + (octave - 1) * 12 + 1 : keyNumber + (octave - 1) * 12 + 1;
+        keyNumber = keyNumber < 3 ?
+            keyNumber + 12 + (octave - 1) * 12 + 1 :
+            keyNumber + (octave - 1) * 12 + 1;
         var result = 440f * Pow(2f, (keyNumber - 49f) / 12f);
 
         return result;
@@ -114,11 +196,17 @@ public class Notes : Audio
                 var noteProgress = Map(j, (0f, time), (0f, 1f));
                 var fadeValue = 1f;
 
-                fadeValue *= isStarting && noteProgress <= noteA ? Map(noteProgress, (0f, noteA), (0f, 1f)) : 1f;
-                fadeValue *= isStopping && noteProgress > noteB ? Map(noteProgress, (noteB, 1f), (1f, 0f)) : 1f;
+                fadeValue *= isStarting && noteProgress <= noteA ?
+                    Map(noteProgress, (0f, noteA), (0f, 1f)) :
+                    1f;
+                fadeValue *= isStopping && noteProgress > noteB ?
+                    Map(noteProgress, (noteB, 1f), (1f, 0f)) :
+                    1f;
 
                 samples[sampleIndex] =
-                    (short)(frequency == 0 ? 0 : GetWaveSample(sampleIndex, frequency, wave) * fadeValue);
+                    (short)(frequency == 0 ?
+                        0 :
+                        GetWaveSample(sampleIndex, frequency, wave) * fadeValue);
                 sampleIndex++;
             }
         }
@@ -169,5 +257,27 @@ public class Notes : Audio
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-    #endregion
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using var stream = new DeflateStream(input, CompressionMode.Decompress);
+        stream.CopyTo(output);
+        return output.ToArray();
+    }
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
+    }
+#endregion
 }

@@ -56,7 +56,14 @@ public class BlockPack
             return BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
         }
     }
+    public BlockPack(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -123,6 +130,23 @@ public class BlockPack
     {
         foreach (var e in data)
             e.Update();
+    }
+
+    public static implicit operator string(BlockPack blockPack)
+    {
+        return blockPack.ToBase64();
+    }
+    public static implicit operator BlockPack(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](BlockPack blockPack)
+    {
+        return blockPack.ToBytes();
+    }
+    public static implicit operator BlockPack(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

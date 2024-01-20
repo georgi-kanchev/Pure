@@ -38,7 +38,14 @@ public class Palette : Block
         Opacity.progress = opacity;
         Opacity.index = index;
     }
+    public Palette(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
+    public override string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public override byte[] ToBytes()
     {
         var result = base.ToBytes().ToList();
@@ -71,6 +78,23 @@ public class Palette : Block
         }
 
         SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
+    }
+
+    public static implicit operator string(Palette palette)
+    {
+        return palette.ToBase64();
+    }
+    public static implicit operator Palette(string base64)
+    {
+        return new(base64);
+    }
+    public static implicit operator byte[](Palette palette)
+    {
+        return palette.ToBytes();
+    }
+    public static implicit operator Palette(byte[] base64)
+    {
+        return new(base64);
     }
 
 #region Backend

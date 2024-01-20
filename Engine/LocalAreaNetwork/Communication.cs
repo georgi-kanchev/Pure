@@ -16,11 +16,16 @@ public abstract class Communication
     }
     public void OnReceive(Action<(string fromNickname, byte tag, string message)> method)
     {
-        onReceive += method;
+        onReceiveMsg += method;
+    }
+    public void OnReceive(Action<(string fromNickname, byte tag, byte[] data)> method)
+    {
+        onReceiveData += method;
     }
 
-    #region Backend
+#region Backend
     internal Action<string> onError, onClientConnect, onClientDisconnect;
-    internal Action<(string fromNickname, byte tag, string message)> onReceive;
-    #endregion
+    internal Action<(string fromNickname, byte tag, string message)> onReceiveMsg;
+    internal Action<(string fromNickname, byte tag, byte[] data)> onReceiveData;
+#endregion
 }
