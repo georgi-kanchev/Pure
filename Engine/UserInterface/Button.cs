@@ -46,21 +46,18 @@ public class Button : Block
         return result.ToArray();
     }
 
-    public static implicit operator string(Button button)
+    public Button Copy()
     {
-        return button.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Button(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Button button)
     {
         return button.ToBytes();
     }
-    public static implicit operator Button(byte[] base64)
+    public static implicit operator Button(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

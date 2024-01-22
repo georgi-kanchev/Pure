@@ -347,21 +347,13 @@ public struct Line
     {
         return (line.A.x, line.A.y, line.B.x, line.B.y, line.Color);
     }
-    public static implicit operator string(Line line)
-    {
-        return line.ToBase64();
-    }
-    public static implicit operator Line(string base64)
-    {
-        return new(base64);
-    }
     public static implicit operator byte[](Line line)
     {
         return line.ToBytes();
     }
-    public static implicit operator Line(byte[] base64)
+    public static implicit operator Line(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

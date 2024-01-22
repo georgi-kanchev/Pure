@@ -867,6 +867,11 @@ public class Tilemap
         return result;
     }
 
+    public Tilemap Copy()
+    {
+        return new(ToBytes());
+    }
+
     /// <summary>
     /// Implicitly converts a 2D array of tiles to a tilemap object.
     /// </summary>
@@ -899,21 +904,13 @@ public class Tilemap
     {
         return tilemap.ids;
     }
-    public static implicit operator string(Tilemap tilemap)
-    {
-        return tilemap.ToBase64();
-    }
-    public static implicit operator Tilemap(string base64)
-    {
-        return new(base64);
-    }
     public static implicit operator byte[](Tilemap tilemap)
     {
         return tilemap.ToBytes();
     }
-    public static implicit operator Tilemap(byte[] base64)
+    public static implicit operator Tilemap(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend
@@ -1072,8 +1069,7 @@ public class Tilemap
 
         return output.ToArray();
     }
-
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    internal static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {
         var result = fromBytes[offset..(offset + amount)];
         offset += amount;

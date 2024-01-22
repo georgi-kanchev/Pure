@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.Storage;
+﻿using System.Text.RegularExpressions;
+
+namespace Pure.Engine.Storage;
 
 using System;
 using System.Collections;
@@ -28,13 +30,13 @@ public class Storage
             sepTuple = string.IsNullOrEmpty(value.tuple) ? ";" : value.tuple;
         }
     }
-    public (string? _1D, string? _2D, string? dictionary) DividersCollection
+    public (string? oneD, string? twoD, string? dictionary) DividersCollection
     {
         get => (sep1D, sep2D, sepDict);
         set
         {
-            sep1D = string.IsNullOrEmpty(value._1D) ? "|" : value._1D;
-            sep2D = string.IsNullOrEmpty(value._2D) ? $"|{Environment.NewLine}" : value._2D;
+            sep1D = string.IsNullOrEmpty(value.oneD) ? "|" : value.oneD;
+            sep2D = string.IsNullOrEmpty(value.twoD) ? $"|{Environment.NewLine}" : value.twoD;
             sepDict = string.IsNullOrEmpty(value.dictionary) ? "/" : value.dictionary;
         }
     }
@@ -46,18 +48,18 @@ public class Storage
     }
     public Storage(byte[] bytes)
     {
-        var text = Encoding.UTF8.GetString(Decompress(bytes));
-        LoadFromText(text);
+        LoadFromBytes(bytes);
     }
     public Storage(string text, bool isBase64 = false)
     {
         if (isBase64)
         {
-            var bytes = Decompress(Convert.FromBase64String(text));
-            LoadFromText(Encoding.UTF8.GetString(bytes));
+            LoadFromBytes(Convert.FromBase64String(text));
             return;
         }
 
+        Dividers = default;
+        DividersCollection = default;
         LoadFromText(text);
     }
 
@@ -69,11 +71,17 @@ public class Storage
         var result = new StringBuilder();
         foreach (var kvp in data)
         {
-            result.Append(kvp.Key);
+            result.Append(kvp.Key.key);
             result.Append(Dividers.common);
-            result.Append(kvp.Value.typeId);
+            result.Append(kvp.Key.typeId);
             result.Append(Dividers.common);
-            result.Append(kvp.Value.data);
+
+            var value = kvp.Value;
+
+            if (value != null && value.Contains(STR_PLACEHOLDER))
+                value = FromPlaceholder(value);
+
+            result.Append(value);
             result.Append(Dividers.common + Environment.NewLine);
         }
 
@@ -88,7 +96,25 @@ public class Storage
     }
     public byte[] ToBytes()
     {
-        return Compress(Encoding.UTF8.GetBytes(ToText()));
+        var result = new List<byte>();
+        var text = ToText();
+
+        PutString(result, Dividers.common ?? "");
+        PutString(result, Dividers.text ?? "");
+        PutString(result, Dividers.tuple ?? "");
+        PutString(result, DividersCollection.oneD ?? "");
+        PutString(result, DividersCollection.twoD ?? "");
+        PutString(result, DividersCollection.dictionary ?? "");
+        PutString(result, text);
+
+        return Compress(result.ToArray());
+
+        void PutString(List<byte> intoBytes, string value)
+        {
+            var b = Encoding.UTF8.GetBytes(value);
+            intoBytes.AddRange(BitConverter.GetBytes(b.Length));
+            intoBytes.AddRange(b);
+        }
     }
 
     /// <summary>
@@ -99,7 +125,7 @@ public class Storage
     /// <param name="typeId">The type identifier of the object instance.</param>
     public void Set(string key, object? instance, int typeId = default)
     {
-        data[key] = (typeId, TextFromObject(typeId, instance));
+        data[(key, typeId)] = TextFromObject(typeId, instance);
     }
     /// <summary>
     /// Removes the object with the specified key from storage.
@@ -107,7 +133,23 @@ public class Storage
     /// <param name="key">The key of the object to be removed.</param>
     public void Remove(string key)
     {
-        data.Remove(key);
+        var keyToRemove = default((string, int));
+        foreach (var kvp in data)
+            if (kvp.Key.key == key)
+            {
+                keyToRemove = kvp.Key;
+                break;
+            }
+
+        data.Remove(keyToRemove);
+    }
+    public bool IsContaining(string key)
+    {
+        foreach (var kvp in data)
+            if (kvp.Key.key == key)
+                return true;
+
+        return false;
     }
 
     /// <summary>
@@ -117,7 +159,11 @@ public class Storage
     /// <returns>The type ID of the object instance.</returns>
     public int GetTypeId(string key)
     {
-        return data.TryGetValue(key, out var value) ? value.typeId : default;
+        foreach (var kvp in data)
+            if (kvp.Key.key == key)
+                return kvp.Key.typeId;
+
+        return default;
     }
     /// <summary>
     /// Gets the object instance with the specified key as text.
@@ -126,7 +172,11 @@ public class Storage
     /// <returns>The object instance as text.</returns>
     public string? GetAsText(string key)
     {
-        return data.TryGetValue(key, out var value) ? value.data : default;
+        foreach (var kvp in data)
+            if (kvp.Key.key == key)
+                return kvp.Value;
+
+        return default;
     }
     /// <summary>
     /// Gets the object instance with the specified key as an object of type <typeparamref name="T"/>.
@@ -136,20 +186,28 @@ public class Storage
     /// <returns>The object instance as an object of type <typeparamref name="T"/>.</returns>
     public T? GetAsObject<T>(string key)
     {
-        if (data.ContainsKey(key) == false)
-            return default;
+        foreach (var kvp in data)
+            if (kvp.Key.key == key)
+            {
+                var obj = TextToObject<T>(kvp.Key.typeId, kvp.Value);
+                return obj is "" or null ? default : (T)obj;
+            }
 
-        var obj = TextToObject<T>(data[key].typeId, data[key].data);
-        return obj is "" or null ? default : (T)obj;
+        return default;
     }
 
-    public void OnObjectFromText(Func<(int typeId, string dataAsText), object> method)
+    public void OnObjectFromText(int typeId, Func<string, object> method)
     {
-        onObjectFromText = method;
+        onObjectFromText[typeId] = method;
     }
-    public void OnObjectToText(Func<(int typeId, object instance), string> method)
+    public void OnObjectToText(int typeId, Func<object, string> method)
     {
-        onObjectToText = method;
+        onObjectToText[typeId] = method;
+    }
+
+    public Storage Copy()
+    {
+        return new(ToBytes());
     }
 
     public static implicit operator Storage(byte[] bytes)
@@ -162,39 +220,115 @@ public class Storage
     }
 
 #region Backend
-    private Func<(int typeId, string dataAsText), object>? onObjectFromText;
-    private Func<(int typeId, object instance), string>? onObjectToText;
+    private readonly Dictionary<int, Func<string, object>> onObjectFromText = new();
+    private readonly Dictionary<int, Func<object, string>> onObjectToText = new();
+    private readonly Dictionary<(string key, int typeId), string?> data = new();
     private const string STR_PLACEHOLDER = "—";
     private string? sep1D, sep2D, sepTuple, sepDict, sep, sepStr;
-    private readonly Dictionary<string, (int typeId, string? data)> data = new();
     private List<string>? strings;
 
+    private void LoadFromBytes(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+
+        Dividers = (GrabString(), GrabString(), GrabString());
+        DividersCollection = (GrabString(), GrabString(), GrabString());
+
+        var text = GrabString();
+        LoadFromText(text);
+
+        string GrabString()
+        {
+            var textBytesLength = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+            var bText = GetBytesFrom(b, textBytesLength, ref offset);
+            return Encoding.UTF8.GetString(bText);
+        }
+    }
     private void LoadFromText(string text)
     {
-        strings = GetStrings(ref text);
-        var split = text.Split(Dividers.common);
-        var index = 0;
-        var key = string.Empty;
-        var typeId = 0;
-
-        foreach (var s in split)
+        try
         {
-            var curIndex = index;
-            index++;
-            if (curIndex == 0)
-            {
-                key = s.Trim();
-                continue;
-            }
-            else if (curIndex == 1)
-            {
-                typeId = int.Parse(s.Trim());
-                continue;
-            }
+            strings = GetStrings(ref text);
+            var split = text.Split(Dividers.common);
+            var index = 0;
+            var key = string.Empty;
+            var typeId = 0;
 
-            data[key] = (typeId, s.Trim());
-            index = 0;
+            foreach (var s in split)
+            {
+                var curIndex = index;
+                index++;
+                if (curIndex == 0)
+                {
+                    key = s.Trim();
+                    continue;
+                }
+                else if (curIndex == 1)
+                {
+                    typeId = int.Parse(s.Trim());
+                    continue;
+                }
+
+                data[(key, typeId)] = s.Trim();
+                index = 0;
+            }
         }
+        catch (Exception)
+        {
+            throw new ArgumentException("Failed to process data! " +
+                                        "Make sure the data is valid and " +
+                                        "export/import dividers are the same.");
+        }
+    }
+    private List<string> GetStrings(ref string input)
+    {
+        var result = new List<string>();
+
+        if (Dividers.text == null)
+            return result;
+
+        var count = 0;
+        while (input.Contains(Dividers.text))
+        {
+            var openIndex = input.IndexOf(Dividers.text, 0, StringComparison.Ordinal);
+            if (openIndex == -1)
+                break;
+
+            var closeIndex = input.IndexOf(Dividers.text, openIndex + 1, StringComparison.Ordinal);
+
+            if (closeIndex == -1)
+                closeIndex = openIndex + 1;
+
+            var extractedString = input.Substring(openIndex + 1, closeIndex - openIndex - 1);
+            result.Add(extractedString);
+
+            var placeholder = STR_PLACEHOLDER + count;
+            input = string.Concat(input.AsSpan(0, openIndex), placeholder, input.AsSpan(closeIndex + 1));
+
+            count++;
+        }
+
+        return result;
+    }
+    private string FromPlaceholder(string value)
+    {
+        if (strings == null || strings.Count == 0)
+            return value;
+
+        return Regex.Replace(value, "—(\\d+)", match =>
+        {
+            var index = int.Parse(match.Groups[1].Value);
+            return index >= 0 && index < strings.Count ?
+                $"{Dividers.text}{strings[index]}{Dividers.text}" :
+                match.Value;
+        });
+    }
+    private string ToPlaceholder(string value)
+    {
+        strings ??= new();
+        strings.Add(value);
+        return $"{STR_PLACEHOLDER}{strings.Count - 1}";
     }
 
     private string? TextFromObject(int typeId, object? instance)
@@ -205,18 +339,18 @@ public class Storage
         var t = instance.GetType();
 
         if (typeId != default)
-            return onObjectToText?.Invoke((typeId, instance)); // ask user for parse
+        {
+            onObjectToText.TryGetValue(typeId, out var value);
+            return value?.Invoke(instance); // ask user for parse
+        }
 
         if (t.IsPrimitive || t == typeof(string))
             return TextFromPrimitiveOrTuple(instance);
-
-        if (IsGenericList(t) || (t.IsArray && IsArrayOfPrimitives((Array)instance)))
+        else if (IsGenericList(t) || (t.IsArray && IsArrayOfPrimitives((Array)instance)))
             return TextFromArrayOrList(instance);
-
-        if (IsPrimitiveOrTupleDictionary(t))
+        else if (IsPrimitiveOrTupleDictionary(t))
             return TextFromDictionary((IDictionary)instance);
-
-        if (IsPrimitiveTuple(t))
+        else if (IsPrimitiveTuple(t))
             return TextFromTuple(instance);
 
         return string.Empty;
@@ -227,19 +361,19 @@ public class Storage
             return default;
 
         if (typeId != default)
-            return onObjectFromText?.Invoke((typeId, dataAsText)); // ask user for parse
+        {
+            onObjectFromText.TryGetValue(typeId, out var value);
+            return value?.Invoke(dataAsText); // ask user for parse
+        }
 
         var t = typeof(T);
         if ((t.IsArray || IsGenericList(t)) && IsArray(dataAsText))
             return TextToArrayOrList(dataAsText, t);
-
-        if (t.IsPrimitive || t == typeof(string))
+        else if (t.IsPrimitive || t == typeof(string))
             return TextToPrimitive(dataAsText, t);
-
-        if (IsPrimitiveOrTupleDictionary(t))
+        else if (IsPrimitiveOrTupleDictionary(t))
             return TextToDictionary(dataAsText, t);
-
-        if (IsPrimitiveTuple(t))
+        else if (IsPrimitiveTuple(t))
             return TextToTuple(dataAsText, t);
 
         return default;
@@ -333,8 +467,8 @@ public class Storage
 
     private string TextFromArrayOrList(object collection)
     {
-        if (string.IsNullOrEmpty(DividersCollection._1D) ||
-            string.IsNullOrEmpty(DividersCollection._2D))
+        if (string.IsNullOrEmpty(DividersCollection.oneD) ||
+            string.IsNullOrEmpty(DividersCollection.twoD))
             return string.Empty;
 
         var result = new StringBuilder();
@@ -345,7 +479,7 @@ public class Storage
             var list = (IList)collection;
             for (var i = 0; i < list.Count; i++)
             {
-                var separator = i == 0 ? string.Empty : DividersCollection._1D;
+                var separator = i == 0 ? string.Empty : DividersCollection.oneD;
                 result.Append(separator + TextFromPrimitiveOrTuple(list[i]));
             }
 
@@ -357,7 +491,7 @@ public class Storage
         {
             for (var i = 0; i < array.GetLength(0); i++)
             {
-                var separator = i == 0 ? string.Empty : DividersCollection._1D;
+                var separator = i == 0 ? string.Empty : DividersCollection.oneD;
                 result.Append(separator + TextFromPrimitiveOrTuple(array.GetValue(i)));
             }
         }
@@ -365,36 +499,36 @@ public class Storage
         {
             for (var i = 0; i < array.GetLength(0); i++)
             {
-                result.Append(DividersCollection._2D);
+                result.Append(DividersCollection.twoD);
 
                 for (var j = 0; j < array.GetLength(1); j++)
                 {
-                    var separator = j == 0 ? string.Empty : DividersCollection._1D;
+                    var separator = j == 0 ? string.Empty : DividersCollection.oneD;
                     result.Append(separator + TextFromPrimitiveOrTuple(array.GetValue(i, j)));
                 }
             }
 
-            result.Remove(0, DividersCollection._2D.Length);
+            result.Remove(0, DividersCollection.twoD.Length);
         }
         else if (array.Rank == 3)
         {
             for (var i = 0; i < array.GetLength(0); i++)
             {
-                result.Append(DividersCollection._2D);
+                result.Append(DividersCollection.twoD);
 
                 for (var j = 0; j < array.GetLength(1); j++)
                 {
-                    result.Append(DividersCollection._2D);
+                    result.Append(DividersCollection.twoD);
 
                     for (var k = 0; k < array.GetLength(2); k++)
                     {
-                        var separator = k == 0 ? string.Empty : DividersCollection._1D;
+                        var separator = k == 0 ? string.Empty : DividersCollection.oneD;
                         result.Append(separator + TextFromPrimitiveOrTuple(array.GetValue(i, j, k)));
                     }
                 }
             }
 
-            result.Remove(0, DividersCollection._2D.Length * 2);
+            result.Remove(0, DividersCollection.twoD.Length * 2);
         }
 
         return result.ToString();
@@ -437,16 +571,16 @@ public class Storage
 
         var resultArrays2D = new List<string[]>();
         var resultArrays1D = new List<string[]>();
-        var sep3D = DividersCollection._2D + DividersCollection._2D;
+        var sep3D = DividersCollection.twoD + DividersCollection.twoD;
         var array3D = dataAsText.Split(sep3D);
 
         foreach (var str3D in array3D)
         {
-            var array2D = str3D.Split(DividersCollection._2D);
+            var array2D = str3D.Split(DividersCollection.twoD);
             resultArrays2D.Add(array2D);
             foreach (var str2D in array2D)
             {
-                var array1D = str2D.Split(DividersCollection._1D);
+                var array1D = str2D.Split(DividersCollection.oneD);
                 resultArrays1D.Add(array1D);
             }
         }
@@ -459,10 +593,10 @@ public class Storage
         var resultArray1D = Array.CreateInstance(arrayType, length1D);
         for (var i = 0; i < array3D.Length; i++)
         {
-            var array2D = array3D[i].Split(DividersCollection._2D);
+            var array2D = array3D[i].Split(DividersCollection.twoD);
             for (var j = 0; j < array2D.Length; j++)
             {
-                var array1D = array2D[j].Split(DividersCollection._1D);
+                var array1D = array2D[j].Split(DividersCollection.oneD);
                 for (var k = 0; k < array1D.Length; k++)
                 {
                     var item = Convert.ChangeType(TextToPrimitiveOrTuple(array1D[k], arrayType),
@@ -504,7 +638,10 @@ public class Storage
         if (IsPrimitiveTuple(value.GetType()))
             return TextFromTuple(value);
 
-        var primitive = value is string str ? $"{Dividers.text}{str}{Dividers.text}" : $"{value}";
+        var primitive = value is string str ?
+            ToPlaceholder(str) :
+            $"{value}";
+
         return primitive;
     }
     private object? TextToPrimitiveOrTuple(string dataAsText, Type type)
@@ -545,9 +682,9 @@ public class Storage
     }
     private bool IsArray(string dataAsText)
     {
-        return DividersCollection is { _1D: not null, _2D: not null } &&
-               (dataAsText.Contains(DividersCollection._1D) ||
-                dataAsText.Contains(DividersCollection._2D));
+        return DividersCollection is { oneD: not null, twoD: not null } &&
+               (dataAsText.Contains(DividersCollection.oneD) ||
+                dataAsText.Contains(DividersCollection.twoD));
     }
     private static bool IsGenericList(Type type)
     {
@@ -634,36 +771,10 @@ public class Storage
 
         return output.ToArray();
     }
-
-    private List<string> GetStrings(ref string input)
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {
-        var result = new List<string>();
-
-        if (Dividers.text == null)
-            return result;
-
-        var count = 0;
-
-        while (input.Contains(Dividers.text))
-        {
-            var openIndex = input.IndexOf(Dividers.text, 0, StringComparison.Ordinal);
-            if (openIndex == -1)
-                break;
-
-            var closeIndex = input.IndexOf(Dividers.text, openIndex + 1, StringComparison.Ordinal);
-
-            if (closeIndex == -1)
-                closeIndex = openIndex + 1;
-
-            var extractedString = input.Substring(openIndex + 1, closeIndex - openIndex - 1);
-            result.Add(extractedString);
-
-            var placeholder = STR_PLACEHOLDER + count;
-            input = string.Concat(input.AsSpan(0, openIndex), placeholder, input.AsSpan(closeIndex + 1));
-
-            count++;
-        }
-
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
         return result;
     }
 #endregion

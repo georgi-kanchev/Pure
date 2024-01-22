@@ -114,21 +114,18 @@ public class Pages : Block
             item.OnInteraction(interaction, () => method.Invoke(item));
     }
 
-    public static implicit operator string(Pages pages)
+    public Pages Copy()
     {
-        return pages.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Pages(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Pages pages)
     {
         return pages.ToBytes();
     }
-    public static implicit operator Pages(byte[] base64)
+    public static implicit operator Pages(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

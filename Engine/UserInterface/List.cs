@@ -386,6 +386,11 @@ public class List : Block
             item.OnInteraction(interaction, () => method.Invoke(item));
     }
 
+    public List Copy()
+    {
+        return new(ToBytes());
+    }
+
     /// <summary>
     /// Implicitly converts an array of button objects to a list object.
     /// </summary>
@@ -409,21 +414,13 @@ public class List : Block
         return list.data.ToArray();
     }
 
-    public static implicit operator string(List list)
-    {
-        return list.ToBase64();
-    }
-    public static implicit operator List(string base64)
-    {
-        return new(base64);
-    }
     public static implicit operator byte[](List list)
     {
         return list.ToBytes();
     }
-    public static implicit operator List(byte[] base64)
+    public static implicit operator List(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

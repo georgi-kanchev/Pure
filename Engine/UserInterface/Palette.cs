@@ -80,21 +80,18 @@ public class Palette : Block
         SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
     }
 
-    public static implicit operator string(Palette palette)
+    public Palette Copy()
     {
-        return palette.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Palette(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Palette palette)
     {
         return palette.ToBytes();
     }
-    public static implicit operator Palette(byte[] base64)
+    public static implicit operator Palette(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

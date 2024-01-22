@@ -1,4 +1,4 @@
-namespace Pure.Examples.ExampleApplications;
+namespace Pure.Examples.ExamplesApplications;
 
 using Engine.Tilemap;
 using Engine.Utilities;

@@ -76,21 +76,18 @@ public class Prompt : Block
         buttons[index].Interact(Interaction.Trigger);
     }
 
-    public static implicit operator string(Prompt prompt)
+    public Prompt Copy()
     {
-        return prompt.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Prompt(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Prompt prompt)
     {
         return prompt.ToBytes();
     }
-    public static implicit operator Prompt(byte[] base64)
+    public static implicit operator Prompt(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

@@ -156,8 +156,10 @@ public struct Color
     /// <param name="bundle">A bundle tuple containing the red, green, blue, and alpha
     /// components of the color.</param>
     public Color((byte red, byte green, byte blue, byte alpha) bundle)
-        :
-        this(bundle.red, bundle.green, bundle.blue, bundle.alpha)
+        : this(bundle.red, bundle.green, bundle.blue, bundle.alpha)
+    {
+    }
+    public Color(byte rgb, byte alpha = 255) : this(rgb, rgb, rgb, alpha)
     {
     }
 
@@ -169,10 +171,10 @@ public struct Color
     /// <returns>The new darkened color.</returns>
     public Color ToDark(float unit = 0.5f)
     {
-        var r = (byte)Map(unit, 0, 1, R, 0);
-        var g = (byte)Map(unit, 0, 1, G, 0);
-        var b = (byte)Map(unit, 0, 1, B, 0);
-        return new(r, g, b);
+        var red = (byte)Map(unit, 0, 1, R, 0);
+        var green = (byte)Map(unit, 0, 1, G, 0);
+        var blue = (byte)Map(unit, 0, 1, B, 0);
+        return new(red, green, blue);
     }
     /// <summary>
     /// Converts the color to a brighter shade.

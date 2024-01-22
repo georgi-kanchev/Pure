@@ -164,21 +164,13 @@ public struct Solid
     {
         return solid.ToBundle();
     }
-    public static implicit operator string(Solid solid)
-    {
-        return solid.ToBase64();
-    }
-    public static implicit operator Solid(string base64)
-    {
-        return new(base64);
-    }
     public static implicit operator byte[](Solid solid)
     {
         return solid.ToBytes();
     }
-    public static implicit operator Solid(byte[] base64)
+    public static implicit operator Solid(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

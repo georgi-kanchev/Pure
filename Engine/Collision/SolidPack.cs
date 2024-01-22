@@ -148,6 +148,11 @@ public class SolidPack
         return false;
     }
 
+    public SolidPack Copy()
+    {
+        return new(ToBytes());
+    }
+
     public static implicit operator SolidPack(Solid[] solids)
     {
         return new(default, default, solids);
@@ -169,21 +174,13 @@ public class SolidPack
             result[i] = solids[i];
         return result;
     }
-    public static implicit operator string(SolidPack solidPack)
-    {
-        return solidPack.ToBase64();
-    }
-    public static implicit operator SolidPack(string base64)
-    {
-        return new(base64);
-    }
     public static implicit operator byte[](SolidPack solidPack)
     {
         return solidPack.ToBytes();
     }
-    public static implicit operator SolidPack(byte[] base64)
+    public static implicit operator SolidPack(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

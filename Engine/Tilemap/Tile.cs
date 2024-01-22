@@ -1,5 +1,7 @@
 ﻿namespace Pure.Engine.Tilemap;
 
+using System.Runtime.InteropServices;
+
 public struct Tile
 {
     public int Id { get; set; }
@@ -21,24 +23,37 @@ public struct Tile
         IsMirrored = isMirrored;
         IsFlipped = isFlipped;
     }
+    public Tile((int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) bundle)
+    {
+        Id = bundle.id;
+        Tint = bundle.tint;
+        Turns = bundle.turns;
+        IsMirrored = bundle.isMirrored;
+        IsFlipped = bundle.isFlipped;
+    }
     public Tile(byte[] bytes)
     {
+        var b = Tilemap.Decompress(bytes);
         var offset = 0;
 
-        Id = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-        Tint = BitConverter.ToUInt32(GetBytesFrom(bytes, 4, ref offset));
-        Turns = (sbyte)GetBytesFrom(bytes, 1, ref offset)[0];
-        IsMirrored = BitConverter.ToBoolean(GetBytesFrom(bytes, 1, ref offset));
-        IsFlipped = BitConverter.ToBoolean(GetBytesFrom(bytes, 1, ref offset));
+        Id = BitConverter.ToInt32(Get<int>());
+        Tint = BitConverter.ToUInt32(Get<uint>());
+        Turns = (sbyte)Tilemap.GetBytesFrom(b, 1, ref offset)[0];
+        IsMirrored = BitConverter.ToBoolean(Get<bool>());
+        IsFlipped = BitConverter.ToBoolean(Get<bool>());
+
+        byte[] Get<T>()
+        {
+            return Tilemap.GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
+    }
+    public Tile(string base64) : this(Convert.FromBase64String(base64))
+    {
     }
 
-    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) ToBundle()
+    public string ToBase64()
     {
-        return this;
-    }
-    public override string ToString()
-    {
-        return $"Tile {Id}";
+        return Convert.ToBase64String(ToBytes());
     }
     public byte[] ToBytes()
     {
@@ -50,7 +65,15 @@ public struct Tile
         result.AddRange(BitConverter.GetBytes(IsMirrored));
         result.AddRange(BitConverter.GetBytes(IsFlipped));
 
-        return result.ToArray();
+        return Tilemap.Compress(result.ToArray());
+    }
+    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) ToBundle()
+    {
+        return (Id, Tint, Turns, IsMirrored, IsFlipped);
+    }
+    public override string ToString()
+    {
+        return $"Tile {Id}";
     }
 
     public override int GetHashCode()
@@ -70,21 +93,23 @@ public struct Tile
     {
         return new(id);
     }
-    public static implicit operator Tile(
-        (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) bundle)
+    public static implicit operator
+        Tile((int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) bundle)
     {
-        var (tile, tint, angle, flipH, flipV) = bundle;
-        return new(tile, tint, angle, flipH, flipV);
+        return new(bundle);
     }
-    public static implicit operator (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)(
-        Tile tile)
+    public static implicit operator
+        (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)(Tile tile)
     {
-        return (
-            tile.Id,
-            tile.Tint,
-            tile.Turns,
-            tile.IsMirrored,
-            tile.IsFlipped);
+        return tile.ToBundle();
+    }
+    public static implicit operator byte[](Tile tile)
+    {
+        return tile.ToBytes();
+    }
+    public static implicit operator Tile(byte[] bytes)
+    {
+        return new(bytes);
     }
 
     public static bool operator ==(Tile a, Tile b)
@@ -737,12 +762,5 @@ public struct Tile
 
 #region Backend
     internal const int BYTE_SIZE = 11;
-
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
-    }
 #endregion
 }

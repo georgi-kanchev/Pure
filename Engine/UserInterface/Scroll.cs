@@ -65,21 +65,18 @@ public class Scroll : Block
         return result.ToArray();
     }
 
-    public static implicit operator string(Scroll scroll)
+    public Scroll Copy()
     {
-        return scroll.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Scroll(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Scroll scroll)
     {
         return scroll.ToBytes();
     }
-    public static implicit operator Scroll(byte[] base64)
+    public static implicit operator Scroll(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

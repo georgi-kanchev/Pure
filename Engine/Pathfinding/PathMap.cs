@@ -123,21 +123,18 @@ public class PathMap
         return withColors;
     }
 
-    public static implicit operator string(PathMap pathMap)
+    public PathMap Copy()
     {
-        return pathMap.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator PathMap(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](PathMap pathMap)
     {
         return pathMap.ToBytes();
     }
-    public static implicit operator PathMap(byte[] base64)
+    public static implicit operator PathMap(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

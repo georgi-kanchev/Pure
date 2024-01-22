@@ -1,4 +1,7 @@
-﻿namespace Pure.Engine.Utilities;
+﻿using System.IO.Compression;
+using System.Runtime.InteropServices;
+
+namespace Pure.Engine.Utilities;
 
 /// <summary>
 /// Represents a 2D direction in space with an x and y component.
@@ -38,11 +41,6 @@ public struct Direction
         }
     }
 
-    public Direction Reversed
-    {
-        get => (-X, -Y);
-    }
-
     /// <summary>
     /// Determines whether the direction is invalid.
     /// </summary>
@@ -76,6 +74,48 @@ public struct Direction
     public Direction((float x, float y) bundle) : this(bundle.x, bundle.y)
     {
     }
+    public Direction(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+
+        x = BitConverter.ToSingle(Get<float>());
+        y = BitConverter.ToSingle(Get<float>());
+
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
+    }
+    public Direction(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
+
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+
+        result.AddRange(BitConverter.GetBytes(X));
+        result.AddRange(BitConverter.GetBytes(Y));
+
+        return Compress(result.ToArray());
+    }
+    /// <returns>
+    /// A bundle tuple containing the X and Y components of the direction.</returns>
+    public (float x, float y) ToBundle()
+    {
+        return this;
+    }
+    /// <returns>
+    /// A string that represents this direction.</returns>
+    public override string ToString()
+    {
+        return Value.ToString();
+    }
 
     /// <summary>
     /// Calculates the dot product between this direction and another direction.
@@ -96,6 +136,10 @@ public struct Direction
     {
         return this - 2f * Dot(surfaceNormal) * surfaceNormal;
     }
+    public Direction Reverse()
+    {
+        return (-X, -Y);
+    }
 
     /// <summary>
     /// Calculates a direction instance representing the direction between two points.
@@ -114,13 +158,6 @@ public struct Direction
         return new Direction(tpx - px, tpy - py);
     }
 
-    /// <returns>
-    /// A bundle tuple containing the X and Y components of the direction.</returns>
-    public (float x, float y) ToBundle()
-    {
-        return this;
-    }
-
     public override int GetHashCode()
     {
         return base.GetHashCode();
@@ -128,12 +165,6 @@ public struct Direction
     public override bool Equals(object? obj)
     {
         return base.Equals(obj);
-    }
-    /// <returns>
-    /// A string that represents this direction.</returns>
-    public override string ToString()
-    {
-        return Value.ToString();
     }
 
     /// <summary>
@@ -213,6 +244,14 @@ public struct Direction
     public static implicit operator (float x, float y)(Direction direction)
     {
         return direction.Value;
+    }
+    public static implicit operator byte[](Direction point)
+    {
+        return point.ToBytes();
+    }
+    public static implicit operator Direction(byte[] bytes)
+    {
+        return new(bytes);
     }
 
     /// <summary>
@@ -335,6 +374,28 @@ public struct Direction
         var m = MathF.Sqrt(x * x + y * y);
         x /= m;
         y /= m;
+    }
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using var stream = new DeflateStream(input, CompressionMode.Decompress);
+        stream.CopyTo(output);
+        return output.ToArray();
+    }
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
     }
 #endregion
 }

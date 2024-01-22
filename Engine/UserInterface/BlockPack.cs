@@ -132,21 +132,18 @@ public class BlockPack
             e.Update();
     }
 
-    public static implicit operator string(BlockPack blockPack)
+    public BlockPack Copy()
     {
-        return blockPack.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator BlockPack(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](BlockPack blockPack)
     {
         return blockPack.ToBytes();
     }
-    public static implicit operator BlockPack(byte[] base64)
+    public static implicit operator BlockPack(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

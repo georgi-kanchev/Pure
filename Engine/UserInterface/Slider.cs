@@ -95,21 +95,18 @@ public class Slider : Block
             Input.CursorResult = MouseCursor.Hand;
     }
 
-    public static implicit operator string(Slider slider)
+    public Slider Copy()
     {
-        return slider.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Slider(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Slider slider)
     {
         return slider.ToBytes();
     }
-    public static implicit operator Slider(byte[] base64)
+    public static implicit operator Slider(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

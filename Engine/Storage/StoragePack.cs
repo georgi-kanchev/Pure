@@ -5,10 +5,33 @@ using System.Text;
 
 public class StoragePack
 {
-    public byte[] this[string key]
+    public byte[]? this[string key]
     {
-        get => data[key];
-        set => data[key] = value;
+        get => data.GetValueOrDefault(key);
+        set => Set(key, value);
+    }
+
+    public byte[]? Get(string key)
+    {
+        return data.GetValueOrDefault(key);
+    }
+    public void Set(string key, byte[]? value)
+    {
+        if (value == default)
+        {
+            Remove(key);
+            return;
+        }
+
+        data[key] = value;
+    }
+    public void Remove(string key)
+    {
+        data.Remove(key);
+    }
+    public bool IsContaining(string key)
+    {
+        return data.ContainsKey(key);
     }
 
     public StoragePack()
@@ -53,6 +76,11 @@ public class StoragePack
         }
 
         return Compress(result.ToArray());
+    }
+
+    public StoragePack Copy()
+    {
+        return new(ToBytes());
     }
 
     public static implicit operator StoragePack(byte[] bytes)

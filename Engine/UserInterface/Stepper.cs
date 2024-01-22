@@ -71,21 +71,18 @@ public class Stepper : Block
         return result.ToArray();
     }
 
-    public static implicit operator string(Stepper stepper)
+    public Stepper Copy()
     {
-        return stepper.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Stepper(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Stepper stepper)
     {
         return stepper.ToBytes();
     }
-    public static implicit operator Stepper(byte[] base64)
+    public static implicit operator Stepper(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

@@ -459,9 +459,7 @@ public class Editor
             var color = btn.GetInteractionColor(Color.Gray.ToBright());
             var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (sbyte)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
-            MapsUi[(int)LayerMapsUi.Front].SetTile(
-                btn.Position,
-                tile: rotations == 4 ? center : arrow);
+            MapsUi[(int)LayerMapsUi.Front].SetTile(btn.Position, tile: rotations == 4 ? center : arrow);
         });
 
         Ui.Add(btn);

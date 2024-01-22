@@ -1,4 +1,7 @@
-﻿namespace Pure.Engine.Utilities;
+﻿using System.IO.Compression;
+using System.Runtime.InteropServices;
+
+namespace Pure.Engine.Utilities;
 
 /// <summary>
 /// Represents a 2D integer coordinate with X and Y components. Usually used for 2D arrays.
@@ -43,6 +46,47 @@ public struct Indices
         X = x;
         Y = y;
     }
+    public Indices(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+
+        val = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
+    }
+    public Indices(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
+
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+
+        result.AddRange(BitConverter.GetBytes(X));
+        result.AddRange(BitConverter.GetBytes(Y));
+
+        return Compress(result.ToArray());
+    }
+    /// <returns>
+    /// A bundle tuple containing the X and Y components of this 2D coordinate.</returns>
+    public (int x, int y) ToBundle()
+    {
+        return this;
+    }
+    /// <returns>
+    /// A string that represents these index coordinates.</returns>
+    public override string ToString()
+    {
+        return val.ToString();
+    }
 
     /// <summary>
     /// Calculates the 1D index for this 2D coordinate given the width of the 2D array.
@@ -68,13 +112,6 @@ public struct Indices
         return (index % size.width, index / size.width);
     }
 
-    /// <returns>
-    /// A bundle tuple containing the X and Y components of this 2D coordinate.</returns>
-    public (int x, int y) ToBundle()
-    {
-        return this;
-    }
-
     public override int GetHashCode()
     {
         return base.GetHashCode();
@@ -82,12 +119,6 @@ public struct Indices
     public override bool Equals(object? obj)
     {
         return base.Equals(obj);
-    }
-    /// <returns>
-    /// A string that represents these index coordinates.</returns>
-    public override string ToString()
-    {
-        return val.ToString();
     }
 
     /// <summary>
@@ -127,6 +158,14 @@ public struct Indices
     public static implicit operator (float x, float y)(Indices vector)
     {
         return vector.val;
+    }
+    public static implicit operator byte[](Indices point)
+    {
+        return point.ToBytes();
+    }
+    public static implicit operator Indices(byte[] bytes)
+    {
+        return new(bytes);
     }
 
     /// <summary>
@@ -235,5 +274,27 @@ public struct Indices
 
 #region Backend
     private (int x, int y) val;
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using var stream = new DeflateStream(input, CompressionMode.Decompress);
+        stream.CopyTo(output);
+        return output.ToArray();
+    }
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
+    }
 #endregion
 }

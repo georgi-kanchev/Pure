@@ -57,21 +57,18 @@ public class Panel : Block
         resize += method;
     }
 
-    public static implicit operator string(Panel panel)
+    public Panel Copy()
     {
-        return panel.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Panel(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Panel panel)
     {
         return panel.ToBytes();
     }
-    public static implicit operator Panel(byte[] base64)
+    public static implicit operator Panel(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

@@ -523,10 +523,6 @@ public abstract class Block
         return Encoding.UTF8.GetString(bText);
     }
 
-    public static implicit operator string(Block block)
-    {
-        return block.ToBase64();
-    }
     public static implicit operator byte[](Block block)
     {
         return block.ToBytes();

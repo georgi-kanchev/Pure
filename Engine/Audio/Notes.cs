@@ -93,21 +93,18 @@ public class Notes : Audio
         buffer?.SaveToFile(path);
     }
 
-    public static implicit operator string(Notes notes)
+    public Notes Copy()
     {
-        return notes.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Notes(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Notes notes)
     {
         return notes.ToBytes();
     }
-    public static implicit operator Notes(byte[] base64)
+    public static implicit operator Notes(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

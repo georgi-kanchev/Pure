@@ -372,21 +372,18 @@ public class InputBox : Block
         submit += method;
     }
 
-    public static implicit operator string(InputBox inputBox)
+    public InputBox Copy()
     {
-        return inputBox.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator InputBox(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](InputBox inputBox)
     {
         return inputBox.ToBytes();
     }
-    public static implicit operator InputBox(byte[] base64)
+    public static implicit operator InputBox(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

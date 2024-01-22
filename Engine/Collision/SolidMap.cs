@@ -329,6 +329,11 @@ public class SolidMap
         return false;
     }
 
+    public SolidMap Copy()
+    {
+        return new(ToBytes());
+    }
+
     public static implicit operator Solid[](SolidMap solidMap)
     {
         return solidMap.ToArray();
@@ -338,21 +343,13 @@ public class SolidMap
     {
         return solidMap.ToBundle();
     }
-    public static implicit operator string(SolidMap solidMap)
-    {
-        return solidMap.ToBase64();
-    }
-    public static implicit operator SolidMap(string base64)
-    {
-        return new(base64);
-    }
     public static implicit operator byte[](SolidMap solidMap)
     {
         return solidMap.ToBytes();
     }
-    public static implicit operator SolidMap(byte[] base64)
+    public static implicit operator SolidMap(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

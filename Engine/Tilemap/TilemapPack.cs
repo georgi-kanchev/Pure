@@ -36,7 +36,7 @@ public class TilemapPack
 
     public Tilemap this[int index]
     {
-        get => data[index];
+        get => Get(index);
     }
 
     public TilemapPack()
@@ -54,20 +54,21 @@ public class TilemapPack
     {
         var b = Tilemap.Decompress(bytes);
         var offset = 0;
-        var count = BitConverter.ToInt32(Get<int>());
+        var count = BitConverter.ToInt32(GetBytes<int>());
+        Size = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
+        ViewPosition = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
+        ViewSize = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
 
         for (var i = 0; i < count; i++)
         {
-            var tmapByteCount = BitConverter.ToInt32(Get<int>());
-            var bTmap = GetBytesFrom(b, tmapByteCount, ref offset);
+            var tmapByteCount = BitConverter.ToInt32(GetBytes<int>());
+            var bTmap = Tilemap.GetBytesFrom(b, tmapByteCount, ref offset);
             data.Add(new(bTmap));
         }
 
-        return;
-
-        byte[] Get<T>()
+        byte[] GetBytes<T>()
         {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+            return Tilemap.GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
         }
     }
     public TilemapPack(string base64) : this(Convert.FromBase64String(base64))
@@ -82,6 +83,12 @@ public class TilemapPack
     {
         var result = new List<byte>();
         result.AddRange(BitConverter.GetBytes(Count));
+        result.AddRange(BitConverter.GetBytes(Size.width));
+        result.AddRange(BitConverter.GetBytes(Size.height));
+        result.AddRange(BitConverter.GetBytes(ViewPosition.x));
+        result.AddRange(BitConverter.GetBytes(ViewPosition.y));
+        result.AddRange(BitConverter.GetBytes(ViewSize.width));
+        result.AddRange(BitConverter.GetBytes(ViewSize.height));
 
         foreach (var t in data)
         {
@@ -110,6 +117,10 @@ public class TilemapPack
         Shift(data, offset, tilemaps);
     }
 
+    public Tilemap Get(int index)
+    {
+        return data[index];
+    }
     public void Add(params Tilemap[]? tilemaps)
     {
         if (tilemaps == null || tilemaps.Length == 0)
@@ -138,6 +149,14 @@ public class TilemapPack
     {
         data.Clear();
     }
+    public int IndexOf(Tilemap? tilemap)
+    {
+        return tilemap == null || data.Contains(tilemap) == false ? -1 : data.IndexOf(tilemap);
+    }
+    public bool IsContaining(Tilemap? tilemap)
+    {
+        return tilemap != null && data.Contains(tilemap);
+    }
 
     public void Flush()
     {
@@ -155,15 +174,6 @@ public class TilemapPack
             map.Flood(position, isExactTile, tiles);
     }
 
-    public int IndexOf(Tilemap? tilemap)
-    {
-        return tilemap == null || data.Contains(tilemap) == false ? -1 : data.IndexOf(tilemap);
-    }
-    public bool IsContaining(Tilemap? tilemap)
-    {
-        return tilemap != null && data.Contains(tilemap);
-    }
-
     public Tile[] TilesAt((int x, int y) position)
     {
         var result = new Tile[Count];
@@ -171,6 +181,10 @@ public class TilemapPack
             result[i] = data[i].TileAt(position);
 
         return result;
+    }
+    public bool IsInside((int x, int y) position)
+    {
+        return data.Count > 0 && data[0].IsOverlapping(position);
     }
 
     public void ConfigureText(
@@ -185,11 +199,6 @@ public class TilemapPack
     {
         for (var i = 0; i < symbols.Length; i++)
             data[i].ConfigureText(symbols, startId);
-    }
-
-    public bool IsInside((int x, int y) position)
-    {
-        return data[0].IsOverlapping(position);
     }
 
     public int TileIdFrom(char symbol)
@@ -209,31 +218,20 @@ public class TilemapPack
 
     public TilemapPack Copy()
     {
-        var result = new TilemapPack { ViewPosition = ViewPosition, ViewSize = ViewSize };
-        result.data.Clear();
-        result.data.AddRange(data);
-        return result;
+        return new(ToBytes());
     }
 
     public static implicit operator Tilemap[](TilemapPack tilemapPack)
     {
         return tilemapPack.data.ToArray();
     }
-    public static implicit operator string(TilemapPack tilemapPack)
-    {
-        return tilemapPack.ToBase64();
-    }
-    public static implicit operator TilemapPack(string base64)
-    {
-        return new(base64);
-    }
     public static implicit operator byte[](TilemapPack tilemapPack)
     {
         return tilemapPack.ToBytes();
     }
-    public static implicit operator TilemapPack(byte[] base64)
+    public static implicit operator TilemapPack(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend
@@ -256,12 +254,6 @@ public class TilemapPack
             map.ViewPosition = ViewPosition;
             map.ViewSize = ViewSize;
         }
-    }
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
     }
     private static void Shift<T>(IList<T> collection, int offset, params T[]? items)
     {

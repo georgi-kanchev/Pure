@@ -137,21 +137,18 @@ public class FileViewer : Block
         }
     }
 
-    public static implicit operator string(FileViewer button)
+    public FileViewer Copy()
     {
-        return button.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator FileViewer(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](FileViewer button)
     {
         return button.ToBytes();
     }
-    public static implicit operator FileViewer(byte[] base64)
+    public static implicit operator FileViewer(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

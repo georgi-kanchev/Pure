@@ -89,21 +89,18 @@ public class Layout : Block
         displaySegment += method;
     }
 
-    public static implicit operator string(Layout layout)
+    public Layout Copy()
     {
-        return layout.ToBase64();
+        return new(ToBytes());
     }
-    public static implicit operator Layout(string base64)
-    {
-        return new(base64);
-    }
+
     public static implicit operator byte[](Layout layout)
     {
         return layout.ToBytes();
     }
-    public static implicit operator Layout(byte[] base64)
+    public static implicit operator Layout(byte[] bytes)
     {
-        return new(base64);
+        return new(bytes);
     }
 
 #region Backend

@@ -105,6 +105,13 @@ public class Animation<T>
     {
     }
 
+    /// <returns>
+    /// An array copy containing the values in the animation sequence.</returns>
+    public T[] ToArray()
+    {
+        return Copy(values);
+    }
+
     /// <summary>
     /// Updates the animation progress based on the specified delta time.
     /// </summary>
@@ -141,14 +148,7 @@ public class Animation<T>
     /// <param name="animation">The Animation object to convert.</param>
     public static implicit operator T[](Animation<T> animation)
     {
-        return Copy(animation.values);
-    }
-
-    /// <returns>
-    /// An array copy containing the values in the animation sequence.</returns>
-    public T[] ToArray()
-    {
-        return this;
+        return animation.ToArray();
     }
 
     public void OnEnd(Action method)
@@ -160,7 +160,7 @@ public class Animation<T>
         onLoop += method;
     }
 
-    #region Backend
+#region Backend
     private Action? onEnd, onLoop;
     private readonly T[] values;
 
@@ -184,5 +184,5 @@ public class Animation<T>
         Array.Copy(array, copy, array.Length);
         return copy;
     }
-    #endregion
+#endregion
 }

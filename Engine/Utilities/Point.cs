@@ -1,5 +1,8 @@
 ﻿namespace Pure.Engine.Utilities;
 
+using System.IO.Compression;
+using System.Runtime.InteropServices;
+
 public enum NoiseType
 {
     OpenSimplex2,
@@ -19,13 +22,13 @@ public struct Point
 
     public float X
     {
-        get => val.Item1;
-        set => val = (value, val.Item2);
+        get => val.x;
+        set => val = (value, val.y);
     }
     public float Y
     {
-        get => val.Item2;
-        set => val = (val.Item1, value);
+        get => val.y;
+        set => val = (val.x, value);
     }
     public uint Color { get; set; }
 
@@ -41,17 +44,54 @@ public struct Point
         X = x;
         Y = y;
     }
-    public Point(float xy, uint color = uint.MaxValue)
-        : this(xy, xy, color)
+    public Point(float xy, uint color = uint.MaxValue) : this(xy, xy, color)
     {
     }
-    public Point((float x, float y, uint color) bundle)
-        : this(bundle.x, bundle.y, bundle.color)
+    public Point((float x, float y, uint color) bundle) : this(bundle.x, bundle.y, bundle.color)
     {
     }
-    public Point((float x, float y) position, uint color)
+    public Point((float x, float y) position, uint color = uint.MaxValue)
         : this(position.x, position.y, color)
     {
+    }
+    public Point(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+
+        val = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        Color = BitConverter.ToUInt32(Get<uint>());
+
+        byte[] Get<T>()
+        {
+            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+        }
+    }
+    public Point(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
+
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+
+        result.AddRange(BitConverter.GetBytes(X));
+        result.AddRange(BitConverter.GetBytes(Y));
+        result.AddRange(BitConverter.GetBytes(Color));
+
+        return Compress(result.ToArray());
+    }
+    public (float x, float y, uint color) ToBundle()
+    {
+        return (X, Y, Color);
+    }
+    public override string ToString()
+    {
+        return val.ToString();
     }
 
     public Point ToGrid(Point gridSize)
@@ -73,8 +113,8 @@ public struct Point
             return this;
 
         // normalize
-        var x = direction.Item1;
-        var y = direction.Item2;
+        var x = direction.x;
+        var y = direction.y;
         var m = MathF.Sqrt(x * x + y * y);
         x /= m;
         y /= m;
@@ -104,8 +144,8 @@ public struct Point
     }
     public Point ToTarget(Point targetPoint, (float x, float y) unit)
     {
-        var x = Map(unit.Item1, 0, 1, X, targetPoint.X);
-        var y = Map(unit.Item2, 0, 1, Y, targetPoint.Y);
+        var x = Map(unit.x, 0, 1, X, targetPoint.X);
+        var y = Map(unit.y, 0, 1, Y, targetPoint.Y);
         return new(x, y);
     }
     public float ToNoise(NoiseType type = NoiseType.Perlin, float scale = 10f, int seed = 0)
@@ -137,11 +177,6 @@ public struct Point
         return (x, y);
     }
 
-    public (float x, float y, uint color) ToBundle()
-    {
-        return this;
-    }
-
     public override int GetHashCode()
     {
         return base.GetHashCode();
@@ -150,22 +185,18 @@ public struct Point
     {
         return base.Equals(obj);
     }
-    public override string ToString()
-    {
-        return val.ToString();
-    }
 
     public static implicit operator Point((int x, int y) position)
     {
-        return new(position.Item1, position.Item2);
+        return new(position.x, position.y);
     }
     public static implicit operator (int x, int y)(Point point)
     {
-        return ((int)MathF.Round(point.val.Item1), (int)MathF.Round(point.val.Item2));
+        return ((int)MathF.Round(point.val.x), (int)MathF.Round(point.val.y));
     }
     public static implicit operator Point((float x, float y) position)
     {
-        return new(position.Item1, position.Item2);
+        return new(position);
     }
     public static implicit operator (float x, float y)(Point point)
     {
@@ -178,6 +209,14 @@ public struct Point
     public static implicit operator (float x, float y, uint color)(Point point)
     {
         return point.ToBundle();
+    }
+    public static implicit operator byte[](Point point)
+    {
+        return point.ToBytes();
+    }
+    public static implicit operator Point(byte[] bytes)
+    {
+        return new(bytes);
     }
 
     public static Point operator +(Point a, Point b)
@@ -221,12 +260,12 @@ public struct Point
         return a.val != b.val;
     }
 
-    #region Backend
-    private (float, float) val;
+#region Backend
+    private (float x, float y) val;
 
-    private static float ToAngle((float, float) direction)
+    private static float ToAngle((float x, float y) direction)
     {
-        return (MathF.Atan2(direction.Item2, direction.Item1) * (180f / MathF.PI)).Wrap(360);
+        return (MathF.Atan2(direction.y, direction.x) * (180f / MathF.PI)).Wrap(360);
     }
     private static float Wrap(float number, float range)
     {
@@ -237,5 +276,27 @@ public struct Point
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using var stream = new DeflateStream(input, CompressionMode.Decompress);
+        stream.CopyTo(output);
+        return output.ToArray();
+    }
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
+    }
+#endregion
 }

@@ -1,26 +1,29 @@
 ﻿namespace Pure;
 
+using Examples.ExamplesSystems;
+using Examples.ExamplesApplications;
 using Examples.ExamplesUserInterface;
 
 public static class Run
 {
     public static void Main()
     {
-        //Examples.ExamplesApplications.FlappyBird.Run();
-        //Examples.ExampleApplications.Ludo.Run();
-        //Examples.ExamplesApplications.Pong.Run();
-        //Examples.ExampleApplications.Chat.Run();
+        // FlappyBird.Run();
+        // Ludo.Run();
+        // Pong.Run();
+        // Chat.Run();
 
-        Editors.EditorCollision.Program.Run();
-        //Editors.EditorMap.Program.Run();
-        //Editors.EditorUserInterface.Program.Run();
+        // Editors.EditorCollision.Program.Run();
+        // Editors.EditorMap.Program.Run();
+        // Editors.EditorUserInterface.Program.Run();
 
         //RunExampleUserInterface();
 
-        //Examples.ExamplesSystems.Collision.Run();
-        //Examples.ExamplesSystems.Pathfinding.Run();
-        //Examples.ExamplesSystems.Audio.Run();
-        //Examples.ExamplesSystems.UtilityExtensions.Run();
+        Storages.Run();
+        // Collision.Run();
+        // Pathfinding.Run();
+        // Audio.Run();
+        // UtilityExtensions.Run();
     }
 
     private static void RunExampleUserInterface()
