@@ -346,12 +346,12 @@ public class Storage
 
         if (t.IsPrimitive || t == typeof(string))
             return TextFromPrimitiveOrTuple(instance);
+        else if (IsPrimitiveTuple(t))
+            return TextFromTuple(instance);
         else if (IsGenericList(t) || (t.IsArray && IsArrayOfPrimitives((Array)instance)))
             return TextFromArrayOrList(instance);
         else if (IsPrimitiveOrTupleDictionary(t))
             return TextFromDictionary((IDictionary)instance);
-        else if (IsPrimitiveTuple(t))
-            return TextFromTuple(instance);
 
         return string.Empty;
     }
@@ -371,10 +371,10 @@ public class Storage
             return TextToArrayOrList(dataAsText, t);
         else if (t.IsPrimitive || t == typeof(string))
             return TextToPrimitive(dataAsText, t);
-        else if (IsPrimitiveOrTupleDictionary(t))
-            return TextToDictionary(dataAsText, t);
         else if (IsPrimitiveTuple(t))
             return TextToTuple(dataAsText, t);
+        else if (IsPrimitiveOrTupleDictionary(t))
+            return TextToDictionary(dataAsText, t);
 
         return default;
     }
@@ -435,7 +435,7 @@ public class Storage
 
         var items = GetTupleItems(tuple);
         for (var i = 0; i < items.Count; i++)
-            result += (i != 0 ? Dividers.tuple : string.Empty) + $"{items[i]}";
+            result += (i != 0 ? Dividers.tuple : string.Empty) + TextFromPrimitiveOrTuple(items[i]);
 
         return result;
     }
@@ -695,7 +695,9 @@ public class Storage
     }
     private static bool IsPrimitiveTuple(Type type)
     {
-        return IsPrimitiveGenTypes(type);
+        var name = type.Name;
+        var isTuple = name.StartsWith(nameof(ValueTuple)) || name.StartsWith(nameof(Tuple));
+        return isTuple && IsPrimitiveGenTypes(type);
     }
     private static bool IsPrimitiveGenTypes(Type type)
     {
@@ -712,13 +714,13 @@ public class Storage
     }
     private static bool IsPrimitiveOrTupleDictionary(Type type)
     {
-        //var isDict = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+        var isDict = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
         var types = type.GenericTypeArguments;
         foreach (var t in types)
             if (IsPrimitiveTuple(t) == false && t.IsPrimitive == false && t != typeof(string))
                 return false;
 
-        return true;
+        return isDict;
     }
     private static bool IsNumber(Type t)
     {
