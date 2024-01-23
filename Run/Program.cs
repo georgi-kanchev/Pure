@@ -16,6 +16,7 @@ public static class Run
         // Editors.EditorCollision.Program.Run();
         // Editors.EditorMap.Program.Run();
         // Editors.EditorUserInterface.Program.Run();
+        //Editors.EditorStorage.Program.Run();
 
         //RunExampleUserInterface();
 

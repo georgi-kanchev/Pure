@@ -12,22 +12,25 @@ public static class Storages
         storage.Set("test3", 35);
         storage.Set("test4", (5, "hi"));
         storage.Set("dict",
-            new Dictionary<(string, int), int> { { ("key1", 3), 25 }, { ("key2", 6), 39 } });
+            new Dictionary<(string, int), int> { { ("//af", 3), 25 }, { ("r/q/", 6), 39 } });
 
-        var xtest = storage.GetAsObject<string>("test");
-        var xtest2 = storage.GetAsObject<(string, bool)[]>("test2");
-        var xtest3 = storage.GetAsObject<int>("test3");
-        var xtest4 = storage.GetAsObject<(int, string)>("test4");
-        var xdict = storage.GetAsObject<Dictionary<(string, int), int>>("dict");
+        var xtest = storage.GetObject<string>("test");
+        var xtest2 = storage.GetObject<(string, bool)[]>("test2");
+        var xtest3 = storage.GetObject<int>("test3");
+        var xtest4 = storage.GetObject<(int, string)>("test4");
+        var xdict = storage.GetObject<Dictionary<(string, int), int>>("dict");
 
-        var text = storage.ToBase64();
-        var load = new Storage(text, true);
+        var text = storage.ToText();
+        var load = new Storage(text);
 
-        var test = load.GetAsObject<string>("test");
-        var test2 = load.GetAsObject<(string, bool)[]>("test2");
-        var test3 = load.GetAsObject<int>("test3");
-        var test4 = load.GetAsObject<(int, string)>("test4");
-        var dict = load.GetAsObject<Dictionary<(string, int), int>>("dict");
+        var test = load.GetObject<string>("test");
+        var test2 = load.GetObject<(string, bool)[]>("test2");
+        var test3 = load.GetObject<int>("test3");
+        var test4 = load.GetObject<(int, string)>("test4");
+        var dict = load.GetObject<Dictionary<(char, int), int>>("dict");
+
+        var myT = load.ObjectToText(("this;that", true));
+        var myObj = load.ObjectFromText<Dictionary<(string, int), int>>("`/;/af`;3/25/`r/;q/`;6/39");
 
         var t = load.ToText();
     }

@@ -50,17 +50,17 @@ public class Storage
     {
         LoadFromBytes(bytes);
     }
-    public Storage(string text, bool isBase64 = false)
+    public Storage(string dataAsText, bool isBase64 = false)
     {
         if (isBase64)
         {
-            LoadFromBytes(Convert.FromBase64String(text));
+            LoadFromBytes(Convert.FromBase64String(dataAsText));
             return;
         }
 
         Dividers = default;
         DividersCollection = default;
-        LoadFromText(text);
+        LoadFromText(dataAsText);
     }
 
     public string ToText()
@@ -75,20 +75,15 @@ public class Storage
             result.Append(Dividers.common);
             result.Append(kvp.Key.typeId);
             result.Append(Dividers.common);
-
-            var value = kvp.Value;
-
-            if (value != null && value.Contains(STR_PLACEHOLDER))
-                value = FromPlaceholder(value);
-
-            result.Append(value);
+            result.Append(kvp.Value);
             result.Append(Dividers.common + Environment.NewLine);
         }
 
         var length = Dividers.common.Length + Environment.NewLine.Length;
         result.Remove(result.Length - length, length);
 
-        return result.ToString();
+        var placeholders = RemovePlaceholders(result.ToString());
+        return placeholders;
     }
     public string ToBase64()
     {
@@ -125,7 +120,7 @@ public class Storage
     /// <param name="typeId">The type identifier of the object instance.</param>
     public void Set(string key, object? instance, int typeId = default)
     {
-        data[(key, typeId)] = TextFromObject(typeId, instance);
+        data[(key, typeId)] = AddPlaceholders(TextFromObject(instance, typeId));
     }
     /// <summary>
     /// Removes the object with the specified key from storage.
@@ -170,7 +165,7 @@ public class Storage
     /// </summary>
     /// <param name="key">The key of the object instance.</param>
     /// <returns>The object instance as text.</returns>
-    public string? GetAsText(string key)
+    public string? GetText(string key)
     {
         foreach (var kvp in data)
             if (kvp.Key.key == key)
@@ -184,16 +179,43 @@ public class Storage
     /// <typeparam name="T">The type of the object instance.</typeparam>
     /// <param name="key">The key of the object instance.</param>
     /// <returns>The object instance as an object of type <typeparamref name="T"/>.</returns>
-    public T? GetAsObject<T>(string key)
+    public T? GetObject<T>(string key)
     {
         foreach (var kvp in data)
             if (kvp.Key.key == key)
-            {
-                var obj = TextToObject<T>(kvp.Key.typeId, kvp.Value);
-                return obj is "" or null ? default : (T)obj;
-            }
+                return TextToObject<T>(kvp.Value, kvp.Key.typeId);
 
         return default;
+    }
+
+    public string ObjectToText(object? instance, int typeId = default)
+    {
+        // no need deal with placeholders since we would never use them & the result
+        // goes straight back to the user, unlike in the storage's case where it's kept
+        //
+        // see brother method for more clarification
+        return TextFromObject(instance, typeId);
+    }
+    public T? ObjectFromText<T>(string? dataAsText, int typeId = default)
+    {
+        // this method and their brother are a bit nomadic in this class, they have
+        // nothing to do with the storage & are purely for converting objects
+        // from and to text, they can't be static because i said so
+        //
+        // to encapsulate this data's strings, we hijack the placeholders of
+        // the storage and then leave no tracks behind us while escaping with
+        // our precious result
+        //
+        // this is needed since strings may contain separator values
+
+        var prevCount = strings.Count;
+        dataAsText = AddPlaceholders(dataAsText ?? "");
+        var result = TextToObject<T>(dataAsText, typeId);
+
+        if (prevCount != strings.Count)
+            strings.RemoveRange(prevCount, strings.Count - prevCount);
+
+        return result;
     }
 
     public void OnObjectFromText(int typeId, Func<string, object> method)
@@ -225,7 +247,7 @@ public class Storage
     private readonly Dictionary<(string key, int typeId), string?> data = new();
     private const string STR_PLACEHOLDER = "—";
     private string? sep1D, sep2D, sepTuple, sepDict, sep, sepStr;
-    private List<string>? strings;
+    private readonly List<string> strings = new();
 
     private void LoadFromBytes(byte[] bytes)
     {
@@ -249,8 +271,8 @@ public class Storage
     {
         try
         {
-            strings = GetStrings(ref text);
-            var split = text.Split(Dividers.common);
+            var str = AddPlaceholders(text);
+            var split = str.Split(Dividers.common);
             var index = 0;
             var key = string.Empty;
             var typeId = 0;
@@ -281,42 +303,10 @@ public class Storage
                                         "export/import dividers are the same.");
         }
     }
-    private List<string> GetStrings(ref string input)
+
+    private string RemovePlaceholders(string dataAsText)
     {
-        var result = new List<string>();
-
-        if (Dividers.text == null)
-            return result;
-
-        var count = 0;
-        while (input.Contains(Dividers.text))
-        {
-            var openIndex = input.IndexOf(Dividers.text, 0, StringComparison.Ordinal);
-            if (openIndex == -1)
-                break;
-
-            var closeIndex = input.IndexOf(Dividers.text, openIndex + 1, StringComparison.Ordinal);
-
-            if (closeIndex == -1)
-                closeIndex = openIndex + 1;
-
-            var extractedString = input.Substring(openIndex + 1, closeIndex - openIndex - 1);
-            result.Add(extractedString);
-
-            var placeholder = STR_PLACEHOLDER + count;
-            input = string.Concat(input.AsSpan(0, openIndex), placeholder, input.AsSpan(closeIndex + 1));
-
-            count++;
-        }
-
-        return result;
-    }
-    private string FromPlaceholder(string value)
-    {
-        if (strings == null || strings.Count == 0)
-            return value;
-
-        return Regex.Replace(value, "—(\\d+)", match =>
+        return Regex.Replace(dataAsText, "—(\\d+)", match =>
         {
             var index = int.Parse(match.Groups[1].Value);
             return index >= 0 && index < strings.Count ?
@@ -324,14 +314,17 @@ public class Storage
                 match.Value;
         });
     }
-    private string ToPlaceholder(string value)
+    private string AddPlaceholders(string dataAsText)
     {
-        strings ??= new();
-        strings.Add(value);
-        return $"{STR_PLACEHOLDER}{strings.Count - 1}";
+        return Regex.Replace(dataAsText, "`([^`]+)`", match =>
+        {
+            var replacedValue = "—" + strings.Count;
+            strings.Add(match.Groups[1].Value);
+            return replacedValue;
+        });
     }
 
-    private string? TextFromObject(int typeId, object? instance)
+    private string TextFromObject(object? instance, int typeId)
     {
         if (instance == null)
             return string.Empty;
@@ -341,7 +334,7 @@ public class Storage
         if (typeId != default)
         {
             onObjectToText.TryGetValue(typeId, out var value);
-            return value?.Invoke(instance); // ask user for parse
+            return value?.Invoke(instance) ?? string.Empty; // ask user for parse
         }
 
         if (t.IsPrimitive || t == typeof(string))
@@ -355,28 +348,30 @@ public class Storage
 
         return string.Empty;
     }
-    private object? TextToObject<T>(int typeId, string? dataAsText)
+    private T? TextToObject<T>(string? dataAsText, int typeId)
     {
         if (string.IsNullOrWhiteSpace(dataAsText))
             return default;
 
+        var result = default(object);
+
         if (typeId != default)
         {
             onObjectFromText.TryGetValue(typeId, out var value);
-            return value?.Invoke(dataAsText); // ask user for parse
+            result = value?.Invoke(dataAsText); // ask user for parse
         }
 
         var t = typeof(T);
         if ((t.IsArray || IsGenericList(t)) && IsArray(dataAsText))
-            return TextToArrayOrList(dataAsText, t);
-        else if (t.IsPrimitive || t == typeof(string))
-            return TextToPrimitive(dataAsText, t);
+            result = TextToArrayOrList(dataAsText, t);
         else if (IsPrimitiveTuple(t))
-            return TextToTuple(dataAsText, t);
+            result = TextToTuple(dataAsText, t);
         else if (IsPrimitiveOrTupleDictionary(t))
-            return TextToDictionary(dataAsText, t);
+            result = TextToDictionary(dataAsText, t);
+        else if (t.IsPrimitive || t == typeof(string))
+            result = TextToPrimitive(dataAsText, t);
 
-        return default;
+        return result is "" or null ? default : (T)result;
     }
 
     private string TextFromDictionary(IDictionary dict)
@@ -553,7 +548,7 @@ public class Storage
         if (type == typeof(double)) return Wrap(number, double.MinValue, double.MaxValue);
         if (type == typeof(decimal)) return number;
 
-        if (strings == null || dataAsText.StartsWith(STR_PLACEHOLDER) == false)
+        if (dataAsText.StartsWith(STR_PLACEHOLDER) == false)
             return dataAsText;
 
         _ = int.TryParse(dataAsText.Replace(STR_PLACEHOLDER, string.Empty), out var paramIndex);
@@ -639,7 +634,7 @@ public class Storage
             return TextFromTuple(value);
 
         var primitive = value is string str ?
-            ToPlaceholder(str) :
+            $"{Dividers.text}{str}{Dividers.text}" :
             $"{value}";
 
         return primitive;

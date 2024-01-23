@@ -3,11 +3,11 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
+global using Pure.Tools.TiledLoader;
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
 using System.Text;
-using Pure.Tools.TiledLoader;
 
 namespace Pure.Editors.EditorBase;
 
