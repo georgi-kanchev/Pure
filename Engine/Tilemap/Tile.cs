@@ -33,14 +33,14 @@ public struct Tile
     }
     public Tile(byte[] bytes)
     {
-        var b = Tilemap.Decompress(bytes);
+        var b = bytes;
         var offset = 0;
 
         Id = BitConverter.ToInt32(Get<int>());
         Tint = BitConverter.ToUInt32(Get<uint>());
         Turns = (sbyte)Tilemap.GetBytesFrom(b, 1, ref offset)[0];
-        IsMirrored = BitConverter.ToBoolean(Get<bool>());
-        IsFlipped = BitConverter.ToBoolean(Get<bool>());
+        IsMirrored = BitConverter.ToBoolean(Tilemap.GetBytesFrom(b, 1, ref offset));
+        IsFlipped = BitConverter.ToBoolean(Tilemap.GetBytesFrom(b, 1, ref offset));
 
         byte[] Get<T>()
         {
@@ -65,7 +65,7 @@ public struct Tile
         result.AddRange(BitConverter.GetBytes(IsMirrored));
         result.AddRange(BitConverter.GetBytes(IsFlipped));
 
-        return Tilemap.Compress(result.ToArray());
+        return result.ToArray();
     }
     public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) ToBundle()
     {

@@ -146,11 +146,16 @@ public class Scroll : Block
             Slider.size = (w - 2, h);
         }
 
-        Slider.InheritParent(this);
         Increase.InheritParent(this);
         Decrease.InheritParent(this);
 
-        Slider.Update();
+        if ((IsVertical && Size.height > 2) ||
+            IsVertical == false && Size.width > 2)
+        {
+            Slider.InheritParent(this);
+            Slider.Update();
+        }
+
         Increase.Update();
         Decrease.Update();
     }

@@ -255,11 +255,11 @@ public static class TilemapperUserInterface
 
         Clear(maps, s, zOrder);
         SetBackground(maps[zOrder], s, 0.4f);
-        maps[zOrder + 1].SetTile(s.Increase.Position,
-            new(Tile.ARROW, GetInteractionColor(s.Increase, scrollColor), scrollUpAng));
         maps[zOrder + 1].SetTile(s.Slider.Handle.Position,
             new(Tile.SHAPE_CIRCLE,
                 GetInteractionColor(isHandle ? s.Slider.Handle : s.Slider, scrollColor)));
+        maps[zOrder + 1].SetTile(s.Increase.Position,
+            new(Tile.ARROW, GetInteractionColor(s.Increase, scrollColor), scrollUpAng));
         maps[zOrder + 1].SetTile(s.Decrease.Position,
             new(Tile.ARROW, GetInteractionColor(s.Decrease, scrollColor), scrollDownAng));
     }

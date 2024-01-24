@@ -55,6 +55,7 @@ public class Editor
     public bool IsDisabledViewZoom { get; set; }
     public bool IsDisabledViewMove { get; set; }
     public bool IsDisabledViewInteraction { get; set; }
+    public bool IsPromptEnterDisabled { get; set; }
 
     public float ViewZoom
     {
@@ -144,7 +145,7 @@ public class Editor
 
         Keyboard.Key.Enter.OnPress(() =>
         {
-            if (Prompt.IsHidden == false)
+            if (Prompt.IsHidden == false && IsPromptEnterDisabled == false)
                 Prompt.TriggerButton(0);
         });
 

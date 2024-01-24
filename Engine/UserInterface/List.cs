@@ -197,6 +197,10 @@ public class List : Block
 
         return result.ToArray();
     }
+    public Button[] ToArray()
+    {
+        return data.ToArray();
+    }
 
     public void Shift(int offset, params Button[]? items)
     {
@@ -391,29 +395,6 @@ public class List : Block
         return new(ToBytes());
     }
 
-    /// <summary>
-    /// Implicitly converts an array of button objects to a list object.
-    /// </summary>
-    /// <param name="items">The array of button objects to convert.</param>
-    /// <returns>A new list object containing the specified button objects.</returns>
-    public static implicit operator List(Button[] items)
-    {
-        var result = new List((0, 0), 0);
-        for (var i = 0; i < items.Length; i++)
-            result.data[i] = items[i];
-
-        return result;
-    }
-    /// <summary>
-    /// Implicitly converts a list object to an array of its button item objects.
-    /// </summary>
-    /// <param name="list">The list object to convert.</param>
-    /// <returns>An array of button objects contained in the list object.</returns>
-    public static implicit operator Button[](List list)
-    {
-        return list.data.ToArray();
-    }
-
     public static implicit operator byte[](List list)
     {
         return list.ToBytes();
@@ -526,7 +507,15 @@ public class List : Block
             Input.CursorResult = MouseCursor.Arrow;
 
         if (Span != Span.Dropdown)
-            LimitSizeMin((2, 2));
+        {
+            // it's possible to have no scroll, single item with width/height of 1
+            // that should affect the minimum size, it is possible to be (1, 1)
+            var singleItem = data.Count == 1;
+            var (w, h) = ItemSize;
+            LimitSizeMin((
+                singleItem && w == 1 ? 1 : 2,
+                singleItem && h == 1 ? 1 : 2));
+        }
 
         ItemSize = itemSize; // reclamp value
         var totalWidth = data.Count * (ItemSize.width + ItemGap);

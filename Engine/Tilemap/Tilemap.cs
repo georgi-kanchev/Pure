@@ -100,9 +100,8 @@ public class Tilemap
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
             {
-                var bTile = b[offset..(offset + Tile.BYTE_SIZE)];
-                SetTile((j, i), new Tile(bTile));
-                offset += Tile.BYTE_SIZE;
+                var bTile = GetBytesFrom(b, Tile.BYTE_SIZE, ref offset);
+                SetTile((j, i), new(bTile));
             }
 
         return;

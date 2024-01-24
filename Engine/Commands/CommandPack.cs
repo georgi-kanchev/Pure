@@ -1,33 +1,35 @@
 ﻿namespace Pure.Engine.Commands;
 
+using System.Text.RegularExpressions;
 using System.Globalization;
 
 public class CommandPack
 {
     public bool IsDisabled { get; set; }
 
-    public (char command, char value, char text, char array) Dividers { get; set; } = (';', ' ', '`', '|');
+    public (char command, char value, char text, char array) Dividers { get; set; } =
+        (';', ' ', '`', '|');
 
-    public void Add(string commandName, Func<string?> onExecute)
+    public void Add(string command, Func<string?> onExecute)
     {
-        if (string.IsNullOrWhiteSpace(commandName))
+        if (string.IsNullOrWhiteSpace(command))
             return;
 
-        commandName = commandName.Replace(Dividers.value, char.MinValue);
-        commandName = commandName.Replace(Dividers.text, char.MinValue);
-        commandName = commandName.Replace(Dividers.command, char.MinValue);
-        commandName = commandName.Replace(Dividers.array, char.MinValue);
+        command = command.Replace(Dividers.value, char.MinValue);
+        command = command.Replace(Dividers.text, char.MinValue);
+        command = command.Replace(Dividers.command, char.MinValue);
+        command = command.Replace(Dividers.array, char.MinValue);
 
-        commands[commandName] = onExecute;
+        commands[command] = onExecute;
     }
-    public string[] Execute(string commandName)
+    public string[] Execute(string command)
     {
         if (IsDisabled)
             return Array.Empty<string>();
 
-        var strings = GetStrings(ref commandName);
+        var strings = AddPlaceholders(ref command);
         var results = new List<string>();
-        var cmds = commandName.Trim().Split(Dividers.command);
+        var cmds = command.Trim().Split(Dividers.command);
 
         foreach (var cmd in cmds)
         {
@@ -67,7 +69,7 @@ public class CommandPack
         return obj is "" or null ? default : (T)obj;
     }
 
-    #region Backend
+#region Backend
     private const string STR_PLACEHOLDER = "—";
     private static int parameterIndex;
     private static readonly Dictionary<string, Func<string?>> commands = new();
@@ -149,32 +151,16 @@ public class CommandPack
         return dataAsText.Contains(Dividers.array);
     }
 
-    private List<string> GetStrings(ref string input)
+    private static List<string> AddPlaceholders(ref string dataAsText)
     {
         var result = new List<string>();
-        var count = 0;
-
-        while (input.Contains(Dividers.text))
+        dataAsText = Regex.Replace(dataAsText, "`([^`]+)`", match =>
         {
-            var openIndex = input.IndexOf(Dividers.text, 0);
-            if (openIndex == -1)
-                break;
-
-            var closeIndex = input.IndexOf(Dividers.text, openIndex + 1);
-
-            if (closeIndex == -1)
-                closeIndex = openIndex + 1;
-
-            var extractedString = input.Substring(openIndex + 1, closeIndex - openIndex - 1);
-            result.Add(extractedString);
-
-            var placeholder = STR_PLACEHOLDER + count;
-            input = string.Concat(input.AsSpan(0, openIndex), placeholder, input.AsSpan(closeIndex + 1));
-
-            count++;
-        }
-
+            var replacedValue = "—" + result.Count;
+            result.Add(match.Groups[1].Value);
+            return replacedValue;
+        });
         return result;
     }
-    #endregion
+#endregion
 }

@@ -16,11 +16,12 @@ public static class Run
         // Editors.EditorCollision.Program.Run();
         // Editors.EditorMap.Program.Run();
         // Editors.EditorUserInterface.Program.Run();
-        //Editors.EditorStorage.Program.Run();
+        Editors.EditorStorage.Program.Run();
 
         //RunExampleUserInterface();
 
-        Storages.Run();
+        // Commands.Run();
+        // Storages.Run();
         // Collision.Run();
         // Pathfinding.Run();
         // Audio.Run();

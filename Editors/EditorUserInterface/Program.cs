@@ -19,7 +19,7 @@ public static class Program
 
     internal static readonly Editor editor;
 
-    internal static readonly BlockPack ui, panels;
+    internal static readonly BlockPack ui = new(), panels = new();
     internal static readonly Inspector inspector;
     internal static readonly Dictionary<MenuType, Menu> menus = new();
 
@@ -31,6 +31,21 @@ public static class Program
 
     public static void Run()
     {
+        editor.OnUpdateEditor = () =>
+        {
+            editor.MapsEditor.Flush();
+
+            IsInteractable = false;
+            ui.Update();
+            IsInteractable = true;
+            panels.Update();
+        };
+        editor.OnUpdateUi = () =>
+        {
+            inspector.IsHidden = selected == null;
+            if (inspector.IsHidden == false)
+                inspector.Update();
+        };
         editor.Run();
     }
 
@@ -41,10 +56,7 @@ public static class Program
 
         var maps = editor.MapsUi;
         const int BACK = (int)Editor.LayerMapsUi.PromptBack;
-        const int MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
 
-        ui = new();
-        panels = new();
         var (_, uh) = editor.MapsUi.Size;
         inspector = new(default) { Size = (16, uh) };
         inspector.Align((1f, 0.5f));
@@ -64,24 +76,15 @@ public static class Program
         menus[MenuType.Add] = new MenuAdd();
         menus[MenuType.Main] = new MenuMain();
 
-        editor.OnUpdateEditor = () =>
+        Mouse.Button.Left.OnRelease(() =>
         {
-            editor.MapsEditor.Flush();
+            for (var i = panels.Count - 1; i >= 0; i--)
+                if (panels[i].IsOverlapping(editor.MousePositionWorld))
+                    return;
 
-            IsInteractable = false;
-            ui.Update();
-            IsInteractable = true;
-            panels.Update();
-
-            if (CanDeselect())
+            if (inspector.IsHovered == false && editor.Prompt.IsHidden)
                 selected = null;
-        };
-        editor.OnUpdateUi = () =>
-        {
-            inspector.IsHidden = selected == null;
-            if (inspector.IsHidden == false)
-                inspector.Update();
-        };
+        });
     }
 
     internal static void BlockCreate(
@@ -287,18 +290,6 @@ public static class Program
     private static void OnDragPanel(Panel panel, (int width, int height) delta)
     {
         editor.Log($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
-    }
-
-    private static bool CanDeselect()
-    {
-        var onLmbRelease = (Mouse.Button.Left.IsPressed() == false).Once("lmb-deselect");
-        var result = onLmbRelease && inspector.IsHovered == false && editor.Prompt.IsHidden;
-
-        for (var i = panels.Count - 1; i >= 0; i--)
-            if (panels[i].IsOverlapping(editor.MousePositionWorld))
-                return false;
-
-        return result;
     }
 #endregion
 }

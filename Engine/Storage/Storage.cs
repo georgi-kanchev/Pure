@@ -1,7 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿namespace Pure.Engine.Storage;
 
-namespace Pure.Engine.Storage;
-
+using System.Text.RegularExpressions;
 using System;
 using System.Collections;
 using System.Globalization;
@@ -530,9 +529,8 @@ public class Storage
     }
     private object TextToPrimitive(string dataAsText, Type type)
     {
-        if (type == typeof(bool) && bool.TryParse(dataAsText, out _))
-            return Convert.ToBoolean(dataAsText);
-        if (type == typeof(char) && char.TryParse(dataAsText, out _)) return Convert.ToChar(dataAsText);
+        if (type == typeof(bool) && bool.TryParse(dataAsText, out var b))
+            return b;
 
         decimal.TryParse(dataAsText, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
 
@@ -552,7 +550,12 @@ public class Storage
             return dataAsText;
 
         _ = int.TryParse(dataAsText.Replace(STR_PLACEHOLDER, string.Empty), out var paramIndex);
-        return strings[paramIndex];
+        var value = strings[paramIndex];
+
+        if (type == typeof(char) && char.TryParse(value, out var c))
+            return c;
+
+        return value;
     }
     private IList? TextToArrayOrList(string dataAsText, Type type)
     {
@@ -633,9 +636,8 @@ public class Storage
         if (IsPrimitiveTuple(value.GetType()))
             return TextFromTuple(value);
 
-        var primitive = value is string str ?
-            $"{Dividers.text}{str}{Dividers.text}" :
-            $"{value}";
+        var primitive = value is string str ? $"{Dividers.text}{str}{Dividers.text}" : $"{value}";
+        primitive = value is char ch ? $"{Dividers.text}{ch}{Dividers.text}" : primitive;
 
         return primitive;
     }

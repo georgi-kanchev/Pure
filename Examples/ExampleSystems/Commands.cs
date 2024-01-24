@@ -17,6 +17,7 @@ public static class Commands
             Console.WriteLine(text);
             return "result";
         });
-        var results = cmd.Execute("log `hello, world!` 1|2|3|4 true|false|true ; log `second command`");
+        var results =
+            cmd.Execute("log `hello, |;world!` 1|2|3|4 true|false|true ; log `second command`");
     }
 }

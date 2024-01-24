@@ -14,6 +14,7 @@ public enum SymbolGroup
     Special = 16,
     Space = 32,
     Other = 64,
+    All = Letters | Digits | Punctuation | Math | Special | Space | Other,
     Password = 128,
 }
 
@@ -32,6 +33,7 @@ public class InputBox : Block
         get => value;
         set
         {
+            value = value[..Math.Min(value.Length, MaximumSymbolCount)];
             this.value = value;
             var split = value.Split(Environment.NewLine);
 
@@ -60,6 +62,7 @@ public class InputBox : Block
             symbolGroup = value;
         }
     }
+    public int MaximumSymbolCount { get; set; }
 
     public string Selection
     {
@@ -210,14 +213,9 @@ public class InputBox : Block
         Size = (12, 1);
         lines[0] = Text;
         Value = Text;
+        MaximumSymbolCount = int.MaxValue;
 
-        SymbolGroup = SymbolGroup.Letters |
-                      SymbolGroup.Digits |
-                      SymbolGroup.Punctuation |
-                      SymbolGroup.Math |
-                      SymbolGroup.Special |
-                      SymbolGroup.Space |
-                      SymbolGroup.Other;
+        SymbolGroup = SymbolGroup.All;
     }
     public InputBox(byte[] bytes) : base(bytes)
     {
@@ -227,6 +225,7 @@ public class InputBox : Block
         Placeholder = GrabString(bytes);
         Value = GrabString(bytes);
         SymbolGroup = (SymbolGroup)GrabByte(bytes);
+        MaximumSymbolCount = GrabInt(bytes);
     }
     public InputBox(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -244,6 +243,7 @@ public class InputBox : Block
         PutString(result, Placeholder);
         PutString(result, Value);
         PutByte(result, (byte)SymbolGroup);
+        PutInt(result, MaximumSymbolCount);
         return result.ToArray();
     }
 
