@@ -8,24 +8,24 @@ public static class Run
 {
     public static void Main()
     {
-        // FlappyBird.Run();
-        // Ludo.Run();
-        // Pong.Run();
-        // Chat.Run();
+        //FlappyBird.Run();
+        //Ludo.Run();
+        //Pong.Run();
+        //Chat.Run();
 
-        // Editors.EditorCollision.Program.Run();
-        // Editors.EditorMap.Program.Run();
-        // Editors.EditorUserInterface.Program.Run();
+        //Editors.EditorCollision.Program.Run();
+        //Editors.EditorMap.Program.Run();
+        //Editors.EditorUserInterface.Program.Run();
         Editors.EditorStorage.Program.Run();
 
         //RunExampleUserInterface();
 
-        // Commands.Run();
-        // Storages.Run();
-        // Collision.Run();
-        // Pathfinding.Run();
-        // Audio.Run();
-        // UtilityExtensions.Run();
+        //Commands.Run();
+        //Storages.Run();
+        //Collision.Run();
+        //Pathfinding.Run();
+        //Audio.Run();
+        //UtilityExtensions.Run();
     }
 
     private static void RunExampleUserInterface()

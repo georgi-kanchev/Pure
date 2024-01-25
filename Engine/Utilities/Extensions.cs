@@ -267,51 +267,46 @@ public static class Extensions
                 collection[i] = tmp[i];
         }
     }
-    public static void Shift<T>(this IList<T> collection, int offset, params T[]? items)
+    public static void Shift<T>(this IList<T> collection, int offset, params int[]? indices)
     {
-        if (items == null || items.Length == 0 || items.Length == collection.Count || offset == 0)
+        if (indices == null || indices.Length == 0 || indices.Length == collection.Count || offset == 0)
             return;
 
         if (collection is List<T> list)
         {
             var results = new List<int>();
-            var indexes = new List<int>();
-            var itemList = items.ToList();
+            var indexList = indices.ToList();
             var prevTargetIndex = -1;
             var max = list.Count - 1;
 
-            foreach (var item in items)
-                indexes.Add(list.IndexOf(item));
-
-            indexes.Sort();
+            indexList.Sort();
 
             if (offset > 0)
-                indexes.Reverse();
+                indexList.Reverse();
 
-            foreach (var currIndex in indexes)
+            foreach (var currIndex in indexList)
             {
-                var item = list[currIndex];
-
-                if (item == null || list.Contains(item) == false)
+                if (currIndex < 0 || currIndex >= list.Count)
                     continue;
 
-                var index = list.IndexOf(item);
+                var item = list[currIndex];
+                var index = currIndex;
                 var targetIndex = Math.Clamp(index + offset, 0, max);
 
                 // prevent items order change
                 if (index > 0 &&
                     index < max &&
-                    itemList.Contains(list[index + (offset > 0 ? 1 : -1)]))
+                    indexList.Contains(index + (offset > 0 ? 1 : -1)))
                     continue;
 
                 // prevent overshooting of multiple items which would change the order
                 var isOvershooting = (targetIndex == 0 && prevTargetIndex == 0) ||
                                      (targetIndex == max && prevTargetIndex == max) ||
                                      results.Contains(targetIndex);
-                var i = indexes.IndexOf(list.IndexOf(item));
+                var i = indexList.IndexOf(currIndex);
                 var result = isOvershooting ? offset < 0 ? i : max - i : targetIndex;
 
-                list.Remove(item);
+                list.RemoveAt(index);
                 list.Insert(result, item);
                 prevTargetIndex = targetIndex;
                 results.Add(result);
@@ -322,7 +317,7 @@ public static class Extensions
 
         // if not a list then convert it
         var tempList = collection.ToList();
-        Shift(tempList, offset, items);
+        Shift(tempList, offset, indices);
 
         for (var i = 0; i < tempList.Count; i++)
             collection[i] = tempList[i];

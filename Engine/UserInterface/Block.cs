@@ -527,6 +527,10 @@ public abstract class Block
     {
         return block.ToBytes();
     }
+    public static implicit operator (int x, int y, int width, int height)(Block block)
+    {
+        return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
+    }
 
 #region Backend
     internal (int, int) position,

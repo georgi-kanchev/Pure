@@ -129,7 +129,14 @@ public class BlockPack
     public void Update()
     {
         foreach (var e in data)
+        {
+            var prevCount = data.Count;
+
             e.Update();
+
+            if (data.Count != prevCount) // was the data modified by this update?
+                return; // run away
+        }
     }
 
     public BlockPack Copy()
