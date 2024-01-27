@@ -16,7 +16,7 @@ public static class Program
         editor.OnUpdateUi += () =>
         {
             if (prevViewPos != editor.MapsEditor.ViewPosition)
-                UpdateSolidMapOffset();
+                UpdateViewOffsets();
 
             prevViewPos = editor.MapsEditor.ViewPosition;
 
@@ -356,14 +356,17 @@ public static class Program
                         var path = Path.Combine($"{directory}", editor.PromptInput.Value);
 
                         // ignore editor offset, keep original tilemap's view
-                        var prevOffset = solidMap.Offset;
-                        if (index == 2)
-                            solidMap.Offset = originalMapViewPos;
+                        var prevMapOffset = solidMap.Offset;
+                        var prevGlobalOffset = solidPack.Offset;
+
+                        solidPack.Offset = originalMapViewPos;
+                        solidMap.Offset = originalMapViewPos;
 
                         var data = index == 1 ? solidPack.ToBytes() : solidMap.ToBytes();
                         File.WriteAllBytes(path, data);
 
-                        solidMap.Offset = prevOffset;
+                        solidPack.Offset = prevGlobalOffset;
+                        solidMap.Offset = prevMapOffset;
                     });
                 });
             }
@@ -388,7 +391,7 @@ public static class Program
                     else
                     {
                         solidMap = new(bytes);
-                        UpdateSolidMapOffset();
+                        UpdateViewOffsets();
                     }
                 });
             }
@@ -431,9 +434,10 @@ public static class Program
         currentLayer = (currentLayer + offset).Limit((0, layers.Length - 1), true);
     }
 
-    private static void UpdateSolidMapOffset()
+    private static void UpdateViewOffsets()
     {
         var (x, y) = editor.MapsEditor.ViewPosition;
+        solidPack.Offset = (-x, -y);
         solidMap.Offset = (-x, -y);
         solidMap.Update(editor.MapsEditor[currentLayer]);
     }

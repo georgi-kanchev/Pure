@@ -30,5 +30,7 @@ public static class Storages
         var dict = load.GetObject<Dictionary<(char, int), int>>("dict");
 
         var t = load.ToText();
+        var raw = load.ToBytes();
+        var b64 = load.ToBase64();
     }
 }

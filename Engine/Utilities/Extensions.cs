@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.Utilities;
+﻿using System.Text.RegularExpressions;
+
+namespace Pure.Engine.Utilities;
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -684,6 +686,23 @@ public static class Extensions
     public static int Count(this string text, string target)
     {
         return string.IsNullOrEmpty(target) ? 0 : text.Split(target).Length - 1;
+    }
+    public static string EnsureUnique(this string value, params string[]? values)
+    {
+        return EnsureUnique(values, value);
+    }
+    public static string EnsureUnique(this string[]? values, string value)
+    {
+        if (values == null || values.Contains(value) == false)
+            return value;
+
+        var baseName = Regex.Replace(value, @"(\d+)$", "");
+        var number = 1;
+
+        while (values.Any(n => Regex.IsMatch(n, $"^{baseName}{number}$")))
+            number++;
+
+        return $"{baseName}{number}";
     }
 
     [SuppressMessage("ReSharper", "FormatStringProblem")]

@@ -25,6 +25,7 @@ public static class Program
             removes.Update();
             removeKeys.Update();
             adds.Update();
+            dictKeys.Update();
         };
         editor.Run();
     }
@@ -51,7 +52,8 @@ public static class Program
         moves = new(),
         removeKeys = new(),
         removes = new(),
-        adds = new();
+        adds = new(),
+        dictKeys = new();
     private static (int x, int y) rightClickPos;
     private static readonly InputBox promptText, promptKey, promptNumber;
     private static readonly Stepper promptSymbol;
@@ -130,28 +132,33 @@ public static class Program
                 currTupleAmount++;
                 values[0].Text = $"Value {currTupleAmount}/2… ";
             }
-            else if (creating == Creating.List)
+            else if (creating is Creating.List)
             {
                 selectedTypes.Add(btn.Text.Trim());
                 AddPanel();
             }
-            else if (creating == Creating.TupleAdd)
+            else if (creating is Creating.TupleAdd or Creating.Dictionary)
             {
                 var type = btn.Text.Trim();
                 selectedTypes.Add(type);
 
-                var i = lastIndexAdd;
-                var list = (List)data[i];
-                var remove = (List)removes[i];
-                var move = (List)moves[i];
+                var list = (List)data[lastIndexAdd];
+                var remove = (List)removes[lastIndexAdd];
+                var move = (List)moves[lastIndexAdd];
 
                 list.Add(new Button { Text = GetDefaultValue(0) });
                 remove.Add(new Button());
                 move.Add(new Button());
 
-                list.Text += $",{type}";
+                list.Text += (list.Text == "" ? "" : ",") + type;
                 values.IsHidden = true;
             }
+
+            if (creating != Creating.Dictionary)
+                return;
+
+            var keys = (List)dictKeys[lastIndexAdd];
+            keys.Add(new Button { Text = GetUniqueText(keys, "Key", null) });
         });
 
         addData = new(editor,
@@ -189,6 +196,8 @@ public static class Program
                 values.IsHidden = false;
                 values.Position = addData.Position;
             }
+            else if (creating == Creating.Dictionary)
+                AddPanel();
         });
     }
     private static void SubscribeToClicks()
@@ -214,6 +223,8 @@ public static class Program
     {
         values.IsHidden = true;
         var itemCount = creating == Creating.Tuple ? 2 : 1;
+        itemCount = creating == Creating.Dictionary ? 0 : itemCount;
+
         var add = new Button { Size = (1, 1), Text = creating.ToString() };
         var removeKey = new Button { Size = (1, 1) };
         var panel = new Panel(values.Position)
@@ -230,12 +241,16 @@ public static class Program
         var remove = new List(itemCount: itemCount) { ItemSize = (1, 1) };
         var move = new List(itemCount: itemCount) { ItemSize = (1, 1) };
         var maps = editor.MapsEditor;
+        var keys = new List(itemCount: 0)
+        {
+            IsHidden = true,
+            IsDisabled = true,
+            Text = "Text"
+        };
 
         if (creating == Creating.Value)
         {
             panel.SizeMinimum = (5, 3);
-            panel.SizeMaximum = (int.MaxValue, 3);
-
             list[0].Text = GetDefaultValue(0);
         }
         else if (creating == Creating.Tuple)
@@ -243,11 +258,26 @@ public static class Program
             for (var i = 0; i < selectedTypes.Count; i++)
                 list[i].Text = GetDefaultValue(i);
         }
-        else if (creating is Creating.List or Creating.Dictionary)
+        else if (creating == Creating.List)
         {
             panel.Text = $"{selectedTypes[0]} {creating}";
             list[0].Text = GetDefaultValue(0);
         }
+        else if (creating == Creating.Dictionary)
+        {
+            panel.Text = $"{creating}";
+            panel.SizeMinimum = (11, 4);
+            panel.Size = (18, panel.Size.height);
+            keys.IsHidden = false;
+            keys.IsDisabled = false;
+        }
+
+        keys.OnItemDisplay(item =>
+        {
+            maps[1].SetTextLine(item.Position, item.Text,
+                item.GetInteractionColor(Color.Orange), item.Size.width);
+        });
+        keys.OnItemInteraction(Interaction.Trigger, item => OnValueClick(keys, item, true));
 
         list.OnDisplay(() => maps.SetList(list));
         list.OnItemDisplay(item =>
@@ -288,7 +318,7 @@ public static class Program
         });
         panel.OnDisplay(() => OnPanelDisplay(panel));
 
-        add.OnDisplay(() => maps.SetButtonIcon(add, new(Tile.ICON_PLUS, Color.Green), 1));
+        add.OnDisplay(() => maps.SetButtonIcon(add, new(Tile.MATH_PLUS, Color.Green), 1));
         add.OnInteraction(Interaction.Trigger, () => OnAddClick(add));
         removeKey.OnDisplay(() => maps.SetButtonIcon(removeKey, new(Tile.ICON_TRASH, Color.Red), 1));
         removeKey.OnInteraction(Interaction.Trigger, () => OnRemoveKeyClick(removeKey));
@@ -304,12 +334,95 @@ public static class Program
         removes.Add(remove);
         moves.Add(move);
         adds.Add(add);
+        dictKeys.Add(keys);
     }
 
-    private static void OnValueClick(List list, Button item)
+    private static void OnPanelDisplay(Panel panel)
+    {
+        var i = panels.IndexOf(panel);
+        var list = (List)data[i];
+        var removeKey = (Button)removeKeys[i];
+        var add = (Button)adds[i];
+        var remove = (List)removes[i];
+        var move = (List)moves[i];
+        var keys = (List)dictKeys[i];
+        var (x, y) = panel.Position;
+        var (w, h) = panel.Size;
+
+        panel.SizeMaximum = (int.MaxValue, list.Count + 2);
+
+        if (add.Text == $"{Creating.Value}")
+        {
+            panel.SizeMaximum = (int.MaxValue, 3);
+            remove.IsHidden = true;
+            add.IsHidden = true;
+            move.IsHidden = true;
+        }
+        else if (add.Text == $"{Creating.Tuple}")
+        {
+            remove.IsHidden = list.Count < 3;
+            add.IsHidden = list.Count > 8;
+            move.IsHidden = false;
+        }
+        else if (add.Text == $"{Creating.Dictionary}")
+        {
+            remove.IsHidden = list.Count == 0;
+            add.IsHidden = false;
+            move.IsHidden = list.Count < 2;
+        }
+        else if (add.Text == $"{Creating.List}")
+        {
+            remove.IsHidden = list.Count < 2;
+            add.IsHidden = false;
+            move.IsHidden = list.Count < 2;
+        }
+
+        var offX = move.IsHidden ? 1 : 3;
+        var offW = -2;
+        offW -= move.IsHidden ? 0 : 2;
+        offW -= remove.IsHidden ? 0 : 2;
+
+        remove.IsDisabled = remove.IsHidden;
+        add.IsDisabled = add.IsHidden;
+        move.IsDisabled = move.IsHidden;
+
+        if (add.Text == $"{Creating.Dictionary}")
+        {
+            var half = (w + offW) / 2;
+            var oddW = w % 2 == 0 ? 0 : 1;
+            list.Position = (x + offX + half + oddW, y + 1);
+            list.Size = (half, h - 2);
+
+            keys.Position = (x + offX, y + 1);
+            keys.Size = (half - 1 + oddW, h - 2);
+        }
+        else
+        {
+            list.Position = (x + offX, y + 1);
+            list.Size = (w + offW, h - 2);
+        }
+
+        list.ItemSize = (list.Size.width, 1);
+
+        move.Scroll.Slider.Progress = list.Scroll.Slider.Progress;
+        remove.Scroll.Slider.Progress = list.Scroll.Slider.Progress;
+        keys.Scroll.Slider.Progress = list.Scroll.Slider.Progress;
+
+        move.Position = (x + 1, y + 1);
+        move.Size = (2, list.Size.height);
+        remove.Position = (x + w - 3, y + 1);
+        remove.Size = (2, list.Size.height);
+
+        add.Position = (x + 1, y + h - 1);
+        removeKey.Position = (x + w - 2, y + h - 1);
+
+        editor.MapsEditor.SetPanel(panel);
+    }
+
+    private static void OnValueClick(List list, Button item, bool isKey = false)
     {
         var types = list.Text.Split(",");
-        var type = types[list.IndexOf(item)];
+        var type = isKey ? types[0] : types[list.IndexOf(item)];
 
         if (type == VALUE_FLAG)
         {
@@ -326,13 +439,32 @@ public static class Program
             editor.IsPromptEnterDisabled = true;
             promptText.Value = item.Text;
             promptText.SelectAll();
-            editor.Prompt.Text = "Edit Text Value";
+            editor.Prompt.Text = "Edit Text " + (isKey ? "Key" : "Value");
             editor.Prompt.Open(promptText, i =>
             {
                 editor.Prompt.Close();
                 editor.IsPromptEnterDisabled = false;
-                if (i == 0)
+
+                if (i != 0)
+                    return;
+
+                if (isKey == false)
+                {
                     item.Text = promptText.Value;
+                    return;
+                }
+
+                if (promptText.Value == item.Text)
+                    return;
+
+                var unique = GetUniqueText(list, promptText.Value, item);
+
+                if (promptText.Value != unique)
+                    editor.PromptMessage(
+                        $"The provided key '{promptText.Value}' already exists.{Environment.NewLine}" +
+                        $"It was changed to '{unique}'.");
+
+                item.Text = unique;
             });
         }
         else if (type == VALUE_SYMBOL)
@@ -368,12 +500,16 @@ public static class Program
         var valueList = (List)data[index];
         var moveList = (List)moves[index];
         var removeList = (List)removes[index];
+        var keysList = (List)dictKeys[index];
         var types = valueList.Text.Split(",").ToList();
 
         types.RemoveAt(itemIndex);
         valueList.Remove(valueList[itemIndex]);
         moveList.Remove(moveList[itemIndex]);
         removeList.Remove(removeList[itemIndex]);
+
+        if (keysList.Count > 0)
+            keysList.Remove(keysList[itemIndex]);
 
         valueList.Text = types.ToString(",");
     }
@@ -382,10 +518,14 @@ public static class Program
         var index = moves.IndexOf(list);
         var itemIndex = list.IndexOf(item);
         var valueList = (List)data[index];
+        var keysList = (List)dictKeys[index];
         var types = valueList.Text.Split(",").ToList();
 
         types.Shift(-1, itemIndex);
         valueList.Shift(-1, valueList[itemIndex]);
+
+        if (keysList.Count > 0)
+            keysList.Shift(-1, keysList[itemIndex]);
 
         valueList.Text = types.ToString(",");
     }
@@ -401,6 +541,7 @@ public static class Program
             moves.Remove(moves[index]);
             removeKeys.Remove(removeKeys[index]);
             adds.Remove(adds[index]);
+            dictKeys.Remove(dictKeys[index]);
         });
     }
     private static void OnAddClick(Button button)
@@ -411,12 +552,8 @@ public static class Program
 
         if (type == $"{Creating.Tuple}")
         {
-            var (x, y) = editor.MousePositionUi;
-            values.Position = ((int)x + 1, (int)y + 2);
-            values.IsHidden = false;
             values[0].Text = $"Value {list.Count + 1}/{list.Count + 1}… ";
             creating = Creating.TupleAdd;
-            selectedTypes.Clear();
             lastIndexAdd = index;
         }
         else if (type == $"{Creating.List}")
@@ -434,62 +571,20 @@ public static class Program
 
             list.Text += $",{valueType}";
         }
-    }
-    private static void OnPanelDisplay(Panel panel)
-    {
-        var i = panels.IndexOf(panel);
-        var list = (List)data[i];
-        var removeKey = (Button)removeKeys[i];
-        var add = (Button)adds[i];
-        var remove = (List)removes[i];
-        var move = (List)moves[i];
-        var (x, y) = panel.Position;
-        var (w, h) = panel.Size;
-
-        if (add.Text == $"{Creating.Value}")
+        else if (type == $"{Creating.Dictionary}")
         {
-            remove.IsHidden = true;
-            add.IsHidden = true;
-            move.IsHidden = true;
-        }
-        else if (add.Text == $"{Creating.Tuple}")
-        {
-            remove.IsHidden = list.Count < 3;
-            add.IsHidden = list.Count > 8;
-            move.IsHidden = false;
-        }
-        else
-        {
-            remove.IsHidden = list.Count < 2;
-            add.IsHidden = false;
-            move.IsHidden = list.Count < 2;
+            selectedTypes.Clear();
+            values[0].Text = "Value… ";
+            lastIndexAdd = index;
         }
 
-        var offX = move.IsHidden ? 1 : 3;
-        var offW = -2;
-        offW -= move.IsHidden ? 0 : 2;
-        offW -= remove.IsHidden ? 0 : 2;
+        if (type != $"{Creating.Tuple}" && type != $"{Creating.Dictionary}")
+            return;
 
-        remove.IsDisabled = remove.IsHidden;
-        add.IsDisabled = add.IsHidden;
-        move.IsDisabled = move.IsHidden;
-
-        list.Position = (x + offX, y + 1);
-        list.Size = (w + offW, h - 2);
-        list.ItemSize = (list.Size.width, 1);
-
-        move.Scroll.Slider.Progress = list.Scroll.Slider.Progress;
-        remove.Scroll.Slider.Progress = list.Scroll.Slider.Progress;
-
-        move.Position = (x + 1, y + 1);
-        move.Size = (2, list.Size.height);
-        remove.Position = (x + w - 3, y + 1);
-        remove.Size = (2, list.Size.height);
-
-        add.Position = (x + 1, y + h - 1);
-        removeKey.Position = (x + w - 2, y + h - 1);
-
-        editor.MapsEditor.SetPanel(panel);
+        var (x, y) = editor.MousePositionUi;
+        values.Position = ((int)x + 1, (int)y + 2);
+        values.IsHidden = false;
+        list.Scroll.Slider.Progress = 1f;
     }
 
     private static string GetDefaultValue(int index)
@@ -514,6 +609,15 @@ public static class Program
                 return true;
 
         return false;
+    }
+    private static string GetUniqueText(List list, string text, Button? ignoreItem = null)
+    {
+        var texts = new List<string>();
+        for (var i = 0; i < list.Count; i++)
+            if (ignoreItem != list[i])
+                texts.Add(list[i].Text);
+
+        return texts.ToArray().EnsureUnique(text);
     }
 #endregion
 }

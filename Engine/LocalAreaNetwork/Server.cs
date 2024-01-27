@@ -175,7 +175,7 @@ public class Server : Communication
             int.TryParse(nickname, out var n);
             n++;
             var nIndex = nickname.Length - number.Length;
-            nickname = nickname[..nIndex] + n.ToString();
+            nickname = nickname[..nIndex] + n;
         }
 
         return nickname;

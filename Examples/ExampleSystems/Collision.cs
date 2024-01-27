@@ -64,7 +64,7 @@ public static class Collision
             var line = new Line((mousePosition.x - 1, mousePosition.y), (15, 15), Color.Red);
             var crossPoints = line.CrossPoints(collisionMap);
 
-            hitbox.Position = mousePosition;
+            hitbox.Offset = mousePosition;
             line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
 
             layer.DrawTilemap(background);

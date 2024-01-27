@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 public class SolidPack
 {
-    public (float x, float y) Position { get; set; }
+    public (float x, float y) Offset { get; set; }
     public (float width, float height) Scale { get; set; }
     public int Count
     {
@@ -18,18 +18,18 @@ public class SolidPack
         set => data[index] = value;
     }
 
-    public SolidPack((float x, float y) position = default, (float width, float height) scale = default)
+    public SolidPack((float x, float y) offset = default, (float width, float height) scale = default)
     {
         scale = scale == default ? (1f, 1f) : scale;
 
-        Position = position;
+        Offset = offset;
         Scale = scale;
     }
     public SolidPack(
-        (float x, float y) position = default,
+        (float x, float y) offset = default,
         (float width, float height) scale = default,
         params Solid[] solids)
-        : this(position, scale)
+        : this(offset, scale)
     {
         Add(solids);
     }
@@ -40,7 +40,7 @@ public class SolidPack
 
         var count = BitConverter.ToInt32(Get<int>());
 
-        Position = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        Offset = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
         Scale = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
 
         for (var i = 0; i < count; i++)
@@ -71,8 +71,8 @@ public class SolidPack
     {
         var result = new List<byte>();
         result.AddRange(BitConverter.GetBytes(data.Count));
-        result.AddRange(BitConverter.GetBytes(Position.x));
-        result.AddRange(BitConverter.GetBytes(Position.y));
+        result.AddRange(BitConverter.GetBytes(Offset.x));
+        result.AddRange(BitConverter.GetBytes(Offset.y));
         result.AddRange(BitConverter.GetBytes(Scale.width));
         result.AddRange(BitConverter.GetBytes(Scale.height));
 
@@ -213,7 +213,7 @@ public class SolidPack
     {
         var (x, y) = localRect.Position;
         var (w, h) = localRect.Size;
-        localRect.Position = (Position.x + x * Scale.width, Position.y + y * Scale.height);
+        localRect.Position = (Offset.x + x * Scale.width, Offset.y + y * Scale.height);
         localRect.Size = (w * Scale.width, h * Scale.height);
         return localRect;
     }
