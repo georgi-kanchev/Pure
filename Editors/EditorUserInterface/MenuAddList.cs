@@ -9,6 +9,7 @@ internal class MenuAddList : Menu
         $"  {Span.Horizontal}",
         $"  {Span.Dropdown}")
     {
+        IsHidden = true;
         Size = (12, 4);
 
         OnItemInteraction(Interaction.Trigger, item =>

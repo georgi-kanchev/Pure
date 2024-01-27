@@ -24,7 +24,6 @@ public static class Program
     internal static readonly Dictionary<MenuType, Menu> menus = new();
 
     internal static readonly Slider promptSlider;
-    internal static readonly FileViewer saveLoad;
     internal static readonly InputBox fileName;
 
     internal static Block? selected;
@@ -52,7 +51,7 @@ public static class Program
 #region Backend
     static Program()
     {
-        editor = new(title: "Pure - User Interface Editor", mapSize: (48, 27), viewSize: (48, 27));
+        editor = new(title: "Pure - User Interface Editor");
 
         var maps = editor.MapsUi;
         const int BACK = (int)Editor.LayerMapsUi.PromptBack;
@@ -63,10 +62,6 @@ public static class Program
 
         promptSlider = new() { Size = (15, 1) };
         promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, BACK));
-
-        saveLoad = new() { Size = (20, 10) };
-        saveLoad.OnDisplay(() => maps.SetFileViewer(saveLoad, BACK));
-        saveLoad.FilesAndFolders.IsSingleSelecting = true;
 
         fileName = new() { Size = (20, 1), IsSingleLine = true };
         fileName.OnDisplay(() => maps.SetInputBox(fileName, BACK));

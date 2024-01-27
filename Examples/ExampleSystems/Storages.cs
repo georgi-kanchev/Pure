@@ -32,5 +32,7 @@ public static class Storages
         var t = load.ToText();
         var raw = load.ToBytes();
         var b64 = load.ToBase64();
+
+        var array = storage.ObjectFromText<float[]>("5");
     }
 }

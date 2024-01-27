@@ -30,23 +30,13 @@ public static class Program
     {
         var (mw, mh) = (50, 50);
 
-        editor = new(title: "Pure - Map Editor", mapSize: (mw, mh), viewSize: (mw, mh));
+        editor = new(title: "Pure - Map Editor");
         editor.MapsEditor.Clear();
         editor.MapsEditor.Add(new Tilemap((mw, mh)));
         editor.MapsEditor.ViewSize = (mw, mh);
 
         tilePalette = new(editor);
         inspector = new(editor, tilePalette);
-
-        editor.MapFileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, btn =>
-        {
-            if (editor.MapFileViewer.IsSelectingFolders || editor.MapFileViewer.IsFolder(btn))
-                return;
-
-            editor.Prompt.Close();
-            var layers = editor.LoadMap();
-            LoadLayers(layers);
-        });
 
         CreateMenu();
     }
@@ -72,26 +62,18 @@ public static class Program
 
             if (index == 1) // save map
             {
-                editor.Prompt.Text = "Select a Directory:";
-                editor.MapFileViewer.IsSelectingFolders = true;
-                editor.Prompt.Open(editor.MapFileViewer, i =>
-                {
-                    editor.Prompt.Close();
+                var layers = inspector.layers;
+                var bytes = new List<byte>();
 
-                    if (i != 0)
-                        return;
+                PutInt(bytes, layers.Count);
+                for (var i = 0; i < layers.Count; i++)
+                    PutString(bytes, layers[i].Text);
 
-                    editor.Prompt.Text = "Provide a File Name:";
-                    editor.Prompt.Open(editor.PromptInput, btnIndex =>
-                    {
-                        editor.Prompt.Close();
-                        if (btnIndex == 0)
-                            Save(editor.PromptInput.Value);
-                    });
-                });
+                bytes.AddRange(editor.MapsEditor.ToBytes());
+                editor.PromptFileSave(bytes.ToArray());
             }
             else if (index == 3) // load tileset
-                editor.OpenTilesetPrompt(
+                editor.PromptTileset(
                     onSuccess: (layer, map) =>
                     {
                         layer.Offset = (755, 340);
@@ -100,20 +82,12 @@ public static class Program
                     },
                     onFail: () => tilePalette.Create(tilePalette.layer.TilesetSize));
             else if (index == 4) // load map
-            {
-                editor.Prompt.Text = "Select Map File:";
-                editor.MapFileViewer.IsSelectingFolders = false;
-                editor.Prompt.Open(editor.MapFileViewer, i =>
+                editor.PromptLoadMap(layers =>
                 {
-                    editor.Prompt.Close();
-
-                    if (i != 0)
-                        return;
-
-                    var layers = editor.LoadMap();
-                    LoadLayers(layers);
+                    inspector.layers.Clear();
+                    foreach (var layer in layers)
+                        inspector.layers.Add(new Button { Text = layer });
                 });
-            }
         });
 
         Mouse.Button.Right.OnPress(() =>
@@ -131,35 +105,6 @@ public static class Program
     private static void UpdateEditor()
     {
         editor.IsDisabledViewInteraction = inspector.IsHovered;
-    }
-
-    private static void Save(string name)
-    {
-        try
-        {
-            var paths = editor.MapFileViewer.SelectedPaths;
-            var directory = paths.Length == 1 ? paths[0] : editor.MapFileViewer.CurrentDirectory;
-            var layers = inspector.layers;
-            var bytes = new List<byte>();
-            var path = Path.Combine($"{directory}", name);
-
-            PutInt(bytes, layers.Count);
-            for (var i = 0; i < layers.Count; i++)
-                PutString(bytes, layers[i].Text);
-
-            bytes.AddRange(editor.MapsEditor.ToBytes());
-            File.WriteAllBytes(path, bytes.ToArray());
-        }
-        catch (Exception)
-        {
-            editor.PromptMessage("Could not save map!");
-        }
-    }
-    private static void LoadLayers(string[] layers)
-    {
-        inspector.layers.Clear();
-        foreach (var layer in layers)
-            inspector.layers.Add(new Button { Text = layer });
     }
 
     private static void PutInt(List<byte> intoBytes, int value)

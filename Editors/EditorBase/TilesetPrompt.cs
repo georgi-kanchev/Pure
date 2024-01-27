@@ -46,14 +46,10 @@ internal class TilesetPrompt
     public void Open()
     {
         editor.Prompt.Text = "Select Image File:";
-        editor.Prompt.Open(fileViewer, i =>
+        editor.Prompt.Open(fileViewer, onButtonTrigger: i =>
         {
-            editor.Prompt.Close();
-
-            if (i != 0)
-                return;
-
-            PromptTilesetAccept();
+            if (i == 0)
+                PromptTilesetAccept();
         });
     }
 
@@ -67,7 +63,6 @@ internal class TilesetPrompt
 
     private void PromptTilesetAccept()
     {
-        editor.Prompt.Close();
         var paths = fileViewer.SelectedPaths;
         if (paths.Length == 0)
         {
@@ -95,19 +90,14 @@ internal class TilesetPrompt
     {
         editor.Prompt.Text = $"Enter Tile Size{Environment.NewLine}" +
                              $"example: '16 16'";
-        editor.Prompt.Open(pair, i =>
+        editor.Prompt.Open(pair, onButtonTrigger: i =>
         {
-            editor.Prompt.Close();
-
-            if (i != 0)
-                return;
-
-            PromptTileSizeAccept();
+            if (i == 0)
+                PromptTileSizeAccept();
         });
     }
     private void PromptTileSizeAccept()
     {
-        editor.Prompt.Close();
         var split = pair.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
         if (split.Length != 2)
         {
@@ -125,19 +115,14 @@ internal class TilesetPrompt
     {
         editor.Prompt.Text = $"Enter Tile Gap{Environment.NewLine}" +
                              $"example: '1 1'";
-        editor.Prompt.Open(pair, i =>
+        editor.Prompt.Open(pair, onButtonTrigger: i =>
         {
-            editor.Prompt.Close();
-
-            if (i != 0)
-                return;
-
-            PromptTileGapAccept();
+            if (i == 0)
+                PromptTileGapAccept();
         });
     }
     private void PromptTileGapAccept()
     {
-        editor.Prompt.Close();
         var split = pair.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
         if (split.Length != 2)
         {
@@ -155,21 +140,16 @@ internal class TilesetPrompt
     private void PromptTileFull()
     {
         editor.Prompt.Text = "Provide Full Tile Id";
-        editor.Prompt.Open(stepper, i =>
+        editor.Prompt.Open(stepper, onButtonTrigger: i =>
         {
-            editor.Prompt.Close();
-
-            if (i != 0)
-                return;
-
-            PromptTileFullAccept();
+            if (i == 0)
+                PromptTileFullAccept();
         });
     }
     private void PromptTileFullAccept()
     {
         var result = (int)stepper.Value;
 
-        editor.Prompt.Close();
         editor.LayerGrid.TileIdFull = result;
         editor.LayerMap.TileIdFull = result;
         layer.TileIdFull = result;

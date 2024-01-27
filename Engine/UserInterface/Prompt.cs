@@ -2,45 +2,30 @@ namespace Pure.Engine.UserInterface;
 
 public class Prompt : Block
 {
-    public int ButtonCount { get; set; } = 1;
-
     public Prompt()
     {
         Init();
     }
-    public Prompt(byte[] bytes) : base(bytes)
-    {
-        Init();
-        ButtonCount = GrabByte(bytes);
-    }
-    public Prompt(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
 
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = base.ToBytes().ToList();
-        PutByte(result, (byte)ButtonCount);
-        return result.ToArray();
-    }
-
-    public void Open(Block? block = null, Action<int>? onButtonTrigger = null)
+    public void Open(
+        Block? block = null,
+        bool isAutoClosing = true,
+        int buttonCount = 2,
+        int buttonAccept = 0,
+        Action<int>? onButtonTrigger = null)
     {
         if (block != null)
             block.IsFocused = true;
 
+        btnAccept = buttonAccept;
         currentBlock = block;
         UpdateBlockPosition();
 
-        ButtonCount = Math.Max(ButtonCount, 1);
+        buttonCount = Math.Max(buttonCount, 1);
         isHidden = false;
         buttons.Clear();
 
-        for (var i = 0; i < ButtonCount; i++)
+        for (var i = 0; i < buttonCount; i++)
         {
             var btn = new Button((-1, -1))
             {
@@ -48,7 +33,13 @@ public class Prompt : Block
                 size = (1, 1),
             };
             var index = i;
-            btn.OnInteraction(Interaction.Trigger, () => onButtonTrigger?.Invoke(index));
+            btn.OnInteraction(Interaction.Trigger, () =>
+            {
+                if (isAutoClosing)
+                    Close();
+
+                onButtonTrigger?.Invoke(index);
+            });
             buttons.Add(btn);
         }
     }
@@ -56,7 +47,6 @@ public class Prompt : Block
     {
         currentBlock = null;
         isHidden = true;
-        buttons.Clear();
     }
 
     public int IndexOf(Button? button)
@@ -70,28 +60,18 @@ public class Prompt : Block
     }
     public void TriggerButton(int index)
     {
-        if (index < 0 || index >= buttons.Count || IsDisabled)
+        if (index < 0 || index >= buttons.Count || isDisabled)
             return;
 
         buttons[index].Interact(Interaction.Trigger);
     }
 
-    public Prompt Copy()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Prompt prompt)
-    {
-        return prompt.ToBytes();
-    }
-    public static implicit operator Prompt(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
 #region Backend
+    private int btnAccept = 1;
+
     private readonly List<Button> buttons = new();
+    private Action<Button>? itemDisplay;
+    private Block? currentBlock;
     private readonly Panel panel = new((0, 0))
     {
         IsResizable = false,
@@ -100,9 +80,6 @@ public class Prompt : Block
         isTextReadonly = true,
         hasParent = true,
     };
-
-    private Action<Button>? itemDisplay;
-    private Block? currentBlock;
 
     private void Init()
     {
@@ -123,8 +100,13 @@ public class Prompt : Block
 
     protected override void OnInput()
     {
-        if (isHidden == false && Input.IsKeyJustPressed(Key.Escape))
+        if (isHidden)
+            return;
+
+        if (Input.IsKeyJustPressed(Key.Escape))
             Close();
+        if (Input.IsKeyJustPressed(Key.Enter))
+            TriggerButton(btnAccept);
     }
     internal override void OnChildrenDisplay()
     {

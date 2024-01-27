@@ -9,12 +9,13 @@ internal class MenuMain : Menu
         "Block… ",
         "  Add",
         "------ ",
-        "Scene… ",
+        "Blocks… ",
         "  New",
         "  Save",
         "  Load")
     {
-        Size = (6, 7);
+        IsHidden = true;
+        Size = (7, 7);
 
         OnItemInteraction(Interaction.Trigger, item =>
         {
@@ -30,9 +31,27 @@ internal class MenuMain : Menu
                 panels.Clear();
             }
             else if (index == 5)
-                OpenPromptFolder();
+                editor.PromptFileSave(ui.ToBytes());
             else if (index == 6)
-                OpenPromptFile();
+                editor.PromptFileLoad(bytes =>
+                {
+                    var loadedUi = new BlockPack(bytes);
+
+                    selected = null;
+                    ui.Clear();
+                    panels.Clear();
+                    for (var i = 0; i < loadedUi.Count; i++)
+                    {
+                        var block = loadedUi[i];
+                        var bBytes = block.ToBytes();
+                        var span = Span.Vertical;
+
+                        if (block is List l)
+                            span = l.Span;
+
+                        BlockCreate(block.GetType().Name, (0, 0), span, bBytes);
+                    }
+                });
         });
 
         Mouse.Button.Right.OnPress(() =>
@@ -48,70 +67,4 @@ internal class MenuMain : Menu
             IsHidden = false;
         });
     }
-
-#region Backend
-    private static void OpenPromptFile()
-    {
-        var prompt = editor.Prompt;
-        saveLoad.IsSelectingFolders = false;
-        prompt.Text = "Load from file:";
-        prompt.Open(saveLoad, btnIndex =>
-        {
-            prompt.Close();
-
-            if (btnIndex != 0)
-                return;
-
-            var file = saveLoad.SelectedPaths[0];
-            var bytes = File.ReadAllBytes(file);
-            var loadedUi = new BlockPack(bytes);
-
-            selected = null;
-            ui.Clear();
-            panels.Clear();
-            for (var i = 0; i < loadedUi.Count; i++)
-            {
-                var block = loadedUi[i];
-                var bBytes = block.ToBytes();
-                var span = Span.Vertical;
-
-                if (block is List l)
-                    span = l.Span;
-
-                BlockCreate(block.GetType().Name, (0, 0), span, bBytes);
-            }
-        });
-    }
-    private static void OpenPromptFolder()
-    {
-        var prompt = editor.Prompt;
-        saveLoad.IsSelectingFolders = true;
-        prompt.Text = "Save to directory:";
-        prompt.Open(saveLoad, btnIndex =>
-        {
-            prompt.Close();
-
-            if (btnIndex == 0)
-                OpenPromptFileName();
-        });
-    }
-    private static void OpenPromptFileName()
-    {
-        var prompt = editor.Prompt;
-        var directory = saveLoad.SelectedPaths.Length == 0 ?
-            saveLoad.CurrentDirectory :
-            saveLoad.SelectedPaths[0];
-        prompt.Text = "File name:";
-        prompt.Open(fileName, btnIndex =>
-        {
-            prompt.Close();
-
-            if (btnIndex != 0)
-                return;
-
-            var bytes = ui.ToBytes();
-            File.WriteAllBytes(Path.Join(directory, fileName.Value), bytes);
-        });
-    }
-#endregion
 }

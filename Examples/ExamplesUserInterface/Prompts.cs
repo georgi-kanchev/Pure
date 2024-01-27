@@ -41,11 +41,8 @@ public static class Prompts
             input.IsHidden = false;
 
             prompt.Text = "Log a message?";
-            prompt.ButtonCount = 2;
-            prompt.Open(input, index =>
+            prompt.Open(input, onButtonTrigger: index =>
             {
-                prompt.Close();
-
                 if (index == 0)
                     Console.WriteLine(input.Value);
             });
@@ -55,7 +52,6 @@ public static class Prompts
             input.IsHidden = true;
 
             prompt.Text = $"This should be some{Environment.NewLine}important message!";
-            prompt.ButtonCount = 1;
             prompt.Open(onButtonTrigger: _ => prompt.Close());
         });
 

@@ -40,6 +40,26 @@ public class Storage
         }
     }
 
+    public string[] Keys
+    {
+        get
+        {
+            var result = new string[data.Count];
+            var i = 0;
+            foreach (var kvp in data)
+            {
+                result[i] = ObjectFromText<string>(kvp.Key.key) ?? "";
+                i++;
+            }
+
+            return result;
+        }
+    }
+    public int Count
+    {
+        get => data.Count;
+    }
+
     public Storage()
     {
         Dividers = default;
@@ -64,7 +84,7 @@ public class Storage
 
     public string ToText()
     {
-        if (string.IsNullOrEmpty(Dividers.common))
+        if (string.IsNullOrEmpty(Dividers.common) || data.Count == 0)
             return string.Empty;
 
         var result = new StringBuilder();
@@ -119,7 +139,9 @@ public class Storage
     /// <param name="typeId">The type identifier of the object instance.</param>
     public void Set(string key, object? instance, int typeId = default)
     {
-        data[(key, typeId)] = AddPlaceholders(TextFromObject(instance, typeId));
+        var value = AddPlaceholders(TextFromObject(instance, typeId));
+        var k = (AddPlaceholders($"{sepStr}{key}{sepStr}"), typeId);
+        data[k] = value;
     }
     /// <summary>
     /// Removes the object with the specified key from storage.
@@ -129,7 +151,7 @@ public class Storage
     {
         var keyToRemove = default((string, int));
         foreach (var kvp in data)
-            if (kvp.Key.key == key)
+            if (TextToObject<string>(kvp.Key.key, 0) == key)
             {
                 keyToRemove = kvp.Key;
                 break;
@@ -140,7 +162,7 @@ public class Storage
     public bool IsContaining(string key)
     {
         foreach (var kvp in data)
-            if (kvp.Key.key == key)
+            if (TextToObject<string>(kvp.Key.key, 0) == key)
                 return true;
 
         return false;
@@ -154,7 +176,7 @@ public class Storage
     public int GetTypeId(string key)
     {
         foreach (var kvp in data)
-            if (kvp.Key.key == key)
+            if (TextToObject<string>(kvp.Key.key, 0) == key)
                 return kvp.Key.typeId;
 
         return default;
@@ -167,7 +189,7 @@ public class Storage
     public string? GetText(string key)
     {
         foreach (var kvp in data)
-            if (kvp.Key.key == key)
+            if (TextToObject<string>(kvp.Key.key, 0) == key)
                 return kvp.Value;
 
         return default;
@@ -181,7 +203,7 @@ public class Storage
     public T? GetObject<T>(string key)
     {
         foreach (var kvp in data)
-            if (kvp.Key.key == key)
+            if (TextToObject<string>(kvp.Key.key, 0) == key)
                 return TextToObject<T>(kvp.Value, kvp.Key.typeId);
 
         return default;
@@ -361,7 +383,7 @@ public class Storage
         }
 
         var t = typeof(T);
-        if ((t.IsArray || IsGenericList(t)) && IsArray(dataAsText))
+        if (t.IsArray || IsGenericList(t))
             result = TextToArrayOrList(dataAsText, t);
         else if (IsPrimitiveTuple(t))
             result = TextToTuple(dataAsText, t);
@@ -370,7 +392,17 @@ public class Storage
         else if (t.IsPrimitive || t == typeof(string))
             result = TextToPrimitive(dataAsText, t);
 
-        return result is "" or null ? default : (T)result;
+        if (result is "" or null)
+            return default;
+
+        try
+        {
+            return (T)Convert.ChangeType(result, typeof(T));
+        }
+        catch (Exception)
+        {
+            return default;
+        }
     }
 
     private string TextFromDictionary(IDictionary dict)
@@ -546,16 +578,12 @@ public class Storage
         if (type == typeof(double)) return Wrap(number, double.MinValue, double.MaxValue);
         if (type == typeof(decimal)) return number;
 
-        if (dataAsText.StartsWith(STR_PLACEHOLDER) == false)
-            return dataAsText;
+        dataAsText = RemovePlaceholders(dataAsText).Replace(sepStr, string.Empty);
 
-        _ = int.TryParse(dataAsText.Replace(STR_PLACEHOLDER, string.Empty), out var paramIndex);
-        var value = strings[paramIndex];
-
-        if (type == typeof(char) && char.TryParse(value, out var c))
+        if (type == typeof(char) && char.TryParse(dataAsText, out var c))
             return c;
 
-        return value;
+        return dataAsText;
     }
     private IList? TextToArrayOrList(string dataAsText, Type type)
     {
@@ -677,12 +705,7 @@ public class Storage
 
         return elementType.IsPrimitive || elementType == typeof(string) || IsPrimitiveTuple(elementType);
     }
-    private bool IsArray(string dataAsText)
-    {
-        return DividersCollection is { oneD: not null, twoD: not null } &&
-               (dataAsText.Contains(DividersCollection.oneD) ||
-                dataAsText.Contains(DividersCollection.twoD));
-    }
+
     private static bool IsGenericList(Type type)
     {
         return type.IsGenericType &&

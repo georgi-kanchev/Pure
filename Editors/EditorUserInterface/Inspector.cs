@@ -139,7 +139,7 @@ internal class Inspector : Panel
                 else if (Text == "Align X")
                 {
                     prompt.Text = "Left      Right";
-                    prompt.Open(promptSlider, i =>
+                    prompt.Open(promptSlider, onButtonTrigger: i =>
                     {
                         prompt.Close();
 
@@ -155,7 +155,7 @@ internal class Inspector : Panel
                 else if (Text == "Align Y")
                 {
                     prompt.Text = "Top      Bottom";
-                    prompt.Open(promptSlider, i =>
+                    prompt.Open(promptSlider, onButtonTrigger: i =>
                     {
                         prompt.Close();
 
@@ -392,10 +392,8 @@ internal class Inspector : Panel
 
             l.Clear();
             var split = items.Value.Split(Environment.NewLine);
-            var newItems = new Button[split.Length];
-            for (var index = 0; index < split.Length; index++)
-                newItems[index].Text = split[index];
-            l.Add(newItems);
+            foreach (var t in split)
+                l.Add(new Button { Text = t });
 
             for (var j = 0; j < l.Count; j++)
             {

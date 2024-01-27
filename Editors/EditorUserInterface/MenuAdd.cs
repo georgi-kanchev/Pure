@@ -17,6 +17,7 @@ internal class MenuAdd : Menu
         $"  {nameof(List)}",
         $"  {nameof(FileViewer)}")
     {
+        IsHidden = true;
         Size = (12, 12);
 
         OnItemInteraction(Interaction.Trigger, item =>

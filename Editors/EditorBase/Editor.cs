@@ -44,9 +44,9 @@ public class Editor
     public BlockPack Ui { get; }
     public Prompt Prompt { get; }
     public InputBox PromptInput { get; }
+    public FileViewer PromptFileViewer { get; set; }
 
     public Panel MapPanel { get; }
-    public FileViewer MapFileViewer { get; }
 
     public (float x, float y) MousePositionUi { get; private set; }
     public (float x, float y) MousePositionWorld { get; private set; }
@@ -55,7 +55,6 @@ public class Editor
     public bool IsDisabledViewZoom { get; set; }
     public bool IsDisabledViewMove { get; set; }
     public bool IsDisabledViewInteraction { get; set; }
-    public bool IsPromptEnterDisabled { get; set; }
 
     public float ViewZoom
     {
@@ -80,21 +79,21 @@ public class Editor
 
     public Action<Button>? OnPromptItemDisplay { get; set; }
 
-    public Editor(string title, (int width, int height) mapSize, (int width, int height) viewSize)
+    public Editor(string title)
     {
         Window.Create(PIXEL_SCALE);
         Window.Title = title;
         Mouse.IsCursorVisible = false;
 
         var (width, height) = Monitor.Current.AspectRatio;
-        ChangeMapSize(mapSize);
-        MapsEditor.ViewSize = (viewSize.width, viewSize.height);
+        ChangeMapSize((50, 50));
+        MapsEditor.ViewSize = (50, 50);
         MapsUi = new((int)LayerMapsUi.Count, (width * 5, height * 5));
 
         MapPanel = new() { IsResizable = false, IsMovable = false };
 
         Ui = new();
-        Prompt = new() { ButtonCount = 2 };
+        Prompt = new();
         Prompt.OnDisplay(() => MapsUi.SetPrompt(Prompt, zOrder: (int)LayerMapsUi.PromptFade));
         OnPromptItemDisplay = item => MapsUi.SetPromptItem(Prompt, item, (int)LayerMapsUi.PromptMiddle);
         Prompt.OnItemDisplay(item => OnPromptItemDisplay?.Invoke(item));
@@ -119,19 +118,19 @@ public class Editor
 
         const int BACK = (int)LayerMapsUi.PromptBack;
         const int MIDDLE = (int)LayerMapsUi.PromptMiddle;
-        MapFileViewer = new()
+        PromptFileViewer = new()
         {
             FilesAndFolders = { IsSingleSelecting = true },
             Size = (21, 16)
         };
-        MapFileViewer.OnDisplay(() => MapsUi.SetFileViewer(MapFileViewer, BACK));
-        MapFileViewer.FilesAndFolders.OnItemDisplay(btn =>
-            MapsUi.SetFileViewerItem(MapFileViewer, btn, MIDDLE));
-        MapFileViewer.HardDrives.OnItemDisplay(btn =>
-            MapsUi.SetFileViewerItem(MapFileViewer, btn, MIDDLE));
-        MapFileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, item =>
+        PromptFileViewer.OnDisplay(() => MapsUi.SetFileViewer(PromptFileViewer, BACK));
+        PromptFileViewer.FilesAndFolders.OnItemDisplay(btn =>
+            MapsUi.SetFileViewerItem(PromptFileViewer, btn, MIDDLE));
+        PromptFileViewer.HardDrives.OnItemDisplay(btn =>
+            MapsUi.SetFileViewerItem(PromptFileViewer, btn, MIDDLE));
+        PromptFileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, item =>
         {
-            if (MapFileViewer.IsFolder(item) == false)
+            if (PromptFileViewer.IsFolder(item) == false)
                 Prompt.TriggerButton(0);
         });
 
@@ -142,12 +141,6 @@ public class Editor
             IsSingleLine = true
         };
         PromptInput.OnDisplay(() => MapsUi.SetInputBox(PromptInput, BACK));
-
-        Keyboard.Key.Enter.OnPress(() =>
-        {
-            if (Prompt.IsHidden == false && IsPromptEnterDisabled == false)
-                Prompt.TriggerButton(0);
-        });
 
         tilesetPrompt = new(this);
     }
@@ -259,24 +252,73 @@ public class Editor
         infoTextTimer = 2f;
     }
 
+    public void PromptFileSave(byte[] bytes)
+    {
+        PromptFileViewer.IsSelectingFolders = true;
+        Prompt.Text = "Select a Directory:";
+        Prompt.Open(PromptFileViewer, onButtonTrigger: i =>
+        {
+            if (i != 0)
+                return;
+
+            Prompt.Open(PromptInput, onButtonTrigger: j =>
+            {
+                if (j != 0)
+                    return;
+
+                try
+                {
+                    var paths = PromptFileViewer.SelectedPaths;
+                    var directory = paths.Length == 1 ? paths[0] : PromptFileViewer.CurrentDirectory;
+                    var path = Path.Combine($"{directory}", PromptInput.Value);
+                    File.WriteAllBytes(path, bytes);
+                }
+                catch (Exception)
+                {
+                    PromptMessage("Failed to save file!");
+                }
+            });
+        });
+    }
+    public void PromptFileLoad(Action<byte[]> onLoad)
+    {
+        PromptFileViewer.IsSelectingFolders = false;
+        Prompt.Text = "Select a File:";
+        Prompt.Open(PromptFileViewer, onButtonTrigger: i =>
+        {
+            if (i != 0)
+                return;
+
+            try
+            {
+                var bytes = File.ReadAllBytes(PromptFileViewer.SelectedPaths[0]);
+                onLoad?.Invoke(bytes);
+            }
+            catch (Exception)
+            {
+                PromptMessage("Failed to load file!");
+            }
+        });
+    }
     public void PromptMessage(string message)
     {
         Prompt.Text = message;
-        Prompt.ButtonCount = 1;
-        Prompt.Open(onButtonTrigger: _ => Prompt.Close());
-        Prompt.ButtonCount = 2;
+        Prompt.Open(buttonCount: 1);
     }
     public void PromptYesNo(string message, Action? onAccept)
     {
         Prompt.Text = message;
-        Prompt.ButtonCount = 2;
         Prompt.Open(onButtonTrigger: i =>
         {
-            Prompt.Close();
-
             if (i == 0)
                 onAccept?.Invoke();
         });
+    }
+    public void PromptTileset(Action<Layer, Tilemap>? onSuccess, Action? onFail)
+    {
+        tilesetPrompt.OnSuccess = onSuccess;
+        tilesetPrompt.OnFail = onFail;
+        tilesetPrompt.Open();
     }
 
     public void SetGrid()
@@ -308,52 +350,54 @@ public class Editor
         OnSetGrid?.Invoke();
     }
 
-    public string[] LoadMap()
+    public void PromptLoadMap(Action<string[]> onLoad)
     {
-        try
+        Prompt.Text = "Select Map File:";
+        PromptFileViewer.IsSelectingFolders = false;
+        Prompt.Open(PromptFileViewer, onButtonTrigger: btnIndex =>
         {
-            var selectedPaths = MapFileViewer.SelectedPaths;
-            var file = selectedPaths.Length == 1 ? selectedPaths[0] : MapFileViewer.CurrentDirectory;
-            var maps = default(TilemapPack);
-            var result = Array.Empty<string>();
+            if (btnIndex != 0)
+                return;
 
-            if (Path.GetExtension(file) == ".tmx" && file != null)
+            try
             {
-                var (layers, tilemapPack) = TiledLoader.Load(file);
-                maps = tilemapPack;
-                result = layers;
+                var selectedPaths = PromptFileViewer.SelectedPaths;
+                var file = selectedPaths.Length == 1 ?
+                    selectedPaths[0] :
+                    PromptFileViewer.CurrentDirectory;
+                var maps = default(TilemapPack);
+                var result = Array.Empty<string>();
+
+                if (Path.GetExtension(file) == ".tmx" && file != null)
+                {
+                    var (layers, tilemapPack) = TiledLoader.Load(file);
+                    maps = tilemapPack;
+                    result = layers;
+                }
+                else
+                {
+                    var bytes = File.ReadAllBytes($"{file}");
+                    var byteOffset = 0;
+                    var layerCount = GrabInt(bytes, ref byteOffset);
+
+                    result = new string[layerCount];
+                    for (var i = 0; i < layerCount; i++)
+                        result[i] = GrabString(bytes, ref byteOffset);
+
+                    maps = new(bytes[byteOffset..]);
+                }
+
+                MapsEditor.Clear();
+                for (var i = 0; i < maps.Count; i++)
+                    MapsEditor.Add(maps[i]);
+
+                onLoad?.Invoke(result);
             }
-            else
+            catch (Exception)
             {
-                var bytes = File.ReadAllBytes($"{file}");
-                var byteOffset = 0;
-                var layerCount = GrabInt(bytes, ref byteOffset);
-
-                result = new string[layerCount];
-                for (var i = 0; i < layerCount; i++)
-                    result[i] = GrabString(bytes, ref byteOffset);
-
-                maps = new(bytes[byteOffset..]);
+                PromptMessage("Could not load map!");
             }
-
-            MapsEditor.Clear();
-            for (var i = 0; i < maps.Count; i++)
-                MapsEditor.Add(maps[i]);
-
-            return result;
-        }
-        catch (Exception)
-        {
-            PromptMessage("Could not load map!");
-            return Array.Empty<string>();
-        }
-    }
-    public void OpenTilesetPrompt(Action<Layer, Tilemap>? onSuccess, Action? onFail)
-    {
-        tilesetPrompt.OnSuccess = onSuccess;
-        tilesetPrompt.OnFail = onFail;
-        Prompt.ButtonCount = 2;
-        tilesetPrompt.Open();
+        });
     }
 
 #region Backend
@@ -379,8 +423,7 @@ public class Editor
         {
             Prompt.Text = $"Enter Map Size,{Environment.NewLine}" +
                           $"example: '100 100'.";
-            Prompt.ButtonCount = 2;
-            Prompt.Open(promptSize, ResizePressMap);
+            Prompt.Open(promptSize, onButtonTrigger: ResizePressMap);
         });
         btnMapSize.OnDisplay(() => MapsUi.SetButton(btnMapSize));
 
@@ -389,27 +432,14 @@ public class Editor
         {
             Prompt.Text = $"Enter View Size,{Environment.NewLine}" +
                           $"example: '100 100'.";
-            Prompt.ButtonCount = 2;
-            Prompt.Open(promptSize, ResizePressView);
+            Prompt.Open(promptSize, onButtonTrigger: ResizePressView);
         });
         btnViewSize.OnDisplay(() => MapsUi.SetButton(btnViewSize));
 
         Ui.Add(btnMapSize, btnViewSize);
-
-        Keyboard.Key.Enter.OnPress(() =>
-        {
-            if (Prompt.IsHidden)
-                return;
-
-            if (Prompt.Text.Contains("View Size"))
-                ResizePressView(0);
-            else if (Prompt.Text.Contains("Map Size"))
-                ResizePressMap(0);
-        });
     }
     private void ResizePressMap(int i)
     {
-        Prompt.Close();
         var text = promptSize.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
         if (i != 0 || text.Length != 2)
@@ -431,7 +461,6 @@ public class Editor
     }
     private void ResizePressView(int i)
     {
-        Prompt.Close();
         var text = promptSize.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
         if (i != 0 || text.Length != 2)

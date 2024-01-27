@@ -58,7 +58,6 @@ public static class Program
     private static readonly List tools;
     private static readonly Layer layer = new();
     private static readonly Tilemap map = new((3, 3));
-    private static readonly FileViewer saveLoad = new();
     private static readonly Panel promptPanel;
     private static SolidPack solidPack = new();
     private static SolidMap solidMap = new();
@@ -71,7 +70,7 @@ public static class Program
 
     private static bool CanDrawLayer
     {
-        get => editor.Prompt is { IsHidden: false, ButtonCount: 3 };
+        get => editor.Prompt.IsHidden == false || editor.Prompt.Text.Contains("Tile");
     }
     private static bool CanEditGlobal
     {
@@ -102,22 +101,12 @@ public static class Program
 
     static Program()
     {
-        var (mw, mh) = (50, 50);
-
-        editor = new(title: "Pure - Collision Editor", mapSize: (mw, mh), viewSize: (mw, mh));
+        editor = new(title: "Pure - Collision Editor");
+        var (mw, mh) = editor.MapsEditor.Size;
         editor.MapsEditor.Clear();
         editor.MapsEditor.Add(new Tilemap((mw, mh)), new Tilemap((mw, mh)));
         editor.MapsEditor.ViewSize = (mw, mh);
         CreateMenu();
-
-        editor.MapFileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, btn =>
-        {
-            if (editor.MapFileViewer.IsSelectingFolders || editor.MapFileViewer.IsFolder(btn))
-                return;
-
-            editor.Prompt.Close();
-            layers = editor.LoadMap();
-        });
 
         const int FRONT = (int)Editor.LayerMapsUi.Front;
         const int PROMPT_MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
@@ -166,24 +155,6 @@ public static class Program
         layer.TilemapSize = map.Size;
         layer.Offset = (0f, -10f);
 
-        const int BACK = (int)Editor.LayerMapsUi.PromptBack;
-        const int MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
-        saveLoad = new()
-        {
-            FilesAndFolders = { IsSingleSelecting = true },
-            Size = (21, 16)
-        };
-        saveLoad.OnDisplay(() => editor.MapsUi.SetFileViewer(saveLoad, BACK));
-        saveLoad.FilesAndFolders.OnItemDisplay(btn =>
-            editor.MapsUi.SetFileViewerItem(saveLoad, btn, MIDDLE));
-        saveLoad.HardDrives.OnItemDisplay(btn =>
-            editor.MapsUi.SetFileViewerItem(saveLoad, btn, MIDDLE));
-        saveLoad.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, item =>
-        {
-            if (saveLoad.IsFolder(item) == false)
-                editor.Prompt.TriggerButton(0);
-        });
-
         SubscribeToClicks();
     }
 
@@ -213,7 +184,6 @@ public static class Program
             var (x, y) = MousePos;
             x += editor.MapsEditor.ViewPosition.x;
             y += editor.MapsEditor.ViewPosition.y;
-            editor.Prompt.ButtonCount = 3;
             currentTile = editor.MapsEditor[currentLayer].TileAt(((int)x, (int)y));
 
             layer.TileGap = editor.LayerMap.TileGap;
@@ -228,7 +198,7 @@ public static class Program
             UpdateMap();
             promptPanel.Text = layers[currentLayer];
             editor.Prompt.Text = "Edit Tile Solids";
-            editor.Prompt.Open(promptPanel, i =>
+            editor.Prompt.Open(promptPanel, buttonCount: 3, onButtonTrigger: i =>
             {
                 if (i == 0)
                 {
@@ -247,7 +217,7 @@ public static class Program
                     OffsetLayer(-1);
                     UpdateMap();
                 }
-            });
+            }, isAutoClosing: false);
         });
         Mouse.Button.Left.OnRelease(() =>
         {
@@ -334,58 +304,22 @@ public static class Program
 
             if (index is 1 or 2) // save solids
             {
-                saveLoad.IsSelectingFolders = true;
-                editor.Prompt.Text = "Select a Directory:";
-                editor.Prompt.ButtonCount = 2;
-                editor.Prompt.Open(saveLoad, i =>
-                {
-                    editor.Prompt.Close();
+                // ignore editor offset, keep original tilemap's view
+                var prevMapOffset = solidMap.Offset;
+                var prevGlobalOffset = solidPack.Offset;
 
-                    if (i != 0)
-                        return;
+                solidPack.Offset = originalMapViewPos;
+                solidMap.Offset = originalMapViewPos;
 
-                    editor.Prompt.Text = "Provide a File Name:";
-                    editor.Prompt.Open(editor.PromptInput, btnIndex =>
-                    {
-                        editor.Prompt.Close();
-                        if (btnIndex != 0)
-                            return;
+                var data = index == 1 ? solidPack.ToBytes() : solidMap.ToBytes();
+                editor.PromptFileSave(data);
 
-                        var paths = saveLoad.SelectedPaths;
-                        var directory = paths.Length == 1 ? paths[0] : saveLoad.CurrentDirectory;
-                        var path = Path.Combine($"{directory}", editor.PromptInput.Value);
-
-                        // ignore editor offset, keep original tilemap's view
-                        var prevMapOffset = solidMap.Offset;
-                        var prevGlobalOffset = solidPack.Offset;
-
-                        solidPack.Offset = originalMapViewPos;
-                        solidMap.Offset = originalMapViewPos;
-
-                        var data = index == 1 ? solidPack.ToBytes() : solidMap.ToBytes();
-                        File.WriteAllBytes(path, data);
-
-                        solidPack.Offset = prevGlobalOffset;
-                        solidMap.Offset = prevMapOffset;
-                    });
-                });
+                solidPack.Offset = prevGlobalOffset;
+                solidMap.Offset = prevMapOffset;
             }
             else if (index is 4 or 5) // load solids
-            {
-                saveLoad.IsSelectingFolders = false;
-                editor.Prompt.Text = "Select Solids File:";
-                editor.Prompt.ButtonCount = 2;
-                editor.Prompt.Open(saveLoad, i =>
+                editor.PromptFileLoad(bytes =>
                 {
-                    editor.Prompt.Close();
-
-                    if (i != 0)
-                        return;
-
-                    var selectedPaths = saveLoad.SelectedPaths;
-                    var file = selectedPaths.Length == 1 ? selectedPaths[0] : saveLoad.CurrentDirectory;
-                    var bytes = File.ReadAllBytes($"{file}");
-
                     if (index == 4)
                         solidPack = new(bytes);
                     else
@@ -394,26 +328,15 @@ public static class Program
                         UpdateViewOffsets();
                     }
                 });
-            }
             else if (index == 6) // load tileset
-                editor.OpenTilesetPrompt(null, null);
+                editor.PromptTileset(null, null);
             else if (index == 7) // load map
-            {
-                editor.Prompt.Text = "Select Map File:";
-                editor.MapFileViewer.IsSelectingFolders = false;
-                editor.Prompt.ButtonCount = 2;
-                editor.Prompt.Open(editor.MapFileViewer, i =>
+                editor.PromptLoadMap(result =>
                 {
-                    editor.Prompt.Close();
-
-                    if (i != 0)
-                        return;
-
-                    layers = editor.LoadMap();
+                    layers = result;
                     originalMapViewPos = editor.MapsEditor.ViewPosition;
                     solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
-            }
         });
         menu.OnUpdate(() =>
         {

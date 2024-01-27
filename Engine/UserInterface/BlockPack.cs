@@ -38,12 +38,10 @@ public class BlockPack
             else if (typeStr == nameof(FileViewer)) Add(new FileViewer(bBlock));
             else if (typeStr == nameof(InputBox)) Add(new InputBox(bBlock));
             else if (typeStr == nameof(Layout)) Add(new Layout(bBlock));
-            // this workaround prevents list casting to button[]
-            else if (typeStr == nameof(List)) Add(new Block[] { new List(bBlock) });
+            else if (typeStr == nameof(List)) Add(new List(bBlock));
             else if (typeStr == nameof(Pages)) Add(new Pages(bBlock));
             else if (typeStr == nameof(Palette)) Add(new Palette(bBlock));
             else if (typeStr == nameof(Panel)) Add(new Panel(bBlock));
-            else if (typeStr == nameof(Prompt)) Add(new Prompt(bBlock));
             else if (typeStr == nameof(Scroll)) Add(new Scroll(bBlock));
             else if (typeStr == nameof(Slider)) Add(new Slider(bBlock));
             else if (typeStr == nameof(Stepper)) Add(new Stepper(bBlock));

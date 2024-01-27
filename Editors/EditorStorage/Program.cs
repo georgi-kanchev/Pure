@@ -1,4 +1,7 @@
-﻿namespace Pure.Editors.EditorStorage;
+﻿using System.IO.Compression;
+using System.Text;
+
+namespace Pure.Editors.EditorStorage;
 
 using Engine.Utilities;
 using Engine.Storage;
@@ -31,7 +34,7 @@ public static class Program
     }
 
 #region Backend
-    private enum Creating
+    private enum DataType
     {
         Value, Tuple, List, Dictionary, TupleAdd
     }
@@ -43,10 +46,9 @@ public static class Program
         VALUE_SYMBOL = "Symbol";
 
     private static readonly Editor editor;
-    private static Menu values, addData;
-    private static Creating creating;
+    private static Menu values, main;
+    private static DataType creating;
     private static int currTupleAmount;
-    private static readonly Storage storage = new();
     private static readonly BlockPack data = new(),
         panels = new(),
         moves = new(),
@@ -62,9 +64,7 @@ public static class Program
 
     static Program()
     {
-        var (mw, mh) = (50, 50);
-
-        editor = new(title: "Pure - Storage Editor", mapSize: (mw, mh), viewSize: (mw, mh));
+        editor = new(title: "Pure - Storage Editor");
         CreateMenus();
         SubscribeToClicks();
 
@@ -99,7 +99,7 @@ public static class Program
         });
     }
 
-    [MemberNotNull(nameof(addData), nameof(values))]
+    [MemberNotNull(nameof(main), nameof(values))]
     private static void CreateMenus()
     {
         values = new(editor,
@@ -109,17 +109,17 @@ public static class Program
             $" {VALUE_FLAG}",
             $" {VALUE_SYMBOL}")
         {
-            Size = (10, 5),
+            Size = (11, 5),
             IsHidden = true
         };
         values.OnItemInteraction(Interaction.Trigger, btn =>
         {
-            if (creating == Creating.Value)
+            if (creating == DataType.Value)
             {
                 selectedTypes.Add(btn.Text.Trim());
                 AddPanel();
             }
-            else if (creating == Creating.Tuple)
+            else if (creating == DataType.Tuple)
             {
                 selectedTypes.Add(btn.Text.Trim());
 
@@ -132,12 +132,12 @@ public static class Program
                 currTupleAmount++;
                 values[0].Text = $"Value {currTupleAmount}/2… ";
             }
-            else if (creating is Creating.List)
+            else if (creating is DataType.List or DataType.Dictionary)
             {
                 selectedTypes.Add(btn.Text.Trim());
                 AddPanel();
             }
-            else if (creating is Creating.TupleAdd or Creating.Dictionary)
+            else if (creating is DataType.TupleAdd)
             {
                 var type = btn.Text.Trim();
                 selectedTypes.Add(type);
@@ -153,52 +153,22 @@ public static class Program
                 list.Text += (list.Text == "" ? "" : ",") + type;
                 values.IsHidden = true;
             }
-
-            if (creating != Creating.Dictionary)
-                return;
-
-            var keys = (List)dictKeys[lastIndexAdd];
-            keys.Add(new Button { Text = GetUniqueText(keys, "Key", null) });
         });
 
-        addData = new(editor,
+        main = new(editor,
             "Add… ",
             " Value",
             " Tuple",
             " List",
-            " Dictionary")
+            " Dictionary",
+            "Storage… ",
+            " Save",
+            " Load")
         {
-            Size = (11, 5),
+            Size = (11, 8),
             IsHidden = true
         };
-        addData.OnItemInteraction(Interaction.Trigger, btn =>
-        {
-            addData.IsHidden = true;
-            creating = (Creating)(addData.IndexOf(btn) - 1);
-            selectedTypes.Clear();
-
-            if (creating == Creating.Value)
-            {
-                values[0].Text = "Value… ";
-                values.IsHidden = false;
-                values.Position = addData.Position;
-            }
-            else if (creating == Creating.Tuple)
-            {
-                currTupleAmount = 1;
-                values[0].Text = $"Value {currTupleAmount}/2… ";
-                values.IsHidden = false;
-                values.Position = addData.Position;
-            }
-            else if (creating == Creating.List)
-            {
-                values[0].Text = "List… ";
-                values.IsHidden = false;
-                values.Position = addData.Position;
-            }
-            else if (creating == Creating.Dictionary)
-                AddPanel();
-        });
+        main.OnItemInteraction(Interaction.Trigger, OnMainMenuClick);
     }
     private static void SubscribeToClicks()
     {
@@ -210,9 +180,9 @@ public static class Program
         });
         Mouse.Button.Right.OnPress(() =>
         {
-            addData.IsHidden = false;
+            main.IsHidden = false;
             var (x, y) = editor.MousePositionUi;
-            addData.Position = ((int)x + 1, (int)y + 1);
+            main.Position = ((int)x + 1, (int)y + 1);
 
             var (wx, wy) = editor.MousePositionWorld;
             rightClickPos = ((int)wx, (int)wy);
@@ -222,16 +192,16 @@ public static class Program
     private static void AddPanel()
     {
         values.IsHidden = true;
-        var itemCount = creating == Creating.Tuple ? 2 : 1;
-        itemCount = creating == Creating.Dictionary ? 0 : itemCount;
 
+        var itemCount = creating == DataType.Tuple ? 2 : 1;
         var add = new Button { Size = (1, 1), Text = creating.ToString() };
         var removeKey = new Button { Size = (1, 1) };
+        var allKeys = GetKeys();
         var panel = new Panel(values.Position)
         {
             SizeMinimum = (8, 4),
             Size = (13, itemCount + 2),
-            Text = $"{creating}",
+            Text = $"{creating}".EnsureUnique(allKeys),
             Position = rightClickPos
         };
         var list = new List(itemCount: itemCount)
@@ -248,28 +218,26 @@ public static class Program
             Text = "Text"
         };
 
-        if (creating == Creating.Value)
+        if (creating == DataType.Value)
         {
             panel.SizeMinimum = (5, 3);
             list[0].Text = GetDefaultValue(0);
         }
-        else if (creating == Creating.Tuple)
+        else if (creating == DataType.Tuple)
         {
-            for (var i = 0; i < selectedTypes.Count; i++)
+            for (var i = 0; i < list.Count; i++)
                 list[i].Text = GetDefaultValue(i);
         }
-        else if (creating == Creating.List)
+        else if (creating is DataType.List or DataType.Dictionary)
         {
             panel.Text = $"{selectedTypes[0]} {creating}";
             list[0].Text = GetDefaultValue(0);
         }
-        else if (creating == Creating.Dictionary)
+
+        if (creating == DataType.Dictionary)
         {
-            panel.Text = $"{creating}";
-            panel.SizeMinimum = (11, 4);
-            panel.Size = (18, panel.Size.height);
-            keys.IsHidden = false;
-            keys.IsDisabled = false;
+            panel.Size = (19, 4);
+            keys.Add(new Button { Text = GetUniqueText(keys, "Key") });
         }
 
         keys.OnItemDisplay(item =>
@@ -305,14 +273,10 @@ public static class Program
             Input.TilemapSize = editor.MapsUi.Size;
             editor.Prompt.Text = "Edit Key";
             promptKey.Value = panel.Text;
-            editor.Prompt.Open(promptKey, i =>
+            editor.Prompt.Open(promptKey, onButtonTrigger: i =>
             {
-                editor.Prompt.Close();
-
-                if (i != 0)
-                    return;
-
-                panel.Text = promptKey.Value;
+                if (i == 0)
+                    panel.Text = promptKey.Value.EnsureUnique(allKeys);
             });
             Input.TilemapSize = maps.Size;
         });
@@ -336,7 +300,6 @@ public static class Program
         adds.Add(add);
         dictKeys.Add(keys);
     }
-
     private static void OnPanelDisplay(Panel panel)
     {
         var i = panels.IndexOf(panel);
@@ -351,26 +314,20 @@ public static class Program
 
         panel.SizeMaximum = (int.MaxValue, list.Count + 2);
 
-        if (add.Text == $"{Creating.Value}")
+        if (add.Text == nameof(DataType.Value))
         {
             panel.SizeMaximum = (int.MaxValue, 3);
             remove.IsHidden = true;
             add.IsHidden = true;
             move.IsHidden = true;
         }
-        else if (add.Text == $"{Creating.Tuple}")
+        else if (add.Text == nameof(DataType.Tuple))
         {
             remove.IsHidden = list.Count < 3;
-            add.IsHidden = list.Count > 8;
+            add.IsHidden = list.Count > 7;
             move.IsHidden = false;
         }
-        else if (add.Text == $"{Creating.Dictionary}")
-        {
-            remove.IsHidden = list.Count == 0;
-            add.IsHidden = false;
-            move.IsHidden = list.Count < 2;
-        }
-        else if (add.Text == $"{Creating.List}")
+        else
         {
             remove.IsHidden = list.Count < 2;
             add.IsHidden = false;
@@ -382,11 +339,14 @@ public static class Program
         offW -= move.IsHidden ? 0 : 2;
         offW -= remove.IsHidden ? 0 : 2;
 
+        keys.IsHidden = add.Text != nameof(DataType.Dictionary);
+
         remove.IsDisabled = remove.IsHidden;
         add.IsDisabled = add.IsHidden;
         move.IsDisabled = move.IsHidden;
+        keys.IsDisabled = keys.IsHidden;
 
-        if (add.Text == $"{Creating.Dictionary}")
+        if (add.Text == nameof(DataType.Dictionary))
         {
             var half = (w + offW) / 2;
             var oddW = w % 2 == 0 ? 0 : 1;
@@ -419,6 +379,35 @@ public static class Program
         editor.MapsEditor.SetPanel(panel);
     }
 
+    private static void OnMainMenuClick(Button btn)
+    {
+        main.IsHidden = true;
+        var index = main.IndexOf(btn);
+
+        if (index < 6)
+        {
+            creating = (DataType)(main.IndexOf(btn) - 1);
+            selectedTypes.Clear();
+
+            values.IsHidden = false;
+            values.Position = main.Position;
+
+            if (creating == DataType.Tuple)
+            {
+                currTupleAmount = 1;
+                values[0].Text = $"Value {currTupleAmount}/2… ";
+            }
+            else
+                values[0].Text = $"{creating}… ";
+
+            return;
+        }
+
+        if (index == 6)
+            editor.PromptFileSave(OnSave());
+        else if (index == 7)
+            editor.PromptFileLoad(OnLoad);
+    }
     private static void OnValueClick(List list, Button item, bool isKey = false)
     {
         var types = list.Text.Split(",");
@@ -436,15 +425,11 @@ public static class Program
 
         if (type == VALUE_TEXT)
         {
-            editor.IsPromptEnterDisabled = true;
             promptText.Value = item.Text;
             promptText.SelectAll();
             editor.Prompt.Text = "Edit Text " + (isKey ? "Key" : "Value");
-            editor.Prompt.Open(promptText, i =>
+            editor.Prompt.Open(promptText, buttonAccept: -1, onButtonTrigger: i =>
             {
-                editor.Prompt.Close();
-                editor.IsPromptEnterDisabled = false;
-
                 if (i != 0)
                     return;
 
@@ -471,9 +456,8 @@ public static class Program
         {
             promptSymbol.Value = Convert.ToChar(item.Text);
             editor.Prompt.Text = "Edit Symbol Value";
-            editor.Prompt.Open(promptSymbol, i =>
+            editor.Prompt.Open(promptSymbol, onButtonTrigger: i =>
             {
-                editor.Prompt.Close();
                 if (i == 0)
                     item.Text = $"{Convert.ToChar((int)promptSymbol.Value)}";
             });
@@ -483,9 +467,8 @@ public static class Program
             promptNumber.Value = item.Text;
             promptNumber.SelectAll();
             editor.Prompt.Text = "Edit Number Value";
-            editor.Prompt.Open(promptNumber, i =>
+            editor.Prompt.Open(promptNumber, onButtonTrigger: i =>
             {
-                editor.Prompt.Close();
                 if (i == 0)
                     item.Text = $"{promptNumber.Value.Calculate()}";
             });
@@ -550,13 +533,18 @@ public static class Program
         var list = (List)data[index];
         var type = adds[index].Text;
 
-        if (type == $"{Creating.Tuple}")
+        if (type == nameof(DataType.Tuple))
         {
+            selectedTypes.Clear();
             values[0].Text = $"Value {list.Count + 1}/{list.Count + 1}… ";
-            creating = Creating.TupleAdd;
+            creating = DataType.TupleAdd;
             lastIndexAdd = index;
+
+            var (x, y) = editor.MousePositionUi;
+            values.Position = ((int)x + 1, (int)y + 2);
+            values.IsHidden = false;
         }
-        else if (type == $"{Creating.List}")
+        else if (type is nameof(DataType.List) or nameof(DataType.Dictionary))
         {
             var valueType = list.Text.Split(",")[0];
             selectedTypes.Clear();
@@ -571,20 +559,96 @@ public static class Program
 
             list.Text += $",{valueType}";
         }
-        else if (type == $"{Creating.Dictionary}")
-        {
-            selectedTypes.Clear();
-            values[0].Text = "Value… ";
-            lastIndexAdd = index;
-        }
 
-        if (type != $"{Creating.Tuple}" && type != $"{Creating.Dictionary}")
+        list.Scroll.Slider.Progress = 1f;
+
+        if (type != nameof(DataType.Dictionary))
             return;
 
-        var (x, y) = editor.MousePositionUi;
-        values.Position = ((int)x + 1, (int)y + 2);
-        values.IsHidden = false;
-        list.Scroll.Slider.Progress = 1f;
+        var keys = (List)dictKeys[index];
+        keys.Add(new Button { Text = GetUniqueText(keys, "Key") });
+    }
+
+    private static byte[] OnSave()
+    {
+        var result = new List<byte>();
+        var storage = new Storage();
+        for (var i = 0; i < data.Count; i++)
+        {
+            var list = (List)data[i];
+            var types = list.Text.Split(",");
+            var dataType = adds[i].Text;
+            var key = panels[i].Text;
+
+            if (dataType == nameof(DataType.Value))
+                storage.Set(key, ObjectFromText(storage, types[0], list[0].Text, out _));
+            else if (dataType == nameof(DataType.Tuple))
+                storage.Set(key, CreateTuple(storage, types, list));
+            else if (dataType == nameof(DataType.List))
+                storage.Set(key, CreateArray(storage, types[0], list));
+            else if (dataType == nameof(DataType.Dictionary))
+                storage.Set(key, CreateDictionary(storage, types[0], (List)dictKeys[i], list));
+        }
+
+        var bytes = Decompress(storage.ToBytes());
+        result.AddRange(bytes);
+
+        // hijack the end of the file to save some extra info
+        // should be ignored by the engine but not by the editor
+
+        for (var i = 0; i < data.Count; i++)
+        {
+            var panel = panels[i];
+            result.AddRange(BitConverter.GetBytes(panel.Position.x));
+            result.AddRange(BitConverter.GetBytes(panel.Position.y));
+            result.AddRange(BitConverter.GetBytes(panel.Size.width));
+            result.AddRange(BitConverter.GetBytes(panel.Size.height));
+            result.AddRange(BitConverter.GetBytes(DataTypeToInt(adds[i].Text)));
+            PutString(result, data[i].Text);
+        }
+
+        return Compress(result.ToArray());
+    }
+    private static void OnLoad(byte[] bytes)
+    {
+        data.Clear();
+        panels.Clear();
+        moves.Clear();
+        removeKeys.Clear();
+        removes.Clear();
+        adds.Clear();
+        dictKeys.Clear();
+
+        var storage = new Storage(bytes);
+        var decompressed = Decompress(bytes);
+        var measure = Decompress(storage.ToBytes()).Length;
+
+        var hijackedBytes = decompressed[measure..];
+        var offset = 0;
+        var keys = storage.Keys;
+        for (var i = 0; i < storage.Count; i++)
+        {
+            var panelX = GrabInt();
+            var panelY = GrabInt();
+            var panelW = GrabInt();
+            var panelH = GrabInt();
+            creating = (DataType)GrabInt();
+            var types = GrabString(hijackedBytes, ref offset);
+            selectedTypes.Clear();
+            selectedTypes.AddRange(types.Split(","));
+
+            AddPanel();
+
+            var list = (List)data[i];
+            list.Text = types;
+            panels[i].Position = (panelX, panelY);
+            panels[i].Size = (panelW, panelH);
+            panels[i].Text = keys[i];
+
+            LoadData(storage, creating, i);
+        }
+
+        int GrabInt() => BitConverter.ToInt32(GetBytesFrom(hijackedBytes, 4, ref offset));
     }
 
     private static string GetDefaultValue(int index)
@@ -618,6 +682,221 @@ public static class Program
                 texts.Add(list[i].Text);
 
         return texts.ToArray().EnsureUnique(text);
+    }
+
+    private static object? ObjectFromText(Storage storage, string type, string text, out Type casted)
+    {
+        if (type == VALUE_FLAG)
+        {
+            casted = typeof(bool);
+            return storage.ObjectFromText<bool>(text);
+        }
+        else if (type == VALUE_NUMBER)
+        {
+            casted = typeof(float);
+            return storage.ObjectFromText<float>(text);
+        }
+        else if (type == VALUE_SYMBOL)
+        {
+            casted = typeof(char);
+            return storage.ObjectFromText<char>(text);
+        }
+
+        casted = typeof(string);
+        return storage.ObjectFromText<string>(text);
+    }
+    private static object? CreateTuple(Storage storage, string[] strTypes, List list)
+    {
+        // lord, have mercy...
+
+        var t = new Type[strTypes.Length];
+        var objs = new object?[strTypes.Length];
+        var resultType = default(Type);
+        var tpl = new[]
+        {
+            typeof(ValueTuple<,>),
+            typeof(ValueTuple<,,>),
+            typeof(ValueTuple<,,,>),
+            typeof(ValueTuple<,,,,>),
+            typeof(ValueTuple<,,,,,>),
+            typeof(ValueTuple<,,,,,,>),
+            typeof(ValueTuple<,,,,,,,>),
+        };
+
+        for (var i = 0; i < t.Length; i++)
+        {
+            objs[i] = Value(i, out var type);
+            t[i] = type;
+        }
+
+        if (t.Length == 2)
+            resultType = tpl[0].MakeGenericType(t[0], t[1]);
+        else if (t.Length == 3)
+            resultType = tpl[1].MakeGenericType(t[0], t[1], t[2]);
+        else if (t.Length == 4)
+            resultType = tpl[2].MakeGenericType(t[0], t[1], t[2], t[3]);
+        else if (t.Length == 5)
+            resultType = tpl[3].MakeGenericType(t[0], t[1], t[2], t[3], t[4]);
+        else if (t.Length == 6)
+            resultType = tpl[4].MakeGenericType(t[0], t[1], t[2], t[3], t[4], t[5]);
+        else if (t.Length == 7)
+            resultType = tpl[5].MakeGenericType(t[0], t[1], t[2], t[3], t[4], t[5], t[6]);
+        else if (t.Length == 8)
+            resultType = tpl[6].MakeGenericType(t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7]);
+
+        if (resultType == null)
+            return default;
+
+        var tuple = Activator.CreateInstance(resultType);
+        for (var i = 0; i < objs.Length; i++)
+            resultType.GetField($"Item{i + 1}")?.SetValue(tuple, objs[i]);
+
+        return tuple;
+
+        object? Value(int i, out Type type)
+        {
+            return ObjectFromText(storage, strTypes[i], list[i].Text, out type);
+        }
+    }
+    private static Array? CreateArray(Storage storage, string type, List list)
+    {
+        var instance = Array.CreateInstance(GetType(type), list.Count);
+        for (var i = 0; i < list.Count; i++)
+            instance.SetValue(ObjectFromText(storage, type, list[i].Text, out _), i);
+
+        return instance;
+    }
+    private static object? CreateDictionary(Storage storage, string type, List keys, List list)
+    {
+        var resultType = typeof(Dictionary<,>).MakeGenericType(typeof(string), GetType(type));
+        var instance = Activator.CreateInstance(resultType);
+
+        for (var i = 0; i < list.Count; i++)
+        {
+            var value = ObjectFromText(storage, type, list[i].Text, out _);
+            resultType.GetMethod("Add")?.Invoke(instance, new[] { keys[i].Text, value });
+        }
+
+        return instance;
+    }
+
+    private static void LoadData(Storage storage, DataType type, int index)
+    {
+        var list = (List)data[index];
+        var types = list.Text.Split(",");
+        var key = panels[index].Text;
+        var value = storage.GetObject<string>(key) ?? "";
+        var divider = "";
+
+        if (type == DataType.Value)
+        {
+            LoadValue(list[0], types[0], list, value);
+            return;
+        }
+        else if (type == DataType.Tuple)
+            divider = storage.Dividers.tuple;
+        else if (type == DataType.List)
+            divider = storage.DividersCollection.oneD;
+        else if (type == DataType.Dictionary)
+            divider = storage.DividersCollection.dictionary;
+
+        var multipleValues = value.Split(divider);
+        var remove = (List)removes[index];
+        var move = (List)moves[index];
+        for (var i = 0; i < multipleValues.Length; i++)
+        {
+            if (i == list.Count)
+            {
+                list.Add(new Button());
+                remove.Add(new Button());
+                move.Add(new Button());
+            }
+
+            LoadValue(list[i], types[i], list, multipleValues[i]);
+        }
+    }
+    private static void LoadValue(
+        Button btn,
+        string type,
+        List list,
+        string value)
+    {
+        btn.Text = value;
+
+        if (type != VALUE_FLAG)
+            return;
+
+        btn.Text = btn.Text.ToLower();
+        list.Select(btn, btn.Text == "true");
+    }
+
+    private static Type GetType(string type)
+    {
+        if (type == VALUE_FLAG)
+            return typeof(bool);
+        else if (type == VALUE_NUMBER)
+            return typeof(float);
+        else if (type == VALUE_SYMBOL)
+            return typeof(char);
+
+        return typeof(string);
+    }
+
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
+    }
+    private static void PutString(List<byte> intoBytes, string value)
+    {
+        var b = Encoding.UTF8.GetBytes(value);
+        intoBytes.AddRange(BitConverter.GetBytes(b.Length));
+        intoBytes.AddRange(b);
+    }
+    private static string GrabString(byte[] fromBytes, ref int offset)
+    {
+        var textBytesLength = BitConverter.ToInt32(GetBytesFrom(fromBytes, 4, ref offset));
+        var bText = GetBytesFrom(fromBytes, textBytesLength, ref offset);
+        return Encoding.UTF8.GetString(bText);
+    }
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+            stream.CopyTo(output);
+
+        return output.ToArray();
+    }
+
+    private static int DataTypeToInt(string dataType)
+    {
+        if (dataType == nameof(DataType.Tuple))
+            return (int)DataType.Tuple;
+        else if (dataType == nameof(DataType.List))
+            return (int)DataType.List;
+        else if (dataType == nameof(DataType.Dictionary))
+            return (int)DataType.Dictionary;
+
+        return (int)DataType.Value;
+    }
+    private static string[] GetKeys()
+    {
+        var result = new string[data.Count];
+        for (var i = 0; i < result.Length; i++)
+            result[i] = panels[i].Text;
+
+        return result;
     }
 #endregion
 }
