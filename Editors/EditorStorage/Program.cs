@@ -162,10 +162,11 @@ public static class Program
             " List",
             " Dictionary",
             "Storage… ",
+            " New",
             " Save",
             " Load")
         {
-            Size = (11, 8),
+            Size = (11, 9),
             IsHidden = true
         };
         main.OnItemInteraction(Interaction.Trigger, OnMainMenuClick);
@@ -404,8 +405,11 @@ public static class Program
         }
 
         if (index == 6)
-            editor.PromptFileSave(OnSave());
+            editor.PromptYesNo($"Any unsaved changes will be lost.{Environment.NewLine}" +
+                               $"Confirm?", ResetAll);
         else if (index == 7)
+            editor.PromptFileSave(OnSave());
+        else if (index == 8)
             editor.PromptFileLoad(OnLoad);
     }
     private static void OnValueClick(List list, Button item, bool isKey = false)
@@ -611,17 +615,17 @@ public static class Program
     }
     private static void OnLoad(byte[] bytes)
     {
-        data.Clear();
-        panels.Clear();
-        moves.Clear();
-        removeKeys.Clear();
-        removes.Clear();
-        adds.Clear();
-        dictKeys.Clear();
+        ResetAll();
 
         var storage = new Storage(bytes);
         var decompressed = Decompress(bytes);
         var measure = Decompress(storage.ToBytes()).Length;
+
+        if (decompressed.Length == measure)
+        {
+            
+            return;
+        }
 
         var hijackedBytes = decompressed[measure..];
         var offset = 0;
@@ -649,6 +653,16 @@ public static class Program
         }
 
         int GrabInt() => BitConverter.ToInt32(GetBytesFrom(hijackedBytes, 4, ref offset));
+    }
+    private static void ResetAll()
+    {
+        data.Clear();
+        panels.Clear();
+        moves.Clear();
+        removeKeys.Clear();
+        removes.Clear();
+        adds.Clear();
+        dictKeys.Clear();
     }
 
     private static string GetDefaultValue(int index)
@@ -783,9 +797,13 @@ public static class Program
     private static void LoadData(Storage storage, DataType type, int index)
     {
         var list = (List)data[index];
+        var keys = (List)dictKeys[index];
+        var remove = (List)removes[index];
+        var move = (List)moves[index];
         var types = list.Text.Split(",");
         var key = panels[index].Text;
         var value = storage.GetObject<string>(key) ?? "";
+        var isDict = type == DataType.Dictionary;
         var divider = "";
 
         if (type == DataType.Value)
@@ -797,19 +815,30 @@ public static class Program
             divider = storage.Dividers.tuple;
         else if (type == DataType.List)
             divider = storage.DividersCollection.oneD;
-        else if (type == DataType.Dictionary)
+        else if (isDict)
             divider = storage.DividersCollection.dictionary;
 
         var multipleValues = value.Split(divider);
-        var remove = (List)removes[index];
-        var move = (List)moves[index];
         for (var i = 0; i < multipleValues.Length; i++)
         {
-            if (i == list.Count)
+            if ((i == list.Count && isDict == false) ||
+                (i / 2 == list.Count && isDict))
             {
                 list.Add(new Button());
                 remove.Add(new Button());
                 move.Add(new Button());
+
+                if (type == DataType.Dictionary)
+                    keys.Add(new Button());
+            }
+
+            if (isDict)
+            {
+                if (i % 2 == 0)
+                    LoadValue(keys[i / 2], types[0], keys, multipleValues[i]);
+                else
+                    LoadValue(list[i / 2], types[0], list, multipleValues[i]);
+                continue;
             }
 
             LoadValue(list[i], types[i], list, multipleValues[i]);
