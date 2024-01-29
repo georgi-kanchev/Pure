@@ -461,6 +461,11 @@ public static class Extensions
                 (matrix[rows - i - 1, j], matrix[i, j]) = (matrix[i, j], matrix[rows - i - 1, j]);
     }
 
+    public static bool IsSurroundedBy(this string input, string text)
+    {
+        var isInvalid = string.IsNullOrEmpty(input) || string.IsNullOrEmpty(text);
+        return isInvalid == false && input.StartsWith(text) && input.EndsWith(text);
+    }
     public static float Calculate(this string mathExpression)
     {
         mathExpression = mathExpression.Replace(' ', char.MinValue);

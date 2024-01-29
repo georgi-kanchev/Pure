@@ -136,7 +136,7 @@ public class Editor
 
         PromptInput = new()
         {
-            Size = (20, 1),
+            Size = (30, 1),
             Value = "",
             IsSingleLine = true
         };

@@ -16,10 +16,11 @@ using System.Text;
 /// C. Arrays of A and B<br></br>
 /// D. Lists of A and B<br></br>
 /// E. Dictionaries of A and B<br></br>
+/// F. Custom
 /// </summary>
 public class Storage
 {
-    public (string? common, string? text, string? tuple) Dividers
+    public (string common, string text, string tuple) Dividers
     {
         get => (sep, sepStr, sepTuple);
         set
@@ -29,7 +30,7 @@ public class Storage
             sepTuple = string.IsNullOrEmpty(value.tuple) ? ";" : value.tuple;
         }
     }
-    public (string? oneD, string? twoD, string? dictionary) DividersCollection
+    public (string oneD, string twoD, string dictionary) DividersCollection
     {
         get => (sep1D, sep2D, sepDict);
         set
@@ -101,7 +102,7 @@ public class Storage
         var length = Dividers.common.Length + Environment.NewLine.Length;
         result.Remove(result.Length - length, length);
 
-        var placeholders = RemovePlaceholders(result.ToString());
+        var placeholders = FilterPlaceholders(result.ToString());
         return placeholders;
     }
     public string ToBase64()
@@ -186,13 +187,13 @@ public class Storage
     /// </summary>
     /// <param name="key">The key of the object instance.</param>
     /// <returns>The object instance as text.</returns>
-    public string? GetText(string key)
+    public string GetText(string key)
     {
         foreach (var kvp in data)
             if (TextToObject<string>(kvp.Key.key, 0) == key)
-                return kvp.Value;
+                return FilterPlaceholders(TextFromObject(kvp.Value, kvp.Key.typeId));
 
-        return default;
+        return string.Empty;
     }
     /// <summary>
     /// Gets the object instance with the specified key as an object of type <typeparamref name="T"/>.
@@ -265,9 +266,9 @@ public class Storage
 #region Backend
     private readonly Dictionary<int, Func<string, object>> onObjectFromText = new();
     private readonly Dictionary<int, Func<object, string>> onObjectToText = new();
-    private readonly Dictionary<(string key, int typeId), string?> data = new();
+    private readonly Dictionary<(string key, int typeId), string> data = new();
     private const string STR_PLACEHOLDER = "—";
-    private string? sep1D, sep2D, sepTuple, sepDict, sep, sepStr;
+    private string sep1D = "", sep2D = "", sepTuple = "", sepDict = "", sep = "", sepStr = "";
     private readonly List<string> strings = new();
 
     private void LoadFromBytes(byte[] bytes)
@@ -325,9 +326,9 @@ public class Storage
         }
     }
 
-    private string RemovePlaceholders(string dataAsText)
+    private string FilterPlaceholders(string dataAsText)
     {
-        return Regex.Replace(dataAsText, "—(\\d+)", match =>
+        return Regex.Replace(dataAsText, STR_PLACEHOLDER + "(\\d+)", match =>
         {
             var index = int.Parse(match.Groups[1].Value);
             return index >= 0 && index < strings.Count ?
@@ -339,7 +340,7 @@ public class Storage
     {
         return Regex.Replace(dataAsText, "`([^`]+)`", match =>
         {
-            var replacedValue = "—" + strings.Count;
+            var replacedValue = STR_PLACEHOLDER + strings.Count;
             strings.Add(match.Groups[1].Value);
             return replacedValue;
         });
@@ -578,7 +579,7 @@ public class Storage
         if (type == typeof(double)) return Wrap(number, double.MinValue, double.MaxValue);
         if (type == typeof(decimal)) return number;
 
-        dataAsText = RemovePlaceholders(dataAsText).Replace(sepStr, string.Empty);
+        dataAsText = FilterPlaceholders(dataAsText).Replace(sepStr, string.Empty);
 
         if (type == typeof(char) && char.TryParse(dataAsText, out var c))
             return c;

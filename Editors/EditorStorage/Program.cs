@@ -1,5 +1,6 @@
 ﻿using System.IO.Compression;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Pure.Editors.EditorStorage;
 
@@ -46,9 +47,9 @@ public static class Program
         VALUE_SYMBOL = "Symbol";
 
     private static readonly Editor editor;
-    private static Menu values, main;
+    private static readonly Menu values, main;
     private static DataType creating;
-    private static int currTupleAmount;
+    private static int currValueSelection;
     private static readonly BlockPack data = new(),
         panels = new(),
         moves = new(),
@@ -57,23 +58,50 @@ public static class Program
         adds = new(),
         dictKeys = new();
     private static (int x, int y) rightClickPos;
-    private static readonly InputBox promptText, promptKey, promptNumber;
+    private static readonly InputBox promptText, promptNumber;
     private static readonly Stepper promptSymbol;
     private static readonly List<string> selectedTypes = new();
     private static int lastIndexAdd;
+    private static readonly List<string> strings = new();
+    private const string STR_PLACEHOLDER = "—";
 
     static Program()
     {
         editor = new(title: "Pure - Storage Editor");
-        CreateMenus();
+
+        values = new(editor,
+            "Value… ",
+            $" {VALUE_TEXT}",
+            $" {VALUE_NUMBER}",
+            $" {VALUE_FLAG}",
+            $" {VALUE_SYMBOL}")
+        {
+            Size = (10, 5),
+            IsHidden = true
+        };
+        values.OnItemInteraction(Interaction.Trigger, OnMenuValuesClick);
+
+        main = new(editor,
+            "Add… ",
+            " Value",
+            " Tuple",
+            " List",
+            " Dictionary",
+            "Storage… ",
+            " New",
+            " Save",
+            " Load")
+        {
+            Size = (11, 9),
+            IsHidden = true
+        };
+        main.OnItemInteraction(Interaction.Trigger, OnMenuMainClick);
+
         SubscribeToClicks();
 
         promptText = new() { Size = (50, 30) };
         promptText.OnDisplay(() =>
             editor.MapsUi.SetInputBox(promptText, (int)Editor.LayerMapsUi.PromptBack));
-        promptKey = new() { Size = (20, 1), IsSingleLine = true };
-        promptKey.OnDisplay(() =>
-            editor.MapsUi.SetInputBox(promptKey, (int)Editor.LayerMapsUi.PromptBack));
         promptNumber = new() { Size = (20, 1), SymbolGroup = SymbolGroup.Digits | SymbolGroup.Math };
         promptNumber.OnDisplay(() =>
             editor.MapsUi.SetInputBox(promptNumber, (int)Editor.LayerMapsUi.PromptBack));
@@ -99,78 +127,6 @@ public static class Program
         });
     }
 
-    [MemberNotNull(nameof(main), nameof(values))]
-    private static void CreateMenus()
-    {
-        values = new(editor,
-            "Value… ",
-            $" {VALUE_TEXT}",
-            $" {VALUE_NUMBER}",
-            $" {VALUE_FLAG}",
-            $" {VALUE_SYMBOL}")
-        {
-            Size = (11, 5),
-            IsHidden = true
-        };
-        values.OnItemInteraction(Interaction.Trigger, btn =>
-        {
-            if (creating == DataType.Value)
-            {
-                selectedTypes.Add(btn.Text.Trim());
-                AddPanel();
-            }
-            else if (creating == DataType.Tuple)
-            {
-                selectedTypes.Add(btn.Text.Trim());
-
-                if (currTupleAmount == 2)
-                {
-                    AddPanel();
-                    return;
-                }
-
-                currTupleAmount++;
-                values[0].Text = $"Value {currTupleAmount}/2… ";
-            }
-            else if (creating is DataType.List or DataType.Dictionary)
-            {
-                selectedTypes.Add(btn.Text.Trim());
-                AddPanel();
-            }
-            else if (creating is DataType.TupleAdd)
-            {
-                var type = btn.Text.Trim();
-                selectedTypes.Add(type);
-
-                var list = (List)data[lastIndexAdd];
-                var remove = (List)removes[lastIndexAdd];
-                var move = (List)moves[lastIndexAdd];
-
-                list.Add(new Button { Text = GetDefaultValue(0) });
-                remove.Add(new Button());
-                move.Add(new Button());
-
-                list.Text += (list.Text == "" ? "" : ",") + type;
-                values.IsHidden = true;
-            }
-        });
-
-        main = new(editor,
-            "Add… ",
-            " Value",
-            " Tuple",
-            " List",
-            " Dictionary",
-            "Storage… ",
-            " New",
-            " Save",
-            " Load")
-        {
-            Size = (11, 9),
-            IsHidden = true
-        };
-        main.OnItemInteraction(Interaction.Trigger, OnMainMenuClick);
-    }
     private static void SubscribeToClicks()
     {
         Mouse.Button.Left.OnPress(() =>
@@ -190,7 +146,7 @@ public static class Program
         });
     }
 
-    private static void AddPanel()
+    private static void AddPanel(bool emptyData = false)
     {
         values.IsHidden = true;
 
@@ -212,7 +168,7 @@ public static class Program
         var remove = new List(itemCount: itemCount) { ItemSize = (1, 1) };
         var move = new List(itemCount: itemCount) { ItemSize = (1, 1) };
         var maps = editor.MapsEditor;
-        var keys = new List(itemCount: 0)
+        var keys = new List(itemCount: 1)
         {
             IsHidden = true,
             IsDisabled = true,
@@ -222,23 +178,24 @@ public static class Program
         if (creating == DataType.Value)
         {
             panel.SizeMinimum = (5, 3);
-            list[0].Text = GetDefaultValue(0);
+
+            if (emptyData == false)
+                list[0].Text = GetDefaultValue(0);
         }
         else if (creating == DataType.Tuple)
         {
-            for (var i = 0; i < list.Count; i++)
-                list[i].Text = GetDefaultValue(i);
+            if (emptyData == false)
+                for (var i = 0; i < list.Count; i++)
+                    list[i].Text = GetDefaultValue(i);
         }
         else if (creating is DataType.List or DataType.Dictionary)
-        {
-            panel.Text = $"{selectedTypes[0]} {creating}";
-            list[0].Text = GetDefaultValue(0);
-        }
+            if (emptyData == false)
+                list[0].Text = GetDefaultValue(0);
 
         if (creating == DataType.Dictionary)
         {
             panel.Size = (19, 4);
-            keys.Add(new Button { Text = GetUniqueText(keys, "Key") });
+            keys[0].Text = GetUniqueText(keys, "Key");
         }
 
         keys.OnItemDisplay(item =>
@@ -272,12 +229,22 @@ public static class Program
         panel.OnInteraction(Interaction.DoubleTrigger, () =>
         {
             Input.TilemapSize = editor.MapsUi.Size;
-            editor.Prompt.Text = "Edit Key";
-            promptKey.Value = panel.Text;
-            editor.Prompt.Open(promptKey, onButtonTrigger: i =>
+            editor.Prompt.Text = "Edit Key of " + add.Text;
+            editor.PromptInput.Value = panel.Text;
+            editor.PromptInput.SelectAll();
+            editor.Prompt.Open(editor.PromptInput, onButtonTrigger: i =>
             {
-                if (i == 0)
-                    panel.Text = promptKey.Value.EnsureUnique(allKeys);
+                if (i != 0 || editor.PromptInput.Value == panel.Text)
+                    return;
+
+                var unique = editor.PromptInput.Value.EnsureUnique(allKeys);
+
+                if (editor.PromptInput.Value != unique)
+                    editor.PromptMessage(
+                        $"The provided key '{editor.PromptInput.Value}' already " +
+                        $"exists.{Environment.NewLine}It was changed to '{unique}'.");
+
+                panel.Text = unique;
             });
             Input.TilemapSize = maps.Size;
         });
@@ -380,7 +347,7 @@ public static class Program
         editor.MapsEditor.SetPanel(panel);
     }
 
-    private static void OnMainMenuClick(Button btn)
+    private static void OnMenuMainClick(Button btn)
     {
         main.IsHidden = true;
         var index = main.IndexOf(btn);
@@ -393,13 +360,13 @@ public static class Program
             values.IsHidden = false;
             values.Position = main.Position;
 
-            if (creating == DataType.Tuple)
+            if (creating is DataType.Tuple)
             {
-                currTupleAmount = 1;
-                values[0].Text = $"Value {currTupleAmount}/2… ";
+                currValueSelection = 1;
+                values[0].Text = $"Value {currValueSelection}/2… ";
             }
             else
-                values[0].Text = $"{creating}… ";
+                values[0].Text = $"Value… ";
 
             return;
         }
@@ -412,6 +379,52 @@ public static class Program
         else if (index == 8)
             editor.PromptFileLoad(OnLoad);
     }
+    private static void OnMenuValuesClick(Button btn)
+    {
+        if (creating == DataType.Value)
+        {
+            selectedTypes.Add(btn.Text.Trim());
+            AddPanel();
+        }
+        else if (creating == DataType.Tuple)
+        {
+            selectedTypes.Add(btn.Text.Trim());
+
+            if (currValueSelection == 2)
+            {
+                AddPanel();
+                return;
+            }
+
+            currValueSelection++;
+            values[0].Text = $"Value {currValueSelection}/2… ";
+        }
+        else if (creating is DataType.List or DataType.Dictionary)
+        {
+            selectedTypes.Add(btn.Text.Trim());
+            AddPanel();
+        }
+        else if (creating is DataType.TupleAdd)
+        {
+            var type = btn.Text.Trim();
+            selectedTypes.Add(type);
+
+            var list = (List)data[lastIndexAdd];
+            var remove = (List)removes[lastIndexAdd];
+            var move = (List)moves[lastIndexAdd];
+
+            list.Add(new Button { Text = GetDefaultValue(0) });
+            remove.Add(new Button());
+            move.Add(new Button());
+
+            list.Text += (list.Text == "" ? "" : ",") + type;
+            values.IsHidden = true;
+        }
+
+        if (creating == DataType.Tuple)
+            values[0].Text = $"Value {currValueSelection}/2… ";
+    }
+
     private static void OnValueClick(List list, Button item, bool isKey = false)
     {
         var types = list.Text.Split(",");
@@ -620,28 +633,24 @@ public static class Program
         var storage = new Storage(bytes);
         var decompressed = Decompress(bytes);
         var measure = Decompress(storage.ToBytes()).Length;
-
-        if (decompressed.Length == measure)
-        {
-            
-            return;
-        }
-
+        var predict = decompressed.Length == measure;
         var hijackedBytes = decompressed[measure..];
         var offset = 0;
         var keys = storage.Keys;
         for (var i = 0; i < storage.Count; i++)
         {
-            var panelX = GrabInt();
-            var panelY = GrabInt();
-            var panelW = GrabInt();
-            var panelH = GrabInt();
-            creating = (DataType)GrabInt();
-            var types = GrabString(hijackedBytes, ref offset);
+            var panelX = predict ? 0 : GrabInt();
+            var panelY = predict ? 0 : GrabInt();
+            var panelW = predict ? 16 : GrabInt();
+            var panelH = predict ? 8 : GrabInt();
+            creating = predict ? default : (DataType)GrabInt();
+            var types = predict ? "" : GrabString(hijackedBytes, ref offset);
             selectedTypes.Clear();
-            selectedTypes.AddRange(types.Split(","));
 
-            AddPanel();
+            if (predict == false)
+                selectedTypes.AddRange(types.Split(","));
+
+            AddPanel(true);
 
             var list = (List)data[i];
             list.Text = types;
@@ -649,8 +658,35 @@ public static class Program
             panels[i].Size = (panelW, panelH);
             panels[i].Text = keys[i];
 
-            LoadData(storage, creating, i);
+            LoadData(storage, creating, i, predict);
+
+            OnPanelDisplay((Panel)panels[i]);
+
+            if (predict == false || i == 0)
+                continue;
+
+            var prevPos = panels[i - 1].Position;
+            var prevSz = panels[i - 1].Size;
+            panels[i].Position = (0, prevPos.y + prevSz.height);
+
+            if (prevPos.y + prevSz.height > editor.MapsEditor.Size.height)
+                panels[i].Position = (prevPos.x + prevSz.width, 0);
         }
+
+        if (predict)
+            editor.PromptMessage($"Loading files that were saved from the{Environment.NewLine}" +
+                                 $"engine rather than the editor is not{Environment.NewLine}" +
+                                 $"recommended. This is because the types{Environment.NewLine}" +
+                                 $"and values might get predicted{Environment.NewLine}" +
+                                 $"incorrectly. Keep in mind that the{Environment.NewLine}" +
+                                 $"editor supports fewer types than{Environment.NewLine}" +
+                                 $"the engine:{Environment.NewLine}" +
+                                 $"{Environment.NewLine}" +
+                                 $"A. Primitives and Strings     {Environment.NewLine}" +
+                                 $"B. Tuples of A                {Environment.NewLine}" +
+                                 $"C. Arrays of A                {Environment.NewLine}" +
+                                 $"D. Lists of A                 {Environment.NewLine}" +
+                                 $"E. Dictionaries of <String, A>");
 
         int GrabInt() => BitConverter.ToInt32(GetBytesFrom(hijackedBytes, 4, ref offset));
     }
@@ -663,6 +699,7 @@ public static class Program
         removes.Clear();
         adds.Clear();
         dictKeys.Clear();
+        strings.Clear();
     }
 
     private static string GetDefaultValue(int index)
@@ -772,7 +809,7 @@ public static class Program
             return ObjectFromText(storage, strTypes[i], list[i].Text, out type);
         }
     }
-    private static Array? CreateArray(Storage storage, string type, List list)
+    private static Array CreateArray(Storage storage, string type, List list)
     {
         var instance = Array.CreateInstance(GetType(type), list.Count);
         for (var i = 0; i < list.Count; i++)
@@ -794,7 +831,7 @@ public static class Program
         return instance;
     }
 
-    private static void LoadData(Storage storage, DataType type, int index)
+    private static void LoadData(Storage storage, DataType type, int index, bool predict)
     {
         var list = (List)data[index];
         var keys = (List)dictKeys[index];
@@ -802,12 +839,37 @@ public static class Program
         var move = (List)moves[index];
         var types = list.Text.Split(",");
         var key = panels[index].Text;
-        var value = storage.GetObject<string>(key) ?? "";
-        var isDict = type == DataType.Dictionary;
+        var value = storage.GetText(key);
+
+        if (value.IsSurroundedBy(storage.Dividers.text))
+            value = value[1..^1];
+
+        value = AddPlaceholders(value);
         var divider = "";
 
+        if (predict)
+        {
+            type = PredictDataType(storage, value, out var separator);
+            types = PredictValueTypes(storage, value.Split(separator));
+            adds[index].Text = $"{type}";
+
+            if (type != DataType.Dictionary)
+                list.Text = types.ToString(",");
+            else
+            {
+                var valueTypes = new string[types.Length / 2];
+                for (var i = 0; i < valueTypes.Length; i++)
+                    valueTypes[i] = types[i * 2 + 1];
+
+                types = valueTypes;
+                list.Text = valueTypes.ToString(",");
+            }
+        }
+
+        var isDict = type == DataType.Dictionary;
         if (type == DataType.Value)
         {
+            value = FilterPlaceholders(storage, value).Replace(storage.Dividers.text, string.Empty);
             LoadValue(list[0], types[0], list, value);
             return;
         }
@@ -821,6 +883,9 @@ public static class Program
         var multipleValues = value.Split(divider);
         for (var i = 0; i < multipleValues.Length; i++)
         {
+            var v = FilterPlaceholders(storage, multipleValues[i]);
+            v = v.Replace(storage.Dividers.text, string.Empty);
+
             if ((i == list.Count && isDict == false) ||
                 (i / 2 == list.Count && isDict))
             {
@@ -828,20 +893,20 @@ public static class Program
                 remove.Add(new Button());
                 move.Add(new Button());
 
-                if (type == DataType.Dictionary)
+                if (isDict)
                     keys.Add(new Button());
             }
 
             if (isDict)
             {
                 if (i % 2 == 0)
-                    LoadValue(keys[i / 2], types[0], keys, multipleValues[i]);
+                    LoadValue(keys[i / 2], types[0], keys, v);
                 else
-                    LoadValue(list[i / 2], types[0], list, multipleValues[i]);
+                    LoadValue(list[i / 2], types[0], list, v);
                 continue;
             }
 
-            LoadValue(list[i], types[i], list, multipleValues[i]);
+            LoadValue(list[i], types[i], list, v);
         }
     }
     private static void LoadValue(
@@ -926,6 +991,73 @@ public static class Program
             result[i] = panels[i].Text;
 
         return result;
+    }
+
+    private static DataType PredictDataType(Storage storage, string value, out string separator)
+    {
+        if (value.Contains(storage.Dividers.tuple))
+        {
+            separator = storage.Dividers.tuple;
+            return DataType.Tuple;
+        }
+        else if (value.Contains(storage.DividersCollection.oneD))
+        {
+            separator = storage.DividersCollection.oneD;
+            return DataType.List;
+        }
+        else if (value.Contains(storage.DividersCollection.dictionary))
+        {
+            separator = storage.DividersCollection.dictionary;
+            return DataType.Dictionary;
+        }
+
+        separator = "";
+        return DataType.Value;
+    }
+    private static string[] PredictValueTypes(Storage storage, string[] strValues)
+    {
+        var result = new string[strValues.Length];
+
+        for (var i = 0; i < strValues.Length; i++)
+        {
+            var v = strValues[i];
+            if (v.StartsWith(STR_PLACEHOLDER))
+            {
+                v = FilterPlaceholders(storage, v).Replace(storage.Dividers.text, string.Empty);
+                if (char.TryParse(v, out _))
+                    result[i] = VALUE_SYMBOL;
+                else
+                    result[i] = VALUE_TEXT;
+            }
+            else if (v.ToLower() == "true" || v.ToLower() == "false")
+                result[i] = VALUE_FLAG;
+            else if (v.IsNumber())
+                result[i] = VALUE_NUMBER;
+            else
+                result[i] = VALUE_TEXT;
+        }
+
+        return result;
+    }
+
+    private static string FilterPlaceholders(Storage storage, string dataAsText)
+    {
+        return Regex.Replace(dataAsText, STR_PLACEHOLDER + "(\\d+)", match =>
+        {
+            var index = int.Parse(match.Groups[1].Value);
+            return index >= 0 && index < strings.Count ?
+                $"{storage.Dividers.text}{strings[index]}{storage.Dividers.text}" :
+                match.Value;
+        });
+    }
+    private static string AddPlaceholders(string dataAsText)
+    {
+        return Regex.Replace(dataAsText, "`([^`]+)`", match =>
+        {
+            var replacedValue = STR_PLACEHOLDER + strings.Count;
+            strings.Add(match.Groups[1].Value);
+            return replacedValue;
+        });
     }
 #endregion
 }
