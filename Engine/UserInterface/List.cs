@@ -499,7 +499,7 @@ public class List : Block
 
     internal void OnUpdate()
     {
-        if (Input.IsJustPressed && IsHovered == false)
+        if (Input.IsButtonJustPressed() && IsHovered == false)
             IsCollapsed = true;
 
         // for in between items, overwrite mouse cursor (don't give it to the block bellow)

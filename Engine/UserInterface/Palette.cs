@@ -71,7 +71,7 @@ public class Palette : Block
         if (isPicking)
             Input.CursorResult = MouseCursor.Crosshair;
 
-        if (Input.IsJustPressed && isPicking && IsHovered == false)
+        if (Input.IsButtonJustPressed() && isPicking && IsHovered == false)
         {
             isPicking = false;
             SelectedColor = pick?.Invoke(Input.Position) ?? default;

@@ -13,6 +13,11 @@ public static class Storages
         storage.Set("test4", (5, "hi"));
         storage.Set("dict", new Dictionary<char, int> { { 'a', 25 }, { '/', 39 } });
 
-        File.WriteAllBytes("storage.st", storage);
+        // LYxRCoAgDIatR0+xAwSG5kN0mUkaCkKgg148fM5i8LF/37ZJCAFTBzIORpsZkltV2FCohLACxpDzvcBzl+wR5BB6GIqpNoqOsI1pu8bNt2J4xdg/bZzsgTGx9+n8fjtU2irsZfYX
+        var base64 = storage.ToBase64();
+        // Y2RgYFBgBBIJIMIaRNQwgQguEFO/CCRTklpckqBgoJCQkZqTk6+jUJ5flJOSoMAFljACy5RkZBbXlGQkliTUgEVr0sB6IEqMQUqMTaE8ExDP1DohIxMkn5KZDDE7MUHfyFQ/AQiNLRmgQACImaFsFiAOSa0oYYCKCUDFQI7lhMrpwBSwo2lmA2K/0tykVJB/GLiQtIN8yQ2XhRvAh6QEZAgvQgmEAgA=
+        var b64 =
+            "Y2RgYFBgBBIJIMIaRNQwgQguEFO/CCRTklpckqBgoJCQkZqTk6+jUJ5flJOSoMAFljACy5RkZBbXlGQkliTUgEVr0sB6IEqMQUqMTaE8ExDP1DohIxMkn5KZDDE7MUHfyFQ/AQiNLRmgQACImaFsFiAOSa0oYYCKCUDFQI7lhMrpwBSwo2lmA2K/0tykVJB/GLiQtIN8yQ2XhRvAh6QEZAgvQgmEAgA=\n";
+        var load = new Storage(b64, true);
     }
 }

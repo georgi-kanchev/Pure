@@ -164,11 +164,7 @@ public static class Ludo
         {
             Input.TilemapSize = map.Size;
             Input.Position = layer.PixelToWorld(Mouse.CursorPosition);
-            Input.Update(
-                Mouse.Button.Left.IsPressed(),
-                Mouse.ScrollDelta,
-                Array.Empty<int>(),
-                "");
+            Input.Update(Mouse.ButtonIDsPressed, Mouse.ScrollDelta);
 
             Time.Update();
             dice.Update();

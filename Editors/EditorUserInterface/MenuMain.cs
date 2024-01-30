@@ -6,16 +6,17 @@ internal class MenuMain : Menu
 
     public MenuMain() : base(
         editor,
-        "Block… ",
-        "  Add",
-        "------ ",
+        "Add… ",
+        " Block",
         "Blocks… ",
-        "  New",
-        "  Save",
-        "  Load")
+        " New",
+        " Save",
+        " Load",
+        " Copy",
+        " Paste")
     {
         IsHidden = true;
-        Size = (7, 7);
+        Size = (7, 8);
 
         OnItemInteraction(Interaction.Trigger, item =>
         {
@@ -24,34 +25,21 @@ internal class MenuMain : Menu
             var index = IndexOf(item);
             if (index == 1)
                 menus[MenuType.Add].Show(Position);
-            else if (index == 4)
-            {
-                selected = null;
-                ui.Clear();
-                panels.Clear();
-            }
-            else if (index == 5)
-                editor.PromptFileSave(ui.ToBytes());
-            else if (index == 6)
-                editor.PromptFileLoad(bytes =>
+            else if (index == 3)
+                editor.PromptConfirm(() =>
                 {
-                    var loadedUi = new BlockPack(bytes);
-
                     selected = null;
                     ui.Clear();
                     panels.Clear();
-                    for (var i = 0; i < loadedUi.Count; i++)
-                    {
-                        var block = loadedUi[i];
-                        var bBytes = block.ToBytes();
-                        var span = Span.Vertical;
-
-                        if (block is List l)
-                            span = l.Span;
-
-                        BlockCreate(block.GetType().Name, (0, 0), span, bBytes);
-                    }
                 });
+            else if (index == 4)
+                editor.PromptFileSave(ui.ToBytes());
+            else if (index == 5)
+                editor.PromptFileLoad(Load);
+            else if (index == 6)
+                Convert.ToBase64String(ui.ToBytes()).Copy();
+            else if (index == 7)
+                editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
         });
 
         Mouse.Button.Right.OnPress(() =>
@@ -66,5 +54,24 @@ internal class MenuMain : Menu
             Position = ((int)x + 1, (int)y + 1);
             IsHidden = false;
         });
+    }
+    private static void Load(byte[] bytes)
+    {
+        var loadedUi = new BlockPack(bytes);
+
+        selected = null;
+        ui.Clear();
+        panels.Clear();
+        for (var i = 0; i < loadedUi.Count; i++)
+        {
+            var block = loadedUi[i];
+            var bBytes = block.ToBytes();
+            var span = Span.Vertical;
+
+            if (block is List l)
+                span = l.Span;
+
+            BlockCreate(block.GetType().Name, (0, 0), span, bBytes);
+        }
     }
 }

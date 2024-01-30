@@ -122,7 +122,7 @@ public class Panel : Block
         TrySetCursorAndCache(isHoveringSides, isHovL, isHovR, isHovB, isHovCornersT, isHovT);
 
         if (IsFocused == false ||
-            Input.IsPressed == false ||
+            Input.IsButtonPressed() == false ||
             Input.Position == Input.PositionPrevious)
             return;
 
@@ -137,13 +137,10 @@ public class Panel : Block
         bool isHoveringTopCorners,
         bool isHoveringTop)
     {
-        var isClicked = Input.IsPressed && Input.WasPressed == false;
-        var wasClicked = Input.IsPressed == false && Input.WasPressed;
-
         if (IsDisabled == false && IsHovered)
             Input.CursorResult = MouseCursor.Arrow;
 
-        if (wasClicked)
+        if (Input.IsButtonJustReleased())
         {
             isMoving = false;
             isResizingL = false;
@@ -180,7 +177,7 @@ public class Panel : Block
 
         void Process(ref bool condition, MouseCursor cursor)
         {
-            if (isClicked && IsFocused)
+            if (Input.IsButtonJustPressed() && IsFocused)
             {
                 condition = true;
                 startBotR = (Position.x + Size.width, Position.y + Size.height);

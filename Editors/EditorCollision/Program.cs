@@ -70,7 +70,7 @@ public static class Program
 
     private static bool CanDrawLayer
     {
-        get => editor.Prompt.IsHidden == false || editor.Prompt.Text.Contains("Tile");
+        get => editor.Prompt.IsHidden == false && editor.Prompt.Text.Contains("Tile");
     }
     private static bool CanEditGlobal
     {
@@ -125,7 +125,7 @@ public static class Program
         tools.OnDisplay(() => editor.MapsUi.SetList(tools, FRONT));
         tools.OnUpdate(() => tools.IsHidden = editor.Prompt.IsHidden == false);
         tools.OnItemDisplay(item => editor.MapsUi.SetListItem(tools, item, FRONT));
-        editor.Ui.Add(new Block[] { tools });
+        editor.Ui.Add(tools);
 
         // override the default prompt buttons
         editor.OnPromptItemDisplay = item =>
@@ -286,63 +286,111 @@ public static class Program
     private static void CreateMenu()
     {
         menu = new(editor,
-            "Save… ",
-            " Solids Global",
-            " Solids Map",
-            "Load… ",
-            " Solids Global",
-            " Solids Map",
-            " Tileset",
-            " Tilemap")
+            "Graphics… ",
+            " Load",
+            "Map… ",
+            " Load",
+            " Paste",
+            "Solids… ",
+            " Global… ",
+            "  New",
+            "  Save",
+            "  Load",
+            "  Copy",
+            "  Paste",
+            " Map… ",
+            "  New",
+            "  Save",
+            "  Load",
+            "  Copy",
+            "  Paste")
         {
-            Size = (14, 8),
+            Size = (9, 18),
             IsHidingOnClick = false
         };
         menu.OnItemInteraction(Interaction.Trigger, btn =>
         {
             var index = menu.IndexOf(btn);
 
-            if (index is 1 or 2) // save solids
-            {
-                // ignore editor offset, keep original tilemap's view
-                var prevMapOffset = solidMap.Offset;
-                var prevGlobalOffset = solidPack.Offset;
-
-                solidPack.Offset = originalMapViewPos;
-                solidMap.Offset = originalMapViewPos;
-
-                var data = index == 1 ? solidPack.ToBytes() : solidMap.ToBytes();
-                editor.PromptFileSave(data);
-
-                solidPack.Offset = prevGlobalOffset;
-                solidMap.Offset = prevMapOffset;
-            }
-            else if (index is 4 or 5) // load solids
-                editor.PromptFileLoad(bytes =>
-                {
-                    if (index == 4)
-                        solidPack = new(bytes);
-                    else
-                    {
-                        solidMap = new(bytes);
-                        UpdateViewOffsets();
-                    }
-                });
-            else if (index == 6) // load tileset
+            if (index == 1) // load tileset
                 editor.PromptTileset(null, null);
-            else if (index == 7) // load map
+            else if (index == 3) // load map
                 editor.PromptLoadMap(result =>
                 {
                     layers = result;
                     originalMapViewPos = editor.MapsEditor.ViewPosition;
                     solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
+            else if (index == 4)
+                editor.PromptLoadMapBase64(result =>
+                {
+                    layers = result;
+                    originalMapViewPos = editor.MapsEditor.ViewPosition;
+                    solidMap.Update(editor.MapsEditor[currentLayer]);
+                });
+            else if (index is 7 or 13)
+                editor.PromptConfirm(() =>
+                {
+                    if (index == 7)
+                        solidPack = new();
+                    else
+                        solidMap = new();
+                });
+            else if (index is 8 or 14) // save solids
+                editor.PromptFileSave(Save(index == 8));
+            else if (index is 9 or 15) // load solids
+                editor.PromptFileLoad(bytes => Load(index == 9, bytes));
+            else if (index is 10 or 16) // copy
+                Convert.ToBase64String(Save(index == 10)).Copy();
+            else if (index is 11 or 17) // paste
+                editor.PromptBase64(() =>
+                    Load(index == 11, Convert.FromBase64String(editor.PromptInput.Value)));
         });
         menu.OnUpdate(() =>
         {
             menu.IsHidden = editor.Prompt.IsHidden == false;
             menu.Align((1f, 1f));
         });
+    }
+    private static void Load(bool global, byte[] bytes)
+    {
+        try
+        {
+            if (global)
+                solidPack = new(bytes);
+            else
+            {
+                solidMap = new(bytes);
+                UpdateViewOffsets();
+            }
+        }
+        catch (Exception)
+        {
+            editor.PromptMessage("Loading failed!");
+        }
+    }
+    private static byte[] Save(bool global)
+    {
+        try
+        {
+            // ignore editor offset, keep original tilemap's view
+            var prevMapOffset = solidMap.Offset;
+            var prevGlobalOffset = solidPack.Offset;
+
+            solidPack.Offset = originalMapViewPos;
+            solidMap.Offset = originalMapViewPos;
+
+            var data = global ? solidPack.ToBytes() : solidMap.ToBytes();
+            solidPack.Offset = prevGlobalOffset;
+            solidMap.Offset = prevMapOffset;
+
+            return data;
+        }
+        catch (Exception)
+        {
+            editor.PromptMessage("Saving failed!");
+            return Array.Empty<byte>();
+        }
     }
     private static void UpdateMap()
     {

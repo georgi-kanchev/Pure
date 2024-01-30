@@ -3,72 +3,6 @@
 using System.Text;
 
 /// <summary>
-/// The various user interface actions that can be triggered by user input.
-/// </summary>
-public enum Interaction
-{
-    Focus,
-    Unfocus,
-    Hover,
-    Unhover,
-    Press,
-    Release,
-    Trigger,
-    DoubleTrigger,
-    PressAndHold,
-    Scroll,
-    Select
-}
-
-/// <summary>
-/// The type of mouse cursor result from a user interaction with the user interface.
-/// </summary>
-public enum MouseCursor
-{
-    None = -1,
-    Arrow,
-    ArrowWait,
-    Wait,
-    Text,
-    Hand,
-    ResizeHorizontal,
-    ResizeVertical,
-    ResizeDiagonal1,
-    ResizeDiagonal2,
-    Move,
-    Crosshair,
-    Help,
-    Disable
-}
-
-/// <summary>
-/// Represents the keyboard keys used for input by the user interface.
-/// </summary>
-public enum Key
-{
-    Escape = 36,
-    ControlLeft = 37,
-    ShiftLeft = 38,
-    AltLeft = 39,
-    ControlRight = 41,
-    ShiftRight = 42,
-    AltRight = 43,
-    Enter = 58,
-    Backspace = 59,
-    Tab = 60,
-    PageUp = 61,
-    PageDown = 62,
-    End = 63,
-    Home = 64,
-    Insert = 65,
-    Delete = 66,
-    ArrowLeft = 71,
-    ArrowRight = 72,
-    ArrowUp = 73,
-    ArrowDown = 74
-}
-
-/// <summary>
 /// Represents a user interface block that the user can interact with and receive some
 /// results back.
 /// </summary>
@@ -204,14 +138,6 @@ public abstract class Block
     /// </summary>
     public bool IsHovered { get; private set; }
     /// <summary>
-    /// Gets a value indicating whether the user interface block is currently 
-    /// being pressed and hovered by the input.
-    /// </summary>
-    public bool IsPressed
-    {
-        get => IsHovered && Input.IsPressed;
-    }
-    /// <summary>
     /// Gets a value indicating whether the user interface block is currently held by the input,
     /// regardless of being hovered or not.
     /// </summary>
@@ -308,7 +234,7 @@ public abstract class Block
         else if (IsHovered)
             Input.CursorResult = MouseCursor.Arrow;
 
-        var isJustPressed = Input.WasPressed == false && IsPressed;
+        var isJustPressed = Input.IsButtonJustPressed() && IsPressed();
         var isJustScrolled = Input.ScrollDelta != 0 && IsHovered;
 
         if (isJustPressed || isJustScrolled)
@@ -327,12 +253,24 @@ public abstract class Block
             Interact(Interaction.Hover);
         if (IsHovered == false && wasHovered)
             Interact(Interaction.Unhover);
-        if (IsPressed && Input.WasPressed == false)
+        if (IsPressed() && Input.IsButtonJustPressed())
             Interact(Interaction.Press);
-        if (IsHovered && IsPressed == false && Input.WasPressed)
+        if (IsHovered && IsPressed() == false && Input.IsButtonJustReleased())
             Interact(Interaction.Release);
         if (IsPressedAndHeld && Input.IsJustHeld)
             Interact(Interaction.PressAndHold);
+
+        const MouseButton RMB = MouseButton.Right;
+        if (IsPressed(RMB) && Input.IsButtonJustPressed(RMB))
+            Interact(Interaction.PressRight);
+        if (IsHovered && IsPressed(RMB) == false && Input.IsButtonJustReleased(RMB))
+            Interact(Interaction.ReleaseRight);
+
+        const MouseButton MMB = MouseButton.Middle;
+        if (IsPressed(MMB) && Input.IsButtonJustPressed(MMB))
+            Interact(Interaction.PressMiddle);
+        if (IsHovered && IsPressed(MMB) == false && Input.IsButtonJustReleased(MMB))
+            Interact(Interaction.ReleaseMiddle);
 
         var p = Input.Position;
         var pp = Input.PositionPrevious;
@@ -375,6 +313,10 @@ public abstract class Block
         }
     }
 
+    public bool IsPressed(MouseButton button = default)
+    {
+        return IsHovered && Input.IsButtonPressed(button);
+    }
     public bool IsOverlapping((float x, float y) point)
     {
         if (point.x < 0 ||
@@ -590,7 +532,7 @@ public abstract class Block
             return;
         }
 
-        if (IsHovered && Input.IsJustReleased && IsPressedAndHeld)
+        if (IsHovered && Input.IsButtonJustReleased() && IsPressedAndHeld)
         {
             IsPressedAndHeld = false;
             Interact(Interaction.Trigger);
@@ -608,10 +550,10 @@ public abstract class Block
             isReadyForDoubleClick = false;
         }
 
-        if (IsHovered && Input.IsJustPressed)
+        if (IsHovered && Input.IsButtonJustPressed())
             IsPressedAndHeld = true;
 
-        if (IsHovered == false && Input.IsJustReleased)
+        if (IsHovered == false && Input.IsButtonJustReleased())
             IsPressedAndHeld = false;
     }
 

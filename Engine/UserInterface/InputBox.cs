@@ -589,7 +589,7 @@ public class InputBox : Block
         var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
         var hasMoved = Input.PositionPrevious != Input.Position;
 
-        if (Input.IsPressed)
+        if (Input.IsButtonPressed())
         {
             cursorBlink.Restart();
             clickDelay.Restart();
@@ -611,7 +611,7 @@ public class InputBox : Block
             if (IsPressedAndHeld && hasMoved)
                 MoveCursor();
 
-            if (Input.IsJustPressed == false)
+            if (Input.IsButtonJustPressed() == false)
                 return;
 
             // click

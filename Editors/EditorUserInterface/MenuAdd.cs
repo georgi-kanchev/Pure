@@ -5,20 +5,20 @@ internal class MenuAdd : Menu
     public MenuAdd() : base(
         editor,
         "Add… ",
-        $"  {nameof(Button)}",
-        $"  {nameof(InputBox)}",
-        $"  {nameof(Pages)}",
-        $"  {nameof(Panel)}",
-        $"  {nameof(Palette)}",
-        $"  {nameof(Slider)}",
-        $"  {nameof(Engine.UserInterface.Scroll)}",
-        $"  {nameof(Stepper)}",
-        $"  {nameof(Layout)}",
-        $"  {nameof(List)}",
-        $"  {nameof(FileViewer)}")
+        $" {nameof(Button)}",
+        $" {nameof(InputBox)}",
+        $" {nameof(Pages)}",
+        $" {nameof(Panel)}",
+        $" {nameof(Palette)}",
+        $" {nameof(Slider)}",
+        $" {nameof(Engine.UserInterface.Scroll)}",
+        $" {nameof(Stepper)}",
+        $" {nameof(Layout)}",
+        $" {nameof(List)}",
+        $" {nameof(FileViewer)}")
     {
         IsHidden = true;
-        Size = (12, 12);
+        Size = (11, 12);
 
         OnItemInteraction(Interaction.Trigger, item =>
         {

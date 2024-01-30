@@ -1,8 +1,82 @@
-using System.Runtime.InteropServices;
-
 namespace Pure.Engine.UserInterface;
 
+using System.Runtime.InteropServices;
 using System.Diagnostics;
+
+/// <summary>
+/// The various user interface actions that can be triggered by user input.
+/// </summary>
+public enum Interaction
+{
+    Focus,
+    Unfocus,
+    Hover,
+    Unhover,
+    Press,
+    Release,
+    Trigger,
+    DoubleTrigger,
+    PressAndHold,
+    PressRight,
+    ReleaseRight,
+    PressMiddle,
+    ReleaseMiddle,
+    Scroll,
+    Select
+}
+
+/// <summary>
+/// The type of mouse cursor result from a user interaction with the user interface.
+/// </summary>
+public enum MouseCursor
+{
+    None = -1,
+    Arrow,
+    ArrowWait,
+    Wait,
+    Text,
+    Hand,
+    ResizeHorizontal,
+    ResizeVertical,
+    ResizeDiagonal1,
+    ResizeDiagonal2,
+    Move,
+    Crosshair,
+    Help,
+    Disable
+}
+
+public enum MouseButton
+{
+    Left, Right, Middle
+}
+
+/// <summary>
+/// Represents the keyboard keys used for input by the user interface.
+/// </summary>
+public enum Key
+{
+    Escape = 36,
+    ControlLeft = 37,
+    ShiftLeft = 38,
+    AltLeft = 39,
+    ControlRight = 41,
+    ShiftRight = 42,
+    AltRight = 43,
+    Enter = 58,
+    Backspace = 59,
+    Tab = 60,
+    PageUp = 61,
+    PageDown = 62,
+    End = 63,
+    Home = 64,
+    Insert = 65,
+    Delete = 66,
+    ArrowLeft = 71,
+    ArrowRight = 72,
+    ArrowUp = 73,
+    ArrowDown = 74
+}
 
 /// <summary>
 /// Represents user input for received by the user interface.
@@ -41,24 +115,23 @@ public static class Input
     /// <summary>
     /// Applies input to all user interface blocks, updating their state accordingly.
     /// </summary>
-    /// <param name="isPressed">Whether an input is currently pressed.</param>
+    /// <param name="buttonsPressed">An array of currently pressed mouse buttons.</param>
     /// <param name="scrollDelta">The amount the mouse wheel has been scrolled.</param>
     /// <param name="keysPressed">An array of currently pressed keys on the keyboard.</param>
     /// <param name="keysTyped">A string containing characters typed on the keyboard.</param>
     public static void Update(
-        bool isPressed = default,
+        int[]? buttonsPressed = default,
         int scrollDelta = default,
         int[]? keysPressed = default,
         string? keysTyped = default)
     {
         CursorResult = MouseCursor.Arrow;
 
-        WasPressed = IsPressed;
         TypedPrevious = Typed;
         prevPressedKeys.Clear();
         prevPressedKeys.AddRange(pressedKeys);
-
-        IsPressed = isPressed;
+        prevPressedBtns.Clear();
+        prevPressedBtns.AddRange(pressedBtns);
 
         if (keysPressed != null)
         {
@@ -69,11 +142,20 @@ public static class Input
             PressedKeys = keys;
         }
 
+        if (buttonsPressed != null)
+        {
+            var buttons = new MouseButton[buttonsPressed.Length];
+            for (var i = 0; i < buttonsPressed.Length; i++)
+                buttons[i] = (MouseButton)buttonsPressed[i];
+
+            PressedButtons = buttons;
+        }
+
         Typed = keysTyped?.Replace("\n", "").Replace("\t", "").Replace("\r", "");
 
         ScrollDelta = scrollDelta;
 
-        if (IsJustPressed)
+        if (IsButtonJustPressed())
             hold.Restart();
 
         IsJustHeld = false;
@@ -85,7 +167,7 @@ public static class Input
         }
 
         FocusedPrevious = Focused;
-        if (WasPressed == false && IsPressed)
+        if (IsButtonJustPressed())
             Focused = default;
     }
 
@@ -93,19 +175,10 @@ public static class Input
     internal const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f, DOUBLE_CLICK_DELAY = 0.5f;
     internal static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     internal static readonly List<Key> pressedKeys = new(), prevPressedKeys = new();
+    internal static readonly List<MouseButton> pressedBtns = new(), prevPressedBtns = new();
     private static (int width, int height) tilemapSize;
     internal static Block? FocusedPrevious { get; set; }
 
-    internal static bool WasPressed { get; private set; }
-    internal static bool IsPressed { get; private set; }
-    internal static bool IsJustPressed
-    {
-        get => WasPressed == false && IsPressed;
-    }
-    internal static bool IsJustReleased
-    {
-        get => WasPressed && IsPressed == false;
-    }
     internal static bool IsJustHeld { get; private set; }
 
     internal static string? Typed { get; private set; }
@@ -123,6 +196,17 @@ public static class Input
                 pressedKeys.AddRange(value);
         }
     }
+    internal static MouseButton[]? PressedButtons
+    {
+        get => pressedBtns.ToArray();
+        private set
+        {
+            pressedBtns.Clear();
+
+            if (value != null && value.Length != 0)
+                pressedBtns.AddRange(value);
+        }
+    }
 
     internal static bool IsKeyPressed(Key key)
     {
@@ -135,6 +219,18 @@ public static class Input
     internal static bool IsKeyJustReleased(Key key)
     {
         return IsKeyPressed(key) == false && prevPressedKeys.Contains(key);
+    }
+    internal static bool IsButtonPressed(MouseButton button = default)
+    {
+        return pressedBtns.Contains(button);
+    }
+    internal static bool IsButtonJustPressed(MouseButton button = default)
+    {
+        return IsButtonPressed(button) && prevPressedBtns.Contains(button) == false;
+    }
+    internal static bool IsButtonJustReleased(MouseButton button = default)
+    {
+        return IsButtonPressed(button) == false && prevPressedBtns.Contains(button);
     }
 
     internal static void Copy(this string text)

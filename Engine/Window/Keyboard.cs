@@ -138,9 +138,9 @@ public static class Keyboard
     {
         get
         {
-            var press = KeysPressed;
-            var result = new int[press.Length];
-            for (var i = 0; i < press.Length; i++)
+            var press = pressed;
+            var result = new int[press.Count];
+            for (var i = 0; i < press.Count; i++)
                 result[i] = (int)press[i];
 
             return result;

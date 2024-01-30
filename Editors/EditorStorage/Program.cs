@@ -90,9 +90,11 @@ public static class Program
             "Storage… ",
             " New",
             " Save",
-            " Load")
+            " Load",
+            " Copy",
+            " Paste")
         {
-            Size = (11, 9),
+            Size = (11, 12),
             IsHidden = true
         };
         main.OnItemInteraction(Interaction.Trigger, OnMenuMainClick);
@@ -352,7 +354,7 @@ public static class Program
         main.IsHidden = true;
         var index = main.IndexOf(btn);
 
-        if (index < 6)
+        if (index < 5)
         {
             creating = (DataType)(main.IndexOf(btn) - 1);
             selectedTypes.Clear();
@@ -372,12 +374,15 @@ public static class Program
         }
 
         if (index == 6)
-            editor.PromptYesNo($"Any unsaved changes will be lost.{Environment.NewLine}" +
-                               $"Confirm?", ResetAll);
+            editor.PromptConfirm(ResetAll);
         else if (index == 7)
-            editor.PromptFileSave(OnSave());
+            editor.PromptFileSave(Save());
         else if (index == 8)
-            editor.PromptFileLoad(OnLoad);
+            editor.PromptFileLoad(Load);
+        else if (index == 9)
+            Convert.ToBase64String(Save()).Copy();
+        else if (index == 10)
+            editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
     }
     private static void OnMenuValuesClick(Button btn)
     {
@@ -586,109 +591,124 @@ public static class Program
         keys.Add(new Button { Text = GetUniqueText(keys, "Key") });
     }
 
-    private static byte[] OnSave()
+    private static byte[] Save()
     {
-        var result = new List<byte>();
-        var storage = new Storage();
-        for (var i = 0; i < data.Count; i++)
+        try
         {
-            var list = (List)data[i];
-            var types = list.Text.Split(",");
-            var dataType = adds[i].Text;
-            var key = panels[i].Text;
+            var result = new List<byte>();
+            var storage = new Storage();
+            for (var i = 0; i < data.Count; i++)
+            {
+                var list = (List)data[i];
+                var types = list.Text.Split(",");
+                var dataType = adds[i].Text;
+                var key = panels[i].Text;
 
-            if (dataType == nameof(DataType.Value))
-                storage.Set(key, ObjectFromText(storage, types[0], list[0].Text, out _));
-            else if (dataType == nameof(DataType.Tuple))
-                storage.Set(key, CreateTuple(storage, types, list));
-            else if (dataType == nameof(DataType.List))
-                storage.Set(key, CreateArray(storage, types[0], list));
-            else if (dataType == nameof(DataType.Dictionary))
-                storage.Set(key, CreateDictionary(storage, types[0], (List)dictKeys[i], list));
+                if (dataType == nameof(DataType.Value))
+                    storage.Set(key, ObjectFromText(storage, types[0], list[0].Text, out _));
+                else if (dataType == nameof(DataType.Tuple))
+                    storage.Set(key, CreateTuple(storage, types, list));
+                else if (dataType == nameof(DataType.List))
+                    storage.Set(key, CreateArray(storage, types[0], list));
+                else if (dataType == nameof(DataType.Dictionary))
+                    storage.Set(key, CreateDictionary(storage, types[0], (List)dictKeys[i], list));
+            }
+
+            var bytes = Decompress(storage.ToBytes());
+            result.AddRange(bytes);
+
+            // hijack the end of the file to save some extra info
+            // should be ignored by the engine but not by the editor
+
+            for (var i = 0; i < data.Count; i++)
+            {
+                var panel = panels[i];
+                result.AddRange(BitConverter.GetBytes(panel.Position.x));
+                result.AddRange(BitConverter.GetBytes(panel.Position.y));
+                result.AddRange(BitConverter.GetBytes(panel.Size.width));
+                result.AddRange(BitConverter.GetBytes(panel.Size.height));
+                result.AddRange(BitConverter.GetBytes(DataTypeToInt(adds[i].Text)));
+                PutString(result, data[i].Text);
+            }
+
+            return Compress(result.ToArray());
         }
-
-        var bytes = Decompress(storage.ToBytes());
-        result.AddRange(bytes);
-
-        // hijack the end of the file to save some extra info
-        // should be ignored by the engine but not by the editor
-
-        for (var i = 0; i < data.Count; i++)
+        catch (Exception)
         {
-            var panel = panels[i];
-            result.AddRange(BitConverter.GetBytes(panel.Position.x));
-            result.AddRange(BitConverter.GetBytes(panel.Position.y));
-            result.AddRange(BitConverter.GetBytes(panel.Size.width));
-            result.AddRange(BitConverter.GetBytes(panel.Size.height));
-            result.AddRange(BitConverter.GetBytes(DataTypeToInt(adds[i].Text)));
-            PutString(result, data[i].Text);
+            editor.PromptMessage("Saving failed!");
+            return Array.Empty<byte>();
         }
-
-        return Compress(result.ToArray());
     }
-    private static void OnLoad(byte[] bytes)
+    private static void Load(byte[] bytes)
     {
-        ResetAll();
-
-        var storage = new Storage(bytes);
-        var decompressed = Decompress(bytes);
-        var measure = Decompress(storage.ToBytes()).Length;
-        var predict = decompressed.Length == measure;
-        var hijackedBytes = decompressed[measure..];
-        var offset = 0;
-        var keys = storage.Keys;
-        for (var i = 0; i < storage.Count; i++)
+        try
         {
-            var panelX = predict ? 0 : GrabInt();
-            var panelY = predict ? 0 : GrabInt();
-            var panelW = predict ? 16 : GrabInt();
-            var panelH = predict ? 8 : GrabInt();
-            creating = predict ? default : (DataType)GrabInt();
-            var types = predict ? "" : GrabString(hijackedBytes, ref offset);
-            selectedTypes.Clear();
+            ResetAll();
 
-            if (predict == false)
-                selectedTypes.AddRange(types.Split(","));
+            var storage = new Storage(bytes);
+            var decompressed = Decompress(bytes);
+            var measure = Decompress(storage.ToBytes()).Length;
+            var predict = decompressed.Length == measure;
+            var hijackedBytes = decompressed[measure..];
+            var offset = 0;
+            var keys = storage.Keys;
+            for (var i = 0; i < storage.Count; i++)
+            {
+                var panelX = predict ? 0 : GrabInt();
+                var panelY = predict ? 0 : GrabInt();
+                var panelW = predict ? 16 : GrabInt();
+                var panelH = predict ? 8 : GrabInt();
+                creating = predict ? default : (DataType)GrabInt();
+                var types = predict ? "" : GrabString(hijackedBytes, ref offset);
+                selectedTypes.Clear();
 
-            AddPanel(true);
+                if (predict == false)
+                    selectedTypes.AddRange(types.Split(","));
 
-            var list = (List)data[i];
-            list.Text = types;
-            panels[i].Position = (panelX, panelY);
-            panels[i].Size = (panelW, panelH);
-            panels[i].Text = keys[i];
+                AddPanel(true);
 
-            LoadData(storage, creating, i, predict);
+                var list = (List)data[i];
+                list.Text = types;
+                panels[i].Position = (panelX, panelY);
+                panels[i].Size = (panelW, panelH);
+                panels[i].Text = keys[i];
 
-            OnPanelDisplay((Panel)panels[i]);
+                LoadData(storage, creating, i, predict);
 
-            if (predict == false || i == 0)
-                continue;
+                OnPanelDisplay((Panel)panels[i]);
 
-            var prevPos = panels[i - 1].Position;
-            var prevSz = panels[i - 1].Size;
-            panels[i].Position = (0, prevPos.y + prevSz.height);
+                if (predict == false || i == 0)
+                    continue;
 
-            if (prevPos.y + prevSz.height > editor.MapsEditor.Size.height)
-                panels[i].Position = (prevPos.x + prevSz.width, 0);
+                var prevPos = panels[i - 1].Position;
+                var prevSz = panels[i - 1].Size;
+                panels[i].Position = (0, prevPos.y + prevSz.height);
+
+                if (prevPos.y + prevSz.height > editor.MapsEditor.Size.height)
+                    panels[i].Position = (prevPos.x + prevSz.width, 0);
+            }
+
+            if (predict)
+                editor.PromptMessage($"Loading storages that were saved by the{Environment.NewLine}" +
+                                     $"engine rather than the editor is not{Environment.NewLine}" +
+                                     $"recommended. This is because the types{Environment.NewLine}" +
+                                     $"and values might get predicted{Environment.NewLine}" +
+                                     $"incorrectly. Keep in mind that the{Environment.NewLine}" +
+                                     $"editor supports fewer types than the{Environment.NewLine}" +
+                                     $"engine. These types are:{Environment.NewLine}" +
+                                     $"{Environment.NewLine}" +
+                                     $"A. Primitives and Strings     {Environment.NewLine}" +
+                                     $"B. Tuples of A                {Environment.NewLine}" +
+                                     $"C. Arrays of A                {Environment.NewLine}" +
+                                     $"D. Lists of A                 {Environment.NewLine}" +
+                                     $"E. Dictionaries of <String, A>");
+
+            int GrabInt() => BitConverter.ToInt32(GetBytesFrom(hijackedBytes, 4, ref offset));
         }
-
-        if (predict)
-            editor.PromptMessage($"Loading files that were saved from the{Environment.NewLine}" +
-                                 $"engine rather than the editor is not{Environment.NewLine}" +
-                                 $"recommended. This is because the types{Environment.NewLine}" +
-                                 $"and values might get predicted{Environment.NewLine}" +
-                                 $"incorrectly. Keep in mind that the{Environment.NewLine}" +
-                                 $"editor supports fewer types than{Environment.NewLine}" +
-                                 $"the engine:{Environment.NewLine}" +
-                                 $"{Environment.NewLine}" +
-                                 $"A. Primitives and Strings     {Environment.NewLine}" +
-                                 $"B. Tuples of A                {Environment.NewLine}" +
-                                 $"C. Arrays of A                {Environment.NewLine}" +
-                                 $"D. Lists of A                 {Environment.NewLine}" +
-                                 $"E. Dictionaries of <String, A>");
-
-        int GrabInt() => BitConverter.ToInt32(GetBytesFrom(hijackedBytes, 4, ref offset));
+        catch (Exception)
+        {
+            editor.PromptMessage("Loading failed!");
+        }
     }
     private static void ResetAll()
     {

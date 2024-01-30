@@ -5,12 +5,12 @@ internal class MenuAddList : Menu
     public MenuAddList() : base(
         editor,
         $"{nameof(List)}… ",
-        $"  {Span.Vertical}",
-        $"  {Span.Horizontal}",
-        $"  {Span.Dropdown}")
+        $" {Span.Vertical}",
+        $" {Span.Horizontal}",
+        $" {Span.Dropdown}")
     {
         IsHidden = true;
-        Size = (12, 4);
+        Size = (11, 4);
 
         OnItemInteraction(Interaction.Trigger, item =>
         {

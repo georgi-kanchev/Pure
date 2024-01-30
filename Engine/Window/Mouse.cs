@@ -78,6 +78,18 @@ public static class Mouse
     {
         get => pressed.ToArray();
     }
+    public static int[] ButtonIDsPressed
+    {
+        get
+        {
+            var press = pressed;
+            var result = new int[press.Count];
+            for (var i = 0; i < press.Count; i++)
+                result[i] = (int)press[i];
+
+            return result;
+        }
+    }
     /// <summary>
     /// Gets the scroll delta of the mouse.
     /// </summary>

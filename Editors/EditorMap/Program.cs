@@ -6,6 +6,7 @@ global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
 global using System.Text;
+using System.IO.Compression;
 
 namespace Pure.Editors.EditorMap;
 
@@ -45,13 +46,15 @@ public static class Program
     private static void CreateMenu()
     {
         menu = new(editor,
-            "Save… ",
-            " Tilemap",
-            "Load… ",
-            " Tileset",
-            " Tilemap")
+            "Graphics… ",
+            " Load",
+            "Map… ",
+            " Save",
+            " Load",
+            " Copy",
+            " Paste")
         {
-            Size = (9, 5),
+            Size = (9, 8),
             IsHidden = true
         };
         menu.OnItemInteraction(Interaction.Trigger, btn =>
@@ -60,19 +63,7 @@ public static class Program
             menu.IsDisabled = true;
             var index = menu.IndexOf(btn);
 
-            if (index == 1) // save map
-            {
-                var layers = inspector.layers;
-                var bytes = new List<byte>();
-
-                PutInt(bytes, layers.Count);
-                for (var i = 0; i < layers.Count; i++)
-                    PutString(bytes, layers[i].Text);
-
-                bytes.AddRange(editor.MapsEditor.ToBytes());
-                editor.PromptFileSave(bytes.ToArray());
-            }
-            else if (index == 3) // load tileset
+            if (index == 1) // load tileset
                 editor.PromptTileset(
                     onSuccess: (layer, map) =>
                     {
@@ -81,8 +72,19 @@ public static class Program
                         tilePalette.map = map;
                     },
                     onFail: () => tilePalette.Create(tilePalette.layer.TilesetSize));
+            if (index == 3) // save map
+                editor.PromptFileSave(Save());
             else if (index == 4) // load map
                 editor.PromptLoadMap(layers =>
+                {
+                    inspector.layers.Clear();
+                    foreach (var layer in layers)
+                        inspector.layers.Add(new Button { Text = layer });
+                });
+            else if (index == 5)
+                Convert.ToBase64String(Save()).Copy();
+            else if (index == 6)
+                editor.PromptLoadMapBase64(layers =>
                 {
                     inspector.layers.Clear();
                     foreach (var layer in layers)
@@ -102,6 +104,31 @@ public static class Program
         });
     }
 
+    private static byte[] Save()
+    {
+        try
+        {
+            var layers = inspector.layers;
+            var bytes = new List<byte>();
+
+            var maps = Decompress(editor.MapsEditor.ToBytes());
+            bytes.AddRange(maps);
+
+            // hijack the end of the file to save some extra info
+            // should be ignored by the engine but not by the editor
+            PutInt(bytes, layers.Count);
+            for (var i = 0; i < layers.Count; i++)
+                PutString(bytes, layers[i].Text);
+
+            return Compress(bytes.ToArray());
+        }
+        catch (Exception)
+        {
+            editor.PromptMessage("Saving failed!");
+            return Array.Empty<byte>();
+        }
+    }
+
     private static void UpdateEditor()
     {
         editor.IsDisabledViewInteraction = inspector.IsHovered;
@@ -116,6 +143,24 @@ public static class Program
         var bytes = Encoding.UTF8.GetBytes(value);
         PutInt(intoBytes, bytes.Length);
         intoBytes.AddRange(bytes);
+    }
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+            stream.CopyTo(output);
+
+        return output.ToArray();
     }
 #endregion
 }

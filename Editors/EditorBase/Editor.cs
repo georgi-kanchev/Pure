@@ -7,6 +7,7 @@ global using Pure.Tools.TiledLoader;
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
+using System.IO.Compression;
 using System.Text;
 
 namespace Pure.Editors.EditorBase;
@@ -159,7 +160,7 @@ public class Editor
             LayerUi.TilemapSize = MapsUi.ViewSize;
 
             Input.Update(
-                Mouse.Button.Left.IsPressed(),
+                Mouse.ButtonIDsPressed,
                 Mouse.ScrollDelta,
                 Keyboard.KeyIDsPressed,
                 Keyboard.KeyTyped);
@@ -275,7 +276,7 @@ public class Editor
                 }
                 catch (Exception)
                 {
-                    PromptMessage("Failed to save file!");
+                    PromptMessage("Saving failed!");
                 }
             });
         });
@@ -296,7 +297,7 @@ public class Editor
             }
             catch (Exception)
             {
-                PromptMessage("Failed to load file!");
+                PromptMessage("Loading failed!");
             }
         });
     }
@@ -319,6 +320,19 @@ public class Editor
         tilesetPrompt.OnSuccess = onSuccess;
         tilesetPrompt.OnFail = onFail;
         tilesetPrompt.Open();
+    }
+    public void PromptConfirm(Action? onConfirm)
+    {
+        PromptYesNo($"Any unsaved changes will be lost.{Environment.NewLine}Confirm?", onConfirm);
+    }
+    public void PromptBase64(Action? onAccept)
+    {
+        Prompt.Text = "Paste Base64";
+        Prompt.Open(PromptInput, onButtonTrigger: i =>
+        {
+            if (i == 0)
+                onAccept?.Invoke();
+        });
     }
 
     public void SetGrid()
@@ -359,15 +373,15 @@ public class Editor
             if (btnIndex != 0)
                 return;
 
+            var selectedPaths = PromptFileViewer.SelectedPaths;
+            var file = selectedPaths.Length == 1 ?
+                selectedPaths[0] :
+                PromptFileViewer.CurrentDirectory;
+            var result = Array.Empty<string>();
+
             try
             {
-                var selectedPaths = PromptFileViewer.SelectedPaths;
-                var file = selectedPaths.Length == 1 ?
-                    selectedPaths[0] :
-                    PromptFileViewer.CurrentDirectory;
                 var maps = default(TilemapPack);
-                var result = Array.Empty<string>();
-
                 if (Path.GetExtension(file) == ".tmx" && file != null)
                 {
                     var (layers, tilemapPack) = TiledLoader.Load(file);
@@ -377,19 +391,11 @@ public class Editor
                 else
                 {
                     var bytes = File.ReadAllBytes($"{file}");
-                    var byteOffset = 0;
-                    var layerCount = GrabInt(bytes, ref byteOffset);
-
-                    result = new string[layerCount];
-                    for (var i = 0; i < layerCount; i++)
-                        result[i] = GrabString(bytes, ref byteOffset);
-
-                    maps = new(bytes[byteOffset..]);
+                    maps = LoadMap(bytes, ref result);
                 }
 
                 MapsEditor.Clear();
-                for (var i = 0; i < maps.Count; i++)
-                    MapsEditor.Add(maps[i]);
+                MapsEditor.Add(maps);
 
                 onLoad?.Invoke(result);
             }
@@ -397,6 +403,19 @@ public class Editor
             {
                 PromptMessage("Could not load map!");
             }
+        });
+    }
+    public void PromptLoadMapBase64(Action<string[]> onLoad)
+    {
+        PromptBase64(() =>
+        {
+            var bytes = Convert.FromBase64String(PromptInput.Value);
+            var result = Array.Empty<string>();
+            var maps = LoadMap(bytes, ref result);
+            MapsEditor.Clear();
+            MapsEditor.Add(maps);
+
+            onLoad?.Invoke(result);
         });
     }
 
@@ -636,6 +655,45 @@ public class Editor
         var result = fromBytes[byteOffset..(byteOffset + amount)];
         byteOffset += amount;
         return result;
+    }
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+            stream.CopyTo(output);
+
+        return output.ToArray();
+    }
+
+    private static TilemapPack LoadMap(byte[] bytes, ref string[] result)
+    {
+        var maps = new TilemapPack(bytes);
+        var decompressed = Decompress(bytes);
+        var measure = Decompress(maps.ToBytes()).Length;
+
+        if (decompressed.Length == measure)
+            return maps;
+
+        // has hijacked data
+        var hijackedBytes = decompressed[measure..];
+        var byteOffset = 0;
+        var layerCount = GrabInt(hijackedBytes, ref byteOffset);
+
+        result = new string[layerCount];
+        for (var i = 0; i < layerCount; i++)
+            result[i] = GrabString(hijackedBytes, ref byteOffset);
+
+        return maps;
     }
 #endregion
 }
