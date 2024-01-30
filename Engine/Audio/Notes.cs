@@ -93,7 +93,7 @@ public class Notes : Audio
         buffer?.SaveToFile(path);
     }
 
-    public Notes Copy()
+    public Notes Duplicate()
     {
         return new(ToBytes());
     }

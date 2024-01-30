@@ -78,7 +78,7 @@ public class StoragePack
         return Compress(result.ToArray());
     }
 
-    public StoragePack Copy()
+    public StoragePack Duplicate()
     {
         return new(ToBytes());
     }

@@ -216,7 +216,7 @@ public class TilemapPack
         return data[0].TileIdsFrom(text);
     }
 
-    public TilemapPack Copy()
+    public TilemapPack Duplicate()
     {
         return new(ToBytes());
     }

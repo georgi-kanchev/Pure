@@ -80,7 +80,7 @@ public class Palette : Block
         SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
     }
 
-    public Palette Copy()
+    public Palette Duplicate()
     {
         return new(ToBytes());
     }

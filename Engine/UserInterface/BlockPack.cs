@@ -137,7 +137,7 @@ public class BlockPack
         }
     }
 
-    public BlockPack Copy()
+    public BlockPack Duplicate()
     {
         return new(ToBytes());
     }

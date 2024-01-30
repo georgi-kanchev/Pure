@@ -46,7 +46,7 @@ public class Button : Block
         return result.ToArray();
     }
 
-    public Button Copy()
+    public Button Duplicate()
     {
         return new(ToBytes());
     }

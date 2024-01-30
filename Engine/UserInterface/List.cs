@@ -390,7 +390,7 @@ public class List : Block
             item.OnInteraction(interaction, () => method.Invoke(item));
     }
 
-    public List Copy()
+    public List Duplicate()
     {
         return new(ToBytes());
     }

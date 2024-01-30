@@ -126,20 +126,20 @@ public class InputBox : Block
             var sb = new StringBuilder();
             var cursorIndex = IndicesToIndex(CursorIndices);
             var selectionIndex = IndicesToIndex(SelectionIndices);
-            var a = cursorIndex < selectionIndex ? cursorIndex : selectionIndex;
-            var b = cursorIndex > selectionIndex ? cursorIndex : selectionIndex;
+            var start = Math.Min(cursorIndex, selectionIndex);
+            var end = Math.Max(cursorIndex, selectionIndex);
 
-            for (var i = a; i < b; i++)
+            for (var i = start; i < end; i++)
             {
                 var (ix, iy) = IndicesFromIndex(i);
-                var symbol = GetSymbol((ix, iy));
 
-                if (symbol == default && ix == lines[iy].Length)
+                if (ix == lines[iy].Length)
                 {
-                    sb.Append(Environment.NewLine);
+                    sb.AppendLine();
                     continue;
                 }
 
+                var symbol = GetSymbol((ix, iy));
                 if (symbol != default)
                     sb.Append(symbol);
             }
@@ -372,7 +372,7 @@ public class InputBox : Block
         submit += method;
     }
 
-    public InputBox Copy()
+    public InputBox Duplicate()
     {
         return new(ToBytes());
     }
@@ -742,9 +742,10 @@ public class InputBox : Block
     }
     private void Type(string symbols, bool isPasting)
     {
-        if (isPasting && string.IsNullOrWhiteSpace(TextCopied) == false)
+        var paste = string.Empty.Paste(0);
+        if (isPasting && string.IsNullOrWhiteSpace(paste) == false)
         {
-            var pastedLines = TextCopied.Split(Environment.NewLine);
+            var pastedLines = paste.Split(Environment.NewLine);
             var carry = string.Empty;
 
             for (var i = 0; i < pastedLines.Length; i++)
@@ -768,7 +769,7 @@ public class InputBox : Block
                     lines[cy + i] += RemoveForbiddenSymbols(carry);
             }
 
-            var copied = TextCopied.Replace(Environment.NewLine, string.Empty);
+            var copied = paste.Replace(Environment.NewLine, string.Empty);
             CursorMove((copied.Length, 0));
             UpdateTextAndValue();
             return;
@@ -967,16 +968,16 @@ public class InputBox : Block
         if (IsReadOnly)
             return false;
 
-        if (ctrl && Input.Typed == "c")
+        if (ctrl && Input.Typed == "c" && Input.TypedPrevious != "c")
         {
-            TextCopied = SelectedText;
+            SelectedText.Copy();
             return true;
         }
         else if (ctrl && Input.Typed == "v")
             isPasting = true;
         else if (hasSelection && ctrl && Input.Typed == "x")
         {
-            TextCopied = SelectedText;
+            SelectedText.Copy();
             shouldDelete = true;
             TryDeleteSelected(ref justDeletedSelection, shouldDelete);
             return true;
@@ -1018,13 +1019,13 @@ public class InputBox : Block
     private (int symbol, int line) IndicesFromIndex(int index)
     {
         var curIndex = 0;
-        var symbol = 0;
         var line = 0;
+
         foreach (var l in lines)
         {
-            if (index >= curIndex && index <= curIndex + l.Length)
+            if (index < curIndex + l.Length)
             {
-                symbol += l.Length - index;
+                var symbol = l.Length - (curIndex + l.Length - index);
                 return (symbol, line);
             }
 
@@ -1032,7 +1033,7 @@ public class InputBox : Block
             line++;
         }
 
-        return (symbol, line);
+        return (0, 0);
     }
 
     private static void TryResetHoldTimers(out bool isHolding, bool isJustTyped)

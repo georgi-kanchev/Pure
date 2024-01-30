@@ -57,7 +57,7 @@ public class Panel : Block
         resize += method;
     }
 
-    public Panel Copy()
+    public Panel Duplicate()
     {
         return new(ToBytes());
     }

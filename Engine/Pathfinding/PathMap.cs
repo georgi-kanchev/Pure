@@ -123,7 +123,7 @@ public class PathMap
         return withColors;
     }
 
-    public PathMap Copy()
+    public PathMap Duplicate()
     {
         return new(ToBytes());
     }

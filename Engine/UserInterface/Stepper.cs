@@ -71,7 +71,7 @@ public class Stepper : Block
         return result.ToArray();
     }
 
-    public Stepper Copy()
+    public Stepper Duplicate()
     {
         return new(ToBytes());
     }

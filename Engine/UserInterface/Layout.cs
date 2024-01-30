@@ -89,7 +89,7 @@ public class Layout : Block
         displaySegment += method;
     }
 
-    public Layout Copy()
+    public Layout Duplicate()
     {
         return new(ToBytes());
     }

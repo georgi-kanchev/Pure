@@ -329,7 +329,7 @@ public class SolidMap
         return false;
     }
 
-    public SolidMap Copy()
+    public SolidMap Duplicate()
     {
         return new(ToBytes());
     }

@@ -148,7 +148,7 @@ public class SolidPack
         return false;
     }
 
-    public SolidPack Copy()
+    public SolidPack Duplicate()
     {
         return new(ToBytes());
     }

@@ -1,7 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿namespace Pure.Engine.Utilities;
 
-namespace Pure.Engine.Utilities;
-
+using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -677,8 +676,6 @@ public static class Extensions
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 Process.Start("xdg-open", url);
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                Process.Start("open", url);
             else
                 Console.WriteLine($"Could not load URL '{url}'.");
         }
@@ -708,6 +705,91 @@ public static class Extensions
             number++;
 
         return $"{baseName}{number}";
+    }
+
+    public static void Copy(this string text)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c echo '{text}' | clip",
+                RedirectStandardOutput = false,
+                UseShellExecute = true,
+                CreateNoWindow = true
+            };
+
+            Process.Start(psi)?.WaitForExit();
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "bash",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = false,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = new Process();
+            process.StartInfo = psi;
+            process.Start();
+
+            using (var sw = process.StandardInput)
+            {
+                if (sw.BaseStream.CanWrite)
+                {
+                    text = text.TrimEnd('\n');
+                    sw.Write($"echo '{text}' | xclip -selection clipboard");
+                }
+            }
+
+            process.WaitForExit();
+        }
+    }
+    public static string Paste(this string text, int index)
+    {
+        var result = string.Empty;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = "/c echo off | clip",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = new Process();
+            process.StartInfo = psi;
+            process.Start();
+            using var reader = process.StandardOutput;
+            result = reader.ReadToEnd().Trim();
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "xclip",
+                Arguments = "-selection clipboard -o",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+
+            if (process == null)
+                return string.Empty;
+
+            using var reader = process.StandardOutput;
+            result = reader.ReadToEnd().Trim();
+        }
+
+        return text.Insert(index, result);
     }
 
     [SuppressMessage("ReSharper", "FormatStringProblem")]

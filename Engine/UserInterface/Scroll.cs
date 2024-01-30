@@ -65,7 +65,7 @@ public class Scroll : Block
         return result.ToArray();
     }
 
-    public Scroll Copy()
+    public Scroll Duplicate()
     {
         return new(ToBytes());
     }

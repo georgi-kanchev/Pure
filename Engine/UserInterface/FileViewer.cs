@@ -137,7 +137,7 @@ public class FileViewer : Block
         }
     }
 
-    public FileViewer Copy()
+    public FileViewer Duplicate()
     {
         return new(ToBytes());
     }

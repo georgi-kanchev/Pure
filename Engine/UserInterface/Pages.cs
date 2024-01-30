@@ -114,7 +114,7 @@ public class Pages : Block
             item.OnInteraction(interaction, () => method.Invoke(item));
     }
 
-    public Pages Copy()
+    public Pages Duplicate()
     {
         return new(ToBytes());
     }

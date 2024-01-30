@@ -249,7 +249,7 @@ public class Storage
         onObjectToText[typeId] = method;
     }
 
-    public Storage Copy()
+    public Storage Duplicate()
     {
         return new(ToBytes());
     }

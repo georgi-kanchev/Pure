@@ -447,7 +447,7 @@ public class Editor
 
         var (vw, vh) = MapsEditor.ViewSize;
         var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
-        var packCopy = MapsEditor.Copy();
+        var packCopy = MapsEditor.Duplicate();
 
         ChangeMapSize((w, h));
 

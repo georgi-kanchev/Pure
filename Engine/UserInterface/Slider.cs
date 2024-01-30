@@ -95,7 +95,7 @@ public class Slider : Block
             Input.CursorResult = MouseCursor.Hand;
     }
 
-    public Slider Copy()
+    public Slider Duplicate()
     {
         return new(ToBytes());
     }

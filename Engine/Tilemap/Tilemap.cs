@@ -71,7 +71,7 @@ public class Tilemap
         var w = tileData.GetLength(0);
         var h = tileData.GetLength(1);
         Size = (w, h);
-        data = Copy(tileData);
+        data = Duplicate(tileData);
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
         ids = new int[w, h];
         ViewSize = (w, h);
@@ -866,7 +866,7 @@ public class Tilemap
         return result;
     }
 
-    public Tilemap Copy()
+    public Tilemap Duplicate()
     {
         return new(ToBytes());
     }
@@ -887,7 +887,7 @@ public class Tilemap
     /// <returns>A new 2D array of tiles containing the tiles from the tilemap object.</returns>
     public static implicit operator Tile[,](Tilemap tilemap)
     {
-        return Copy(tilemap.data);
+        return Duplicate(tilemap.data);
     }
     /// <summary>
     /// Implicitly converts a tilemap object to a 2D array of tile bundles.
@@ -991,7 +991,7 @@ public class Tilemap
         var padLeft = spaces / 2 + text.Length;
         return text.PadLeft(padLeft).PadRight(length);
     }
-    private static T[,] Copy<T>(T[,] array)
+    private static T[,] Duplicate<T>(T[,] array)
     {
         var copy = new T[array.GetLength(0), array.GetLength(1)];
         Array.Copy(array, copy, array.Length);

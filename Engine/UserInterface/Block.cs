@@ -166,10 +166,6 @@ public abstract class Block
         }
     }
     /// <summary>
-    /// Gets or sets the text that has been copied to the user interface clipboard.
-    /// </summary>
-    public static string? TextCopied { get; set; } = "";
-    /// <summary>
     /// Gets or sets a value indicating whether the user interface block is hidden.
     /// </summary>
     public bool IsHidden
