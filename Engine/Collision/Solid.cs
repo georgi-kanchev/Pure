@@ -127,7 +127,7 @@ public struct Solid
     /// line; otherwise, false.</returns>
     public bool IsOverlapping(Line line)
     {
-        return line.IsCrossing(this);
+        return IsOverlapping(line.A) || IsOverlapping(line.B) || line.IsCrossing(this);
     }
     /// <param name="point">
     /// The line to test for overlap with.</param>
@@ -173,7 +173,7 @@ public struct Solid
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
@@ -195,5 +195,5 @@ public struct Solid
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.Collision;
+﻿using System.Collections.Concurrent;
+
+namespace Pure.Engine.Collision;
 
 using System.IO.Compression;
 using System.Runtime.InteropServices;
@@ -32,8 +34,8 @@ public class SolidMap
         for (var i = 0; i < ignoredCount; i++)
             IgnoredCellsAdd((BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>())));
 
-        var sectorCount = BitConverter.ToInt32(Get<int>());
-        for (var i = 0; i < sectorCount; i++)
+        var cellRectCount = BitConverter.ToInt32(Get<int>());
+        for (var i = 0; i < cellRectCount; i++)
         {
             var tileId = BitConverter.ToInt32(Get<int>());
             var rectAmount = BitConverter.ToInt32(Get<int>());
@@ -48,6 +50,15 @@ public class SolidMap
 
                 SolidsAdd(tileId, new Solid((w, h), (x, y), color));
             }
+        }
+
+        var tileIndicesCount = BitConverter.ToInt32(Get<int>());
+        for (var i = 0; i < tileIndicesCount; i++)
+        {
+            var x = BitConverter.ToInt32(Get<int>());
+            var y = BitConverter.ToInt32(Get<int>());
+            var tile = BitConverter.ToInt32(Get<int>());
+            tileIndices[(x, y)] = tile;
         }
 
         byte[] Get<T>()
@@ -91,6 +102,14 @@ public class SolidMap
                 result.AddRange(BitConverter.GetBytes(r.Size.height));
                 result.AddRange(BitConverter.GetBytes(r.Color));
             }
+        }
+
+        result.AddRange(BitConverter.GetBytes(tileIndices.Count));
+        foreach (var kvp in tileIndices)
+        {
+            result.AddRange(BitConverter.GetBytes(kvp.Key.x));
+            result.AddRange(BitConverter.GetBytes(kvp.Key.y));
+            result.AddRange(BitConverter.GetBytes(kvp.Value));
         }
 
         return Compress(result.ToArray());
@@ -162,9 +181,7 @@ public class SolidMap
     }
     public Solid[] SolidsIn(int tileId)
     {
-        return cellRects.ContainsKey(tileId) == false ?
-            Array.Empty<Solid>() :
-            cellRects[tileId].ToArray();
+        return cellRects.ContainsKey(tileId) == false ? Array.Empty<Solid>() : cellRects[tileId].ToArray();
     }
 
     public void SolidsClear()
@@ -307,7 +324,7 @@ public class SolidMap
     }
     public bool IsOverlapping(Line line)
     {
-        return line.CrossPoints(this).Length > 0;
+        return line.IsCrossing(this);
     }
     public bool IsOverlapping(Solid solid)
     {
@@ -321,12 +338,48 @@ public class SolidMap
     }
     public bool IsOverlapping((float x, float y) point)
     {
-        var neighborRects = GetNeighborRects(new(point, (1, 1)));
+        var neighborRects = GetNeighborRects((Solid)new(point, (1, 1)));
         for (var i = 0; i < neighborRects.Count; i++)
             if (neighborRects[i].IsOverlapping(point))
                 return true;
 
         return false;
+    }
+
+    public Solid[] CalculateLight((float x, float y) position, int radius = 10)
+    {
+        return CalculateSight(position, 0, radius, 360);
+    }
+    public Solid[] CalculateSight((float x, float y) position, float angle, int radius = 10, float fieldOfView = 60)
+    {
+        var (x, y) = position;
+        var result = new ConcurrentStack<Solid>();
+        var diameter = 2 * radius + 1;
+        var radiusSquared = radius * radius;
+        var halfFieldOfView = fieldOfView / 2;
+
+        angle = AngleWrap(angle);
+
+        Parallel.For(0, diameter * diameter, index =>
+        {
+            var i = index / diameter - radius;
+            var j = index % diameter - radius;
+
+            if (i * i + j * j > radiusSquared)
+                return;
+
+            var (endX, endY) = ((int)x + j, (int)y + i);
+            var line = new Line((x, y), (endX + 0.5f, endY + 0.5f));
+            var diff = AngleDifference(angle, line.Angle);
+
+            if (Math.Abs(diff) > halfFieldOfView)
+                return;
+
+            if (IsOverlapping(line) == false)
+                result.Push(new Solid((1, 1), (endX, endY)));
+        });
+
+        return result.ToArray();
     }
 
     public SolidMap Duplicate()
@@ -352,7 +405,7 @@ public class SolidMap
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     // save format in sectors
     // [amount of bytes]		- data
     // --------------------------------
@@ -411,12 +464,60 @@ public class SolidMap
 
         return result;
     }
+    public List<Solid> GetNeighborRects(Line line)
+    {
+        var (x0, y0) = ((int)line.A.x, (int)line.A.y);
+        var (x1, y1) = ((int)line.B.x, (int)line.B.y);
+        var dx = (int)MathF.Abs(x1 - x0);
+        var dy = (int)-MathF.Abs(y1 - y0);
+        var sx = x0 < x1 ? 1 : -1;
+        var sy = y0 < y1 ? 1 : -1;
+        var err = dx + dy;
+        var rects = new List<Solid>();
+
+        for (var i = 0; i < 1000; i++)
+        {
+            var ix = x0;
+            var iy = y0;
+
+            rects.AddRange(GetNeighborRects((Solid)new((1, 1), (ix, iy))));
+
+            if (x0 == x1 && y0 == y1)
+                break;
+
+            var e2 = 2 * err;
+
+            if (e2 > dy)
+            {
+                err += dy;
+                x0 += sx;
+            }
+
+            if (e2 >= dx)
+                continue;
+
+            err += dx;
+            y0 += sy;
+        }
+
+        return rects;
+    }
+
     private static (int, int) GetChunkSizeForRect(Solid globalRect)
     {
         var (w, h) = globalRect.Size;
         var resultW = Math.Max((int)MathF.Ceiling(w * 2f), 1);
         var resultH = Math.Max((int)MathF.Ceiling(h * 2f), 1);
         return (resultW, resultH);
+    }
+
+    public static float AngleDifference(float angle1, float angle2)
+    {
+        return Math.Abs((angle2 - angle1 + 540) % 360 - 180);
+    }
+    private static float AngleWrap(float angle)
+    {
+        return (angle % 360 + 360) % 360;
     }
 
     private static byte[] Compress(byte[] data)
@@ -440,5 +541,5 @@ public class SolidMap
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

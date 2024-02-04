@@ -23,7 +23,7 @@ public struct Line
     /// </summary>
     public float Length
     {
-        get => Vector2.Distance(new(A.Item1, A.Item2), new(B.Item1, B.Item2));
+        get => Vector2.Distance(new(A.x, A.y), new(B.x, B.y));
     }
     /// <summary>
     /// Gets the angle of the line in degrees.
@@ -37,7 +37,7 @@ public struct Line
     /// </summary>
     public (float x, float y) Direction
     {
-        get => Normalize((B.Item1 - A.Item1, B.Item2 - A.Item2));
+        get => Normalize((B.x - A.x, B.y - A.y));
     }
     /// <summary>
     /// Gets or sets the color of the line.
@@ -112,7 +112,7 @@ public struct Line
     /// </returns>
     public bool IsCrossing(SolidMap solidMap)
     {
-        return CrossPoints(solidMap).Length > 0;
+        return IsCrossing(solidMap.GetNeighborRects(this).ToArray());
     }
     /// <summary>
     ///     Checks if this line is crossing with any of the rectangles in the
@@ -140,7 +140,13 @@ public struct Line
     /// </returns>
     public bool IsCrossing(Solid solid)
     {
-        return CrossPoints(solid).Length > 0;
+        var (x, y) = solid.Position;
+        var (w, h) = solid.Size;
+        var t = new Line((x, y), (x + w, y));
+        var r = new Line((x + w, y), (x + w, y + h));
+        var b = new Line((x + w, y + h), (x, y + h));
+        var l = new Line((x, y + h), (x, y));
+        return IsCrossing(t) || IsCrossing(r) || IsCrossing(b) || IsCrossing(l);
     }
     /// <summary>
     /// Determines if this line is crossing another line.
@@ -162,8 +168,9 @@ public struct Line
     public bool IsCrossing((float x, float y) point)
     {
         var length = Length;
-        var sum = Distance(A, point) + Distance(B, point);
-        return IsBetween(sum, length - 0.01f, length + 0.01f);
+        var a = Vector2.Distance(new(A.x, A.y), new(point.x, point.y));
+        var b = Vector2.Distance(new(B.x, B.y), new(point.x, point.y));
+        return IsBetween(a + b, length - 0.01f, length + 0.01f);
     }
     /// <param name="point">
     ///     The point to check for crossing.
@@ -197,45 +204,10 @@ public struct Line
     /// </returns>
     public (float x, float y, uint color)[] CrossPoints(SolidMap solidMap)
     {
-        var (x0, y0) = ((int)A.Item1, (int)A.Item2);
-        var (x1, y1) = ((int)B.Item1, (int)B.Item2);
-        var dx = (int)MathF.Abs(x1 - x0);
-        var dy = (int)-MathF.Abs(y1 - y0);
-        var sx = x0 < x1 ? 1 : -1;
-        var sy = y0 < y1 ? 1 : -1;
-        var err = dx + dy;
-        var rects = new List<Solid>();
-
-        for (var k = 0; k < MAX_ITERATIONS; k++)
-        {
-            var ix = x0;
-            var iy = y0;
-
-            var neighbourCells = solidMap.GetNeighborRects(new((1, 1), (ix, iy)));
-            foreach (var cell in neighbourCells)
-                if (rects.Contains(cell) == false)
-                    rects.Add(cell);
-
-            if (x0 == x1 && y0 == y1)
-                break;
-
-            var e2 = 2 * err;
-
-            if (e2 > dy)
-            {
-                err += dy;
-                x0 += sx;
-            }
-
-            if (e2 >= dx)
-                continue;
-
-            err += dx;
-            y0 += sy;
-        }
-
+        var neighbours = solidMap.GetNeighborRects(this);
         var result = new List<(float, float, uint)>();
-        foreach (var r in rects)
+
+        foreach (var r in neighbours)
         {
             var crossPoints = CrossPoints(r);
             foreach (var p in crossPoints)
@@ -285,12 +257,12 @@ public struct Line
         var right = new Line(tr, br);
         var down = new Line(br, bl);
         var left = new Line(bl, tl);
-        var result = new List<(float, float, uint)>();
-        var points = new List<(float, float, uint)>
+        var result = new List<(float x, float y, uint)>();
+        var points = new List<(float x, float y, uint)>
             { CrossPoint(up), CrossPoint(right), CrossPoint(down), CrossPoint(left) };
 
         for (var i = 0; i < points.Count; i++)
-            if (float.IsNaN(points[i].Item1) == false && float.IsNaN(points[i].Item2) == false)
+            if (float.IsNaN(points[i].x) == false && float.IsNaN(points[i].y) == false)
                 result.Add(points[i]);
 
         return result.ToArray();
@@ -317,16 +289,16 @@ public struct Line
     /// </returns>
     public (float x, float y, uint color) ClosestPoint((float x, float y) point)
     {
-        var ap = (point.Item1 - A.Item1, point.Item2 - A.Item2);
-        var ab = (B.Item1 - A.Item1, B.Item2 - A.Item2);
+        var ap = (point.x - A.x, point.y - A.y);
+        var (abx, aby) = (B.x - A.x, B.y - A.y);
 
-        var magnitude = LengthSquared(ab);
-        var product = Dot(ap, ab);
+        var magnitude = LengthSquared((abx, aby));
+        var product = Dot(ap, (abx, aby));
         var distance = product / magnitude;
 
         return distance < 0 ? (A.x, A.y, uint.MaxValue) :
             distance > 1 ? (B.x, A.y, uint.MaxValue) :
-            (A.Item1 + ab.Item1 * distance, A.Item2 + ab.Item2 * distance, uint.MaxValue);
+            (A.x + abx * distance, A.y + aby * distance, uint.MaxValue);
     }
 
     /// <summary>
@@ -356,21 +328,19 @@ public struct Line
         return new(bytes);
     }
 
-#region Backend
-    private const int MAX_ITERATIONS = 1000;
-
+    #region Backend
     private static (float, float, uint) CrossPoint(
-        (float, float) a,
-        (float, float) b,
-        (float, float) c,
-        (float, float) d)
+        (float x, float y) a,
+        (float x, float y) b,
+        (float x, float y) c,
+        (float x, float y) d)
     {
-        var a1 = b.Item2 - a.Item2;
-        var b1 = a.Item1 - b.Item1;
-        var c1 = a1 * a.Item1 + b1 * a.Item2;
-        var a2 = d.Item2 - c.Item2;
-        var b2 = c.Item1 - d.Item1;
-        var c2 = a2 * c.Item1 + b2 * c.Item2;
+        var a1 = b.y - a.y;
+        var b1 = a.x - b.x;
+        var c1 = a1 * a.x + b1 * a.y;
+        var a2 = d.y - c.y;
+        var b2 = c.x - d.x;
+        var c2 = a2 * c.x + b2 * c.y;
         var determinant = a1 * b2 - a2 * b1;
 
         if (determinant == 0)
@@ -380,26 +350,20 @@ public struct Line
         var y = (a1 * c2 - a2 * c1) / determinant;
         return (x, y, uint.MaxValue);
     }
-    private static float ToAngle((float, float) direction)
+    private static float ToAngle((float x, float y) direction)
     {
         //Vector2 to Radians: atan2(Vector2.y, Vector2.x)
         //Radians to Angle: radians * (180 / Math.PI)
 
-        var rad = MathF.Atan2(direction.Item2, direction.Item1);
+        var rad = MathF.Atan2(direction.y, direction.x);
         var result = rad * (180f / MathF.PI);
-        return result;
+        return AngleWrap(result);
     }
     private static (float, float) Normalize((float, float) direction)
     {
         var (x, y) = direction;
         var distance = MathF.Sqrt(x * x + y * y);
         return (x / distance, y / distance);
-    }
-    private static float Distance((float, float) a, (float, float) b)
-    {
-        var (x1, y1) = a;
-        var (x2, y2) = b;
-        return MathF.Sqrt(MathF.Pow(x2 - x1, 2) + MathF.Pow(y2 - y1, 2));
     }
     private static bool IsBetween(
         float number,
@@ -428,6 +392,10 @@ public struct Line
         var (bx, by) = b;
         return ax * bx + ay * by;
     }
+    private static float AngleWrap(float angle)
+    {
+        return (angle % 360 + 360) % 360;
+    }
 
     private static byte[] Compress(byte[] data)
     {
@@ -450,5 +418,5 @@ public struct Line
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

@@ -15,7 +15,7 @@ public static class Run
 
         //Editors.EditorCollision.Program.Run();
         //Editors.EditorMap.Program.Run();
-        Editors.EditorUserInterface.Program.Run();
+        //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
         //RunExampleUserInterface();
@@ -24,6 +24,7 @@ public static class Run
         //Storages.Run();
         //Collision.Run();
         //Pathfinding.Run();
+        LineOfSightAndLights.Run();
         //Audio.Run();
         //UtilityExtensions.Run();
     }
