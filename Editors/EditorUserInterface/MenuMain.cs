@@ -26,18 +26,20 @@ internal class MenuMain : Menu
             if (index == 1)
                 menus[MenuType.Add].Show(Position);
             else if (index == 3)
+            {
                 editor.PromptConfirm(() =>
                 {
                     selected = null;
                     ui.Clear();
                     panels.Clear();
                 });
+            }
             else if (index == 4)
                 editor.PromptFileSave(ui.ToBytes());
             else if (index == 5)
                 editor.PromptFileLoad(Load);
             else if (index == 6)
-                Convert.ToBase64String(ui.ToBytes()).Copy();
+                Keyboard.Clipboard = Convert.ToBase64String(ui.ToBytes());
             else if (index == 7)
                 editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
         });

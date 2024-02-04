@@ -1,12 +1,16 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
+
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.TiledLoader;
+
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
+
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
+
 using System.IO.Compression;
 using System.Text;
 
@@ -95,7 +99,7 @@ public class Editor
 
         Ui = new();
         Prompt = new();
-        Prompt.OnDisplay(() => MapsUi.SetPrompt(Prompt, zOrder: (int)LayerMapsUi.PromptFade));
+        Prompt.OnDisplay(() => MapsUi.SetPrompt(Prompt, (int)LayerMapsUi.PromptFade));
         OnPromptItemDisplay = item => MapsUi.SetPromptItem(Prompt, item, (int)LayerMapsUi.PromptMiddle);
         Prompt.OnItemDisplay(item => OnPromptItemDisplay?.Invoke(item));
         promptSize = new()
@@ -150,9 +154,11 @@ public class Editor
     {
         SetGrid();
 
+        Input.OnTextCopy(() => Keyboard.Clipboard = Input.Clipboard);
         while (Window.KeepOpen())
         {
             Time.Update();
+
             MapsUi.Flush();
 
             LayerGrid.TilemapSize = MapGrid.ViewSize;
@@ -163,7 +169,8 @@ public class Editor
                 Mouse.ButtonIDsPressed,
                 Mouse.ScrollDelta,
                 Keyboard.KeyIDsPressed,
-                Keyboard.KeyTyped);
+                Keyboard.KeyTyped,
+                Keyboard.Clipboard);
 
             prevRaw = MousePositionRaw;
             MousePositionRaw = Mouse.CursorPosition;
@@ -347,18 +354,18 @@ public class Editor
         {
             var newX = x - (x + i) % GRID_GAP;
             MapGrid.SetLine(
-                pointA: (newX + i, y),
-                pointB: (newX + i, y + size.height),
-                tiles: new Tile(LayerMap.TileIdFull, color));
+                (newX + i, y),
+                (newX + i, y + size.height),
+                new Tile(LayerMap.TileIdFull, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
             MapGrid.SetLine(
-                pointA: (x, newY + i),
-                pointB: (x + size.width, newY + i),
-                tiles: new Tile(LayerMap.TileIdFull, color));
+                (x, newY + i),
+                (x + size.width, newY + i),
+                new Tile(LayerMap.TileIdFull, color));
         }
 
         OnSetGrid?.Invoke();
@@ -374,9 +381,7 @@ public class Editor
                 return;
 
             var selectedPaths = PromptFileViewer.SelectedPaths;
-            var file = selectedPaths.Length == 1 ?
-                selectedPaths[0] :
-                PromptFileViewer.CurrentDirectory;
+            var file = selectedPaths.Length == 1 ? selectedPaths[0] : PromptFileViewer.CurrentDirectory;
             var result = Array.Empty<string>();
 
             try
@@ -419,7 +424,7 @@ public class Editor
         });
     }
 
-#region Backend
+    #region Backend
     private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
     private const int GRID_GAP = 10;
     private readonly InputBox promptSize;
@@ -508,7 +513,7 @@ public class Editor
             var color = btn.GetInteractionColor(Color.Gray.ToBright());
             var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (sbyte)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
-            MapsUi[(int)LayerMapsUi.Front].SetTile(btn.Position, tile: rotations == 4 ? center : arrow);
+            MapsUi[(int)LayerMapsUi.Front].SetTile(btn.Position, rotations == 4 ? center : arrow);
         });
 
         Ui.Add(btn);
@@ -550,21 +555,21 @@ public class Editor
         MapPanel.Update();
 
         MapsUi[(int)LayerMapsUi.Back].SetBox(
-            position: MapPanel.Position,
-            size: MapPanel.Size,
-            tileFill: new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()),
-            cornerTileId: Tile.BOX_CORNER_ROUND,
-            borderTileId: Tile.SHADE_OPAQUE,
-            borderTint: Color.Gray.ToDark());
+            MapPanel.Position,
+            MapPanel.Size,
+            new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()),
+            Tile.BOX_CORNER_ROUND,
+            Tile.SHADE_OPAQUE,
+            Color.Gray.ToDark());
 
         MapsUi[FRONT].SetTextLine((0, 0), $"FPS:{fps}");
         MapsUi[FRONT].SetTextLine((11, bottomY - 2), $"{mw} x {mh}");
         MapsUi[FRONT].SetTextLine((12, bottomY), $"{vw} x {vh}");
 
         MapsUi[FRONT].SetTextRectangle(
-            position: (x, bottomY),
-            size: (TEXT_WIDTH, 1),
-            text: $"Cursor {(int)mx}, {(int)my}",
+            (x, bottomY),
+            (TEXT_WIDTH, 1),
+            $"Cursor {(int)mx}, {(int)my}",
             alignment: Alignment.Center);
 
         if (infoTextTimer <= 0)
@@ -574,9 +579,9 @@ public class Editor
         }
 
         MapsUi[FRONT].SetTextRectangle(
-            position: (x, 0),
-            size: (TEXT_WIDTH, TEXT_HEIGHT),
-            text: infoText,
+            (x, 0),
+            (TEXT_WIDTH, TEXT_HEIGHT),
+            infoText,
             alignment: Alignment.Top,
             scrollProgress: 1f);
     }
@@ -695,5 +700,5 @@ public class Editor
 
         return maps;
     }
-#endregion
+    #endregion
 }

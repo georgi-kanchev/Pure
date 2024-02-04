@@ -147,6 +147,12 @@ public static class Keyboard
         }
     }
 
+    public static string? Clipboard
+    {
+        get => SFML.Window.Clipboard.Contents;
+        set => SFML.Window.Clipboard.Contents = value;
+    }
+
     public static void CancelInput()
     {
         pressed.Clear();
@@ -159,6 +165,10 @@ public static class Keyboard
     public static bool IsPressed(this Key key)
     {
         return pressed.Contains(key);
+    }
+    public static bool IsAnyPressed()
+    {
+        return pressed.Count > 0;
     }
     public static string ToText(this Key key, bool isUsingShift)
     {
@@ -204,13 +214,14 @@ public static class Keyboard
             onKeyRelease[key] += method;
     }
 
-#region Backend
+    #region Backend
     private static Action<Key>? onKeyPressAny, onKeyReleaseAny;
     private static readonly Dictionary<Key, Action> onKeyPress = new();
     private static readonly Dictionary<Key, Action> onKeyRelease = new();
     private static readonly List<Key> pressed;
     private static readonly Dictionary<Key, (string, string)> symbols;
     private static readonly string[] shiftNumbers;
+
     static Keyboard()
     {
         KeyTyped = "";
@@ -290,5 +301,5 @@ public static class Keyboard
         KeyTyped = KeyTyped.Replace(symbol.ToLower(), "");
         KeyTyped = KeyTyped.Replace(symbol.ToUpper(), "");
     }
-#endregion
+    #endregion
 }

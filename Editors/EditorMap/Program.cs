@@ -1,10 +1,13 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
+
 global using Pure.Editors.EditorBase;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
+
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
+
 global using System.Text;
 using System.IO.Compression;
 
@@ -20,7 +23,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private static readonly Editor editor;
     private static readonly Inspector inspector;
     private static readonly TilePalette tilePalette;
@@ -31,7 +34,7 @@ public static class Program
     {
         var (mw, mh) = (50, 50);
 
-        editor = new(title: "Pure - Map Editor");
+        editor = new("Pure - Map Editor");
         editor.MapsEditor.Clear();
         editor.MapsEditor.Add(new Tilemap((mw, mh)));
         editor.MapsEditor.ViewSize = (mw, mh);
@@ -64,32 +67,39 @@ public static class Program
             var index = menu.IndexOf(btn);
 
             if (index == 1) // load tileset
+            {
                 editor.PromptTileset(
-                    onSuccess: (layer, map) =>
+                    (layer, map) =>
                     {
                         layer.Offset = (755, 340);
                         tilePalette.layer = layer;
                         tilePalette.map = map;
                     },
-                    onFail: () => tilePalette.Create(tilePalette.layer.TilesetSize));
+                    () => tilePalette.Create(tilePalette.layer.TilesetSize));
+            }
+
             if (index == 3) // save map
                 editor.PromptFileSave(Save());
             else if (index == 4) // load map
+            {
                 editor.PromptLoadMap(layers =>
                 {
                     inspector.layers.Clear();
                     foreach (var layer in layers)
                         inspector.layers.Add(new Button { Text = layer });
                 });
+            }
             else if (index == 5)
-                Convert.ToBase64String(Save()).Copy();
+                Keyboard.Clipboard = Convert.ToBase64String(Save());
             else if (index == 6)
+            {
                 editor.PromptLoadMapBase64(layers =>
                 {
                     inspector.layers.Clear();
                     foreach (var layer in layers)
                         inspector.layers.Add(new Button { Text = layer });
                 });
+            }
         });
 
         Mouse.Button.Right.OnPress(() =>
@@ -162,5 +172,5 @@ public static class Program
 
         return output.ToArray();
     }
-#endregion
+    #endregion
 }

@@ -15,7 +15,7 @@ public enum SymbolGroup
     Space = 32,
     Other = 64,
     All = Letters | Digits | Punctuation | Math | Special | Space | Other,
-    Password = 128,
+    Password = 128
 }
 
 /// <summary>
@@ -190,8 +190,10 @@ public class InputBox : Block
                 return;
 
             if (lineIndex >= lines.Count)
+            {
                 for (var i = lines.Count - 1; i <= lineIndex; i++)
                     lines.Insert(i, string.Empty);
+            }
 
             if (value == null)
                 lines.RemoveAt(lineIndex);
@@ -386,7 +388,7 @@ public class InputBox : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private readonly List<string> lines = new() { string.Empty };
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
 
@@ -572,7 +574,7 @@ public class InputBox : Block
             if (j >= lines[cy].Length - 1 && step > 0)
                 return index + 1;
 
-            if (char.IsLetterOrDigit(GetSymbol((j, cy))) == false ^ targetIsWord)
+            if ((char.IsLetterOrDigit(GetSymbol((j, cy))) == false) ^ targetIsWord)
                 return index + (step < 0 ? 1 : 0);
 
             index += step;
@@ -721,7 +723,7 @@ public class InputBox : Block
             (Allowed(Key.ArrowLeft, isHolding), (ctrl ? GetWordEndOffset(-1) : -1, 0)),
             (Allowed(Key.ArrowRight, isHolding), (ctrl ? GetWordEndOffset(1) : 1, 0)),
             (Allowed(Key.ArrowUp, isHolding), (0, -1)),
-            (Allowed(Key.ArrowDown, isHolding), (0, 1)),
+            (Allowed(Key.ArrowDown, isHolding), (0, 1))
         };
 
         for (var j = 0; j < hotkeys.Length; j++)
@@ -742,9 +744,9 @@ public class InputBox : Block
     }
     private void Type(string symbols, bool isPasting)
     {
-        var paste = string.Empty.Paste(0);
-        if (isPasting && string.IsNullOrWhiteSpace(paste) == false)
+        if (isPasting)
         {
+            var paste = Input.Clipboard ?? "";
             var pastedLines = paste.Split(Environment.NewLine);
             var carry = string.Empty;
 
@@ -970,14 +972,17 @@ public class InputBox : Block
 
         if (ctrl && Input.Typed == "c" && Input.TypedPrevious != "c")
         {
-            SelectedText.Copy();
+            Input.Clipboard = SelectedText;
+            Input.onTextCopy?.Invoke();
             return true;
         }
-        else if (ctrl && Input.Typed == "v")
+
+        if (ctrl && Input.Typed == "v")
             isPasting = true;
         else if (hasSelection && ctrl && Input.Typed == "x")
         {
-            SelectedText.Copy();
+            Input.Clipboard = SelectedText;
+            Input.onTextCopy?.Invoke();
             shouldDelete = true;
             TryDeleteSelected(ref justDeletedSelection, shouldDelete);
             return true;
@@ -1050,7 +1055,8 @@ public class InputBox : Block
         if (isAnyJustPressed)
             holdDelay.Restart();
 
-        if (holdDelay.Elapsed.TotalSeconds > HOLD_DELAY &&
+        if (Input.IsAnyKeyPressed() &&
+            holdDelay.Elapsed.TotalSeconds > HOLD_DELAY &&
             hold.Elapsed.TotalSeconds > HOLD)
         {
             hold.Restart();
@@ -1073,5 +1079,5 @@ public class InputBox : Block
 
         return result.ToString();
     }
-#endregion
+    #endregion
 }

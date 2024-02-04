@@ -1,6 +1,5 @@
 namespace Pure.Engine.UserInterface;
 
-using System.Runtime.InteropServices;
 using System.Diagnostics;
 
 /// <summary>
@@ -25,9 +24,6 @@ public enum Interaction
     Select
 }
 
-/// <summary>
-/// The type of mouse cursor result from a user interaction with the user interface.
-/// </summary>
 public enum MouseCursor
 {
     None = -1,
@@ -48,7 +44,9 @@ public enum MouseCursor
 
 public enum MouseButton
 {
-    Left, Right, Middle
+    Left,
+    Right,
+    Middle
 }
 
 /// <summary>
@@ -112,21 +110,18 @@ public static class Input
     /// </summary>
     public static (float x, float y) PositionPrevious { get; set; }
 
-    /// <summary>
-    /// Applies input to all user interface blocks, updating their state accordingly.
-    /// </summary>
-    /// <param name="buttonsPressed">An array of currently pressed mouse buttons.</param>
-    /// <param name="scrollDelta">The amount the mouse wheel has been scrolled.</param>
-    /// <param name="keysPressed">An array of currently pressed keys on the keyboard.</param>
-    /// <param name="keysTyped">A string containing characters typed on the keyboard.</param>
+    public static string? Clipboard { get; set; }
+
     public static void Update(
         int[]? buttonsPressed = default,
         int scrollDelta = default,
         int[]? keysPressed = default,
-        string? keysTyped = default)
+        string? keysTyped = default,
+        string? clipboard = default)
     {
-        CursorResult = MouseCursor.Arrow;
+        Clipboard = clipboard;
 
+        CursorResult = MouseCursor.Arrow;
         TypedPrevious = Typed;
         prevPressedKeys.Clear();
         prevPressedKeys.AddRange(pressedKeys);
@@ -171,12 +166,19 @@ public static class Input
             Focused = default;
     }
 
-#region Backend
-    internal const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f, DOUBLE_CLICK_DELAY = 0.5f;
+    public static void OnTextCopy(Action method)
+    {
+        onTextCopy += method;
+    }
+
+    #region Backend
+    private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
+    internal const float DOUBLE_CLICK_DELAY = 0.5f;
     internal static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
-    internal static readonly List<Key> pressedKeys = new(), prevPressedKeys = new();
+    private static readonly List<Key> pressedKeys = new(), prevPressedKeys = new();
     internal static readonly List<MouseButton> pressedBtns = new(), prevPressedBtns = new();
     private static (int width, int height) tilemapSize;
+    internal static Action? onTextCopy;
     internal static Block? FocusedPrevious { get; set; }
 
     internal static bool IsJustHeld { get; private set; }
@@ -208,6 +210,14 @@ public static class Input
         }
     }
 
+    internal static bool IsAnyKeyPressed()
+    {
+        return pressedKeys.Count > 0;
+    }
+    internal static bool IsAnyButtonPressed()
+    {
+        return pressedBtns.Count > 0;
+    }
     internal static bool IsKeyPressed(Key key)
     {
         return pressedKeys.Contains(key);
@@ -232,104 +242,5 @@ public static class Input
     {
         return IsButtonPressed(button) == false && prevPressedBtns.Contains(button);
     }
-
-    internal static void Copy(this string text)
-    {
-        try
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c echo '{text}' | clip",
-                    RedirectStandardOutput = false,
-                    UseShellExecute = true,
-                    CreateNoWindow = true
-                };
-
-                Process.Start(psi)?.WaitForExit();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "bash",
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = false,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = new Process();
-                process.StartInfo = psi;
-                process.Start();
-
-                using (var sw = process.StandardInput)
-                {
-                    if (sw.BaseStream.CanWrite)
-                    {
-                        text = text.TrimEnd('\n');
-                        sw.Write($"echo '{text}' | xclip -selection clipboard");
-                    }
-                }
-
-                process.WaitForExit();
-            }
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
-    }
-    internal static string Paste(this string text, int index)
-    {
-        try
-        {
-            var result = string.Empty;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c echo off | clip",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = new Process();
-                process.StartInfo = psi;
-                process.Start();
-                using var reader = process.StandardOutput;
-                result = reader.ReadToEnd().Trim();
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "xclip",
-                    Arguments = "-selection clipboard -o",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = Process.Start(psi);
-
-                if (process == null)
-                    return string.Empty;
-
-                using var reader = process.StandardOutput;
-                result = reader.ReadToEnd().Trim();
-            }
-
-            return text.Insert(index, result);
-        }
-        catch (Exception)
-        {
-            return text;
-        }
-    }
-#endregion
+    #endregion
 }

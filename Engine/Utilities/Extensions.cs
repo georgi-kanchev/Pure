@@ -448,9 +448,11 @@ public static class Extensions
         var cols = matrix.GetLength(1);
 
         if (isMirrored)
+        {
             for (var i = 0; i < rows; i++)
                 for (var j = 0; j < cols / 2; j++)
                     (matrix[i, cols - j - 1], matrix[i, j]) = (matrix[i, j], matrix[i, cols - j - 1]);
+        }
 
         if (isFlipped == false)
             return;
@@ -528,10 +530,12 @@ public static class Extensions
             values.Push(ApplyOperator(val1, val2, op));
             return false;
         }
+
         bool IsOperator(char c)
         {
             return c is '+' or '-' or '*' or '/' or '^' or '%';
         }
+
         int Priority(char op)
         {
             if (op is '+' or '-') return 1;
@@ -539,6 +543,7 @@ public static class Extensions
             if (op is '^') return 3;
             return 0;
         }
+
         float ApplyOperator(float val1, float val2, char op)
         {
             if (op == '+') return val1 + val2;
@@ -549,6 +554,7 @@ public static class Extensions
             if (op == '^') return MathF.Pow(val1, val2);
             return float.NaN;
         }
+
         float GetNumber(ref int i)
         {
             var num = "";
@@ -613,9 +619,7 @@ public static class Extensions
             using var compressedStream = new MemoryStream();
             using (var compressorStream =
                    new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
-            {
                 uncompressedStream.CopyTo(compressorStream);
-            }
 
             compressedBytes = compressedStream.ToArray();
         }
@@ -706,92 +710,6 @@ public static class Extensions
 
         return $"{baseName}{number}";
     }
-
-    public static void Copy(this string text)
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = $"/c echo '{text}' | clip",
-                RedirectStandardOutput = false,
-                UseShellExecute = true,
-                CreateNoWindow = true
-            };
-
-            Process.Start(psi)?.WaitForExit();
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "bash",
-                RedirectStandardInput = true,
-                RedirectStandardOutput = false,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process();
-            process.StartInfo = psi;
-            process.Start();
-
-            using (var sw = process.StandardInput)
-            {
-                if (sw.BaseStream.CanWrite)
-                {
-                    text = text.TrimEnd('\n');
-                    sw.Write($"echo '{text}' | xclip -selection clipboard");
-                }
-            }
-
-            process.WaitForExit();
-        }
-    }
-    public static string Paste(this string text, int index)
-    {
-        var result = string.Empty;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = "/c echo off | clip",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process();
-            process.StartInfo = psi;
-            process.Start();
-            using var reader = process.StandardOutput;
-            result = reader.ReadToEnd().Trim();
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "xclip",
-                Arguments = "-selection clipboard -o",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(psi);
-
-            if (process == null)
-                return string.Empty;
-
-            using var reader = process.StandardOutput;
-            result = reader.ReadToEnd().Trim();
-        }
-
-        return text.Insert(index, result);
-    }
-
     [SuppressMessage("ReSharper", "FormatStringProblem")]
     public static string PadZeros(this float number, int amountOfZeros)
     {
@@ -844,7 +762,7 @@ public static class Extensions
     /// <returns>The wrapped value within the specified range.</returns>
     public static float Wrap(this float number, float targetNumber)
     {
-        return ((number % targetNumber) + targetNumber) % targetNumber;
+        return (number % targetNumber + targetNumber) % targetNumber;
     }
     /// <summary>
     /// Wraps a value within a range of 0 to target number inclusive. Useful for
@@ -855,7 +773,7 @@ public static class Extensions
     /// <returns>The wrapped value within the specified range.</returns>
     public static int Wrap(this int number, int targetNumber)
     {
-        return ((number % targetNumber) + targetNumber) % targetNumber;
+        return (number % targetNumber + targetNumber) % targetNumber;
     }
     /// <summary>
     /// Animate the specified value using the given animation and curve.
@@ -890,21 +808,20 @@ public static class Extensions
             {
                 return curve == AnimationCurve.In ? x * x * x :
                     curve == AnimationCurve.Out ? 1 - MathF.Pow(1 - x, 3) :
-                    (x < 0.5 ? 4 * x * x * x : 1 - MathF.Pow(-2 * x + 2, 3) / 2);
+                    x < 0.5 ? 4 * x * x * x : 1 - MathF.Pow(-2 * x + 2, 3) / 2;
             }
             case Animation.BendStrong:
             {
                 return curve == AnimationCurve.In ? x * x * x * x :
                     curve == AnimationCurve.Out ? 1 - MathF.Pow(1 - x, 5) :
-                    (x < 0.5 ? 16 * x * x * x * x * x : 1 - MathF.Pow(-2 * x + 2, 5) / 2);
+                    x < 0.5 ? 16 * x * x * x * x * x : 1 - MathF.Pow(-2 * x + 2, 5) / 2;
             }
             case Animation.Circle:
             {
                 return curve == AnimationCurve.In ? 1 - MathF.Sqrt(1 - MathF.Pow(x, 2)) :
                     curve == AnimationCurve.Out ? MathF.Sqrt(1 - MathF.Pow(x - 1, 2)) :
-                    (x < 0.5 ?
-                        (1 - MathF.Sqrt(1 - MathF.Pow(2 * x, 2))) / 2 :
-                        (MathF.Sqrt(1 - MathF.Pow(-2 * x + 2, 2)) + 1) / 2);
+                    x < 0.5 ? (1 - MathF.Sqrt(1 - MathF.Pow(2 * x, 2))) / 2 :
+                    (MathF.Sqrt(1 - MathF.Pow(-2 * x + 2, 2)) + 1) / 2;
             }
             case Animation.Elastic:
             {
@@ -936,15 +853,14 @@ public static class Extensions
                     curve == AnimationCurve.Out ? 1 +
                                                   2.70158f * MathF.Pow(x - 1, 3) +
                                                   1.70158f * MathF.Pow(x - 1, 2) :
-                    (x < 0.5 ?
-                        (MathF.Pow(2 * x, 2) * ((2.59491f + 1) * 2 * x - 2.59491f)) / 2 :
-                        (MathF.Pow(2 * x - 2, 2) * ((2.59491f + 1) * (x * 2 - 2) + 2.59491f) + 2) / 2);
+                    x < 0.5 ? MathF.Pow(2 * x, 2) * ((2.59491f + 1) * 2 * x - 2.59491f) / 2 :
+                    (MathF.Pow(2 * x - 2, 2) * ((2.59491f + 1) * (x * 2 - 2) + 2.59491f) + 2) / 2;
             }
             case Animation.Bounce:
             {
                 return curve == AnimationCurve.In ? 1 - EaseOutBounce(1 - x) :
                     curve == AnimationCurve.Out ? EaseOutBounce(x) :
-                    (x < 0.5f ? (1 - EaseOutBounce(1 - 2 * x)) / 2 : (1 + EaseOutBounce(2 * x - 1)) / 2);
+                    x < 0.5f ? (1 - EaseOutBounce(1 - 2 * x)) / 2 : (1 + EaseOutBounce(2 * x - 1)) / 2;
 
                 static float EaseOutBounce(float x)
                 {
@@ -1255,7 +1171,7 @@ public static class Extensions
         return HashCode.Combine(parameters.a, parameters.b, parameters.c);
     }
 
-#region Backend
+    #region Backend
     private class Gate
     {
         public int entries;
@@ -1271,5 +1187,5 @@ public static class Extensions
         holdFrequency.Start();
         holdDelay.Start();
     }
-#endregion
+    #endregion
 }

@@ -104,6 +104,10 @@ public static class Mouse
     {
         return pressed.Contains(button);
     }
+    public static bool IsAnyPressed()
+    {
+        return pressed.Count > 0;
+    }
 
     public static void CancelInput()
     {
@@ -134,7 +138,7 @@ public static class Mouse
         actionScroll += method;
     }
 
-#region Backend
+    #region Backend
     private static Action<Button>? onButtonPressAny, onButtonReleaseAny;
     private static readonly Dictionary<Button, Action> onButtonPress = new(), onButtonRelease = new();
     private static Action? actionScroll;
@@ -220,5 +224,5 @@ public static class Mouse
                 Window.window.SetMouseCursor(sysCursor);
         }
     }
-#endregion
+    #endregion
 }

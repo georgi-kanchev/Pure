@@ -103,6 +103,7 @@ public static class Window
 
         window.Closed += (_, _) => Close();
         window.Resized += (_, _) => Resize();
+        //window.GainedFocus += (_, _) => Keyboard.cacheClipboard = true;
         window.LostFocus += (_, _) =>
         {
             Mouse.CancelInput();
@@ -179,7 +180,7 @@ public static class Window
         window.Close();
     }
 
-#region Backend
+    #region Backend
     internal static RenderWindow? window;
     internal static RenderTexture? renderTexture;
     internal static (int w, int h) renderTextureViewSize;
@@ -216,7 +217,7 @@ public static class Window
             new(new(0, 0), Color.White, new(0, 0)),
             new(new(sz.X, 0), Color.White, new(tw, 0)),
             new(new(sz.X, sz.Y), Color.White, new(tw, th)),
-            new(new(0, sz.Y), Color.White, new(0, th)),
+            new(new(0, sz.Y), Color.White, new(0, th))
         };
 
         if (IsRetro)
@@ -241,5 +242,5 @@ public static class Window
         Create();
         size = ((int)window.Size.X, (int)window.Size.Y);
     }
-#endregion
+    #endregion
 }

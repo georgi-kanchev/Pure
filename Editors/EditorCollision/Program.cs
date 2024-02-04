@@ -1,12 +1,15 @@
 ﻿namespace Pure.Editors.EditorCollision;
 
 using EditorBase;
+
 using Tools.Tilemapper;
+
 using Engine.Collision;
 using Engine.Utilities;
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
+
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -51,7 +54,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private static (int x, int y) prevViewPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
@@ -101,7 +104,7 @@ public static class Program
 
     static Program()
     {
-        editor = new(title: "Pure - Collision Editor");
+        editor = new("Pure - Collision Editor");
         var (mw, mh) = editor.MapsEditor.Size;
         editor.MapsEditor.Clear();
         editor.MapsEditor.Add(new Tilemap((mw, mh)), new Tilemap((mw, mh)));
@@ -140,7 +143,7 @@ public static class Program
             editor.MapsUi.SetPromptItem(
                 editor.Prompt,
                 item,
-                zOrder: PROMPT_MIDDLE,
+                PROMPT_MIDDLE,
                 CanDrawLayer ? tiles : null);
         };
 
@@ -315,20 +318,25 @@ public static class Program
             if (index == 1) // load tileset
                 editor.PromptTileset(null, null);
             else if (index == 3) // load map
+            {
                 editor.PromptLoadMap(result =>
                 {
                     layers = result;
                     originalMapViewPos = editor.MapsEditor.ViewPosition;
                     solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
+            }
             else if (index == 4)
+            {
                 editor.PromptLoadMapBase64(result =>
                 {
                     layers = result;
                     originalMapViewPos = editor.MapsEditor.ViewPosition;
                     solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
+            }
             else if (index is 7 or 13)
+            {
                 editor.PromptConfirm(() =>
                 {
                     if (index == 7)
@@ -336,15 +344,18 @@ public static class Program
                     else
                         solidMap = new();
                 });
+            }
             else if (index is 8 or 14) // save solids
                 editor.PromptFileSave(Save(index == 8));
             else if (index is 9 or 15) // load solids
                 editor.PromptFileLoad(bytes => Load(index == 9, bytes));
             else if (index is 10 or 16) // copy
-                Convert.ToBase64String(Save(index == 10)).Copy();
+                Keyboard.Clipboard = Convert.ToBase64String(Save(index == 10));
             else if (index is 11 or 17) // paste
+            {
                 editor.PromptBase64(() =>
                     Load(index == 11, Convert.FromBase64String(editor.PromptInput.Value)));
+            }
         });
         menu.OnUpdate(() =>
         {
@@ -419,5 +430,5 @@ public static class Program
         var (sx, sy) = (1f / l.TileSize.width, 1f / l.TileSize.height);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }
-#endregion
+    #endregion
 }

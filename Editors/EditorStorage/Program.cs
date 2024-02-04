@@ -6,11 +6,15 @@ namespace Pure.Editors.EditorStorage;
 
 using Engine.Utilities;
 using Engine.Storage;
+
 using Tools.Tilemapper;
+
 using EditorBase;
+
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
+
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -34,10 +38,14 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private enum DataType
     {
-        Value, Tuple, List, Dictionary, TupleAdd
+        Value,
+        Tuple,
+        List,
+        Dictionary,
+        TupleAdd
     }
 
     private const string
@@ -67,7 +75,7 @@ public static class Program
 
     static Program()
     {
-        editor = new(title: "Pure - Storage Editor");
+        editor = new("Pure - Storage Editor");
 
         values = new(editor,
             "Value… ",
@@ -131,12 +139,8 @@ public static class Program
 
     private static void SubscribeToClicks()
     {
-        Mouse.Button.Left.OnPress(() =>
-        {
-        });
-        Mouse.Button.Left.OnRelease(() =>
-        {
-        });
+        Mouse.Button.Left.OnPress(() => { });
+        Mouse.Button.Left.OnRelease(() => { });
         Mouse.Button.Right.OnPress(() =>
         {
             main.IsHidden = false;
@@ -187,12 +191,16 @@ public static class Program
         else if (creating == DataType.Tuple)
         {
             if (emptyData == false)
+            {
                 for (var i = 0; i < list.Count; i++)
                     list[i].Text = GetDefaultValue(i);
+            }
         }
         else if (creating is DataType.List or DataType.Dictionary)
+        {
             if (emptyData == false)
                 list[0].Text = GetDefaultValue(0);
+        }
 
         if (creating == DataType.Dictionary)
         {
@@ -242,9 +250,11 @@ public static class Program
                 var unique = editor.PromptInput.Value.EnsureUnique(allKeys);
 
                 if (editor.PromptInput.Value != unique)
+                {
                     editor.PromptMessage(
                         $"The provided key '{editor.PromptInput.Value}' already " +
                         $"exists.{Environment.NewLine}It was changed to '{unique}'.");
+                }
 
                 panel.Text = unique;
             });
@@ -380,7 +390,7 @@ public static class Program
         else if (index == 8)
             editor.PromptFileLoad(Load);
         else if (index == 9)
-            Convert.ToBase64String(Save()).Copy();
+            Keyboard.Clipboard = Convert.ToBase64String(Save());
         else if (index == 10)
             editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
     }
@@ -467,9 +477,11 @@ public static class Program
                 var unique = GetUniqueText(list, promptText.Value, item);
 
                 if (promptText.Value != unique)
+                {
                     editor.PromptMessage(
                         $"The provided key '{promptText.Value}' already exists.{Environment.NewLine}" +
                         $"It was changed to '{unique}'.");
+                }
 
                 item.Text = unique;
             });
@@ -689,6 +701,7 @@ public static class Program
             }
 
             if (predict)
+            {
                 editor.PromptMessage($"Loading storages that were saved by the{Environment.NewLine}" +
                                      $"engine rather than the editor is not{Environment.NewLine}" +
                                      $"recommended. This is because the types{Environment.NewLine}" +
@@ -702,8 +715,12 @@ public static class Program
                                      $"C. Arrays of A                {Environment.NewLine}" +
                                      $"D. Lists of A                 {Environment.NewLine}" +
                                      $"E. Dictionaries of <String, A>");
+            }
 
-            int GrabInt() => BitConverter.ToInt32(GetBytesFrom(hijackedBytes, 4, ref offset));
+            int GrabInt()
+            {
+                return BitConverter.ToInt32(GetBytesFrom(hijackedBytes, 4, ref offset));
+            }
         }
         catch (Exception)
         {
@@ -791,7 +808,7 @@ public static class Program
             typeof(ValueTuple<,,,,>),
             typeof(ValueTuple<,,,,,>),
             typeof(ValueTuple<,,,,,,>),
-            typeof(ValueTuple<,,,,,,,>),
+            typeof(ValueTuple<,,,,,,,>)
         };
 
         for (var i = 0; i < t.Length; i++)
@@ -1065,9 +1082,9 @@ public static class Program
         return Regex.Replace(dataAsText, STR_PLACEHOLDER + "(\\d+)", match =>
         {
             var index = int.Parse(match.Groups[1].Value);
-            return index >= 0 && index < strings.Count ?
-                $"{storage.Dividers.text}{strings[index]}{storage.Dividers.text}" :
-                match.Value;
+            return index >= 0 && index < strings.Count
+                ? $"{storage.Dividers.text}{strings[index]}{storage.Dividers.text}"
+                : match.Value;
         });
     }
     private static string AddPlaceholders(string dataAsText)
@@ -1079,5 +1096,5 @@ public static class Program
             return replacedValue;
         });
     }
-#endregion
+    #endregion
 }
