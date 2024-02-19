@@ -20,6 +20,7 @@ public static class Prompts
             Size = (16, 1),
             Value = "",
             Placeholder = "Message…",
+            IsSingleLine = true,
         };
         input.OnDisplay(() => maps.SetInputBox(input, zOrder: 4));
 
@@ -27,14 +28,6 @@ public static class Prompts
         prompt.OnDisplay(() => maps.SetPrompt(prompt, zOrder: 3));
         prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: 5));
 
-        Key.Enter.OnPress(() =>
-        {
-            var shouldLog = input.IsHidden == false && prompt.IsHidden == false;
-            prompt.Close();
-
-            if (shouldLog)
-                Console.WriteLine(input.Value);
-        });
         HOTKEY_LOG.OnPress(() =>
         {
             input.IsFocused = true;
@@ -52,7 +45,7 @@ public static class Prompts
             input.IsHidden = true;
 
             prompt.Text = $"This should be some{Environment.NewLine}important message!";
-            prompt.Open(onButtonTrigger: _ => prompt.Close());
+            prompt.Open(buttonCount: 1);
         });
 
         return new Block[] { info, prompt };

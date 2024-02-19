@@ -11,20 +11,20 @@ public class Prompt : Block
         Block? block = null,
         bool isAutoClosing = true,
         int buttonCount = 2,
-        int buttonAccept = 0,
+        int buttonAccept = default,
+        int buttonDecline = 1,
         Action<int>? onButtonTrigger = null)
     {
         if (block != null)
             block.IsFocused = true;
 
-        btnAccept = buttonAccept;
         currentBlock = block;
         UpdateBlockPosition();
 
         buttonCount = Math.Max(buttonCount, 1);
         isHidden = false;
-        buttons.Clear();
 
+        buttons.Clear();
         for (var i = 0; i < buttonCount; i++)
         {
             var btn = new Button((-1, -1))
@@ -40,6 +40,11 @@ public class Prompt : Block
 
                 onButtonTrigger?.Invoke(index);
             });
+            if (i == buttonAccept)
+                btn.HotkeyId = (int)Key.Enter;
+            if (i == buttonDecline)
+                btn.HotkeyId = (int)Key.Escape;
+
             buttons.Add(btn);
         }
     }
@@ -47,6 +52,13 @@ public class Prompt : Block
     {
         currentBlock = null;
         isHidden = true;
+    }
+    public void TriggerButton(int index)
+    {
+        if (index < 0 || index >= buttons.Count || isDisabled)
+            return;
+
+        buttons[index].Interact(Interaction.Trigger);
     }
 
     public int IndexOf(Button? button)
@@ -58,17 +70,8 @@ public class Prompt : Block
     {
         itemDisplay += method;
     }
-    public void TriggerButton(int index)
-    {
-        if (index < 0 || index >= buttons.Count || isDisabled)
-            return;
-
-        buttons[index].Interact(Interaction.Trigger);
-    }
 
 #region Backend
-    private int btnAccept = 1;
-
     private readonly List<Button> buttons = new();
     private Action<Button>? itemDisplay;
     private Block? currentBlock;
@@ -98,16 +101,6 @@ public class Prompt : Block
         currentBlock.position = (x, y + lines / 2);
     }
 
-    protected override void OnInput()
-    {
-        if (isHidden)
-            return;
-
-        if (Input.IsKeyJustPressed(Key.Escape))
-            Close();
-        if (Input.IsKeyJustPressed(Key.Enter))
-            TriggerButton(btnAccept);
-    }
     internal override void OnChildrenDisplay()
     {
         if (isHidden)

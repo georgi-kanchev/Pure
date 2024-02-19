@@ -16,6 +16,7 @@ public class Button : Block
             if (hasParent == false) isSelected = value;
         }
     }
+    public int HotkeyId { get; set; }
 
     /// <summary>
     /// Initializes a new button instance with the specified position and default size of (10, 1).
@@ -25,11 +26,13 @@ public class Button : Block
     {
         Init();
         Size = (10, 1);
+        HotkeyId = -1;
     }
     public Button(byte[] bytes) : base(bytes)
     {
         Init();
         IsSelected = GrabBool(bytes);
+        HotkeyId = GrabInt(bytes);
     }
     public Button(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -43,6 +46,7 @@ public class Button : Block
     {
         var result = base.ToBytes().ToList();
         PutBool(result, IsSelected);
+        PutInt(result, HotkeyId);
         return result.ToArray();
     }
 
@@ -78,6 +82,12 @@ public class Button : Block
     {
         if (IsHovered)
             Input.CursorResult = MouseCursor.Hand;
+
+        if (Input.IsKeyJustPressed((Key)HotkeyId))
+            ;
+
+        if (Input.IsKeyJustPressed((Key)HotkeyId))
+            Interact(Interaction.Trigger);
     }
 #endregion
 }

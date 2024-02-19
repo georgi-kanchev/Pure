@@ -1,15 +1,12 @@
 ﻿namespace Pure.Editors.EditorCollision;
 
 using EditorBase;
-
 using Tools.Tilemapper;
-
 using Engine.Collision;
 using Engine.Utilities;
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
-
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -54,7 +51,7 @@ public static class Program
         editor.Run();
     }
 
-    #region Backend
+#region Backend
     private static (int x, int y) prevViewPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
@@ -201,26 +198,27 @@ public static class Program
             UpdateMap();
             promptPanel.Text = layers[currentLayer];
             editor.Prompt.Text = "Edit Tile Solids";
-            editor.Prompt.Open(promptPanel, buttonCount: 3, onButtonTrigger: i =>
-            {
-                if (i == 0)
+            editor.Prompt.Open(promptPanel, buttonDecline: -1, isAutoClosing: false, buttonCount: 3,
+                onButtonTrigger: i =>
                 {
-                    editor.Prompt.Close();
-                    solidMap.Update(editor.MapsEditor[currentLayer]);
-                    return;
-                }
+                    if (i == 0)
+                    {
+                        editor.Prompt.Close();
+                        solidMap.Update(editor.MapsEditor[currentLayer]);
+                        return;
+                    }
 
-                if (i == 1)
-                {
-                    OffsetLayer(1);
-                    UpdateMap();
-                }
-                else if (i == 2)
-                {
-                    OffsetLayer(-1);
-                    UpdateMap();
-                }
-            }, isAutoClosing: false);
+                    if (i == 1)
+                    {
+                        OffsetLayer(1);
+                        UpdateMap();
+                    }
+                    else if (i == 2)
+                    {
+                        OffsetLayer(-1);
+                        UpdateMap();
+                    }
+                });
         });
         Mouse.Button.Left.OnRelease(() =>
         {
@@ -430,5 +428,5 @@ public static class Program
         var (sx, sy) = (1f / l.TileSize.width, 1f / l.TileSize.height);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }
-    #endregion
+#endregion
 }

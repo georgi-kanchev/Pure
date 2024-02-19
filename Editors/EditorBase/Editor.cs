@@ -1,16 +1,12 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
-
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.TiledLoader;
-
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
-
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
-
 using System.IO.Compression;
 using System.Text;
 
@@ -166,9 +162,9 @@ public class Editor
             LayerUi.TilemapSize = MapsUi.ViewSize;
 
             Input.Update(
-                Mouse.ButtonIDsPressed,
+                Mouse.ButtonIdsPressed,
                 Mouse.ScrollDelta,
-                Keyboard.KeyIDsPressed,
+                Keyboard.KeyIdsPressed,
                 Keyboard.KeyTyped,
                 Keyboard.Clipboard);
 
@@ -424,7 +420,7 @@ public class Editor
         });
     }
 
-    #region Backend
+#region Backend
     private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
     private const int GRID_GAP = 10;
     private readonly InputBox promptSize;
@@ -700,5 +696,5 @@ public class Editor
 
         return maps;
     }
-    #endregion
+#endregion
 }

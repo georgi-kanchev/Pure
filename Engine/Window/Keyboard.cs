@@ -134,7 +134,7 @@ public static class Keyboard
     /// <summary>
     /// Gets an array of currently pressed key identifiers.
     /// </summary>
-    public static int[] KeyIDsPressed
+    public static int[] KeyIdsPressed
     {
         get
         {
@@ -214,7 +214,7 @@ public static class Keyboard
             onKeyRelease[key] += method;
     }
 
-    #region Backend
+#region Backend
     private static Action<Key>? onKeyPressAny, onKeyReleaseAny;
     private static readonly Dictionary<Key, Action> onKeyPress = new();
     private static readonly Dictionary<Key, Action> onKeyRelease = new();
@@ -301,5 +301,5 @@ public static class Keyboard
         KeyTyped = KeyTyped.Replace(symbol.ToLower(), "");
         KeyTyped = KeyTyped.Replace(symbol.ToUpper(), "");
     }
-    #endregion
+#endregion
 }

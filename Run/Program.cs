@@ -18,13 +18,13 @@ public static class Run
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
-        //RunExampleUserInterface();
+        RunExampleUserInterface();
 
         //Commands.Run();
         //Storages.Run();
         //Collision.Run();
         //Pathfinding.Run();
-        LineOfSightAndLights.Run();
+        //LineOfSightAndLights.Run();
         //Audio.Run();
         //UtilityExtensions.Run();
     }
@@ -41,7 +41,7 @@ public static class Run
         //blocks.Add(Lists.Create(maps));
         //blocks.Add(Steppers.Create(maps));
         //blocks.Add(Pagination.Create(maps));
-        //blocks.Add(Prompts.Create(maps));
+        blocks.Add(Prompts.Create(maps));
         Program.Run(maps, blocks);
     }
 }

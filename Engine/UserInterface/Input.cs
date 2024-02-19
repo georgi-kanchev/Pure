@@ -52,7 +52,7 @@ public enum MouseButton
 /// <summary>
 /// Represents the keyboard keys used for input by the user interface.
 /// </summary>
-public enum Key
+internal enum Key
 {
     Escape = 36,
     ControlLeft = 37,
@@ -171,7 +171,7 @@ public static class Input
         onTextCopy += method;
     }
 
-    #region Backend
+#region Backend
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     internal const float DOUBLE_CLICK_DELAY = 0.5f;
     internal static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
@@ -242,5 +242,5 @@ public static class Input
     {
         return IsButtonPressed(button) == false && prevPressedBtns.Contains(button);
     }
-    #endregion
+#endregion
 }

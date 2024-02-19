@@ -33,7 +33,7 @@ public static class LineOfSightAndLights
         while (Window.KeepOpen())
         {
             Time.Update();
-            Console.WriteLine($"{Time.UpdatesPerSecond}");
+            //Console.WriteLine($"{Time.UpdatesPerSecond}");
             angle += Time.Delta * 60;
 
             var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);

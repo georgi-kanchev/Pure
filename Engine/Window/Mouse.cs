@@ -78,7 +78,7 @@ public static class Mouse
     {
         get => pressed.ToArray();
     }
-    public static int[] ButtonIDsPressed
+    public static int[] ButtonIdsPressed
     {
         get
         {
@@ -138,7 +138,7 @@ public static class Mouse
         actionScroll += method;
     }
 
-    #region Backend
+#region Backend
     private static Action<Button>? onButtonPressAny, onButtonReleaseAny;
     private static readonly Dictionary<Button, Action> onButtonPress = new(), onButtonRelease = new();
     private static Action? actionScroll;
@@ -224,5 +224,5 @@ public static class Mouse
                 Window.window.SetMouseCursor(sysCursor);
         }
     }
-    #endregion
+#endregion
 }
