@@ -173,7 +173,7 @@ public struct Solid
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
@@ -195,5 +195,5 @@ public struct Solid
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

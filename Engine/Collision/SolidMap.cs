@@ -1,7 +1,6 @@
-﻿using System.Collections.Concurrent;
+﻿namespace Pure.Engine.Collision;
 
-namespace Pure.Engine.Collision;
-
+using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 
@@ -181,7 +180,9 @@ public class SolidMap
     }
     public Solid[] SolidsIn(int tileId)
     {
-        return cellRects.ContainsKey(tileId) == false ? Array.Empty<Solid>() : cellRects[tileId].ToArray();
+        return cellRects.ContainsKey(tileId) == false ?
+            Array.Empty<Solid>() :
+            cellRects[tileId].ToArray();
     }
 
     public void SolidsClear()
@@ -350,17 +351,24 @@ public class SolidMap
     {
         return CalculateSight(position, 0, radius, 360);
     }
-    public Solid[] CalculateSight((float x, float y) position, float angle, int radius = 10, float fieldOfView = 60)
+    public Solid[] CalculateSight(
+        (float x, float y) position,
+        float angle,
+        int radius = 10,
+        float fieldOfView = 60)
     {
         var (x, y) = position;
         var result = new ConcurrentStack<Solid>();
         var diameter = 2 * radius + 1;
         var radiusSquared = radius * radius;
         var halfFieldOfView = fieldOfView / 2;
+        var diameterSquared = diameter * diameter;
+        var rect = new Solid(radius / 2f + 1, radius / 2f + 1, x, y);
+        var solidsToCheck = GetNeighborRects(rect);
 
         angle = AngleWrap(angle);
 
-        Parallel.For(0, diameter * diameter, index =>
+        Parallel.For(0, diameterSquared, index =>
         {
             var i = index / diameter - radius;
             var j = index % diameter - radius;
@@ -375,8 +383,21 @@ public class SolidMap
             if (Math.Abs(diff) > halfFieldOfView)
                 return;
 
-            if (IsOverlapping(line) == false)
-                result.Push(new Solid((1, 1), (endX, endY)));
+            var shouldAdd = true;
+
+            foreach (var solid in solidsToCheck)
+                if (solid.IsOverlapping(line))
+                {
+                    shouldAdd = false;
+
+                    if (solid.IsOverlapping(position))
+                        return;
+                    else
+                        break;
+                }
+
+            if (shouldAdd)
+                result.Push(new((1, 1), (endX, endY)));
         });
 
         return result.ToArray();
@@ -405,34 +426,7 @@ public class SolidMap
         return new(bytes);
     }
 
-    #region Backend
-    // save format in sectors
-    // [amount of bytes]		- data
-    // --------------------------------
-    // [4]						- amount of sectors
-    // = = = = = = (sector 1)
-    // [4]						- tile
-    // [4]						- rect amount
-    // [rect amount * 4]		- xs
-    // [rect amount * 4]		- ys
-    // [rect amount * 4]		- widths
-    // [rect amount * 4]		- heights
-    // [rect amount * 4]		- colors
-    // = = = = = = (sector 2)
-    // [4]						- tile
-    // [4]						- rect amount
-    // [rect amount * 4]		- xs
-    // [rect amount * 4]		- ys
-    // [rect amount * 4]		- widths
-    // [rect amount * 4]		- heights
-    // [rect amount * 4]		- colors
-    // = = = = = = (sector 3)
-    // ...
-
-    // to not repeat rectangles for each tile
-    // saving map of tiles [(x, y), tile]
-    // and rectangles for each tile [tile, list of rectangles]
-
+#region Backend
     private readonly Dictionary<(int x, int y), int> tileIndices = new();
     private readonly Dictionary<int, List<Solid>> cellRects = new();
     private readonly List<(int x, int y)> ignoredCells = new();
@@ -541,5 +535,5 @@ public class SolidMap
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

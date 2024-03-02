@@ -33,15 +33,13 @@ public static class LineOfSightAndLights
         while (Window.KeepOpen())
         {
             Time.Update();
-            //Console.WriteLine($"{Time.UpdatesPerSecond}");
             angle += Time.Delta * 60;
 
             var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
-
-            var sight = (SolidPack)solidMap.CalculateLight((mx, my), 20);
+            var sight = (SolidPack)solidMap.CalculateSight((mx, my), angle, 20);
 
             layer.DrawTilemap(tilemap);
-            layer.DrawRectangles(solidMap);
+            //layer.DrawRectangles(solidMap);
             layer.DrawRectangles(sight);
             layer.DrawCursor();
             layer.Draw();

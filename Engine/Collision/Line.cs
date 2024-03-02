@@ -115,13 +115,11 @@ public struct Line
         return IsCrossing(solidMap.GetNeighborRects(this).ToArray());
     }
     /// <summary>
-    ///     Checks if this line is crossing with any of the rectangles in the
-    ///     specified hitbox.
+    /// Checks if this line is crossing with any of the rectangles in the specified hitbox.
     /// </summary>
     /// <param name="solidPack">The hitbox to check for crossing.</param>
     /// <returns>
-    ///     True if this line is crossing with the specified hitbox,
-    ///     otherwise false.
+    /// True if this line is crossing with the specified hitbox, otherwise false.
     /// </returns>
     public bool IsCrossing(SolidPack solidPack)
     {
@@ -140,13 +138,22 @@ public struct Line
     /// </returns>
     public bool IsCrossing(Solid solid)
     {
+        var (x1, y1) = A;
+        var (x2, y2) = B;
         var (x, y) = solid.Position;
         var (w, h) = solid.Size;
-        var t = new Line((x, y), (x + w, y));
-        var r = new Line((x + w, y), (x + w, y + h));
-        var b = new Line((x + w, y + h), (x, y + h));
-        var l = new Line((x, y + h), (x, y));
-        return IsCrossing(t) || IsCrossing(r) || IsCrossing(b) || IsCrossing(l);
+        var (tax, tay) = (x, y);
+        var (tbx, tby) = (x + w, y);
+        var (rax, ray) = (x + w, y);
+        var (rbx, rby) = (x + w, y + h);
+        var (bax, bay) = (x + w, y + h);
+        var (bbx, bby) = (x, y + h);
+        var (lax, lay) = (x, y + h);
+        var (lbx, lby) = (x, y);
+        return LinesAreCrossing(x1, y1, x2, y2, tax, tay, tbx, tby) ||
+               LinesAreCrossing(x1, y1, x2, y2, rax, ray, rbx, rby) ||
+               LinesAreCrossing(x1, y1, x2, y2, bax, bay, bbx, bby) ||
+               LinesAreCrossing(x1, y1, x2, y2, lax, lay, lbx, lby);
     }
     /// <summary>
     /// Determines if this line is crossing another line.
@@ -155,8 +162,11 @@ public struct Line
     /// <returns>True if the lines cross, false otherwise.</returns>
     public bool IsCrossing(Line line)
     {
-        var (x, y, _) = CrossPoint(line);
-        return float.IsNaN(x) == false && float.IsNaN(y) == false;
+        var (ax1, ay1) = A;
+        var (bx1, by1) = B;
+        var (ax2, ay2) = line.A;
+        var (bx2, by2) = line.B;
+        return LinesAreCrossing(ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
     }
     /// <param name="point">
     ///     The point to check for crossing.
@@ -167,10 +177,20 @@ public struct Line
     /// </returns>
     public bool IsCrossing((float x, float y) point)
     {
-        var length = Length;
-        var a = Vector2.Distance(new(A.x, A.y), new(point.x, point.y));
-        var b = Vector2.Distance(new(B.x, B.y), new(point.x, point.y));
-        return IsBetween(a + b, length - 0.01f, length + 0.01f);
+        var (ax, ay) = A;
+        var (bx, by) = B;
+        var (apx, apy) = (point.x - ax, point.y - ay);
+        var (abx, aby) = (bx - ax, by - ay);
+        var dotProduct = apx * abx + apy * aby;
+        var dx = bx - ax;
+        var dy = by - ay;
+        var lengthSquared = dx * dx + dy * dy;
+
+        if (dotProduct < 0 || dotProduct > lengthSquared)
+            return false;
+
+        var distanceSquared = apx * apx + apy * apy - dotProduct * dotProduct / lengthSquared;
+        return distanceSquared <= 0.01f * 0.01f;
     }
     /// <param name="point">
     ///     The point to check for crossing.
@@ -277,8 +297,11 @@ public struct Line
     /// </returns>
     public (float x, float y, uint color) CrossPoint(Line line)
     {
-        var p = CrossPoint(A, B, line.A, line.B);
-        return IsCrossing(p) && line.IsCrossing(p) ? p : (float.NaN, float.NaN, uint.MaxValue);
+        var (ax1, ay1) = A;
+        var (bx1, by1) = B;
+        var (ax2, ay2) = line.A;
+        var (bx2, by2) = line.B;
+        return LinesCrossPoint(line.Color, ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
     }
     /// <param name="point">
     ///     The point to find the closest point on the line to.
@@ -289,16 +312,17 @@ public struct Line
     /// </returns>
     public (float x, float y, uint color) ClosestPoint((float x, float y) point)
     {
-        var ap = (point.x - A.x, point.y - A.y);
-        var (abx, aby) = (B.x - A.x, B.y - A.y);
+        var (ax, ay) = A;
+        var (bx, by) = B;
+        var (apx, apy) = (point.x - ax, point.y - ay);
+        var (abx, aby) = (bx - ax, by - ay);
+        var magnitude = abx * abx + aby * aby;
+        var dot = apx * abx + apy * aby;
+        var distance = dot / magnitude;
 
-        var magnitude = LengthSquared((abx, aby));
-        var product = Dot(ap, (abx, aby));
-        var distance = product / magnitude;
-
-        return distance < 0 ? (A.x, A.y, uint.MaxValue) :
-            distance > 1 ? (B.x, A.y, uint.MaxValue) :
-            (A.x + abx * distance, A.y + aby * distance, uint.MaxValue);
+        return distance < 0 ? (ax, ay, uint.MaxValue) :
+            distance > 1 ? (bx, ay, uint.MaxValue) :
+            (ax + abx * distance, ay + aby * distance, uint.MaxValue);
     }
 
     /// <summary>
@@ -328,28 +352,7 @@ public struct Line
         return new(bytes);
     }
 
-    #region Backend
-    private static (float, float, uint) CrossPoint(
-        (float x, float y) a,
-        (float x, float y) b,
-        (float x, float y) c,
-        (float x, float y) d)
-    {
-        var a1 = b.y - a.y;
-        var b1 = a.x - b.x;
-        var c1 = a1 * a.x + b1 * a.y;
-        var a2 = d.y - c.y;
-        var b2 = c.x - d.x;
-        var c2 = a2 * c.x + b2 * c.y;
-        var determinant = a1 * b2 - a2 * b1;
-
-        if (determinant == 0)
-            return (float.NaN, float.NaN, uint.MaxValue);
-
-        var x = (b2 * c1 - b1 * c2) / determinant;
-        var y = (a1 * c2 - a2 * c1) / determinant;
-        return (x, y, uint.MaxValue);
-    }
+#region Backend
     private static float ToAngle((float x, float y) direction)
     {
         //Vector2 to Radians: atan2(Vector2.y, Vector2.x)
@@ -365,36 +368,54 @@ public struct Line
         var distance = MathF.Sqrt(x * x + y * y);
         return (x / distance, y / distance);
     }
-    private static bool IsBetween(
-        float number,
-        float rangeA,
-        float rangeB,
-        bool inclusiveA = false,
-        bool inclusiveB = false)
-    {
-        if (rangeA > rangeB)
-            (rangeA, rangeB) = (rangeB, rangeA);
-
-        var l = inclusiveA ? rangeA <= number : rangeA < number;
-        var u = inclusiveB ? rangeB >= number : rangeB > number;
-        return l && u;
-    }
-    private static float LengthSquared((float, float) vector)
-    {
-        var (x, y) = vector;
-        var sum = x * x + y * y;
-
-        return MathF.Pow(MathF.Sqrt(sum), 2);
-    }
-    private static float Dot((float, float) a, (float, float) b)
-    {
-        var (ax, ay) = a;
-        var (bx, by) = b;
-        return ax * bx + ay * by;
-    }
     private static float AngleWrap(float angle)
     {
         return (angle % 360 + 360) % 360;
+    }
+
+    // these two ugly methods are made with speed in mind, avoiding line constructors
+    private static bool LinesAreCrossing(
+        float ax1,
+        float ay1,
+        float bx1,
+        float by1,
+        float ax2,
+        float ay2,
+        float bx2,
+        float by2)
+    {
+        var (x, y, _) = LinesCrossPoint(0, ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
+        return float.IsNaN(x) == false && float.IsNaN(y) == false;
+    }
+    private static (float x, float y, uint color) LinesCrossPoint(
+        uint color,
+        float ax1,
+        float ay1,
+        float bx1,
+        float by1,
+        float ax2,
+        float ay2,
+        float bx2,
+        float by2)
+    {
+        var dx1 = bx1 - ax1;
+        var dy1 = by1 - ay1;
+        var dx2 = bx2 - ax2;
+        var dy2 = by2 - ay2;
+        var det = dx1 * dy2 - dy1 * dx2;
+
+        if (det == 0)
+            return (float.NaN, float.NaN, uint.MaxValue);
+
+        var s = ((ay1 - ay2) * dx2 - (ax1 - ax2) * dy2) / det;
+        var t = ((ay1 - ay2) * dx1 - (ax1 - ax2) * dy1) / det;
+
+        if (s is < 0 or > 1 || t is < 0 or > 1)
+            return (float.NaN, float.NaN, uint.MaxValue);
+
+        var intersectionX = ax1 + s * dx1;
+        var intersectionY = ay1 + s * dy1;
+        return (intersectionX, intersectionY, color);
     }
 
     private static byte[] Compress(byte[] data)
@@ -418,5 +439,5 @@ public struct Line
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

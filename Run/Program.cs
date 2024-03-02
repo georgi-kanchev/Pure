@@ -18,13 +18,13 @@ public static class Run
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
-        RunExampleUserInterface();
+        //RunExampleUserInterface();
 
         //Commands.Run();
         //Storages.Run();
         //Collision.Run();
         //Pathfinding.Run();
-        //LineOfSightAndLights.Run();
+        LineOfSightAndLights.Run();
         //Audio.Run();
         //UtilityExtensions.Run();
     }

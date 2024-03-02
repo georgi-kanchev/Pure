@@ -143,11 +143,17 @@ public abstract class Block
     /// </summary>
     public bool IsPressedAndHeld { get; private set; }
 
+    /// <summary>
+    /// Gets a value indicating whether the user interface block is currently scrollable.
+    /// </summary>
     internal bool IsScrollable
     {
         get => IsFocused && Input.FocusedPrevious == this && IsHovered;
     }
 
+    /// <summary>
+    /// Initializes a new user interface block instance class.
+    /// </summary>
     protected Block() : this((0, 0))
     {
     }
@@ -164,6 +170,11 @@ public abstract class Block
         typeName = GetType().Name;
         Init();
     }
+    /// <summary>
+    /// Initializes a new user interface block instance class with the specified
+    /// bytes.
+    /// </summary>
+    /// <param name="bytes">The bytes of the user interface block.</param>
     protected Block(byte[] bytes)
     {
         Init(); // should be before
@@ -178,14 +189,26 @@ public abstract class Block
         IsDisabled = GrabBool(bytes);
         hasParent = GrabBool(bytes);
     }
-    public Block(string base64) : this(Convert.FromBase64String(base64))
+    /// <summary>
+    /// Initializes a new user interface block instance class with the specified
+    /// </summary>
+    /// <param name="base64">The base64 of the user interface block.</param>
+    protected Block(string base64) : this(Convert.FromBase64String(base64))
     {
     }
 
+    /// <summary>
+    /// Converts the user interface block to a base64 string.
+    /// </summary>
+    /// <returns>The base64 string representation of the user interface block.</returns>
     public virtual string ToBase64()
     {
         return Convert.ToBase64String(ToBytes());
     }
+    /// <summary>
+    /// Converts the user interface block to a byte array.
+    /// </summary>
+    /// <returns> A byte array representation of the user interface block.</returns>
     public virtual byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -206,11 +229,18 @@ public abstract class Block
 
         return result.ToArray();
     }
+    /// <summary>
+    /// Overrides the ToString method to provide a custom string representation of the object.
+    /// </summary>
+    /// <returns>A string representation of the object.</returns>
     public override string ToString()
     {
         return $"{GetType().Name} \"{Text}\"";
     }
 
+    /// <summary>
+    /// Updates the block's state based on user input and other conditions.
+    /// </summary>
     public void Update()
     {
         LimitSizeMin((1, 1));
@@ -313,23 +343,40 @@ public abstract class Block
         }
     }
 
+    /// <summary>
+    /// Checks if the mouse button is pressed on the block.
+    /// </summary>
+    /// <param name="button">The mouse button to check.</param>
+    /// <returns>True if the mouse button is pressed on the block, false otherwise.</returns>
     public bool IsPressed(MouseButton button = default)
     {
         return IsHovered && Input.IsButtonPressed(button);
     }
+    /// <summary>
+    /// Checks if the block is overlapping with a specified point.
+    /// </summary>
+    /// <param name="point">The point to check for overlap.</param>
+    /// <returns>True if the block is overlapping with the point, false otherwise.</returns>
     public bool IsOverlapping((float x, float y) point)
     {
+        // Check if the point is outside the tilemap boundaries
         if (point.x < 0 ||
             point.x >= Input.TilemapSize.width ||
             point.y < 0 ||
             point.y >= Input.TilemapSize.height)
             return false;
 
+        // Check if the point is inside the bounding box
         return point.x >= Position.x &&
                point.x < Position.x + Size.width &&
                point.y >= Position.y &&
                point.y < Position.y + Size.height;
     }
+    /// <summary>
+    /// Checks if the block is overlapping with another block.
+    /// </summary>
+    /// <param name="block">The block to check for overlap.</param>
+    /// <returns>True if the block is overlapping with the specified block, false otherwise.</returns>
     public bool IsOverlapping(Block block)
     {
         var (x, y) = Position;
@@ -340,6 +387,10 @@ public abstract class Block
         return (x + w <= ex || x >= ex + ew || y + h <= ey || y >= ey + eh) == false;
     }
 
+    /// <summary>
+    /// Aligns the block to the specified horizontal and vertical alignment.
+    /// </summary>
+    /// <param name="alignment">The horizontal and vertical alignment values.</param>
     public void Align((float horizontal, float vertical) alignment)
     {
         var newX = Map(alignment.horizontal, (0, 1), (0, Input.TilemapSize.width - Size.width));
@@ -348,6 +399,9 @@ public abstract class Block
             float.IsNaN(alignment.horizontal) ? Position.x : (int)newX,
             float.IsNaN(alignment.vertical) ? Position.y : (int)newY);
     }
+    /// <summary>
+    /// Fits the block within the tilemap boundaries.
+    /// </summary>
     public void Fit()
     {
         var (w, h) = Size;
@@ -371,7 +425,10 @@ public abstract class Block
         if (hasOverflown == false)
             Position = (x, y);
     }
-
+    /// <summary>
+    /// Interacts with the block based on the specified interaction.
+    /// </summary>
+    /// <param name="interaction">The interaction type.</param>
     public void Interact(Interaction interaction)
     {
         if (interactions.ContainsKey(interaction) == false)
@@ -380,53 +437,109 @@ public abstract class Block
         interactions[interaction].Invoke();
     }
 
+    /// <summary>
+    /// Adds a method to be called when a specific interaction occurs.
+    /// </summary>
+    /// <param name="interaction">The interaction that triggers the method.</param>
+    /// <param name="method">The method to be called.</param>
     public void OnInteraction(Interaction interaction, Action method)
     {
         if (interactions.TryAdd(interaction, method) == false)
             interactions[interaction] += method;
     }
+    /// <summary>
+    /// Adds a method to be called when the display needs to be updated.
+    /// </summary>
+    /// <param name="method">The method to be called.</param>
     public void OnDisplay(Action method)
     {
         display += method;
     }
+    /// <summary>
+    /// Adds a method to be called when an update is needed.
+    /// </summary>
+    /// <param name="method">The method to be called.</param>
     public void OnUpdate(Action method)
     {
         update += method;
     }
+
+    /// <summary>
+    /// Adds a method to be called when a drag occurs.
+    /// </summary>
+    /// <param name="method">The method to be called, with the delta coordinates of the drag.</param>
     public void OnDrag(Action<(int deltaX, int deltaY)> method)
     {
         drag += method;
     }
 
+    /// <summary>
+    /// Called when input is received.
+    /// </summary>
     protected virtual void OnInput()
     {
     }
+
+    /// <summary>
+    /// Inherits properties from the parent block.
+    /// </summary>
+    /// <param name="parent">The parent block to inherit properties from.</param>
     protected internal void InheritParent(Block parent)
     {
         isHidden |= parent.IsHidden;
         isDisabled |= parent.IsDisabled;
     }
 
+    /// <summary>
+    /// Adds a boolean value to the given byte list.
+    /// </summary>
+    /// <param name="intoBytes">The byte list to add the boolean value to.</param>
+    /// <param name="value">The boolean value to add to the byte list.</param>
     protected static void PutBool(List<byte> intoBytes, bool value)
     {
         intoBytes.AddRange(BitConverter.GetBytes(value));
     }
+    /// <summary>
+    /// Adds a byte value to the given byte list.
+    /// </summary>
+    /// <param name="intoBytes">The byte list to add the byte value to.</param>
+    /// <param name="value">The byte value to add to the byte list.</param>
     protected static void PutByte(List<byte> intoBytes, byte value)
     {
         intoBytes.Add(value);
     }
+    /// <summary>
+    /// Adds an integer value to the given byte list.
+    /// </summary>
+    /// <param name="intoBytes">The byte list to add the integer value to.</param>
+    /// <param name="value">The integer value to add to the byte list.</param>
     protected static void PutInt(List<byte> intoBytes, int value)
     {
         intoBytes.AddRange(BitConverter.GetBytes(value));
     }
+    /// <summary>
+    /// Adds an unsigned integer value to the given byte list.
+    /// </summary>
+    /// <param name="intoBytes">The byte list to add the unsigned integer value to.</param>
+    /// <param name="value">The unsigned integer value to add to the byte list.</param>
     protected static void PutUInt(List<byte> intoBytes, uint value)
     {
         intoBytes.AddRange(BitConverter.GetBytes(value));
     }
+    /// <summary>
+    /// Adds a float value to the given byte list.
+    /// </summary>
+    /// <param name="intoBytes">The byte list to add the float value to.</param>
+    /// <param name="value">The float value to add to the byte list.</param>
     protected static void PutFloat(List<byte> intoBytes, float value)
     {
         intoBytes.AddRange(BitConverter.GetBytes(value));
     }
+    /// <summary>
+    /// Adds a string value to the given byte list.
+    /// </summary>
+    /// <param name="intoBytes">The byte list to add the string value to.</param>
+    /// <param name="value">The string value to add to the byte list.</param>
     protected static void PutString(List<byte> intoBytes, string value)
     {
         var bytes = Encoding.UTF8.GetBytes(value);
@@ -434,26 +547,56 @@ public abstract class Block
         intoBytes.AddRange(bytes);
     }
 
+    /// <summary>
+    /// Retrieves a boolean value from the given byte array.
+    /// </summary>
+    /// <param name="fromBytes">The byte array to retrieve the boolean value from.</param>
+    /// <returns>The retrieved boolean value.</returns>
     protected bool GrabBool(byte[] fromBytes)
     {
         return BitConverter.ToBoolean(GetBytes(fromBytes, 1));
     }
+    /// <summary>
+    /// Retrieves a byte value from the given byte array.
+    /// </summary>
+    /// <param name="fromBytes">The byte array to retrieve the byte value from.</param>
+    /// <returns>The retrieved byte value.</returns>
     protected byte GrabByte(byte[] fromBytes)
     {
         return GetBytes(fromBytes, 1)[0];
     }
+    /// <summary>
+    /// Retrieves an integer value from the given byte array.
+    /// </summary>
+    /// <param name="fromBytes">The byte array to retrieve the integer value from.</param>
+    /// <returns>The retrieved integer value.</returns>
     protected int GrabInt(byte[] fromBytes)
     {
         return BitConverter.ToInt32(GetBytes(fromBytes, 4));
     }
+    /// <summary>
+    /// Retrieves an unsigned integer value from the given byte array.
+    /// </summary>
+    /// <param name="fromBytes">The byte array to retrieve the unsigned integer value from.</param>
+    /// <returns>The retrieved unsigned integer value.</returns>
     protected uint GrabUInt(byte[] fromBytes)
     {
         return BitConverter.ToUInt32(GetBytes(fromBytes, 4));
     }
+    /// <summary>
+    /// Retrieves a float value from the given byte array.
+    /// </summary>
+    /// <param name="fromBytes">The byte array to retrieve the float value from.</param>
+    /// <returns>The retrieved float value.</returns>
     protected float GrabFloat(byte[] fromBytes)
     {
         return BitConverter.ToSingle(GetBytes(fromBytes, 4));
     }
+    /// <summary>
+    /// Retrieves a string value from the given byte array.
+    /// </summary>
+    /// <param name="fromBytes">The byte array to retrieve the string value from.</param>
+    /// <returns>The retrieved string value.</returns>
     protected string GrabString(byte[] fromBytes)
     {
         var textBytesLength = GrabInt(fromBytes);
@@ -461,10 +604,20 @@ public abstract class Block
         return Encoding.UTF8.GetString(bText);
     }
 
+    /// <summary>
+    /// Converts the block to a byte array.
+    /// </summary>
+    /// <param name="block">The block to convert.</param>
+    /// <returns>The byte array representation of the block.</returns>
     public static implicit operator byte[](Block block)
     {
         return block.ToBytes();
     }
+    /// <summary>
+    /// Converts the block to a tuple of integers representing the position and size.
+    /// </summary>
+    /// <param name="block">The block to convert.</param>
+    /// <returns>A tuple of integers representing the position and size of the Block.</returns>
     public static implicit operator (int x, int y, int width, int height)(Block block)
     {
         return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
