@@ -11,7 +11,7 @@ public static class LineOfSightAndLights
     public static void Run()
     {
         Window.Create();
-        Window.Title = "Pure - Sights Example";
+        Window.Title = "Pure - Sights/Lights Example";
 
         var (w, h) = Monitor.Current.AspectRatio;
         var tilemap = new Tilemap((w * 3, h * 3));
