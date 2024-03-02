@@ -10,16 +10,17 @@ public static class FlappyBird
 {
     public static void Run()
     {
-        Window.Create();
         Window.Title = "Pure - Flappy Bird Example";
         Window.IsRetro = true;
+        Mouse.IsCursorVisible = true;
 
         // some data needed throughout the game
         const int SCROLL_SPEED = 4, BIRD_X = 10, PIPE_WIDTH = 2, PIPE_HEIGHT = 20;
         const string GAME_OVER = "Game Over! <Space> to play again.";
         var score = 0;
         var isGameOver = false;
-        var background = new Tilemap((16 * 3, 9 * 3)); // 16:9 aspect ratio times 3
+        var ratio = Monitor.Current.AspectRatio;
+        var background = new Tilemap((ratio.width * 3, ratio.height * 3));
         var foreground = new Tilemap(background.Size);
         var (width, height) = background.Size;
         var birdY = 5f;
@@ -39,7 +40,9 @@ public static class FlappyBird
 
         Keyboard.Key.Space.OnPress(() =>
         {
-            birdVelocity = -0.1f;
+            Window.Monitor = 1;
+
+            birdVelocity = -8f;
             birdAnimation.CurrentProgress = 0;
 
             if (isGameOver == false)
@@ -66,8 +69,8 @@ public static class FlappyBird
             // apply gravity, unless game over
             if (isGameOver == false)
             {
-                birdVelocity += Time.Delta * 0.1f;
-                birdY += birdVelocity;
+                birdVelocity += Time.Delta * 10f;
+                birdY += birdVelocity * Time.Delta;
             }
 
             // prevent jumping "over" pipes and going offscreen

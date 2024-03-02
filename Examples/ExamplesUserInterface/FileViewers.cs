@@ -4,6 +4,8 @@ public static class FileViewers
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - File Viewers Example";
+
         var folderViewer = new FileViewer((25, 2))
         {
             Text = "Select Folders:",

@@ -312,7 +312,7 @@ public class Layer
     }
     public (float x, float y) PixelToWorld((int x, int y) pixelPosition)
     {
-        if (Window.window == null)
+        if (Window.window == null || Window.renderTexture == null)
             return (float.NaN, float.NaN);
 
         var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);

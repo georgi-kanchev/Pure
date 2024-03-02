@@ -4,6 +4,8 @@ public static class Steppers
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Steppers Example";
+
         var stepper = new Stepper { Range = (-8, 10), Size = (12, 2) };
         stepper.Align((0.05f, 0.5f));
         stepper.OnDisplay(() =>

@@ -1,13 +1,10 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
-
 global using Pure.Editors.EditorBase;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
-
 global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
-
 global using System.Text;
 using System.IO.Compression;
 
@@ -23,7 +20,7 @@ public static class Program
         editor.Run();
     }
 
-    #region Backend
+#region Backend
     private static readonly Editor editor;
     private static readonly Inspector inspector;
     private static readonly TilePalette tilePalette;
@@ -90,7 +87,7 @@ public static class Program
                 });
             }
             else if (index == 5)
-                Keyboard.Clipboard = Convert.ToBase64String(Save());
+                Window.Clipboard = Convert.ToBase64String(Save());
             else if (index == 6)
             {
                 editor.PromptLoadMapBase64(layers =>
@@ -172,5 +169,5 @@ public static class Program
 
         return output.ToArray();
     }
-    #endregion
+#endregion
 }

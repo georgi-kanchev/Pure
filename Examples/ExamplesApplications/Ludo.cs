@@ -145,7 +145,6 @@ public static class Ludo
 
     public static void Run()
     {
-        Window.Create();
         Window.Title = "Pure - Ludo Example";
 
         var map = new Tilemap((48, 27));

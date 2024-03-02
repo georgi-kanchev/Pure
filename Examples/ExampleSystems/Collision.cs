@@ -9,7 +9,6 @@ public static class Collision
 {
     public static void Run()
     {
-        Window.Create();
         Window.Title = "Pure - Collision Example";
 
         var aspectRatio = Monitor.Current.AspectRatio;

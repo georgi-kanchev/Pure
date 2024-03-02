@@ -348,7 +348,7 @@ public static class Program
             else if (index is 9 or 15) // load solids
                 editor.PromptFileLoad(bytes => Load(index == 9, bytes));
             else if (index is 10 or 16) // copy
-                Keyboard.Clipboard = Convert.ToBase64String(Save(index == 10));
+                Window.Clipboard = Convert.ToBase64String(Save(index == 10));
             else if (index is 11 or 17) // paste
             {
                 editor.PromptBase64(() =>

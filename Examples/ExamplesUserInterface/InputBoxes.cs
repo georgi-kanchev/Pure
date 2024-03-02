@@ -4,6 +4,8 @@ public static class InputBoxes
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Input Boxes Example";
+
         var line = Environment.NewLine;
         var messages = $"Welcome to the chat! :){line}" +
                        $"Type a message &{line}" +
@@ -55,10 +57,10 @@ public static class InputBoxes
             Value = "",
             Placeholder = "Password…",
             IsSingleLine = true,
+            Mask = "#"
         };
-        password.SymbolGroup |= SymbolGroup.Password;
         password.Align((0.95f, 0.1f));
-        password.OnSubmit(() => { pass = password.Value; });
+        password.OnSubmit(() => pass = password.Value);
         password.OnDisplay(() =>
         {
             var pos = password.Position;
@@ -85,6 +87,9 @@ public static class InputBoxes
             maps[0].SetTextLine((pos.x, pos.y - 1), mathResult);
             maps.SetInputBox(equation);
         });
+
+        Key.ControlLeft.OnPress(() => multiLine.Mask = "*");
+        Key.ControlRight.OnPress(() => multiLine.Mask = null);
 
         return new Block[] { multiLine, password, chat, equation };
     }

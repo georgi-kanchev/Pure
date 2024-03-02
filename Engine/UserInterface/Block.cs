@@ -142,7 +142,13 @@ public abstract class Block
     /// regardless of being hovered or not.
     /// </summary>
     public bool IsPressedAndHeld { get; private set; }
-
+    /// <summary>
+    /// Gets a value indicating whether this block belongs to another user interface block.
+    /// </summary>
+    public bool IsChild
+    {
+        get => hasParent;
+    }
     /// <summary>
     /// Gets a value indicating whether the user interface block is currently scrollable.
     /// </summary>

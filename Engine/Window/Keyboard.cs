@@ -147,12 +147,6 @@ public static class Keyboard
         }
     }
 
-    public static string? Clipboard
-    {
-        get => SFML.Window.Clipboard.Contents;
-        set => SFML.Window.Clipboard.Contents = value;
-    }
-
     public static void CancelInput()
     {
         pressed.Clear();

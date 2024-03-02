@@ -4,6 +4,8 @@ public static class Pagination
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Pages Example";
+
         var icons = new Pages { Size = (9, 1), ItemGap = 0 };
         icons.Align((0.05f, 0.5f));
         icons.OnDisplay(() => maps.SetPages(icons));

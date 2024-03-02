@@ -6,15 +6,11 @@ namespace Pure.Editors.EditorStorage;
 
 using Engine.Utilities;
 using Engine.Storage;
-
 using Tools.Tilemapper;
-
 using EditorBase;
-
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
-
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -38,7 +34,7 @@ public static class Program
         editor.Run();
     }
 
-    #region Backend
+#region Backend
     private enum DataType
     {
         Value,
@@ -390,7 +386,7 @@ public static class Program
         else if (index == 8)
             editor.PromptFileLoad(Load);
         else if (index == 9)
-            Keyboard.Clipboard = Convert.ToBase64String(Save());
+            Window.Clipboard = Convert.ToBase64String(Save());
         else if (index == 10)
             editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
     }
@@ -1082,9 +1078,9 @@ public static class Program
         return Regex.Replace(dataAsText, STR_PLACEHOLDER + "(\\d+)", match =>
         {
             var index = int.Parse(match.Groups[1].Value);
-            return index >= 0 && index < strings.Count
-                ? $"{storage.Dividers.text}{strings[index]}{storage.Dividers.text}"
-                : match.Value;
+            return index >= 0 && index < strings.Count ?
+                $"{storage.Dividers.text}{strings[index]}{storage.Dividers.text}" :
+                match.Value;
         });
     }
     private static string AddPlaceholders(string dataAsText)
@@ -1096,5 +1092,5 @@ public static class Program
             return replacedValue;
         });
     }
-    #endregion
+#endregion
 }

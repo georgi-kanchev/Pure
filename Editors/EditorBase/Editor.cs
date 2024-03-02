@@ -82,7 +82,7 @@ public class Editor
 
     public Editor(string title)
     {
-        Window.Create(PIXEL_SCALE);
+        Window.PixelScale = PIXEL_SCALE;
         Window.Title = title;
         Mouse.IsCursorVisible = false;
 
@@ -150,7 +150,7 @@ public class Editor
     {
         SetGrid();
 
-        Input.OnTextCopy(() => Keyboard.Clipboard = Input.Clipboard);
+        Input.OnTextCopy(() => Window.Clipboard = Input.Clipboard);
         while (Window.KeepOpen())
         {
             Time.Update();
@@ -166,7 +166,7 @@ public class Editor
                 Mouse.ScrollDelta,
                 Keyboard.KeyIdsPressed,
                 Keyboard.KeyTyped,
-                Keyboard.Clipboard);
+                Window.Clipboard);
 
             prevRaw = MousePositionRaw;
             MousePositionRaw = Mouse.CursorPosition;

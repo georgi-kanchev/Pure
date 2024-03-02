@@ -4,6 +4,8 @@ public static class Prompts
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Prompts Example";
+
         const Key HOTKEY_LOG = Key.ShiftLeft;
         const Key HOTKEY_MSG = Key.ControlLeft;
 

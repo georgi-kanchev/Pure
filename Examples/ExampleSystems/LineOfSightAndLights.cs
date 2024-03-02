@@ -10,7 +10,6 @@ public static class LineOfSightAndLights
 {
     public static void Run()
     {
-        Window.Create();
         Window.Title = "Pure - Sights/Lights Example";
 
         var (w, h) = Monitor.Current.AspectRatio;

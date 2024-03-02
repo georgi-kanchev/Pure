@@ -9,7 +9,7 @@ public class Monitor
     public static Monitor[] Monitors { get; }
     public static Monitor Current
     {
-        get => Monitors[current];
+        get => Monitors[Window.Monitor];
     }
 
     public string Name { get; private set; } = "";
@@ -23,9 +23,11 @@ public class Monitor
     }
 
 #region Backend
-    internal static int current;
+    internal (int x, int y) position;
 
-    internal (int x, int y) Position { get; private set; }
+    private Monitor()
+    {
+    }
 
     static Monitor()
     {
@@ -40,7 +42,7 @@ public class Monitor
                 var m = new Monitor
                 {
                     Size = (monitor.Resolution.Width, monitor.Resolution.Height),
-                    Position = (monitor.Resolution.X, monitor.Resolution.Y),
+                    position = (monitor.Resolution.X, monitor.Resolution.Y),
                 };
                 m.AspectRatio = GetAspectRatio(m.Size.width, m.Size.height);
                 m.Name = $"{monitor.Description} ({m.Size.width}x{m.Size.height} | " +
@@ -49,7 +51,6 @@ public class Monitor
                 monitors.Add(m);
             }
 
-            current = Math.Min(current, monitors.Count - 1);
             Monitors = monitors.ToArray();
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -88,7 +89,7 @@ public class Monitor
                     currentMonitor = new()
                     {
                         Size = (width, height),
-                        Position = (x, y),
+                        position = (x, y),
                         AspectRatio = GetAspectRatio(width, height),
                         Name = $"Monitor {monitors.Count}{(isPrimary ? " (Primary)" : "")}",
                         IsPrimary = isPrimary

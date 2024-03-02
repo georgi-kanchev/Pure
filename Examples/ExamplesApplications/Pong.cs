@@ -13,7 +13,6 @@ public static class Pong
 
     public static void Run()
     {
-        Window.Create();
         Window.Title = "Pure - Pong Example";
 
         var tilemap = new Tilemap((48, 27));

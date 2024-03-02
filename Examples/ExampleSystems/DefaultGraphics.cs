@@ -8,7 +8,6 @@ public static class DefaultGraphics
 {
     public static void Run()
     {
-        Window.Create();
         Window.Title = "Pure - Default Graphics Example";
 
         var (w, h) = Monitor.Current.AspectRatio;

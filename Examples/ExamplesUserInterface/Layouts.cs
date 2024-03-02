@@ -4,6 +4,8 @@ public static class Layouts
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Layouts Example";
+
         var panel = new Panel { Size = (21, 21) };
         panel.Align((0.9f, 0.5f));
 

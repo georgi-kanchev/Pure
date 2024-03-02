@@ -39,7 +39,7 @@ internal class MenuMain : Menu
             else if (index == 5)
                 editor.PromptFileLoad(Load);
             else if (index == 6)
-                Keyboard.Clipboard = Convert.ToBase64String(ui.ToBytes());
+                Window.Clipboard = Convert.ToBase64String(ui.ToBytes());
             else if (index == 7)
                 editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
         });

@@ -4,6 +4,8 @@ public static class Panels
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Panels Example";
+
         var nl = Environment.NewLine;
         var text = $"- Useful for containing other elements{nl}{nl}" +
                    $"- Title{nl}{nl}" +

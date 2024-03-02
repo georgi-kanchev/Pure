@@ -8,7 +8,6 @@ public static class Audio
 {
     public static void Run()
     {
-        Window.Create();
         Window.Title = "Pure - Audio Example";
 
         var jingleBells =

@@ -9,7 +9,6 @@ public static class Pathfinding
 {
     public static void Run()
     {
-        Window.Create();
         Window.Title = "Pure - Pathfinding Example";
 
         var (w, h) = Monitor.Current.AspectRatio;

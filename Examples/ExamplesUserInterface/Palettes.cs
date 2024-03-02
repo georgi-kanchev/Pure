@@ -4,6 +4,8 @@ public static class Palettes
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Palettes Example";
+
         var palette = new Palette { Size = (13, 3) };
         palette.Align((0.5f, 0.6f));
         palette.OnColorPick(position => maps[0].TileAt(((int)position.x, (int)position.y)).Tint);

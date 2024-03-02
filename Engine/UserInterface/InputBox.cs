@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.UserInterface;
+﻿using System.Text.RegularExpressions;
+
+namespace Pure.Engine.UserInterface;
 
 using System.Diagnostics;
 using System.Text;
@@ -14,8 +16,7 @@ public enum SymbolGroup
     Special = 16,
     Space = 32,
     Other = 64,
-    All = Letters | Digits | Punctuation | Math | Special | Space | Other,
-    Password = 128
+    All = Letters | Digits | Punctuation | Math | Special | Space | Other
 }
 
 /// <summary>
@@ -47,6 +48,15 @@ public class InputBox : Block
             // reclamp
             SelectionIndices = (sx, sy);
             CursorIndices = (cx, cy);
+        }
+    }
+    public string? Mask
+    {
+        get => mask;
+        set
+        {
+            mask = value;
+            UpdateText();
         }
     }
     public bool IsReadOnly { get; set; }
@@ -272,8 +282,7 @@ public class InputBox : Block
 
     public void CursorMove((int x, int y) delta, bool isSelecting = false, bool isScrolling = true)
     {
-        var shift = Pressed(Key.ShiftLeft) || Pressed(Key.ShiftRight);
-
+        clicks = 0;
         cursorBlink.Restart();
 
         for (var i = 0; i < Math.Abs(delta.x); i++)
@@ -301,15 +310,28 @@ public class InputBox : Block
             cy++;
         }
 
-        for (var i = 0; i < Math.Abs(delta.y); i++)
-            cy += delta.y < 0 ? -1 : 1;
+        cy += delta.y;
 
-        CursorIndices = (cx, cy);
+        // trying to keep the cx the when moving up & down
+        if (delta.x == 0 && delta.y != 0)
+            cx = cxDesired;
+
+        // last line, trying to go down, should move to the end of line on cx
+        if (cy >= lines.Count)
+            cx = lines[^1].Length;
+        // same thing for first line going up, should move to start of line on cx
+        if (cy < 0)
+            cx = 0;
+
+        CursorIndices = (cx, cy); // clamp
 
         if (isScrolling)
             CursorScroll();
 
-        SelectionIndices = shift && isSelecting ? SelectionIndices : CursorIndices;
+        SelectionIndices = isSelecting ? SelectionIndices : CursorIndices;
+
+        if (delta.x != 0)
+            cxDesired = cx;
     }
     public void CursorScroll()
     {
@@ -388,7 +410,7 @@ public class InputBox : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private readonly List<string> lines = new() { string.Empty };
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
 
@@ -402,20 +424,21 @@ public class InputBox : Block
         { SymbolGroup.Space, " " }
     };
 
-    private const char SELECTION = '█', SPACE = ' ', PASSWORD = '*';
+    private const char SELECTION = '█', SPACE = ' ';
     private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
     private static readonly Stopwatch holdDelay = new(),
         hold = new(),
         clickDelay = new(),
         cursorBlink = new(),
         scrollHold = new();
-    private int cx, cy, sx, sy, clicks, scrX, scrY;
+    private int cx, cy, sx, sy, clicks, scrX, scrY, cxDesired;
     private (int, int) lastClickIndices = (-1, -1), prevSize;
     private string value = string.Empty;
 
     private Action<string>? type;
     private Action? submit;
     private SymbolGroup symbolGroup;
+    private string? mask;
 
     static InputBox()
     {
@@ -488,7 +511,8 @@ public class InputBox : Block
     {
         var delta = Input.ScrollDelta;
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
-        CursorMove(ctrl ? (-delta, 0) : (0, -delta), true);
+        var shift = Pressed(Key.ShiftLeft) || Pressed(Key.ShiftRight);
+        CursorMove(ctrl ? (-delta, 0) : (0, -delta), shift);
     }
 
     private void UpdateTextAndValue()
@@ -508,8 +532,8 @@ public class InputBox : Block
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
             var result = scrX >= secondIndex ? string.Empty : line[scrX..secondIndex];
 
-            if (SymbolGroup.HasFlag(SymbolGroup.Password))
-                result = new(PASSWORD, result.Length);
+            if (Mask != null)
+                result = Regex.Replace(result, ".", Mask);
 
             str.Append(newLine + result);
         }
@@ -552,35 +576,6 @@ public class InputBox : Block
                 return true;
 
         return false;
-    }
-
-    private char GetSymbol((int symbol, int line) indices)
-    {
-        var (x, y) = indices;
-        return y < 0 || y >= lines.Count || x < 0 || x >= lines[y].Length ? default : lines[y][x];
-    }
-    private int GetWordEndOffset(int step)
-    {
-        var index = step < 0 ? -1 : 0;
-        var symbol = GetSymbol((cx + (step < 0 ? -1 : 0), cy));
-        var targetIsWord = char.IsLetterOrDigit(symbol) == false;
-
-        for (var i = 0; i < lines[cy].Length; i++)
-        {
-            var j = cx + index;
-
-            if (j <= 0 && step < 0)
-                return index;
-            if (j >= lines[cy].Length - 1 && step > 0)
-                return index + 1;
-
-            if ((char.IsLetterOrDigit(GetSymbol((j, cy))) == false) ^ targetIsWord)
-                return index + (step < 0 ? 1 : 0);
-
-            index += step;
-        }
-
-        return step < 0 ? IndicesToIndex((0, cy)) : IndicesToIndex((lines[cy].Length, cy));
     }
 
     private void TrySelect()
@@ -627,6 +622,7 @@ public class InputBox : Block
                 cy = iy;
                 cx = ix;
                 CursorIndices = (cx, cy);
+                cxDesired = cx;
                 CursorScroll();
             }
         }
@@ -642,24 +638,35 @@ public class InputBox : Block
         var (x, y) = Position;
         var (w, h) = Size;
 
-        if (px > x + w) cx += 1;
-        else if (px < x) cx -= 1;
-        if (py > y + h) cy += 1;
-        else if (py < y) cy -= 1;
+        if (px > x + w)
+            cx += 1;
+        else if (px < x)
+            cx -= 1;
+        if (py > y + h)
+            cy += 1;
+        else if (py < y)
+            cy -= 1;
 
         CursorIndices = (cx, cy);
+        cxDesired = cx;
         CursorScroll();
         scrollHold.Restart();
     }
     private void TryCycleSelected()
     {
-        var (x, y) = Position;
-        var (hx, hy) = Input.Position;
-        var selectionIndices = PositionToIndices(((int)hx, (int)hy));
-
         clicks = clicks == 4 ? 1 : clicks + 1;
 
-        if (clicks == 1)
+        var (x, y) = Position;
+        var (hx, hy) = Input.Position;
+        var isWholeLineSelected = sx == 0 && cx == lines[cy].Length;
+
+        var skipWord = clicks == 2 && Mask != null; // there are only whole lines
+        clicks += skipWord ? 1 : 0;
+
+        var skipLine = clicks == 3 && (IsSingleLine || isWholeLineSelected);
+        clicks += skipLine ? 1 : 0;
+
+        if (clicks == 1) // cursor to mouse
         {
             var ix = (int)Math.Round(scrX + hx - Position.x);
             var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
@@ -667,14 +674,14 @@ public class InputBox : Block
             CursorScroll();
             SelectionIndices = (ix, iy);
         }
-        else if (clicks == 2)
+        else if (clicks == 2) // select word
         {
             cx += GetWordEndOffset(1);
             CursorIndices = (cx, cy);
             CursorScroll();
-            SelectionIndices = (cx + GetWordEndOffset(-1), selectionIndices.line);
+            SelectionIndices = (cx + GetWordEndOffset(-1), cy);
         }
-        else if (clicks == 3)
+        else if (clicks == 3) // select line
         {
             var p = PositionToIndices((x + lines[cy].Length, y + cy));
             CursorIndices = (p.symbol, cy);
@@ -682,11 +689,7 @@ public class InputBox : Block
             SelectionIndices = (0, cy);
         }
         else if (clicks == 4)
-        {
-            CursorIndices = (int.MaxValue, int.MaxValue);
-            CursorScroll();
-            SelectionIndices = (0, 0);
-        }
+            SelectAll();
     }
     private bool TrySelectAll()
     {
@@ -729,7 +732,7 @@ public class InputBox : Block
         for (var j = 0; j < hotkeys.Length; j++)
             if (hotkeys[j].Item1)
             {
-                CursorMove(hotkeys[j].Item2, true);
+                CursorMove(hotkeys[j].Item2, shift);
                 return;
             }
     }
@@ -1007,6 +1010,37 @@ public class InputBox : Block
 
         return max;
     }
+    private char GetSymbol((int symbol, int line) indices)
+    {
+        var (x, y) = indices;
+        return y < 0 || y >= lines.Count || x < 0 || x >= lines[y].Length ? default : lines[y][x];
+    }
+    private int GetWordEndOffset(int step)
+    {
+        if (Mask != null)
+            return step < 0 ? -cx : lines[cy].Length - cx;
+
+        var index = step < 0 ? -1 : 0;
+        var symbol = GetSymbol((cx + (step < 0 ? -1 : 0), cy));
+        var targetIsWord = char.IsLetterOrDigit(symbol) == false;
+
+        for (var i = 0; i < lines[cy].Length; i++)
+        {
+            var j = cx + index;
+
+            if (j <= 0 && step < 0)
+                return index;
+            if (j >= lines[cy].Length - 1 && step > 0)
+                return index + 1;
+
+            if ((char.IsLetterOrDigit(GetSymbol((j, cy))) == false) ^ targetIsWord)
+                return index + (step < 0 ? 1 : 0);
+
+            index += step;
+        }
+
+        return step < 0 ? IndicesToIndex((0, cy)) : IndicesToIndex((lines[cy].Length, cy));
+    }
 
     private int IndicesToIndex((int symbol, int line) indices)
     {
@@ -1079,5 +1113,5 @@ public class InputBox : Block
 
         return result.ToString();
     }
-    #endregion
+#endregion
 }

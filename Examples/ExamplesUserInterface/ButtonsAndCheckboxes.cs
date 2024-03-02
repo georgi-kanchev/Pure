@@ -4,6 +4,8 @@ public static class ButtonsAndCheckboxes
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Buttons & Checkboxes Example";
+
         var buttonSelect = new Button { Text = "Button Select" };
         buttonSelect.Size = (buttonSelect.Text.Length + 4, 1);
         buttonSelect.Align((0.5f, 0.2f));

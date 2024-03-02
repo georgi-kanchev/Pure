@@ -4,6 +4,8 @@ public static class Lists
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Lists Example";
+
         var listVertical = new List
         {
             ItemGap = 1,

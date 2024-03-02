@@ -4,6 +4,8 @@ public static class SlidersAndScrolls
 {
     public static Block[] Create(TilemapPack maps)
     {
+        Window.Title = "Pure - Sliders & Scrolls Example";
+
         var sliderH = new Slider((0, 0), isVertical: false) { Size = (10, 10) };
         var sliderV = new Slider((0, 0), isVertical: true) { Size = (10, 10) };
         var scrollH = new Scroll((0, 0), isVertical: false);
