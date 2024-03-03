@@ -2,21 +2,17 @@
 global using SFML.System;
 global using SFML.Window;
 global using System.Diagnostics.CodeAnalysis;
+using System.IO.Compression;
+using System.Text;
 
 namespace Pure.Engine.Window;
 
 /// <summary>
 /// Possible window modes.
 /// </summary>
-[Flags]
 public enum Mode
 {
-    None = 0,
-    Titlebar = 1 << 0,
-    Resize = 1 << 1,
-    Close = 1 << 2,
-    Fullscreen = 1 << 3,
-    Default = Titlebar | Resize | Close
+    Windowed, Borderless, Fullscreen
 }
 
 /// <summary>
@@ -36,6 +32,8 @@ public static class Window
                 isRecreating = true;
 
             mode = value;
+            if (mode == Mode.Fullscreen)
+                monitor = 0;
 
             TryCreate();
         }
@@ -63,9 +61,8 @@ public static class Window
     {
         get
         {
-            var ratio = Engine.Window.Monitor.Current.AspectRatio;
-            var (w, h) = (ratio.width * scale, ratio.height * scale);
-            return ((uint)w, (uint)h);
+            var (w, h) = Engine.Window.Monitor.Current.Size;
+            return ((uint)(w * Scale), (uint)(h * Scale));
         }
     }
     public static float Scale
@@ -73,9 +70,12 @@ public static class Window
         get => scale;
         set
         {
-            scale = value;
-            var ratio = Engine.Window.Monitor.Current.AspectRatio;
-            var size = (ratio.width * value, ratio.height * value);
+            TryCreate();
+
+            if (mode != Mode.Windowed)
+                return;
+
+            SetInternalScale(value);
         }
     }
     /// <summary>
@@ -114,8 +114,17 @@ public static class Window
         get => monitor;
         set
         {
+            if (mode == Mode.Fullscreen)
+                return;
+
             monitor = (uint)Math.Min(value, Engine.Window.Monitor.Monitors.Length - 1);
             TryCreate();
+
+            var (w, h) = Engine.Window.Monitor.Current.Size;
+            if (mode == Mode.Windowed)
+                while (window.Size.X > w || window.Size.Y > h)
+                    Scale -= 0.05f;
+
             Center();
         }
     }
@@ -155,15 +164,68 @@ public static class Window
         set => SFML.Window.Clipboard.Contents = value;
     }
 
+    public static void FromBytes(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+
+        mode = (Mode)GetBytesFrom(b, 1, ref offset)[0];
+        var bTitleLength = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        title = Encoding.UTF8.GetString(GetBytesFrom(b, bTitleLength, ref offset));
+        scale = BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+        isRetro = BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
+        backgroundColor = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        monitor = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        pixelScale = BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+        isVerticallySynced = BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
+        maximumFrameRate = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        var x = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        var y = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        TryCreate();
+        window.Position = new(x, y);
+    }
+    public static void FromBase64(string base64)
+    {
+        FromBytes(Convert.FromBase64String(base64));
+    }
+    public static string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public static byte[] ToBytes()
+    {
+        TryCreate();
+
+        var result = new List<byte>();
+        var bTitle = Encoding.UTF8.GetBytes(Title);
+        result.Add((byte)Mode);
+        result.AddRange(BitConverter.GetBytes(bTitle.Length));
+        result.AddRange(bTitle);
+        result.AddRange(BitConverter.GetBytes(Scale));
+        result.AddRange(BitConverter.GetBytes(IsRetro));
+        result.AddRange(BitConverter.GetBytes(BackgroundColor));
+        result.AddRange(BitConverter.GetBytes(Monitor));
+        result.AddRange(BitConverter.GetBytes(PixelScale));
+        result.AddRange(BitConverter.GetBytes(IsVerticallySynced));
+        result.AddRange(BitConverter.GetBytes(MaximumFrameRate));
+        result.AddRange(BitConverter.GetBytes(window.Position.X));
+        result.AddRange(BitConverter.GetBytes(window.Position.Y));
+        return Compress(result.ToArray());
+    }
+
     public static bool KeepOpen()
     {
         if (isRecreating)
             Recreate();
 
         TryCreate();
+        ForceAspectRatio();
 
         Mouse.Update();
         FinishDraw();
+
+        if (hasClosed)
+            return false;
 
         window.Display();
         window.DispatchEvents();
@@ -204,7 +266,14 @@ public static class Window
             return;
         }
 
+        hasClosed = true;
+        close?.Invoke();
         window.Close();
+    }
+
+    public static void OnClose(Action method)
+    {
+        close += method;
     }
 
 #region Backend
@@ -212,6 +281,7 @@ public static class Window
     internal static RenderTexture? renderTexture;
     internal static (int w, int h) renderTextureViewSize;
 
+    private static Action? close;
     private static Shader? retroScreen;
     private static readonly Random retroRand = new();
     private static readonly Clock retroScreenTimer = new();
@@ -219,14 +289,13 @@ public static class Window
     private static Clock? retroTurnoffTime;
     private const float RETRO_TURNOFF_TIME = 0.5f;
 
-    private static bool isRetro, isClosing, isVerticallySynced, isRecreating;
+    private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating;
     private static string title = "Game";
-    private static (uint w, uint h) size;
     private static uint backgroundColor, monitor;
     private static Mode mode;
     private static float pixelScale = 5f;
     private static uint maximumFrameRate;
-    private static float scale;
+    private static float scale = 0.75f;
 
     [MemberNotNull(nameof(window))]
     private static void TryCreate()
@@ -237,7 +306,6 @@ public static class Window
         if (renderTexture == null)
             RecreateRenderTexture();
 
-        mode = Mode.Default;
         Recreate();
     }
     [MemberNotNull(nameof(window))]
@@ -245,22 +313,29 @@ public static class Window
     {
         isRecreating = false;
 
-        var shouldCenter = true;
         var prevSize = new Vector2u(1280, 720);
         var prevPos = new Vector2i();
         if (window != null)
         {
-            shouldCenter = false;
+            SetInternalScale(mode == Mode.Windowed ? 0.75f : 1f);
+
             prevPos = window.Position;
             prevSize = window.Size;
             window.Dispose();
             window = null;
         }
 
-        window = new(new(prevSize.X, prevSize.Y), title, (Styles)mode) { Position = prevPos };
+        var style = Styles.Default;
+        style = mode == Mode.Fullscreen ? Styles.Fullscreen : style;
+        style = mode == Mode.Borderless ? Styles.None : style;
+
+        window = new(new(prevSize.X, prevSize.Y), title, style) { Position = prevPos };
+        window.SetKeyRepeatEnabled(false);
         window.Closed += (_, _) => Close();
-        window.Resized += (_, _) =>
+        window.Resized += (_, e) =>
         {
+            if (e.Width < 50 || e.Height < 50)
+                Scale = 0.1f;
         };
         window.KeyPressed += Keyboard.OnPress;
         window.KeyReleased += Keyboard.OnRelease;
@@ -280,10 +355,8 @@ public static class Window
         window.Clear();
         window.Display();
 
-        if (shouldCenter)
-            Center();
-
         // set values to the new window
+        Scale = scale;
         Title = title;
         IsVerticallySynced = isVerticallySynced;
         MaximumFrameRate = maximumFrameRate;
@@ -291,8 +364,9 @@ public static class Window
         Mouse.IsCursorBounded = Mouse.IsCursorBounded;
         Mouse.IsCursorVisible = Mouse.IsCursorVisible;
         Mouse.TryUpdateSystemCursor();
-    }
 
+        Center();
+    }
     [MemberNotNull(nameof(renderTexture))]
     private static void RecreateRenderTexture()
     {
@@ -305,16 +379,29 @@ public static class Window
         renderTexture.SetView(view);
     }
 
+    private static void SetInternalScale(float value)
+    {
+        TryCreate();
+        scale = Math.Max(value, 0.1f);
+        var monitorSize = Engine.Window.Monitor.Current.Size;
+        var (w, h) = (monitorSize.width * value, monitorSize.height * value);
+        window.Size = new((uint)w, (uint)h);
+    }
     private static void StartRetroAnimation()
     {
         retroTurnoffTime = new();
         retroTurnoff = new(RETRO_TURNOFF_TIME * 1000);
         retroTurnoff.Start();
-        retroTurnoff.Elapsed += (_, _) => window?.Close();
+        retroTurnoff.Elapsed += (_, _) =>
+        {
+            hasClosed = true;
+            close?.Invoke();
+            window?.Close();
+        };
     }
     private static void FinishDraw()
     {
-        if (renderTexture == null)
+        if (renderTexture == null || hasClosed)
             return;
 
         TryCreate();
@@ -353,15 +440,63 @@ public static class Window
     {
         TryCreate();
 
-        var currentMonitor = Engine.Window.Monitor.Monitors[Monitor];
-        var (x, y) = currentMonitor.position;
-        var (w, h) = currentMonitor.Size;
+        var current = Engine.Window.Monitor.Current;
+        var (x, y) = current.position;
+        var (w, h) = current.Size;
         var (ww, wh) = Size;
 
         x += w / 2 - (int)ww / 2;
         y += h / 2 - (int)wh / 2;
 
-        window.Position = new((int)x, (int)y);
+        window.Position = new(x, y);
+    }
+    private static void ForceAspectRatio()
+    {
+        TryCreate();
+
+        var (w, h) = ((int)window.Size.X, (int)window.Size.Y);
+        var curr = Engine.Window.Monitor.Current;
+        var (mw, mh) = curr.Size;
+        var (aw, ah) = curr.AspectRatio;
+        var (dw, dh) = (w % aw, h % ah);
+
+        if (dw != 0)
+        {
+            w -= dw;
+            Scale = w / (float)mw;
+        }
+
+        if (dh != 0)
+        {
+            h -= dh;
+            Scale = h / (float)mh;
+        }
+
+        Scale = scale;
+    }
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+            stream.CopyTo(output);
+
+        return output.ToArray();
+    }
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
     }
 #endregion
 }

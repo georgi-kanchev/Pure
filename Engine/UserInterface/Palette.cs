@@ -29,11 +29,12 @@ public class Palette : Block
     }
     public Palette(byte[] bytes) : base(bytes)
     {
-        SelectedColor = GrabUInt(bytes);
-        var opacity = GrabFloat(bytes);
-        var index = GrabInt(bytes);
-        var count = GrabInt(bytes);
-        var page = GrabInt(bytes);
+        var b = Decompress(bytes);
+        SelectedColor = GrabUInt(b);
+        var opacity = GrabFloat(b);
+        var index = GrabInt(b);
+        var count = GrabInt(b);
+        var page = GrabInt(b);
         Init(count, page, opacity);
         Opacity.progress = opacity;
         Opacity.index = index;
@@ -48,13 +49,13 @@ public class Palette : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutUInt(result, SelectedColor);
         PutFloat(result, Opacity.Progress);
         PutInt(result, Opacity.index);
         PutInt(result, Brightness.Count);
         PutInt(result, Brightness.Current);
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     public void OnColorSampleDisplay(Action<Button, uint> method)

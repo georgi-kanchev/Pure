@@ -70,10 +70,11 @@ public class Pages : Block
     }
     public Pages(byte[] bytes) : base(bytes)
     {
-        ItemWidth = GrabByte(bytes);
-        ItemGap = GrabByte(bytes);
-        Count = GrabInt(bytes);
-        Current = GrabInt(bytes);
+        var b = Decompress(bytes);
+        ItemWidth = GrabByte(b);
+        ItemGap = GrabByte(b);
+        Count = GrabInt(b);
+        Current = GrabInt(b);
 
         Init();
     }
@@ -87,12 +88,12 @@ public class Pages : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutByte(result, (byte)ItemWidth);
         PutByte(result, (byte)ItemGap);
         PutInt(result, Count);
         PutInt(result, Current);
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     public int IndexOf(Button button)

@@ -39,13 +39,14 @@ public class Scroll : Block
     }
     public Scroll(byte[] bytes) : base(bytes)
     {
-        IsVertical = GrabBool(bytes);
-        Step = GrabFloat(bytes);
+        var b = Decompress(bytes);
+        IsVertical = GrabBool(b);
+        Step = GrabFloat(b);
         Size = IsVertical ? (1, Size.height) : (Size.width, 1);
 
         Init();
-        Slider.progress = GrabFloat(bytes);
-        Slider.index = GrabInt(bytes);
+        Slider.progress = GrabFloat(b);
+        Slider.index = GrabInt(b);
     }
     public Scroll(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -57,12 +58,12 @@ public class Scroll : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsVertical);
         PutFloat(result, Step);
         PutFloat(result, Slider.Progress);
         PutInt(result, Slider.index);
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     public Scroll Duplicate()

@@ -24,16 +24,17 @@ public class Layout : Block
     public Layout(byte[] bytes) : base(bytes)
     {
         Init();
-        var count = GrabByte(bytes);
+        var b = Decompress(bytes);
+        var count = GrabByte(b);
 
         // all segments need to be added before parent linking
         var parentIndexes = new List<int>();
 
         for (var i = 0; i < count; i++)
         {
-            var rate = GrabFloat(bytes);
-            var cutSide = (Side)GrabByte(bytes);
-            var parentIndex = GrabInt(bytes);
+            var rate = GrabFloat(b);
+            var cutSide = (Side)GrabByte(b);
+            var parentIndex = GrabInt(b);
 
             parentIndexes.Add(parentIndex);
             var seg = new Segment(rate, cutSide, null);
@@ -56,7 +57,7 @@ public class Layout : Block
     }
     public override byte[] ToBytes()
     {
-        var bytes = base.ToBytes().ToList();
+        var bytes = Decompress(base.ToBytes()).ToList();
         PutByte(bytes, (byte)segments.Count);
 
         foreach (var seg in segments)
@@ -67,7 +68,7 @@ public class Layout : Block
             PutInt(bytes, parentIndex);
         }
 
-        return bytes.ToArray();
+        return Compress(bytes.ToArray());
     }
 
     public void Cut(int index, Side side, float rate)

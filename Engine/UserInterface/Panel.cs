@@ -30,9 +30,10 @@ public class Panel : Block
     }
     public Panel(byte[] bytes) : base(bytes)
     {
-        IsResizable = GrabBool(bytes);
-        IsMovable = GrabBool(bytes);
-        IsRestricted = GrabBool(bytes);
+        var b = Decompress(bytes);
+        IsResizable = GrabBool(b);
+        IsMovable = GrabBool(b);
+        IsRestricted = GrabBool(b);
         Init();
     }
     public Panel(string base64) : this(Convert.FromBase64String(base64))
@@ -45,11 +46,11 @@ public class Panel : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsResizable);
         PutBool(result, IsMovable);
         PutBool(result, IsRestricted);
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     public void OnResize(Action<(int deltaWidth, int deltaHeight)> method)

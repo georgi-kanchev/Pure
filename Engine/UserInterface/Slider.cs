@@ -40,11 +40,12 @@ public class Slider : Block
     }
     public Slider(byte[] bytes) : base(bytes)
     {
-        IsVertical = GrabBool(bytes);
+        var b = Decompress(bytes);
+        IsVertical = GrabBool(b);
 
         Init();
-        Progress = GrabFloat(bytes);
-        index = GrabInt(bytes);
+        Progress = GrabFloat(b);
+        index = GrabInt(b);
     }
     public Slider(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -56,11 +57,11 @@ public class Slider : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsVertical);
         PutFloat(result, Progress);
         PutInt(result, index);
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     /// <summary>

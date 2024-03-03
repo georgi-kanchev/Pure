@@ -95,8 +95,9 @@ public class FileViewer : Block
     public FileViewer(byte[] bytes) : base(bytes)
     {
         Init();
-        IsSelectingFolders = GrabBool(bytes);
-        FileFilter = GrabString(bytes);
+        var b = Decompress(bytes);
+        IsSelectingFolders = GrabBool(b);
+        FileFilter = GrabString(b);
     }
     public FileViewer(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -108,10 +109,10 @@ public class FileViewer : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsSelectingFolders);
         PutString(result, FileFilter ?? "");
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     public bool IsFolder(Button item)

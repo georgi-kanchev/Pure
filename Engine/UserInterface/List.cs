@@ -138,24 +138,25 @@ public class List : Block
     public List(byte[] bytes) : base(bytes)
     {
         Init();
-        Span = (Span)GrabByte(bytes);
-        IsSingleSelecting = GrabBool(bytes);
-        IsReadOnly = GrabBool(bytes);
-        ItemGap = GrabInt(bytes);
-        ItemSize = (GrabInt(bytes), GrabInt(bytes));
-        var scrollProgress = GrabFloat(bytes);
-        var scrollIndex = GrabInt(bytes);
+        var b = Decompress(bytes);
+        Span = (Span)GrabByte(b);
+        IsSingleSelecting = GrabBool(b);
+        IsReadOnly = GrabBool(b);
+        ItemGap = GrabInt(b);
+        ItemSize = (GrabInt(b), GrabInt(b));
+        var scrollProgress = GrabFloat(b);
+        var scrollIndex = GrabInt(b);
 
-        var items = InternalCreateAmount(GrabInt(bytes));
+        var items = InternalCreateAmount(GrabInt(b));
         InternalAdd(items);
 
         Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true };
 
         for (var i = 0; i < Count; i++)
         {
-            Select(i, GrabBool(bytes));
-            Disable(i, GrabBool(bytes));
-            this[i].text = GrabString(bytes);
+            Select(i, GrabBool(b));
+            Disable(i, GrabBool(b));
+            this[i].text = GrabString(b);
         }
 
         Scroll.Slider.progress = scrollProgress;
@@ -177,7 +178,7 @@ public class List : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutByte(result, (byte)Span);
         PutBool(result, IsSingleSelecting);
         PutBool(result, IsReadOnly);
@@ -195,7 +196,7 @@ public class List : Block
             PutString(result, this[i].Text);
         }
 
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
     public Button[] ToArray()
     {

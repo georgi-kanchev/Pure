@@ -19,6 +19,7 @@ public class BlockPack
     }
     public BlockPack(byte[] bytes)
     {
+        var b = Block.Decompress(bytes);
         var offset = 0;
         var count = GetInt();
 
@@ -28,11 +29,11 @@ public class BlockPack
 
             // blockType string gets saved first for each block
             var typeStrBytesLength = GetInt();
-            var typeStr = Encoding.UTF8.GetString(GetBytes(bytes, typeStrBytesLength, ref offset));
+            var typeStr = Encoding.UTF8.GetString(GetBytes(b, typeStrBytesLength, ref offset));
 
             // return the offset to where it was so the block can get loaded properly
             offset -= typeStrBytesLength + 4;
-            var bBlock = GetBytes(bytes, byteCount, ref offset);
+            var bBlock = GetBytes(b, byteCount, ref offset);
 
             if (typeStr == nameof(Button)) Add(new Button(bBlock));
             else if (typeStr == nameof(FileViewer)) Add(new FileViewer(bBlock));
@@ -51,7 +52,7 @@ public class BlockPack
 
         int GetInt()
         {
-            return BitConverter.ToInt32(GetBytes(bytes, 4, ref offset));
+            return BitConverter.ToInt32(GetBytes(b, 4, ref offset));
         }
     }
     public BlockPack(string base64) : this(Convert.FromBase64String(base64))
@@ -74,7 +75,7 @@ public class BlockPack
             result.AddRange(bytes);
         }
 
-        return result.ToArray();
+        return Block.Compress(result.ToArray());
     }
 
     public void Add(params Block[]? blocks)

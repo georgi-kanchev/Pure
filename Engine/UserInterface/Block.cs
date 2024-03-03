@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.UserInterface;
+﻿using System.IO.Compression;
+
+namespace Pure.Engine.UserInterface;
 
 using System.Text;
 
@@ -185,15 +187,16 @@ public abstract class Block
     {
         Init(); // should be before
 
-        typeName = GrabString(bytes);
-        Position = (GrabInt(bytes), GrabInt(bytes));
-        SizeMinimum = (GrabInt(bytes), GrabInt(bytes));
-        SizeMaximum = (GrabInt(bytes), GrabInt(bytes));
-        Size = (GrabInt(bytes), GrabInt(bytes));
-        Text = GrabString(bytes);
-        IsHidden = GrabBool(bytes);
-        IsDisabled = GrabBool(bytes);
-        hasParent = GrabBool(bytes);
+        var b = Decompress(bytes);
+        typeName = GrabString(b);
+        Position = (GrabInt(b), GrabInt(b));
+        SizeMinimum = (GrabInt(b), GrabInt(b));
+        SizeMaximum = (GrabInt(b), GrabInt(b));
+        Size = (GrabInt(b), GrabInt(b));
+        Text = GrabString(b);
+        IsHidden = GrabBool(b);
+        IsDisabled = GrabBool(b);
+        hasParent = GrabBool(b);
     }
     /// <summary>
     /// Initializes a new user interface block instance class with the specified
@@ -233,7 +236,7 @@ public abstract class Block
         PutBool(result, IsDisabled);
         PutBool(result, hasParent);
 
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
     /// <summary>
     /// Overrides the ToString method to provide a custom string representation of the object.
@@ -716,6 +719,23 @@ public abstract class Block
             IsPressedAndHeld = false;
     }
 
+    internal static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+            stream.Write(data, 0, data.Length);
+
+        return output.ToArray();
+    }
+    internal static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+            stream.CopyTo(output);
+
+        return output.ToArray();
+    }
     private byte[] GetBytes(byte[] fromBytes, int amount)
     {
         var result = fromBytes[byteOffset..(byteOffset + amount)];

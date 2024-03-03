@@ -47,9 +47,10 @@ public class Stepper : Block
     }
     public Stepper(byte[] bytes) : base(bytes)
     {
-        Range = (GrabFloat(bytes), GrabFloat(bytes));
-        Step = GrabFloat(bytes);
-        Value = GrabFloat(bytes);
+        var b = Decompress(bytes);
+        Range = (GrabFloat(b), GrabFloat(b));
+        Step = GrabFloat(b);
+        Value = GrabFloat(b);
 
         Init();
     }
@@ -63,12 +64,12 @@ public class Stepper : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutFloat(result, Range.minimum);
         PutFloat(result, Range.maximum);
         PutFloat(result, Step);
         PutFloat(result, Value);
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     public Stepper Duplicate()

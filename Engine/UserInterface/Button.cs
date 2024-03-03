@@ -31,8 +31,9 @@ public class Button : Block
     public Button(byte[] bytes) : base(bytes)
     {
         Init();
-        IsSelected = GrabBool(bytes);
-        HotkeyId = GrabInt(bytes);
+        var b = Decompress(bytes);
+        IsSelected = GrabBool(b);
+        HotkeyId = GrabInt(b);
     }
     public Button(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -44,10 +45,10 @@ public class Button : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsSelected);
         PutInt(result, HotkeyId);
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     public Button Duplicate()

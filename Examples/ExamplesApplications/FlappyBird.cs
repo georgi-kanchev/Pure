@@ -10,6 +10,9 @@ public static class FlappyBird
 {
     public static void Run()
     {
+        Window.FromBytes(File.ReadAllBytes("window-settings.cfg"));
+        Window.OnClose(() => File.WriteAllBytes("window-settings.cfg", Window.ToBytes()));
+
         Window.Title = "Pure - Flappy Bird Example";
         Window.IsRetro = true;
         Mouse.IsCursorVisible = true;
@@ -40,8 +43,6 @@ public static class FlappyBird
 
         Keyboard.Key.Space.OnPress(() =>
         {
-            Window.Monitor = 1;
-
             birdVelocity = -8f;
             birdAnimation.CurrentProgress = 0;
 
@@ -139,8 +140,6 @@ public static class FlappyBird
 
             layer.Draw();
         }
-
-        return;
 
         void InitializePipes()
         {

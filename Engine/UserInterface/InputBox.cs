@@ -232,12 +232,13 @@ public class InputBox : Block
     public InputBox(byte[] bytes) : base(bytes)
     {
         Init();
-        IsReadOnly = GrabBool(bytes);
-        IsSingleLine = GrabBool(bytes);
-        Placeholder = GrabString(bytes);
-        Value = GrabString(bytes);
-        SymbolGroup = (SymbolGroup)GrabByte(bytes);
-        MaximumSymbolCount = GrabInt(bytes);
+        var b = Decompress(bytes);
+        IsReadOnly = GrabBool(b);
+        IsSingleLine = GrabBool(b);
+        Placeholder = GrabString(b);
+        Value = GrabString(b);
+        SymbolGroup = (SymbolGroup)GrabByte(b);
+        MaximumSymbolCount = GrabInt(b);
     }
     public InputBox(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -249,14 +250,14 @@ public class InputBox : Block
     }
     public override byte[] ToBytes()
     {
-        var result = base.ToBytes().ToList();
+        var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsReadOnly);
         PutBool(result, IsSingleLine);
         PutString(result, Placeholder);
         PutString(result, Value);
         PutByte(result, (byte)SymbolGroup);
         PutInt(result, MaximumSymbolCount);
-        return result.ToArray();
+        return Compress(result.ToArray());
     }
 
     public (int symbol, int line) PositionToIndices((int x, int y) position)

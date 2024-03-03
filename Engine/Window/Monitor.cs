@@ -106,19 +106,17 @@ public class Monitor
     private static (int width, int height) GetAspectRatio(int width, int height)
     {
         var gcd = height == 0 ? width : GetGreatestCommonDivisor(height, width % height);
-
         return (width / gcd, height / gcd);
-
-        int GetGreatestCommonDivisor(int a, int b)
+    }
+    internal static int GetGreatestCommonDivisor(int a, int b)
+    {
+        while (true)
         {
-            while (true)
-            {
-                if (b == 0)
-                    return a;
-                var a1 = a;
-                a = b;
-                b = a1 % b;
-            }
+            if (b == 0)
+                return a;
+            var a1 = a;
+            a = b;
+            b = a1 % b;
         }
     }
 #endregion
