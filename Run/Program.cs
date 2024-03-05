@@ -20,6 +20,7 @@ public static class Run
 
         //RunExampleUserInterface();
 
+        //DefaultGraphics.Run();
         //Commands.Run();
         //Storages.Run();
         //Collision.Run();

@@ -10,12 +10,13 @@ public static class FlappyBird
 {
     public static void Run()
     {
-        Window.FromBytes(File.ReadAllBytes("window-settings.cfg"));
-        Window.OnClose(() => File.WriteAllBytes("window-settings.cfg", Window.ToBytes()));
+        //Window.FromBytes(File.ReadAllBytes("window-settings.cfg"));
+        //Window.OnClose(() => File.WriteAllBytes("window-settings.cfg", Window.ToBytes()));
 
         Window.Title = "Pure - Flappy Bird Example";
         Window.IsRetro = true;
         Mouse.IsCursorVisible = true;
+        Window.BackgroundColor = Color.Blue.ToDark();
 
         // some data needed throughout the game
         const int SCROLL_SPEED = 4, BIRD_X = 10, PIPE_WIDTH = 2, PIPE_HEIGHT = 20;

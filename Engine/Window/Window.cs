@@ -1,6 +1,7 @@
 ﻿global using SFML.Graphics;
 global using SFML.System;
 global using SFML.Window;
+
 global using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Text;
@@ -12,7 +13,9 @@ namespace Pure.Engine.Window;
 /// </summary>
 public enum Mode
 {
-    Windowed, Borderless, Fullscreen
+    Windowed,
+    Borderless,
+    Fullscreen
 }
 
 /// <summary>
@@ -59,24 +62,7 @@ public static class Window
     /// </summary>
     public static (uint width, uint height) Size
     {
-        get
-        {
-            var (w, h) = Engine.Window.Monitor.Current.Size;
-            return ((uint)(w * Scale), (uint)(h * Scale));
-        }
-    }
-    public static float Scale
-    {
-        get => scale;
-        set
-        {
-            TryCreate();
-
-            if (mode != Mode.Windowed)
-                return;
-
-            SetInternalScale(value);
-        }
+        get => window != null ? (window.Size.X, window.Size.Y) : (0, 0);
     }
     /// <summary>
     /// Gets a value indicating whether the window is focused.
@@ -90,11 +76,11 @@ public static class Window
     /// </summary>
     public static bool IsRetro
     {
-        get => isRetro;
+        get => isRetro && retroShader != null && Shader.IsAvailable;
         set
         {
-            if (value && retroScreen == null && Shader.IsAvailable)
-                retroScreen = RetroShader.Create();
+            if (value && retroShader == null && Shader.IsAvailable)
+                retroShader = RetroShader.Create();
 
             isRetro = value;
             TryCreate();
@@ -119,12 +105,6 @@ public static class Window
 
             monitor = (uint)Math.Min(value, Engine.Window.Monitor.Monitors.Length - 1);
             TryCreate();
-
-            var (w, h) = Engine.Window.Monitor.Current.Size;
-            if (mode == Mode.Windowed)
-                while (window.Size.X > w || window.Size.Y > h)
-                    Scale -= 0.05f;
-
             Center();
         }
     }
@@ -172,7 +152,6 @@ public static class Window
         mode = (Mode)GetBytesFrom(b, 1, ref offset)[0];
         var bTitleLength = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
         title = Encoding.UTF8.GetString(GetBytesFrom(b, bTitleLength, ref offset));
-        scale = BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
         isRetro = BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
         backgroundColor = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
         monitor = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
@@ -181,8 +160,11 @@ public static class Window
         maximumFrameRate = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
         var x = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
         var y = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        var w = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        var h = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
         TryCreate();
         window.Position = new(x, y);
+        window.Size = new(w, h);
     }
     public static void FromBase64(string base64)
     {
@@ -201,7 +183,6 @@ public static class Window
         result.Add((byte)Mode);
         result.AddRange(BitConverter.GetBytes(bTitle.Length));
         result.AddRange(bTitle);
-        result.AddRange(BitConverter.GetBytes(Scale));
         result.AddRange(BitConverter.GetBytes(IsRetro));
         result.AddRange(BitConverter.GetBytes(BackgroundColor));
         result.AddRange(BitConverter.GetBytes(Monitor));
@@ -210,6 +191,8 @@ public static class Window
         result.AddRange(BitConverter.GetBytes(MaximumFrameRate));
         result.AddRange(BitConverter.GetBytes(window.Position.X));
         result.AddRange(BitConverter.GetBytes(window.Position.Y));
+        result.AddRange(BitConverter.GetBytes(window.Size.X));
+        result.AddRange(BitConverter.GetBytes(window.Size.Y));
         return Compress(result.ToArray());
     }
 
@@ -219,7 +202,6 @@ public static class Window
             Recreate();
 
         TryCreate();
-        ForceAspectRatio();
 
         Mouse.Update();
         FinishDraw();
@@ -229,7 +211,7 @@ public static class Window
 
         window.Display();
         window.DispatchEvents();
-        window.Clear();
+        window.Clear(new(BackgroundColor));
         window.SetActive();
 
         renderTexture?.Clear(new(BackgroundColor));
@@ -270,19 +252,68 @@ public static class Window
         close?.Invoke();
         window.Close();
     }
+    public static void Scale(float scale)
+    {
+        scale = Math.Max(scale, 0.05f);
+
+        TryCreate();
+        var (mw, mh) = Engine.Window.Monitor.Current.Size;
+        window.Size = new((uint)(mw * scale), (uint)(mh * scale));
+    }
+    public static void Center()
+    {
+        TryCreate();
+
+        var current = Engine.Window.Monitor.Current;
+        var (x, y) = current.position;
+        var (w, h) = current.Size;
+        var (ww, wh) = Size;
+
+        x += w / 2 - (int)ww / 2;
+        y += h / 2 - (int)wh / 2;
+
+        window.Position = new(x, y);
+    }
+    public static void SetIconToTile(Layer layer, int tileId, uint color)
+    {
+        TryCreate();
+
+        const uint SIZE = 128;
+        var rend = new RenderTexture(SIZE, SIZE);
+        var texture = Layer.tilesets[layer.TilesetPath];
+        var (i, j) = IndexToCoords(tileId, layer);
+        var (tw, th) = layer.TileSize;
+        var (gw, gh) = layer.TileGap;
+        tw += gw;
+        th += gh;
+        var verts = new Vertex[]
+        {
+            new(new(0, 0), new(color), new(tw * i, th * j)),
+            new(new(SIZE, 0), new(color), new(tw * (i + 1), th * j)),
+            new(new(SIZE, SIZE), new(color), new(tw * (i + 1), th * (j + 1))),
+            new(new(0, SIZE), new(color), new(tw * i, th * (j + 1)))
+        };
+        rend.Draw(verts, PrimitiveType.Quads, new RenderStates(texture));
+        rend.Display();
+        var image = rend.Texture.CopyToImage();
+        window.SetIcon(SIZE, SIZE, image.Pixels);
+
+        rend.Dispose();
+        image.Dispose();
+    }
 
     public static void OnClose(Action method)
     {
         close += method;
     }
 
-#region Backend
+    #region Backend
     internal static RenderWindow? window;
     internal static RenderTexture? renderTexture;
     internal static (int w, int h) renderTextureViewSize;
 
     private static Action? close;
-    private static Shader? retroScreen;
+    private static Shader? retroShader;
     private static readonly Random retroRand = new();
     private static readonly Clock retroScreenTimer = new();
     private static System.Timers.Timer? retroTurnoff;
@@ -295,7 +326,6 @@ public static class Window
     private static Mode mode;
     private static float pixelScale = 5f;
     private static uint maximumFrameRate;
-    private static float scale = 0.75f;
 
     [MemberNotNull(nameof(window))]
     private static void TryCreate()
@@ -317,8 +347,6 @@ public static class Window
         var prevPos = new Vector2i();
         if (window != null)
         {
-            SetInternalScale(mode == Mode.Windowed ? 0.75f : 1f);
-
             prevPos = window.Position;
             prevSize = window.Size;
             window.Dispose();
@@ -334,8 +362,10 @@ public static class Window
         window.Closed += (_, _) => Close();
         window.Resized += (_, e) =>
         {
-            if (e.Width < 50 || e.Height < 50)
-                Scale = 0.1f;
+            var view = window.GetView();
+            view.Center = new(e.Width / 2f, e.Height / 2f);
+            view.Size = new(e.Width, e.Height);
+            window.SetView(view);
         };
         window.KeyPressed += Keyboard.OnPress;
         window.KeyReleased += Keyboard.OnRelease;
@@ -355,8 +385,9 @@ public static class Window
         window.Clear();
         window.Display();
 
+        SetIconToTile(new(), 394, 16711935); // green joystick
+
         // set values to the new window
-        Scale = scale;
         Title = title;
         IsVerticallySynced = isVerticallySynced;
         MaximumFrameRate = maximumFrameRate;
@@ -379,14 +410,6 @@ public static class Window
         renderTexture.SetView(view);
     }
 
-    private static void SetInternalScale(float value)
-    {
-        TryCreate();
-        scale = Math.Max(value, 0.1f);
-        var monitorSize = Engine.Window.Monitor.Current.Size;
-        var (w, h) = (monitorSize.width * value, monitorSize.height * value);
-        window.Size = new((uint)w, (uint)h);
-    }
     private static void StartRetroAnimation()
     {
         retroTurnoffTime = new();
@@ -407,16 +430,26 @@ public static class Window
         TryCreate();
         renderTexture.Display();
 
-        var sz = window.GetView().Size;
+        var (rw, rh) = Engine.Window.Monitor.Current.AspectRatio;
+        var ratio = rw / (float)rh;
+        var (ww, wh) = (window.Size.X, window.Size.Y);
+
+        if (ww / (float)wh < ratio)
+            wh = (uint)(ww / ratio);
+        else
+            ww = (uint)(wh * ratio);
+
+        var (ow, oh) = ((window.Size.X - ww) / 2f, (window.Size.Y - wh) / 2);
+
         var (tw, th) = (renderTexture.Size.X, renderTexture.Size.Y);
-        var shader = IsRetro ? retroScreen : null;
+        var shader = IsRetro ? retroShader : null;
         var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, renderTexture.Texture, shader);
         var verts = new Vertex[]
         {
-            new(new(0, 0), Color.White, new(0, 0)),
-            new(new(sz.X, 0), Color.White, new(tw, 0)),
-            new(new(sz.X, sz.Y), Color.White, new(tw, th)),
-            new(new(0, sz.Y), Color.White, new(0, th))
+            new(new(ow, oh), Color.White, new(0, 0)),
+            new(new(ww + ow, oh), Color.White, new(tw, 0)),
+            new(new(ww + ow, wh + oh), Color.White, new(tw, th)),
+            new(new(ow, wh + oh), Color.White, new(0, th))
         };
 
         if (IsRetro)
@@ -436,43 +469,13 @@ public static class Window
         window.Draw(verts, PrimitiveType.Quads, rend);
     }
 
-    private static void Center()
+    private static (int, int) IndexToCoords(int index, Layer layer)
     {
-        TryCreate();
+        var (tw, th) = layer.TilesetSize;
+        index = index < 0 ? 0 : index;
+        index = index > tw * th - 1 ? tw * th - 1 : index;
 
-        var current = Engine.Window.Monitor.Current;
-        var (x, y) = current.position;
-        var (w, h) = current.Size;
-        var (ww, wh) = Size;
-
-        x += w / 2 - (int)ww / 2;
-        y += h / 2 - (int)wh / 2;
-
-        window.Position = new(x, y);
-    }
-    private static void ForceAspectRatio()
-    {
-        TryCreate();
-
-        var (w, h) = ((int)window.Size.X, (int)window.Size.Y);
-        var curr = Engine.Window.Monitor.Current;
-        var (mw, mh) = curr.Size;
-        var (aw, ah) = curr.AspectRatio;
-        var (dw, dh) = (w % aw, h % ah);
-
-        if (dw != 0)
-        {
-            w -= dw;
-            Scale = w / (float)mw;
-        }
-
-        if (dh != 0)
-        {
-            h -= dh;
-            Scale = h / (float)mh;
-        }
-
-        Scale = scale;
+        return (index % tw, index / tw);
     }
 
     private static byte[] Compress(byte[] data)
@@ -498,5 +501,5 @@ public static class Window
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }
