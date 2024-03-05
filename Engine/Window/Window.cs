@@ -274,11 +274,11 @@ public static class Window
 
         window.Position = new(x, y);
     }
-    public static void SetIconToTile(Layer layer, int tileId, uint color)
+    public static void SetIconToTile(Layer layer, int tileId, uint color, bool isSavingAsFile = true)
     {
         TryCreate();
 
-        const uint SIZE = 128;
+        const uint SIZE = 64;
         var rend = new RenderTexture(SIZE, SIZE);
         var texture = Layer.tilesets[layer.TilesetPath];
         var (i, j) = IndexToCoords(tileId, layer);
@@ -297,6 +297,9 @@ public static class Window
         rend.Display();
         var image = rend.Texture.CopyToImage();
         window.SetIcon(SIZE, SIZE, image.Pixels);
+
+        if (isSavingAsFile)
+            image.SaveToFile("icon.png");
 
         rend.Dispose();
         image.Dispose();
