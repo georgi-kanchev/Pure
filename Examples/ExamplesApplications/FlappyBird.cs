@@ -16,11 +16,11 @@ public static class FlappyBird
         Window.Title = "Pure - Flappy Bird Example";
         Window.IsRetro = true;
         Mouse.IsCursorVisible = true;
-        Window.BackgroundColor = Color.Blue.ToDark();
+        Window.BackgroundColor = Window.IsRetro ? Color.Black : Color.Blue.ToDark();
+        Window.Monitor = 1;
 
         // some data needed throughout the game
         const int SCROLL_SPEED = 4, BIRD_X = 10, PIPE_WIDTH = 2, PIPE_HEIGHT = 20;
-        const string GAME_OVER = "Game Over! <Space> to play again.";
         var score = 0;
         var isGameOver = false;
         var ratio = Monitor.Current.AspectRatio;
@@ -128,7 +128,9 @@ public static class FlappyBird
             foreground.SetTextLine((width / 2 - scoreText.Length / 2, 1), scoreText);
 
             if (isGameOver)
-                foreground.SetTextLine((width / 2 - GAME_OVER.Length / 2, height / 2), GAME_OVER);
+                foreground.SetTextRectangle((0, 0), (width, height),
+                    $"Game Over!{Environment.NewLine}{Environment.NewLine}<Space> to play again",
+                    alignment: Alignment.Center);
 
             layer.DrawTilemap(background.ToBundle());
             layer.DrawTilemap(foreground.ToBundle());

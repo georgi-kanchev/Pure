@@ -25,6 +25,7 @@ void main()
     private const string RETRO_SCREEN_FRAG = @"
 uniform sampler2D texture;
 uniform vec2 viewSize;
+uniform vec2 offScreen;
 uniform vec2 randomVec;
 uniform float time;
 uniform float turnoffAnimation;
@@ -79,7 +80,7 @@ vec4 vignetteIntensity(vec2 uv, vec2 resolution, float opacity, float roundness)
 }
 void main(void)
 {
-	vec2 coord = gl_FragCoord / viewSize;
+	vec2 coord = gl_FragCoord / viewSize - offScreen / viewSize;
 	vec2 remappedUV = curveRemapUV(coord);
 	vec4 baseColor = texture2D(texture, gl_TexCoord[0].xy) * gl_Color;
 	float scanDarkMultiplier = (1.0 + sin((-time * scanLineSpeed) + coord.y * (10.0 / scanLineSize)) / 2.0);

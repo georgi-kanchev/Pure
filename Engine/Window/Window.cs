@@ -1,7 +1,6 @@
 ﻿global using SFML.Graphics;
 global using SFML.System;
 global using SFML.Window;
-
 global using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Text;
@@ -104,6 +103,7 @@ public static class Window
                 return;
 
             monitor = (uint)Math.Min(value, Engine.Window.Monitor.Monitors.Length - 1);
+            RecreateRenderTexture();
             TryCreate();
             Center();
         }
@@ -274,7 +274,7 @@ public static class Window
 
         window.Position = new(x, y);
     }
-    public static void SetIconToTile(Layer layer, int tileId, uint color, bool isSavingAsFile = true)
+    public static void SetIconFromTile(Layer layer, int tileId, uint color, bool isSavingAsFile = false)
     {
         TryCreate();
 
@@ -310,7 +310,7 @@ public static class Window
         close += method;
     }
 
-    #region Backend
+#region Backend
     internal static RenderWindow? window;
     internal static RenderTexture? renderTexture;
     internal static (int w, int h) renderTextureViewSize;
@@ -388,7 +388,7 @@ public static class Window
         window.Clear();
         window.Display();
 
-        SetIconToTile(new(), 394, 16711935); // green joystick
+        SetIconFromTile(new(), 394, 16711935); // green joystick
 
         // set values to the new window
         Title = title;
@@ -404,6 +404,9 @@ public static class Window
     [MemberNotNull(nameof(renderTexture))]
     private static void RecreateRenderTexture()
     {
+        renderTexture?.Dispose();
+        renderTexture = null;
+
         var currentMonitor = Engine.Window.Monitor.Monitors[Monitor];
         var (w, h) = currentMonitor.Size;
         renderTexture = new((uint)(w / pixelScale), (uint)(h / pixelScale));
@@ -460,7 +463,8 @@ public static class Window
             var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
             shader?.SetUniform("time", retroScreenTimer.ElapsedTime.AsSeconds());
             shader?.SetUniform("randomVec", randVec);
-            shader?.SetUniform("viewSize", new Vector2f(window.Size.X, window.Size.Y));
+            shader?.SetUniform("viewSize", new Vector2f(ww, wh));
+            shader?.SetUniform("offScreen", new Vector2f(ow, oh));
 
             if (isClosing && retroTurnoffTime != null)
             {
@@ -504,5 +508,5 @@ public static class Window
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }
