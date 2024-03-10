@@ -137,11 +137,11 @@ public static class EightBallPool
                 var reflectAngle = bounceLine.NormalizeToPoint(pos.XY).Angle - 90;
                 ball.MoveAngle = ball.MoveAngle.Reflect(reflectAngle);
                 ball.Position = ball.Position.MoveAt(reflectAngle, 0.2f);
-                ball.Speed = speed * 0.4f;
+                ball.Speed = speed * 0.5f;
 
                 otherBall.MoveAngle = ball.MoveAngle - 180;
                 otherBall.Position = otherBall.Position.MoveAt(reflectAngle - 180, 0.2f);
-                otherBall.Speed = speed * 0.8f;
+                otherBall.Speed = speed * 0.9f;
 
                 var penaltyAngle = new Angle(angleBetweenBalls - angle + 180);
                 var penaltyMultiplier = penaltyAngle > 270 ?

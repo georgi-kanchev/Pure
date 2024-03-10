@@ -45,13 +45,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Run", "Run\Run.csproj", "{F
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{4AC51807-EF05-4EBE-8687-02D7E795F9DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tilemapper", "Default\Tilemapper\Tilemapper.csproj", "{10B8A18F-9D0A-402D-BDE1-F18951220239}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tilemapper", "Tools\Tilemapper\Tilemapper.csproj", "{10B8A18F-9D0A-402D-BDE1-F18951220239}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorMap", "Editors\EditorMap\EditorMap.csproj", "{10CE6E3E-4CC5-4C6B-905A-6691C8949391}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorBase", "Editors\EditorBase\EditorBase.csproj", "{D107BDEB-B26B-4C33-BC13-112B55BB02B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TiledLoader", "TiledLoader\TiledLoader.csproj", "{4EC3003B-BFD8-4321-B8DE-0F11002662C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TiledLoader", "Tools\TiledLoader\TiledLoader.csproj", "{4EC3003B-BFD8-4321-B8DE-0F11002662C0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pathfinding", "Engine\Pathfinding\Pathfinding.csproj", "{20C377CD-FB66-4C04-9DAA-54812C63912B}"
 EndProject

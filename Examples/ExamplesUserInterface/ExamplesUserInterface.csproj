@@ -8,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Default\Tilemapper\Tilemapper.csproj"/>
         <ProjectReference Include="..\..\Engine\Tilemap\Tilemap.csproj"/>
         <ProjectReference Include="..\..\Engine\UserInterface\UserInterface.csproj"/>
         <ProjectReference Include="..\..\Engine\Utilities\Utilities.csproj"/>
         <ProjectReference Include="..\..\Engine\Window\Window.csproj"/>
+        <ProjectReference Include="..\..\Tools\Tilemapper\Tilemapper.csproj"/>
     </ItemGroup>
 
 </Project>
