@@ -316,12 +316,15 @@ public class Layer
             return (float.NaN, float.NaN);
 
         var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
-        var (ww, wh) = (Window.Size.width, Window.Size.height);
         var (vw, vh) = Window.renderTextureViewSize;
         var (cw, ch) = TilemapSize;
         var (tw, th) = TileSize;
         var (ox, oy) = Offset;
         var (mw, mh) = (cw * tw, ch * th);
+        var (ww, wh, ow, oh) = Window.GetRenderOffset();
+
+        px -= ow;
+        py -= oh;
 
         ox /= mw;
         oy /= mh;

@@ -274,24 +274,35 @@ public static class Window
 
         window.Position = new(x, y);
     }
-    public static void SetIconFromTile(Layer layer, int tileId, uint color, bool isSavingAsFile = false)
+    public static void SetIconFromTile(
+        Layer layer,
+        int tileId,
+        uint color,
+        int tileIdBack = 0,
+        uint colorBack = 0,
+        bool isSavingAsFile = false)
     {
         TryCreate();
 
         const uint SIZE = 64;
         var rend = new RenderTexture(SIZE, SIZE);
         var texture = Layer.tilesets[layer.TilesetPath];
-        var (i, j) = IndexToCoords(tileId, layer);
+        var (bx, by) = IndexToCoords(tileIdBack, layer);
+        var (fx, fy) = IndexToCoords(tileId, layer);
         var (tw, th) = layer.TileSize;
         var (gw, gh) = layer.TileGap;
         tw += gw;
         th += gh;
         var verts = new Vertex[]
         {
-            new(new(0, 0), new(color), new(tw * i, th * j)),
-            new(new(SIZE, 0), new(color), new(tw * (i + 1), th * j)),
-            new(new(SIZE, SIZE), new(color), new(tw * (i + 1), th * (j + 1))),
-            new(new(0, SIZE), new(color), new(tw * i, th * (j + 1)))
+            new(new(0, 0), new(colorBack), new(tw * bx, th * by)),
+            new(new(SIZE, 0), new(colorBack), new(tw * (bx + 1), th * by)),
+            new(new(SIZE, SIZE), new(colorBack), new(tw * (bx + 1), th * (by + 1))),
+            new(new(0, SIZE), new(colorBack), new(tw * bx, th * (by + 1))),
+            new(new(0, 0), new(color), new(tw * fx, th * fy)),
+            new(new(SIZE, 0), new(color), new(tw * (fx + 1), th * fy)),
+            new(new(SIZE, SIZE), new(color), new(tw * (fx + 1), th * (fy + 1))),
+            new(new(0, SIZE), new(color), new(tw * fx, th * (fy + 1))),
         };
         rend.Draw(verts, PrimitiveType.Quads, new RenderStates(texture));
         rend.Display();
@@ -436,17 +447,7 @@ public static class Window
         TryCreate();
         renderTexture.Display();
 
-        var (rw, rh) = Engine.Window.Monitor.Current.AspectRatio;
-        var ratio = rw / (float)rh;
-        var (ww, wh) = (window.Size.X, window.Size.Y);
-
-        if (ww / (float)wh < ratio)
-            wh = (uint)(ww / ratio);
-        else
-            ww = (uint)(wh * ratio);
-
-        var (ow, oh) = ((window.Size.X - ww) / 2f, (window.Size.Y - wh) / 2);
-
+        var (ww, wh, ow, oh) = GetRenderOffset();
         var (tw, th) = (renderTexture.Size.X, renderTexture.Size.Y);
         var shader = IsRetro ? retroShader : null;
         var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, renderTexture.Texture, shader);
@@ -483,6 +484,22 @@ public static class Window
         index = index > tw * th - 1 ? tw * th - 1 : index;
 
         return (index % tw, index / tw);
+    }
+
+    internal static (float winW, float winH, float offW, float offH) GetRenderOffset()
+    {
+        TryCreate();
+
+        var (rw, rh) = Engine.Window.Monitor.Current.AspectRatio;
+        var ratio = rw / (float)rh;
+        var (ww, wh) = (window.Size.X, window.Size.Y);
+
+        if (ww / (float)wh < ratio)
+            wh = (uint)(ww / ratio);
+        else
+            ww = (uint)(wh * ratio);
+
+        return (ww, wh, (window.Size.X - ww) / 2f, (window.Size.Y - wh) / 2f);
     }
 
     private static byte[] Compress(byte[] data)

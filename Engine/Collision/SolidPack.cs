@@ -1,37 +1,19 @@
 ﻿namespace Pure.Engine.Collision;
 
-using System.IO.Compression;
 using System.Runtime.InteropServices;
 
-public class SolidPack
+public class SolidPack : Pack<Solid>
 {
-    public (float x, float y) Offset { get; set; }
-    public (float width, float height) Scale { get; set; }
-    public int Count
-    {
-        get => data.Count;
-    }
-
-    public Solid this[int index]
-    {
-        get => LocalToGlobalRectangle(data[index]);
-        set => data[index] = value;
-    }
-
     public SolidPack((float x, float y) offset = default, (float width, float height) scale = default)
+        : base(offset, scale)
     {
-        scale = scale == default ? (1f, 1f) : scale;
-
-        Offset = offset;
-        Scale = scale;
     }
     public SolidPack(
         (float x, float y) offset = default,
         (float width, float height) scale = default,
         params Solid[] solids)
-        : this(offset, scale)
+        : base(offset, scale, solids)
     {
-        Add(solids);
     }
     public SolidPack(byte[] bytes)
     {
@@ -63,11 +45,7 @@ public class SolidPack
     {
     }
 
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
+    public override byte[] ToBytes()
     {
         var result = new List<byte>();
         result.AddRange(BitConverter.GetBytes(data.Count));
@@ -87,10 +65,6 @@ public class SolidPack
 
         return Compress(result.ToArray());
     }
-    public Solid[] ToArray()
-    {
-        return data.ToArray();
-    }
     public (float x, float y, float width, float height, uint color)[] ToBundle()
     {
         var result = new (float x, float y, float width, float height, uint color)[data.Count];
@@ -99,22 +73,10 @@ public class SolidPack
         return result;
     }
 
-    public void Add(params Solid[]? solids)
+    public bool IsOverlapping(LinePack linePack)
     {
-        if (solids == null || solids.Length == 0)
-            return;
-
-        data.AddRange(solids);
+        return linePack.IsOverlapping(this);
     }
-    public void Remove(params Solid[]? solids)
-    {
-        if (solids == null || solids.Length == 0)
-            return;
-
-        foreach (var solid in solids)
-            data.Remove(solid);
-    }
-
     public bool IsOverlapping(SolidPack solidPack)
     {
         for (var i = 0; i < Count; i++)
@@ -184,61 +146,13 @@ public class SolidPack
     }
 
 #region Backend
-    // save format in sectors
-    // [amount of bytes]	- data
-    // --------------------------------
-    // [4]					- x
-    // [4]					- y
-    // [4]					- scale width
-    // [4]					- scale height
-    // [4]					- count
-    // = = = = = = (sector 1)
-    // [4]					- x
-    // [4]					- y
-    // [4]					- width
-    // [4]					- height
-    // [4]					- color
-    // = = = = = = (sector 2)
-    // [4]					- x
-    // [4]					- y
-    // [4]					- width
-    // [4]					- height
-    // [4]					- color
-    // = = = = = = (sector 3)
-    // ... up to sector [count]
-
-    private readonly List<Solid> data = new();
-
-    private Solid LocalToGlobalRectangle(Solid localRect)
+    protected override Solid LocalToGlobal(Solid localRect)
     {
         var (x, y) = localRect.Position;
         var (w, h) = localRect.Size;
         localRect.Position = (Offset.x + x * Scale.width, Offset.y + y * Scale.height);
         localRect.Size = (w * Scale.width, h * Scale.height);
         return localRect;
-    }
-
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-            stream.Write(data, 0, data.Length);
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress)) stream.CopyTo(output);
-
-        return output.ToArray();
-    }
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
     }
 #endregion
 }

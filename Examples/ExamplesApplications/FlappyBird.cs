@@ -15,9 +15,7 @@ public static class FlappyBird
 
         Window.Title = "Pure - Flappy Bird Example";
         Window.IsRetro = true;
-        Mouse.IsCursorVisible = true;
         Window.BackgroundColor = Window.IsRetro ? Color.Black : Color.Blue.ToDark();
-        Window.Monitor = 1;
 
         // some data needed throughout the game
         const int SCROLL_SPEED = 4, BIRD_X = 10, PIPE_WIDTH = 2, PIPE_HEIGHT = 20;
@@ -137,7 +135,7 @@ public static class FlappyBird
             var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile,
                 Color.Yellow, birdAngle);
             layer.DrawTiles((BIRD_X, birdY), tile);
-
+            layer.DrawCursor();
             //Window.DrawRectangles(collisionMap);
             //Window.DrawRectangles(birdRect);
 

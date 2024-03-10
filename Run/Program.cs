@@ -8,7 +8,8 @@ public static class Run
 {
     public static void Main()
     {
-        FlappyBird.Run();
+        EightBallPool.Run();
+        //FlappyBird.Run();
         //Ludo.Run();
         //Pong.Run();
         //Chat.Run();

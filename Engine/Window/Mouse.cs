@@ -148,6 +148,18 @@ public static class Mouse
     private static SFML.Window.Cursor sysCursor = new(SFML.Window.Cursor.CursorType.Arrow);
     private static bool isGrabbed;
 
+    private static bool IsOverRender
+    {
+        get
+        {
+            var (ww, wh) = Window.Size;
+            var (_, _, ow, oh) = Window.GetRenderOffset();
+            var (x, y) = CursorPosition;
+
+            return x > ow && x < ww - ow && y > oh && y < wh - oh;
+        }
+    }
+
     internal static bool isOverWindow;
 
     internal static void OnMove(object? s, MouseMoveEventArgs e)
@@ -205,7 +217,9 @@ public static class Mouse
     internal static void Update()
     {
         ScrollDelta = 0;
-        Window.window?.SetMouseCursorVisible(isOverWindow == false || IsCursorVisible);
+        Window.window?.SetMouseCursorVisible(isOverWindow == false ||
+                                             IsCursorVisible ||
+                                             IsOverRender == false);
     }
 
     internal static void TryUpdateSystemCursor()
