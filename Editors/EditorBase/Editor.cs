@@ -296,7 +296,7 @@ public class Editor
             try
             {
                 var bytes = File.ReadAllBytes(PromptFileViewer.SelectedPaths[0]);
-                onLoad?.Invoke(bytes);
+                onLoad.Invoke(bytes);
             }
             catch (Exception)
             {
@@ -330,7 +330,7 @@ public class Editor
     }
     public void PromptBase64(Action? onAccept)
     {
-        Prompt.Text = "Paste Base64";
+        Prompt.Text = $"Paste Base64";
         Prompt.Open(PromptInput, onButtonTrigger: i =>
         {
             if (i == 0)
@@ -369,7 +369,7 @@ public class Editor
 
     public void PromptLoadMap(Action<string[]> onLoad)
     {
-        Prompt.Text = "Select Map File:";
+        Prompt.Text = "Select a File:";
         PromptFileViewer.IsSelectingFolders = false;
         Prompt.Open(PromptFileViewer, onButtonTrigger: btnIndex =>
         {
@@ -398,7 +398,7 @@ public class Editor
                 MapsEditor.Clear();
                 MapsEditor.Add(maps);
 
-                onLoad?.Invoke(result);
+                onLoad.Invoke(result);
             }
             catch (Exception)
             {
@@ -416,7 +416,7 @@ public class Editor
             MapsEditor.Clear();
             MapsEditor.Add(maps);
 
-            onLoad?.Invoke(result);
+            onLoad.Invoke(result);
         });
     }
 

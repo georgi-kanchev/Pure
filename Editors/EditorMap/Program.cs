@@ -54,7 +54,7 @@ public static class Program
             " Copy",
             " Paste")
         {
-            Size = (9, 8),
+            Size = (9, 7),
             IsHidden = true
         };
         menu.OnItemInteraction(Interaction.Trigger, btn =>

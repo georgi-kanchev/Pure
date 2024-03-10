@@ -134,7 +134,7 @@ public static class Program
 
                 palette.Brightness.OnItemDisplay(item =>
                     editor.MapsEditor.SetPagesItem(palette.Brightness, item));
-                palette.OnColorSampleDisplay((btn, c) =>
+                palette.OnSampleDisplay((btn, c) =>
                     editor.MapsEditor[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
                 break;
             }

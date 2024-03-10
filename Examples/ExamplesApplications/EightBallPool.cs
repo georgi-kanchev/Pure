@@ -11,8 +11,8 @@ public static class EightBallPool
     {
         Window.Title = "Pure - Pool Example";
 
-        var collisions = new SolidPack(COLLISIONS);
-        var tilemaps = new TilemapPack(MAP);
+        var lineCollisions = new LinePack(LINE_COLLISIONS);
+        var tilemaps = new TilemapPack(TILEMAPS);
         var layer = new Layer((48, 27));
         var balls = new List<Ball>();
         var timeAtPress = 0f;
@@ -69,7 +69,6 @@ public static class EightBallPool
 
         void ResetBalls()
         {
-            const int X = 34;
             var colors = new[]
             {
                 Color.White, Color.Yellow.ToDark(0.3f), Color.Blue, Color.Red, Color.Purple,
@@ -116,28 +115,67 @@ public static class EightBallPool
             if (ball.Speed > 0)
                 isAnyBallMoving = true;
 
-            var solid = new Solid(new Point(1 - 1 / 6f), ball.Position + 1 / 8f);
-            for (var i = 0; i < collisions.Count; i++)
-                if (collisions[i].IsOverlapping(solid))
-                {
-                    var reflectAngle = 180;
-                    reflectAngle = collisions[i].Position.x > ball.Position.X ? 0 : reflectAngle;
-                    reflectAngle = collisions[i].Position.y < ball.Position.Y ? 90 : reflectAngle;
-                    reflectAngle = collisions[i].Position.y > ball.Position.Y ? 270 : reflectAngle;
-                    ball.MoveAngle = ball.MoveAngle.Reflect(reflectAngle);
-                    ball.Position = ball.Position.MoveAt(reflectAngle, 0.2f);
-                    ball.Speed *= 0.75f;
-                }
+            foreach (var otherBall in balls)
+            {
+                var pos = ball.Position + 0.5f;
+                var posOther = otherBall.Position + 0.5f;
 
+                if (ball == otherBall || ball.Speed == 0 || pos.Distance(posOther) > 0.75f)
+                    continue;
+
+                var angleBetweenBalls = Angle.FromPoints(posOther.XY, pos.XY);
+                var bounceLine = new Line
+                {
+                    A = posOther.MoveAt(angleBetweenBalls - 90, 3),
+                    B = posOther.MoveAt(angleBetweenBalls + 90, 3),
+                    Color = Color.White
+                };
+
+                var speed = ball.Speed;
+                var angle = ball.MoveAngle;
+
+                var reflectAngle = bounceLine.NormalizeToPoint(pos.XY).Angle - 90;
+                ball.MoveAngle = ball.MoveAngle.Reflect(reflectAngle);
+                ball.Position = ball.Position.MoveAt(reflectAngle, 0.2f);
+                ball.Speed = speed * 0.4f;
+
+                otherBall.MoveAngle = ball.MoveAngle - 180;
+                otherBall.Position = otherBall.Position.MoveAt(reflectAngle - 180, 0.2f);
+                otherBall.Speed = speed * 0.8f;
+
+                var penaltyAngle = new Angle(angleBetweenBalls - angle + 180);
+                var penaltyMultiplier = penaltyAngle > 270 ?
+                    ((float)penaltyAngle).Map((290, 360), (0, 1)) :
+                    ((float)penaltyAngle).Map((0, 70), (1, 0));
+                otherBall.Speed *= penaltyMultiplier;
+            }
+
+            for (var i = 0; i < lineCollisions.Count; i++)
+            {
+                var line = lineCollisions[i];
+                var pos = ball.Position + 0.5f;
+                var closestPoint = (Point)line.ClosestPoint(pos.XY);
+                var distance = closestPoint.Distance(pos);
+
+                if (distance > 0.5f)
+                    continue;
+
+                var reflectAngle = line.NormalizeToPoint(pos.XY).Angle - 90;
+                ball.MoveAngle = ball.MoveAngle.Reflect(reflectAngle);
+                ball.Position = ball.Position.MoveAt(reflectAngle, 0.2f);
+                ball.Speed *= 0.75f;
+            }
+
+            var p = ball.Position;
             if (ball.Number <= 8)
             {
-                layer.DrawTiles(ball.Position, new Tile(Tile.SHAPE_CIRCLE_BIG, ball.Color));
+                layer.DrawTiles(p, new Tile(Tile.SHAPE_CIRCLE_BIG, ball.Color));
                 DrawBallNumber();
                 return;
             }
 
-            layer.DrawTiles(ball.Position, new Tile(Tile.SHAPE_CIRCLE_BIG, new Color(220)));
-            layer.DrawTiles(ball.Position, new Tile(Tile.BAR_DEFAULT_STRAIGHT, ball.Color));
+            layer.DrawTiles(p, new Tile(Tile.SHAPE_CIRCLE_BIG, new Color(220)));
+            layer.DrawTiles(p, new Tile(Tile.BAR_DEFAULT_STRAIGHT, ball.Color));
             DrawBallNumber();
 
             void DrawBallNumber()
@@ -147,12 +185,12 @@ public static class EightBallPool
                 {
                     numberTile -= 9;
                     var secondDigitTile = new Tile(Tile.SUBSCRIPT_1_ST);
-                    layer.DrawTiles((ball.Position.X + 0.1f, ball.Position.Y - 0.1f), secondDigitTile);
-                    layer.DrawTiles((ball.Position.X + 0.6f, ball.Position.Y - 0.1f), numberTile);
+                    layer.DrawTiles((p.X + 0.1f, p.Y - 0.1f), secondDigitTile);
+                    layer.DrawTiles((p.X + 0.6f, p.Y - 0.1f), numberTile);
                     return;
                 }
 
-                layer.DrawTiles((ball.Position.X + 0.3f, ball.Position.Y - 0.1f), numberTile);
+                layer.DrawTiles((p.X + 0.3f, p.Y - 0.1f), numberTile);
             }
         }
     }
@@ -172,7 +210,7 @@ public static class EightBallPool
         }
     }
 
-    private const string MAP =
+    private const string TILEMAPS =
         "Y2VgYDAAYmkGBDCC4iAgfnt7I2eDg4DLxc7cg2ouOaeWrQtNfXDgxo977anxjLPfTUw5f91yua1kbHTl3R0ys5UdXH" +
         "CAP2efmaYXbqtk0VdjBJo6+yJvk4FAW79TTQHrY75jC2MOxd45/FJE5JBj91OvbO/f9Z0n5YMOTu5/3PjYyUVdaue3" +
         "+cWuXxa5b3/p0ZF6zLHJa8M2v8fLf2vHXWyv037JvWn1jwd72t/vN3acGJ+3yvpIrc0s3W053cZrWK9uY7VeNrG0lz" +
@@ -183,11 +221,10 @@ public static class EightBallPool
         "t78WME/6RHf6p8P2p02i/9XCVRVawT498ketLMzHu3rMKkMx8XShgzIIMTGp7fI3avvmT5Ua7z11vXzFXTLtl8LPz7" +
         "LSzM8HAFu875fXfLtW5957Npc/HYVmPut6vYZrq/Fsjdhw9yMhhwsGy4fVi16zf/c/cXDHXCJ7yDflYxo5hfzkyaah" +
         "CfBYiTEpOzWYF0WlF+Xgk7kFGQn5ydWlIMAA==";
-    private const string COLLISIONS =
-        "bVNJTsNAEJyn+AkoLAqL4ukRhxzzhBx4iJ+QI8c8AgEHBCbiEKIIOHHmCfwAXO4a3O7BkiOnVDNdXV19GezT1Prmp4" +
-        "r4fxV++N1zZiGsiB0QCx22JjY1vJbY3PC+iC0M75vYkti1dD9RsRvh2Xq4D1hbs8ZMsVtiqNEQ2/5z9pW81vB2Al16" +
-        "XyC2l1LLfb4vDmetbxV5+k0trLuq6VeHRWLrWv1C3YoYtM3juDdoW+T7TN3er+5dy4A9CPwc8x7ZXzDY05+HA/Ysqs" +
-        "nyNqLaLe9Fyn4/pMzLO3n5PvT/Juh/wNA/vK5MDfSPmdgZoX/Mzs4I/WPGPi+Zl3OFbOA+m7874YxNTjHfTxnPd5t5" +
-        "LkNe305KfTjn9U1Sqe8wFfoaYHsZ7VFzlNQ/u2/HiT6bvTxJ5TwukmbDzK2ZElsa70+T5sXO6CxpXoLhnSfNi+m3Ab" +
-        "aRcU5Rw+cUWvzOwJec6ax5YnhZCzDkMToMubUZAub3HJjb816z31Vgflfhgd9VeOV2tfd0vKu/";
+    private const string LINE_COLLISIONS =
+        "XZI9agMxEIXnGFtumTqFSUKIVjpFyj2KjuIjuAjERYoFG2ITL9mAwS59hK3cJnp6I0bxgtDj0/zP3kn9RcfTdyJzut" +
+        "98gt2vyFWkSazXt8IGR4a36MhWJUY6kzJq8lZ9qRELMcnmKveHN7uDZ67JW97J0/9HGTQY/HfKqNnHXhm1yDqdUdl7" +
+        "1ryPytZZow6RszLEQi27yu5T7baV3Sbp043vXn1Hb/WNGus+WH3snX1vvM0PMfs8CzL6iCyCzQAaM3gKNivoby/xOd" +
+        "1fyqBRb80eAvPy7R+LuHVHWb92jNd0Fq9RNjhj2BPy678RHwN7WOTb+phvGGaC/2is/j9o2MG+MOzy4rirlbNdLpWJ" +
+        "s10OL+xPhIyacyhsqwxzbataWldqAvsD";
 }

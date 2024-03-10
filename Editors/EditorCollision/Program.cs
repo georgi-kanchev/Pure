@@ -28,20 +28,34 @@ public static class Program
             }
             else
             {
-                editor.LayerMap.DrawRectangles(solidPack);
                 editor.LayerMap.DrawRectangles(solidMap);
+                editor.LayerMap.DrawRectangles(solidPack);
+                editor.LayerMap.DrawLines(linePack);
             }
 
             if (isDragging == false)
                 return;
 
             var pos = CanDrawLayer ? MousePosPrompt : MousePos;
+            var l = CanDrawLayer ? layer : editor.LayerMap;
+            var (sx, sy) = (1f / l.TileSize.width, 1f / l.TileSize.height);
             solid.Size = Snap((pos.x - solid.Position.x, pos.y - solid.Position.y));
+            solid.Position = Snap(solid.Position);
+
+            if (solid.Size.width <= 0)
+                solid.Size = (solid.Size.width - sx, solid.Size.height);
+            if (solid.Size.height <= 0)
+                solid.Size = (solid.Size.width, solid.Size.height - sy);
 
             if (CanDrawLayer)
                 layer.DrawRectangles(solid);
-            else
+            else if (CanEditGlobal)
                 editor.LayerMap.DrawRectangles(solid);
+            else if (CanEditLines)
+            {
+                var line = new Line(Snap(clickPos), Snap(pos), solid.Color);
+                editor.LayerMap.DrawLines(line);
+            }
         };
         editor.OnUpdateLate += () =>
         {
@@ -52,6 +66,7 @@ public static class Program
     }
 
 #region Backend
+    private static (float x, float y) clickPos, rightClickPos;
     private static (int x, int y) prevViewPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
@@ -59,8 +74,10 @@ public static class Program
     private static readonly Layer layer = new();
     private static readonly Tilemap map = new((3, 3));
     private static readonly Panel promptPanel;
+    private static readonly Palette palette;
     private static SolidPack solidPack = new();
     private static SolidMap solidMap = new();
+    private static LinePack linePack = new();
     private static Menu menu;
     private static bool isDragging;
     private static Solid solid;
@@ -72,23 +89,25 @@ public static class Program
     {
         get => editor.Prompt.IsHidden == false && editor.Prompt.Text.Contains("Tile");
     }
-    private static bool CanEditGlobal
+    private static bool CanEdit
     {
         get => editor.LayerMap.IsHovered &&
                editor.Prompt.IsHidden &&
                editor.MapPanel.IsHovered == false &&
                menu.IsHovered == false &&
-               tools.IsHovered == false &&
-               tools[0].IsSelected;
+               tools.IsHovered == false;
+    }
+    private static bool CanEditGlobal
+    {
+        get => CanEdit && tools[0].IsSelected;
     }
     private static bool CanEditTile
     {
-        get => editor.LayerMap.IsHovered &&
-               editor.Prompt.IsHidden &&
-               editor.MapPanel.IsHovered == false &&
-               menu.IsHovered == false &&
-               tools.IsHovered == false &&
-               tools[1].IsSelected;
+        get => CanEdit && tools[1].IsSelected;
+    }
+    private static bool CanEditLines
+    {
+        get => CanEdit && tools[2].IsSelected;
     }
     private static (float x, float y) MousePos
     {
@@ -108,24 +127,40 @@ public static class Program
         editor.MapsEditor.ViewSize = (mw, mh);
         CreateMenu();
 
+        const int MIDDLE = (int)Editor.LayerMapsUi.Middle;
         const int FRONT = (int)Editor.LayerMapsUi.Front;
         const int PROMPT_MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
         const int PROMPT_BACK = (int)Editor.LayerMapsUi.PromptBack;
         tools = new(itemCount: 0)
         {
-            Size = (8, 2),
-            ItemSize = (8, 1),
+            Size = (10, 3),
+            ItemSize = (10, 1),
             IsSingleSelecting = true
         };
         tools.Add(
-            new Button { Text = "Per Tile" },
-            new Button { Text = "Global" });
-        tools.Select(0);
+            new Button { Text = "Line Pack" },
+            new Button { Text = "Solid Map" },
+            new Button { Text = "Solid Pack" });
         tools.Align((1f, 0f));
         tools.OnDisplay(() => editor.MapsUi.SetList(tools, FRONT));
         tools.OnUpdate(() => tools.IsHidden = editor.Prompt.IsHidden == false);
         tools.OnItemDisplay(item => editor.MapsUi.SetListItem(tools, item, FRONT));
-        editor.Ui.Add(tools);
+        tools.OnItemInteraction(Interaction.Trigger, btn => menu[5].Text = $"{btn.Text}… ");
+        tools[0].Interact(Interaction.Trigger);
+
+        palette = new() { IsPickHidden = true };
+        palette.OnDisplay(() =>
+        {
+            editor.MapsUi.SetPalette(palette, MIDDLE);
+            editor.MapsUi.SetPages(palette.Brightness, MIDDLE);
+        });
+        palette.Brightness.OnItemDisplay(btn =>
+            editor.MapsUi.SetPagesItem(palette.Brightness, btn, FRONT));
+        palette.OnSampleDisplay((btn, color) =>
+            editor.MapsUi[FRONT].SetTile(btn.Position, new(Tile.FULL, color)));
+        palette.Align((0.8f, 0f));
+
+        editor.Ui.Add(tools, palette);
 
         // override the default prompt buttons
         editor.OnPromptItemDisplay = item =>
@@ -162,19 +197,20 @@ public static class Program
     {
         Mouse.Button.Left.OnPress(() =>
         {
-            if (CanEditGlobal)
+            if (CanEditLines || CanEditGlobal)
             {
                 isDragging = true;
-                solid.Position = Snap(MousePos);
-                solid.Color = new Color((uint)Color.Green) { A = 100 };
+                clickPos = MousePos;
+                solid.Position = MousePos;
+                solid.Color = palette.SelectedColor;
                 return;
             }
 
             if (CanDrawLayer)
             {
                 isDragging = true;
-                solid.Position = Snap(MousePosPrompt);
-                solid.Color = new Color((uint)Color.Red) { A = 100 };
+                solid.Position = MousePosPrompt;
+                solid.Color = palette.SelectedColor;
                 return;
             }
 
@@ -228,32 +264,47 @@ public static class Program
             isDragging = false;
             var (mx, my) = CanDrawLayer ? MousePosPrompt : MousePos;
             if (solid.Size.width < 0)
-                solid.Position = Snap((mx, solid.Position.y));
+                solid.Position = (mx, solid.Position.y);
 
             if (solid.Size.height < 0)
-                solid.Position = Snap((solid.Position.x, my));
+                solid.Position = (solid.Position.x, my);
 
             solid.Size = Snap((Math.Abs(solid.Size.width), Math.Abs(solid.Size.height)));
 
+            var curSolid = solid;
             if (CanEditGlobal)
             {
-                var curSolid = solid;
-                curSolid.Position = Snap(curSolid.Position);
-                curSolid.Size = Snap(curSolid.Size);
+                curSolid.Position = curSolid.Position;
                 if (curSolid.Size is { width: > 0, height: > 0 })
                     solidPack.Add(curSolid);
             }
             else if (CanDrawLayer)
             {
-                var curSolid = solid;
-                curSolid.Position = Snap((solid.Position.x - 1, solid.Position.y - 1));
-                curSolid.Size = Snap(curSolid.Size);
+                curSolid.Position = (solid.Position.x - 1, solid.Position.y - 1);
                 if (curSolid.Size is { width: > 0, height: > 0 })
                     solidMap.SolidsAdd(currentTile, curSolid);
             }
+            else if (CanEditLines)
+                linePack.Add(new Line(Snap(clickPos), Snap((mx, my)), solid.Color));
         });
         Mouse.Button.Right.OnPress(() =>
         {
+            if (CanEditLines)
+            {
+                for (var i = 0; i < linePack.Count; i++)
+                {
+                    var line = linePack[i];
+                    var closestPoint = (Point)line.ClosestPoint(MousePos);
+                    if (closestPoint.Distance(MousePos) > 1)
+                        continue;
+
+                    linePack.Remove(line);
+                    i--;
+                }
+
+                return;
+            }
+
             if (CanEditGlobal)
             {
                 for (var i = 0; i < solidPack.Count; i++)
@@ -289,71 +340,58 @@ public static class Program
         menu = new(editor,
             "Graphics… ",
             " Load",
-            "Map… ",
+            "Tilemap… ",
             " Load",
             " Paste",
-            "Solids… ",
-            " Global… ",
-            "  New",
-            "  Save",
-            "  Load",
-            "  Copy",
-            "  Paste",
-            " Map… ",
-            "  New",
-            "  Save",
-            "  Load",
-            "  Copy",
-            "  Paste")
+            "Collisions… ",
+            " New",
+            " Save",
+            " Load",
+            " Copy",
+            " Paste")
         {
-            Size = (9, 18),
+            Size = (11, 11),
             IsHidingOnClick = false
         };
         menu.OnItemInteraction(Interaction.Trigger, btn =>
         {
             var index = menu.IndexOf(btn);
+            var selection = tools.IndexOf(tools.ItemsSelected[0]);
 
             if (index == 1) // load tileset
                 editor.PromptTileset(null, null);
-            else if (index == 3) // load map
-            {
+            else if (index == 3) // load tilemap
                 editor.PromptLoadMap(result =>
                 {
                     layers = result;
                     originalMapViewPos = editor.MapsEditor.ViewPosition;
                     solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
-            }
-            else if (index == 4)
-            {
+            else if (index == 4) // paste tilemap
                 editor.PromptLoadMapBase64(result =>
                 {
                     layers = result;
                     originalMapViewPos = editor.MapsEditor.ViewPosition;
                     solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
-            }
-            else if (index is 7 or 13)
-            {
+            else if (index == 6) // new
                 editor.PromptConfirm(() =>
                 {
-                    if (index == 7)
+                    if (selection == 0)
                         solidPack = new();
-                    else
+                    else if (selection == 1)
                         solidMap = new();
+                    else if (selection == 2)
+                        linePack = new();
                 });
-            }
-            else if (index is 8 or 14) // save solids
-                editor.PromptFileSave(Save(index == 8));
-            else if (index is 9 or 15) // load solids
-                editor.PromptFileLoad(bytes => Load(index == 9, bytes));
-            else if (index is 10 or 16) // copy
-                Window.Clipboard = Convert.ToBase64String(Save(index == 10));
-            else if (index is 11 or 17) // paste
-            {
-                editor.PromptBase64(() =>
-                    Load(index == 11, Convert.FromBase64String(editor.PromptInput.Value)));
-            }
+            else if (index == 7) // save
+                editor.PromptFileSave(Save());
+            else if (index == 8) // load
+                editor.PromptFileLoad(Load);
+            else if (index == 9) // copy
+                Window.Clipboard = Convert.ToBase64String(Save());
+            else if (index == 10) // paste
+                editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
         });
         menu.OnUpdate(() =>
         {
@@ -361,37 +399,53 @@ public static class Program
             menu.Align((1f, 1f));
         });
     }
-    private static void Load(bool global, byte[] bytes)
+    private static void Load(byte[] bytes)
     {
         try
         {
-            if (global)
+            var selection = tools.IndexOf(tools.ItemsSelected[0]);
+
+            if (selection == 0)
                 solidPack = new(bytes);
-            else
-            {
+            else if (selection == 1)
                 solidMap = new(bytes);
-                UpdateViewOffsets();
-            }
+            else if (selection == 2)
+                linePack = new(bytes);
+
+            UpdateViewOffsets();
         }
         catch (Exception)
         {
             editor.PromptMessage("Loading failed!");
         }
     }
-    private static byte[] Save(bool global)
+    private static byte[] Save()
     {
         try
         {
+            var selection = tools.IndexOf(tools.ItemsSelected[0]);
+
             // ignore editor offset, keep original tilemap's view
             var prevMapOffset = solidMap.Offset;
-            var prevGlobalOffset = solidPack.Offset;
+            var prevSolidOffset = solidPack.Offset;
+            var prevLineOffset = linePack.Offset;
 
             solidPack.Offset = originalMapViewPos;
             solidMap.Offset = originalMapViewPos;
+            linePack.Offset = originalMapViewPos;
 
-            var data = global ? solidPack.ToBytes() : solidMap.ToBytes();
-            solidPack.Offset = prevGlobalOffset;
+            var data = Array.Empty<byte>();
+
+            if (selection == 0)
+                data = solidPack.ToBytes();
+            else if (selection == 1)
+                data = solidMap.ToBytes();
+            else if (selection == 2)
+                data = linePack.ToBytes();
+
+            solidPack.Offset = prevSolidOffset;
             solidMap.Offset = prevMapOffset;
+            linePack.Offset = prevLineOffset;
 
             return data;
         }
@@ -418,6 +472,7 @@ public static class Program
     {
         var (x, y) = editor.MapsEditor.ViewPosition;
         solidPack.Offset = (-x, -y);
+        linePack.Offset = (-x, -y);
         solidMap.Offset = (-x, -y);
         solidMap.Update(editor.MapsEditor[currentLayer]);
     }

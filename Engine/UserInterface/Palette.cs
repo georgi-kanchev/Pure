@@ -20,6 +20,7 @@ public class Palette : Block
                 Interact(Interaction.Select);
         }
     }
+    public bool IsPickHidden { get; set; }
 
     public Palette((int x, int y) position = default, int brightnessLevels = 30) : base(position)
     {
@@ -58,11 +59,11 @@ public class Palette : Block
         return Compress(result.ToArray());
     }
 
-    public void OnColorSampleDisplay(Action<Button, uint> method)
+    public void OnSampleDisplay(Action<Button, uint> method)
     {
         displaySample += method;
     }
-    public void OnColorPick(Func<(float x, float y), uint> method)
+    public void OnPick(Func<(float x, float y), uint> method)
     {
         pick = method;
     }
@@ -167,8 +168,11 @@ public class Palette : Block
         Opacity.size = (w, h - 2);
         Pick.position = (x + w - 1, y + h - 1);
         Pick.size = (1, 1);
+        Pick.isDisabled = IsPickHidden;
+        Pick.isHidden = IsPickHidden;
+
         Brightness.position = (x, y + h - 1);
-        Brightness.size = (w - 1, 1);
+        Brightness.size = (w - (IsPickHidden ? 0 : 1), 1);
 
         Opacity.InheritParent(this);
         Pick.InheritParent(this);

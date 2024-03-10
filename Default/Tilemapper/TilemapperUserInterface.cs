@@ -363,8 +363,8 @@ public static class TilemapperUserInterface
     {
         var p = palette;
         var tile = new Tile(Tile.SHADE_OPAQUE, GetInteractionColor(p.Opacity, Color.Gray.ToBright()));
-        var (x, y) = p.Opacity.Position;
-        var (w, h) = p.Opacity.Size;
+        var (x, y) = p.Position;
+        var (w, h) = p.Size;
 
         Clear(maps, p, zOrder);
         maps[zOrder].SetRectangle(
@@ -377,8 +377,11 @@ public static class TilemapperUserInterface
             p.SelectedColor,
             p.Opacity.Size.width);
         maps[zOrder + 1].SetTile(p.Opacity.Handle.Position, tile);
-        maps[zOrder + 1].SetTile(p.Pick.Position,
-            new(Tile.ICON_PICK, GetInteractionColor(p.Pick, Color.Gray)));
+
+        maps[zOrder].SetTile(p.Pick.Position, Tile.EMPTY);
+        if (p.IsPickHidden == false)
+            maps[zOrder + 1].SetTile(p.Pick.Position,
+                new(Tile.ICON_PICK, GetInteractionColor(p.Pick, Color.Gray)));
     }
     public static void SetPages(this TilemapPack maps, Pages pages, int zOrder = 0)
     {

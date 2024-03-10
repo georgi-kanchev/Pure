@@ -146,13 +146,13 @@ public class SolidPack : Pack<Solid>
     }
 
 #region Backend
-    protected override Solid LocalToGlobal(Solid localRect)
+    protected override Solid LocalToGlobal(Solid local)
     {
-        var (x, y) = localRect.Position;
-        var (w, h) = localRect.Size;
-        localRect.Position = (Offset.x + x * Scale.width, Offset.y + y * Scale.height);
-        localRect.Size = (w * Scale.width, h * Scale.height);
-        return localRect;
+        var (x, y) = local.Position;
+        var (w, h) = local.Size;
+        local.Position = (Offset.x + x * Scale.width, Offset.y + y * Scale.height);
+        local.Size = (w * Scale.width, h * Scale.height);
+        return local;
     }
 #endregion
 }

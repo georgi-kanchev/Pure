@@ -749,9 +749,12 @@ public static class Extensions
         if (float.IsNaN(interval) || float.IsInfinity(number) || Math.Abs(interval) < 0.001f)
             return number;
 
-        // this prevents -0
-        //var value = number - (number < 0 ? interval : 0);
-        return number - number % interval;
+        var remainder = number % interval;
+        var halfway = interval / 2f;
+
+        return remainder < halfway ?
+            number - remainder :
+            number + (interval - remainder);
     }
     /// <summary>
     /// Wraps a value within a range of 0 to target number inclusive. Useful for
@@ -1171,7 +1174,7 @@ public static class Extensions
         return HashCode.Combine(parameters.a, parameters.b, parameters.c);
     }
 
-    #region Backend
+#region Backend
     private class Gate
     {
         public int entries;
@@ -1187,5 +1190,5 @@ public static class Extensions
         holdFrequency.Start();
         holdDelay.Start();
     }
-    #endregion
+#endregion
 }

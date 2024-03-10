@@ -115,6 +115,75 @@ public class LinePack : Pack<Line>
         return false;
     }
 
+    public (float x, float y, uint color)[] CrossPoints(LinePack linePack)
+    {
+        var result = new List<(float x, float y, uint color)>();
+        for (var i = 0; i < data.Count; i++)
+            result.AddRange(data[i].CrossPoints(linePack));
+
+        return result.ToArray();
+    }
+    public (float x, float y, uint color)[] CrossPoints(SolidMap solidMap)
+    {
+        var result = new List<(float x, float y, uint color)>();
+        for (var i = 0; i < data.Count; i++)
+            result.AddRange(data[i].CrossPoints(solidMap));
+
+        return result.ToArray();
+    }
+    public (float x, float y, uint color)[] CrossPoints(SolidPack solidPack)
+    {
+        var result = new List<(float x, float y, uint color)>();
+        for (var i = 0; i < data.Count; i++)
+            result.AddRange(data[i].CrossPoints(solidPack));
+
+        return result.ToArray();
+    }
+    public (float x, float y, uint color)[] CrossPoints(Solid solid)
+    {
+        var result = new List<(float x, float y, uint color)>();
+        for (var i = 0; i < data.Count; i++)
+            result.AddRange(data[i].CrossPoints(solid));
+
+        return result.ToArray();
+    }
+    public (float x, float y, uint color)[] CrossPoints(Line line)
+    {
+        var result = new List<(float x, float y, uint color)>();
+        for (var i = 0; i < data.Count; i++)
+            result.Add(data[i].CrossPoint(line));
+
+        return result.ToArray();
+    }
+
+    public (float x, float y, uint color) ClosestPoint((float x, float y, uint color) point)
+    {
+        var result = ClosestPoint((point.x, point.y));
+        result.color = point.color;
+        return result;
+    }
+    public (float x, float y, uint color) ClosestPoint((float x, float y) point)
+    {
+        var closestPoints = new List<(float x, float y, uint color)>();
+        for (var i = 0; i < data.Count; i++)
+            closestPoints.Add(data[i].ClosestPoint(point));
+
+        var result = (float.NaN, float.NaN, 0u);
+        var closestDistance = float.MaxValue;
+        foreach (var pt in closestPoints)
+        {
+            var distance = Vector2.Distance(new(), new());
+
+            if (distance > closestDistance)
+                continue;
+
+            closestDistance = distance;
+            result = pt;
+        }
+
+        return result;
+    }
+
     public LinePack Duplicate()
     {
         return new(ToBytes());
@@ -151,15 +220,15 @@ public class LinePack : Pack<Line>
     }
 
 #region Backend
-    protected override Line LocalToGlobal(Line localLine)
+    protected override Line LocalToGlobal(Line local)
     {
-        var (ax, ay) = localLine.A;
-        var (bx, by) = localLine.B;
+        var (ax, ay) = local.A;
+        var (bx, by) = local.B;
         var m = Matrix3x2.Identity;
         m *= Matrix3x2.CreateScale(Scale.width, Scale.height, new(Offset.x, Offset.y));
         var ra = (m * Matrix3x2.CreateTranslation(ax, ay)).Translation;
         var rb = (m * Matrix3x2.CreateTranslation(bx, by)).Translation;
-        return (ra.X, ra.Y, rb.X, rb.Y, localLine.Color);
+        return (ra.X, ra.Y, rb.X, rb.Y, local.Color);
     }
 #endregion
 }

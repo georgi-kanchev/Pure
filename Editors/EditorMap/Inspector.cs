@@ -110,7 +110,7 @@ internal class Inspector : Panel
             editor.MapsUi.SetSlider(paletteColor.Opacity, zOrder: 1);
             editor.MapsUi.SetPages(paletteColor.Brightness, zOrder: 1);
         });
-        paletteColor.OnColorSampleDisplay((btn, color) =>
+        paletteColor.OnSampleDisplay((btn, color) =>
             editor.MapsUi[1].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, color)));
         paletteColor.Brightness.OnItemDisplay(btn =>
             editor.MapsUi.SetPagesItem(paletteColor.Brightness, btn));

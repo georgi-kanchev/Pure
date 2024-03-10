@@ -16,6 +16,11 @@ public struct Direction
         get => new(float.NaN);
     }
 
+    public (float x, float y) XY
+    {
+        get => (x, y);
+        set => Value = (value.x, value.y);
+    }
     /// <summary>
     /// Gets or sets the X component of the direction.
     /// </summary>

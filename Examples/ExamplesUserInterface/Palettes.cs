@@ -8,12 +8,12 @@ public static class Palettes
 
         var palette = new Palette { Size = (13, 3) };
         palette.Align((0.5f, 0.6f));
-        palette.OnColorPick(position => maps[0].TileAt(((int)position.x, (int)position.y)).Tint);
+        palette.OnPick(position => maps[0].TileAt(((int)position.x, (int)position.y)).Tint);
         palette.OnDisplay(() =>
         {
             maps.SetPalette(palette);
             maps.SetPages(palette.Brightness);
-            palette.OnColorSampleDisplay((sample, color) =>
+            palette.OnSampleDisplay((sample, color) =>
                 maps[1].SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color)));
             palette.Brightness.OnItemDisplay(item =>
                 maps.SetPagesItem(palette.Brightness, item, zOrder: 2));

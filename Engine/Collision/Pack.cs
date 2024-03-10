@@ -62,7 +62,7 @@ public abstract class Pack<T>
 #region Backend
     protected readonly List<T> data = new();
 
-    protected abstract T LocalToGlobal(T localLine);
+    protected abstract T LocalToGlobal(T local);
 
     protected static byte[] Compress(byte[] data)
     {

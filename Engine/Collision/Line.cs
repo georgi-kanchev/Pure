@@ -100,9 +100,17 @@ public struct Line
     /// </returns>
     public override string ToString()
     {
-        return $"A{A} B{B} Color{Color}";
+        return $"A{A} B{B} Angle({Angle})";
     }
 
+    public bool IsCrossing(LinePack linePack)
+    {
+        for (var i = 0; i < linePack.Count; i++)
+            if (IsCrossing(linePack[i]))
+                return true;
+
+        return false;
+    }
     /// <summary>
     /// Checks if this line is crossing any rectangles in the given map.
     /// </summary>
@@ -204,16 +212,14 @@ public struct Line
         return IsCrossing((point.x, point.y));
     }
 
-    public float IsLeftOf((float x, float y) point)
+    public (float x, float y, uint color)[] CrossPoints(LinePack linePack)
     {
-        var (px, py) = point;
-        return (B.x - A.x) * (py - A.y) - (B.y - A.y) * (px - A.x);
-    }
-    public float IsLeftOf((float x, float y, uint color) point)
-    {
-        return IsLeftOf((point.x, point.y));
-    }
+        var result = new List<(float x, float y, uint color)>();
+        for (var i = 0; i < linePack.Count; i++)
+            result.Add(CrossPoint(linePack[i]));
 
+        return result.ToArray();
+    }
     /// <summary>
     /// Calculates all points of intersection between this line and the rectangles of the
     /// specified map.
@@ -303,6 +309,13 @@ public struct Line
         var (bx2, by2) = line.B;
         return LinesCrossPoint(line.Color, ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
     }
+
+    public (float x, float y, uint color) ClosestPoint((float x, float y, uint color) point)
+    {
+        var result = ClosestPoint((point.x, point.y));
+        result.color = point.color;
+        return result;
+    }
     /// <param name="point">
     ///     The point to find the closest point on the line to.
     /// </param>
@@ -323,6 +336,24 @@ public struct Line
         return distance < 0 ? (ax, ay, uint.MaxValue) :
             distance > 1 ? (bx, ay, uint.MaxValue) :
             (ax + abx * distance, ay + aby * distance, uint.MaxValue);
+    }
+    public bool IsLeftOf((float x, float y) point)
+    {
+        var (px, py) = point;
+        return (B.x - A.x) * (py - A.y) - (B.y - A.y) * (px - A.x) < 0;
+    }
+    public bool IsLeftOf((float x, float y, uint color) point)
+    {
+        return IsLeftOf((point.x, point.y));
+    }
+
+    public Line NormalizeToPoint((float x, float y, uint color) point)
+    {
+        return NormalizeToPoint((point.x, point.y));
+    }
+    public Line NormalizeToPoint((float x, float y) point)
+    {
+        return IsLeftOf(point) ? this : new(B, A, Color);
     }
 
     /// <summary>

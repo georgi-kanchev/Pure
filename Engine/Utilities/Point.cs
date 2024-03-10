@@ -20,6 +20,11 @@ public struct Point
         get => new(float.NaN);
     }
 
+    public (float x, float y) XY
+    {
+        get => (X, Y);
+        set => val = (value.x, value.y);
+    }
     public float X
     {
         get => val.x;

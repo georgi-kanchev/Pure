@@ -28,7 +28,8 @@ public struct Angle
     /// <param name="degrees">The value in degrees.</param>
     public Angle(float degrees)
     {
-        value = degrees;
+        value = 0;
+        Value = degrees;
     }
 
     /// <summary>
@@ -93,6 +94,12 @@ public struct Angle
         var m = MathF.Sqrt(x * x + y * y);
 
         return (x / m, y / m);
+    }
+    public static Angle FromPoints(
+        (float x, float y, uint color) point,
+        (float x, float y, uint color) targetPoint)
+    {
+        return FromPoints((point.x, point.y), (targetPoint.x, targetPoint.y));
     }
     public static Angle FromRadians(float radians)
     {
@@ -197,17 +204,8 @@ public struct Angle
     private float Value
     {
         get => value;
-        set
-        {
-            this.value = value;
-            Wrap();
-        }
+        set => this.value = (value % 360 + 360) % 360;
     }
     private float value;
-
-    private void Wrap()
-    {
-        value = ((value % 360) + 360) % 360;
-    }
 #endregion
 }
