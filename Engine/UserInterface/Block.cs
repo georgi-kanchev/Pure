@@ -651,10 +651,6 @@ public abstract class Block
 
     private void Init()
     {
-        Input.hold.Start();
-        Input.holdTrigger.Start();
-        Input.doubleClick.Start();
-
         Text = GetType().Name;
     }
     internal void LimitSizeMin((int width, int height) minimumSize)

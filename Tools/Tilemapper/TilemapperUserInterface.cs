@@ -1,4 +1,6 @@
-﻿namespace Pure.Tools.Tilemapper;
+﻿using Pure.Engine.Window;
+
+namespace Pure.Tools.Tilemapper;
 
 using Engine.Tilemap;
 using Engine.UserInterface;
@@ -499,8 +501,10 @@ public static class TilemapperUserInterface
 
     public static Color GetInteractionColor(this Block block, Color baseColor)
     {
+        var hotkeyIsPressed = block is Button btn && ((Keyboard.Key)btn.Hotkey.id).IsPressed();
+
         if (block.IsDisabled || IsInteractable == false) return baseColor;
-        if (block.IsPressedAndHeld) return baseColor.ToDark();
+        if (block.IsPressedAndHeld || hotkeyIsPressed) return baseColor.ToDark();
         else if (block.IsHovered) return baseColor.ToBright();
 
         return baseColor;

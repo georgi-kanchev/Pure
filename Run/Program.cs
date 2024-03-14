@@ -8,14 +8,14 @@ public static class Run
 {
     public static void Main()
     {
-        EightBallPool.Run();
+        //EightBallPool.Run();
         //FlappyBird.Run();
         //Ludo.Run();
         //Pong.Run();
         //Chat.Run();
 
         //Editors.EditorCollision.Program.Run();
-        //Editors.EditorMap.Program.Run();
+        Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 

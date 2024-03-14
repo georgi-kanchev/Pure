@@ -41,9 +41,9 @@ public class Prompt : Block
                 onButtonTrigger?.Invoke(index);
             });
             if (i == buttonAccept)
-                btn.HotkeyId = (int)Key.Enter;
+                btn.Hotkey = ((int)Key.Enter, false);
             if (i == buttonDecline)
-                btn.HotkeyId = (int)Key.Escape;
+                btn.Hotkey = ((int)Key.Escape, false);
 
             buttons.Add(btn);
         }

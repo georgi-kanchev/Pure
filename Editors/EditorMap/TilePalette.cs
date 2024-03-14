@@ -72,11 +72,8 @@ internal class TilePalette
         layer.DrawTilemap(view);
 
         if (layer.IsHovered)
-        {
-            layer.DrawTiles(
-                ((int)mx, (int)my),
+            layer.DrawTiles(((int)mx, (int)my),
                 new Tile(layer.TileIdFull, new Color(50, 100, 255, 100)));
-        }
 
         UpdateSelected();
         var s = selected.ToBundle();
@@ -114,20 +111,18 @@ internal class TilePalette
         else if (rectangleTools.Contains(tool)) // rectangle/ellipse of random tiles
             editor.LayerMap.DrawRectangles((start.x, start.y, szw, szh, color));
         else if (tool == 4 && start != end) // line of random tiles
-        {
             editor.LayerMap.DrawLines(
                 (start.x, start.y, end.x - 1, end.y - 1, color),
                 (start.x + 1, start.y, end.x, end.y - 1, color),
                 (start.x + 1, start.y + 1, end.x, end.y, color),
                 (start.x, start.y + 1, end.x - 1, end.y, color));
-        }
 
         if (Mouse.Button.Left.IsPressed())
             OnMouseHold(randomTile, tilemap);
     }
 
 #region Backend
-    private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12 };
+    private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12, 13 };
     private Inspector? inspector;
     private (int x, int y) prevMousePos;
     private readonly Editor editor;
@@ -140,8 +135,7 @@ internal class TilePalette
 
     static TilePalette()
     {
-        Mouse.Button.Left.OnPress(() =>
-            clickSeed = (-10000, 10000).Random());
+        Mouse.Button.Left.OnRelease(() => clickSeed = (-10000, 10000).Random());
     }
     private void UpdateSelected()
     {
@@ -174,7 +168,7 @@ internal class TilePalette
             return;
 
         start = ((int)editor.MousePositionWorld.x, (int)editor.MousePositionWorld.y);
-        end = start;
+        end = (start.x + 1, start.y + 1);
 
         if (inspector.layers.ItemsSelected.Length != 1)
         {
@@ -225,36 +219,36 @@ internal class TilePalette
         else if (tool == 8) // fill
             tilemap.Flood((mx, my), false, tiles);
         else if (tool == 9) // rotate
-        {
             ProcessRegion(tile =>
             {
                 tile.Turns++;
                 return tile;
             });
-        }
         else if (tool == 10) // mirror
-        {
             ProcessRegion(tile =>
             {
                 tile.IsMirrored = tile.IsMirrored == false;
                 return tile;
             });
-        }
         else if (tool == 11) // flip
-        {
             ProcessRegion(tile =>
             {
                 tile.IsFlipped = tile.IsFlipped == false;
                 return tile;
             });
-        }
         else if (tool == 12) // color
-        {
             ProcessRegion(tile =>
             {
                 tile.Tint = inspector.paletteColor.SelectedColor;
                 return tile;
             });
+        else if (tool == 13) // pick
+        {
+            var tile = tilemap.TileAt((mx, my));
+            var coords = Indices.FromIndex(tile.Id, layer.TilesetSize);
+            inspector.paletteColor.SelectedColor = tile.Tint;
+            selectedPos = coords;
+            selectedSz = (1, 1);
         }
 
         start = end;
@@ -291,6 +285,16 @@ internal class TilePalette
         }
 
         end = (mx + offX, my + offY);
+        if (end.x - start.x == 0)
+            end = (end.x + 1, end.y);
+        if (end.y - start.y == 0)
+            end = (end.x, end.y + 1);
+
+        if (tool == 13) // pick
+        {
+            start = (mx, my);
+            end = (mx + 1, my + 1);
+        }
 
         if (lmb && tool == 1) // group of tiles
             tilemap?.SetGroup(pos, GetSelectedTiles());

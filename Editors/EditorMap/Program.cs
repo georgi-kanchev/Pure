@@ -35,6 +35,8 @@ public static class Program
         editor.MapsEditor.Clear();
         editor.MapsEditor.Add(new Tilemap((mw, mh)));
         editor.MapsEditor.ViewSize = (mw, mh);
+        editor.MapsEditorVisible.Clear();
+        editor.MapsEditorVisible.Add(true);
 
         tilePalette = new(editor);
         inspector = new(editor, tilePalette);
@@ -78,25 +80,11 @@ public static class Program
             if (index == 3) // save map
                 editor.PromptFileSave(Save());
             else if (index == 4) // load map
-            {
-                editor.PromptLoadMap(layers =>
-                {
-                    inspector.layers.Clear();
-                    foreach (var layer in layers)
-                        inspector.layers.Add(new Button { Text = layer });
-                });
-            }
+                editor.PromptLoadMap(InitializeLayers);
             else if (index == 5)
                 Window.Clipboard = Convert.ToBase64String(Save());
             else if (index == 6)
-            {
-                editor.PromptLoadMapBase64(layers =>
-                {
-                    inspector.layers.Clear();
-                    foreach (var layer in layers)
-                        inspector.layers.Add(new Button { Text = layer });
-                });
-            }
+                editor.PromptLoadMapBase64(InitializeLayers);
         });
 
         Mouse.Button.Right.OnPress(() =>
@@ -109,6 +97,19 @@ public static class Program
             menu.IsDisabled = false;
             menu.Position = ((int)mx + 1, (int)my + 1);
         });
+
+        void InitializeLayers(string[] layers)
+        {
+            inspector.layers.Clear();
+            inspector.layersVisibility.Clear();
+            editor.MapsEditorVisible.Clear();
+            foreach (var layer in layers)
+            {
+                inspector.layers.Add(new Button { Text = layer });
+                inspector.layersVisibility.Add(new Button());
+                editor.MapsEditorVisible.Add(true);
+            }
+        }
     }
 
     private static byte[] Save()

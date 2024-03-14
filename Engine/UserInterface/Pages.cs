@@ -185,8 +185,8 @@ public class Pages : Block
         Next.OnInteraction(Interaction.Trigger, () => Current++);
         Last.OnInteraction(Interaction.Trigger, () => Current = Count);
 
-        Previous.OnInteraction(Interaction.PressAndHold, () => Current--);
-        Next.OnInteraction(Interaction.PressAndHold, () => Current++);
+        Previous.OnInteraction(Interaction.PressAndHold, () => Previous.Interact(Interaction.Trigger));
+        Next.OnInteraction(Interaction.PressAndHold, () => Next.Interact(Interaction.Trigger));
 
         First.OnInteraction(Interaction.Scroll, ApplyScroll);
         Previous.OnInteraction(Interaction.Scroll, ApplyScroll);

@@ -172,7 +172,7 @@ public static class Input
     }
 
 #region Backend
-    private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
+    internal const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     internal const float DOUBLE_CLICK_DELAY = 0.5f;
     internal static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private static readonly List<Key> pressedKeys = new(), prevPressedKeys = new();
@@ -186,6 +186,13 @@ public static class Input
     internal static string? Typed { get; private set; }
     internal static string? TypedPrevious { get; private set; }
     internal static int ScrollDelta { get; private set; }
+
+    static Input()
+    {
+        hold.Start();
+        holdTrigger.Start();
+        doubleClick.Start();
+    }
 
     internal static Key[]? PressedKeys
     {

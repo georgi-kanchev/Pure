@@ -1104,9 +1104,9 @@ public static class Extensions
         var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
         Random random;
 
-        if (randomCache.TryGetValue(s, out var r))
-            random = r;
-        else
+        // if (randomCache.TryGetValue(s, out var r))
+        //     random = r;
+        //else
         {
             random = new(s);
             randomCache[s] = random;

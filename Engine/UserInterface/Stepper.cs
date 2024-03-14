@@ -106,14 +106,14 @@ public class Stepper : Block
         Increase.OnInteraction(Interaction.PressAndHold, () =>
         {
             if (Increase.IsHovered)
-                Value += Step;
+                Increase.Interact(Interaction.Trigger);
         });
         Decrease.OnInteraction(Interaction.Scroll, ApplyScroll);
         Decrease.OnInteraction(Interaction.Trigger, () => Value -= Step);
         Decrease.OnInteraction(Interaction.PressAndHold, () =>
         {
             if (Decrease.IsHovered)
-                Value -= Step;
+                Decrease.Interact(Interaction.Trigger);
         });
 
         Minimum.OnInteraction(Interaction.Scroll, ApplyScroll);

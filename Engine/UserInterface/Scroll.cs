@@ -100,7 +100,7 @@ public class Scroll : Block
         Increase.OnInteraction(Interaction.PressAndHold, () =>
         {
             if (Increase.IsHovered)
-                Slider.Progress += Step;
+                Increase.Interact(Interaction.Trigger);
         });
 
         Decrease.OnInteraction(Interaction.Scroll, ApplyScroll);
@@ -108,7 +108,7 @@ public class Scroll : Block
         Decrease.OnInteraction(Interaction.PressAndHold, () =>
         {
             if (Decrease.IsHovered)
-                Slider.Progress -= Step;
+                Decrease.Interact(Interaction.Trigger);
         });
     }
     internal override void ApplyScroll()

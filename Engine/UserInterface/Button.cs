@@ -1,5 +1,7 @@
 ﻿namespace Pure.Engine.UserInterface;
 
+using System.Diagnostics;
+
 /// <summary>
 /// Represents a user interface button.
 /// </summary>
@@ -13,10 +15,11 @@ public class Button : Block
         get => isSelected;
         set
         {
-            if (hasParent == false) isSelected = value;
+            if (hasParent == false)
+                isSelected = value;
         }
     }
-    public int HotkeyId { get; set; }
+    public (int id, bool isHoldable) Hotkey { get; set; }
 
     /// <summary>
     /// Initializes a new button instance with the specified position and default size of (10, 1).
@@ -26,14 +29,14 @@ public class Button : Block
     {
         Init();
         Size = (10, 1);
-        HotkeyId = -1;
+        Hotkey = (-1, false);
     }
     public Button(byte[] bytes) : base(bytes)
     {
         Init();
         var b = Decompress(bytes);
         IsSelected = GrabBool(b);
-        HotkeyId = GrabInt(b);
+        Hotkey = (GrabInt(b), GrabBool(b));
     }
     public Button(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -47,7 +50,8 @@ public class Button : Block
     {
         var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsSelected);
-        PutInt(result, HotkeyId);
+        PutInt(result, Hotkey.id);
+        PutBool(result, Hotkey.isHoldable);
         return Compress(result.ToArray());
     }
 
@@ -67,9 +71,13 @@ public class Button : Block
 
 #region Backend
     internal bool isSelected;
+    private static readonly Stopwatch hold = new(), holdTrigger = new();
 
     private void Init()
     {
+        hold.Start();
+        holdTrigger.Start();
+
         OnInteraction(Interaction.Trigger, () =>
         {
             // not using property since the user click can access it despite of parent
@@ -84,10 +92,27 @@ public class Button : Block
         if (IsHovered)
             Input.CursorResult = MouseCursor.Hand;
 
-        if (Input.IsKeyJustPressed((Key)HotkeyId))
-            ;
+        if (Hotkey.id == -1)
+            return;
 
-        if (Input.IsKeyJustPressed((Key)HotkeyId))
+        if (Input.IsKeyJustPressed((Key)Hotkey.id))
+        {
+            Interact(Interaction.Trigger);
+            hold.Restart();
+        }
+
+        if (Hotkey.isHoldable == false)
+            return;
+
+        var isJustHeld = false;
+        if (hold.Elapsed.TotalSeconds > Input.HOLD_DELAY &&
+            holdTrigger.Elapsed.TotalSeconds > Input.HOLD_INTERVAL)
+        {
+            holdTrigger.Restart();
+            isJustHeld = true;
+        }
+
+        if (Input.IsKeyPressed((Key)Hotkey.id) && isJustHeld)
             Interact(Interaction.Trigger);
     }
 #endregion

@@ -80,6 +80,8 @@ public class Editor
 
     public Action<Button>? OnPromptItemDisplay { get; set; }
 
+    public List<bool> MapsEditorVisible { get; private set; }
+
     public Editor(string title)
     {
         Window.PixelScale = PIXEL_SCALE;
@@ -88,6 +90,7 @@ public class Editor
 
         var (width, height) = Monitor.Current.AspectRatio;
         ChangeMapSize((50, 50));
+        MapsEditorVisible = new() { true, true, true };
         MapsEditor.ViewSize = (50, 50);
         MapsUi = new((int)LayerMapsUi.Count, (width * 5, height * 5));
 
@@ -148,6 +151,9 @@ public class Editor
 
     public void Run()
     {
+        Window.SetIconFromTile(LayerUi, Tile.ICON_SKY_STARS, Color.Red.ToDark(),
+            Tile.FULL, Color.Brown.ToBright());
+
         SetGrid();
 
         Input.OnTextCopy(() => Window.Clipboard = Input.Clipboard);
@@ -195,8 +201,13 @@ public class Editor
 
             //========
             var view = MapsEditor.ViewUpdate();
-            foreach (var t in view)
-                LayerMap.DrawTilemap(t.ToBundle());
+            for (var i = 0; i < view.Length; i++)
+            {
+                if (i < MapsEditorVisible.Count && MapsEditorVisible[i] == false)
+                    continue;
+
+                LayerMap.DrawTilemap(view[i].ToBundle());
+            }
 
             //========
 
