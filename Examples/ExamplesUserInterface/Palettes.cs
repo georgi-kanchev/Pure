@@ -7,7 +7,7 @@ public static class Palettes
         Window.Title = "Pure - Palettes Example";
 
         var palette = new Palette { Size = (13, 3) };
-        palette.Align((0.5f, 0.6f));
+        palette.AlignInside((0.5f, 0.6f));
         palette.OnPick(position => maps[0].TileAt(((int)position.x, (int)position.y)).Tint);
         palette.OnDisplay(() =>
         {

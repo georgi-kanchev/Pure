@@ -58,7 +58,7 @@ public static class Program
 
         var (_, uh) = editor.MapsUi.Size;
         inspector = new(default) { Size = (16, uh) };
-        inspector.Align((1f, 0.5f));
+        inspector.AlignInside((1f, 0.5f));
 
         promptSlider = new() { Size = (15, 1) };
         promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, BACK));

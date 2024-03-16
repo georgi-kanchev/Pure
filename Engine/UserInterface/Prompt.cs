@@ -96,7 +96,7 @@ public class Prompt : Block
 
         var lines = Text.Split(Environment.NewLine).Length;
 
-        currentBlock.Align((0.5f, 0.5f));
+        currentBlock.AlignInside((0.5f, 0.5f));
         var (x, y) = currentBlock.Position;
         currentBlock.position = (x, y + lines / 2);
     }

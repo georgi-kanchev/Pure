@@ -147,7 +147,7 @@ internal class Inspector : Panel
                             return;
 
                         Input.TilemapSize = (ew, eh);
-                        panel.Align((promptSlider.Progress, float.NaN));
+                        panel.AlignInside((promptSlider.Progress, float.NaN));
                         panel.Position = (panel.Position.x + 1, panel.Position.y);
                         Input.TilemapSize = (uw, uh);
                     });
@@ -163,7 +163,7 @@ internal class Inspector : Panel
                             return;
 
                         Input.TilemapSize = (ew, eh);
-                        panel.Align((float.NaN, promptSlider.Progress));
+                        panel.AlignInside((float.NaN, promptSlider.Progress));
                         panel.Position = (panel.Position.x, panel.Position.y + 1);
                         Input.TilemapSize = (uw, uh);
                     });

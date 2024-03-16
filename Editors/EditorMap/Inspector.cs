@@ -18,7 +18,7 @@ internal class Inspector : Panel
         IsResizable = false;
 
         OnDisplay(() => editor.MapsUi.SetPanel(this));
-        Align((1f, 0.5f));
+        AlignInside((1f, 0.5f));
 
         //========
 

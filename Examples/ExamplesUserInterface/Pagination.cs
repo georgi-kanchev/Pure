@@ -7,7 +7,7 @@ public static class Pagination
         Window.Title = "Pure - Pages Example";
 
         var icons = new Pages { Size = (9, 1), ItemGap = 0 };
-        icons.Align((0.05f, 0.5f));
+        icons.AlignInside((0.05f, 0.5f));
         icons.OnDisplay(() => maps.SetPages(icons));
         icons.OnItemDisplay(item => maps.SetPagesIcon(item, Tile.ICON_HOME));
 
@@ -15,7 +15,7 @@ public static class Pagination
 
         var pages = new Pages { Size = (15, 1), Count = 150 };
         pages.ItemWidth = $"{pages.Count}".Length;
-        pages.Align((0.95f, 0.5f));
+        pages.AlignInside((0.95f, 0.5f));
         pages.OnDisplay(() => maps.SetPages(pages));
         pages.OnItemDisplay(item => maps.SetPagesItem(pages, item));
 
@@ -24,7 +24,7 @@ public static class Pagination
         var buttons = new Pages { Size = (21, 1), Count = 150 };
         buttons.Current = buttons.Count / 2;
         buttons.ItemWidth = $"{buttons.Count}".Length + 2;
-        buttons.Align((0.5f, 0.1f));
+        buttons.AlignInside((0.5f, 0.1f));
         buttons.OnDisplay(() => maps.SetPages(buttons));
         buttons.OnItemDisplay(item => maps.SetButtonSelect(item, zOrder: 1));
 
@@ -32,7 +32,7 @@ public static class Pagination
 
         var buttonsBig = new Pages { Size = (21, 3), Count = 100 };
         buttonsBig.ItemWidth = $"{buttonsBig.Count}".Length + 2;
-        buttonsBig.Align((0.5f, 0.9f));
+        buttonsBig.AlignInside((0.5f, 0.9f));
         buttonsBig.OnDisplay(() => maps.SetPages(buttonsBig));
         buttonsBig.OnItemDisplay(item =>
             maps.SetButton(item, isDisplayingSelection: true, zOrder: 1));

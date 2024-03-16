@@ -8,7 +8,7 @@ public static class ButtonsAndCheckboxes
 
         var buttonSelect = new Button { Text = "Button Select" };
         buttonSelect.Size = (buttonSelect.Text.Length + 4, 1);
-        buttonSelect.Align((0.5f, 0.2f));
+        buttonSelect.AlignInside((0.5f, 0.2f));
         buttonSelect.OnDisplay(() => maps.SetButtonSelect(buttonSelect));
 
         // ==============
@@ -16,7 +16,7 @@ public static class ButtonsAndCheckboxes
         var counter = 0;
         var button = new Button { Text = "Cool Button" };
         button.Size = (button.Text.Length + 2, 3);
-        button.Align((0.5f, 0.4f));
+        button.AlignInside((0.5f, 0.4f));
         button.OnInteraction(Interaction.Trigger, () => counter++);
         button.OnDisplay(() =>
         {
@@ -28,14 +28,14 @@ public static class ButtonsAndCheckboxes
 
         var checkbox = new Button { Text = "Checkbox" };
         checkbox.Size = (checkbox.Text.Length + 2, 1);
-        checkbox.Align((0.5f, 0.6f));
+        checkbox.AlignInside((0.5f, 0.6f));
         checkbox.OnDisplay(() => maps.SetCheckbox(checkbox));
 
         // ==============
 
         var buttonDisabled = new Button { IsDisabled = true, Text = "Disabled Button" };
         buttonDisabled.Size = (buttonDisabled.Text.Length, 1);
-        buttonDisabled.Align((0.5f, 0.8f));
+        buttonDisabled.AlignInside((0.5f, 0.8f));
         buttonDisabled.OnDisplay(() =>
         {
             maps[0].SetTextLine(buttonDisabled.Position, buttonDisabled.Text,

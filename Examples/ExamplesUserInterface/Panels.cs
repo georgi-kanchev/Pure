@@ -6,6 +6,7 @@ public static class Panels
     {
         Window.Title = "Pure - Panels Example";
 
+        var alignment = 0f;
         var nl = Environment.NewLine;
         var text = $"- Useful for containing other elements{nl}{nl}" +
                    $"- Title{nl}{nl}" +
@@ -13,7 +14,7 @@ public static class Panels
                    $"- Cannot be resized or moved outside the window{nl}{nl}" +
                    $"- Minimum sizes";
         var panelText = new Panel { Text = "Cool Title", Size = (19, 19), SizeMinimum = (4, 2) };
-        panelText.Align((0.1f, 0.5f));
+        panelText.AlignInside((0.1f, 0.5f));
         panelText.OnDisplay(() =>
         {
             var (x, y) = panelText.Position;
@@ -31,7 +32,7 @@ public static class Panels
 
         var button = new Button { Text = "CLICK ME!" };
         var panelButton = new Panel { Size = (15, 9), SizeMinimum = (5, 5) };
-        panelButton.Align((0.95f, 0.5f));
+        panelButton.AlignInside((0.95f, 0.5f));
         panelButton.OnDisplay(() =>
         {
             var (x, y) = panelButton.Position;

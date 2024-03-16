@@ -141,7 +141,7 @@ public static class Program
             new Button { Text = "Line Pack" },
             new Button { Text = "Solid Map" },
             new Button { Text = "Solid Pack" });
-        tools.Align((1f, 0f));
+        tools.AlignInside((1f, 0f));
         tools.OnDisplay(() => editor.MapsUi.SetList(tools, FRONT));
         tools.OnUpdate(() => tools.IsHidden = editor.Prompt.IsHidden == false);
         tools.OnItemDisplay(item => editor.MapsUi.SetListItem(tools, item, FRONT));
@@ -158,7 +158,7 @@ public static class Program
             editor.MapsUi.SetPagesItem(palette.Brightness, btn, FRONT));
         palette.OnSampleDisplay((btn, color) =>
             editor.MapsUi[FRONT].SetTile(btn.Position, new(Tile.FULL, color)));
-        palette.Align((0.8f, 0f));
+        palette.AlignInside((0.8f, 0f));
 
         editor.Ui.Add(tools, palette);
 
@@ -396,7 +396,7 @@ public static class Program
         menu.OnUpdate(() =>
         {
             menu.IsHidden = editor.Prompt.IsHidden == false;
-            menu.Align((1f, 1f));
+            menu.AlignInside((1f, 1f));
         });
     }
     private static void Load(byte[] bytes)

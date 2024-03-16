@@ -17,7 +17,7 @@ public static class InputBoxes
             Placeholder = "Chat message…",
             IsSingleLine = true,
         };
-        chat.Align((0.1f, 0.95f));
+        chat.AlignInside((0.1f, 0.95f));
         chat.OnSubmit(() =>
         {
             var clock = $"[{Time.Clock.ToClock()}]";
@@ -45,7 +45,7 @@ public static class InputBoxes
             Value = "",
             Placeholder = "Type some text on multiple lines…",
         };
-        multiLine.Align((0.1f, 0.1f));
+        multiLine.AlignInside((0.1f, 0.1f));
         multiLine.OnDisplay(() => maps.SetInputBox(multiLine));
 
         // ==========================
@@ -59,7 +59,7 @@ public static class InputBoxes
             IsSingleLine = true,
             Mask = "#"
         };
-        password.Align((0.95f, 0.1f));
+        password.AlignInside((0.95f, 0.1f));
         password.OnSubmit(() => pass = password.Value);
         password.OnDisplay(() =>
         {
@@ -79,7 +79,7 @@ public static class InputBoxes
             SymbolGroup = SymbolGroup.Math | SymbolGroup.Digits,
             IsSingleLine = true,
         };
-        equation.Align((0.95f, 0.9f));
+        equation.AlignInside((0.95f, 0.9f));
         equation.OnSubmit(() => mathResult = $"{equation.Value.Calculate()}");
         equation.OnDisplay(() =>
         {

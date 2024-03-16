@@ -7,7 +7,7 @@ public static class Layouts
         Window.Title = "Pure - Layouts Example";
 
         var panel = new Panel { Size = (21, 21) };
-        panel.Align((0.9f, 0.5f));
+        panel.AlignInside((0.9f, 0.5f));
 
         //============
 
@@ -23,7 +23,7 @@ public static class Layouts
             layoutFull.Size = (
                 25 + (int)(Math.Sin(Time.Clock / 2) * 10),
                 20 + (int)(Math.Cos(Time.Clock / 2) * 3));
-            layoutFull.Align((0.9f, 0.5f));
+            layoutFull.AlignInside((0.9f, 0.5f));
         });
         layoutFull.OnDisplaySegment((segment, index) =>
         {
@@ -53,7 +53,7 @@ public static class Layouts
         //============
 
         var layoutEmpty = new Layout();
-        layoutEmpty.Align((0.05f, 0.5f));
+        layoutEmpty.AlignInside((0.05f, 0.5f));
         layoutEmpty.Cut(index: 0, side: Side.Right, rate: 0.4f);
         layoutEmpty.Cut(index: 0, side: Side.Bottom, rate: 0.6f);
         layoutEmpty.Cut(index: 1, side: Side.Top, rate: 0.25f);

@@ -12,7 +12,7 @@ public static class Lists
             Size = (7, 10),
             IsSingleSelecting = true
         };
-        listVertical.Align((0.05f, 0.5f));
+        listVertical.AlignInside((0.05f, 0.5f));
         listVertical.OnDisplay(() =>
         {
             var (x, y) = listVertical.Position;
@@ -29,7 +29,7 @@ public static class Lists
             ItemGap = 1,
             Size = (11, 4),
         };
-        listHorizontal.Align((0.95f, 0.5f));
+        listHorizontal.AlignInside((0.95f, 0.5f));
         listHorizontal.OnDisplay(() =>
         {
             var (x, y) = listHorizontal.Position;
@@ -41,7 +41,7 @@ public static class Lists
         //==============
 
         var listDropdown = new List(span: Span.Dropdown) { Size = (7, 10) };
-        listDropdown.Align((0.5f, 0.5f));
+        listDropdown.AlignInside((0.5f, 0.5f));
         listDropdown.OnDisplay(() => maps.SetList(listDropdown));
         listDropdown.OnItemDisplay(item => maps.SetListItem(listDropdown, item));
 

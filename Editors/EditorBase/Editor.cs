@@ -449,7 +449,7 @@ public class Editor
         var btnMapSize = new Button { Text = "Resize Map", Size = (10, 1) };
         var btnViewSize = new Button { Text = "Resize View", Size = (11, 1) };
 
-        btnMapSize.Align((0f, 0.96f));
+        btnMapSize.AlignInside((0f, 0.96f));
         btnMapSize.OnInteraction(Interaction.Trigger, () =>
         {
             Prompt.Text = $"Enter Map Size,{Environment.NewLine}" +
@@ -458,7 +458,7 @@ public class Editor
         });
         btnMapSize.OnDisplay(() => MapsUi.SetButton(btnMapSize));
 
-        btnViewSize.Align((0f, 1f));
+        btnViewSize.AlignInside((0f, 1f));
         btnViewSize.OnInteraction(Interaction.Trigger, () =>
         {
             Prompt.Text = $"Enter View Size,{Environment.NewLine}" +
@@ -507,7 +507,7 @@ public class Editor
         var offsets = new (int x, int y)[] { (1, 0), (0, 1), (-1, 0), (0, -1), (0, 0) };
         var btn = new Button { Size = (1, 1) };
         var (offX, offY) = offsets[rotations];
-        btn.Align((0.26f, 0.98f));
+        btn.AlignInside((0.26f, 0.98f));
         btn.Position = (btn.Position.x + offX, btn.Position.y + offY);
 
         if (offX != 0 && offY != 0)

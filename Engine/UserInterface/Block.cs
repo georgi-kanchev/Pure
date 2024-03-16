@@ -396,43 +396,101 @@ public abstract class Block
         return (x + w <= ex || x >= ex + ew || y + h <= ey || y >= ey + eh) == false;
     }
 
-    /// <summary>
-    /// Aligns the block to the specified horizontal and vertical alignment.
-    /// </summary>
-    /// <param name="alignment">The horizontal and vertical alignment values.</param>
-    public void Align((float horizontal, float vertical) alignment)
+    public void AlignEdges(
+        Side edge,
+        Side targetEdge,
+        (int x, int y, int width, int height)? rectangle = null,
+        float alignment = float.NaN,
+        bool isExceedingEdge = false)
     {
-        var newX = Map(alignment.horizontal, (0, 1), (0, Input.TilemapSize.width - Size.width));
-        var newY = Map(alignment.vertical, (0, 1), (0, Input.TilemapSize.height - Size.height));
-        Position = (
-            float.IsNaN(alignment.horizontal) ? Position.x : (int)newX,
-            float.IsNaN(alignment.vertical) ? Position.y : (int)newY);
+        var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
+        var rw = rectangle?.width ?? Input.TilemapSize.width;
+        var rh = rectangle?.height ?? Input.TilemapSize.height;
+        var (x, y) = Position;
+        var (w, h) = Size;
+        var (rxw, ryh) = (rx + rw, ry + rh);
+        var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
+        var (cx, cy) = (x + w / 2, y + h / 2);
+        var ex = isExceedingEdge;
+        var a = alignment;
+        var notNan = float.IsNaN(a) == false;
+
+        if (notNan && edge is Side.Top or Side.Bottom && targetEdge is Side.Top or Side.Bottom)
+            x = (int)MathF.Round(Map(a, (0, 1), ex ? (rx - w + 1, rxw - 1) : (rx, rxw - w)));
+        else if (notNan && edge is Side.Left or Side.Right && targetEdge is Side.Left or Side.Right)
+            y = (int)MathF.Round(Map(a, (0, 1), ex ? (ry - h + 1, ryh - 1) : (ry, ryh - h)));
+
+        if (edge == Side.Left && targetEdge is Side.Left or Side.Right)
+            x = targetEdge == Side.Left ? rx : rxw - 1;
+        else if (edge == Side.Left)
+            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx, rxw - 1)));
+
+        if (edge == Side.Right && targetEdge is Side.Left or Side.Right)
+            x = targetEdge == Side.Left ? rxw : rxw - w;
+        else if (edge == Side.Right)
+            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx - w + 1, rxw - w)));
+
+        if (edge == Side.Top && targetEdge is Side.Left or Side.Right)
+            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry, ryh - 1)));
+        else if (edge == Side.Top)
+            y = targetEdge == Side.Top ? ry : ryh - 1;
+
+        if (edge == Side.Bottom && targetEdge is Side.Left or Side.Right)
+            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry - h + 1, ryh - h)));
+        else if (edge == Side.Bottom)
+            y = targetEdge == Side.Top ? ryh : ryh - h;
+
+        Position = (x, y);
     }
-    /// <summary>
-    /// Fits the block within the tilemap boundaries.
-    /// </summary>
-    public void Fit()
+    public void AlignInside(
+        (float horizontal, float vertical) alignment,
+        (int x, int y, int width, int height)? rectangle = null)
+    {
+        var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
+        var rw = rectangle?.width ?? Input.TilemapSize.width;
+        var rh = rectangle?.height ?? Input.TilemapSize.height;
+        var (x, y) = Position;
+        var (w, h) = Size;
+
+        var newX = Map(alignment.horizontal, (0, 1), (rx, rw - w));
+        var newY = Map(alignment.vertical, (0, 1), (ry, rh - h));
+        Position = (
+            float.IsNaN(alignment.horizontal) ? x : (int)newX,
+            float.IsNaN(alignment.vertical) ? y : (int)newY);
+    }
+    public void AlignOutside(
+        Side targetEdge,
+        (int x, int y, int width, int height)? rectangle = null,
+        float alignment = float.NaN,
+        bool isExceedingEdge = false)
+    {
+        var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
+        AlignEdges(opposites[(int)targetEdge], targetEdge, rectangle, alignment, isExceedingEdge);
+    }
+    public void Fit((int x, int y, int width, int height)? rectangle = null)
     {
         var (w, h) = Size;
-        var (tw, th) = Input.TilemapSize;
-        var x = tw - w < 0 ? 0 : Math.Clamp(Position.x, 0, tw - w);
-        var y = th - h < 0 ? 0 : Math.Clamp(Position.y, 0, th - h);
+        var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
+        var rw = rectangle?.width ?? Input.TilemapSize.width;
+        var rh = rectangle?.height ?? Input.TilemapSize.height;
+        var newX = rw - w < rx ? rx : Math.Clamp(Position.x, rx, rw - w);
+        var newY = rh - h < ry ? ry : Math.Clamp(Position.y, ry, rh - h);
         var hasOverflown = false;
 
-        if (tw - w < 0)
+        if (rw - w < 0)
         {
-            Align((0.5f, float.NaN));
+            AlignInside((0.5f, float.NaN));
             hasOverflown = true;
         }
 
-        if (tw - h < 0)
+        if (rw - h < 0)
         {
-            Align((float.NaN, 0.5f));
+            AlignInside((float.NaN, 0.5f));
             hasOverflown = true;
         }
 
         if (hasOverflown == false)
-            Position = (x, y);
+            Position = (newX, newY);
     }
     /// <summary>
     /// Interacts with the block based on the specified interaction.
