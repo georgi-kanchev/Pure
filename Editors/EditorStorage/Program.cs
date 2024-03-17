@@ -98,7 +98,7 @@ public static class Program
             " Copy",
             " Paste")
         {
-            Size = (11, 12),
+            Size = (11, 11),
             IsHidden = true
         };
         main.OnItemInteraction(Interaction.Trigger, OnMenuMainClick);
@@ -533,11 +533,12 @@ public static class Program
         var valueList = (List)data[index];
         var keysList = (List)dictKeys[index];
         var types = valueList.Text.Split(",").ToList();
+        var add = (Button)adds[index];
 
         types.Shift(-1, itemIndex);
         valueList.Shift(-1, valueList[itemIndex]);
 
-        if (keysList.Count > 0)
+        if (add.Text == nameof(DataType.Dictionary) && keysList.Count > 0)
             keysList.Shift(-1, keysList[itemIndex]);
 
         valueList.Text = types.ToString(",");
