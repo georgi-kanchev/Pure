@@ -41,7 +41,7 @@ public static class Lists
         //==============
 
         var listDropdown = new List(span: Span.Dropdown) { Size = (7, 10) };
-        listDropdown.AlignInside((0.5f, 0.5f));
+        listDropdown.AlignInside((0.1f, 0.5f));
         listDropdown.OnDisplay(() => maps.SetList(listDropdown));
         listDropdown.OnItemDisplay(item => maps.SetListItem(listDropdown, item));
 

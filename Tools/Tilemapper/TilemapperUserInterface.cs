@@ -555,7 +555,7 @@ public static class TilemapperUserInterface
 
         for (var i = zOrder; i < zOrder + 3; i++)
             if (i < maps.Count)
-                maps[i].SetArea((x, y, w, h), null, Tile.SHADE_TRANSPARENT);
+                maps[i].SetArea((x, y, w, h), block.Mask, Tile.SHADE_TRANSPARENT);
     }
 #endregion
 }
