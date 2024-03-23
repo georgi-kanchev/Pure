@@ -220,8 +220,8 @@ public static class Program
     internal static void BlockToTop(Block block)
     {
         var panel = panels[ui.IndexOf(block)];
-        panels.OrderToFront(panel);
-        ui.OrderToFront(block);
+        panels.BringToFront(panel);
+        ui.BringToFront(block);
         selected = block;
     }
 

@@ -8,6 +8,36 @@ public class BlockPack
     {
         get => data.Count;
     }
+    public (int x, int y, int width, int height) Mask
+    {
+        get => mask;
+        set
+        {
+            mask = value;
+            foreach (var block in data)
+                block.Mask = mask;
+        }
+    }
+    public (int x, int y, int width, int height) Area
+    {
+        get
+        {
+            var (tlx, tly) = (int.MaxValue, int.MaxValue);
+            var (brx, bry) = (int.MinValue, int.MinValue);
+
+            foreach (var block in data)
+            {
+                var (x, y, w, h) = block.Area;
+
+                tlx = x < tlx ? x : tlx;
+                tly = y < tly ? y : tly;
+                brx = x + w >= brx ? x + w : brx;
+                bry = y + h >= bry ? y + h : bry;
+            }
+
+            return (tlx, tly, brx - tlx, bry - tly);
+        }
+    }
 
     public Block this[int index]
     {
@@ -50,10 +80,7 @@ public class BlockPack
 
         return;
 
-        int GetInt()
-        {
-            return BitConverter.ToInt32(GetBytes(b, 4, ref offset));
-        }
+        int GetInt() => BitConverter.ToInt32(GetBytes(b, 4, ref offset));
     }
     public BlockPack(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -105,7 +132,7 @@ public class BlockPack
         data.Clear();
     }
 
-    public void OrderToFront(params Block[]? blocks)
+    public void BringToFront(params Block[]? blocks)
     {
         if (blocks == null || blocks.Length == 0)
             return;
@@ -171,6 +198,7 @@ public class BlockPack
 
 #region Backend
     private readonly List<Block> data = new();
+    private (int x, int y, int width, int height) mask;
 
     private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
     {
