@@ -47,7 +47,7 @@ public class SolidMap
                 var h = BitConverter.ToSingle(Get<float>());
                 var color = BitConverter.ToUInt32(Get<uint>());
 
-                SolidsAdd(tileId, new Solid((w, h), (x, y), color));
+                SolidsAdd(tileId, new Solid(x, y, w, h, color));
             }
         }
 
@@ -339,7 +339,7 @@ public class SolidMap
     }
     public bool IsOverlapping((float x, float y) point)
     {
-        var neighborRects = GetNeighborRects((Solid)new(point, (1, 1)));
+        var neighborRects = GetNeighborRects(new Solid(point, (1, 1)));
         for (var i = 0; i < neighborRects.Count; i++)
             if (neighborRects[i].IsOverlapping(point))
                 return true;
@@ -363,7 +363,7 @@ public class SolidMap
         var radiusSquared = radius * radius;
         var halfFieldOfView = fieldOfView / 2;
         var diameterSquared = diameter * diameter;
-        var rect = new Solid(radius / 2f + 1, radius / 2f + 1, x, y);
+        var rect = new Solid(x, y, radius / 2f + 1, radius / 2f + 1);
         var solidsToCheck = GetNeighborRects(rect);
 
         angle = AngleWrap(angle);
@@ -397,7 +397,7 @@ public class SolidMap
                 }
 
             if (shouldAdd)
-                result.Push(new((1, 1), (endX, endY)));
+                result.Push(new(endX, endY, 1, 1));
         });
 
         return result.ToArray();
@@ -474,7 +474,7 @@ public class SolidMap
             var ix = x0;
             var iy = y0;
 
-            rects.AddRange(GetNeighborRects((Solid)new((1, 1), (ix, iy))));
+            rects.AddRange(GetNeighborRects((Solid)new(ix, iy, 1, 1)));
 
             if (x0 == x1 && y0 == y1)
                 break;

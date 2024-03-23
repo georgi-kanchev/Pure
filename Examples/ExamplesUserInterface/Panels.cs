@@ -6,7 +6,6 @@ public static class Panels
     {
         Window.Title = "Pure - Panels Example";
 
-        var alignment = 0f;
         var nl = Environment.NewLine;
         var text = $"- Useful for containing other elements{nl}{nl}" +
                    $"- Title{nl}{nl}" +
@@ -22,8 +21,7 @@ public static class Panels
 
             maps.SetPanel(panelText);
             maps[1].SetTextRectangle(
-                position: (x + 1, y + 1),
-                size: (w - 2, h - 2),
+                area: (x + 1, y + 1, w - 2, h - 2),
                 text,
                 tint: Color.Green);
         });

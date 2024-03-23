@@ -24,7 +24,7 @@ internal class TilePalette
                 return;
 
             var pos = layer.PixelToWorld(Mouse.CursorPosition);
-            var (vx, vy) = map.ViewPosition;
+            var (vx, vy) = map.View.Position;
             selectedPos = ((int)pos.x + vx, (int)pos.y + vy);
             selectedSz = (1, 1);
         });
@@ -34,8 +34,8 @@ internal class TilePalette
     [MemberNotNull(nameof(map), nameof(layer))]
     public void Create((int width, int height) size)
     {
-        map = new(size) { ViewSize = (10, 10) };
-        layer = new(map.ViewSize) { Zoom = ZOOM_DEFAULT, Offset = (755, 340) };
+        map = new(size) { View = (0, 0, 10, 10) };
+        layer = new(map.View.Size) { Zoom = ZOOM_DEFAULT, Offset = (755, 340) };
     }
 
     public void Update(Inspector inspector)
@@ -44,10 +44,10 @@ internal class TilePalette
             return;
 
         var (tw, th) = layer.TilesetSize;
-        map.ViewSize = (Math.Min(10, tw), Math.Min(10, th));
-        layer.TilemapSize = map.ViewSize;
+        map.View = new(map.View.Position, (Math.Min(10, tw), Math.Min(10, th)));
+        layer.TilemapSize = map.View.Size;
         var (mw, mh) = map.Size;
-        var (vw, vh) = map.ViewSize;
+        var (vw, vh) = map.View.Size;
 
         for (var i = 0; i < mh; i++)
             for (var j = 0; j < mw; j++)
@@ -62,7 +62,7 @@ internal class TilePalette
         inspector.paletteScrollV.Step = 1f / (mh - vh);
         var w = (int)MathF.Round(inspector.paletteScrollH.Slider.Progress * (mw - vw));
         var h = (int)MathF.Round(inspector.paletteScrollV.Slider.Progress * (mh - vh));
-        map.ViewPosition = (w, h);
+        map.View = new((w, h), map.View.Size);
 
         var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
         prevMousePos = mousePos;
@@ -91,8 +91,8 @@ internal class TilePalette
         var drawLayer = inspector.layers.ItemsSelected;
         var tool = inspector.tools.Current;
         var (sx, sy) = selected.Position;
-        sx += map.ViewPosition.x;
-        sy += map.ViewPosition.y;
+        sx += map.View.X;
+        sy += map.View.Y;
         var (sw, sh) = selected.Size;
         var tile = map.TileAt(((int)sx, (int)sy));
         var color = new Color(tile.Tint) { A = 200 };
@@ -150,8 +150,8 @@ internal class TilePalette
         var (sx, sy) = selectedPos;
         var (sw, sh) = selectedSz;
         var (ox, oy) = (sw < 0 ? 1 : 0, sh < 0 ? 1 : 0);
-        var (vx, vy) = map.ViewPosition;
-        selected = new((sw, sh), (sx + ox - vx, sy + oy - vy));
+        var (vx, vy) = map.View.Position;
+        selected = new(sx + ox - vx, sy + oy - vy, sw, sh);
     }
 
     [MemberNotNullWhen(true, nameof(inspector))]
@@ -194,6 +194,7 @@ internal class TilePalette
         var tool = inspector.tools.Current;
         var (szw, szh) = (end.x - start.x, end.y - start.y);
         var tiles = GetSelectedTiles().Flatten();
+        var (tw, th) = tilemap.Size;
 
         if (rectangleTools.Contains(tool))
         {
@@ -204,20 +205,20 @@ internal class TilePalette
         }
 
         if (tool == 3) // rectangle of random tiles
-            tilemap.SetRectangle((start.x, start.y, Math.Abs(szw), Math.Abs(szh)), tiles);
+            tilemap.SetArea((start.x, start.y, Math.Abs(szw), Math.Abs(szh)), null, tiles);
         else if (tool == 4) // line of random tiles
-            tilemap.SetLine(start, (end.x - 1, end.y - 1), tiles);
+            tilemap.SetLine(start, (end.x - 1, end.y - 1), null, tiles);
         else if (tool is 5 or 6) // ellipse of random tiles
         {
             var center = ((Point)start).ToTarget((end.x - 1, end.y - 1), (0.5f, 0.5f));
             var radius = ((int)((end.x - start.x - 1) / 2f), (int)((end.y - start.y - 1) / 2f));
 
-            tilemap.SetEllipse(center, radius, tool == 5, tiles);
+            tilemap.SetEllipse(center, radius, tool == 5, null, tiles);
         }
         else if (tool == 7) // replace
-            tilemap.Replace((0, 0), tilemap.Size, tilemap.TileAt(start), tiles);
+            tilemap.Replace((0, 0, tw, th), tilemap.TileAt(start), null, tiles);
         else if (tool == 8) // fill
-            tilemap.Flood((mx, my), false, tiles);
+            tilemap.Flood((mx, my), false, null, tiles);
         else if (tool == 9) // rotate
             ProcessRegion(tile =>
             {
@@ -304,10 +305,10 @@ internal class TilePalette
     private Tile[,] GetSelectedTiles()
     {
         var (sx, sy) = selected.Position;
-        sx += map.ViewPosition.x;
-        sy += map.ViewPosition.y;
+        sx += map.View.X;
+        sy += map.View.Y;
         var (sw, sh) = selected.Size;
-        return map.TilesIn((sx, sy, sw, sh));
+        return map.TilesIn(((int)sx, (int)sy, (int)sw, (int)sh));
     }
 #endregion
 }

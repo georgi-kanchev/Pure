@@ -15,10 +15,10 @@ public static class Program
     {
         editor.OnUpdateUi += () =>
         {
-            if (prevViewPos != editor.MapsEditor.ViewPosition)
+            if (prevViewPos != editor.MapsEditor.View.Position)
                 UpdateViewOffsets();
 
-            prevViewPos = editor.MapsEditor.ViewPosition;
+            prevViewPos = editor.MapsEditor.View.Position;
 
             if (CanDrawLayer)
             {
@@ -124,7 +124,7 @@ public static class Program
         var (mw, mh) = editor.MapsEditor.Size;
         editor.MapsEditor.Clear();
         editor.MapsEditor.Add(new Tilemap((mw, mh)), new Tilemap((mw, mh)));
-        editor.MapsEditor.ViewSize = (mw, mh);
+        editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
         CreateMenu();
 
         const int MIDDLE = (int)Editor.LayerMapsUi.Middle;
@@ -218,8 +218,8 @@ public static class Program
                 return;
 
             var (x, y) = MousePos;
-            x += editor.MapsEditor.ViewPosition.x;
-            y += editor.MapsEditor.ViewPosition.y;
+            x += editor.MapsEditor.View.X;
+            y += editor.MapsEditor.View.Y;
             currentTile = editor.MapsEditor[currentLayer].TileAt(((int)x, (int)y));
 
             layer.TileGap = editor.LayerMap.TileGap;
@@ -364,14 +364,14 @@ public static class Program
                 editor.PromptLoadMap(result =>
                 {
                     layers = result;
-                    originalMapViewPos = editor.MapsEditor.ViewPosition;
+                    originalMapViewPos = editor.MapsEditor.View.Position;
                     solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
             else if (index == 4) // paste tilemap
                 editor.PromptLoadMapBase64(result =>
                 {
                     layers = result;
-                    originalMapViewPos = editor.MapsEditor.ViewPosition;
+                    originalMapViewPos = editor.MapsEditor.View.Position;
                     solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
             else if (index == 6) // new
@@ -470,7 +470,7 @@ public static class Program
 
     private static void UpdateViewOffsets()
     {
-        var (x, y) = editor.MapsEditor.ViewPosition;
+        var (x, y) = editor.MapsEditor.View.Position;
         solidPack.Offset = (-x, -y);
         linePack.Offset = (-x, -y);
         solidMap.Offset = (-x, -y);

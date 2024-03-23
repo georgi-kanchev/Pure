@@ -175,10 +175,10 @@ public class Pages : Block
     {
         OnUpdate(OnUpdate);
 
-        First = new((int.MaxValue, int.MaxValue)) { hasParent = true };
-        Previous = new((int.MaxValue, int.MaxValue)) { hasParent = true };
-        Next = new((int.MaxValue, int.MaxValue)) { hasParent = true };
-        Last = new((int.MaxValue, int.MaxValue)) { hasParent = true };
+        First = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
+        Previous = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
+        Next = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
+        Last = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
 
         First.OnInteraction(Interaction.Trigger, () => Current = 0);
         Previous.OnInteraction(Interaction.Trigger, () => Current--);
@@ -222,14 +222,11 @@ public class Pages : Block
         var visibleWidth = VisibleWidth;
         var hasNav = HasNavigation;
 
-        First.isHidden = hasNav == false;
-        First.isDisabled = hasNav == false;
-        Previous.isHidden = hasNav == false;
-        Previous.isDisabled = hasNav == false;
-        Next.isHidden = hasNav == false;
-        Next.isDisabled = hasNav == false;
-        Last.isHidden = hasNav == false;
-        Last.isDisabled = hasNav == false;
+        var m = HasNavigation ? mask : Input.Mask;
+        First.mask = m;
+        Previous.mask = m;
+        Next.mask = m;
+        Last.mask = m;
 
         if (hasNav)
         {
@@ -242,11 +239,6 @@ public class Pages : Block
             Previous.size = (1, Size.height);
             Next.size = (1, Size.height);
             Last.size = (1, Size.height);
-
-            First.InheritParent(this);
-            Previous.InheritParent(this);
-            Next.InheritParent(this);
-            Last.InheritParent(this);
 
             First.Update();
             Previous.Update();
@@ -268,7 +260,7 @@ public class Pages : Block
                 pos = ((int)xs[i], y);
 
             page.position = pos;
-            page.InheritParent(this);
+            page.mask = mask;
             page.Update();
         }
     }

@@ -95,11 +95,16 @@ public class Stepper : Block
     {
         OnUpdate(OnUpdate);
 
-        Increase = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
-        Decrease = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
-        Minimum = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
-        Middle = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
-        Maximum = new((int.MaxValue, int.MaxValue)) { size = (1, 1), hasParent = true };
+        Increase = new((int.MaxValue, int.MaxValue))
+            { size = (1, 1), wasMaskSet = true, hasParent = true };
+        Decrease = new((int.MaxValue, int.MaxValue))
+            { size = (1, 1), wasMaskSet = true, hasParent = true };
+        Minimum = new((int.MaxValue, int.MaxValue))
+            { size = (1, 1), wasMaskSet = true, hasParent = true };
+        Middle = new((int.MaxValue, int.MaxValue))
+            { size = (1, 1), wasMaskSet = true, hasParent = true };
+        Maximum = new((int.MaxValue, int.MaxValue))
+            { size = (1, 1), wasMaskSet = true, hasParent = true };
 
         Increase.OnInteraction(Interaction.Scroll, ApplyScroll);
         Increase.OnInteraction(Interaction.Trigger, () => Value += Step);
@@ -148,11 +153,11 @@ public class Stepper : Block
         Middle.position = (x + w - 2, y + h - 1);
         Maximum.position = (x + w - 1, y + h - 1);
 
-        Increase.InheritParent(this);
-        Decrease.InheritParent(this);
-        Minimum.InheritParent(this);
-        Middle.InheritParent(this);
-        Maximum.InheritParent(this);
+        Increase.mask = mask;
+        Decrease.mask = mask;
+        Minimum.mask = mask;
+        Middle.mask = mask;
+        Maximum.mask = mask;
 
         Increase.Update();
         Decrease.Update();

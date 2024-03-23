@@ -158,7 +158,7 @@ internal class TilesetPrompt
         var ratio = MathF.Max(tw / 8f, th / 8f);
         var zoom = 3.8f / ratio;
         layer.Zoom = zoom;
-        map = new(layer.TilesetSize) { ViewSize = (10, 10) };
+        map = new(layer.TilesetSize) { View = (0, 0, 10, 10) };
 
         editor.SetGrid();
 

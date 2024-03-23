@@ -104,15 +104,32 @@ public class BlockPack
     {
         data.Clear();
     }
-    public void BringToTop(params Block[]? blocks)
+
+    public void OrderToFront(params Block[]? blocks)
     {
         if (blocks == null || blocks.Length == 0)
             return;
 
-        foreach (var block in blocks)
+        for (var i = blocks.Length - 1; i >= 0; i--)
         {
-            Remove(block);
-            Add(block);
+            Remove(blocks[i]);
+            Add(blocks[i]);
+        }
+    }
+    public void Stack((int x, int y) pivot, Side direction, float alignment = 0f, int gap = 0)
+    {
+        var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
+        var opposite = opposites[(int)direction];
+
+        for (var i = 0; i < data.Count; i++)
+        {
+            if (i == 0)
+            {
+                data[i].Position = pivot;
+                continue;
+            }
+
+            data[i].AlignEdges(opposite, direction, data[i - 1], alignment, gap + 1);
         }
     }
 

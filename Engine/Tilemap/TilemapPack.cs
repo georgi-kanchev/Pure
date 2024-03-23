@@ -11,26 +11,17 @@ public class TilemapPack
         get => data.Count;
     }
     public (int width, int height) Size { get; }
-    public (int x, int y) ViewPosition
+    public Area View
     {
-        get => viewPos;
+        get => view;
         set
         {
-            viewPos = value;
-            foreach (var map in data)
-                map.ViewPosition = value;
-        }
-    }
-    public (int width, int height) ViewSize
-    {
-        get => viewSz;
-        set
-        {
-            viewSz = (Math.Max(value.width, 1),
-                Math.Max(value.height, 1));
+            value.Width = Math.Max(value.Width, 1);
+            value.Height = Math.Max(value.Height, 1);
 
+            view = value;
             foreach (var map in data)
-                map.ViewSize = value;
+                map.View = value;
         }
     }
 
@@ -48,7 +39,7 @@ public class TilemapPack
             data.Add(new(size));
 
         Size = size;
-        ViewSize = (size.width, size.height);
+        View = (0, 0, size.width, size.height);
     }
     public TilemapPack(byte[] bytes)
     {
@@ -56,8 +47,8 @@ public class TilemapPack
         var offset = 0;
         var count = BitConverter.ToInt32(GetBytes<int>());
         Size = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
-        ViewPosition = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
-        ViewSize = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
+        View = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()),
+            BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
 
         for (var i = 0; i < count; i++)
         {
@@ -85,10 +76,10 @@ public class TilemapPack
         result.AddRange(BitConverter.GetBytes(Count));
         result.AddRange(BitConverter.GetBytes(Size.width));
         result.AddRange(BitConverter.GetBytes(Size.height));
-        result.AddRange(BitConverter.GetBytes(ViewPosition.x));
-        result.AddRange(BitConverter.GetBytes(ViewPosition.y));
-        result.AddRange(BitConverter.GetBytes(ViewSize.width));
-        result.AddRange(BitConverter.GetBytes(ViewSize.height));
+        result.AddRange(BitConverter.GetBytes(View.X));
+        result.AddRange(BitConverter.GetBytes(View.Y));
+        result.AddRange(BitConverter.GetBytes(View.Width));
+        result.AddRange(BitConverter.GetBytes(View.Height));
 
         foreach (var t in data)
         {
@@ -163,15 +154,15 @@ public class TilemapPack
         foreach (var t in data)
             t.Flush();
     }
-    public void Fill(params Tile[]? tiles)
+    public void Fill(Area? mask = null, params Tile[]? tiles)
     {
         foreach (var t in data)
-            t.Fill(tiles);
+            t.Fill(mask, tiles);
     }
-    public void Flood((int x, int y) position, bool isExactTile, params Tile[] tiles)
+    public void Flood((int x, int y) position, bool isExactTile, Area? mask = null, params Tile[] tiles)
     {
         foreach (var map in data)
-            map.Flood(position, isExactTile, tiles);
+            map.Flood(position, isExactTile, mask, tiles);
     }
 
     public Tile[] TilesAt((int x, int y) position)
@@ -235,7 +226,7 @@ public class TilemapPack
     }
 
 #region Backend
-    private (int, int) viewSz, viewPos;
+    private Area view;
     private readonly List<Tilemap> data = new();
 
     private void ValidateMaps(Tilemap[] tilemaps)
@@ -246,13 +237,12 @@ public class TilemapPack
             var map = tilemaps[i];
             if (Count > 0 && map.Size != Size)
             {
-                var newMap = new Tilemap(Size) { ViewPosition = ViewPosition, ViewSize = ViewSize };
+                var newMap = new Tilemap(Size) { View = View };
                 newMap.SetGroup((0, 0), map);
                 map = newMap;
             }
 
-            map.ViewPosition = ViewPosition;
-            map.ViewSize = ViewSize;
+            map.View = View;
         }
     }
     private static void Shift<T>(IList<T> collection, int offset, params T[]? items)

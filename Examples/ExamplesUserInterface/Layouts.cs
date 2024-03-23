@@ -31,8 +31,7 @@ public static class Layouts
             {
                 maps.SetLayoutSegment(segment, index, false);
                 maps[1].SetTextRectangle(
-                    position: (segment.x, segment.y),
-                    size: (segment.width, segment.height),
+                    area: segment,
                     text: $"- Useful for containing structured elements{nl}{nl}" +
                           $"- Can be dynamically resized without losing its ratios");
                 return;

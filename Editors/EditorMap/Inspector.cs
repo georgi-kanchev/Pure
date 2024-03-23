@@ -207,7 +207,7 @@ internal class Inspector : Panel
         RecreateMapVisibilities();
 
         if (isEmpty)
-            editor.MapsEditor.ViewSize = (50, 50);
+            editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (50, 50));
     }
     private void LayersRename(string name)
     {
@@ -270,8 +270,7 @@ internal class Inspector : Panel
             var (mx, my) = palette.mousePos;
             var index = new Indices(my, mx).ToIndex(palette.map.Size.width);
             editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetTextRectangle(
-                position: (segment.x, segment.y),
-                size: (segment.width, segment.height),
+                area: segment,
                 text: $"{index} ({mx} {my})");
             return;
         }
@@ -282,11 +281,6 @@ internal class Inspector : Panel
 
         item.Position = (segment.x, segment.y);
         item.Size = (segment.width, segment.height);
-
-        if (i == 19)
-        {
-            var list = (List)item;
-        }
     }
 
     private void ShowWhenLayerSelected(Block block)

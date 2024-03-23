@@ -49,9 +49,7 @@ public static class FileViewers
             paths += $"{Environment.NewLine}{Environment.NewLine}{path}";
 
         maps[0].SetTextLine((fileViewer.Position.x, fileViewer.Position.y - 1), fileViewer.Text);
-        maps[0].SetTextRectangle(
-            position: (e.Position.x, e.Position.y + e.Size.height - 1),
-            size: (e.Size.width, 20),
+        maps[0].SetTextRectangle((e.Position.x, e.Position.y + e.Size.height - 1, e.Size.width, 20),
             paths);
     }
 }

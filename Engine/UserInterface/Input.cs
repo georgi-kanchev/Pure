@@ -186,6 +186,10 @@ public static class Input
     internal static string? Typed { get; private set; }
     internal static string? TypedPrevious { get; private set; }
     internal static int ScrollDelta { get; private set; }
+    internal static (int x, int y, int width, int height) Mask
+    {
+        get => (0, 0, TilemapSize.width, TilemapSize.height);
+    }
 
     static Input()
     {

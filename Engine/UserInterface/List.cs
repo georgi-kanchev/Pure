@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.UserInterface;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Pure.Engine.UserInterface;
 
 public enum Span
 {
@@ -13,7 +15,7 @@ public enum Span
 /// </summary>
 public class List : Block
 {
-    public Scroll Scroll { get; }
+    public Scroll Scroll { get; private set; }
 
     /// <summary>
     /// Gets the number of items in the list.
@@ -60,6 +62,11 @@ public class List : Block
                 item.isTextReadonly = value;
         }
     }
+    public bool IsScrollAvailable
+    {
+        get => (Span == Span.Horizontal ? HasScroll.horizontal : HasScroll.vertical) &&
+               IsCollapsed == false;
+    }
 
     public Button[] ItemsSelected
     {
@@ -68,16 +75,6 @@ public class List : Block
             var result = new Button[indexesSelected.Count];
             for (var i = 0; i < indexesSelected.Count; i++)
                 result[i] = this[indexesSelected[i]];
-            return result;
-        }
-    }
-    public Button[] ItemsDisabled
-    {
-        get
-        {
-            var result = new Button[indexesDisabled.Count];
-            for (var i = 0; i < indexesDisabled.Count; i++)
-                result[i] = this[indexesDisabled[i]];
             return result;
         }
     }
@@ -122,8 +119,6 @@ public class List : Block
         originalHeight = Size.height;
         Span = span;
 
-        Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true };
-
         var items = InternalCreateAmount(itemCount);
         Add(items);
 
@@ -150,12 +145,9 @@ public class List : Block
         var items = InternalCreateAmount(GrabInt(b));
         InternalAdd(items);
 
-        Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true };
-
         for (var i = 0; i < Count; i++)
         {
             Select(i, GrabBool(b));
-            Disable(i, GrabBool(b));
             this[i].text = GrabString(b);
         }
 
@@ -252,21 +244,12 @@ public class List : Block
             prevTargetIndex = targetIndex;
             results.Add(result);
 
-            ShiftSelectedAndDisabled(index, result);
-        }
-
-        void ShiftSelectedAndDisabled(int index, int result)
-        {
             var prevSel = indexesSelected.IndexOf(index);
-            var prevDis = indexesDisabled.IndexOf(index);
             indexesSelected.Remove(index);
-            indexesDisabled.Remove(index);
 
             // use insert and prev index to keep order
             if (prevSel != -1)
                 indexesSelected.Insert(prevSel, result);
-            if (prevDis != -1)
-                indexesDisabled.Insert(prevDis, result);
         }
     }
     public void Add(params Button[] items)
@@ -354,23 +337,6 @@ public class List : Block
     {
         Select(IndexOf(item), isSelected);
     }
-    public void Disable(int index, bool isDisabled = true)
-    {
-        if (HasIndex(index) == false)
-            return;
-
-        var hasIndex = indexesDisabled.Contains(index);
-        this[index].isDisabled = isDisabled;
-
-        if (isDisabled && hasIndex == false)
-            indexesDisabled.Add(index);
-        else if (isDisabled == false && hasIndex)
-            indexesDisabled.Remove(index);
-    }
-    public void Disable(Button item, bool isDisabled = true)
-    {
-        Disable(IndexOf(item), isDisabled);
-    }
 
     protected override void OnInput()
     {
@@ -412,7 +378,7 @@ public class List : Block
     private readonly bool isInitialized;
     private int itemGap;
     internal (int width, int height) itemSize = (6, 1);
-    private readonly List<int> indexesDisabled = new(), indexesSelected = new();
+    private readonly List<int> indexesSelected = new();
     internal bool isReadOnly;
 
     private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
@@ -429,25 +395,23 @@ public class List : Block
             return (totalW > Size.width, totalH > Size.height);
         }
     }
-    internal bool IsScrollVisible
-    {
-        get => (Span == Span.Horizontal ? HasScroll.horizontal : HasScroll.vertical) &&
-               IsCollapsed == false;
-    }
 
+    [MemberNotNull(nameof(Scroll))]
     private void Init()
     {
+        Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
         OnUpdate(OnUpdate);
         OnInteraction(Interaction.Trigger, () =>
         {
-            if (IsCollapsed && IsFocused && this[singleSelectedIndex].IsHovered == false)
+            if (IsCollapsed && IsFocused)
                 IsCollapsed = false;
         });
     }
-    private void InitItem(Button item, int i)
+    private void InitItem(Button item)
     {
         item.size = (Span == Span.Horizontal ? text.Length : Size.width, 1);
         item.hasParent = true;
+        item.wasMaskSet = true;
         item.OnInteraction(Interaction.Trigger, () => OnInternalItemTrigger(item));
         item.OnInteraction(Interaction.Scroll, ApplyScroll);
 
@@ -461,10 +425,10 @@ public class List : Block
     }
     internal void InternalInsert(int index, params Button[] items)
     {
-        for (var i = 0; i < items.Length; i++)
+        foreach (var item in items)
         {
-            InitItem(items[i], i);
-            data.Insert(index, items[i]);
+            InitItem(item);
+            data.Insert(index, item);
             AdjustIndexesAbove(index, 1);
         }
     }
@@ -473,7 +437,6 @@ public class List : Block
         foreach (var item in items)
         {
             var index = IndexOf(item);
-            indexesDisabled.Remove(index);
             indexesSelected.Remove(index);
 
             AdjustIndexesAbove(index, -1);
@@ -482,7 +445,6 @@ public class List : Block
     }
     internal void InternalClear()
     {
-        indexesDisabled.Clear();
         indexesSelected.Clear();
         data.Clear();
     }
@@ -490,10 +452,7 @@ public class List : Block
     {
         var result = new Button[count];
         for (var i = 0; i < count; i++)
-        {
-            var item = new Button();
-            result[i] = item;
-        }
+            result[i] = new() { Text = $"Item{count - i}" };
 
         return result;
     }
@@ -538,16 +497,8 @@ public class List : Block
         var (x, y) = Position;
         var (w, h) = Size;
 
-        var hidesScr = IsScrollVisible == false;
-        Scroll.Increase.isHidden = hidesScr;
-        Scroll.Increase.isDisabled = hidesScr;
-        Scroll.Decrease.isHidden = hidesScr;
-        Scroll.Decrease.isDisabled = hidesScr;
-        Scroll.Slider.isHidden = hidesScr;
-        Scroll.Slider.isDisabled = hidesScr;
-        Scroll.isHidden = hidesScr;
-        Scroll.isDisabled = hidesScr;
-        Scroll.InheritParent(this);
+        var m = IsScrollAvailable ? Mask : default;
+        Scroll.mask = m;
 
         Scroll.position = (x + w - 1, y);
         Scroll.size = (1, h);
@@ -556,15 +507,15 @@ public class List : Block
         {
             var selectedItem = this[singleSelectedIndex];
             selectedItem.position = Position;
-            selectedItem.isHidden = false;
-            selectedItem.isDisabled = false;
+            selectedItem.mask = mask;
 
             TryTrimItem(selectedItem);
 
-            selectedItem.InheritParent(this);
             selectedItem.Update();
 
-            Scroll.Update();
+            Scroll.mask = default;
+            if (IsScrollAvailable)
+                Scroll.Update();
             return;
         }
         else if (Span == Span.Horizontal)
@@ -573,15 +524,14 @@ public class List : Block
             Scroll.size = (w, 1);
         }
 
-        Scroll.Update();
+        if (IsScrollAvailable)
+            Scroll.Update();
 
         for (var i = 0; i < data.Count; i++)
         {
             var item = data[i];
 
-            item.isHidden = false;
-            item.isDisabled = indexesDisabled.Contains(i);
-            item.InheritParent(this);
+            item.mask = mask;
 
             if (Span == Span.Horizontal)
             {
@@ -609,10 +559,7 @@ public class List : Block
                 ix >= x + w ||
                 iy + ih <= y ||
                 iy >= y + h - botEdgeTrim)
-            {
-                item.isHidden = true;
-                item.isDisabled = true;
-            }
+                item.mask = default;
 
             TryTrimItem(item);
             item.Update();
@@ -635,13 +582,8 @@ public class List : Block
         }
 
         foreach (var item in data)
-            if (IsOverlapping(item))
-            {
-                if (item.IsHidden)
-                    continue;
-
+            if (IsOverlapping(item) && item.IsHidden == false)
                 itemDisplays?.Invoke(item);
-            }
     }
 
     private void OnInternalItemTrigger(Button item)
@@ -710,10 +652,6 @@ public class List : Block
         for (var i = 0; i < indexesSelected.Count; i++)
             if (index <= indexesSelected[i])
                 indexesSelected[i] += offset;
-
-        for (var i = 0; i < indexesDisabled.Count; i++)
-            if (index <= indexesDisabled[i])
-                indexesDisabled[i] += offset;
     }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)

@@ -182,15 +182,17 @@ public class FileViewer : Block
         {
             isReadOnly = true,
             hasParent = true,
+            wasMaskSet = true,
             IsSingleSelecting = true,
         };
         FilesAndFolders = new(position, 0)
         {
             isReadOnly = true,
             hasParent = true,
+            wasMaskSet = true
         };
 
-        Back = new(position) { hasParent = true, isTextReadonly = true };
+        Back = new(position) { hasParent = true, wasMaskSet = true, isTextReadonly = true };
         Back.OnInteraction(Interaction.Scroll, ApplyScroll);
         Back.OnInteraction(Interaction.Trigger, () =>
             CurrentDirectory = Path.GetDirectoryName(CurrentDirectory) ?? DefaultPath);
@@ -198,6 +200,7 @@ public class FileViewer : Block
         User = new(position)
         {
             hasParent = true,
+            wasMaskSet = true,
             isTextReadonly = true,
             text = GetPath(Directory.UserProfile)
         };
@@ -306,19 +309,23 @@ public class FileViewer : Block
         HardDrives.size = (w, hds);
         HardDrives.position = (x, y);
         HardDrives.itemSize = (w, 1);
+        HardDrives.mask = mask;
         HardDrives.Update();
 
         User.size = (w, 1);
         User.position = (x, y + hds);
+        User.mask = mask;
         User.Update();
 
         Back.size = (w, 1);
         Back.position = (x, y + hds + 1);
+        Back.mask = mask;
         Back.Update();
 
         FilesAndFolders.size = (w, h - hds - 2);
         FilesAndFolders.position = (x, y + hds + 2);
         FilesAndFolders.itemSize = (w, 1);
+        FilesAndFolders.mask = mask;
         FilesAndFolders.Update();
     }
 

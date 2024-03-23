@@ -128,21 +128,22 @@ public class Palette : Block
         var (w, h) = Size;
         brightnessPageCount = Math.Clamp(brightnessPageCount, 1, 99);
 
-        Opacity = new((x, y)) { Progress = opacityProgress, hasParent = true };
+        Opacity = new((x, y)) { Progress = opacityProgress, hasParent = true, wasMaskSet = true };
         Brightness = new((x, y + 2), brightnessPageCount)
         {
             size = (w - 1, 1),
             Current = brightnessCurrentPage,
             ItemWidth = $"{brightnessPageCount}".Length,
             hasParent = true,
+            wasMaskSet = true,
         };
-        Pick = new((x + w - 1, y + h - 1)) { hasParent = true };
+        Pick = new((x + w - 1, y + h - 1)) { hasParent = true, wasMaskSet = true };
 
         Pick.OnInteraction(Interaction.Trigger, () => isPicking = true);
 
         for (var i = 0; i < palette.Length; i++)
         {
-            var btn = new Button((x + i, y + 1)) { size = (1, 1), hasParent = true };
+            var btn = new Button((x + i, y + 1)) { size = (1, 1), hasParent = true, wasMaskSet = true };
             var index = i;
             btn.OnInteraction(Interaction.Trigger, () => SelectedColor = GetColor(index));
             colorButtons.Add(btn);
@@ -166,20 +167,17 @@ public class Palette : Block
 
         Opacity.position = (x, y);
         Opacity.size = (w, h - 2);
+        Opacity.mask = mask;
+        Opacity.Update();
+
         Pick.position = (x + w - 1, y + h - 1);
         Pick.size = (1, 1);
-        Pick.isDisabled = IsPickHidden;
-        Pick.isHidden = IsPickHidden;
+        Pick.mask = IsPickHidden ? Input.Mask : mask;
+        Pick.Update();
 
         Brightness.position = (x, y + h - 1);
         Brightness.size = (w - (IsPickHidden ? 0 : 1), 1);
-
-        Opacity.InheritParent(this);
-        Pick.InheritParent(this);
-        Brightness.InheritParent(this);
-
-        Opacity.Update();
-        Pick.Update();
+        Brightness.mask = mask;
         Brightness.Update();
 
         var xs = Distribute(colorButtons.Count, (x, x + w));
@@ -188,7 +186,7 @@ public class Palette : Block
             var btn = colorButtons[i];
             btn.position = ((int)xs[i], y + h - 2);
             btn.size = (1, 1);
-            btn.InheritParent(this);
+            btn.mask = mask;
             btn.Update();
         }
     }

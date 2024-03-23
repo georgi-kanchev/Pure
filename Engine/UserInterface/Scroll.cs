@@ -89,9 +89,11 @@ public class Scroll : Block
     {
         OnUpdate(OnUpdate);
 
-        Slider = new((int.MaxValue, int.MaxValue)) { hasParent = true };
-        Increase = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
-        Decrease = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
+        Slider = new((int.MaxValue, int.MaxValue)) { wasMaskSet = true, hasParent = true };
+        Increase = new((int.MaxValue, int.MaxValue))
+            { Size = (1, 1), wasMaskSet = true, hasParent = true };
+        Decrease = new((int.MaxValue, int.MaxValue))
+            { Size = (1, 1), wasMaskSet = true, hasParent = true };
 
         Slider.OnInteraction(Interaction.Scroll, ApplyScroll);
 
@@ -147,15 +149,13 @@ public class Scroll : Block
             Slider.size = (w - 2, h);
         }
 
-        Increase.InheritParent(this);
-        Decrease.InheritParent(this);
+        Increase.mask = mask;
+        Decrease.mask = mask;
+        Slider.mask = mask;
 
         if ((IsVertical && Size.height > 2) ||
             IsVertical == false && Size.width > 2)
-        {
-            Slider.InheritParent(this);
             Slider.Update();
-        }
 
         Increase.Update();
         Decrease.Update();

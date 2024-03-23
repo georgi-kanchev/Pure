@@ -29,18 +29,7 @@ public class Tilemap
     /// Gets the size of the tilemap in tiles.
     /// </summary>
     public (int width, int height) Size { get; }
-    /// <summary>
-    /// Gets or sets the position of the view.
-    /// </summary>
-    public (int x, int y) ViewPosition { get; set; }
-    /// <summary>
-    /// Gets or sets the size of the view.
-    /// </summary>
-    public (int height, int width) ViewSize
-    {
-        get => viewSz;
-        set => viewSz = (Math.Max(value.width, 1), Math.Max(value.height, 1));
-    }
+    public Area View { get; set; }
 
     /// <summary>
     /// Initializes a new tilemap instance with the specified size.
@@ -56,7 +45,7 @@ public class Tilemap
         data = new Tile[w, h];
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
         ids = new int[w, h];
-        ViewSize = (size.width, size.height);
+        View = (0, 0, size.width, size.height);
     }
     /// <summary>
     /// Initializes a new tilemap instance with the specified tileData.
@@ -74,7 +63,7 @@ public class Tilemap
         data = Duplicate(tileData);
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
         ids = new int[w, h];
-        ViewSize = (w, h);
+        View = (0, 0, w, h);
 
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
@@ -94,14 +83,14 @@ public class Tilemap
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
         ids = new int[w, h];
         Size = (w, h);
-        ViewPosition = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-        ViewSize = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+        View = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()),
+            BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
 
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
             {
                 var bTile = GetBytesFrom(b, Tile.BYTE_SIZE, ref offset);
-                SetTile((j, i), new(bTile));
+                SetTile((j, i), new(bTile), null);
             }
 
         return;
@@ -125,10 +114,10 @@ public class Tilemap
         var (w, h) = Size;
         result.AddRange(BitConverter.GetBytes(w));
         result.AddRange(BitConverter.GetBytes(h));
-        result.AddRange(BitConverter.GetBytes(ViewPosition.x));
-        result.AddRange(BitConverter.GetBytes(ViewPosition.y));
-        result.AddRange(BitConverter.GetBytes(ViewSize.width));
-        result.AddRange(BitConverter.GetBytes(ViewSize.height));
+        result.AddRange(BitConverter.GetBytes(View.X));
+        result.AddRange(BitConverter.GetBytes(View.Y));
+        result.AddRange(BitConverter.GetBytes(View.Width));
+        result.AddRange(BitConverter.GetBytes(View.Height));
 
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
@@ -150,14 +139,13 @@ public class Tilemap
     /// <returns>The updated tilemap view.</returns>
     public Tilemap ViewUpdate()
     {
-        var (cx, cy) = ViewPosition;
-        var (w, h) = ViewSize;
-        var newData = new Tile[w, h];
+        var (vx, vy, vw, vh, _) = View.ToBundle();
+        var newData = new Tile[vw, vh];
         var i = 0;
-        for (var x = cx; x != cx + w; x++)
+        for (var x = vx; x != vx + vw; x++)
         {
             var j = 0;
-            for (var y = cy; y != cy + h; y++)
+            for (var y = vy; y != vy + vh; y++)
             {
                 newData[i, j] = TileAt((x, y));
                 j++;
@@ -177,49 +165,34 @@ public class Tilemap
     /// or the default tile value if the position is out of bounds.</returns>
     public Tile TileAt((int x, int y) position)
     {
-        return IndicesAreValid(position) ? data[position.x, position.y] : default;
+        return IndicesAreValid(position, null) ? data[position.x, position.y] : default;
     }
     /// <summary>
     /// Retrieves a rectangular region of tiles from the tilemap.
     /// </summary>
-    /// <param name="rectangle">A tuple representing the rectangle's position and size. 
+    /// <param name="area">A tuple representing the rectangle's position and size. 
     /// The x and y values represent the top-left corner of the rectangle, 
     /// while the width and height represent the size of the rectangle.</param>
     /// <returns>A 2D array of tiles representing the specified rectangular region in the tilemap. 
     /// If the rectangle's dimensions are negative, the method will reverse the direction of the iteration.</returns>
-    public Tile[,] TilesIn((float x, float y, float width, float height) rectangle)
+    public Tile[,] TilesIn(Area area)
     {
-        // Convert the rectangle's position and size to integers
-        var (rx, ry) = ((int)rectangle.x, (int)rectangle.y);
-        var (rw, rh) = ((int)rectangle.width, (int)rectangle.height);
-
-        // Determine the direction of the iteration based on the sign of the rectangle's dimensions
+        var (rx, ry) = (area.X, area.Y);
+        var (rw, rh) = (area.Width, area.Height);
         var xStep = rw < 0 ? -1 : 1;
         var yStep = rh < 0 ? -1 : 1;
-
-        // Create a new 2D array of tiles to store the result
         var result = new Tile[Math.Abs(rw), Math.Abs(rh)]; // Fixed array dimensions
 
-        // Iterate over the rectangle's width and height
         for (var x = 0; x < Math.Abs(rw); x++)
-        {
             for (var y = 0; y < Math.Abs(rh); y++)
             {
-                // Calculate the current position in the tilemap
                 var currentX = rx + x * xStep - (rw < 0 ? 1 : 0);
                 var currentY = ry + y * yStep - (rh < 0 ? 1 : 0);
 
-                // Retrieve the tile at the current position and store it in the result array
                 result[x, y] = TileAt((currentX, currentY));
             }
-        }
 
-        // Return the result array
         return result;
-    }
-    public Tile[,] TilesIn((float x, float y, float width, float height, uint color) rectangle)
-    {
-        return TilesIn((rectangle.x, rectangle.y, rectangle.width, rectangle.height));
     }
 
     public void Flush()
@@ -229,7 +202,7 @@ public class Tilemap
         ids = new int[w, h];
         bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
     }
-    public void Fill(params Tile[]? tiles)
+    public void Fill(Area? mask = null, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
         {
@@ -241,15 +214,15 @@ public class Tilemap
             for (var x = 0; x < Size.width; x++)
             {
                 var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
-                SetTile((x, y), tile);
+                SetTile((x, y), tile, mask);
             }
     }
-    public void Flood((int x, int y) position, bool isExactTile, params Tile[]? tiles)
+    public void Flood((int x, int y) position, bool isExactTile, Area? mask = null, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
 
-        var stack = new Stack<(int x, int y)>();
+        var stack = new System.Collections.Generic.Stack<(int x, int y)>();
         var initialTile = TileAt(position);
         stack.Push(position);
 
@@ -261,15 +234,11 @@ public class Tilemap
             var exactTile = curTile == tile || curTile != initialTile;
             var onlyId = curTile.Id == tile.Id || curTile.Id != initialTile.Id;
 
-            if (x < 0 ||
-                x >= Size.width ||
-                y < 0 ||
-                y >= Size.height ||
-                (isExactTile && exactTile) ||
+            if ((isExactTile && exactTile) ||
                 (isExactTile == false && onlyId))
                 continue;
 
-            SetTile((x, y), tile);
+            SetTile((x, y), tile, mask);
 
             stack.Push((x - 1, y));
             stack.Push((x + 1, y));
@@ -278,24 +247,24 @@ public class Tilemap
         }
     }
     public void Replace(
-        (int x, int y) position,
-        (int width, int height) size,
+        Area area,
         Tile targetTile,
+        Area? mask = null,
         params Tile[] tiles)
     {
         if (tiles.Length == 0)
             return;
 
-        for (var i = 0; i < Math.Abs(size.width * size.height); i++)
+        for (var i = 0; i < Math.Abs(area.Width * area.Height); i++)
         {
-            var x = position.x + i % Math.Abs(size.width) * (size.width < 0 ? -1 : 1);
-            var y = position.y + i / Math.Abs(size.width) * (size.height < 0 ? -1 : 1);
+            var x = area.X + i % Math.Abs(area.Width) * (area.Width < 0 ? -1 : 1);
+            var y = area.Y + i / Math.Abs(area.Width) * (area.Height < 0 ? -1 : 1);
 
             if (TileAt((x, y)).Id != targetTile.Id)
                 continue;
 
             var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
-            SetTile((x, y), tile);
+            SetTile((x, y), tile, mask);
         }
     }
 
@@ -305,31 +274,32 @@ public class Tilemap
     /// </summary>
     /// <param name="position">The position to set the tile at.</param>
     /// <param name="tile">The tile to set.</param>
-    public void SetTile((int x, int y) position, Tile tile)
+    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
+    public void SetTile((int x, int y) position, Tile tile, Area? mask = null)
     {
-        if (IndicesAreValid(position) == false)
+        if (IndicesAreValid(position, mask) == false)
             return;
 
         data[position.x, position.y] = tile;
         ids[position.x, position.y] = tile.Id;
         bundleCache[position.x, position.y] = tile;
     }
-    public void SetRectangle((int x, int y, int width, int height) rectangle, params Tile[]? tiles)
+    public void SetArea(Area area, Area? mask = null, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
 
-        var xStep = rectangle.width < 0 ? -1 : 1;
-        var yStep = rectangle.height < 0 ? -1 : 1;
+        var xStep = area.Width < 0 ? -1 : 1;
+        var yStep = area.Height < 0 ? -1 : 1;
         var i = 0;
-        for (var x = rectangle.x; x != rectangle.x + rectangle.width; x += xStep)
-            for (var y = rectangle.y; y != rectangle.y + rectangle.height; y += yStep)
+        for (var x = area.X; x != area.X + area.Width; x += xStep)
+            for (var y = area.Y; y != area.Y + area.Height; y += yStep)
             {
-                if (i > Math.Abs(rectangle.width * rectangle.height))
+                if (i > Math.Abs(area.Width * area.Height))
                     return;
 
                 var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
-                SetTile((x, y), tile);
+                SetTile((x, y), tile, mask);
                 i++;
             }
     }
@@ -339,14 +309,15 @@ public class Tilemap
     /// </summary>
     /// <param name="position">The position to start setting tiles from.</param>
     /// <param name="tiles">The 2D array of tiles to set.</param>
-    public void SetGroup((int x, int y) position, Tile[,] tiles)
+    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
+    public void SetGroup((int x, int y) position, Tile[,] tiles, Area? mask = null)
     {
         if (tiles.Length == 0)
             return;
 
         for (var i = 0; i < tiles.GetLength(1); i++)
             for (var j = 0; j < tiles.GetLength(0); j++)
-                SetTile((position.x + j, position.y + i), tiles[j, i]);
+                SetTile((position.x + j, position.y + i), tiles[j, i], mask);
     }
     /// <summary>
     /// Sets a single line of text starting from a position with optional tint and optional shortening.
@@ -356,11 +327,13 @@ public class Tilemap
     /// <param name="tint">Optional tint color value (defaults to white).</param>
     /// <param name="maxLength">Optional shortening that adds ellipsis '…' if exceeded
     /// (defaults to none). Negative values reduce the text from the back.</param>
+    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetTextLine(
         (int x, int y) position,
         string? text,
         uint tint = uint.MaxValue,
-        int maxLength = int.MaxValue)
+        int maxLength = int.MaxValue,
+        Area? mask = null)
     {
         var errorOffset = 0;
 
@@ -390,34 +363,33 @@ public class Tilemap
             if (symbol == ' ')
                 continue;
 
-            SetTile((position.x + i - errorOffset, position.y), new(index, tint));
+            SetTile((position.x + i - errorOffset, position.y), new(index, tint), mask);
         }
     }
     /// <summary>
-    /// Sets a rectangle of text with optional 
-    /// alignment, scrolling, and word wrapping.
+    /// Sets a rectangle of text with optional alignment, scrolling, and word wrapping.
     /// </summary>
-    /// <param name="position">The starting position to place the text.</param>
-    /// <param name="size">The width and height of the rectangle.</param>
+    /// <param name="area">The rectangle.</param>
     /// <param name="text">The text to display.</param>
     /// <param name="tint">Optional tint color value (defaults to white).</param>
     /// <param name="isWordWrapping">Optional flag for enabling word wrapping.</param>
     /// <param name="alignment">Optional text alignment.</param>
     /// <param name="scrollProgress">Optional scrolling value (between 0 and 1).</param>
+    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetTextRectangle(
-        (int x, int y) position,
-        (int width, int height) size,
+        Area area,
         string? text,
         uint tint = uint.MaxValue,
         bool isWordWrapping = true,
         Alignment alignment = Alignment.TopLeft,
-        float scrollProgress = 0)
+        float scrollProgress = 0,
+        Area? mask = null)
     {
-        if (string.IsNullOrEmpty(text) || size.width <= 0 || size.height <= 0)
+        if (string.IsNullOrEmpty(text) || area.Width <= 0 || area.Height <= 0)
             return;
 
-        var x = position.x;
-        var y = position.y;
+        var x = area.X;
+        var y = area.Y;
         var lineList = text.TrimEnd().Split(Environment.NewLine).ToList();
 
         if (lineList.Count == 0)
@@ -427,10 +399,10 @@ public class Tilemap
         {
             var line = lineList[i];
 
-            if (line.Length <= size.width) // line is valid length
+            if (line.Length <= area.Width) // line is valid length
                 continue;
 
-            var lastLineIndex = size.width - 1;
+            var lastLineIndex = area.Width - 1;
             var newLineIndex = isWordWrapping ?
                 GetSafeNewLineIndex(line, (uint)lastLineIndex) :
                 lastLineIndex;
@@ -438,8 +410,8 @@ public class Tilemap
             // end of line? can't word wrap, proceed to symbol wrap
             if (newLineIndex == 0)
             {
-                lineList[i] = line[..size.width];
-                lineList.Insert(i + 1, line[size.width..line.Length]);
+                lineList[i] = line[..area.Width];
+                lineList.Insert(i + 1, line[area.Width..line.Length]);
                 continue;
             }
 
@@ -449,7 +421,7 @@ public class Tilemap
             lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
         }
 
-        var yDiff = size.height - lineList.Count;
+        var yDiff = area.Height - lineList.Count;
 
         if (alignment is Alignment.Left or Alignment.Center or Alignment.Right)
             for (var i = 0; i < yDiff / 2; i++)
@@ -459,11 +431,11 @@ public class Tilemap
                 lineList.Insert(0, string.Empty);
 
         // new lineList.Count
-        yDiff = size.height - lineList.Count;
+        yDiff = area.Height - lineList.Count;
 
         var startIndex = 0;
-        var end = size.height;
-        var scrollValue = (int)Math.Round(scrollProgress * (lineList.Count - size.height));
+        var end = area.Height;
+        var scrollValue = (int)Math.Round(scrollProgress * (lineList.Count - area.Height));
 
         if (yDiff < 0)
         {
@@ -471,7 +443,7 @@ public class Tilemap
             end += scrollValue;
         }
 
-        var e = lineList.Count - size.height;
+        var e = lineList.Count - area.Height;
         startIndex = Math.Clamp(startIndex, 0, Math.Max(e, 0));
         end = Math.Clamp(end, 0, lineList.Count);
 
@@ -480,11 +452,11 @@ public class Tilemap
             var line = lineList[i];
 
             if (alignment is Alignment.TopRight or Alignment.Right or Alignment.BottomRight)
-                line = line.PadLeft(size.width);
+                line = line.PadLeft(area.Width);
             else if (alignment is Alignment.Top or Alignment.Center or Alignment.Bottom)
-                line = PadLeftAndRight(line, size.width);
+                line = PadLeftAndRight(line, area.Width);
 
-            SetTextLine((x, y), line, tint);
+            SetTextLine((x, y), line, tint, mask: mask);
             NewLine();
         }
 
@@ -492,13 +464,13 @@ public class Tilemap
 
         void NewLine()
         {
-            x = position.x;
+            x = area.X;
             y++;
         }
         int GetSafeNewLineIndex(string line, uint endLineIndex)
         {
             for (var i = (int)endLineIndex; i >= 0; i--)
-                if (line[i] == ' ' && i <= size.width)
+                if (line[i] == ' ' && i <= area.Width)
                     return i;
 
             return default;
@@ -508,29 +480,28 @@ public class Tilemap
     /// Sets the tint of the tiles in a rectangular area of the tilemap to 
     /// highlight a specific text (if found).
     /// </summary>
-    /// <param name="position">The position of the top-left corner of the rectangular 
-    /// area to search for the text.</param>
-    /// <param name="size">The size of the rectangular area to search for the text.</param>
+    /// <param name="area">The rectangle.</param>
     /// <param name="text">The text to search for and highlight.</param>
     /// <param name="tint">The color to tint the matching tiles.</param>
     /// <param name="isMatchingWord">Whether to only match the text 
     /// as a whole word or any symbols.</param>
+    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetTextRectangleTint(
-        (int x, int y) position,
-        (int width, int height) size,
+        Area area,
         string? text,
         uint tint = uint.MaxValue,
-        bool isMatchingWord = false)
+        bool isMatchingWord = false,
+        Area? mask = null)
     {
         if (string.IsNullOrWhiteSpace(text))
             return;
 
-        var xStep = size.width < 0 ? -1 : 1;
-        var yStep = size.height < 0 ? -1 : 1;
+        var xStep = area.Width < 0 ? -1 : 1;
+        var yStep = area.Height < 0 ? -1 : 1;
         var tileList = TileIdsFrom(text).ToList();
 
-        for (var x = position.x; x != position.x + size.width; x += xStep)
-            for (var y = position.y; y != position.y + size.height; y += yStep)
+        for (var x = area.X; x != area.X + area.Width; x += xStep)
+            for (var y = area.Y; y != area.Y + area.Height; y += yStep)
             {
                 if (tileList[0] != TileAt((x, y)).Id)
                     continue;
@@ -549,16 +520,16 @@ public class Tilemap
                     curX++;
 
                     // try new line
-                    if (curX <= x + size.width)
+                    if (curX <= x + area.Width)
                         continue;
 
-                    curX = position.x;
+                    curX = area.X;
                     curY++;
                 }
 
                 var endPos = (curX, curY);
-                var left = TileAt(startPos).Id == 0 || curX == position.x;
-                var right = TileAt(endPos).Id == 0 || curX == position.x + size.width;
+                var left = TileAt(startPos).Id == 0 || curX == area.X;
+                var right = TileAt(endPos).Id == 0 || curX == area.X + area.Width;
                 var isWord = left && right;
 
                 if (isWord ^ isMatchingWord)
@@ -571,13 +542,13 @@ public class Tilemap
                 curY = y;
                 for (var i = 0; i < text.Length; i++)
                 {
-                    if (curX > x + size.width) // try new line
+                    if (curX > x + area.Width) // try new line
                     {
-                        curX = position.x;
+                        curX = area.X;
                         curY++;
                     }
 
-                    SetTile((curX, curY), new(TileAt((curX, curY)).Id, tint));
+                    SetTile((curX, curY), new(TileAt((curX, curY)).Id, tint), mask);
                     curX++;
                 }
             }
@@ -586,6 +557,7 @@ public class Tilemap
         (int x, int y) center,
         (int width, int height) radius,
         bool isFilled,
+        Area? mask = null,
         params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
@@ -644,22 +616,30 @@ public class Tilemap
             var o = tiles.Length == 1;
             if (isFilled == false)
             {
-                SetTile((c.x + x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y - y))));
-                SetTile((c.x - x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y - y))));
-                SetTile((c.x - x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y + y))));
-                SetTile((c.x + x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y + y))));
+                SetTile((c.x + x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y - y))),
+                    mask);
+                SetTile((c.x - x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y - y))),
+                    mask);
+                SetTile((c.x - x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y + y))),
+                    mask);
+                SetTile((c.x + x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y + y))),
+                    mask);
                 return;
             }
 
             for (var i = c.x - x; i <= c.x + x; i++)
             {
-                SetTile((i, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y - y))));
-                SetTile((i, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y + y))));
+                SetTile((i, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y - y))), mask);
+                SetTile((i, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y + y))), mask);
             }
         }
     }
 
-    public void SetLine((int x, int y) pointA, (int x, int y) pointB, params Tile[]? tiles)
+    public void SetLine(
+        (int x, int y) pointA,
+        (int x, int y) pointB,
+        Area? mask = null,
+        params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -675,7 +655,7 @@ public class Tilemap
         while (true)
         {
             var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x0, y0)));
-            SetTile((x0, y0), tile);
+            SetTile((x0, y0), tile, mask);
 
             if (x0 == x1 && y0 == y1)
                 break;
@@ -699,51 +679,50 @@ public class Tilemap
     /// Sets the tiles in a rectangular area of the tilemap to create a box with corners, borders
     /// and filling.
     /// </summary>
-    /// <param name="position">The position of the top-left corner of the rectangular 
-    /// area to create the box.</param>
-    /// <param name="size">The size of the rectangular area to create the box.</param>
-    /// <param name="tileFill">The tile to use for the filling of the box</param>
+    /// <param name="area">The area of the rectangular box.</param>
+    /// <param name="tileFill">The tile to use for the filling of the box.</param>
     /// <param name="borderTileId">The identifier of the tile to use for the 
     /// straight edges of the box.</param>
     /// <param name="cornerTileId">The identifier of the tile to use for the corners of the box.</param>
     /// <param name="borderTint">The color to tint the border tiles.</param>
+    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetBox(
-        (int x, int y) position,
-        (int width, int height) size,
+        Area area,
         Tile tileFill,
         int cornerTileId,
         int borderTileId,
-        uint borderTint = uint.MaxValue)
+        uint borderTint = uint.MaxValue,
+        Area? mask = null)
     {
-        var (x, y) = position;
-        var (w, h) = size;
+        var (x, y) = (area.X, area.Y);
+        var (w, h) = (area.Width, area.Height);
 
         if (w <= 0 || h <= 0)
             return;
 
         if (w == 1 || h == 1)
         {
-            SetRectangle((position.x, position.y, size.width, size.height), tileFill);
+            SetArea(area, mask, tileFill);
             return;
         }
 
-        SetTile(position, new(cornerTileId, borderTint));
-        SetRectangle((x + 1, y, w - 2, 1), new Tile(borderTileId, borderTint));
-        SetTile((x + w - 1, y), new(cornerTileId, borderTint, 1));
+        SetTile((x, y), new(cornerTileId, borderTint), mask);
+        SetArea((x + 1, y, w - 2, 1), mask, new Tile(borderTileId, borderTint));
+        SetTile((x + w - 1, y), new(cornerTileId, borderTint, 1), mask);
 
         if (h != 2)
         {
-            SetRectangle((x, y + 1, 1, h - 2), new Tile(borderTileId, borderTint, 3));
+            SetArea((x, y + 1, 1, h - 2), mask, new Tile(borderTileId, borderTint, 3));
 
             if (tileFill.Id != Tile.SHADE_TRANSPARENT)
-                SetRectangle((x + 1, y + 1, w - 2, h - 2), tileFill);
+                SetArea((x + 1, y + 1, w - 2, h - 2), mask, tileFill);
 
-            SetRectangle((x + w - 1, y + 1, 1, h - 2), new Tile(borderTileId, borderTint, 1));
+            SetArea((x + w - 1, y + 1, 1, h - 2), mask, new Tile(borderTileId, borderTint, 1));
         }
 
-        SetTile((x, y + h - 1), new(cornerTileId, borderTint, 3));
-        SetTile((x + w - 1, y + h - 1), new(cornerTileId, borderTint, 2));
-        SetRectangle((x + 1, y + h - 1, w - 2, 1), new Tile(borderTileId, borderTint, 2));
+        SetTile((x, y + h - 1), new(cornerTileId, borderTint, 3), mask);
+        SetTile((x + w - 1, y + h - 1), new(cornerTileId, borderTint, 2), mask);
+        SetArea((x + 1, y + h - 1, w - 2, 1), mask, new Tile(borderTileId, borderTint, 2));
     }
     /// <summary>
     /// Sets the tiles in a rectangular area of the tilemap to create a vertical or horizontal bar.
@@ -756,13 +735,15 @@ public class Tilemap
     /// <param name="tint">The color to tint the bar tiles.</param>
     /// <param name="size">The length of the bar in tiles.</param>
     /// <param name="isVertical">Whether the bar should be vertical or horizontal.</param>
+    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetBar(
         (int x, int y) position,
         int tileIdEdge,
         int tileId,
         uint tint = uint.MaxValue,
         int size = 5,
-        bool isVertical = false)
+        bool isVertical = false,
+        Area? mask = null)
     {
         var (x, y) = position;
         var off = size == 1 ? 0 : 1;
@@ -771,28 +752,28 @@ public class Tilemap
         {
             if (size > 1)
             {
-                SetTile(position, new(tileIdEdge, tint, 1));
-                SetTile((x, y + size - 1), new(tileIdEdge, tint, 3));
+                SetTile(position, new(tileIdEdge, tint, 1), mask);
+                SetTile((x, y + size - 1), new(tileIdEdge, tint, 3), mask);
             }
 
             if (size != 2)
-                SetRectangle((x, y + off, 1, size - 2), new Tile(tileId, tint, 1));
+                SetArea((x, y + off, 1, size - 2), mask, new Tile(tileId, tint, 1));
 
             return;
         }
 
         if (size > 1)
         {
-            SetTile(position, new(tileIdEdge, tint));
-            SetTile((x + size - 1, y), new(tileIdEdge, tint, 2));
+            SetTile(position, new(tileIdEdge, tint), mask);
+            SetTile((x + size - 1, y), new(tileIdEdge, tint, 2), mask);
         }
 
         if (size != 2)
-            SetRectangle((x + off, y, size - 2, 1), new Tile(tileId, tint));
+            SetArea((x + off, y, size - 2, 1), mask, new Tile(tileId, tint));
     }
 
     /// <summary>
-    /// Configures the tile identifiers for text characters.
+    /// Configures the tile identifiers for text characters and numbers assuming they are sequential.
     /// </summary>
     /// <param name="lowercase">The tile identifier for the lowercase 'a' character.</param>
     /// <param name="uppercase">The tile identifier for the uppercase 'A' character.</param>
@@ -808,7 +789,7 @@ public class Tilemap
     }
 
     /// <summary>
-    /// Configures the tile identifiers for a set of symbols.
+    /// Configures the tile identifiers for a set of symbols sequentially.
     /// </summary>
     /// <param name="symbols">The string of symbols to configure.</param>
     /// <param name="startId">The starting tile identifier for the symbols.</param>
@@ -970,7 +951,6 @@ public class Tilemap
     private Tile[,] data;
     private (int, uint, sbyte, bool, bool)[,] bundleCache;
     private int[,] ids;
-    private (int w, int h) viewSz;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)
     {
@@ -979,11 +959,13 @@ public class Tilemap
 
         return (index % size.width, index / size.width);
     }
-    private bool IndicesAreValid((int, int) indices)
+    private bool IndicesAreValid((int x, int y) indices, Area? mask)
     {
-        return indices is { Item1: >= 0, Item2: >= 0 } &&
-               indices.Item1 < Size.width &&
-               indices.Item2 < Size.height;
+        var (x, y) = indices;
+        mask ??= new(0, 0, Size.width, Size.height);
+        var (mx, my, mw, mh, _) = mask.Value.ToBundle();
+
+        return x >= mx && y >= my && x < mx + mw && y < my + mh;
     }
     private static string PadLeftAndRight(string text, int length)
     {

@@ -61,8 +61,8 @@ public static class Pong
 
         void TryToBounceBallOffPaddle(ref Point paddlePosition)
         {
-            var paddle = new Solid((1, PADDLE_HEIGHT), paddlePosition);
-            var ball = new Solid((1, 1), ballPosition);
+            var paddle = new Solid(paddlePosition, (1, PADDLE_HEIGHT));
+            var ball = new Solid(ballPosition, (1, 1));
 
             if (paddle.IsOverlapping(ball) == false)
                 return;

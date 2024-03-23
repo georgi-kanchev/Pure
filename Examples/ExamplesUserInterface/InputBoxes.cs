@@ -29,8 +29,7 @@ public static class InputBoxes
         {
             var (x, y) = chat.Position;
             maps[0].SetTextRectangle(
-                position: (x, y - 10),
-                size: (chat.Size.width, 10),
+                area: (x, y - 10, chat.Size.width, 10),
                 text: messages,
                 alignment: Alignment.BottomLeft,
                 scrollProgress: 1f);
@@ -57,7 +56,7 @@ public static class InputBoxes
             Value = "",
             Placeholder = "Password…",
             IsSingleLine = true,
-            Mask = "#"
+            SymbolMask = "#"
         };
         password.AlignInside((0.95f, 0.1f));
         password.OnSubmit(() => pass = password.Value);
@@ -88,8 +87,8 @@ public static class InputBoxes
             maps.SetInputBox(equation);
         });
 
-        Key.ControlLeft.OnPress(() => multiLine.Mask = "*");
-        Key.ControlRight.OnPress(() => multiLine.Mask = null);
+        Key.ControlLeft.OnPress(() => multiLine.SymbolMask = "*");
+        Key.ControlRight.OnPress(() => multiLine.SymbolMask = null);
 
         return new Block[] { multiLine, password, chat, equation };
     }

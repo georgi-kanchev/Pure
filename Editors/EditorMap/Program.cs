@@ -34,7 +34,7 @@ public static class Program
         editor = new("Pure - Map Editor");
         editor.MapsEditor.Clear();
         editor.MapsEditor.Add(new Tilemap((mw, mh)));
-        editor.MapsEditor.ViewSize = (mw, mh);
+        editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
         editor.MapsEditorVisible.Clear();
         editor.MapsEditorVisible.Add(true);
 

@@ -18,7 +18,7 @@ public class Menu : List
         OnDisplay(() => editor.MapsUi.SetList(this, 1));
         OnItemDisplay(item =>
         {
-            Disable(item, item.Text.EndsWith(" "));
+            item.IsDisabled = item.Text.EndsWith(" ");
             editor.MapsUi.SetListItem(this, item, 3, false);
         });
         OnUpdate(() =>

@@ -122,8 +122,8 @@ internal class Inspector : Panel
 
                 var prompt = editor.Prompt;
                 var panel = panels[ui.IndexOf(selected)];
-                var (uw, uh) = editor.MapsUi.ViewSize;
-                var (ew, eh) = editor.MapsEditor.ViewSize;
+                var (uw, uh) = editor.MapsUi.View.Size;
+                var (ew, eh) = editor.MapsEditor.View.Size;
 
                 if (Text == "Remove")
                 {
@@ -232,7 +232,7 @@ internal class Inspector : Panel
 
         SetBackground(editor.MapsUi[(int)Editor.LayerMapsUi.Back], this, color);
 
-        front.SetBox(Position, Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
+        front.SetBox(Area, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
         front.SetTextLine(textPos, Text, Color.Yellow);
 
         UpdateButton(toTop, (topX, topY));
@@ -564,7 +564,9 @@ internal class Inspector : Panel
         var color = checkboxes.Contains(btn) && btn.IsSelected ? Color.Green.ToBright() : Color.Yellow;
         color = btn.IsDisabled ? Color.White : color;
 
-        front.SetTextRectangle(btn.Position, btn.Size, btn.Text, GetColor(btn, color.ToDark()),
+        var (x, y) = btn.Position;
+        var (w, h) = btn.Size;
+        front.SetTextRectangle((x, y, w, h), btn.Text, GetColor(btn, color.ToDark()),
             alignment: Alignment.Center);
     }
     private void UpdateInputBox(InputBox inputBox, (int x, int y) position)
@@ -585,16 +587,19 @@ internal class Inspector : Panel
 
         e.Update();
 
-        back.SetRectangle((x, y, w, h), new Tile(Tile.SHADE_OPAQUE, color.ToDark()));
+        back.SetArea((x, y, w, h), null, new Tile(Tile.SHADE_OPAQUE, color.ToDark()));
         SetClear(Editor.LayerMapsUi.Middle, e);
 
-        back.SetTextRectangle(e.Position, e.Size, e.Selection,
+        (x, y) = e.Position;
+        (w, h) = e.Size;
+
+        back.SetTextRectangle((x, y, w, h), e.Selection,
             e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
-        middle.SetTextRectangle(e.Position, e.Size, e.Text, isWordWrapping: false);
+        middle.SetTextRectangle((x, y, w, h), e.Text, isWordWrapping: false);
         middle.SetTextLine((Position.x + 1, e.Position.y - 1), e.Placeholder, color);
 
         if (string.IsNullOrWhiteSpace(e.Text))
-            middle.SetTextRectangle(e.Position, e.Size, e.Placeholder, color.ToBright(), false);
+            middle.SetTextRectangle((x, y, w, h), e.Placeholder, color.ToBright(), false);
 
         if (e.IsCursorVisible)
             front.SetTile(e.PositionFromIndices(e.CursorIndices), new(Tile.SHAPE_LINE, Color.White, 2));
@@ -702,14 +707,11 @@ internal class Inspector : Panel
     private static void SetBackground(Tilemap map, Block block, Color color)
     {
         var tile = new Tile(Tile.SHADE_OPAQUE, color);
-        var pos = block.Position;
-        var size = block.Size;
-
-        map.SetBox(pos, size, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
+        map.SetBox(block.Area, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
     }
     private static void SetClear(Editor.LayerMapsUi layer, Block block)
     {
-        editor.MapsUi[(int)layer].SetBox(block.Position, block.Size, 0, 0, 0, 0);
+        editor.MapsUi[(int)layer].SetArea(block.Area, null, 0);
     }
 #endregion
 }

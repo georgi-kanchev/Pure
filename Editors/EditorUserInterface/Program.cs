@@ -220,8 +220,8 @@ public static class Program
     internal static void BlockToTop(Block block)
     {
         var panel = panels[ui.IndexOf(block)];
-        panels.BringToTop(panel);
-        ui.BringToTop(block);
+        panels.OrderToFront(panel);
+        ui.OrderToFront(block);
         selected = block;
     }
 
@@ -260,8 +260,8 @@ public static class Program
             return;
 
         var back = editor.MapsEditor[(int)Editor.LayerMapsEditor.Back];
-        back.SetBox(panel.Position, panel.Size, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
-        back.SetRectangle((textPos.Item1, textPos.y, panel.Text.Length, 1), default);
+        back.SetBox(panel.Area, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
+        back.SetArea((textPos.Item1, textPos.y, panel.Text.Length, 1), default);
         back.SetTextLine(textPos, panel.Text, Color.Cyan);
 
         var (x, y) = (panel.Position.x, panel.Position.y - 1);

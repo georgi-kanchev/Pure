@@ -35,8 +35,8 @@ public static class FlappyBird
             (Tile.ARROW_DIAGONAL, 1)); // rotated 1 time (90 degrees clockwise)
         var pipes = new List<(float, int, int)>();
         var collisionMap = new SolidMap();
-        collisionMap.SolidsAdd(Tile.BOX_DEFAULT_CORNER, new Solid((1, 1)));
-        collisionMap.SolidsAdd(Tile.BOX_DEFAULT_STRAIGHT, new Solid((1, 1)));
+        collisionMap.SolidsAdd(Tile.BOX_DEFAULT_CORNER, new Solid(0, 0, 1, 1));
+        collisionMap.SolidsAdd(Tile.BOX_DEFAULT_STRAIGHT, new Solid(0, 0, 1, 1));
 
         InitializePipes();
 
@@ -63,7 +63,7 @@ public static class FlappyBird
             birdAnimation.Update(Time.Delta);
 
             // clear the tilemaps from the previous frame
-            background.Fill(new Tile(Tile.SHADE_OPAQUE, Color.Blue.ToDark()));
+            background.Fill(null, new Tile(Tile.SHADE_OPAQUE, Color.Blue.ToDark()));
             foreground.Flush();
 
             // apply gravity, unless game over
@@ -98,16 +98,16 @@ public static class FlappyBird
 
                 pipes[i] = (pipeX, pipeY, holeSize); // update the pipe itself
 
-                var size = (PIPE_WIDTH, PIPE_HEIGHT);
                 var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
-                background.SetRectangle(((int)pipeX, pipeY, size.PIPE_WIDTH, size.PIPE_HEIGHT),
+                background.SetArea(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), null,
                     new Tile(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
-                background.SetRectangle(((int)pipeX, lowerPipeY, size.PIPE_WIDTH, size.PIPE_HEIGHT),
+                background.SetArea(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT), null,
                     new Tile(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
-                foreground.SetBox(((int)pipeX, pipeY), size, Tile.SHADE_TRANSPARENT,
+                foreground.SetBox(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), Tile.SHADE_TRANSPARENT,
                     Tile.BOX_DEFAULT_CORNER,
                     Tile.BOX_DEFAULT_STRAIGHT, Color.Green);
-                foreground.SetBox(((int)pipeX, lowerPipeY), size, Tile.SHADE_TRANSPARENT,
+                foreground.SetBox(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT),
+                    Tile.SHADE_TRANSPARENT,
                     Tile.BOX_DEFAULT_CORNER,
                     Tile.BOX_DEFAULT_STRAIGHT, Color.Green);
             }
@@ -115,7 +115,7 @@ public static class FlappyBird
             collisionMap.Update(foreground);
 
             // whether the bird fell out of the map or bonked into a pipe
-            var birdRect = new Solid((1, 1), (BIRD_X, birdY), Color.Red);
+            var birdRect = new Solid(BIRD_X, birdY, 1, 1, Color.Red);
             if (birdY + 1 >= height || collisionMap.IsOverlapping(birdRect))
                 isGameOver = true;
 
@@ -126,7 +126,7 @@ public static class FlappyBird
             foreground.SetTextLine((width / 2 - scoreText.Length / 2, 1), scoreText);
 
             if (isGameOver)
-                foreground.SetTextRectangle((0, 0), (width, height),
+                foreground.SetTextRectangle((0, 0, width, height),
                     $"Game Over!{Environment.NewLine}{Environment.NewLine}<Space> to play again",
                     alignment: Alignment.Center);
 

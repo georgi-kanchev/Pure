@@ -10,6 +10,49 @@ using System.Text;
 /// </summary>
 public abstract class Block
 {
+    public (int x, int y, int width, int height) Area
+    {
+        get => (X, Y, Width, Height);
+        set
+        {
+            Position = (value.x, value.y);
+            Size = (value.x, value.y);
+        }
+    }
+    public (int x, int y, int width, int height) Mask
+    {
+        get => mask;
+        set
+        {
+            if (hasParent)
+                return;
+
+            wasMaskSet = true;
+            mask = value;
+        }
+    }
+
+    public int X
+    {
+        get => Position.x;
+        set => Position = (value, Position.y);
+    }
+    public int Y
+    {
+        get => Position.y;
+        set => Position = (Position.x, value);
+    }
+    public int Width
+    {
+        get => Size.width;
+        set => Size = (value, Size.height);
+    }
+    public int Height
+    {
+        get => Size.height;
+        set => Size = (Size.width, value);
+    }
+
     /// <summary>
     /// Gets or sets the position of the user interface block.
     /// </summary>
@@ -18,10 +61,8 @@ public abstract class Block
         get => position;
         set
         {
-            if (hasParent)
-                return;
-
-            position = value;
+            if (hasParent == false)
+                position = value;
         }
     }
     /// <summary>
@@ -35,10 +76,8 @@ public abstract class Block
             value.width = Math.Clamp(value.width, SizeMinimum.width, SizeMaximum.width);
             value.height = Math.Clamp(value.height, SizeMinimum.height, SizeMaximum.height);
 
-            if (hasParent)
-                return;
-
-            size = value;
+            if (hasParent == false)
+                size = value;
         }
     }
     /// <summary>
@@ -95,36 +134,18 @@ public abstract class Block
         get => text ?? string.Empty;
         set
         {
-            if (isTextReadonly)
-                return;
-
-            text = value ?? string.Empty;
+            if (isTextReadonly == false)
+                text = value ?? string.Empty;
         }
     }
     /// <summary>
     /// Gets or sets a value indicating whether the user interface block is hidden.
     /// </summary>
-    public bool IsHidden
-    {
-        get => isHidden;
-        set
-        {
-            if (hasParent == false)
-                isHidden = value;
-        }
-    }
+    public bool IsHidden { get; set; }
     /// <summary>
     /// Gets or sets a value indicating whether the user interface block is disabled.
     /// </summary>
-    public bool IsDisabled
-    {
-        get => isDisabled;
-        set
-        {
-            if (hasParent == false)
-                isDisabled = value;
-        }
-    }
+    public bool IsDisabled { get; set; }
     /// <summary>
     /// Gets a value indicating whether the user interface block is currently focused by
     /// the user input.
@@ -164,6 +185,7 @@ public abstract class Block
     /// </summary>
     protected Block() : this((0, 0))
     {
+        Init();
     }
     /// <summary>
     /// Initializes a new user interface block instance class with the specified 
@@ -193,6 +215,10 @@ public abstract class Block
         SizeMinimum = (GrabInt(b), GrabInt(b));
         SizeMaximum = (GrabInt(b), GrabInt(b));
         Size = (GrabInt(b), GrabInt(b));
+
+        // should set field to not flag wasMaskSet
+        mask = (GrabInt(b), GrabInt(b), GrabInt(b), GrabInt(b));
+
         Text = GrabString(b);
         IsHidden = GrabBool(b);
         IsDisabled = GrabBool(b);
@@ -231,6 +257,10 @@ public abstract class Block
         PutInt(result, SizeMaximum.height);
         PutInt(result, Size.width);
         PutInt(result, Size.height);
+        PutInt(result, Mask.x);
+        PutInt(result, Mask.y);
+        PutInt(result, Mask.width);
+        PutInt(result, Mask.height);
         PutString(result, Text);
         PutBool(result, IsHidden);
         PutBool(result, IsDisabled);
@@ -254,12 +284,13 @@ public abstract class Block
     {
         LimitSizeMin((1, 1));
 
-        var (mw, mh) = Input.TilemapSize;
         var (ix, iy) = Input.Position;
-        var isInputInsideMap = ix >= 0 && iy >= 0 && ix < mw && iy < mh;
 
+        mask = wasMaskSet ? mask : Input.Mask;
         wasHovered = IsHovered;
-        IsHovered = IsOverlapping(Input.Position) && isInputInsideMap;
+        var (mx, my, mw, mh) = mask;
+        var isInputInsideMask = ix >= mx && iy >= my && ix < mx + mw && iy < my + mh;
+        IsHovered = IsOverlapping(Input.Position) && isInputInsideMask;
 
         if (IsDisabled)
         {
@@ -326,7 +357,7 @@ public abstract class Block
 
         update?.Invoke();
 
-        if (isInputInsideMap)
+        if (isInputInsideMask)
             OnInput();
 
         TryDisplaySelfAndProcessChildren();
@@ -401,6 +432,7 @@ public abstract class Block
         Side targetEdge,
         (int x, int y, int width, int height)? rectangle = null,
         float alignment = float.NaN,
+        int offset = 0,
         bool isExceedingEdge = false)
     {
         var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
@@ -415,28 +447,30 @@ public abstract class Block
         var a = alignment;
         var notNan = float.IsNaN(a) == false;
 
+        offset -= 1;
+
         if (notNan && edge is Side.Top or Side.Bottom && targetEdge is Side.Top or Side.Bottom)
-            x = (int)MathF.Round(Map(a, (0, 1), ex ? (rx - w + 1, rxw - 1) : (rx, rxw - w)));
+            x = (int)MathF.Round(Map(a, (0, 1), ex ? (rx - w - offset, rxw + offset) : (rx, rxw - w)));
         else if (notNan && edge is Side.Left or Side.Right && targetEdge is Side.Left or Side.Right)
-            y = (int)MathF.Round(Map(a, (0, 1), ex ? (ry - h + 1, ryh - 1) : (ry, ryh - h)));
+            y = (int)MathF.Round(Map(a, (0, 1), ex ? (ry - h - offset, ryh + offset) : (ry, ryh - h)));
 
         if (edge == Side.Left && targetEdge is Side.Left or Side.Right)
-            x = targetEdge == Side.Left ? rx : rxw - 1;
+            x = targetEdge == Side.Left ? rx : rxw + offset;
         else if (edge == Side.Left)
-            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx, rxw - 1)));
+            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx, rxw + offset)));
 
         if (edge == Side.Right && targetEdge is Side.Left or Side.Right)
             x = targetEdge == Side.Left ? rxw : rxw - w;
         else if (edge == Side.Right)
-            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx - w + 1, rxw - w)));
+            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx - w - offset, rxw - w)));
 
         if (edge == Side.Top && targetEdge is Side.Left or Side.Right)
-            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry, ryh - 1)));
+            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry, ryh + offset)));
         else if (edge == Side.Top)
-            y = targetEdge == Side.Top ? ry : ryh - 1;
+            y = targetEdge == Side.Top ? ry : ryh + offset;
 
         if (edge == Side.Bottom && targetEdge is Side.Left or Side.Right)
-            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry - h + 1, ryh - h)));
+            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry - h - offset, ryh - h)));
         else if (edge == Side.Bottom)
             y = targetEdge == Side.Top ? ryh : ryh - h;
 
@@ -462,10 +496,12 @@ public abstract class Block
         Side targetEdge,
         (int x, int y, int width, int height)? rectangle = null,
         float alignment = float.NaN,
+        int offset = 0,
         bool isExceedingEdge = false)
     {
         var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
-        AlignEdges(opposites[(int)targetEdge], targetEdge, rectangle, alignment, isExceedingEdge);
+        AlignEdges(opposites[(int)targetEdge], targetEdge, rectangle, alignment, offset + 1,
+            isExceedingEdge);
     }
     public void Fit((int x, int y, int width, int height)? rectangle = null)
     {
@@ -545,16 +581,6 @@ public abstract class Block
     /// </summary>
     protected virtual void OnInput()
     {
-    }
-
-    /// <summary>
-    /// Inherits properties from the parent block.
-    /// </summary>
-    /// <param name="parent">The parent block to inherit properties from.</param>
-    protected internal void InheritParent(Block parent)
-    {
-        isHidden |= parent.IsHidden;
-        isDisabled |= parent.IsDisabled;
     }
 
     /// <summary>
@@ -696,7 +722,7 @@ public abstract class Block
         listSizeTrimOffset,
         sizeMinimum = (1, 1),
         sizeMaximum = (int.MaxValue, int.MaxValue);
-    internal bool hasParent, isTextReadonly, isHidden, isDisabled;
+    internal bool hasParent, isTextReadonly, wasMaskSet;
     internal readonly string typeName;
     private int byteOffset;
     private bool wasHovered, isReadyForDoubleClick;
@@ -706,6 +732,7 @@ public abstract class Block
     internal Action<(int deltaX, int deltaY)>? drag;
 
     internal string text = "";
+    internal (int x, int y, int width, int height) mask;
 
     private void Init()
     {

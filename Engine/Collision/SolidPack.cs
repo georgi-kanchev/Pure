@@ -33,7 +33,7 @@ public class SolidPack : Pack<Solid>
             var h = BitConverter.ToSingle(Get<float>());
             var color = BitConverter.ToUInt32(Get<uint>());
 
-            Add(new Solid((w, h), (x, y), color));
+            Add(new Solid(x, y, w, h, color));
         }
 
         byte[] Get<T>()

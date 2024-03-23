@@ -22,7 +22,7 @@ public class Prompt : Block
         UpdateBlockPosition();
 
         buttonCount = Math.Max(buttonCount, 1);
-        isHidden = false;
+        IsHidden = false;
 
         buttons.Clear();
         for (var i = 0; i < buttonCount; i++)
@@ -51,11 +51,11 @@ public class Prompt : Block
     public void Close()
     {
         currentBlock = null;
-        isHidden = true;
+        IsHidden = true;
     }
     public void TriggerButton(int index)
     {
-        if (index < 0 || index >= buttons.Count || isDisabled)
+        if (index < 0 || index >= buttons.Count || IsDisabled)
             return;
 
         buttons[index].Interact(Interaction.Trigger);
@@ -87,7 +87,7 @@ public class Prompt : Block
     private void Init()
     {
         hasParent = true;
-        isHidden = true;
+        IsHidden = true;
     }
     private void UpdateBlockPosition()
     {
@@ -103,7 +103,7 @@ public class Prompt : Block
 
     internal override void OnChildrenDisplay()
     {
-        if (isHidden)
+        if (IsHidden)
             return;
 
         foreach (var btn in buttons)
@@ -111,7 +111,7 @@ public class Prompt : Block
     }
     internal override void OnChildrenUpdate()
     {
-        if (isHidden)
+        if (IsHidden)
             return;
 
         var sz = Input.TilemapSize;
@@ -119,8 +119,8 @@ public class Prompt : Block
         var (w, h) = (sz.width / 2, 0);
         var (x, y) = (sz.width / 4, sz.height / 2 + lines / 2);
 
-        panel.isDisabled = isHidden;
-        panel.position = isHidden ? (int.MaxValue, int.MaxValue) : (0, 0);
+        panel.IsDisabled = IsHidden;
+        panel.position = IsHidden ? (int.MaxValue, int.MaxValue) : (0, 0);
         panel.size = sz;
         panel.Update();
 
@@ -138,7 +138,7 @@ public class Prompt : Block
             }
         }
 
-        position = isHidden ? (int.MaxValue, int.MaxValue) : (x, y - lines);
+        position = IsHidden ? (int.MaxValue, int.MaxValue) : (x, y - lines);
         size = (w, lines + h + 1);
 
         var btnXs = Distribute(buttons.Count, (x, x + w));

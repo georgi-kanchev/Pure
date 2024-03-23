@@ -1,50 +1,58 @@
 ﻿namespace Pure.Engine.Collision;
 
 using System.IO.Compression;
-using System.Runtime.InteropServices;
 
 /// <summary>
 /// Represents a solid in 2D space defined by its position and size.
 /// </summary>
 public struct Solid
 {
-    /// <summary>
-    /// Gets or sets the position of the top-left corner of the solid.
-    /// </summary>
-    public (float x, float y) Position { get; set; }
-    /// <summary>
-    /// Gets or sets the size of the solid.
-    /// </summary>
-    public (float width, float height) Size { get; set; }
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Width { get; set; }
+    public float Height { get; set; }
+
+    public (float x, float y) Position
+    {
+        get => (X, Y);
+        set
+        {
+            X = value.x;
+            Y = value.y;
+        }
+    }
+    public (float width, float height) Size
+    {
+        get => (Width, Height);
+        set
+        {
+            Width = value.width;
+            Height = value.height;
+        }
+    }
+
     /// <summary>
     /// Gets or sets the color of the solid.
     /// </summary>
     public uint Color { get; set; }
 
-    /// <summary>
-    /// Initializes a new solid instance with the specified 
-    /// position, size and color.
-    /// </summary>
-    /// <param name="position">The position of the top-left corner of the solid. 
-    /// The default value is (0, 0).</param>
-    /// <param name="size">The size of the solid.</param>
-    /// <param name="color">The color of the solid.</param>
     public Solid(
-        (float width, float height) size,
-        (float x, float y) position = default,
+        float x,
+        float y,
+        float width,
+        float height,
         uint color = uint.MaxValue)
     {
-        Position = position;
-        Size = size;
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
         Color = color;
     }
     public Solid(
-        float width,
-        float height,
-        float x = default,
-        float y = default,
-        uint color = uint.MaxValue)
-        : this((width, height), (x, y), color)
+        (float x, float y) position,
+        (float width, float height) size,
+        uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
     {
     }
     public Solid(byte[] bytes)
@@ -52,14 +60,13 @@ public struct Solid
         var b = Decompress(bytes);
         var offset = 0;
 
-        Position = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
-        Size = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
-        Color = BitConverter.ToUInt32(Get<uint>());
+        X = BitConverter.ToSingle(Get());
+        Y = BitConverter.ToSingle(Get());
+        Width = BitConverter.ToSingle(Get());
+        Height = BitConverter.ToSingle(Get());
+        Color = BitConverter.ToUInt32(Get());
 
-        byte[] Get<T>()
-        {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
-        }
+        byte[] Get() => GetBytesFrom(b, 4, ref offset);
     }
     public Solid(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -83,16 +90,14 @@ public struct Solid
     /// A bundle tuple containing the position, size and the color of the solid.</returns>
     public (float x, float y, float width, float height, uint color) ToBundle()
     {
-        return (Position.x, Position.y, Size.width, Size.height, Color);
+        return (X, Y, Width, Height, Color);
     }
     /// <returns>
     /// A string that represents this solid. 
     /// The string has the format: "Position[x y] Size[width height]".</returns>
     public override string ToString()
     {
-        var (x, y) = Position;
-        var (w, h) = Size;
-        return $"{nameof(Position)}[{x} {y}] {nameof(Size)}[{w} {h}]";
+        return $"{nameof(Position)}[{X} {Y}] {nameof(Size)}[{Width} {Height}]";
     }
 
     /// <param name="solidPack">
@@ -144,25 +149,43 @@ public struct Solid
         return containsX && containsY;
     }
 
-    /// <summary>
-    /// Implicitly converts a bundle tuple of position, size and color into a solid.
-    /// </summary>
-    /// <param name="bundle">The bundle tuple to convert.</param>
-    /// <returns>A new solid instance.</returns>
-    public static implicit operator
-        Solid((float x, float y, float width, float height, uint color) bundle)
+    public static implicit operator Solid((int x, int y, int width, int height) rectangle)
     {
-        return new((bundle.x, bundle.y), (bundle.width, bundle.height), bundle.color);
+        return new(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
     }
-    /// <summary>
-    /// Implicitly converts a solid into a bundle tuple of position, size and color.
-    /// </summary>
-    /// <param name="solid">The solid to convert.</param>
-    /// <returns>A bundle tuple containing the position, size and color of the solid.</returns>
+    public static implicit operator Solid(
+        (int x, int y, int width, int height, uint color) bundle)
+    {
+        return new(bundle.x, bundle.y, bundle.width, bundle.height, bundle.color);
+    }
+    public static implicit operator (int x, int y, int width, int height, uint color)(
+        Solid solid)
+    {
+        return ((int)solid.X, (int)solid.Y, (int)solid.Width, (int)solid.Height, solid.Color);
+    }
+    public static implicit operator (int x, int y, int width, int height)(
+        Solid solid)
+    {
+        return ((int)solid.X, (int)solid.Y, (int)solid.Width, (int)solid.Height);
+    }
+    public static implicit operator Solid((float x, float y, float width, float height) rectangle)
+    {
+        return new(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+    }
+    public static implicit operator Solid(
+        (float x, float y, float width, float height, uint color) bundle)
+    {
+        return new(bundle.x, bundle.y, bundle.width, bundle.height, bundle.color);
+    }
     public static implicit operator (float x, float y, float width, float height, uint color)(
         Solid solid)
     {
         return solid.ToBundle();
+    }
+    public static implicit operator (float x, float y, float width, float height)(
+        Solid solid)
+    {
+        return (solid.Position.x, solid.Position.y, solid.Size.width, solid.Size.height);
     }
     public static implicit operator byte[](Solid solid)
     {

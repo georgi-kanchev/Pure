@@ -50,12 +50,12 @@ public class InputBox : Block
             CursorIndices = (cx, cy);
         }
     }
-    public string? Mask
+    public string? SymbolMask
     {
-        get => mask;
+        get => symbolMask;
         set
         {
-            mask = value;
+            symbolMask = value;
             UpdateText();
         }
     }
@@ -439,7 +439,7 @@ public class InputBox : Block
     private Action<string>? type;
     private Action? submit;
     private SymbolGroup symbolGroup;
-    private string? mask;
+    private string? symbolMask;
 
     static InputBox()
     {
@@ -533,8 +533,8 @@ public class InputBox : Block
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
             var result = scrX >= secondIndex ? string.Empty : line[scrX..secondIndex];
 
-            if (Mask != null)
-                result = Regex.Replace(result, ".", Mask);
+            if (SymbolMask != null)
+                result = Regex.Replace(result, ".", SymbolMask);
 
             str.Append(newLine + result);
         }
@@ -661,7 +661,7 @@ public class InputBox : Block
         var (hx, hy) = Input.Position;
         var isWholeLineSelected = sx == 0 && cx == lines[cy].Length;
 
-        var skipWord = clicks == 2 && Mask != null; // there are only whole lines
+        var skipWord = clicks == 2 && SymbolMask != null; // there are only whole lines
         clicks += skipWord ? 1 : 0;
 
         var skipLine = clicks == 3 && (IsSingleLine || isWholeLineSelected);
@@ -1018,7 +1018,7 @@ public class InputBox : Block
     }
     private int GetWordEndOffset(int step)
     {
-        if (Mask != null)
+        if (SymbolMask != null)
             return step < 0 ? -cx : lines[cy].Length - cx;
 
         var index = step < 0 ? -1 : 0;

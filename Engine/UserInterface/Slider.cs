@@ -8,6 +8,11 @@ using System.Diagnostics.CodeAnalysis;
 public class Slider : Block
 {
     /// <summary>
+    /// Gets the handle button of the slider.
+    /// </summary>
+    public Button Handle { get; private set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether this slider is vertical or horizontal.
     /// </summary>
     public bool IsVertical
@@ -26,11 +31,6 @@ public class Slider : Block
         get => progress;
         set => progress = Math.Clamp(value, 0, 1);
     }
-
-    /// <summary>
-    /// Gets the handle button of the slider.
-    /// </summary>
-    public Button Handle { get; private set; }
 
     public Slider((int x, int y) position = default, bool isVertical = false) : base(position)
     {
@@ -129,7 +129,8 @@ public class Slider : Block
             MoveTo(((int)x, (int)y));
         });
 
-        Handle = new((int.MaxValue, int.MaxValue)) { Size = (1, 1), hasParent = true };
+        Handle = new((int.MaxValue, int.MaxValue))
+            { Size = (1, 1), wasMaskSet = true, hasParent = true };
         Handle.OnDrag(_ =>
         {
             var (x, y) = Input.Position;
@@ -157,14 +158,12 @@ public class Slider : Block
         }
         else
         {
-            {
-                Handle.position = (x + index, y);
-                Handle.size = (1, h);
-            }
-
-            Handle.InheritParent(this);
-            Handle.Update();
+            Handle.position = (x + index, y);
+            Handle.size = (1, h);
         }
+
+        Handle.mask = mask;
+        Handle.Update();
     }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)

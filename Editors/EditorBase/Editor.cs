@@ -67,7 +67,7 @@ public class Editor
         get => viewPosition;
         set
         {
-            var (w, h) = MapsEditor.ViewSize;
+            var (w, h) = MapsEditor.View.Size;
             var (cw, ch) = (w * 4f * ViewZoom, h * 4f * ViewZoom);
             viewPosition = (Math.Clamp(value.x, -cw, cw), Math.Clamp(value.y, -ch, ch));
         }
@@ -91,7 +91,7 @@ public class Editor
         var (width, height) = Monitor.Current.AspectRatio;
         ChangeMapSize((50, 50));
         MapsEditorVisible = new() { true, true, true };
-        MapsEditor.ViewSize = (50, 50);
+        MapsEditor.View = new(MapsEditor.View.Position, (50, 50));
         MapsUi = new((int)LayerMapsUi.Count, (width * 5, height * 5));
 
         MapPanel = new() { IsResizable = false, IsMovable = false };
@@ -113,7 +113,7 @@ public class Editor
         LayerGrid = new(MapGrid.Size);
         LayerMap = new(MapsEditor.Size);
         LayerUi = new(MapsUi.Size) { Zoom = 3f };
-        Input.TilemapSize = MapsUi.ViewSize;
+        Input.TilemapSize = MapsUi.View.Size;
 
         for (var i = 0; i < 5; i++)
             CreateViewButton(i);
@@ -163,9 +163,9 @@ public class Editor
 
             MapsUi.Flush();
 
-            LayerGrid.TilemapSize = MapGrid.ViewSize;
-            LayerMap.TilemapSize = MapsEditor.ViewSize;
-            LayerUi.TilemapSize = MapsUi.ViewSize;
+            LayerGrid.TilemapSize = MapGrid.View.Size;
+            LayerMap.TilemapSize = MapsEditor.View.Size;
+            LayerUi.TilemapSize = MapsUi.View.Size;
 
             Input.Update(
                 Mouse.ButtonIdsPressed,
@@ -179,8 +179,7 @@ public class Editor
 
             //========
 
-            MapGrid.ViewPosition = MapsEditor.ViewPosition;
-            MapGrid.ViewSize = MapsEditor.ViewSize;
+            MapGrid.View = MapsEditor.View;
             var gridView = MapGrid.ViewUpdate();
             LayerGrid.Offset = ViewPosition;
             LayerGrid.Zoom = ViewZoom;
@@ -189,12 +188,12 @@ public class Editor
             //========
 
             var (x, y) = LayerMap.PixelToWorld(Mouse.CursorPosition);
-            var (vw, vy) = MapsEditor.ViewPosition;
+            var (vw, vy) = MapsEditor.View.Position;
             prevWorld = MousePositionWorld;
             MousePositionWorld = (x + vw, y + vy);
             Input.PositionPrevious = prevWorld;
             Input.Position = MousePositionWorld;
-            Input.TilemapSize = MapsEditor.ViewSize;
+            Input.TilemapSize = MapsEditor.View.Size;
 
             TryViewInteract();
             OnUpdateEditor?.Invoke();
@@ -215,7 +214,7 @@ public class Editor
             MousePositionUi = LayerUi.PixelToWorld(Mouse.CursorPosition);
             Input.Position = MousePositionUi;
             Input.PositionPrevious = prevUi;
-            Input.TilemapSize = MapsUi.ViewSize;
+            Input.TilemapSize = MapsUi.View.Size;
 
             UpdateHud();
             Ui.Update();
@@ -355,23 +354,19 @@ public class Editor
         var color = Color.Gray.ToDark(0.66f);
         var (x, y) = (0, 0);
 
-        MapGrid.Fill(new Tile(LayerMap.TileIdFull, Color.Brown.ToDark(0.8f)));
+        MapGrid.Fill(null, new Tile(LayerMap.TileIdFull, Color.Brown.ToDark(0.8f)));
 
         for (var i = 0; i < size.width + GRID_GAP; i += GRID_GAP)
         {
             var newX = x - (x + i) % GRID_GAP;
-            MapGrid.SetLine(
-                (newX + i, y),
-                (newX + i, y + size.height),
+            MapGrid.SetLine((newX + i, y), (newX + i, y + size.height), null,
                 new Tile(LayerMap.TileIdFull, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
-            MapGrid.SetLine(
-                (x, newY + i),
-                (x + size.width, newY + i),
+            MapGrid.SetLine((x, newY + i), (x + size.width, newY + i), null,
                 new Tile(LayerMap.TileIdFull, color));
         }
 
@@ -476,7 +471,7 @@ public class Editor
         if (i != 0 || text.Length != 2)
             return;
 
-        var (vw, vh) = MapsEditor.ViewSize;
+        var (vw, vh) = MapsEditor.View.Size;
         var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
         var packCopy = MapsEditor.Duplicate();
 
@@ -484,7 +479,7 @@ public class Editor
 
         for (var j = 0; j < packCopy.Count; j++)
             MapsEditor[j].SetGroup((0, 0), packCopy[j]);
-        MapsEditor.ViewSize = (vw, vh);
+        MapsEditor.View = new(MapsEditor.View.Position, (vw, vh));
 
         SetGrid();
         ViewMove(); // reclamp view position
@@ -498,7 +493,7 @@ public class Editor
             return;
 
         var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
-        MapsEditor.ViewSize = (w, h);
+        MapsEditor.View = new(MapsEditor.View.Position, (w, h));
         ViewMove(); // reclamp view position
         Log($"View {w}x{h}");
     }
@@ -527,17 +522,17 @@ public class Editor
 
         void Trigger()
         {
-            var (x, y) = MapsEditor.ViewPosition;
-            MapsEditor.ViewPosition = (x + offX * 5, y + offY * 5);
+            var (x, y) = MapsEditor.View.Position;
+            MapsEditor.View = new((x + offX * 5, y + offY * 5), MapsEditor.View.Size);
 
             if (offX == 0 && offY == 0)
             {
-                MapsEditor.ViewPosition = default;
+                MapsEditor.View = new(default, MapsEditor.View.Size);
                 Log("View Reset");
             }
 
-            if (x != MapsEditor.ViewPosition.x || y != MapsEditor.ViewPosition.y)
-                Log($"View {MapsEditor.ViewPosition.x}, {MapsEditor.ViewPosition.y}");
+            if (x != MapsEditor.View.X || y != MapsEditor.View.Y)
+                Log($"View {MapsEditor.View.X}, {MapsEditor.View.Y}");
         }
     }
 
@@ -551,7 +546,7 @@ public class Editor
         var bottomY = MapsUi.Size.height - 1;
         var (mx, my) = MousePositionWorld;
         var (mw, mh) = MapsEditor.Size;
-        var (vw, vh) = MapsEditor.ViewSize;
+        var (vw, vh) = MapsEditor.View.Size;
         const int FRONT = (int)LayerMapsUi.Front;
 
         if (Time.UpdateCount % 60 == 0)
@@ -561,9 +556,7 @@ public class Editor
         MapPanel.Size = (22, 3);
         MapPanel.Update();
 
-        MapsUi[(int)LayerMapsUi.Back].SetBox(
-            MapPanel.Position,
-            MapPanel.Size,
+        MapsUi[(int)LayerMapsUi.Back].SetBox(MapPanel.Area,
             new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()),
             Tile.BOX_CORNER_ROUND,
             Tile.SHADE_OPAQUE,
@@ -574,8 +567,7 @@ public class Editor
         MapsUi[FRONT].SetTextLine((12, bottomY), $"{vw} x {vh}");
 
         MapsUi[FRONT].SetTextRectangle(
-            (x, bottomY),
-            (TEXT_WIDTH, 1),
+            (x, bottomY, TEXT_WIDTH, 1),
             $"Cursor {(int)mx}, {(int)my}",
             alignment: Alignment.Center);
 
@@ -586,8 +578,7 @@ public class Editor
         }
 
         MapsUi[FRONT].SetTextRectangle(
-            (x, 0),
-            (TEXT_WIDTH, TEXT_HEIGHT),
+            (x, 0, TEXT_WIDTH, TEXT_HEIGHT),
             infoText,
             alignment: Alignment.Top,
             scrollProgress: 1f);

@@ -16,18 +16,18 @@ public static class Collision
         var background = new Tilemap(tilemap.Size);
 
         var collisionMap = new SolidMap();
-        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid((0.5f, 1), (0, 0), Color.Yellow)); // lake
-        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Solid((1, 0.5f), (0, 0), Color.Yellow)); // lake
-        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE, new Solid((1, 1))); // house roof
-        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Solid((1, 1))); // house wall
-        collisionMap.SolidsAdd(Tile.UPPERCASE_I, new Solid((1, 1))); // tree trunk
-        collisionMap.SolidsAdd(Tile.PATTERN_33, new Solid((1, 1))); // tree top
+        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 0.5f, 1, Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1, 0.5f, Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE, new Solid(0, 0, 1, 1)); // house roof
+        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Solid(0, 0, 1, 1)); // house wall
+        collisionMap.SolidsAdd(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1)); // tree trunk
+        collisionMap.SolidsAdd(Tile.PATTERN_33, new Solid(0, 0, 1, 1)); // tree top
 
         // icon tiles are 7x7, not 8x8, cut one row & column,
         // hitbox and tile on screen might mismatch since the tile is pixel perfect
         // and the hitbox is not
         const float SCALE = 1f - 1f / 8f;
-        var hitbox = new SolidPack((0, 0), (SCALE, SCALE), new Solid((1f, 1f)));
+        var hitbox = new SolidPack((0, 0), (SCALE, SCALE), new Solid(0, 0, 1, 1));
         var layer = new Layer(tilemap.Size);
 
         tilemap.FillWithRandomGrass();
@@ -47,7 +47,7 @@ public static class Collision
         {
             var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
             var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
-            collisionMap.IgnoredCellsAdd(new Solid((3, 3), (mx - 1, my - 1)));
+            collisionMap.IgnoredCellsAdd(new Solid(mx - 1, my - 1, 3, 3));
         });
         Keyboard.Key.S.OnPress(() => collisionMap.IgnoredCellsClear());
 
@@ -91,19 +91,20 @@ public static class Collision
         foreach (var t in positions)
         {
             var (x, y) = t;
-            tilemap.SetEllipse((x, y - 1), (1, 1), true,
+            tilemap.SetEllipse((x, y - 1), (1, 1), true, null,
                 new Tile(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
             tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
         }
     }
     private static void SetBridge(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
-        tilemap.SetLine(pointA, pointB, new Tile(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
+        tilemap.SetLine(pointA, pointB, null, new Tile(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
     }
     private static void SetRoad(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
         var angle = pointA.x == pointB.x ? 1 : 0;
-        tilemap.SetLine(pointA, pointB, new Tile(Tile.BAR_SPIKE_STRAIGHT, Color.Brown, (sbyte)angle));
+        tilemap.SetLine(pointA, pointB, null,
+            new Tile(Tile.BAR_SPIKE_STRAIGHT, Color.Brown, (sbyte)angle));
     }
     private static void SetHouses(this Tilemap tilemap, params (int x, int y)[] positions)
     {
@@ -127,8 +128,8 @@ public static class Collision
         (int x, int y) position,
         (int width, int height) radius)
     {
-        tilemap.SetEllipse(position, radius, true, Tile.MATH_APPROXIMATE);
-        tilemap.Replace((0, 0), tilemap.Size, Tile.MATH_APPROXIMATE,
+        tilemap.SetEllipse(position, radius, true, null, Tile.MATH_APPROXIMATE);
+        tilemap.Replace((0, 0, tilemap.Size.width, tilemap.Size.height), Tile.MATH_APPROXIMATE, null,
             new Tile(Tile.ICON_WAVE, Color.Blue),
             new Tile(Tile.ICON_WAVE, Color.Blue, 2),
             new Tile(Tile.ICON_WAVES, Color.Blue),
@@ -137,7 +138,7 @@ public static class Collision
     private static void FillWithRandomGrass(this Tilemap tilemap)
     {
         var color = Color.Green.ToDark(0.4f);
-        tilemap.Replace((0, 0), tilemap.Size, 0,
+        tilemap.Replace((0, 0, tilemap.Size.width, tilemap.Size.height), 0, null,
             new Tile(Tile.SHADE_1, color),
             new Tile(Tile.SHADE_1, color, 1),
             new Tile(Tile.SHADE_1, color, 2),

@@ -128,7 +128,7 @@ public static class Program
             // edit the default tilemapper to display ascii characters
             var (x, y) = promptSymbol.Position;
             var value = (int)promptSymbol.Value;
-            editor.MapsUi[BACK + 1].SetRectangle((x + 2, y + 1, 10, 1), Tile.EMPTY); // erase text
+            editor.MapsUi[BACK + 1].SetArea((x + 2, y + 1, 10, 1), null, Tile.EMPTY); // erase text
             editor.MapsUi[BACK + 1].SetTextLine((x + 2, y + 1), $"{value} '{Convert.ToChar(value)}'");
         });
     }
