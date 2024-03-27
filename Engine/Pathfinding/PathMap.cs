@@ -8,31 +8,30 @@ public class PathMap
     public (int width, int height) Size
     {
         get => pathfind.Size;
-        set => pathfind.Size = value;
     }
 
     public PathMap((int width, int height) size)
     {
-        Size = size;
+        pathfind.Size = size;
+        Init();
     }
     public PathMap(byte[] bytes)
     {
         var b = Decompress(bytes);
         var offset = 0;
 
-        Size = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-        var nodeCount = BitConverter.ToInt32(Get<int>());
+        pathfind.Size = (BitConverter.ToInt32(Get()), BitConverter.ToInt32(Get()));
+        var nodeCount = BitConverter.ToInt32(Get());
         for (var i = 0; i < nodeCount; i++)
         {
-            var pos = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-            var penalty = BitConverter.ToSingle(Get<float>());
+            var pos = (BitConverter.ToInt32(Get()), BitConverter.ToInt32(Get()));
+            var penalty = BitConverter.ToSingle(Get());
             SetObstacle(penalty, pos);
         }
 
-        byte[] Get<T>()
-        {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
-        }
+        Init();
+
+        byte[] Get() => GetBytesFrom(b, 4, ref offset);
     }
     public PathMap(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -73,7 +72,7 @@ public class PathMap
     }
     public void SetObstacle(float penalty, int tileId, int[,]? tileIds)
     {
-        if (tileIds == null)
+        if (tileIds == null || tileIds.Length == 0)
             return;
 
         for (var i = 0; i < tileIds.GetLength(1); i++)
@@ -150,6 +149,11 @@ public class PathMap
     // [remaining]				- is walkable bools (1 bit per bool)
 
     private readonly Astar pathfind = new();
+
+    private void Init()
+    {
+        SetObstacle(0, 0, new int[Size.width, Size.height]);
+    }
 
     private static byte[] Compress(byte[] data)
     {

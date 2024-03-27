@@ -70,12 +70,6 @@ internal class Astar
         if (IsInside(pos) == false)
             return;
 
-        if (penalty == 0)
-        {
-            grid.Remove(pos);
-            return;
-        }
-
         if (grid.ContainsKey(pos) == false)
             grid.Add(pos, new(pos, 0));
 
@@ -101,11 +95,14 @@ internal class Astar
         var end = new Node(((int)b.x, (int)b.y), 0);
         var open = new PriorityQueue<Node, float>();
         var closed = new List<Node>();
-        var neighbours = new List<Node>();
         var current = start;
         var max = Size.width * Size.height;
 
         open.Enqueue(start, start.F);
+
+        var endNode = GetNode(((int)b.x, (int)b.y));
+        if (endNode == null || float.IsPositiveInfinity(endNode.penalty))
+            max = 0;
 
         for (var i = 0; i < max; i++)
         {
@@ -118,7 +115,7 @@ internal class Astar
             if (current.position == b)
                 break;
 
-            neighbours = GetAdjacentNodes(current);
+            var neighbours = GetAdjacentNodes(current);
 
             foreach (var n in neighbours)
             {
@@ -132,10 +129,8 @@ internal class Astar
 
                 var (nx, ny) = n.position;
                 var (ex, ey) = end.position;
-                var nPos = new Vector2(nx, ny);
-                var endPos = new Vector2(ex, ey);
 
-                n.distanceToTarget = Vector2.Distance(nPos, endPos);
+                n.distanceToTarget = Vector2.Distance(new(nx, ny), new(ex, ey));
                 n.cost = n.penalty + n.parent.cost;
                 open.Enqueue(n, n.F);
             }

@@ -22,8 +22,9 @@ public static class Pathfinding
         tilemap.SetLine((0, 0), (48, 27), null, Tile.SHADE_1);
         tilemap.SetLine((0, 1), (48, 27), null, Tile.SHADE_1);
         tilemap.SetLine((1, 0), (48, 27), null, Tile.SHADE_1);
+
         pathMap.SetObstacle(float.PositiveInfinity, Tile.SHADE_OPAQUE, tilemap);
-        //grid.SetObstacle(10, Tile.SHADE_1, tilemap);
+        pathMap.SetObstacle(10, Tile.SHADE_1, tilemap);
 
         while (Window.KeepOpen())
         {

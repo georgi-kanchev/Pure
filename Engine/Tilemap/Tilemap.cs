@@ -8,15 +8,9 @@ using System.Runtime.InteropServices;
 /// </summary>
 public enum Alignment
 {
-    TopLeft,
-    Top,
-    TopRight,
-    Left,
-    Center,
-    Right,
-    BottomLeft,
-    Bottom,
-    BottomRight
+    TopLeft, Top, TopRight,
+    Left, Center, Right,
+    BottomLeft, Bottom, BottomRight
 }
 
 /// <summary>
@@ -127,8 +121,7 @@ public class Tilemap
     }
     /// <returns>
     /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,]
-        ToBundle()
+    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,] ToBundle()
     {
         return bundleCache;
     }
@@ -771,6 +764,37 @@ public class Tilemap
         if (size != 2)
             SetArea((x + off, y, size - 2, 1), mask, new Tile(tileId, tint));
     }
+    public void SetAutoTile(Area area, Tile[] rule, Tile substitute, Area? mask = null)
+    {
+        if (rule is not { Length: 9 })
+            return;
+
+        var changes = new Dictionary<(int x, int y), Tile>();
+
+        for (var i = area.X; i < area.Height; i++)
+            for (var j = area.Y; j < area.Width; j++)
+            {
+                var isMatch = true;
+
+                for (var k = 0; k < rule.Length; k++)
+                {
+                    var (ox, oy) = (k % 3 - 1, k / 3 - 1);
+                    var offTile = TileAt((j + ox, i + oy));
+
+                    if (offTile.Id == rule[k].Id || rule[k] < 0)
+                        continue;
+
+                    isMatch = false;
+                    break;
+                }
+
+                if (isMatch)
+                    changes.Add((j, i), substitute);
+            }
+
+        foreach (var kvp in changes)
+            SetTile(kvp.Key, kvp.Value, mask);
+    }
 
     /// <summary>
     /// Configures the tile identifiers for text characters and numbers assuming they are sequential.
@@ -879,6 +903,10 @@ public class Tilemap
         Tilemap tilemap)
     {
         return tilemap.ToBundle();
+    }
+    public static implicit operator Area(Tilemap tilemap)
+    {
+        return (0, 0, tilemap.Size.width, tilemap.Size.height);
     }
     public static implicit operator int[,](Tilemap tilemap)
     {
