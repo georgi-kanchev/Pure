@@ -7,13 +7,23 @@ using System.Globalization;
 /// </summary>
 public struct Angle
 {
-    /// <summary>
-    /// Returns a value that represents a NaN (not a number) angle.
-    /// </summary>
-    public static Angle NaN
+    public static Angle Up
     {
-        get => float.NaN;
+        get => 270;
     }
+    public static Angle Down
+    {
+        get => 90;
+    }
+    public static Angle Left
+    {
+        get => 180;
+    }
+    public static Angle Right
+    {
+        get => 0;
+    }
+
     /// <summary>
     /// Gets a value indicating whether the angle is NaN (not a number).
     /// </summary>

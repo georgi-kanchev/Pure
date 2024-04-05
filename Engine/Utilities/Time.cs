@@ -56,68 +56,36 @@ public static class Time
     /// Gets the real time clock taken from <see cref="DateTime.Now"/> in seconds ranged
     /// 0 to 86399)<br></br>or in clock hours ranged 12 AM/00:00/24:00 to 11:59:59 AM/23:59:59.
     /// </summary>
-    public static float Clock
-    {
-        get;
-        private set;
-    }
+    public static float Clock { get; private set; }
 
     /// <summary>
     /// Gets or sets the maximum delta time between updates.
     /// </summary>
-    public static float DeltaMax
-    {
-        get;
-        set;
-    } = 0.1f;
+    public static float DeltaMax { get; set; } = 0.1f;
     /// <summary>
     /// Gets the delta time since the last update capped at <see cref="DeltaMax"/>.
     /// </summary>
-    public static float Delta
-    {
-        get;
-        private set;
-    }
+    public static float Delta { get; private set; }
     /// <summary>
     /// Gets the raw delta time since the last update.
     /// </summary>
-    public static float DeltaRaw
-    {
-        get;
-        private set;
-    }
+    public static float DeltaRaw { get; private set; }
     /// <summary>
     /// Gets the number of updates per second.
     /// </summary>
-    public static float UpdatesPerSecond
-    {
-        get;
-        private set;
-    }
+    public static float UpdatesPerSecond { get; private set; }
     /// <summary>
     /// Gets the average number of updates per second.
     /// </summary>
-    public static float UpdatesPerSecondAverage
-    {
-        get;
-        private set;
-    }
+    public static float UpdatesPerSecondAverage { get; private set; }
     /// <summary>
     /// Gets the runtime clock in seconds.
     /// </summary>
-    public static float RuntimeClock
-    {
-        get;
-        private set;
-    }
+    public static float RuntimeClock { get; private set; }
     /// <summary>
     /// Gets the number of updates that have occurred.
     /// </summary>
-    public static uint UpdateCount
-    {
-        get;
-        private set;
-    }
+    public static uint UpdateCount { get; private set; }
 
     /// <summary>
     /// Updates the clock and timers. Should be called once per frame.
@@ -260,7 +228,7 @@ public static class Time
     /// <param name="isRepeating">Whether to repeat the call at the specified interval.</param>
     public static void CallAfter(float seconds, Action method, bool isRepeating = false)
     {
-        timers.Add(new Timer(seconds, isRepeating, method));
+        timers.Add(new(seconds, isRepeating, method));
     }
     /// <summary>
     /// Cancels a scheduled method call.

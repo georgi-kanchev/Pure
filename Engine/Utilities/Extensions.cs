@@ -93,7 +93,7 @@ public static class Extensions
             return false;
         else if (gates.ContainsKey(uniqueId) == false && condition)
         {
-            gates[uniqueId] = new Gate() { value = true, entries = 1 };
+            gates[uniqueId] = new() { value = true, entries = 1 };
             return true;
         }
         else
@@ -135,15 +135,13 @@ public static class Extensions
             return true;
         }
 
-        if (condition &&
-            holdDelay.Elapsed.TotalSeconds > delay &&
-            holdFrequency.Elapsed.TotalSeconds > frequency)
-        {
-            holdFrequency.Restart();
-            return true;
-        }
+        if (condition == false ||
+            holdDelay.Elapsed.TotalSeconds <= delay ||
+            holdFrequency.Elapsed.TotalSeconds <= frequency)
+            return false;
 
-        return false;
+        holdFrequency.Restart();
+        return true;
     }
 
     public static T[] Flatten<T>(this T[,] matrix)

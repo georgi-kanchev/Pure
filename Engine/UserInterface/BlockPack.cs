@@ -86,6 +86,10 @@ public class BlockPack
     {
     }
 
+    public Block[] ToArray()
+    {
+        return data.ToArray();
+    }
     public string ToBase64()
     {
         return Convert.ToBase64String(ToBytes());
@@ -194,6 +198,10 @@ public class BlockPack
     public static implicit operator BlockPack(byte[] bytes)
     {
         return new(bytes);
+    }
+    public static implicit operator Block[](BlockPack blockPack)
+    {
+        return blockPack.ToArray();
     }
 
 #region Backend

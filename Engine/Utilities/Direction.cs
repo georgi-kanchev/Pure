@@ -8,6 +8,23 @@ namespace Pure.Engine.Utilities;
 /// </summary>
 public struct Direction
 {
+    public static Direction Up
+    {
+        get => new(0, -1);
+    }
+    public static Direction Down
+    {
+        get => new(0, 1);
+    }
+    public static Direction Left
+    {
+        get => new(-1, 0);
+    }
+    public static Direction Right
+    {
+        get => new(1, 0);
+    }
+
     /// <summary>
     /// A direction instance representing an invalid direction.
     /// </summary>

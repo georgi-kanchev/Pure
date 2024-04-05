@@ -95,6 +95,12 @@ public static class Mouse
     /// </summary>
     public static int ScrollDelta { get; private set; }
 
+    public static void CancelInput()
+    {
+        ScrollDelta = 0;
+        pressed.Clear();
+    }
+
     /// <summary>
     /// Gets whether the specified mouse button is currently pressed.
     /// </summary>
@@ -104,45 +110,84 @@ public static class Mouse
     {
         return pressed.Contains(button);
     }
+    public static bool IsJustPressed(this Button key)
+    {
+        return IsPressed(key) && prevPressed.Contains(key) == false;
+    }
+    public static bool IsJustReleased(this Button key)
+    {
+        return IsPressed(key) == false && prevPressed.Contains(key);
+    }
+    public static bool IsJustPressedAndHeld(this Button key)
+    {
+        return IsJustPressed(key) || (IsPressed(key) && isJustHeld);
+    }
+
     public static bool IsAnyPressed()
     {
         return pressed.Count > 0;
     }
-
-    public static void CancelInput()
+    public static bool IsAnyJustPressed()
     {
-        ScrollDelta = 0;
-        pressed.Clear();
+        return pressed.Count > prevPressed.Count;
+    }
+    public static bool IsAnyJustReleased()
+    {
+        return pressed.Count < prevPressed.Count;
+    }
+    public static bool IsAnyJustPressedAndHeld()
+    {
+        return IsAnyJustPressed() || isJustHeld;
+    }
+
+    public static void OnPress(this Button button, Action method)
+    {
+        if (onPress.TryAdd(button, method) == false)
+            onPress[button] += method;
+    }
+    public static void OnRelease(this Button button, Action method)
+    {
+        if (onRelease.TryAdd(button, method) == false)
+            onRelease[button] += method;
+    }
+    public static void OnPressAndHold(this Button key, Action method)
+    {
+        if (onHold.TryAdd(key, method) == false)
+            onHold[key] += method;
     }
 
     public static void OnPressAny(Action<Button> method)
     {
-        onButtonPressAny += method;
+        onPressAny += method;
     }
     public static void OnReleaseAny(Action<Button> method)
     {
-        onButtonReleaseAny += method;
+        onReleaseAny += method;
     }
-    public static void OnPress(this Button button, Action method)
+    public static void OnPressAndHoldAny(Action<Button> method)
     {
-        if (onButtonPress.TryAdd(button, method) == false)
-            onButtonPress[button] += method;
+        onHoldAny += method;
     }
-    public static void OnRelease(this Button button, Action method)
+
+    public static void OnCursorMove(Action method)
     {
-        if (onButtonRelease.TryAdd(button, method) == false)
-            onButtonRelease[button] += method;
+        move += method;
     }
     public static void OnWheelScroll(Action method)
     {
-        actionScroll += method;
+        scroll += method;
     }
 
 #region Backend
-    private static Action<Button>? onButtonPressAny, onButtonReleaseAny;
-    private static readonly Dictionary<Button, Action> onButtonPress = new(), onButtonRelease = new();
-    private static Action? actionScroll;
-    private static readonly List<Button> pressed = new();
+    private static Action<Button>? onPressAny, onReleaseAny, onHoldAny;
+    private static readonly Dictionary<Button, Action>
+        onPress = new(), onRelease = new(), onHold = new();
+    private static Action? scroll, move;
+    private static readonly List<Button> pressed = new(), prevPressed = new();
+
+    private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
+    private static readonly Stopwatch hold = new(), holdTrigger = new();
+    private static bool isJustHeld;
 
     private static Cursor cursor;
     private static SFML.Window.Cursor sysCursor = new(SFML.Window.Cursor.CursorType.Arrow);
@@ -166,9 +211,13 @@ public static class Mouse
     {
         isOverWindow = true;
         CursorPosition = (e.X, e.Y);
+        move?.Invoke();
     }
     internal static void OnButtonPressed(object? s, MouseButtonEventArgs e)
     {
+        hold.Restart();
+        holdTrigger.Restart();
+
         isOverWindow = true;
         var btn = (Button)e.Button;
         var contains = pressed.Contains(btn);
@@ -178,10 +227,10 @@ public static class Mouse
 
         pressed.Add(btn);
 
-        if (onButtonPress.TryGetValue(btn, out var value))
+        if (onPress.TryGetValue(btn, out var value))
             value.Invoke();
 
-        onButtonPressAny?.Invoke(btn);
+        onPressAny?.Invoke(btn);
     }
     internal static void OnButtonReleased(object? s, MouseButtonEventArgs e)
     {
@@ -194,16 +243,16 @@ public static class Mouse
 
         pressed.Remove(btn);
 
-        if (onButtonRelease.TryGetValue(btn, out var value))
+        if (onRelease.TryGetValue(btn, out var value))
             value.Invoke();
 
-        onButtonReleaseAny?.Invoke(btn);
+        onReleaseAny?.Invoke(btn);
     }
     internal static void OnWheelScrolled(object? s, MouseWheelScrollEventArgs e)
     {
         isOverWindow = true;
         ScrollDelta = e.Delta < 0 ? -1 : 1;
-        actionScroll?.Invoke();
+        scroll?.Invoke();
     }
     internal static void OnEnter(object? sender, EventArgs e)
     {
@@ -216,6 +265,29 @@ public static class Mouse
 
     internal static void Update()
     {
+        if (IsAnyJustPressed())
+            hold.Restart();
+
+        isJustHeld = false;
+        if (hold.Elapsed.TotalSeconds > HOLD_DELAY &&
+            holdTrigger.Elapsed.TotalSeconds > HOLD_INTERVAL)
+        {
+            holdTrigger.Restart();
+            isJustHeld = true;
+        }
+
+        if (IsAnyJustPressedAndHeld())
+        {
+            onHoldAny?.Invoke(pressed[^1]);
+
+            foreach (var key in pressed)
+                if (IsJustPressedAndHeld(key) && onHold.TryGetValue(key, out var callback))
+                    callback.Invoke();
+        }
+
+        prevPressed.Clear();
+        prevPressed.AddRange(pressed);
+
         ScrollDelta = 0;
         Window.window?.SetMouseCursorVisible(isOverWindow == false ||
                                              IsCursorVisible ||

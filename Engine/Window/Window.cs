@@ -2,8 +2,9 @@
 global using SFML.System;
 global using SFML.Window;
 global using System.Diagnostics.CodeAnalysis;
-using System.IO.Compression;
-using System.Text;
+global using System.Diagnostics;
+global using System.IO.Compression;
+global using System.Text;
 
 namespace Pure.Engine.Window;
 
@@ -203,6 +204,7 @@ public static class Window
 
         TryCreate();
 
+        Keyboard.Update();
         Mouse.Update();
         FinishDraw();
 

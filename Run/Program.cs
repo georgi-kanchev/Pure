@@ -10,7 +10,7 @@ public static class Run
     {
         //EightBallPool.Run();
         //FlappyBird.Run();
-        //Ludo.Run();
+        Tetris.Run();
         //Pong.Run();
         //Chat.Run();
 
@@ -25,7 +25,7 @@ public static class Run
         //Commands.Run();
         //Storages.Run();
         //Collision.Run();
-        Pathfinding.Run();
+        //Pathfinding.Run();
         //LineOfSightAndLights.Run();
         //Audio.Run();
         //UtilityExtensions.Run();
