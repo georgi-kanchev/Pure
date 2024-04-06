@@ -85,14 +85,10 @@ public static class Minesweeper
             if (down)
                 Collapse((x, y + 1));
 
-            if (left == false)
-                Reveal((x - 1, y));
-            if (right == false)
-                Reveal((x + 1, y));
-            if (up == false)
-                Reveal((x, y - 1));
-            if (down == false)
-                Reveal((x, y + 1));
+            for (var i = -1; i <= 1; i++)
+                for (var j = -1; j <= 1; j++)
+                    if (maps[0].TileAt((x + i, y + j)).Id != TILE_0)
+                        Reveal((x + i, y + j));
         }
         void Reveal((int x, int y) position)
         {
