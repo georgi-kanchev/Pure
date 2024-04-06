@@ -9,9 +9,9 @@ public static class Run
     public static void Main()
     {
         //EightBallPool.Run();
-        //FlappyBird.Run();
+        FlappyBird.Run();
         //Tetris.Run();
-        Minesweeper.Run();
+        //Minesweeper.Run();
         //Pong.Run();
         //Chat.Run();
 

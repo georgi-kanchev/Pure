@@ -46,7 +46,7 @@ public static class FlappyBird
             birdAnimation.CurrentProgress = 0;
 
             if (isGameOver == false)
-                return; // restart game in case it's over
+                return;
 
             birdY = 5f;
             birdVelocity = 0f;
@@ -56,31 +56,35 @@ public static class FlappyBird
         });
 
         var layer = new Layer(background.Size);
-        while (Window.KeepOpen()) // the default game loop
+        while (Window.KeepOpen())
         {
-            // update some of the systems
             Time.Update();
             birdAnimation.Update(Time.Delta);
 
-            // clear the tilemaps from the previous frame
             background.Fill(null, new Tile(Tile.SHADE_OPAQUE, Color.Blue.ToDark()));
             foreground.Flush();
 
-            // apply gravity, unless game over
-            if (isGameOver == false)
-            {
-                birdVelocity += Time.Delta * 10f;
-                birdY += birdVelocity * Time.Delta;
-            }
+            UpdateBird();
+            UpdatePipes();
+            collisionMap.Update(foreground);
+            isGameOver = IsGameOver();
+            Draw();
+        }
 
-            // prevent jumping "over" pipes and going offscreen
-            if (birdY < 0)
+        void InitializePipes()
+        {
+            pipes = new()
             {
-                birdY = 0;
-                birdVelocity = 0;
-            }
-
-            // update pipes
+                // pairs of (x, y, holeSize) - some initial offscreen, later they will be reused
+                (width + 00, (-15, -3).Random(), (3, 10).Random()),
+                (width + 10, (-15, -3).Random(), (3, 10).Random()),
+                (width + 20, (-15, -3).Random(), (3, 10).Random()),
+                (width + 30, (-15, -3).Random(), (3, 10).Random()),
+                (width + 40, (-15, -3).Random(), (3, 10).Random())
+            };
+        }
+        void UpdatePipes()
+        {
             for (var i = 0; i < pipes?.Count; i++)
             {
                 var (pipeX, pipeY, holeSize) = pipes[i];
@@ -111,15 +115,30 @@ public static class FlappyBird
                     Tile.BOX_DEFAULT_CORNER,
                     Tile.BOX_DEFAULT_STRAIGHT, Color.Green);
             }
+        }
+        void UpdateBird()
+        {
+            if (isGameOver)
+                return;
 
-            collisionMap.Update(foreground);
+            // apply gravity
+            birdVelocity += Time.Delta * 10f;
+            birdY += birdVelocity * Time.Delta;
 
-            // whether the bird fell out of the map or bonked into a pipe
+            // prevent jumping "over" pipes and going offscreen
+            if (birdY > 0)
+                return;
+
+            birdY = 0;
+            birdVelocity = 0;
+        }
+        bool IsGameOver()
+        {
             var birdRect = new Solid(BIRD_X, birdY, 1, 1, Color.Red);
-            if (birdY + 1 >= height || collisionMap.IsOverlapping(birdRect))
-                isGameOver = true;
-
-            // finish by drawing everything
+            return birdY + 1 >= height || collisionMap.IsOverlapping(birdRect);
+        }
+        void Draw()
+        {
             var (birdTile, birdAngle) = birdAnimation.CurrentValue;
 
             var scoreText = $"Score: {score}";
@@ -136,23 +155,7 @@ public static class FlappyBird
                 Color.Yellow, birdAngle);
             layer.DrawTiles((BIRD_X, birdY), tile);
             layer.DrawCursor();
-            //Window.DrawRectangles(collisionMap);
-            //Window.DrawRectangles(birdRect);
-
             layer.Draw();
-        }
-
-        void InitializePipes()
-        {
-            pipes = new()
-            {
-                // pairs of (x, y, holeSize) - some initial offscreen, later they will be reused
-                (width + 00, (-15, -3).Random(), (3, 10).Random()),
-                (width + 10, (-15, -3).Random(), (3, 10).Random()),
-                (width + 20, (-15, -3).Random(), (3, 10).Random()),
-                (width + 30, (-15, -3).Random(), (3, 10).Random()),
-                (width + 40, (-15, -3).Random(), (3, 10).Random())
-            };
         }
     }
 }
