@@ -10,7 +10,8 @@ public static class Run
     {
         //EightBallPool.Run();
         //FlappyBird.Run();
-        Tetris.Run();
+        //Tetris.Run();
+        Minesweeper.Run();
         //Pong.Run();
         //Chat.Run();
 
