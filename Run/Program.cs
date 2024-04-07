@@ -8,8 +8,9 @@ public static class Run
 {
     public static void Main()
     {
+        Asteroids.Run();
         //EightBallPool.Run();
-        FlappyBird.Run();
+        //FlappyBird.Run();
         //Tetris.Run();
         //Minesweeper.Run();
         //Pong.Run();

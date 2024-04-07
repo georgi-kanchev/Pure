@@ -16,6 +16,21 @@ public class LinePack : Pack<Line>
         : base(offset, scale, lines)
     {
     }
+    public LinePack(
+        (float x, float y) offset = default,
+        (float width, float height) scale = default,
+        params (float x, float y, uint color)[] points) : base(offset, scale)
+    {
+        var lines = new List<Line>();
+        for (var i = 1; i < points?.Length; i++)
+        {
+            var a = points[i - 1];
+            var b = points[i];
+            lines.Add(new((a.x, a.y), (b.x, b.y), a.color));
+        }
+
+        data.AddRange(lines);
+    }
     public LinePack(byte[] bytes)
     {
         var b = Decompress(bytes);
@@ -72,6 +87,22 @@ public class LinePack : Pack<Line>
         for (var i = 0; i < result.Length; i++)
             result[i] = this[i];
         return result;
+    }
+    public (float x, float y, uint color)[] ToBundlePoints()
+    {
+        var result = new List<(float x, float y, uint color)>();
+        for (var i = 0; i < data.Count; i++)
+        {
+            var line = this[i];
+            var (a, b) = (line.A, line.B);
+            var pointA = (a.x, a.y, line.Color);
+            var pointB = (b.x, b.y, line.Color);
+
+            result.Add(pointA);
+            result.Add(pointB);
+        }
+
+        return result.ToArray();
     }
 
     public bool IsOverlapping(LinePack linePack)
@@ -197,6 +228,11 @@ public class LinePack : Pack<Line>
     {
         return linePack.ToArray();
     }
+    public static implicit operator (float x, float y, uint color)[](
+        LinePack linePack)
+    {
+        return linePack.ToBundlePoints();
+    }
     public static implicit operator (float ax, float ay, float bx, float by, uint color)[](
         LinePack linePack)
     {
@@ -208,7 +244,13 @@ public class LinePack : Pack<Line>
         var result = new Line[lines.Length];
         for (var i = 0; i < result.Length; i++)
             result[i] = lines[i];
-        return result;
+
+        return new(default, default, result);
+    }
+    public static implicit operator LinePack(
+        (float x, float y, uint color)[] points)
+    {
+        return new(default, default, points);
     }
     public static implicit operator byte[](LinePack linePack)
     {

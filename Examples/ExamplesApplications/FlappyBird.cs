@@ -10,9 +10,6 @@ public static class FlappyBird
 {
     public static void Run()
     {
-        //Window.FromBytes(File.ReadAllBytes("window-settings.cfg"));
-        //Window.OnClose(() => File.WriteAllBytes("window-settings.cfg", Window.ToBytes()));
-
         Window.Title = "Pure - Flappy Bird Example";
         Window.IsRetro = true;
         Window.BackgroundColor = Window.IsRetro ? Color.Black : Color.Blue.ToDark();
@@ -24,6 +21,7 @@ public static class FlappyBird
         var background = new Tilemap((ratio.width * 3, ratio.height * 3));
         var foreground = new Tilemap(background.Size);
         var (width, height) = background.Size;
+
         var birdY = 5f;
         var birdVelocity = 0f;
         var birdAnimation = new Animation<(int, sbyte)>(0.8f, false,
@@ -32,8 +30,11 @@ public static class FlappyBird
             (Tile.ARROW_DIAGONAL, 0), // first frame twice for a bit more upward time
             (Tile.ARROW, 0),
             (Tile.ARROW_DIAGONAL, 1)); // rotated 1 time (90 degrees clockwise)
+
         var pipes = new List<(float, int, int)>();
         var collisionMap = new SolidMap();
+        var layer = new Layer(background.Size);
+
         collisionMap.SolidsAdd(Tile.BOX_DEFAULT_CORNER, new Solid(0, 0, 1, 1));
         collisionMap.SolidsAdd(Tile.BOX_DEFAULT_STRAIGHT, new Solid(0, 0, 1, 1));
 
@@ -54,7 +55,6 @@ public static class FlappyBird
             InitializePipes();
         });
 
-        var layer = new Layer(background.Size);
         while (Window.KeepOpen())
         {
             Time.Update();

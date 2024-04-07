@@ -30,7 +30,7 @@ public static class Program
             {
                 editor.LayerMap.DrawRectangles(solidMap);
                 editor.LayerMap.DrawRectangles(solidPack);
-                editor.LayerMap.DrawLines(linePack);
+                editor.LayerMap.DrawLines(linePack.ToBundle());
             }
 
             if (isDragging == false)

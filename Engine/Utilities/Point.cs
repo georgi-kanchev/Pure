@@ -19,6 +19,14 @@ public struct Point
     {
         get => new(float.NaN);
     }
+    public static Point Zero
+    {
+        get => new();
+    }
+    public static Point One
+    {
+        get => new();
+    }
 
     public (float x, float y) XY
     {

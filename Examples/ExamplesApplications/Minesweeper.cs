@@ -20,35 +20,7 @@ public static class Minesweeper
         var gameOver = false;
 
         PrepareGame();
-
-        Mouse.Button.Left.OnPress(() =>
-        {
-            if (gameOver)
-            {
-                PrepareGame();
-                return;
-            }
-
-            var (x, y) = layer.PixelToWorld(Mouse.CursorPosition);
-            var pos = ((int)x, (int)y);
-            var id = maps[0].TileAt(pos).Id;
-
-            if (id == TILE_0)
-                Collapse(pos);
-
-            Reveal(pos);
-
-            if (id != TILE_MINE)
-                return;
-
-            Window.BackgroundColor = Color.Red.ToDark();
-            gameOver = true;
-        });
-        Mouse.Button.Right.OnPress(() =>
-        {
-            var (x, y) = layer.PixelToWorld(Mouse.CursorPosition);
-            Flag(((int)x, (int)y));
-        });
+        HandleInput();
 
         while (Window.KeepOpen())
         {
@@ -61,47 +33,6 @@ public static class Minesweeper
             layer.Draw();
         }
 
-        void Collapse((int x, int y) position)
-        {
-            var (x, y) = position;
-
-            var id = maps[1].TileAt(position).Id;
-            if (id == Tile.EMPTY)
-                return;
-
-            var left = maps[0].TileAt((x - 1, y)).Id == TILE_0;
-            var right = maps[0].TileAt((x + 1, y)).Id == TILE_0;
-            var up = maps[0].TileAt((x, y - 1)).Id == TILE_0;
-            var down = maps[0].TileAt((x, y + 1)).Id == TILE_0;
-
-            Reveal(position);
-
-            if (left)
-                Collapse((x - 1, y));
-            if (right)
-                Collapse((x + 1, y));
-            if (up)
-                Collapse((x, y - 1));
-            if (down)
-                Collapse((x, y + 1));
-
-            for (var i = -1; i <= 1; i++)
-                for (var j = -1; j <= 1; j++)
-                    if (maps[0].TileAt((x + i, y + j)).Id != TILE_0)
-                        Reveal((x + i, y + j));
-        }
-        void Reveal((int x, int y) position)
-        {
-            for (var i = 1; i < 3; i++)
-                maps[i].SetTile(position, Tile.EMPTY);
-        }
-        void Flag((int x, int y) position)
-        {
-            if (maps[2].TileAt(position).Id == Tile.SHAPE_SQUARE_BIG_HOLLOW)
-                maps[2].SetTile(position, Tile.ICON_FLAG);
-            else if (maps[2].TileAt(position).Id == Tile.ICON_FLAG)
-                maps[2].SetTile(position, new(Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Gray));
-        }
         void PrepareGame()
         {
             Window.BackgroundColor = Color.Gray;
@@ -147,6 +78,79 @@ public static class Minesweeper
                 new Tile(Tile.NUMBER_8, Color.Gray.ToDark()));
             maps[1].Fill(null, new Tile(Tile.FULL, Color.Gray.ToDark()));
             maps[2].Fill(null, new Tile(Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Gray));
+        }
+        void HandleInput()
+        {
+            Mouse.Button.Left.OnPress(() =>
+            {
+                if (gameOver)
+                {
+                    PrepareGame();
+                    return;
+                }
+
+                var (x, y) = layer.PixelToWorld(Mouse.CursorPosition);
+                var pos = ((int)x, (int)y);
+                var id = maps[0].TileAt(pos).Id;
+
+                if (id == TILE_0)
+                    Collapse(pos);
+
+                Reveal(pos);
+
+                if (id != TILE_MINE)
+                    return;
+
+                Window.BackgroundColor = Color.Red.ToDark();
+                gameOver = true;
+            });
+            Mouse.Button.Right.OnPress(() =>
+            {
+                var (x, y) = layer.PixelToWorld(Mouse.CursorPosition);
+                Flag(((int)x, (int)y));
+            });
+        }
+
+        void Collapse((int x, int y) position)
+        {
+            var (x, y) = position;
+
+            var id = maps[1].TileAt(position).Id;
+            if (id == Tile.EMPTY)
+                return;
+
+            var left = maps[0].TileAt((x - 1, y)).Id == TILE_0;
+            var right = maps[0].TileAt((x + 1, y)).Id == TILE_0;
+            var up = maps[0].TileAt((x, y - 1)).Id == TILE_0;
+            var down = maps[0].TileAt((x, y + 1)).Id == TILE_0;
+
+            Reveal(position);
+
+            if (left)
+                Collapse((x - 1, y));
+            if (right)
+                Collapse((x + 1, y));
+            if (up)
+                Collapse((x, y - 1));
+            if (down)
+                Collapse((x, y + 1));
+
+            for (var i = -1; i <= 1; i++)
+                for (var j = -1; j <= 1; j++)
+                    if (maps[0].TileAt((x + i, y + j)).Id != TILE_0)
+                        Reveal((x + i, y + j));
+        }
+        void Reveal((int x, int y) position)
+        {
+            for (var i = 1; i < 3; i++)
+                maps[i].SetTile(position, Tile.EMPTY);
+        }
+        void Flag((int x, int y) position)
+        {
+            if (maps[2].TileAt(position).Id == Tile.SHAPE_SQUARE_BIG_HOLLOW)
+                maps[2].SetTile(position, Tile.ICON_FLAG);
+            else if (maps[2].TileAt(position).Id == Tile.ICON_FLAG)
+                maps[2].SetTile(position, new(Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Gray));
         }
     }
 }

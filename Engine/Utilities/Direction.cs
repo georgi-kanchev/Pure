@@ -82,12 +82,11 @@ public struct Direction
         this.y = y;
         Normalize();
     }
-    /// <summary>
-    /// Initializes a new direction instance with the same X and Y components.
-    /// </summary>
-    /// <param name="xy">The value to use for both the X and Y components of the direction.</param>
-    public Direction(float xy) : this(xy, xy)
+    public Direction(float angle)
     {
+        var rad = MathF.PI / 180 * angle;
+        x = MathF.Cos(rad);
+        y = MathF.Sin(rad);
     }
     /// <summary>
     /// Initializes a new direction instance with the X and Y components specified as a bundle tuple.
@@ -217,8 +216,7 @@ public struct Direction
     /// <returns>A new direction instance representing the angle.</returns>
     public static implicit operator Direction(float angle)
     {
-        var rad = MathF.PI / 180 * angle;
-        return new(MathF.Cos(rad), MathF.Sin(rad));
+        return new(angle);
     }
     /// <summary>
     /// Implicitly converts a direction instance to a float angle.

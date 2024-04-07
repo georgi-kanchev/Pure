@@ -24,31 +24,10 @@ public static class EightBallPool
             balls.Add(new((0, 0), 0));
 
         ResetBalls();
-        Window.SetIconFromTile(layer,
-            Tile.SUBSCRIPT_8_TH, Color.White, Tile.SHAPE_CIRCLE_BIG, Color.Black);
+        Window.SetIconFromTile(layer, Tile.SUBSCRIPT_8_TH, Color.White, Tile.SHAPE_CIRCLE_BIG,
+            Color.Black);
 
-        Mouse.Button.Left.OnPress(() =>
-        {
-            if (isAnyBallMoving)
-                return;
-
-            timeAtPress = Time.Clock;
-            isCanceled = false;
-            isCharging = true;
-        });
-        Mouse.Button.Left.OnRelease(() =>
-        {
-            if (isCanceled || isAnyBallMoving)
-                return;
-
-            var power = Math.Min(Time.Clock - timeAtPress, 2);
-            var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
-
-            balls[0].MoveAngle = Angle.FromPoints(mousePos, balls[0].Position + new Point(0.5f));
-            balls[0].Speed = power * 75;
-            isCharging = false;
-        });
-        Mouse.Button.Right.OnPress(() => isCanceled = true);
+        HandleInput();
 
         while (Window.KeepOpen())
         {
@@ -59,12 +38,57 @@ public static class EightBallPool
 
             isAnyBallMoving = false;
             foreach (var ball in balls)
-                UpdateAndDrawBall(ball);
+            {
+                MoveBall(ball);
+                TryBallCollision(ball);
+                TryWallCollision(ball);
+                DrawBall(ball);
+            }
 
             DrawStick();
-
             layer.DrawCursor();
             layer.Draw();
+        }
+
+        void HandleInput()
+        {
+            Mouse.Button.Left.OnPress(() =>
+            {
+                if (isAnyBallMoving)
+                    return;
+
+                timeAtPress = Time.Clock;
+                isCanceled = false;
+                isCharging = true;
+            });
+            Mouse.Button.Left.OnRelease(() =>
+            {
+                if (isCanceled || isAnyBallMoving)
+                    return;
+
+                var power = Math.Min(Time.Clock - timeAtPress, 2);
+                var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
+
+                balls[0].MoveAngle = Angle.FromPoints(mousePos, balls[0].Position + new Point(0.5f));
+                balls[0].Speed = power * 75;
+                isCharging = false;
+            });
+            Mouse.Button.Right.OnPress(() => isCanceled = true);
+        }
+        void DrawStick()
+        {
+            if (isAnyBallMoving)
+                return;
+
+            var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
+            var a = balls[0].Position + (0.5f, 0.5f);
+            var angle = Angle.FromPoints(a, (mx, my));
+            var power = isCharging && isCanceled == false ? Math.Min(Time.Clock - timeAtPress, 2) : 0;
+            var b = a.MoveAt(angle, 8 + power * 4);
+
+            a = a.MoveAt(angle, 1 + power * 4);
+
+            layer.DrawLines(new Line(a, b, Color.Brown.ToDark()));
         }
 
         void ResetBalls()
@@ -92,29 +116,16 @@ public static class EightBallPool
                 balls[n].Number = n;
             }
         }
-        void DrawStick()
-        {
-            if (isAnyBallMoving)
-                return;
-
-            var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
-            var a = balls[0].Position + (0.5f, 0.5f);
-            var angle = Angle.FromPoints(a, (mx, my));
-            var power = isCharging && isCanceled == false ? Math.Min(Time.Clock - timeAtPress, 2) : 0;
-            var b = a.MoveAt(angle, 8 + power * 4);
-
-            a = a.MoveAt(angle, 1 + power * 4);
-
-            layer.DrawLines(new Line(a, b, Color.Brown.ToDark()));
-        }
-        void UpdateAndDrawBall(Ball ball)
+        void MoveBall(Ball ball)
         {
             ball.Position = ball.Position.MoveAt(ball.MoveAngle, ball.Speed, Time.Delta);
             ball.Speed = Math.Max(ball.Speed - Time.Delta * 10, 0);
 
             if (ball.Speed > 0)
                 isAnyBallMoving = true;
-
+        }
+        void TryBallCollision(Ball ball)
+        {
             foreach (var otherBall in balls)
             {
                 var pos = ball.Position + 0.5f;
@@ -149,7 +160,9 @@ public static class EightBallPool
                     ((float)penaltyAngle).Map((0, 70), (1, 0));
                 otherBall.Speed *= penaltyMultiplier;
             }
-
+        }
+        void TryWallCollision(Ball ball)
+        {
             for (var i = 0; i < lineCollisions.Count; i++)
             {
                 var line = lineCollisions[i];
@@ -165,7 +178,9 @@ public static class EightBallPool
                 ball.Position = ball.Position.MoveAt(reflectAngle, 0.2f);
                 ball.Speed *= 0.75f;
             }
-
+        }
+        void DrawBall(Ball ball)
+        {
             var p = ball.Position;
             if (ball.Number <= 8)
             {

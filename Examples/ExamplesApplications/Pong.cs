@@ -29,23 +29,21 @@ public static class Pong
 
             ballPosition = ballPosition.MoveAt(ballAngle, BALL_SPEED, Time.Delta);
 
-            TryToScorePoint();
+            TryScore();
+
             ControlPaddle(ref paddleLeftPosition);
             FollowBall(ref paddleRightPosition);
-            LimitPaddleToWindow(ref paddleLeftPosition);
-            LimitPaddleToWindow(ref paddleRightPosition);
-            TryToBounceBallOffWindow();
-            TryToBounceBallOffPaddle(ref paddleLeftPosition);
-            TryToBounceBallOffPaddle(ref paddleRightPosition);
+            LimitPaddle(ref paddleLeftPosition);
+            LimitPaddle(ref paddleRightPosition);
 
-            layer.DrawTiles(paddleLeftPosition, new Tile(Tile.SHADE_4), (1, PADDLE_HEIGHT), true);
-            layer.DrawTiles(paddleRightPosition, new Tile(Tile.SHADE_4), (1, PADDLE_HEIGHT), true);
-            layer.DrawTiles(ballPosition, new Tile(Tile.SHAPE_CIRCLE), (1, 1), true);
-            layer.DrawCursor();
-            layer.Draw();
+            TryBallBounceWindow();
+            TryBallBouncePaddle(ref paddleLeftPosition);
+            TryBallBouncePaddle(ref paddleRightPosition);
+
+            Draw();
         }
 
-        void TryToBounceBallOffWindow()
+        void TryBallBounceWindow()
         {
             if (ballPosition.Y < 0)
             {
@@ -58,8 +56,7 @@ public static class Pong
                 ballPosition = ballPosition.MoveAt(270, 0.5f);
             }
         }
-
-        void TryToBounceBallOffPaddle(ref Point paddlePosition)
+        void TryBallBouncePaddle(ref Point paddlePosition)
         {
             var paddle = new Solid(paddlePosition, (1, PADDLE_HEIGHT));
             var ball = new Solid(ballPosition, (1, 1));
@@ -71,14 +68,12 @@ public static class Pong
             ballAngle = ballAngle.Reflect(angle);
             ballPosition = ballPosition.MoveAt(angle, 1f);
         }
-
         void FollowBall(ref Point paddlePosition)
         {
             var ballIsAbove = ballPosition.Y < paddlePosition.Y + PADDLE_HEIGHT / 2f;
             var angle = ballIsAbove ? 270 : 90;
             paddlePosition = paddlePosition.MoveAt(angle, PADDLE_SPEED, Time.Delta);
         }
-
         void ControlPaddle(ref Point paddlePosition)
         {
             if (Keyboard.Key.ArrowUp.IsPressed())
@@ -86,15 +81,13 @@ public static class Pong
             if (Keyboard.Key.ArrowDown.IsPressed())
                 paddlePosition = paddlePosition.MoveAt(90, PADDLE_SPEED, Time.Delta);
         }
-
-        void LimitPaddleToWindow(ref Point paddlePosition)
+        void LimitPaddle(ref Point paddlePosition)
         {
             paddlePosition = (
                 x: paddlePosition.X,
                 y: Math.Clamp(paddlePosition.Y, 0, tilemap.Size.height - PADDLE_HEIGHT));
         }
-
-        void TryToScorePoint()
+        void TryScore()
         {
             if (ballPosition.X < 0 == false &&
                 ballPosition.X > tilemap.Size.width == false)
@@ -102,6 +95,14 @@ public static class Pong
 
             ballPosition = center;
             ballAngle = (0f, 360f).Random();
+        }
+        void Draw()
+        {
+            layer.DrawTiles(paddleLeftPosition, new Tile(Tile.SHADE_4), (1, PADDLE_HEIGHT), true);
+            layer.DrawTiles(paddleRightPosition, new Tile(Tile.SHADE_4), (1, PADDLE_HEIGHT), true);
+            layer.DrawTiles(ballPosition, new Tile(Tile.SHAPE_CIRCLE), (1, 1), true);
+            layer.DrawCursor();
+            layer.Draw();
         }
     }
 }

@@ -17,64 +17,80 @@ public static class Tetris
         playArea = new(map.Size.width / 3, 0, map.Size.width / 3 - 1, map.Size.height - 1);
         var (ax, ay, aw, ah, _) = playArea.ToBundle();
         map.SetBox((ax, ay, aw + 1, ah + 1), Tile.EMPTY, Tile.BOX_CORNER_ROUND, Tile.FULL);
-
-        tetromino = new((map.Size.width / 2, 0));
+        piece = new((map.Size.width / 2, 0));
 
         Time.CallAfter(0.5f, () =>
         {
-            var hasCollided = tetromino.MoveIn(Direction.Down);
-            if (hasCollided == false)
-                return;
-
-            var ys = tetromino.GetBoxYs();
-            ys.Sort();
-            foreach (var y in ys)
-            {
-                var count = 0;
-                for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
-                    if (fallen.ContainsKey(((int)y, x)))
-                        count++;
-                    else
-                        break;
-
-                if (count != playArea.Width - 1)
-                    continue;
-
-                for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
-                    fallen.Remove(((int)y, x));
-
-                var boxesToDrop = new List<Box>();
-                foreach (var kvp in fallen.Reverse())
-                    if (kvp.Value.Position.Y < y)
-                        boxesToDrop.Add(kvp.Value);
-
-                foreach (var box in boxesToDrop)
-                {
-                    fallen.Remove(((int)box.Position.Y, (int)box.Position.X));
-                    box.MoveIn(Direction.Down);
-                    fallen[((int)box.Position.Y, (int)box.Position.X)] = box;
-                }
-            }
-
-            tetromino = new((map.Size.width / 2, 0));
+            if (piece.TryMoveIn(Direction.Down) == false)
+                Collide();
         }, true);
-        Keyboard.Key.ArrowLeft.OnPressAndHold(() => tetromino.MoveIn(Direction.Left));
-        Keyboard.Key.ArrowRight.OnPressAndHold(() => tetromino.MoveIn(Direction.Right));
-        Keyboard.Key.ArrowDown.OnPressAndHold(() => tetromino.MoveIn(Direction.Down));
-        Keyboard.Key.Space.OnPress(() => tetromino.Rotate());
+
+        HandleInput();
 
         while (Window.KeepOpen())
         {
             Time.Update();
+            Draw();
+        }
 
-            tetromino.Draw();
+        void HandleInput()
+        {
+            Keyboard.Key.ArrowLeft.OnPressAndHold(() => piece?.TryMoveIn(Direction.Left));
+            Keyboard.Key.ArrowRight.OnPressAndHold(() => piece?.TryMoveIn(Direction.Right));
+            Keyboard.Key.ArrowDown.OnPressAndHold(() => piece?.TryMoveIn(Direction.Down));
+            Keyboard.Key.Space.OnPress(() => piece?.Rotate());
+        }
+        void Draw()
+        {
+            piece?.Draw();
 
             foreach (var kvp in fallen)
                 kvp.Value.Draw();
 
-            layer.DrawTilemap(map);
-            layer.DrawCursor();
-            layer.Draw();
+            if (map != null)
+                layer?.DrawTilemap(map);
+
+            layer?.DrawCursor();
+            layer?.Draw();
+        }
+        void Collide()
+        {
+            var ys = piece?.GetBoxYs() ?? new();
+            ys.Sort();
+
+            foreach (var y in ys)
+                if (IsLineFull(y))
+                    ClearLine(y);
+
+            piece = new((map?.Size.width / 2 ?? 0, 0));
+        }
+        bool IsLineFull(float y)
+        {
+            var count = 0;
+            for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
+                if (fallen.ContainsKey(((int)y, x)))
+                    count++;
+                else
+                    break;
+
+            return count == playArea.Width - 1;
+        }
+        void ClearLine(float y)
+        {
+            for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
+                fallen.Remove(((int)y, x));
+
+            var boxesToDrop = new List<Box>();
+            foreach (var kvp in fallen.Reverse())
+                if (kvp.Value.Position.Y < y)
+                    boxesToDrop.Add(kvp.Value);
+
+            foreach (var box in boxesToDrop)
+            {
+                fallen.Remove(((int)box.Position.Y, (int)box.Position.X));
+                box.MoveIn(Direction.Down);
+                fallen[((int)box.Position.Y, (int)box.Position.X)] = box;
+            }
         }
     }
 
@@ -83,11 +99,11 @@ public static class Tetris
     private static Area playArea;
     private static Layer? layer;
     private static Tilemap? map;
-    private static Tetromino? tetromino;
+    private static Piece? piece;
 
-    private class Tetromino
+    private class Piece
     {
-        public Tetromino(Point atPosition)
+        public Piece(Point atPosition)
         {
             var (x, y) = atPosition.XY;
             var colors = new[]
@@ -137,10 +153,10 @@ public static class Tetris
             for (var i = 0; i < boxes.Length; i++)
                 boxes[i].Position = newPositions[i];
         }
-        public bool MoveIn(Direction direction)
+        public bool TryMoveIn(Direction direction)
         {
             if (isFrozen)
-                return true;
+                return false;
 
             foreach (var box in boxes)
             {
@@ -154,17 +170,17 @@ public static class Tetris
                     foreach (var b in boxes)
                         fallen[((int)b.Position.Y, (int)b.Position.X)] = b;
 
-                    return true;
+                    return false;
                 }
 
                 if (hasCollided)
-                    return false;
+                    return true;
             }
 
             foreach (var box in boxes)
                 box.MoveIn(direction);
 
-            return false;
+            return true;
         }
         public void Draw()
         {

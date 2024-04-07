@@ -171,15 +171,15 @@ public class Layer
             }
         }
     }
-    public void DrawLines(params (float x, float y, uint color)[]? lines)
+    public void DrawLines(params (float x, float y, uint color)[]? points)
     {
-        if (lines == null || lines.Length < 2)
+        if (points == null || points.Length < 2)
             return;
 
-        for (var i = 1; i < lines.Length; i++)
+        for (var i = 1; i < points.Length; i++)
         {
-            var a = lines[i - 1];
-            var b = lines[i];
+            var a = points[i - 1];
+            var b = points[i];
             DrawLines((a.x, a.y, b.x, b.y, a.color));
         }
     }
