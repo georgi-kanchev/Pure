@@ -566,7 +566,7 @@ internal class Inspector : Panel
 
         var (x, y) = btn.Position;
         var (w, h) = btn.Size;
-        front.SetTextRectangle((x, y, w, h), btn.Text, GetColor(btn, color.ToDark()),
+        front.SetTextArea((x, y, w, h), btn.Text, GetColor(btn, color.ToDark()),
             alignment: Alignment.Center);
     }
     private void UpdateInputBox(InputBox inputBox, (int x, int y) position)
@@ -593,13 +593,20 @@ internal class Inspector : Panel
         (x, y) = e.Position;
         (w, h) = e.Size;
 
-        back.SetTextRectangle((x, y, w, h), e.Selection,
-            e.IsFocused ? Color.Blue : Color.Blue.ToBright(), false);
-        middle.SetTextRectangle((x, y, w, h), e.Text, isWordWrapping: false);
+        back.SetTextArea(
+            area: (x, y, w, h),
+            text: e.Selection,
+            tint: e.IsFocused ? Color.Blue : Color.Blue.ToBright(),
+            isWordWrapping: false);
+        middle.SetTextArea((x, y, w, h), e.Text, isWordWrapping: false);
         middle.SetTextLine((Position.x + 1, e.Position.y - 1), e.Placeholder, color);
 
         if (string.IsNullOrWhiteSpace(e.Text))
-            middle.SetTextRectangle((x, y, w, h), e.Placeholder, color.ToBright(), false);
+            middle.SetTextArea(
+                area: (x, y, w, h),
+                text: e.Placeholder,
+                tint: color.ToBright(),
+                isWordWrapping: false);
 
         if (e.IsCursorVisible)
             front.SetTile(e.PositionFromIndices(e.CursorIndices), new(Tile.SHAPE_LINE, Color.White, 2));

@@ -20,7 +20,7 @@ public static class Panels
             var (w, h) = panelText.Size;
 
             maps.SetPanel(panelText);
-            maps[1].SetTextRectangle(
+            maps[1].SetTextArea(
                 area: (x + 1, y + 1, w - 2, h - 2),
                 text,
                 tint: Color.Green);

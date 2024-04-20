@@ -10,7 +10,7 @@ public static class Prompts
         const Key HOTKEY_MSG = Key.ControlLeft;
 
         var info = new Button { Position = (int.MaxValue, 0) };
-        info.OnDisplay(() => maps[0].SetTextRectangle(
+        info.OnDisplay(() => maps[0].SetTextArea(
             area: (0, 0, maps.Size.width, 2),
             text:
             $"Press <{HOTKEY_LOG}> to type and log{Environment.NewLine}" +

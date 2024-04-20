@@ -30,7 +30,7 @@ public static class Layouts
             if (index == 0)
             {
                 maps.SetLayoutSegment(segment, index, false);
-                maps[1].SetTextRectangle(
+                maps[1].SetTextArea(
                     area: segment,
                     text: $"- Useful for containing structured elements{nl}{nl}" +
                           $"- Can be dynamically resized without losing its ratios");

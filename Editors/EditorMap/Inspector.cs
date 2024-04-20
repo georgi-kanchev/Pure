@@ -269,7 +269,7 @@ internal class Inspector : Panel
         {
             var (mx, my) = palette.mousePos;
             var index = new Indices(my, mx).ToIndex(palette.map.Size.width);
-            editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetTextRectangle(
+            editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetTextArea(
                 area: segment,
                 text: $"{index} ({mx} {my})");
             return;

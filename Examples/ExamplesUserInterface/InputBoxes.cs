@@ -28,11 +28,11 @@ public static class InputBoxes
         chat.OnDisplay(() =>
         {
             var (x, y) = chat.Position;
-            maps[0].SetTextRectangle(
+            maps[0].SetTextArea(
                 area: (x, y - 10, chat.Size.width, 10),
                 text: messages,
                 alignment: Alignment.BottomLeft,
-                scrollProgress: 1f);
+                symbolProgress: 1f);
             maps.SetInputBox(chat);
         });
 

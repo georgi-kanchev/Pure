@@ -55,7 +55,7 @@ public static class TilemapperUserInterface
             text: b.Text,
             tint: color,
             maxLength: h == 1 ? w : w - 2,
-            b.Mask);
+            mask: b.Mask);
     }
     public static void SetButtonSelect(this TilemapPack maps, Button button, int zOrder = 0)
     {
@@ -93,12 +93,12 @@ public static class TilemapperUserInterface
 
         Clear(maps, inputBox, zOrder);
         maps[zOrder].SetArea(ib.Area, ib.Mask, new Tile(Tile.SHADE_OPAQUE, bgColor));
-        maps[zOrder].SetTextRectangle(ib.Area, ib.Selection, selectColor, false, mask: ib.Mask);
-        maps[zOrder + 1].SetTextRectangle(ib.Area, ib.Text, isWordWrapping: false, mask: ib.Mask);
+        maps[zOrder].SetTextArea(ib.Area, ib.Selection, selectColor, false, mask: ib.Mask);
+        maps[zOrder + 1].SetTextArea(ib.Area, ib.Text, isWordWrapping: false, mask: ib.Mask);
 
         if (string.IsNullOrEmpty(ib.Value))
             maps[zOrder + 1]
-                .SetTextRectangle(ib.Area, ib.Placeholder, Color.Gray, alignment: Alignment.TopLeft,
+                .SetTextArea(ib.Area, ib.Placeholder, Color.Gray, alignment: Alignment.TopLeft,
                     mask: ib.Mask);
 
         if (ib.IsCursorVisible)
@@ -297,11 +297,11 @@ public static class TilemapperUserInterface
             mask: s.Mask);
         maps[zOrder + 1].SetTextLine(
             position: (x + (int)MathF.Ceiling(w / 2f - maxTextSize / 2f), y),
-            s.Text,
-            Color.Gray,
-            maxTextSize,
+            text: s.Text,
+            tint: Color.Gray,
+            maxLength: maxTextSize,
             mask: s.Mask);
-        maps[zOrder + 1].SetTextRectangle(
+        maps[zOrder + 1].SetTextArea(
             area: (x + 2, y + 1, Math.Max(w - 5, text.Length), Math.Max(h - 2, 1)),
             text,
             alignment: Alignment.Left,
@@ -335,7 +335,7 @@ public static class TilemapperUserInterface
         }
 
         var lines = prompt.Text.Split(Environment.NewLine).Length;
-        maps[zOrder + 2].SetTextRectangle(
+        maps[zOrder + 2].SetTextArea(
             (prompt.Position.x, prompt.Position.y, prompt.Size.width, lines),
             prompt.Text,
             alignment: Alignment.Center,
@@ -442,7 +442,7 @@ public static class TilemapperUserInterface
 
         SetBackground(maps[zOrder], item, 0.33f);
         maps[zOrder + 1]
-            .SetTextRectangle(item.Area, text, color, alignment: Alignment.Center, mask: item.Mask);
+            .SetTextArea(item.Area, text, color, alignment: Alignment.Center, mask: item.Mask);
     }
     public static void SetPagesIcon(this TilemapPack maps, Button item, int tileId, int zOrder = 1)
     {
@@ -514,7 +514,7 @@ public static class TilemapperUserInterface
             mask: segment);
 
         if (isIndexVisible)
-            maps[zOrder + 1].SetTextRectangle(
+            maps[zOrder + 1].SetTextArea(
                 area: segment,
                 text: index.ToString(),
                 alignment: Alignment.Center,

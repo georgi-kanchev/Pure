@@ -8,7 +8,7 @@ public static class Run
 {
     public static void Main()
     {
-        Asteroids.Run();
+        //Asteroids.Run();
         //EightBallPool.Run();
         //FlappyBird.Run();
         //Tetris.Run();
@@ -21,7 +21,7 @@ public static class Run
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
-        //RunExampleUserInterface();
+        RunExampleUserInterface();
 
         //DefaultGraphics.Run();
         //Commands.Run();
@@ -42,11 +42,11 @@ public static class Run
         //blocks.Add(InputBoxes.Create(maps));
         //blocks.Add(Panels.Create(maps));
         //blocks.Add(Layouts.Create(maps));
-        blocks.Add(Lists.Create(maps));
+        //blocks.Add(Lists.Create(maps));
         //blocks.Add(Steppers.Create(maps));
         //blocks.Add(Pagination.Create(maps));
         //blocks.Add(Prompts.Create(maps));
-        //blocks.Add(Palettes.Create(maps));
+        blocks.Add(Palettes.Create(maps));
         Program.Run(maps, blocks);
     }
 }

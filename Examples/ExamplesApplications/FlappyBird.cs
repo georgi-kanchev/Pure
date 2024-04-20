@@ -144,7 +144,7 @@ public static class FlappyBird
             foreground.SetTextLine((width / 2 - scoreText.Length / 2, 1), scoreText);
 
             if (isGameOver)
-                foreground.SetTextRectangle((0, 0, width, height),
+                foreground.SetTextArea((0, 0, width, height),
                     $"Game Over!{Environment.NewLine}{Environment.NewLine}<Space> to play again",
                     alignment: Alignment.Center);
 

@@ -206,8 +206,8 @@ public static class Program
 
         keys.OnItemDisplay(item =>
         {
-            maps[1].SetTextLine(item.Position, item.Text,
-                item.GetInteractionColor(Color.Orange), item.Size.width);
+            maps[1].SetTextLine(item.Position, item.Text, item.GetInteractionColor(Color.Orange),
+                maxLength: item.Size.width);
         });
         keys.OnItemInteraction(Interaction.Trigger, item => OnValueClick(keys, item, true));
 
@@ -228,7 +228,7 @@ public static class Program
                 color = Color.Magenta;
 
             var interactionColor = item.GetInteractionColor(color);
-            maps[1].SetTextLine(item.Position, item.Text, interactionColor, item.Size.width);
+            maps[1].SetTextLine(item.Position, item.Text, interactionColor, maxLength: item.Size.width);
         });
         list.OnItemInteraction(Interaction.Trigger, item => OnValueClick(list, item));
 

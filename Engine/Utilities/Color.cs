@@ -119,6 +119,16 @@ public struct Color
         }
     }
 
+    public uint Value
+    {
+        get => this;
+        set
+        {
+            v = value;
+            UpdateRGB();
+        }
+    }
+
     /// <summary>
     /// Initializes a new color instance with the given uint value.
     /// </summary>
@@ -210,6 +220,11 @@ public struct Color
     public override string ToString()
     {
         return $"R({r}) G({g}) B({b}) A({a})";
+    }
+
+    public string ToBrush(char brush = '#')
+    {
+        return $"{brush}{v}{brush}";
     }
 
     /// <param name="bundle">

@@ -566,7 +566,7 @@ public class Editor
         MapsUi[FRONT].SetTextLine((11, bottomY - 2), $"{mw} x {mh}");
         MapsUi[FRONT].SetTextLine((12, bottomY), $"{vw} x {vh}");
 
-        MapsUi[FRONT].SetTextRectangle(
+        MapsUi[FRONT].SetTextArea(
             (x, bottomY, TEXT_WIDTH, 1),
             $"Cursor {(int)mx}, {(int)my}",
             alignment: Alignment.Center);
@@ -577,11 +577,11 @@ public class Editor
             return;
         }
 
-        MapsUi[FRONT].SetTextRectangle(
+        MapsUi[FRONT].SetTextArea(
             (x, 0, TEXT_WIDTH, TEXT_HEIGHT),
             infoText,
             alignment: Alignment.Top,
-            scrollProgress: 1f);
+            symbolProgress: 1f);
     }
 
     private void TryViewInteract()
