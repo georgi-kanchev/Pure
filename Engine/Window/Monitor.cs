@@ -12,7 +12,7 @@ public class Monitor
         get => Monitors[Window.Monitor];
     }
 
-    public string Name { get; private set; } = "";
+    public string Name { get; private set; } = string.Empty;
     public (int width, int height) AspectRatio { get; private set; }
     public (int width, int height) Size { get; private set; }
     public bool IsPrimary { get; private set; }
@@ -91,7 +91,7 @@ public class Monitor
                         Size = (width, height),
                         position = (x, y),
                         AspectRatio = GetAspectRatio(width, height),
-                        Name = $"Monitor {monitors.Count}{(isPrimary ? " (Primary)" : "")}",
+                        Name = $"Monitor {monitors.Count}{(isPrimary ? " (Primary)" : string.Empty)}",
                         IsPrimary = isPrimary
                     };
                 }

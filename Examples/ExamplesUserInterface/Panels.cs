@@ -20,10 +20,8 @@ public static class Panels
             var (w, h) = panelText.Size;
 
             maps.SetPanel(panelText);
-            maps[1].SetTextArea(
-                area: (x + 1, y + 1, w - 2, h - 2),
-                text,
-                tint: Color.Green);
+            text = text.Constrain((w - 2, h - 2));
+            maps[1].SetText((x + 1, y + 1), text, Color.Green);
         });
 
         //============

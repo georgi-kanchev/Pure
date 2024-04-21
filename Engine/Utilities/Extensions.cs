@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
+using static Alignment;
 
 /// <summary>
 /// The type of number animations used by <see cref="Extensions.Animate"/>.
@@ -66,6 +67,16 @@ public enum AnimationCurve
     /// <see cref="In"/> and <see cref="Out"/>.
     /// </summary>
     InOut
+}
+
+/// <summary>
+/// Specifies a 9-directional alignment.
+/// </summary>
+public enum Alignment
+{
+    TopLeft, Top, TopRight,
+    Left, Center, Right,
+    BottomLeft, Bottom, BottomRight
 }
 
 /// <summary>
@@ -216,7 +227,7 @@ public static class Extensions
         var sb = new StringBuilder();
         for (var i = 0; i < collection.Count; i++)
         {
-            var sep = i != 0 ? separator : "";
+            var sep = i != 0 ? separator : string.Empty;
             sb.Append(sep).Append(collection[i]);
         }
 
@@ -555,7 +566,7 @@ public static class Extensions
 
         float GetNumber(ref int i)
         {
-            var num = "";
+            var num = string.Empty;
             while (i < mathExpression.Length &&
                    (char.IsDigit(mathExpression[i]) || mathExpression[i] == '.'))
             {
@@ -700,7 +711,7 @@ public static class Extensions
         if (values == null || values.Contains(value) == false)
             return value;
 
-        var baseName = Regex.Replace(value, @"(\d+)$", "");
+        var baseName = Regex.Replace(value, @"(\d+)$", string.Empty);
         var number = 1;
 
         while (values.Any(n => Regex.IsMatch(n, $"^{baseName}{number}$")))
@@ -708,6 +719,208 @@ public static class Extensions
 
         return $"{baseName}{number}";
     }
+    public static string Mask(this string text, float symbolProgress)
+    {
+        symbolProgress = Math.Clamp(symbolProgress, 0, 1);
+        return text.Remove((int)(text.Length * symbolProgress));
+    }
+    public static string PadLeftAndRight(string text, int length)
+    {
+        var spaces = length - text.Length;
+        var padLeft = spaces / 2 + text.Length;
+        return text.PadLeft(padLeft).PadRight(length);
+    }
+    public static string Constrain(
+        this string text,
+        (int width, int height) size,
+        bool isWordWrapping = true,
+        Alignment alignment = TopLeft,
+        float scrollProgress = 0f,
+        float symbolProgress = 1f,
+        char tintBrush = '#')
+    {
+        if (string.IsNullOrEmpty(text) || size.width <= 0 || size.height <= 0)
+            return string.Empty;
+
+        var result = text;
+        var lineList = result.TrimEnd().Split(Environment.NewLine).ToList();
+
+        TryWordWrap();
+        TryAlignVertically();
+
+        var start = 0;
+        var end = size.height;
+        var e = lineList.Count - end;
+        var scrollValue = (int)Math.Round(scrollProgress * e);
+
+        start = e > 0 ? scrollValue : 0;
+        end = Math.Min(end, lineList.Count);
+        end += e > 0 ? scrollValue : 0;
+
+        var lastHiddenTag = string.Empty;
+        if (start != 0) // there is scrolling which might have cropped the last tag, so find it
+            for (var i = start; i >= 0; i--)
+            {
+                var colors = GetColorTags(lineList[i]);
+                if (colors.Count > 0)
+                    lastHiddenTag = colors[^1].tag;
+            }
+
+        result = string.Empty;
+        for (var i = start; i < end; i++)
+        {
+            var nl = i == start ? lastHiddenTag : Environment.NewLine;
+            result += nl + TryAlignHorizontally(lineList[i]);
+        }
+
+        result = result.Remove((int)(result.Length * Math.Clamp(symbolProgress, 0, 1)));
+        return result;
+
+        string TryAlignHorizontally(string line)
+        {
+            var tags = GetColorTags(line);
+            line = RemoveColorTags(line);
+            if (alignment is TopRight or Right or BottomRight)
+                line = line.PadLeft(size.width);
+            else if (alignment is Top or Center or Bottom)
+                line = PadLeftAndRight(line, size.width);
+            line = ApplyColorTags(line, tags);
+            return line;
+        }
+        void TryAlignVertically()
+        {
+            var yDiff = size.height - lineList.Count;
+
+            if (alignment is Left or Center or Right)
+                for (var i = 0; i < yDiff / 2; i++)
+                    lineList.Insert(0, string.Empty);
+            else if (alignment is BottomLeft or Bottom or BottomRight)
+                for (var i = 0; i < yDiff; i++)
+                    lineList.Insert(0, string.Empty);
+        }
+        void TryWordWrap()
+        {
+            for (var i = 0; i < lineList.Count; i++)
+            {
+                var line = lineList[i];
+                var colors = GetColorTags(line);
+                line = RemoveColorTags(line);
+
+                if (line.Length <= size.width) // line is valid length
+                    continue;
+
+                var lastLineIndex = size.width - 1;
+                var newLineIndex = isWordWrapping ?
+                    GetSafeNewLineIndex(line, (uint)lastLineIndex) :
+                    lastLineIndex;
+
+                // end of line? can't word wrap, proceed to symbol wrap
+                if (newLineIndex == 0)
+                {
+                    lineList[i] = line[..size.width];
+                    lineList.Insert(i + 1, line[size.width..line.Length]);
+                    ApplyNewLineToColors();
+                    continue;
+                }
+
+                // otherwise wordwrap
+                var endIndex = newLineIndex + (isWordWrapping ? 0 : 1);
+                lineList[i] = line[..endIndex].TrimStart();
+                lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
+                ApplyNewLineToColors();
+
+                void ApplyNewLineToColors()
+                {
+                    var lineLengthNoSpaces = lineList[i].Length - lineList[i].Count(" ");
+                    lineList[i] = ApplyColorTags(lineList[i], colors);
+
+                    for (var j = 0; j < colors.Count; j++)
+                        colors[j] = (colors[j].index - lineLengthNoSpaces, colors[j].tag);
+
+                    lineList[i + 1] = ApplyColorTags(lineList[i + 1], colors);
+                }
+            }
+
+            int GetSafeNewLineIndex(string line, uint endLineIndex)
+            {
+                for (var i = (int)endLineIndex; i >= 0; i--)
+                    if (line[i] == ' ' && i <= size.width)
+                        return i;
+
+                return default;
+            }
+        }
+
+        List<(int index, string tag)> GetColorTags(string input)
+        {
+            input = input.Replace(" ", string.Empty);
+            input = input.Replace(Environment.NewLine, string.Empty);
+            var matches = Regex.Matches(input, $"{tintBrush}([0-9a-fA-F]+){tintBrush}");
+            var output = new List<(int index, string tag)>();
+
+            var offset = 0;
+            foreach (Match match in matches)
+            {
+                output.Add((match.Index - offset, $"{tintBrush}{match.Groups[1].Value}{tintBrush}"));
+                offset += match.Length;
+            }
+
+            return output;
+        }
+        string RemoveColorTags(string input)
+        {
+            var matches = Regex.Matches(input, $"{tintBrush}([0-9a-fA-F]+){tintBrush}");
+            var offset = 0;
+            foreach (Match match in matches)
+            {
+                input = input.Remove(match.Index - offset, match.Length);
+                offset += match.Length;
+            }
+
+            return input;
+        }
+        string ApplyColorTags(string input, List<(int index, string tag)> storedTags)
+        {
+            var realIndex = 0;
+            for (var i = 0; i < input.Length; i++)
+            {
+                var symbol = input[i];
+
+                if (char.IsWhiteSpace(symbol))
+                    continue;
+
+                if (storedTags.Count == 0)
+                    return input;
+
+                if (storedTags[0].index == realIndex)
+                {
+                    input = input.Insert(i, storedTags[0].tag);
+                    i += storedTags[0].tag.Length;
+                    storedTags.RemoveAt(0);
+                }
+
+                realIndex++;
+            }
+
+            return input;
+        }
+    }
+    public static string Shorten(this string text, int maxLength, string indicator = "…")
+    {
+        if (maxLength == 0)
+            return string.Empty;
+
+        var abs = Math.Abs(maxLength);
+        var index = abs - indicator.Length;
+
+        if (maxLength > 0 && text.Length > maxLength)
+            text = text[..Math.Max(index, 0)] + indicator;
+        else if (maxLength < 0 && text.Length > abs)
+            text = indicator + text[^index..];
+
+        return text;
+    }
+
     [SuppressMessage("ReSharper", "FormatStringProblem")]
     public static string PadZeros(this float number, int amountOfZeros)
     {
@@ -1102,9 +1315,9 @@ public static class Extensions
         var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
         Random random;
 
-        // if (randomCache.TryGetValue(s, out var r))
-        //     random = r;
-        //else
+        if (randomCache.TryGetValue(s, out var r))
+            random = r;
+        else
         {
             random = new(s);
             randomCache[s] = random;

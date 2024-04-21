@@ -12,7 +12,7 @@ internal class Inspector : Panel
         this.editor = editor;
 
         var (w, h) = (16, editor.MapsUi.Size.height);
-        Text = "";
+        Text = string.Empty;
         Size = (w, h);
         IsMovable = false;
         IsResizable = false;
@@ -69,11 +69,11 @@ internal class Inspector : Panel
         flush.OnDisplay(() => editor.MapsUi.SetButtonIcon(flush,
             new(Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Gray, 1), 1));
 
-        var rename = new InputBox { Value = "", Placeholder = "Rename…", IsSingleLine = true };
+        var rename = new InputBox { Value = string.Empty, Placeholder = "Rename…", IsSingleLine = true };
         rename.OnSubmit(() =>
         {
             LayersRename(rename.Value);
-            rename.Value = "";
+            rename.Value = string.Empty;
         });
         rename.OnUpdate(() => ShowWhenLayerSelected(rename));
         rename.OnDisplay(() => editor.MapsUi.SetInputBox(rename, 1));
@@ -111,7 +111,7 @@ internal class Inspector : Panel
             var (x, y) = item.Position;
             item.Hotkey = ((int)hotkey[index], false);
             editor.MapsUi.SetButtonIcon(item, new(id, item.IsSelected ? Color.Green : Color.Gray), 1);
-            editor.MapsUi[(int)Editor.LayerMapsUi.Middle].SetTextLine(
+            editor.MapsUi[(int)Editor.LayerMapsUi.Middle].SetText(
                 (x, y + 1), $"{hotkey[index]}", Color.Gray.ToDark(0.4f));
         });
         tools.OnItemInteraction(Interaction.Trigger, item =>
@@ -128,7 +128,7 @@ internal class Inspector : Panel
             editor.Log(logs[tools.IndexOf(item)]);
         });
 
-        paletteColor = new() { IsPickHidden = true };
+        paletteColor = new() { Pick = { IsHidden = true } };
         paletteColor.OnDisplay(() =>
         {
             editor.MapsUi.SetPalette(paletteColor, zOrder: 1);
@@ -256,7 +256,7 @@ internal class Inspector : Panel
 
         if (i == 13)
         {
-            editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetTextLine(
+            editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetText(
                 position: (segment.x, segment.y),
                 text: "Tool:");
             return;
@@ -269,9 +269,8 @@ internal class Inspector : Panel
         {
             var (mx, my) = palette.mousePos;
             var index = new Indices(my, mx).ToIndex(palette.map.Size.width);
-            editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetTextArea(
-                area: segment,
-                text: $"{index} ({mx} {my})");
+            var text = $"{index} ({mx} {my})".Constrain((segment.width, segment.height));
+            editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetText((segment.x, segment.y), text);
             return;
         }
 

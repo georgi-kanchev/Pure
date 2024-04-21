@@ -49,7 +49,7 @@ public class Storage
             var i = 0;
             foreach (var kvp in data)
             {
-                result[i] = ObjectFromText<string>(kvp.Key.key) ?? "";
+                result[i] = ObjectFromText<string>(kvp.Key.key) ?? string.Empty;
                 i++;
             }
 
@@ -114,12 +114,12 @@ public class Storage
         var result = new List<byte>();
         var text = ToText();
 
-        PutString(result, Dividers.common ?? "");
-        PutString(result, Dividers.text ?? "");
-        PutString(result, Dividers.tuple ?? "");
-        PutString(result, DividersCollection.oneD ?? "");
-        PutString(result, DividersCollection.twoD ?? "");
-        PutString(result, DividersCollection.dictionary ?? "");
+        PutString(result, Dividers.common ?? string.Empty);
+        PutString(result, Dividers.text ?? string.Empty);
+        PutString(result, Dividers.tuple ?? string.Empty);
+        PutString(result, DividersCollection.oneD ?? string.Empty);
+        PutString(result, DividersCollection.twoD ?? string.Empty);
+        PutString(result, DividersCollection.dictionary ?? string.Empty);
         PutString(result, text);
 
         return Compress(result.ToArray());
@@ -231,7 +231,7 @@ public class Storage
         // this is needed since strings may contain separator values
 
         var prevCount = strings.Count;
-        dataAsText = AddPlaceholders(dataAsText ?? "");
+        dataAsText = AddPlaceholders(dataAsText ?? string.Empty);
         var result = TextToObject<T>(dataAsText, typeId);
 
         if (prevCount != strings.Count)
@@ -268,7 +268,8 @@ public class Storage
     private readonly Dictionary<int, Func<object, string>> onObjectToText = new();
     private readonly Dictionary<(string key, int typeId), string> data = new();
     private const string STR_PLACEHOLDER = "—";
-    private string sep1D = "", sep2D = "", sepTuple = "", sepDict = "", sep = "", sepStr = "";
+    private string sep1D = string.Empty, sep2D = string.Empty, sepTuple = string.Empty,
+        sepDict = string.Empty, sep = string.Empty, sepStr = string.Empty;
     private readonly List<string> strings = new();
 
     private void LoadFromBytes(byte[] bytes)

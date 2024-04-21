@@ -30,10 +30,10 @@ public static class Layouts
             if (index == 0)
             {
                 maps.SetLayoutSegment(segment, index, false);
-                maps[1].SetTextArea(
-                    area: segment,
-                    text: $"- Useful for containing structured elements{nl}{nl}" +
-                          $"- Can be dynamically resized without losing its ratios");
+                var text = $"- Useful for containing structured elements{nl}{nl}" +
+                           $"- Can be dynamically resized without losing its ratios";
+                text = text.Constrain((segment.width, segment.height));
+                maps[1].SetText((segment.x, segment.y), text);
                 return;
             }
 

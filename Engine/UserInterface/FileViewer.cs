@@ -111,7 +111,7 @@ public class FileViewer : Block
     {
         var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsSelectingFolders);
-        PutString(result, FileFilter ?? "");
+        PutString(result, FileFilter ?? string.Empty);
         return Compress(result.ToArray());
     }
 

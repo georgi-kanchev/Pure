@@ -24,7 +24,7 @@ public static class DefaultGraphics
 
             var (x, y) = layer.PixelToWorld(Mouse.CursorPosition);
             var id = tilemap.TileAt(((int)x, (int)y)).Id;
-            tilemap.SetTextLine((27, 13), $"{id}");
+            tilemap.SetText((27, 13), $"{id}");
 
             layer.DrawTilemap(tilemap.ToBundle());
             layer.DrawCursor();

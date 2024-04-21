@@ -128,7 +128,7 @@ public static class Time
         Unit units = Unit.Hour | Unit.Minute | Unit.Second)
     {
         var ts = TimeSpan.FromSeconds(seconds);
-        var result = "";
+        var result = string.Empty;
         var counter = 0;
 
         if (units.HasFlag(Unit.Day))
@@ -140,7 +140,7 @@ public static class Time
 
         if (units.HasFlag(Unit.Hour))
         {
-            var sep = counter > 0 ? separator : "";
+            var sep = counter > 0 ? separator : string.Empty;
             var val = counter == 0 ?
                 (int)ts.TotalHours :
                 (units.HasFlag(Unit.AmPm) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
@@ -151,7 +151,7 @@ public static class Time
 
         if (units.HasFlag(Unit.Minute))
         {
-            var sep = counter > 0 ? separator : "";
+            var sep = counter > 0 ? separator : string.Empty;
             var val = counter == 0 ? (int)ts.TotalMinutes : ts.Minutes;
             result += $"{sep}{val:D2}";
             counter++;
@@ -159,7 +159,7 @@ public static class Time
 
         if (units.HasFlag(Unit.Second))
         {
-            var sep = counter > 0 ? separator : "";
+            var sep = counter > 0 ? separator : string.Empty;
             var val = counter == 0 ? (int)ts.TotalSeconds : ts.Seconds;
             result += $"{sep}{val:D2}";
             counter++;
@@ -168,15 +168,15 @@ public static class Time
         if (units.HasFlag(Unit.Millisecond))
         {
             var val = counter == 0 ? (int)ts.TotalMilliseconds : ts.Milliseconds;
-            var dot = units.HasFlag(Unit.Second) ? "." : "";
-            var sep = dot == "" && counter > 0 ? separator : "";
+            var dot = units.HasFlag(Unit.Second) ? "." : string.Empty;
+            var sep = dot == string.Empty && counter > 0 ? separator : string.Empty;
             result += $"{sep}{dot}{val:D3}";
             counter++;
         }
 
         if (units.HasFlag(Unit.DisplayAmPm))
         {
-            var sep = counter > 0 ? " " : "";
+            var sep = counter > 0 ? " " : string.Empty;
             var str = ts.Hours >= 12 ? "PM" : "AM";
             result += $"{sep}{str}";
         }

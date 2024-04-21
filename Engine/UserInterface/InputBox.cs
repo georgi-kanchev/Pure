@@ -750,7 +750,7 @@ public class InputBox : Block
     {
         if (isPasting)
         {
-            var paste = Input.Clipboard ?? "";
+            var paste = Input.Clipboard ?? string.Empty;
             var pastedLines = paste.Split(Environment.NewLine);
             var carry = string.Empty;
 

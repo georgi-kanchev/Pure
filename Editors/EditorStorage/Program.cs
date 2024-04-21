@@ -129,7 +129,7 @@ public static class Program
             var (x, y) = promptSymbol.Position;
             var value = (int)promptSymbol.Value;
             editor.MapsUi[BACK + 1].SetArea((x + 2, y + 1, 10, 1), null, Tile.EMPTY); // erase text
-            editor.MapsUi[BACK + 1].SetTextLine((x + 2, y + 1), $"{value} '{Convert.ToChar(value)}'");
+            editor.MapsUi[BACK + 1].SetText((x + 2, y + 1), $"{value} '{Convert.ToChar(value)}'");
         });
     }
 
@@ -206,8 +206,8 @@ public static class Program
 
         keys.OnItemDisplay(item =>
         {
-            maps[1].SetTextLine(item.Position, item.Text, item.GetInteractionColor(Color.Orange),
-                maxLength: item.Size.width);
+            maps[1].SetText(item.Position, item.Text.Shorten(item.Size.width),
+                item.GetInteractionColor(Color.Orange));
         });
         keys.OnItemInteraction(Interaction.Trigger, item => OnValueClick(keys, item, true));
 
@@ -228,7 +228,7 @@ public static class Program
                 color = Color.Magenta;
 
             var interactionColor = item.GetInteractionColor(color);
-            maps[1].SetTextLine(item.Position, item.Text, interactionColor, maxLength: item.Size.width);
+            maps[1].SetText(item.Position, item.Text.Shorten(item.Size.width), interactionColor);
         });
         list.OnItemInteraction(Interaction.Trigger, item => OnValueClick(list, item));
 
@@ -428,7 +428,7 @@ public static class Program
             remove.Add(new Button());
             move.Add(new Button());
 
-            list.Text += (list.Text == "" ? "" : ",") + type;
+            list.Text += (list.Text == string.Empty ? string.Empty : ",") + type;
             values.IsHidden = true;
         }
 
@@ -668,7 +668,7 @@ public static class Program
                 var panelW = predict ? 16 : GrabInt();
                 var panelH = predict ? 8 : GrabInt();
                 creating = predict ? default : (DataType)GrabInt();
-                var types = predict ? "" : GrabString(hijackedBytes, ref offset);
+                var types = predict ? string.Empty : GrabString(hijackedBytes, ref offset);
                 selectedTypes.Clear();
 
                 if (predict == false)
@@ -739,7 +739,7 @@ public static class Program
     private static string GetDefaultValue(int index)
     {
         var type = selectedTypes[index];
-        var value = "";
+        var value = string.Empty;
 
         if (type == VALUE_FLAG)
             value = "false";
@@ -879,7 +879,7 @@ public static class Program
             value = value[1..^1];
 
         value = AddPlaceholders(value);
-        var divider = "";
+        var divider = string.Empty;
 
         if (predict)
         {
@@ -1045,7 +1045,7 @@ public static class Program
             return DataType.Dictionary;
         }
 
-        separator = "";
+        separator = string.Empty;
         return DataType.Value;
     }
     private static string[] PredictValueTypes(Storage storage, string[] strValues)

@@ -534,10 +534,10 @@ public abstract class Block
     /// <param name="interaction">The interaction type.</param>
     public void Interact(Interaction interaction)
     {
-        if (interactions.ContainsKey(interaction) == false)
+        if (interactions.TryGetValue(interaction, out var interaction1) == false)
             return;
 
-        interactions[interaction].Invoke();
+        interaction1.Invoke();
     }
 
     /// <summary>
@@ -731,7 +731,7 @@ public abstract class Block
     private readonly Dictionary<Interaction, Action> interactions = new();
     internal Action<(int deltaX, int deltaY)>? drag;
 
-    internal string text = "";
+    internal string text = string.Empty;
     internal (int x, int y, int width, int height) mask;
 
     private void Init()

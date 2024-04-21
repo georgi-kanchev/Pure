@@ -183,8 +183,8 @@ public class Notes : Audio
         for (var i = 0; i < notes.Count; i++)
         {
             var frequency = GetFrequency(notes[i]);
-            var previousNote = i > 0 ? notes[i - 1] : "";
-            var nextNote = i < notes.Count - 1 ? notes[i + 1] : "";
+            var previousNote = i > 0 ? notes[i - 1] : string.Empty;
+            var nextNote = i < notes.Count - 1 ? notes[i + 1] : string.Empty;
             var isStarting = notes[i] != previousNote;
             var isStopping = notes[i] != nextNote;
 

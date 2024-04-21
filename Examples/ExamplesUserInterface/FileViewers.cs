@@ -43,13 +43,13 @@ public static class FileViewers
     {
         var e = fileViewer;
         var selected = e.SelectedPaths;
-        var paths = "";
+        var paths = string.Empty;
 
         foreach (var path in selected)
             paths += $"{Environment.NewLine}{Environment.NewLine}{path}";
 
-        maps[0].SetTextLine((fileViewer.Position.x, fileViewer.Position.y - 1), fileViewer.Text);
-        maps[0].SetTextArea((e.Position.x, e.Position.y + e.Size.height - 1, e.Size.width, 20),
-            paths);
+        var (x, y, w, h) = (e.Position.x, e.Position.y + e.Size.height - 1, e.Size.width, 20);
+        maps[0].SetText((x, y - 1), fileViewer.Text);
+        maps[0].SetText((x, y), paths.Constrain((w, h)));
     }
 }

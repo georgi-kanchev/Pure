@@ -103,7 +103,7 @@ public class Editor
         Prompt.OnItemDisplay(item => OnPromptItemDisplay?.Invoke(item));
         promptSize = new()
         {
-            Value = "",
+            Value = string.Empty,
             Size = (25, 1),
             SymbolGroup = SymbolGroup.Digits | SymbolGroup.Space,
             IsSingleLine = true
@@ -141,7 +141,7 @@ public class Editor
         PromptInput = new()
         {
             Size = (30, 1),
-            Value = "",
+            Value = string.Empty,
             IsSingleLine = true
         };
         PromptInput.OnDisplay(() => MapsUi.SetInputBox(PromptInput, BACK));
@@ -254,7 +254,7 @@ public class Editor
             var lastLine = infoTextSplit[^1];
             if (lastLine.Contains(')'))
             {
-                var split = lastLine.Split("(")[1].Replace(")", "");
+                var split = lastLine.Split("(")[1].Replace(")", string.Empty);
                 var number = int.Parse(split) + 1;
                 text += $" ({number})";
             }
@@ -432,7 +432,7 @@ public class Editor
     private readonly InputBox promptSize;
     private readonly TilesetPrompt tilesetPrompt;
 
-    private string infoText = "";
+    private string infoText = string.Empty;
     private float infoTextTimer;
     private int fps = 60;
     private (float x, float y) prevRaw, prevWorld, prevUi;
@@ -562,26 +562,21 @@ public class Editor
             Tile.SHADE_OPAQUE,
             Color.Gray.ToDark());
 
-        MapsUi[FRONT].SetTextLine((0, 0), $"FPS:{fps}");
-        MapsUi[FRONT].SetTextLine((11, bottomY - 2), $"{mw} x {mh}");
-        MapsUi[FRONT].SetTextLine((12, bottomY), $"{vw} x {vh}");
+        MapsUi[FRONT].SetText((0, 0), $"FPS:{fps}");
+        MapsUi[FRONT].SetText((11, bottomY - 2), $"{mw} x {mh}");
+        MapsUi[FRONT].SetText((12, bottomY), $"{vw} x {vh}");
 
-        MapsUi[FRONT].SetTextArea(
-            (x, bottomY, TEXT_WIDTH, 1),
-            $"Cursor {(int)mx}, {(int)my}",
-            alignment: Alignment.Center);
+        MapsUi[FRONT].SetText((x, bottomY),
+            $"Cursor {(int)mx}, {(int)my}".Constrain((TEXT_WIDTH, 1), alignment: Alignment.Center));
 
         if (infoTextTimer <= 0)
         {
-            infoText = "";
+            infoText = string.Empty;
             return;
         }
 
-        MapsUi[FRONT].SetTextArea(
-            (x, 0, TEXT_WIDTH, TEXT_HEIGHT),
-            infoText,
-            alignment: Alignment.Top,
-            symbolProgress: 1f);
+        MapsUi[FRONT].SetText((x, 0),
+            infoText.Constrain((TEXT_WIDTH, TEXT_HEIGHT), alignment: Alignment.Top));
     }
 
     private void TryViewInteract()

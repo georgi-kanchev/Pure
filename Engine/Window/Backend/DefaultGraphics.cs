@@ -7,7 +7,7 @@ internal static class DefaultGraphics
     public static string PngToBase64String(string pngPath)
     {
         var img = new Image(pngPath);
-        var rawBits = "";
+        var rawBits = string.Empty;
         for (uint y = 0; y < img.Size.Y; y++)
             for (uint x = 0; x < img.Size.X; x++)
             {

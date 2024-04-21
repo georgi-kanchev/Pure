@@ -5,16 +5,6 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 /// <summary>
-/// Specifies the alignment of the text in <see cref="Tilemap.SetTextArea"/>.
-/// </summary>
-public enum Alignment
-{
-    TopLeft, Top, TopRight,
-    Left, Center, Right,
-    BottomLeft, Bottom, BottomRight
-}
-
-/// <summary>
 /// Represents a tilemap consisting of a grid of tiles.
 /// </summary>
 public class Tilemap
@@ -25,7 +15,6 @@ public class Tilemap
     /// </summary>
     public (int width, int height) Size { get; }
     public Area View { get; set; }
-    public char TintBrush { get; set; } = '#';
 
     /// <summary>
     /// Initializes a new tilemap instance with the specified size.
@@ -81,7 +70,6 @@ public class Tilemap
         Size = (w, h);
         View = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()),
             BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
-        TintBrush = BitConverter.ToChar(Get<char>());
 
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
@@ -115,7 +103,6 @@ public class Tilemap
         result.AddRange(BitConverter.GetBytes(View.Y));
         result.AddRange(BitConverter.GetBytes(View.Width));
         result.AddRange(BitConverter.GetBytes(View.Height));
-        result.AddRange(BitConverter.GetBytes(TintBrush));
 
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
@@ -316,207 +303,61 @@ public class Tilemap
             for (var j = 0; j < tiles.GetLength(0); j++)
                 SetTile((position.x + j, position.y + i), tiles[j, i], mask);
     }
-    /// <summary>
-    /// Sets a single line of text starting from a position with optional tint and optional shortening.
-    /// </summary>
-    /// <param name="position">The starting position to place the text.</param>
-    /// <param name="text">The text to display.</param>
-    /// <param name="tint">Optional tint color value (defaults to white).</param>
-    /// <param name="maxLength">Optional shortening that adds ellipsis '…' if exceeded
-    /// (defaults to none). Negative values reduce the text from the back.</param>
-    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
-    public void SetTextLine(
+    public void SetText(
         (int x, int y) position,
         string? text,
         uint tint = uint.MaxValue,
-        int maxLength = int.MaxValue,
-        Area? mask = null)
-    {
-        var errorOffset = 0;
-
-        if (maxLength == 0 || text == null)
-            return;
-
-        text = RemoveColorTags(text, out _);
-
-        var abs = Math.Abs(maxLength);
-        if (maxLength > 0 && text.Length > maxLength)
-            text = text[..Math.Max(abs - 1, 0)] + "…";
-        else if (maxLength < 0 && text.Length > abs)
-            text = "…" + text[^(abs - 1)..];
-
-        for (var i = 0; i < text.Length; i++)
-        {
-            var symbol = text[i];
-            var index = TileIdFrom(symbol);
-
-            if (index == default && symbol != ' ')
-            {
-                errorOffset++;
-                continue;
-            }
-
-            if (symbol == ' ')
-                continue;
-
-            SetTile((position.x + i - errorOffset, position.y), new(index, tint), mask);
-        }
-    }
-    /// <summary>
-    /// Sets an area of text with optional alignment, scrolling, and word wrapping.
-    /// </summary>
-    /// <param name="area">The area.</param>
-    /// <param name="text">The text to display.</param>
-    /// <param name="tint">Optional tint color value (defaults to white).</param>
-    /// <param name="isWordWrapping">Optional flag for enabling word wrapping.</param>
-    /// <param name="alignment">Optional text alignment.</param>
-    /// <param name="symbolProgress">Optional value (ranged 0 to 1)
-    /// indicating the amount of symbols to display.</param>
-    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
-    public void SetTextArea(
-        Area area,
-        string? text,
-        uint tint = uint.MaxValue,
-        bool isWordWrapping = true,
-        Alignment alignment = Alignment.TopLeft,
-        float symbolProgress = 1,
-        Area? mask = null)
-    {
-        if (string.IsNullOrEmpty(text) || area.Width <= 0 || area.Height <= 0)
-            return;
-
-        symbolProgress = Math.Clamp(symbolProgress, 0, 1);
-
-        text = RemoveColorTags(text, out _);
-        text = text.Remove((int)(text.Length * symbolProgress));
-
-        var x = area.X;
-        var y = area.Y;
-        var lineList = text.TrimEnd().Split(Environment.NewLine).ToList();
-
-        if (lineList.Count == 0)
-            return;
-
-        TryWordWrap();
-        TryAlignVertically();
-
-        var startIndex = 0;
-        var end = area.Height;
-        var e = lineList.Count - area.Height;
-        startIndex = Math.Clamp(startIndex, 0, Math.Max(e, 0));
-        end = Math.Clamp(end, 0, lineList.Count);
-
-        Display();
-
-        return;
-
-        void Display()
-        {
-            for (var i = startIndex; i < end; i++)
-            {
-                var line = TryAlignHorizontally(lineList[i]);
-                SetTextLine((x, y), line, tint, mask: mask);
-                x = area.X;
-                y++;
-            }
-        }
-        string TryAlignHorizontally(string line)
-        {
-            if (alignment is Alignment.TopRight or Alignment.Right or Alignment.BottomRight)
-                line = line.PadLeft(area.Width);
-            else if (alignment is Alignment.Top or Alignment.Center or Alignment.Bottom)
-                line = PadLeftAndRight(line, area.Width);
-            return line;
-        }
-        void TryAlignVertically()
-        {
-            var yDiff = area.Height - lineList.Count;
-
-            if (alignment is Alignment.Left or Alignment.Center or Alignment.Right)
-                for (var i = 0; i < yDiff / 2; i++)
-                    lineList.Insert(0, string.Empty);
-            else if (alignment is Alignment.BottomLeft or Alignment.Bottom or Alignment.BottomRight)
-                for (var i = 0; i < yDiff; i++)
-                    lineList.Insert(0, string.Empty);
-        }
-        void TryWordWrap()
-        {
-            for (var i = 0; i < lineList.Count; i++)
-            {
-                var line = lineList[i];
-
-                if (line.Length <= area.Width) // line is valid length
-                    continue;
-
-                var lastLineIndex = area.Width - 1;
-                var newLineIndex = isWordWrapping ?
-                    GetSafeNewLineIndex(line, (uint)lastLineIndex) :
-                    lastLineIndex;
-
-                // end of line? can't word wrap, proceed to symbol wrap
-                if (newLineIndex == 0)
-                {
-                    lineList[i] = line[..area.Width];
-                    lineList.Insert(i + 1, line[area.Width..line.Length]);
-                    continue;
-                }
-
-                // otherwise wordwrap
-                var endIndex = newLineIndex + (isWordWrapping ? 0 : 1);
-                lineList[i] = line[..endIndex].TrimStart();
-                lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
-            }
-
-            int GetSafeNewLineIndex(string line, uint endLineIndex)
-            {
-                for (var i = (int)endLineIndex; i >= 0; i--)
-                    if (line[i] == ' ' && i <= area.Width)
-                        return i;
-
-                return default;
-            }
-        }
-    }
-    public void SetTextAreaTint(
-        Area area,
-        string? text,
+        char tintBrush = '#',
         Area? mask = null)
     {
         if (string.IsNullOrWhiteSpace(text))
             return;
 
-        var xStep = area.Width < 0 ? -1 : 1;
-        var yStep = area.Height < 0 ? -1 : 1;
-        var tiles = TilesIn(area);
+        var colors = GetColors(text, tintBrush);
+        var (x, y) = position;
 
-        RemoveColorTags(text, out var colors);
-        text = text.Replace(" ", string.Empty);
-
-        var symbolIndex = 0;
-        var currTint = uint.MaxValue;
-
-        for (var y = area.Y; y != area.Y + area.Height; y += yStep)
-            for (var x = area.X; x != area.X + area.Width; x += xStep)
+        for (var j = 0; j < text.Length; j++)
+        {
+            if (IsTag(j))
             {
-                var (i, j) = (x - area.X, y - area.Y);
-                var tile = tiles[i, j];
+                var (color, tag, i) = colors[0];
 
-                if (tile.Id == Tile.EMPTY)
-                    continue;
+                text = text.Remove(i, tag.Length);
+                tint = color;
+                colors.RemoveAt(0);
+                for (var k = 0; k < colors.Count; k++)
+                    colors[k] = (colors[k].color, colors[k].tag, colors[k].index - tag.Length);
 
-                if (text[symbolIndex] == TintBrush)
+                if (IsTag(j)) // tag after tag? backtrack one index to handle it above yet again
                 {
-                    var (color, tag) = colors.Dequeue();
-                    var tagIndex = text.IndexOf(tag, StringComparison.Ordinal);
-                    text = text.Remove(tagIndex, tag.Length);
-                    currTint = color;
+                    j--;
+                    continue;
                 }
-
-                symbolIndex++;
-
-                tile.Tint = currTint;
-                SetTile((x, y), tile, mask);
             }
+
+            if (text[j].ToString() == Environment.NewLine)
+            {
+                x = position.x;
+                y++;
+                continue;
+            }
+
+            var index = TileIdFrom(text[j]);
+            if (index != default && text[j] != ' ')
+                SetTile((x, y), new(index, tint), mask);
+
+            x++;
+        }
+
+        bool IsTag(int index)
+        {
+            if (text[index] != tintBrush || colors.Count <= 0)
+                return false;
+
+            var (_, tag, i) = colors[0];
+            var tagEnd = i + tag.Length;
+            return tagEnd < text.Length && text[i..tagEnd] == tag;
+        }
     }
     public void SetEllipse(
         (int x, int y) center,
@@ -528,48 +369,48 @@ public class Tilemap
         if (tiles == null || tiles.Length == 0)
             return;
 
-        var sqrRx = radius.width * radius.width;
-        var sqrRy = radius.height * radius.height;
+        var rxSq = radius.width * radius.width;
+        var rySq = radius.height * radius.height;
         var x = 0;
         var y = radius.height;
         var px = 0;
-        var py = sqrRx * 2 * y;
+        var py = rxSq * 2 * y;
 
         // Region 1
-        var p = (int)(sqrRy - sqrRx * radius.height + 0.25f * sqrRx);
+        var p = (int)(rySq - rxSq * radius.height + 0.25f * rxSq);
         while (px < py)
         {
             Set();
 
             x++;
-            px += sqrRy * 2;
+            px += rySq * 2;
 
             if (p < 0)
-                p += sqrRy + px;
+                p += rySq + px;
             else
             {
                 y--;
-                py -= sqrRx * 2;
-                p += sqrRy + px - py;
+                py -= rxSq * 2;
+                p += rySq + px - py;
             }
         }
 
         // Region 2
-        p = (int)(sqrRy * (x + 0.5f) * (x + 0.5f) + sqrRx * (y - 1) * (y - 1) - sqrRx * sqrRy);
+        p = (int)(rySq * (x + 0.5f) * (x + 0.5f) + rxSq * (y - 1) * (y - 1) - rxSq * rySq);
         while (y >= 0)
         {
             Set();
 
             y--;
-            py -= sqrRx * 2;
+            py -= rxSq * 2;
 
             if (p > 0)
-                p += sqrRx - py;
+                p += rxSq - py;
             else
             {
                 x++;
-                px += sqrRy * 2;
-                p += sqrRx - py + px;
+                px += rySq * 2;
+                p += rxSq - py + px;
             }
         }
 
@@ -967,12 +808,6 @@ public class Tilemap
 
         return x >= mx && y >= my && x < mx + mw && y < my + mh;
     }
-    private static string PadLeftAndRight(string text, int length)
-    {
-        var spaces = length - text.Length;
-        var padLeft = spaces / 2 + text.Length;
-        return text.PadLeft(padLeft).PadRight(length);
-    }
     private static T[,] Duplicate<T>(T[,] array)
     {
         var copy = new T[array.GetLength(0), array.GetLength(1)];
@@ -1033,19 +868,19 @@ public class Tilemap
         return collection[(int)Random(0, collection.Count - 1, 0, seed)];
     }
 
-    private static string RemoveColorTags(string input, out Queue<(uint color, string tag)> colors)
+    private static List<(uint color, string tag, int index)> GetColors(string input, char brush)
     {
-        colors = new();
-        var matches = Regex.Matches(input, @"#(\d+)#");
+        var colors = new List<(uint color, string tag, int index)>();
+        var matches = Regex.Matches(input, $"{brush}([0-9a-fA-F]+){brush}");
 
         foreach (Match match in matches)
         {
-            var colorValue = uint.Parse(match.Groups[1].Value);
-            input = input.Replace(match.Value, string.Empty);
-            colors.Enqueue((colorValue, match.Value));
+            var colorValue = Convert.ToUInt32(match.Groups[1].Value, 16);
+            var startIndex = match.Index;
+            colors.Add((colorValue, match.Value, startIndex));
         }
 
-        return input;
+        return colors;
     }
 
     internal static byte[] Compress(byte[] data)

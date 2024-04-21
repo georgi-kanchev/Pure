@@ -20,7 +20,6 @@ public class Palette : Block
                 Interact(Interaction.Select);
         }
     }
-    public bool IsPickHidden { get; set; }
 
     public Palette((int x, int y) position = default, int brightnessLevels = 30) : base(position)
     {
@@ -172,11 +171,11 @@ public class Palette : Block
 
         Pick.position = (x + w - 1, y + h - 1);
         Pick.size = (1, 1);
-        Pick.mask = IsPickHidden ? Input.Mask : mask;
+        Pick.mask = Pick.IsHidden ? Input.Mask : mask;
         Pick.Update();
 
         Brightness.position = (x, y + h - 1);
-        Brightness.size = (w - (IsPickHidden ? 0 : 1), 1);
+        Brightness.size = (w - (Pick.IsHidden ? 0 : 1), 1);
         Brightness.mask = mask;
         Brightness.Update();
 

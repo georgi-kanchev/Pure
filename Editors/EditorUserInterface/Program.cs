@@ -262,7 +262,7 @@ public static class Program
         var back = editor.MapsEditor[(int)Editor.LayerMapsEditor.Back];
         back.SetBox(panel.Area, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
         back.SetArea((textPos.Item1, textPos.y, panel.Text.Length, 1), default);
-        back.SetTextLine(textPos, panel.Text, Color.Cyan);
+        back.SetText(textPos, panel.Text, Color.Cyan);
 
         var (x, y) = (panel.Position.x, panel.Position.y - 1);
         var curX = 0;

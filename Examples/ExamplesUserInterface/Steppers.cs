@@ -11,7 +11,7 @@ public static class Steppers
         stepper.OnDisplay(() =>
         {
             var (x, y) = stepper.Position;
-            maps[0].SetTextLine((x, y - 1), "Step: 1 / Range: (-8, 10)");
+            maps[0].SetText((x, y - 1), "Step: 1 / Range: (-8, 10)");
             maps.SetStepper(stepper);
         });
 
@@ -22,7 +22,7 @@ public static class Steppers
         stepperDecimal.OnDisplay(() =>
         {
             var (x, y) = stepperDecimal.Position;
-            maps[0].SetTextLine((x, y - 1), "Step: 0.1");
+            maps[0].SetText((x, y - 1), "Step: 0.1");
             maps.SetStepper(stepperDecimal);
         });
 

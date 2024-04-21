@@ -148,7 +148,7 @@ public static class Program
         tools.OnItemInteraction(Interaction.Trigger, btn => menu[5].Text = $"{btn.Text}… ");
         tools[0].Interact(Interaction.Trigger);
 
-        palette = new() { IsPickHidden = true };
+        palette = new() { Pick = { IsHidden = true } };
         palette.OnDisplay(() =>
         {
             editor.MapsUi.SetPalette(palette, MIDDLE);

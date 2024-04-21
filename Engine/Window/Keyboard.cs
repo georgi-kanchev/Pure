@@ -150,7 +150,7 @@ public static class Keyboard
     public static void CancelInput()
     {
         pressed.Clear();
-        KeyTyped = "";
+        KeyTyped = string.Empty;
     }
     public static string ToText(this Key key, bool isShifted)
     {
@@ -174,7 +174,7 @@ public static class Keyboard
         else if (symbols.ContainsKey(key))
             return isShifted ? symbols[key].Item2 : symbols[key].Item1;
 
-        return "";
+        return string.Empty;
     }
 
     /// <param name="key">
@@ -257,7 +257,7 @@ public static class Keyboard
 
     static Keyboard()
     {
-        KeyTyped = "";
+        KeyTyped = string.Empty;
         symbols = new()
         {
             { Key.BracketLeft, ("[", "{") }, { Key.BracketRight, ("]", "}") },
@@ -265,7 +265,7 @@ public static class Keyboard
             { Key.Quote, ("'", "\"") }, { Key.Slash, ("/", "?") }, { Key.Backslash, ("\\", "|") },
             { Key.Tilde, ("`", "~") }, { Key.Equal, ("=", "+") }, { Key.Hyphen, ("-", "_") },
             { Key.Space, (" ", " ") }, { Key.Enter, (Environment.NewLine, Environment.NewLine) },
-            { Key.Tab, ("\t", "") }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
+            { Key.Tab, ("\t", string.Empty) }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
             { Key.Asterisk, ("*", "*") }, { Key.Divide, ("/", "/") }
         };
         shiftNumbers = new[]
@@ -338,29 +338,29 @@ public static class Keyboard
 
         if (pressed.Count == 0)
         {
-            KeyTyped = "";
+            KeyTyped = string.Empty;
             return;
         }
 
         // shift released while holding special symbol, just like removing
         // lowercase and uppercase, shift + 1 = !, so releasing shift would
         // never removes the !
-        if (key is Key.ShiftLeft or Key.ShiftRight && KeyTyped != "")
+        if (key is Key.ShiftLeft or Key.ShiftRight && KeyTyped != string.Empty)
         {
             foreach (var k in pressed)
                 // get symbol as if shift was pressed
-                KeyTyped = KeyTyped.Replace(k.ToText(true), "");
+                KeyTyped = KeyTyped.Replace(k.ToText(true), string.Empty);
         }
 
         if (KeyTyped.Length == 0)
             return;
 
         var symbol = key.ToText(IsPressed(Key.ShiftLeft) || IsPressed(Key.ShiftRight));
-        if (symbol == "")
+        if (symbol == string.Empty)
             return;
 
-        KeyTyped = KeyTyped.Replace(symbol.ToLower(), "");
-        KeyTyped = KeyTyped.Replace(symbol.ToUpper(), "");
+        KeyTyped = KeyTyped.Replace(symbol.ToLower(), string.Empty);
+        KeyTyped = KeyTyped.Replace(symbol.ToUpper(), string.Empty);
     }
 #endregion
 }

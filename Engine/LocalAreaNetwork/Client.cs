@@ -88,7 +88,7 @@ public class Client : Communication
     }
     public void SendToServer(byte[] data, byte tag = default)
     {
-        var msg = new Message(Id, 0, Tag.CLIENT_TO_SERVER, tag, "", data);
+        var msg = new Message(Id, 0, Tag.CLIENT_TO_SERVER, tag, string.Empty, data);
         backendClient?.SendAsync(msg.Total);
     }
     /// <summary>
@@ -103,7 +103,7 @@ public class Client : Communication
     }
     public void SendToAll(byte[] data, byte tag = default)
     {
-        var msg = new Message(Id, 0, Tag.CLIENT_TO_ALL, tag, "", data);
+        var msg = new Message(Id, 0, Tag.CLIENT_TO_ALL, tag, string.Empty, data);
         backendClient?.SendAsync(msg.Total);
     }
     /// <summary>
@@ -123,7 +123,7 @@ public class Client : Communication
     public void SendToClient(string toNickname, byte[] data, byte tag = default)
     {
         // self message is possible / goes through server
-        var msg = new Message(Id, GetId(toNickname), Tag.CLIENT_TO_CLIENT, tag, "", data);
+        var msg = new Message(Id, GetId(toNickname), Tag.CLIENT_TO_CLIENT, tag, string.Empty, data);
         backendClient?.SendAsync(msg.Total);
     }
 
@@ -194,7 +194,7 @@ public class Client : Communication
 
         void TriggerEvent()
         {
-            var from = fromId == 0 ? "" : clients[fromId];
+            var from = fromId == 0 ? string.Empty : clients[fromId];
             if (message.Data == null || message.Data.Length == 0)
                 onReceiveMsg?.Invoke((from, message.Tag, message.Value));
             else

@@ -146,7 +146,8 @@ public static class Input
             PressedButtons = buttons;
         }
 
-        Typed = keysTyped?.Replace("\n", "").Replace("\t", "").Replace("\r", "");
+        var mt = string.Empty;
+        Typed = keysTyped?.Replace("\n", mt).Replace("\t", mt).Replace("\r", mt);
 
         ScrollDelta = scrollDelta;
 

@@ -55,8 +55,8 @@ public static class Chat
             client.OnClientDisconnect(nickname => Log($"'{nickname}' disconnected."));
             client.OnLostConnection(() => Log("Lost connection."));
             client.OnReconnectionAttempt(() => Log("Trying to reconnect..."));
-            client.OnReceive(data =>
-                Log($"{(data.fromNickname == "" ? "Server" : data.fromNickname)}: {data.message}"));
+            client.OnReceive(data => Log(
+                $"{(data.fromNickname == string.Empty ? "Server" : data.fromNickname)}: {data.message}"));
 
             Log("server ip:");
             var ip = Console.ReadLine();

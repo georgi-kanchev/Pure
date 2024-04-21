@@ -11,7 +11,7 @@ internal class Inspector : Panel
 
         var disabled = new EditButton((0, 0)) { Text = "Disabled" };
         var hidden = new EditButton((0, 0)) { Text = "Hidden" };
-        var text = new InputBox((0, 0)) { Placeholder = "Text…", [0] = "" };
+        var text = new InputBox((0, 0)) { Placeholder = "Text…", [0] = string.Empty };
 
         var selected = new EditButton((0, 0)) { Text = "Selected" };
 
@@ -51,7 +51,7 @@ internal class Inspector : Panel
 
         var type = new EditButton((0, 0)) { IsDisabled = true };
         var expanded = new EditButton((0, 0)) { Text = "Expanded" };
-        var items = new InputBox((0, 0)) { Placeholder = "Items�", [0] = "", Size = (0, 7) };
+        var items = new InputBox((0, 0)) { Placeholder = "Items…", [0] = string.Empty, Size = (0, 7) };
         var multiSelect = new EditButton((0, 0)) { Text = "Multi-Select" };
         var scroll = new Stepper((0, 0)) { Text = "Scroll", Range = (0, 1) };
         var width = new Stepper((0, 0)) { Text = "Width", Range = (1, int.MaxValue) };
@@ -233,7 +233,7 @@ internal class Inspector : Panel
         SetBackground(editor.MapsUi[(int)Editor.LayerMapsUi.Back], this, color);
 
         front.SetBox(Area, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
-        front.SetTextLine(textPos, Text, Color.Yellow);
+        front.SetText(textPos, Text, Color.Yellow);
 
         UpdateButton(toTop, (topX, topY));
         UpdateButton(alignX, (topX, topY + 1));
@@ -541,9 +541,9 @@ internal class Inspector : Panel
             itemHeight.Value = l.ItemSize.height;
             itemGap.Value = l.ItemGap;
 
-            var value = "";
+            var value = string.Empty;
             for (var j = 0; j < l.Count; j++)
-                value += $"{(j > 0 ? Environment.NewLine : "")}{l[j].Text}";
+                value += $"{(j > 0 ? Environment.NewLine : string.Empty)}{l[j].Text}";
 
             items.Value = value;
             items.SelectionIndices = (0, 0);
@@ -566,8 +566,8 @@ internal class Inspector : Panel
 
         var (x, y) = btn.Position;
         var (w, h) = btn.Size;
-        front.SetTextArea((x, y, w, h), btn.Text, GetColor(btn, color.ToDark()),
-            alignment: Alignment.Center);
+        var text = btn.Text.Constrain((w, h), alignment: Alignment.Center);
+        front.SetText((x, y), text, GetColor(btn, color.ToDark()));
     }
     private void UpdateInputBox(InputBox inputBox, (int x, int y) position)
     {
@@ -593,20 +593,18 @@ internal class Inspector : Panel
         (x, y) = e.Position;
         (w, h) = e.Size;
 
-        back.SetTextArea(
-            area: (x, y, w, h),
-            text: e.Selection,
-            tint: e.IsFocused ? Color.Blue : Color.Blue.ToBright(),
-            isWordWrapping: false);
-        middle.SetTextArea((x, y, w, h), e.Text, isWordWrapping: false);
-        middle.SetTextLine((Position.x + 1, e.Position.y - 1), e.Placeholder, color);
+        back.SetText(
+            position: (x, y),
+            text: e.Selection.Constrain((w, h), isWordWrapping: false),
+            tint: e.IsFocused ? Color.Blue : Color.Blue.ToBright());
+        middle.SetText((x, y), e.Text.Constrain((w, h), isWordWrapping: false));
+        middle.SetText((Position.x + 1, e.Position.y - 1), e.Placeholder, color);
 
         if (string.IsNullOrWhiteSpace(e.Text))
-            middle.SetTextArea(
-                area: (x, y, w, h),
-                text: e.Placeholder,
-                tint: color.ToBright(),
-                isWordWrapping: false);
+            middle.SetText(
+                position: (x, y),
+                text: e.Placeholder.Constrain((w, h), isWordWrapping: false),
+                tint: color.ToBright());
 
         if (e.IsCursorVisible)
             front.SetTile(e.PositionFromIndices(e.CursorIndices), new(Tile.SHAPE_LINE, Color.White, 2));
@@ -639,8 +637,8 @@ internal class Inspector : Panel
             new(Tile.ARROW_TAILLESS_ROUND, GetColor(e.Increase, color), 3));
         front.SetTile(e.Decrease.Position,
             new(Tile.ARROW_TAILLESS_ROUND, GetColor(e.Decrease, color), 1));
-        front.SetTextLine((e.Position.x + 2, e.Position.y), e.Text, color);
-        front.SetTextLine((e.Position.x + 2, e.Position.y + 1), value);
+        front.SetText((e.Position.x + 2, e.Position.y), e.Text, color);
+        front.SetText((e.Position.x + 2, e.Position.y + 1), value);
 
         front.SetTile(e.Minimum.Position, new(Tile.MATH_MUCH_LESS, GetColor(e.Minimum, color)));
         front.SetTile(e.Middle.Position, new(Tile.PUNCTUATION_PIPE, GetColor(e.Middle, color)));

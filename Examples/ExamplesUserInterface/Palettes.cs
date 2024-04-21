@@ -26,20 +26,18 @@ public static class Palettes
         {
             var (x, y) = (palette.Position.x, palette.Position.y - 10);
             var (w, h) = (palette.Size.width, 10);
-            var rect = (x, y, w, h);
-            var text = $"{Color.Blue.ToBrush()}This " +
+            var text = $"{Color.Cyan.ToBrush()}This " +
                        $"{Color.Red.ToBrush()}text " +
                        $"{Color.Green.ToBrush()}can " +
                        $"{Color.Orange.ToBrush()}be " +
                        $"{Color.Azure.ToBrush()}used " +
-                       $"{Color.Purple.ToBrush()}to " +
-                       $"{Color.Pink.ToBrush()}pick " +
-                       $"{Color.Yellow.ToBrush()}colors " +
-                       $"{Color.Brown.ToBrush()}from";
+                       $"{Color.Magenta.ToBrush()}for " +
+                       $"{Color.Pink.ToBrush()}color " +
+                       $"{Color.Yellow.ToBrush()}picking";
 
-            maps[1].SetTextArea(rect, text, symbolProgress: Time.RuntimeClock / 5f,
-                alignment: Alignment.Center);
-            maps[1].SetTextAreaTint(rect, text);
+            var progress = Time.RuntimeClock / 2f;
+            text = text.Constrain((w, h), alignment: Alignment.Center, scrollProgress: progress);
+            maps[1].SetText((x, y), text);
         });
 
         return new Block[] { hack, palette };

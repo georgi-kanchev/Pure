@@ -17,7 +17,7 @@ internal class TilesetPrompt
         {
             Size = (20, 1),
             SymbolGroup = SymbolGroup.Digits | SymbolGroup.Space,
-            Value = "",
+            Value = string.Empty,
             IsSingleLine = true
         };
         pair.OnDisplay(() => maps.SetInputBox(pair, BACK));

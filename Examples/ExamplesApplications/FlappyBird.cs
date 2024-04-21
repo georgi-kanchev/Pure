@@ -141,12 +141,12 @@ public static class FlappyBird
             var (birdTile, birdAngle) = birdAnimation.CurrentValue;
 
             var scoreText = $"Score: {score}";
-            foreground.SetTextLine((width / 2 - scoreText.Length / 2, 1), scoreText);
+            foreground.SetText((width / 2 - scoreText.Length / 2, 1), scoreText);
 
+            var text = $"Game Over!{Environment.NewLine}{Environment.NewLine}<Space> to play again"
+                .Constrain((width, height), alignment: Alignment.Center);
             if (isGameOver)
-                foreground.SetTextArea((0, 0, width, height),
-                    $"Game Over!{Environment.NewLine}{Environment.NewLine}<Space> to play again",
-                    alignment: Alignment.Center);
+                foreground.SetText((0, 0), text);
 
             layer.DrawTilemap(background.ToBundle());
             layer.DrawTilemap(foreground.ToBundle());

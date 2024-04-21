@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.Utilities;
+﻿using System.Text;
+
+namespace Pure.Engine.Utilities;
 
 /// <summary>
 /// Represents a color in RGBA format and performs color operations.
@@ -224,7 +226,7 @@ public struct Color
 
     public string ToBrush(char brush = '#')
     {
-        return $"{brush}{v}{brush}";
+        return $"{brush}{v:X}{brush}";
     }
 
     /// <param name="bundle">

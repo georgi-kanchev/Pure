@@ -10,16 +10,14 @@ public static class Prompts
         const Key HOTKEY_MSG = Key.ControlLeft;
 
         var info = new Button { Position = (int.MaxValue, 0) };
-        info.OnDisplay(() => maps[0].SetTextArea(
-            area: (0, 0, maps.Size.width, 2),
-            text:
-            $"Press <{HOTKEY_LOG}> to type and log{Environment.NewLine}" +
-            $"Press <{HOTKEY_MSG}> to show a message"));
+        var text = $"Press <{HOTKEY_LOG}> to type and log{Environment.NewLine}" +
+                   $"Press <{HOTKEY_MSG}> to show a message";
+        info.OnDisplay(() => maps[0].SetText((0, 0), text));
 
         var input = new InputBox
         {
             Size = (16, 1),
-            Value = "",
+            Value = string.Empty,
             Placeholder = "Message…",
             IsSingleLine = true,
         };

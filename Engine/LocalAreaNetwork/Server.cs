@@ -84,7 +84,7 @@ public class Server : Communication
     }
     public void SendToAll(byte[] data, byte tag = 0)
     {
-        var msg = new Message(0, 0, Tag.SERVER_TO_ALL, tag, "", data);
+        var msg = new Message(0, 0, Tag.SERVER_TO_ALL, tag, string.Empty, data);
         backendServer?.Multicast(msg.Total);
     }
     /// <summary>
@@ -102,7 +102,7 @@ public class Server : Communication
     }
     public void SendToClient(string toNickname, byte[] data, byte tag = 0)
     {
-        var msg = new Message(0, GetId(toNickname), Tag.SERVER_TO_CLIENT, tag, "", data);
+        var msg = new Message(0, GetId(toNickname), Tag.SERVER_TO_CLIENT, tag, string.Empty, data);
         backendServer?.Multicast(msg.Total);
     }
 
@@ -161,12 +161,12 @@ public class Server : Communication
             if (HasNickname(nickname) == false)
                 return nickname;
 
-            var number = "";
+            var number = string.Empty;
             for (var j = nickname.Length - 1; j >= 0; j--)
                 if (char.IsNumber(nickname[j]))
                     number = number.Insert(0, nickname[j].ToString());
 
-            if (number == "")
+            if (number == string.Empty)
             {
                 nickname += "1";
                 continue;

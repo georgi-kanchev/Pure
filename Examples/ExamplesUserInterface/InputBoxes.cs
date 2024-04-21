@@ -7,41 +7,46 @@ public static class InputBoxes
         Window.Title = "Pure - Input Boxes Example";
 
         var line = Environment.NewLine;
-        var messages = $"Welcome to the chat! :){line}" +
-                       $"Type a message &{line}" +
-                       $"press <Enter> to send it.{line}{line}";
+        var messages = $"{Color.Azure.ToBrush()}Welcome to the chat! :){line}" +
+                       $"Type a message & press <Enter> to send it.{line}{line}";
         var chat = new InputBox
         {
             Size = (20, 1),
-            Value = "",
+            Value = string.Empty,
             Placeholder = "Chat message…",
             IsSingleLine = true,
         };
+        var scroll = new Scroll { IsHidden = true, IsDisabled = true };
         chat.AlignInside((0.1f, 0.95f));
+        var (x, y, w, h) = (chat.Position.x, chat.Position.y - 10, chat.Size.width, 10);
         chat.OnSubmit(() =>
         {
-            var clock = $"[{Time.Clock.ToClock()}]";
-            messages += $"{clock}{line}{chat.Value}" +
+            var clock = $"{Color.Gray.ToBrush()}[{Time.Clock.ToClock()}]";
+            messages += $"{clock}{line}{Color.White.ToBrush()}{chat.Value}" +
                         $"{line}{line}";
-            chat.Value = "";
+            var lines = messages.Split(line).Length;
+            chat.Value = string.Empty;
+            scroll.Slider.Progress = 1f;
+            scroll.IsHidden = lines < h;
+            scroll.IsDisabled = scroll.IsHidden;
+            scroll.Step = 1f / lines;
         });
         chat.OnDisplay(() =>
         {
-            var (x, y) = chat.Position;
-            maps[0].SetTextArea(
-                area: (x, y - 10, chat.Size.width, 10),
-                text: messages,
-                alignment: Alignment.BottomLeft,
-                symbolProgress: 1f);
+            var text = messages.Constrain((w, h), alignment: Alignment.BottomLeft,
+                scrollProgress: scroll.Slider.Progress);
+            maps[0].SetText((x, y), text);
             maps.SetInputBox(chat);
         });
+        scroll.OnDisplay(() => maps.SetScroll(scroll));
+        scroll.AlignEdges(Side.Left, Side.Right, chat, 1f, 2);
 
         // ==========================
 
         var multiLine = new InputBox
         {
             Size = (12, 12),
-            Value = "",
+            Value = string.Empty,
             Placeholder = "Type some text on multiple lines…",
         };
         multiLine.AlignInside((0.1f, 0.1f));
@@ -53,7 +58,7 @@ public static class InputBoxes
         var password = new InputBox
         {
             Size = (17, 1),
-            Value = "",
+            Value = string.Empty,
             Placeholder = "Password…",
             IsSingleLine = true,
             SymbolMask = "#"
@@ -63,7 +68,7 @@ public static class InputBoxes
         password.OnDisplay(() =>
         {
             var pos = password.Position;
-            maps[0].SetTextLine((pos.x, pos.y - 1), pass);
+            maps[0].SetText((pos.x, pos.y - 1), pass);
             maps.SetInputBox(password);
         });
 
@@ -73,7 +78,7 @@ public static class InputBoxes
         var equation = new InputBox
         {
             Size = (20, 1),
-            Value = "",
+            Value = string.Empty,
             Placeholder = "Math equation…",
             SymbolGroup = SymbolGroup.Math | SymbolGroup.Digits,
             IsSingleLine = true,
@@ -83,13 +88,13 @@ public static class InputBoxes
         equation.OnDisplay(() =>
         {
             var pos = equation.Position;
-            maps[0].SetTextLine((pos.x, pos.y - 1), mathResult);
+            maps[0].SetText((pos.x, pos.y - 1), mathResult);
             maps.SetInputBox(equation);
         });
 
         Key.ControlLeft.OnPress(() => multiLine.SymbolMask = "*");
         Key.ControlRight.OnPress(() => multiLine.SymbolMask = null);
 
-        return new Block[] { multiLine, password, chat, equation };
+        return new Block[] { multiLine, password, chat, scroll, equation };
     }
 }
