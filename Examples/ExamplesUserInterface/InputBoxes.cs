@@ -33,7 +33,7 @@ public static class InputBoxes
         });
         chat.OnDisplay(() =>
         {
-            var text = messages.Constrain((w, h), alignment: Alignment.BottomLeft,
+            var text = messages.Constrain((w, h), alignment: Alignment.BottomRight,
                 scrollProgress: scroll.Slider.Progress);
             maps[0].SetText((x, y), text);
             maps.SetInputBox(chat);
@@ -91,9 +91,6 @@ public static class InputBoxes
             maps[0].SetText((pos.x, pos.y - 1), mathResult);
             maps.SetInputBox(equation);
         });
-
-        Key.ControlLeft.OnPress(() => multiLine.SymbolMask = "*");
-        Key.ControlRight.OnPress(() => multiLine.SymbolMask = null);
 
         return new Block[] { multiLine, password, chat, scroll, equation };
     }

@@ -36,7 +36,7 @@ public static class Palettes
                        $"{Color.Yellow.ToBrush()}picking";
 
             var progress = Time.RuntimeClock / 2f;
-            text = text.Constrain((w, h), alignment: Alignment.Center, scrollProgress: progress);
+            text = text.Constrain((w, h), alignment: Alignment.Center, symbolProgress: progress);
             maps[1].SetText((x, y), text);
         });
 
