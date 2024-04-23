@@ -743,6 +743,12 @@ public static class Extensions
             return string.Empty;
 
         var result = text;
+
+        var colorTags = GetColorTags(result);
+        result = RemoveColorTags(result);
+        result = result.Remove((int)(result.Length * Math.Clamp(symbolProgress, 0, 1)));
+        result = ApplyColorTags(result, colorTags);
+
         var lineList = result.TrimEnd().Split(Environment.NewLine).ToList();
 
         TryWordWrap();
@@ -773,7 +779,6 @@ public static class Extensions
             result += nl + TryAlignHorizontally(lineList[i]);
         }
 
-        result = result.Remove((int)(result.Length * Math.Clamp(symbolProgress, 0, 1)));
         return result;
 
         string TryAlignHorizontally(string line)
