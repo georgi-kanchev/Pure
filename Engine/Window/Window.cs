@@ -385,6 +385,7 @@ public static class Window
         };
         window.KeyPressed += Keyboard.OnPress;
         window.KeyReleased += Keyboard.OnRelease;
+        window.TextEntered += Keyboard.OnType;
         window.MouseButtonPressed += Mouse.OnButtonPressed;
         window.MouseButtonReleased += Mouse.OnButtonReleased;
         window.MouseWheelScrolled += Mouse.OnWheelScrolled;

@@ -254,7 +254,7 @@ public static class Keyboard
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
     private static bool isJustHeld;
-
+    
     static Keyboard()
     {
         KeyTyped = string.Empty;
@@ -346,21 +346,25 @@ public static class Keyboard
         // lowercase and uppercase, shift + 1 = !, so releasing shift would
         // never removes the !
         if (key is Key.ShiftLeft or Key.ShiftRight && KeyTyped != string.Empty)
-        {
             foreach (var k in pressed)
-                // get symbol as if shift was pressed
                 KeyTyped = KeyTyped.Replace(k.ToText(true), string.Empty);
-        }
+                // get symbol as if shift was pressed
 
         if (KeyTyped.Length == 0)
             return;
-
+        
         var symbol = key.ToText(IsPressed(Key.ShiftLeft) || IsPressed(Key.ShiftRight));
         if (symbol == string.Empty)
             return;
-
+        
         KeyTyped = KeyTyped.Replace(symbol.ToLower(), string.Empty);
         KeyTyped = KeyTyped.Replace(symbol.ToUpper(), string.Empty);
+    }
+    internal static void OnType(object? s, TextEventArgs e)
+    {
+        // a hack for caps lock support
+        if (e.Unicode[0] is >= 'A' and <= 'Z')
+            KeyTyped = KeyTyped.ToUpper();
     }
 #endregion
 }
