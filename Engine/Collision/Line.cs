@@ -100,7 +100,7 @@ public struct Line
     /// </returns>
     public override string ToString()
     {
-        return $"A{A} B{B} Angle({Angle})";
+        return $"A{A} B{B} Angle({Angle}°)";
     }
 
     public bool IsCrossing(LinePack linePack)
@@ -453,7 +453,10 @@ public struct Line
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
+
         return output.ToArray();
     }
     private static byte[] Decompress(byte[] data)

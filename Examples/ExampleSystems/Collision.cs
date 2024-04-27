@@ -27,7 +27,7 @@ public static class Collision
         // hitbox and tile on screen might mismatch since the tile is pixel perfect
         // and the hitbox is not
         const float SCALE = 1f - 1f / 8f;
-        var hitbox = new SolidPack((0, 0), (SCALE, SCALE), new Solid(0, 0, 1, 1));
+        var hitbox = new SolidPack(new Solid(0, 0, 1, 1)) { Scale = (SCALE, SCALE) };
         var layer = new Layer(tilemap.Size);
 
         tilemap.FillWithRandomGrass();
@@ -63,7 +63,7 @@ public static class Collision
             var line = new Line((mousePosition.x - 1, mousePosition.y), (15, 15), Color.Red);
             var crossPoints = line.CrossPoints(collisionMap);
 
-            hitbox.Offset = mousePosition;
+            hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
 
             layer.DrawTilemap(background);

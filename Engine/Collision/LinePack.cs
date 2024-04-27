@@ -5,24 +5,21 @@ using System.Runtime.InteropServices;
 
 public class LinePack : Pack<Line>
 {
-    public LinePack((float x, float y) offset = default, (float width, float height) scale = default)
-        : base(offset, scale)
+    public float Angle { get; set; }
+
+    public LinePack()
     {
     }
-    public LinePack(
-        (float x, float y) offset = default,
-        (float width, float height) scale = default,
-        params Line[] lines)
-        : base(offset, scale, lines)
+    public LinePack(params Line[] lines) : base(lines)
     {
     }
-    public LinePack(
-        (float x, float y) offset = default,
-        (float width, float height) scale = default,
-        params (float x, float y, uint color)[] points) : base(offset, scale)
+    public LinePack(params (float x, float y, uint color)[]? points)
     {
+        if (points == null || points.Length < 2)
+            return;
+
         var lines = new List<Line>();
-        for (var i = 1; i < points?.Length; i++)
+        for (var i = 1; i < points.Length; i++)
         {
             var a = points[i - 1];
             var b = points[i];
@@ -38,7 +35,7 @@ public class LinePack : Pack<Line>
 
         var count = BitConverter.ToInt32(Get<int>());
 
-        Offset = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        Position = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
         Scale = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
 
         for (var i = 0; i < count; i++)
@@ -65,8 +62,8 @@ public class LinePack : Pack<Line>
     {
         var result = new List<byte>();
         result.AddRange(BitConverter.GetBytes(data.Count));
-        result.AddRange(BitConverter.GetBytes(Offset.x));
-        result.AddRange(BitConverter.GetBytes(Offset.y));
+        result.AddRange(BitConverter.GetBytes(Position.x));
+        result.AddRange(BitConverter.GetBytes(Position.y));
         result.AddRange(BitConverter.GetBytes(Scale.width));
         result.AddRange(BitConverter.GetBytes(Scale.height));
 
@@ -124,7 +121,7 @@ public class LinePack : Pack<Line>
     public bool IsOverlapping(Solid solid)
     {
         for (var i = 0; i < Count; i++)
-            if (this[i].IsCrossing(solid))
+            if (solid.IsOverlapping(this[i]))
                 return true;
 
         return false;
@@ -222,7 +219,7 @@ public class LinePack : Pack<Line>
 
     public static implicit operator LinePack(Line[] lines)
     {
-        return new(default, default, lines);
+        return new(lines);
     }
     public static implicit operator Line[](LinePack linePack)
     {
@@ -245,12 +242,12 @@ public class LinePack : Pack<Line>
         for (var i = 0; i < result.Length; i++)
             result[i] = lines[i];
 
-        return new(default, default, result);
+        return new(result);
     }
     public static implicit operator LinePack(
         (float x, float y, uint color)[] points)
     {
-        return new(default, default, points);
+        return new(points);
     }
     public static implicit operator byte[](LinePack linePack)
     {
@@ -267,9 +264,11 @@ public class LinePack : Pack<Line>
         var (ax, ay) = local.A;
         var (bx, by) = local.B;
         var m = Matrix3x2.Identity;
-        m *= Matrix3x2.CreateScale(Scale.width, Scale.height, new(Offset.x, Offset.y));
-        var ra = (m * Matrix3x2.CreateTranslation(ax, ay)).Translation;
-        var rb = (m * Matrix3x2.CreateTranslation(bx, by)).Translation;
+        m *= Matrix3x2.CreateScale(Scale.width, Scale.height, new(Position.x, Position.y));
+        m *= Matrix3x2.CreateRotation(MathF.PI / 180f * Angle);
+        m *= Matrix3x2.CreateTranslation(new(Position.x, Position.y));
+        var ra = Vector2.Transform(new(ax, ay), m);
+        var rb = Vector2.Transform(new(bx, by), m);
         return (ra.X, ra.Y, rb.X, rb.Y, local.Color);
     }
 #endregion

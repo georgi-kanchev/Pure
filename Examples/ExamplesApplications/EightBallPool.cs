@@ -69,7 +69,7 @@ public static class EightBallPool
                 var power = Math.Min(Time.Clock - timeAtPress, 2);
                 var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
 
-                balls[0].MoveAngle = Angle.FromPoints(mousePos, balls[0].Position + new Point(0.5f));
+                balls[0].MoveAngle = Angle.BetweenPoints(mousePos, balls[0].Position + new Point(0.5f));
                 balls[0].Speed = power * 75;
                 isCharging = false;
             });
@@ -82,7 +82,7 @@ public static class EightBallPool
 
             var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
             var a = balls[0].Position + (0.5f, 0.5f);
-            var angle = Angle.FromPoints(a, (mx, my));
+            var angle = Angle.BetweenPoints(a, (mx, my));
             var power = isCharging && isCanceled == false ? Math.Min(Time.Clock - timeAtPress, 2) : 0;
             var b = a.MoveAt(angle, 8 + power * 4);
 
@@ -134,7 +134,7 @@ public static class EightBallPool
                 if (ball == otherBall || ball.Speed == 0 || pos.Distance(posOther) > 0.75f)
                     continue;
 
-                var angleBetweenBalls = Angle.FromPoints(posOther.XY, pos.XY);
+                var angleBetweenBalls = Angle.BetweenPoints(posOther.XY, pos.XY);
                 var bounceLine = new Line
                 {
                     A = posOther.MoveAt(angleBetweenBalls - 90, 3),

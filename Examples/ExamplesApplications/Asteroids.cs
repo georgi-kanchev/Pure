@@ -14,8 +14,8 @@ public static class Asteroids
         var (w, h) = Monitor.Current.AspectRatio;
         layer = new((w * 3, h * 3));
         var c = Color.White;
-        var ship = new Shape((4.5f, 4.5f, c), (4.5f, 5.5f, c), (6f, 5f, c), (4.5f, 4.5f, c))
-            { Position = (20, 20), IsSlowingDown = true, IsWrapping = true };
+        var ship = new Shape((-0.5f, -0.5f, c), (-0.5f, 0.5f, c), (1f, 0f, c), (-0.5f, -0.5f, c))
+            { Position = (5, 15), IsSlowingDown = true };
         var asteroids = new List<Shape>();
         var shots = new List<Shape>();
 
@@ -26,7 +26,6 @@ public static class Asteroids
 
             var asteroid = new Shape(asteroidShapes[0])
             {
-                IsWrapping = true,
                 Velocity = (1f, 5f).Random(),
                 Scale = ((0.1f, 1f).Random(3), (0.1f, 1f).Random(3)),
                 MoveAngle = (0f, 360f).Random(),
@@ -40,10 +39,11 @@ public static class Asteroids
         }, true);
         Mouse.Button.Right.OnPress(() =>
         {
-            var shot = new Shape((0, 0, Color.White), (1, 0, Color.White))
+            var shot = new Shape((0, 0, Color.White), (1, 0, Color.White), (0, 0, Color.White))
             {
                 Position = ship.Position,
                 Angle = ship.Angle,
+                MoveAngle = ship.Angle,
                 Velocity = 40f
             };
             shots.Add(shot);
@@ -79,13 +79,11 @@ public static class Asteroids
         void HandleShip()
         {
             var mousePos = layer?.PixelToWorld(Mouse.CursorPosition) ?? (0, 0);
-            var targetAngle = ship.Position.Angle(mousePos);
-            ship.Angle = ship.Angle.RotateTo(targetAngle, 200f, Time.Delta);
-            Console.WriteLine(ship.Angle.Dot(350));
-            //ship.MoveAngle = ship.MoveAngle.RotateTo(ship.Rotation, 200f, Time.Delta);
-
-            // if (Keyboard.Key.ArrowUp.IsPressed())
-            //     ship.Velocity = 15f;
+            var targetAngle = new Point(ship.Position).Angle(mousePos);
+            ship.Angle = new Angle(ship.Angle).RotateTo(targetAngle, 200f, Time.Delta).Limit((-30, 30));
+            ship.MoveAngle = ship.Angle;
+            ship.Velocity = 15f;
+            ship.Position = (5f, ship.Position.y);
         }
     }
 
@@ -99,18 +97,15 @@ public static class Asteroids
 
     private class Shape : LinePack
     {
-        public Point Position { get; set; }
-        public Angle Angle { get; set; }
         public Angle MoveAngle { get; set; }
         public float Velocity { get; set; }
         public bool IsSlowingDown { get; set; }
-        public bool IsWrapping { get; set; }
-        public bool IsDestroyed { get; set; }
+        public bool IsDestroyed { get; private set; }
 
         public Shape(string base64) : base(base64)
         {
         }
-        public Shape(params (float x, float y, uint color)[] points) : base(default, default, points)
+        public Shape(params (float x, float y, uint color)[] points) : base(points)
         {
         }
         public void UpdateAndDraw(Layer layer)
@@ -118,46 +113,16 @@ public static class Asteroids
             if (IsDestroyed)
                 return;
 
-            var (w, h) = layer.TilemapSize;
-
             if (IsSlowingDown)
                 Velocity = Math.Max(Velocity - Time.Delta * 5f, 0);
 
-            Position = Position.MoveAt(MoveAngle, Velocity, Time.Delta);
+            Position = new Point(Position).MoveAt(MoveAngle, Velocity, Time.Delta);
 
-            var linePack = CalculateWorldPoints();
             var playArea = new Solid(0, 0, layer.TilemapSize.width, layer.TilemapSize.height);
-            var isOutsideView = linePack.IsOverlapping(playArea) == false;
-
-            if (IsWrapping && isOutsideView)
-                Position = (Position.X.Wrap(w), Position.Y.Wrap(h));
-
-            if (IsWrapping == false && isOutsideView)
+            if (IsOverlapping(playArea) == false)
                 IsDestroyed = true;
 
-            layer.DrawLines(linePack.ToBundlePoints());
-
-            LinePack CalculateWorldPoints()
-            {
-                var result = new (float x, float y, uint color)[Count + 1];
-
-                for (var i = 0; i < Count; i++)
-                {
-                    var point = this[i].A - new Point(5f, 5f);
-                    var angle = new Angle(Point.Zero.Angle(point) + Angle);
-                    var nonUnit = new Point(angle.Direction);
-                    nonUnit.X *= Scale.width;
-                    nonUnit.Y *= Scale.height;
-
-                    var distance = Point.Zero.Distance(point);
-                    var target = Position + nonUnit * distance;
-                    result[i] = target;
-                }
-
-                result[^1] = result[0];
-
-                return result;
-            }
+            layer.DrawLines(ToBundlePoints());
         }
     }
 #endregion

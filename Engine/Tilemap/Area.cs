@@ -52,7 +52,10 @@ public struct Area
         Height = BitConverter.ToInt32(Get());
         Color = BitConverter.ToUInt32(Get());
 
-        byte[] Get() => GetBytesFrom(b, 4, ref offset);
+        byte[] Get()
+        {
+            return GetBytesFrom(b, 4, ref offset);
+        }
     }
     public Area(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -78,7 +81,7 @@ public struct Area
     }
     public override string ToString()
     {
-        return $"{nameof(Position)}[{X} {Y}] {nameof(Size)}[{Width} {Height}]";
+        return $"{nameof(Position)}{Position} {nameof(Size)}{Size}";
     }
 
     public static implicit operator Area((float x, float y, float width, float height) rectangle)
@@ -128,7 +131,10 @@ public struct Area
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
+
         return output.ToArray();
     }
     private static byte[] Decompress(byte[] data)

@@ -430,12 +430,12 @@ public static class Program
 
             // ignore editor offset, keep original tilemap's view
             var prevMapOffset = solidMap.Offset;
-            var prevSolidOffset = solidPack.Offset;
-            var prevLineOffset = linePack.Offset;
+            var prevSolidOffset = solidPack.Position;
+            var prevLineOffset = linePack.Position;
 
-            solidPack.Offset = originalMapViewPos;
+            solidPack.Position = originalMapViewPos;
             solidMap.Offset = originalMapViewPos;
-            linePack.Offset = originalMapViewPos;
+            linePack.Position = originalMapViewPos;
 
             var data = Array.Empty<byte>();
 
@@ -446,9 +446,9 @@ public static class Program
             else if (selection == 2)
                 data = linePack.ToBytes();
 
-            solidPack.Offset = prevSolidOffset;
+            solidPack.Position = prevSolidOffset;
             solidMap.Offset = prevMapOffset;
-            linePack.Offset = prevLineOffset;
+            linePack.Position = prevLineOffset;
 
             return data;
         }
@@ -474,8 +474,8 @@ public static class Program
     private static void UpdateViewOffsets()
     {
         var (x, y) = editor.MapsEditor.View.Position;
-        solidPack.Offset = (-x, -y);
-        linePack.Offset = (-x, -y);
+        solidPack.Position = (-x, -y);
+        linePack.Position = (-x, -y);
         solidMap.Offset = (-x, -y);
         solidMap.Update(editor.MapsEditor[currentLayer]);
     }

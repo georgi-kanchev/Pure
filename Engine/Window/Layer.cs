@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Pure.Engine.Window;
 
 using System.Diagnostics.CodeAnalysis;
@@ -56,10 +58,10 @@ public class Layer
     {
         get
         {
-            var (tsw, tsh) = ((int)tilesetPixelSize.X, (int)tilesetPixelSize.Y);
+            var (w, h) = ((int)tilesetPixelSize.X, (int)tilesetPixelSize.Y);
             var (tw, th) = TileSize;
             var (gw, gh) = TileGap;
-            return (tsw / (tw + gw), tsh / (th + gh));
+            return (w / (tw + gw), h / (th + gh));
         }
     }
     public bool IsOverflowing { get; set; }
@@ -91,27 +93,25 @@ public class Layer
             return;
 
         var (offX, offY) = cursorOffsets[(int)Mouse.CursorCurrent];
-        var ang = default(sbyte);
+        var angle = default(sbyte);
 
         if (Mouse.CursorCurrent == Mouse.Cursor.ResizeVertical)
         {
             tileId--;
-            ang = 1;
+            angle = 1;
         }
         else if (Mouse.CursorCurrent == Mouse.Cursor.ResizeTopLeftBottomRight)
         {
             tileId--;
-            ang = 1;
+            angle = 1;
         }
         else if ((int)Mouse.CursorCurrent >= (int)Mouse.Cursor.ResizeBottomLeftTopRight)
-        {
             tileId -= 2;
-        }
 
         (int id, uint tint, sbyte ang, bool h, bool v) tile = default;
         tile.id = tileId + (int)Mouse.CursorCurrent;
         tile.tint = tint;
-        tile.ang = ang;
+        tile.ang = angle;
 
         var (x, y) = PixelToWorld(Mouse.CursorPosition);
         DrawTiles((x - offX, y - offY), tile);
@@ -135,52 +135,67 @@ public class Layer
     }
     public void DrawLines(params (float ax, float ay, float bx, float by, uint color)[]? lines)
     {
-        for (var i = 0; i < lines?.Length; i++)
-        {
-            var l = lines[i];
-            var (tw, th) = TileSize;
-            var (ax, ay) = (l.ax, l.ay);
-            var (bx, by) = (l.bx, l.by);
-            var (dx, dy) = (MathF.Abs(bx - ax), -MathF.Abs(by - ay));
-            var (stepX, stepY) = (1f / tw * 0.999f, 1f / th * 0.999f);
-            var sx = ax < bx ? stepX : -stepY;
-            var sy = ay < by ? stepX : -stepY;
-            var err = dx + dy;
-            var steps = (int)MathF.Max(dx / stepX, -dy / stepY);
+        if (lines == null || lines.Length == 0)
+            return;
 
-            for (var t = 0; t <= steps; t++)
-            {
-                DrawPoints((ax, ay, l.color));
+        foreach (var line in lines)
+            QueueLine((line.ax, line.ay), (line.bx, line.by), line.color);
 
-                if (IsWithin(ax, bx, stepX) && IsWithin(ay, by, stepY))
-                    break;
-
-                var e2 = 2f * err;
-
-                if (e2 > dy)
-                {
-                    err += dy;
-                    ax += sx;
-                }
-
-                if (e2 < dx == false)
-                    continue;
-
-                err += dx;
-                ay += sy;
-            }
-        }
+        // old method of building lines point by point (very slow) -
+        // now there is a render texture & pixel scale and we are at true resolution
+        // so no need for it
+        // for (var i = 0; i < lines?.Length; i++)
+        // {
+        //     var l = lines[i];
+        //     var (tw, th) = TileSize;
+        //     var (ax, ay) = (l.ax, l.ay);
+        //     var (bx, by) = (l.bx, l.by);
+        //     var (dx, dy) = (MathF.Abs(bx - ax), -MathF.Abs(by - ay));
+        //     var (stepX, stepY) = (1f / tw * 0.999f, 1f / th * 0.999f);
+        //     var sx = ax < bx ? stepX : -stepY;
+        //     var sy = ay < by ? stepX : -stepY;
+        //     var err = dx + dy;
+        //     var steps = (int)MathF.Max(dx / stepX, -dy / stepY);
+        //
+        //     for (var t = 0; t <= steps; t++)
+        //     {
+        //         DrawPoints((ax, ay, l.color));
+        //
+        //         if (IsWithin(ax, bx, stepX) && IsWithin(ay, by, stepY))
+        //             break;
+        //
+        //         var e2 = 2f * err;
+        //
+        //         if (e2 > dy)
+        //         {
+        //             err += dy;
+        //             ax += sx;
+        //         }
+        //
+        //         if (e2 < dx == false)
+        //             continue;
+        //
+        //         err += dx;
+        //         ay += sy;
+        //     }
+        // }
     }
     public void DrawLines(params (float x, float y, uint color)[]? points)
     {
-        if (points == null || points.Length < 2)
+        if (points == null || points.Length == 0)
             return;
+
+        if (points.Length == 1)
+        {
+            DrawPoints(points[0]);
+            return;
+        }
 
         for (var i = 1; i < points.Length; i++)
         {
             var a = points[i - 1];
             var b = points[i];
-            DrawLines((a.x, a.y, b.x, b.y, a.color));
+            QueueLine((a.x, a.y), (b.x, b.y), a.color);
         }
     }
     public void DrawTiles(
@@ -218,7 +233,7 @@ public class Layer
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
             {
-                var (ttl, ttr, tbr, tbl) = GetTexCoords(tiles[j, i], (1, 1));
+                var (texTl, texTr, texBr, texBl) = GetTexCoords(tiles[j, i], (1, 1));
                 var (tx, ty) = ((x + j) * tw, (y + i) * th);
                 var c = new Color(tint);
                 var tl = new Vector2f((int)tx, (int)ty);
@@ -229,28 +244,28 @@ public class Layer
 
                 var tr = new Vector2f((int)br.X, (int)tl.Y);
                 var bl = new Vector2f((int)tl.X, (int)br.Y);
-                var rotated = GetRotatedPoints((sbyte)-angle, ttl, ttr, tbr, tbl);
-                ttl = rotated[0];
-                ttr = rotated[1];
-                tbr = rotated[2];
-                tbl = rotated[3];
+                var rotated = GetRotatedPoints((sbyte)-angle, texTl, texTr, texBr, texBl);
+                texTl = rotated[0];
+                texTr = rotated[1];
+                texBr = rotated[2];
+                texBl = rotated[3];
 
                 if (groupSize.width < 0)
                 {
-                    (ttl, ttr) = (ttr, ttl);
-                    (tbl, tbr) = (tbr, tbl);
+                    (texTl, texTr) = (texTr, texTl);
+                    (texBl, texBr) = (texBr, texBl);
                 }
 
                 if (groupSize.height < 0)
                 {
-                    (ttl, tbl) = (tbl, ttl);
-                    (ttr, tbr) = (tbr, ttr);
+                    (texTl, texBl) = (texBl, texTl);
+                    (texTr, texBr) = (texBr, texTr);
                 }
 
-                verts.Append(TryCropVertex(new(tl, c, ttl)));
-                verts.Append(TryCropVertex(new(tr, c, ttr)));
-                verts.Append(TryCropVertex(new(br, c, tbr)));
-                verts.Append(TryCropVertex(new(bl, c, tbl)));
+                verts.Append(TryCropVertex(new(tl, c, texTl)));
+                verts.Append(TryCropVertex(new(tr, c, texTr)));
+                verts.Append(TryCropVertex(new(br, c, texBr)));
+                verts.Append(TryCropVertex(new(bl, c, texBl)));
             }
     }
     public void DrawTilemap((int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,] tilemap)
@@ -271,20 +286,20 @@ public class Layer
                 var tr = new Vector2f((x + 1) * tw, y * th);
                 var br = new Vector2f((x + 1) * tw, (y + 1) * th);
                 var bl = new Vector2f(x * tw, (y + 1) * th);
-                var (ttl, ttr, tbr, tbl) = GetTexCoords(id, (1, 1));
+                var (texTl, texTr, texBr, texBl) = GetTexCoords(id, (1, 1));
                 var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
                 var (flipX, flipY) = (isFlippedHorizontally, isFlippedVertically);
 
                 if (flipX)
                 {
-                    (ttl, ttr) = (ttr, ttl);
-                    (tbl, tbr) = (tbr, tbl);
+                    (texTl, texTr) = (texTr, texTl);
+                    (texBl, texBr) = (texBr, texBl);
                 }
 
                 if (flipY)
                 {
-                    (ttl, tbl) = (tbl, ttl);
-                    (ttr, tbr) = (tbr, ttr);
+                    (texTl, texBl) = (texBl, texTl);
+                    (texTr, texBr) = (texBr, texTr);
                 }
 
                 tl = rotated[0];
@@ -297,10 +312,10 @@ public class Layer
                 br = new((int)br.X, (int)br.Y);
                 bl = new((int)bl.X, (int)bl.Y);
 
-                verts.Append(new(tl, color, ttl));
-                verts.Append(new(tr, color, ttr));
-                verts.Append(new(br, color, tbr));
-                verts.Append(new(bl, color, tbl));
+                verts.Append(new(tl, color, texTl));
+                verts.Append(new(tr, color, texTr));
+                verts.Append(new(br, color, texBr));
+                verts.Append(new(bl, color, texBl));
             }
     }
 
@@ -405,22 +420,55 @@ public class Layer
         tilesetPixelSize = new(208, 208);
     }
 
+    private void QueueLine((float x, float y) a, (float x, float y) b, uint tint)
+    {
+        var (tw, th) = TileSize;
+        a.x *= tw;
+        a.y *= th;
+        b.x *= tw;
+        b.y *= th;
+
+        const float THICKNESS = 0.5f;
+        var color = new Color(tint);
+        var dir = new Vector2(b.x - a.x, b.y - a.y);
+        var length = dir.Length();
+        var center = new Vector2((a.x + b.x) / 2, (a.y + b.y) / 2);
+        var tl = new Vector2(-length / 2f, -THICKNESS);
+        var tr = new Vector2(length / 2f, -THICKNESS);
+        var br = new Vector2(length / 2f, THICKNESS);
+        var bl = new Vector2(-length / 2f, THICKNESS);
+        var (texTl, texTr, texBr, texBl) = GetTexCoords(TileIdFull, (1, 1));
+
+        var m = Matrix3x2.Identity;
+        m *= Matrix3x2.CreateRotation((float)Math.Atan2(dir.Y, dir.X));
+        m *= Matrix3x2.CreateTranslation(center);
+
+        tl = Vector2.Transform(tl, m);
+        tr = Vector2.Transform(tr, m);
+        br = Vector2.Transform(br, m);
+        bl = Vector2.Transform(bl, m);
+
+        verts.Append(TryCropVertex(new(new(tl.X, tl.Y), color, texTl), true));
+        verts.Append(TryCropVertex(new(new(tr.X, tr.Y), color, texTr), true));
+        verts.Append(TryCropVertex(new(new(br.X, br.Y), color, texBr), true));
+        verts.Append(TryCropVertex(new(new(bl.X, bl.Y), color, texBl), true));
+    }
     private void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
     {
         var (tw, th) = TileSize;
         var (w, h) = size;
         var (x, y) = (position.x * tw, position.y * th);
         var color = new Color(tint);
-        var (ttl, ttr, tbr, tbl) = GetTexCoords(TileIdFull, (1, 1));
+        var (texTl, texTr, texBr, texBl) = GetTexCoords(TileIdFull, (1, 1));
         var tl = new Vector2f((int)x, (int)y);
         var br = new Vector2f((int)(x + tw * w), (int)(y + th * h));
         var tr = new Vector2f((int)br.X, (int)tl.Y);
         var bl = new Vector2f((int)tl.X, (int)br.Y);
 
-        verts.Append(TryCropVertex(new(tl, color, ttl), true));
-        verts.Append(TryCropVertex(new(tr, color, ttr), true));
-        verts.Append(TryCropVertex(new(br, color, tbr), true));
-        verts.Append(TryCropVertex(new(bl, color, tbl), true));
+        verts.Append(TryCropVertex(new(tl, color, texTl), true));
+        verts.Append(TryCropVertex(new(tr, color, texTr), true));
+        verts.Append(TryCropVertex(new(br, color, texBr), true));
+        verts.Append(TryCropVertex(new(bl, color, texBl), true));
     }
     private Vertex TryCropVertex(Vertex vertex, bool skipTexCoords = false)
     {

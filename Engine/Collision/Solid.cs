@@ -66,7 +66,10 @@ public struct Solid
         Height = BitConverter.ToSingle(Get());
         Color = BitConverter.ToUInt32(Get());
 
-        byte[] Get() => GetBytesFrom(b, 4, ref offset);
+        byte[] Get()
+        {
+            return GetBytesFrom(b, 4, ref offset);
+        }
     }
     public Solid(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -97,7 +100,7 @@ public struct Solid
     /// The string has the format: "Position[x y] Size[width height]".</returns>
     public override string ToString()
     {
-        return $"{nameof(Position)}[{X} {Y}] {nameof(Size)}[{Width} {Height}]";
+        return $"{nameof(Position)}{Position} {nameof(Size)}{Size}";
     }
 
     /// <param name="solidPack">
@@ -201,7 +204,10 @@ public struct Solid
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
+
         return output.ToArray();
     }
     private static byte[] Decompress(byte[] data)

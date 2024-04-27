@@ -1,7 +1,5 @@
 ﻿namespace Pure.Engine.Utilities;
 
-using System.Globalization;
-
 public struct Angle
 {
     public static Angle Up
@@ -71,6 +69,9 @@ public struct Angle
     {
         degrees = 0;
         Direction = direction;
+    }
+    public Angle(float directionX, float directionY) : this((directionX, directionY))
+    {
     }
 
     public Angle Rotate(float speed, float deltaTime = 1)
@@ -145,7 +146,6 @@ public struct Angle
             difference -= 360;
         return Math.Abs(difference);
     }
-
     public float Dot(Angle target)
     {
         var dir = Direction;
@@ -161,23 +161,23 @@ public struct Angle
         return degrees - 180;
     }
 
-    public static Angle FromPoints((float x, float y) point, (float x, float y) target)
+    public static Angle BetweenPoints((float x, float y) point, (float x, float y) target)
     {
         var (x, y) = (target.x - point.x, target.y - point.y);
         var m = MathF.Sqrt(x * x + y * y);
 
         return (x / m, y / m);
     }
-    public static Angle FromPoints(
+    public static Angle BetweenPoints(
         (float x, float y, uint color) point,
         (float x, float y, uint color) target)
     {
-        return FromPoints((point.x, point.y), (target.x, target.y));
+        return BetweenPoints((point.x, point.y), (target.x, target.y));
     }
 
     public override string ToString()
     {
-        return degrees.ToString(CultureInfo.CurrentCulture) + "°";
+        return $"{degrees}°";
     }
 
     public static implicit operator Angle((int x, int y) direction)
@@ -185,7 +185,7 @@ public struct Angle
         var result = MathF.Atan2(direction.y, direction.x) * (180f / MathF.PI);
         return new() { Degrees = result };
     }
-    public static implicit operator (int, int)(Angle angle)
+    public static implicit operator (int x, int y)(Angle angle)
     {
         var rad = MathF.PI / 180 * angle;
         return ((int)MathF.Round(MathF.Cos(rad)), (int)MathF.Round(MathF.Sin(rad)));
