@@ -457,11 +457,9 @@ public static class Extensions
         var cols = matrix.GetLength(1);
 
         if (isMirrored)
-        {
             for (var i = 0; i < rows; i++)
                 for (var j = 0; j < cols / 2; j++)
                     (matrix[i, cols - j - 1], matrix[i, j]) = (matrix[i, j], matrix[i, cols - j - 1]);
-        }
 
         if (isFlipped == false)
             return;
@@ -628,7 +626,9 @@ public static class Extensions
             using var compressedStream = new MemoryStream();
             using (var compressorStream =
                    new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
+            {
                 uncompressedStream.CopyTo(compressorStream);
+            }
 
             compressedBytes = compressedStream.ToArray();
         }
@@ -1178,40 +1178,24 @@ public static class Extensions
         var split = number.ToString(CultureInfo.CurrentCulture).Split(cultDecPoint);
         return split.Length > 1 ? split[1].Length : 0;
     }
-    /// <param name="number">
-    /// The float number to check.</param>
-    /// <param name="range">The two range values.</param>
-    /// <param name="inclusiveA">If true, the lower bound is included in the range.</param>
-    /// <param name="inclusiveB">If true, the upper bound is included in the range.</param>
-    /// <returns>True if the given float number is within the given range, 
-    /// false otherwise.</returns>
     public static bool IsBetween(
         this float number,
         (float a, float b) range,
-        bool inclusiveA = false,
-        bool inclusiveB = false)
+        (bool a, bool b) inclusive = default)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
 
-        var l = inclusiveA ? range.a <= number : range.a < number;
-        var u = inclusiveB ? range.b >= number : range.b > number;
+        var l = inclusive.a ? range.a <= number : range.a < number;
+        var u = inclusive.b ? range.b >= number : range.b > number;
         return l && u;
     }
-    /// <param name="number">
-    /// The int number to check.</param>
-    /// <param name="range">The two range values.</param>
-    /// <param name="inclusiveA">If true, the lower bound is included in the range.</param>
-    /// <param name="inclusiveB">If true, the upper bound is included in the range.</param>
-    /// <returns>True if the given int number is within the given range, 
-    /// false otherwise.</returns>
     public static bool IsBetween(
         this int number,
         (int a, int b) range,
-        bool inclusiveA = false,
-        bool inclusiveB = false)
+        (bool a, bool b) inclusive = default)
     {
-        return IsBetween((float)number, range, inclusiveA, inclusiveB);
+        return IsBetween((float)number, range, inclusive);
     }
     /// <summary>
     /// Checks whether the given float number is within the range defined by a 
@@ -1224,7 +1208,7 @@ public static class Extensions
     /// the range value, false otherwise.</returns>
     public static bool IsWithin(this float number, float targetNumber, float range)
     {
-        return IsBetween(number, (targetNumber - range, targetNumber + range), true, true);
+        return IsBetween(number, (targetNumber - range, targetNumber + range), (true, true));
     }
     /// <summary>
     /// Checks whether the given int number is within the range defined by a 
@@ -1237,7 +1221,7 @@ public static class Extensions
     /// the range value, false otherwise.</returns>
     public static bool IsWithin(this int number, int targetNumber, int range)
     {
-        return IsBetween(number, (targetNumber - range, targetNumber + range), true, true);
+        return IsBetween(number, (targetNumber - range, targetNumber + range), (true, true));
     }
     /// <summary>
     /// Moves the given float number by a certain speed 
@@ -1275,14 +1259,17 @@ public static class Extensions
     /// Maps a float number from one range of values to another range of values.
     /// </summary>
     /// <param name="number">The number to map.</param>
-    /// <param name="range">The first input range.</param>
-    /// <param name="targetRange">The second input range.</param>
+    /// <param name="rangeIn">The first input range.</param>
+    /// <param name="rangeOut">The second input range.</param>
     /// <returns>The mapped number.</returns>
-    public static float Map(this float number, (float a, float b) range, (float a, float b) targetRange)
+    public static float Map(this float number, (float a, float b) rangeIn, (float a, float b) rangeOut)
     {
-        var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) +
-                    targetRange.a;
-        return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
+        if (Math.Abs(rangeIn.a - rangeIn.b) < 0.001f)
+            return (rangeOut.a + rangeOut.b) / 2f;
+
+        var target = rangeOut;
+        var value = (number - rangeIn.a) / (rangeIn.b - rangeIn.a) * (target.b - target.a) + target.a;
+        return float.IsNaN(value) || float.IsInfinity(value) ? rangeOut.a : value;
     }
     /// <summary>
     /// Maps a int number from one range of values to another range of values.

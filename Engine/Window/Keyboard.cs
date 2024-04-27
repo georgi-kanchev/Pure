@@ -11,112 +11,22 @@ public static class Keyboard
     public enum Key
     {
         Unknown = -1,
-        A = 00,
-        B = 01,
-        C = 02,
-        D = 03,
-        E = 04,
-        F = 05,
-        G = 06,
-        H = 07,
-        I = 08,
-        J = 09,
-        K = 10,
-        L = 11,
-        M = 12,
-        N = 13,
-        O = 14,
-        P = 15,
-        Q = 16,
-        R = 17,
-        S = 18,
-        T = 19,
-        U = 20,
-        V = 21,
-        W = 22,
-        X = 23,
-        Y = 24,
-        Z = 25,
-        Number0 = 26,
-        Number1 = 27,
-        Number2 = 28,
-        Number3 = 29,
-        Number4 = 30,
-        Number5 = 31,
-        Number6 = 32,
-        Number7 = 33,
-        Number8 = 34,
-        Number9 = 35,
-        Escape = 36,
-        ControlLeft = 37,
-        ShiftLeft = 38,
-        AltLeft = 39,
-        SystemLeft = 40,
-        ControlRight = 41,
-        ShiftRight = 42,
-        AltRight = 43,
-        SystemRight = 44,
-        Menu = 45,
-        BracketLeft = 46,
-        BracketRight = 47,
-        Semicolon = 48,
-        Comma = 49,
-        Dot = 50,
-        Period = 50,
-        Quote = 51,
-        Slash = 52,
-        Backslash = 53,
-        Tilde = 54,
-        Equal = 55,
-        Hyphen = 56,
-        Dash = 56,
-        Space = 57,
-        Enter = 58,
-        Return = 58,
-        Backspace = 59,
-        Tab = 60,
-        PageUp = 61,
-        PageDown = 62,
-        End = 63,
-        Home = 64,
-        Insert = 65,
-        Delete = 66,
-        Add = 67,
-        Plus = 67,
-        Subtract = 68,
-        Minus = 68,
-        Asterisk = 69,
-        Multiply = 69,
-        Divide = 70,
-        ArrowLeft = 71,
-        ArrowRight = 72,
-        ArrowUp = 73,
-        ArrowDown = 74,
-        Numpad0 = 75,
-        Numpad1 = 76,
-        Numpad2 = 77,
-        Numpad3 = 78,
-        Numpad4 = 79,
-        Numpad5 = 80,
-        Numpad6 = 81,
-        Numpad7 = 82,
-        Numpad8 = 83,
-        Numpad9 = 84,
-        F1 = 85,
-        F2 = 86,
-        F3 = 87,
-        F4 = 88,
-        F5 = 89,
-        F6 = 90,
-        F7 = 91,
-        F8 = 92,
-        F9 = 93,
-        F10 = 94,
-        F11 = 95,
-        F12 = 96,
-        F13 = 97,
-        F14 = 98,
-        F15 = 99,
+        A = 00, B = 01, C = 02, D = 03, E = 04, F = 05, G = 06, H = 07, I = 08, J = 09, K = 10, L = 11,
+        M = 12, N = 13, O = 14, P = 15, Q = 16, R = 17, S = 18, T = 19, U = 20, V = 21, W = 22, X = 23,
+        Y = 24, Z = 25,
+        Number0 = 26, Number1 = 27, Number2 = 28, Number3 = 29, Number4 = 30, Number5 = 31,
+        Number6 = 32, Number7 = 33, Number8 = 34, Number9 = 35,
+        Escape = 36, ControlLeft = 37, ShiftLeft = 38, AltLeft = 39, SystemLeft = 40, ControlRight = 41,
+        ShiftRight = 42, AltRight = 43, SystemRight = 44, Menu = 45, BracketLeft = 46, BracketRight = 47,
+        Semicolon = 48, Comma = 49, Dot = 50, Period = 50, Quote = 51, Slash = 52, Backslash = 53,
+        Tilde = 54, Equal = 55, Hyphen = 56, Dash = 56, Space = 57, Enter = 58, Return = 58,
+        Backspace = 59, Tab = 60, PageUp = 61, PageDown = 62, End = 63, Home = 64, Insert = 65,
+        Delete = 66, Add = 67, Plus = 67, Subtract = 68, Minus = 68, Asterisk = 69, Multiply = 69,
+        Divide = 70, ArrowLeft = 71, ArrowRight = 72, ArrowUp = 73, ArrowDown = 74,
+        Numpad0 = 75, Numpad1 = 76, Numpad2 = 77, Numpad3 = 78, Numpad4 = 79, Numpad5 = 80, Numpad6 = 81,
+        Numpad7 = 82, Numpad8 = 83, Numpad9 = 84,
+        F1 = 85, F2 = 86, F3 = 87, F4 = 88, F5 = 89, F6 = 90, F7 = 91, F8 = 92, F9 = 93,
+        F10 = 94, F11 = 95, F12 = 96, F13 = 97, F14 = 98, F15 = 99,
         Pause = 100
     }
 
@@ -254,7 +164,7 @@ public static class Keyboard
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
     private static bool isJustHeld;
-    
+
     static Keyboard()
     {
         KeyTyped = string.Empty;
@@ -312,15 +222,15 @@ public static class Keyboard
         hold.Restart();
         holdTrigger.Restart();
 
-        var onPress = pressed.Contains(key) == false;
-        if (onPress)
+        var press = pressed.Contains(key) == false;
+        if (press)
             pressed.Add(key);
 
         var symbol = key.ToText(IsPressed(Key.ShiftLeft) || IsPressed(Key.ShiftRight));
         if (KeyTyped.Contains(symbol) == false)
             KeyTyped += symbol;
 
-        if (Keyboard.onPress.TryGetValue(key, out var callback))
+        if (onPress.TryGetValue(key, out var callback))
             callback.Invoke();
 
         onPressAny?.Invoke(key);
@@ -348,15 +258,15 @@ public static class Keyboard
         if (key is Key.ShiftLeft or Key.ShiftRight && KeyTyped != string.Empty)
             foreach (var k in pressed)
                 KeyTyped = KeyTyped.Replace(k.ToText(true), string.Empty);
-                // get symbol as if shift was pressed
+        // get symbol as if shift was pressed
 
         if (KeyTyped.Length == 0)
             return;
-        
+
         var symbol = key.ToText(IsPressed(Key.ShiftLeft) || IsPressed(Key.ShiftRight));
         if (symbol == string.Empty)
             return;
-        
+
         KeyTyped = KeyTyped.Replace(symbol.ToLower(), string.Empty);
         KeyTyped = KeyTyped.Replace(symbol.ToUpper(), string.Empty);
     }

@@ -14,6 +14,9 @@ public static class Program
 {
     public static void Run()
     {
+        Window.SetIconFromTile(editor.LayerUi, (Tile.ICON_SKY_STARS, Color.Red.ToDark()),
+            (Tile.FULL, Color.Brown.ToBright()));
+
         editor.OnUpdateUi += tilePalette.TryDraw;
         editor.OnUpdateEditor += UpdateEditor;
         editor.OnUpdateLate += () => tilePalette.Update(inspector);
@@ -66,7 +69,6 @@ public static class Program
             var index = menu.IndexOf(btn);
 
             if (index == 1) // load tileset
-            {
                 editor.PromptTileset(
                     (layer, map) =>
                     {
@@ -75,7 +77,6 @@ public static class Program
                         tilePalette.map = map;
                     },
                     () => tilePalette.Create(tilePalette.layer.TilesetSize));
-            }
 
             if (index == 3) // save map
                 editor.PromptFileSave(Save());
@@ -157,7 +158,9 @@ public static class Program
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -166,7 +169,9 @@ public static class Program
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }

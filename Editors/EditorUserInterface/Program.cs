@@ -30,6 +30,9 @@ public static class Program
 
     public static void Run()
     {
+        Window.SetIconFromTile(editor.LayerUi, (Tile.ICON_SETTINGS, Color.Gray),
+            (Tile.FULL, Color.Green));
+
         editor.OnUpdateEditor = () =>
         {
             editor.MapsEditor.Flush();
@@ -51,7 +54,7 @@ public static class Program
 #region Backend
     static Program()
     {
-        editor = new(title: "Pure - User Interface Editor");
+        editor = new("Pure - User Interface Editor");
 
         var maps = editor.MapsUi;
         const int BACK = (int)Editor.LayerMapsUi.PromptBack;

@@ -151,9 +151,6 @@ public class Editor
 
     public void Run()
     {
-        Window.SetIconFromTile(LayerUi, Tile.ICON_SKY_STARS, Color.Red.ToDark(),
-            Tile.FULL, Color.Brown.ToBright());
-
         SetGrid();
 
         Input.OnTextCopy(() => Window.Clipboard = Input.Clipboard);
@@ -614,7 +611,7 @@ public class Editor
         var (ww, wh) = Window.Size;
         var pos = (Point)(ww / 2f, wh / 2f);
         var zoomInDist = mousePos.Distance(pos);
-        var zoomInDir = (Direction)mousePos.Direction(pos);
+        var zoomInDir = new Angle(mousePos.Direction(pos));
         var zoomInPos = viewPos.MoveIn(zoomInDir, zoomInDist / 10f * ViewZoom);
         var zoomOutDist = viewPos.Distance(new());
         var zoomOutPos = viewPos.MoveTo((0, 0), (5f + zoomOutDist / 50f) * ViewZoom);
@@ -659,7 +656,9 @@ public class Editor
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -668,7 +667,9 @@ public class Editor
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }

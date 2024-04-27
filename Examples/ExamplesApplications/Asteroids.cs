@@ -8,7 +8,7 @@ public static class Asteroids
 {
     public static void Run()
     {
-        Window.Title = "Pure - Minesweeper Example";
+        Window.Title = "Pure - Asteroids Example";
         Mouse.CursorCurrent = Mouse.Cursor.Crosshair;
 
         var (w, h) = Monitor.Current.AspectRatio;
@@ -28,7 +28,7 @@ public static class Asteroids
             {
                 IsWrapping = true,
                 Velocity = (1f, 5f).Random(),
-                Scale = ((0.1f, 1f).Random(precision: 3), (0.1f, 1f).Random(precision: 3)),
+                Scale = ((0.1f, 1f).Random(3), (0.1f, 1f).Random(3)),
                 MoveAngle = (0f, 360f).Random(),
                 Position =
                     (0f, 0f).ChooseOneFrom(float.NaN,
@@ -43,8 +43,8 @@ public static class Asteroids
             var shot = new Shape((0, 0, Color.White), (1, 0, Color.White))
             {
                 Position = ship.Position,
-                Rotation = ship.Rotation,
-                Velocity = 40f,
+                Angle = ship.Angle,
+                Velocity = 40f
             };
             shots.Add(shot);
         });
@@ -67,8 +67,8 @@ public static class Asteroids
                 i--;
             }
 
-            foreach (var asteroid in asteroids)
-                asteroid.UpdateAndDraw(layer);
+            // foreach (var asteroid in asteroids)
+            //     asteroid.UpdateAndDraw(layer);
 
             ship.UpdateAndDraw(layer);
 
@@ -80,11 +80,12 @@ public static class Asteroids
         {
             var mousePos = layer?.PixelToWorld(Mouse.CursorPosition) ?? (0, 0);
             var targetAngle = ship.Position.Angle(mousePos);
-            ship.Rotation = ship.Rotation.RotateTo(targetAngle, 400f, Time.Delta);
-            ship.MoveAngle = ship.MoveAngle.RotateTo(ship.Rotation, 200f, Time.Delta);
+            ship.Angle = ship.Angle.RotateTo(targetAngle, 200f, Time.Delta);
+            Console.WriteLine(ship.Angle.Dot(350));
+            //ship.MoveAngle = ship.MoveAngle.RotateTo(ship.Rotation, 200f, Time.Delta);
 
-            if (Mouse.Button.Left.IsPressed())
-                ship.Velocity = 15f;
+            // if (Keyboard.Key.ArrowUp.IsPressed())
+            //     ship.Velocity = 15f;
         }
     }
 
@@ -99,7 +100,7 @@ public static class Asteroids
     private class Shape : LinePack
     {
         public Point Position { get; set; }
-        public Angle Rotation { get; set; }
+        public Angle Angle { get; set; }
         public Angle MoveAngle { get; set; }
         public float Velocity { get; set; }
         public bool IsSlowingDown { get; set; }
@@ -135,31 +136,29 @@ public static class Asteroids
                 IsDestroyed = true;
 
             layer.DrawLines(linePack.ToBundlePoints());
-        }
 
-#region Backend
-        private LinePack CalculateWorldPoints()
-        {
-            var result = new (float x, float y, uint color)[Count + 1];
-
-            for (var i = 0; i < Count; i++)
+            LinePack CalculateWorldPoints()
             {
-                var point = this[i].A - new Point(5f, 5f);
-                var direction = new Direction(Point.Zero.Angle(point) + Rotation);
-                var nonUnit = new Point(direction.X, direction.Y);
-                nonUnit.X *= Scale.width;
-                nonUnit.Y *= Scale.height;
+                var result = new (float x, float y, uint color)[Count + 1];
 
-                var distance = Point.Zero.Distance(point);
-                var target = Position + nonUnit * distance;
-                result[i] = target;
+                for (var i = 0; i < Count; i++)
+                {
+                    var point = this[i].A - new Point(5f, 5f);
+                    var angle = new Angle(Point.Zero.Angle(point) + Angle);
+                    var nonUnit = new Point(angle.Direction);
+                    nonUnit.X *= Scale.width;
+                    nonUnit.Y *= Scale.height;
+
+                    var distance = Point.Zero.Distance(point);
+                    var target = Position + nonUnit * distance;
+                    result[i] = target;
+                }
+
+                result[^1] = result[0];
+
+                return result;
             }
-
-            result[^1] = result[0];
-
-            return result;
         }
-#endregion
     }
 #endregion
 }

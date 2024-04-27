@@ -145,20 +145,20 @@ public struct Point
 
         return MoveIn(dir, speed, deltaTime);
     }
-    public Point MoveTo(Point targetPoint, float speed, float deltaTime = 1)
+    public Point MoveTo(Point target, float speed, float deltaTime = 1)
     {
-        if (targetPoint == this)
+        if (target == this)
             return this;
 
-        var result = MoveIn(targetPoint - this, speed, deltaTime);
+        var result = MoveIn(target - this, speed, deltaTime);
 
         speed *= deltaTime;
-        return result.Distance(targetPoint) < speed * 1.1f ? targetPoint : result;
+        return result.Distance(target) < speed * 1.1f ? target : result;
     }
-    public Point ToTarget(Point targetPoint, (float x, float y) unit)
+    public Point PercentTo(float percent, Point target)
     {
-        var x = Map(unit.x, 0, 1, X, targetPoint.X);
-        var y = Map(unit.y, 0, 1, Y, targetPoint.Y);
+        var x = Map(percent, 0, 100, X, target.X);
+        var y = Map(percent, 0, 100, Y, target.Y);
         return new(x, y);
     }
     public float ToNoise(NoiseType type = NoiseType.Perlin, float scale = 10f, int seed = 0)
@@ -294,7 +294,10 @@ public struct Point
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
+
         return output.ToArray();
     }
     private static byte[] Decompress(byte[] data)

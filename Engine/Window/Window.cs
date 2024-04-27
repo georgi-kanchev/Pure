@@ -278,10 +278,8 @@ public static class Window
     }
     public static void SetIconFromTile(
         Layer layer,
-        int tileId,
-        uint color,
-        int tileIdBack = 0,
-        uint colorBack = 0,
+        (int id, uint tint) tile,
+        (int id, uint tint) tileBack = default,
         bool isSavingAsFile = false)
     {
         TryCreate();
@@ -289,24 +287,24 @@ public static class Window
         const uint SIZE = 64;
         var rend = new RenderTexture(SIZE, SIZE);
         var texture = Layer.tilesets[layer.TilesetPath];
-        var (bx, by) = IndexToCoords(tileIdBack, layer);
-        var (fx, fy) = IndexToCoords(tileId, layer);
+        var (bx, by) = IndexToCoords(tileBack.id, layer);
+        var (fx, fy) = IndexToCoords(tile.id, layer);
         var (tw, th) = layer.TileSize;
         var (gw, gh) = layer.TileGap;
         tw += gw;
         th += gh;
         var verts = new Vertex[]
         {
-            new(new(0, 0), new(colorBack), new(tw * bx, th * by)),
-            new(new(SIZE, 0), new(colorBack), new(tw * (bx + 1), th * by)),
-            new(new(SIZE, SIZE), new(colorBack), new(tw * (bx + 1), th * (by + 1))),
-            new(new(0, SIZE), new(colorBack), new(tw * bx, th * (by + 1))),
-            new(new(0, 0), new(color), new(tw * fx, th * fy)),
-            new(new(SIZE, 0), new(color), new(tw * (fx + 1), th * fy)),
-            new(new(SIZE, SIZE), new(color), new(tw * (fx + 1), th * (fy + 1))),
-            new(new(0, SIZE), new(color), new(tw * fx, th * (fy + 1))),
+            new(new(0, 0), new(tileBack.tint), new(tw * bx, th * by)),
+            new(new(SIZE, 0), new(tileBack.tint), new(tw * (bx + 1), th * by)),
+            new(new(SIZE, SIZE), new(tileBack.tint), new(tw * (bx + 1), th * (by + 1))),
+            new(new(0, SIZE), new(tileBack.tint), new(tw * bx, th * (by + 1))),
+            new(new(0, 0), new(tile.tint), new(tw * fx, th * fy)),
+            new(new(SIZE, 0), new(tile.tint), new(tw * (fx + 1), th * fy)),
+            new(new(SIZE, SIZE), new(tile.tint), new(tw * (fx + 1), th * (fy + 1))),
+            new(new(0, SIZE), new(tile.tint), new(tw * fx, th * (fy + 1)))
         };
-        rend.Draw(verts, PrimitiveType.Quads, new RenderStates(texture));
+        rend.Draw(verts, PrimitiveType.Quads, new(texture));
         rend.Display();
         var image = rend.Texture.CopyToImage();
         window.SetIcon(SIZE, SIZE, image.Pixels);
@@ -402,7 +400,7 @@ public static class Window
         window.Clear();
         window.Display();
 
-        SetIconFromTile(new(), 394, 16711935); // green joystick
+        SetIconFromTile(new(), (394, 16711935)); // green joystick
 
         // set values to the new window
         Title = title;
@@ -509,7 +507,9 @@ public static class Window
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -518,7 +518,9 @@ public static class Window
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }

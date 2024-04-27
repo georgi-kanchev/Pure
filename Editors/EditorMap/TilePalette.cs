@@ -210,7 +210,7 @@ internal class TilePalette
             tilemap.SetLine(start, (end.x - 1, end.y - 1), null, tiles);
         else if (tool is 5 or 6) // ellipse of random tiles
         {
-            var center = ((Point)start).ToTarget((end.x - 1, end.y - 1), (0.5f, 0.5f));
+            var center = ((Point)start).PercentTo(50f, (end.x - 1, end.y - 1));
             var radius = ((int)((end.x - start.x - 1) / 2f), (int)((end.y - start.y - 1) / 2f));
 
             tilemap.SetEllipse(center, radius, tool == 5, null, tiles);

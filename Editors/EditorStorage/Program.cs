@@ -17,6 +17,8 @@ public static class Program
 {
     public static void Run()
     {
+        Window.SetIconFromTile(editor.LayerUi, (Tile.ICON_LOCK, Color.White), (Tile.FULL, Color.Brown));
+
         editor.OnUpdateEditor = () =>
         {
             editor.IsDisabledViewZoom = IsHoveringPanel();
@@ -187,16 +189,12 @@ public static class Program
         else if (creating == DataType.Tuple)
         {
             if (emptyData == false)
-            {
                 for (var i = 0; i < list.Count; i++)
                     list[i].Text = GetDefaultValue(i);
-            }
         }
         else if (creating is DataType.List or DataType.Dictionary)
-        {
             if (emptyData == false)
                 list[0].Text = GetDefaultValue(0);
-        }
 
         if (creating == DataType.Dictionary)
         {
@@ -246,11 +244,9 @@ public static class Program
                 var unique = editor.PromptInput.Value.EnsureUnique(allKeys);
 
                 if (editor.PromptInput.Value != unique)
-                {
                     editor.PromptMessage(
                         $"The provided key '{editor.PromptInput.Value}' already " +
                         $"exists.{Environment.NewLine}It was changed to '{unique}'.");
-                }
 
                 panel.Text = unique;
             });
@@ -473,11 +469,9 @@ public static class Program
                 var unique = GetUniqueText(list, promptText.Value, item);
 
                 if (promptText.Value != unique)
-                {
                     editor.PromptMessage(
                         $"The provided key '{promptText.Value}' already exists.{Environment.NewLine}" +
                         $"It was changed to '{unique}'.");
-                }
 
                 item.Text = unique;
             });
@@ -698,7 +692,6 @@ public static class Program
             }
 
             if (predict)
-            {
                 editor.PromptMessage($"Loading storages that were saved by the{Environment.NewLine}" +
                                      $"engine rather than the editor is not{Environment.NewLine}" +
                                      $"recommended. This is because the types{Environment.NewLine}" +
@@ -712,7 +705,6 @@ public static class Program
                                      $"C. Arrays of A                {Environment.NewLine}" +
                                      $"D. Lists of A                 {Environment.NewLine}" +
                                      $"E. Dictionaries of <String, A>");
-            }
 
             int GrabInt()
             {
@@ -993,7 +985,9 @@ public static class Program
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -1002,7 +996,9 @@ public static class Program
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }

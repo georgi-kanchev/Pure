@@ -13,6 +13,9 @@ public static class Program
 {
     public static void Run()
     {
+        Window.SetIconFromTile(editor.LayerUi, (Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Blue),
+            (Tile.SHAPE_TRIANGLE_HOLLOW, Color.Red));
+
         editor.OnUpdateUi += () =>
         {
             if (prevViewPos != editor.MapsEditor.View.Position)
@@ -66,7 +69,7 @@ public static class Program
     }
 
 #region Backend
-    private static (float x, float y) clickPos, rightClickPos;
+    private static (float x, float y) clickPos;
     private static (int x, int y) prevViewPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;

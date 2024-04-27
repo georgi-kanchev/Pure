@@ -24,8 +24,8 @@ public static class EightBallPool
             balls.Add(new((0, 0), 0));
 
         ResetBalls();
-        Window.SetIconFromTile(layer, Tile.SUBSCRIPT_8_TH, Color.White, Tile.SHAPE_CIRCLE_BIG,
-            Color.Black);
+        Window.SetIconFromTile(layer,
+            (Tile.SUBSCRIPT_8_TH, Color.White), (Tile.SHAPE_CIRCLE_BIG, Color.Black));
 
         HandleInput();
 

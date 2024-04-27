@@ -21,7 +21,7 @@ public static class Tetris
 
         Time.CallAfter(0.5f, () =>
         {
-            if (piece.TryMoveIn(Direction.Down) == false)
+            if (piece.TryMoveAt(Angle.Down) == false)
                 Collide();
         }, true);
 
@@ -35,9 +35,9 @@ public static class Tetris
 
         void HandleInput()
         {
-            Keyboard.Key.ArrowLeft.OnPressAndHold(() => piece?.TryMoveIn(Direction.Left));
-            Keyboard.Key.ArrowRight.OnPressAndHold(() => piece?.TryMoveIn(Direction.Right));
-            Keyboard.Key.ArrowDown.OnPressAndHold(() => piece?.TryMoveIn(Direction.Down));
+            Keyboard.Key.ArrowLeft.OnPressAndHold(() => piece?.TryMoveAt(Angle.Left));
+            Keyboard.Key.ArrowRight.OnPressAndHold(() => piece?.TryMoveAt(Angle.Right));
+            Keyboard.Key.ArrowDown.OnPressAndHold(() => piece?.TryMoveAt(Angle.Down));
             Keyboard.Key.Space.OnPress(() => piece?.Rotate());
         }
         void Draw()
@@ -88,7 +88,7 @@ public static class Tetris
             foreach (var box in boxesToDrop)
             {
                 fallen.Remove(((int)box.Position.Y, (int)box.Position.X));
-                box.MoveIn(Direction.Down);
+                box.MoveAt(Angle.Down);
                 fallen[((int)box.Position.Y, (int)box.Position.X)] = box;
             }
         }
@@ -118,7 +118,7 @@ public static class Tetris
                 new Point[] { (x + 0, y - 1), (x + 0, y + 0), (x + 0, y + 1), (x - 1, y + 1) }, // J
                 new Point[] { (x + 0, y - 1), (x + 0, y + 0), (x + 0, y + 1), (x + 1, y + 1) }, // L
                 new Point[] { (x - 1, y + 0), (x + 0, y + 0), (x + 0, y - 1), (x + 1, y - 1) }, // S
-                new Point[] { (x - 1, y + 0), (x + 0, y + 0), (x + 0, y + 1), (x + 1, y + 1) }, // Z
+                new Point[] { (x - 1, y + 0), (x + 0, y + 0), (x + 0, y + 1), (x + 1, y + 1) } // Z
             };
             var randomType = (0, positions.Length - 1).Random();
             var structure = new Box[4];
@@ -153,16 +153,16 @@ public static class Tetris
             for (var i = 0; i < boxes.Length; i++)
                 boxes[i].Position = newPositions[i];
         }
-        public bool TryMoveIn(Direction direction)
+        public bool TryMoveAt(Angle angle)
         {
             if (isFrozen)
                 return false;
 
             foreach (var box in boxes)
             {
-                var newPos = box.Position.MoveIn(direction, 1);
+                var newPos = box.Position.MoveIn(angle, 1);
                 var hasCollided = Box.IsColliding(newPos);
-                var hasFrozen = hasCollided && direction == Direction.Down;
+                var hasFrozen = hasCollided && angle == Angle.Down;
 
                 if (hasFrozen)
                 {
@@ -178,7 +178,7 @@ public static class Tetris
             }
 
             foreach (var box in boxes)
-                box.MoveIn(direction);
+                box.MoveAt(angle);
 
             return true;
         }
@@ -204,9 +204,9 @@ public static class Tetris
             Position = position;
         }
 
-        public void MoveIn(Direction direction)
+        public void MoveAt(Angle angle)
         {
-            Position = Position.MoveAt(direction, 1);
+            Position = Position.MoveAt(angle, 1);
         }
         public static bool IsColliding(Point position)
         {
