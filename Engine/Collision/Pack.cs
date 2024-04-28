@@ -32,20 +32,20 @@ public abstract class Pack<T>
         return data.ToArray();
     }
 
-    public void Add(params T[]? lines)
+    public void Add(params T[]? items)
     {
-        if (lines == null || lines.Length == 0)
+        if (items == null || items.Length == 0)
             return;
 
-        data.AddRange(lines);
+        data.AddRange(items);
     }
-    public void Remove(params T[]? lines)
+    public void RemoveAt(params int[]? indexes)
     {
-        if (lines == null || lines.Length == 0)
+        if (indexes == null || indexes.Length == 0)
             return;
 
-        foreach (var line in lines)
-            data.Remove(line);
+        foreach (var i in indexes)
+            data.RemoveAt(i);
     }
 
 #region Backend

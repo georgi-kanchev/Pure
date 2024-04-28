@@ -572,8 +572,8 @@ public class Editor
             return;
         }
 
-        MapsUi[FRONT].SetText((x, 0),
-            infoText.Constrain((TEXT_WIDTH, TEXT_HEIGHT), alignment: Alignment.Top));
+        var text = infoText.Constrain((TEXT_WIDTH, TEXT_HEIGHT), alignment: Alignment.Top, scrollProgress: 1f);
+        MapsUi[FRONT].SetText((x, 0), text);
     }
 
     private void TryViewInteract()
@@ -611,10 +611,9 @@ public class Editor
         var (ww, wh) = Window.Size;
         var pos = (Point)(ww / 2f, wh / 2f);
         var zoomInDist = mousePos.Distance(pos);
-        var zoomInDir = new Angle(mousePos.Direction(pos));
-        var zoomInPos = viewPos.MoveIn(zoomInDir, zoomInDist / 10f * ViewZoom);
-        var zoomOutDist = viewPos.Distance(new());
-        var zoomOutPos = viewPos.MoveTo((0, 0), (5f + zoomOutDist / 50f) * ViewZoom);
+        var zoomInAngle = new Angle(mousePos.Angle(pos));
+        var zoomInPos = viewPos.MoveAt(zoomInAngle, zoomInDist / 10f * ViewZoom);
+        var zoomOutPos = viewPos.PercentTo(15f, (0, 0));
 
         ViewZoom *= Mouse.ScrollDelta > 0 ? 1.1f : 0.9f;
 

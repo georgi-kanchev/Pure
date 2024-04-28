@@ -1,5 +1,6 @@
 namespace Pure.Examples.ExamplesApplications;
 
+using Engine.Tilemap;
 using Engine.Window;
 using Engine.Utilities;
 using Engine.Collision;
@@ -13,65 +14,42 @@ public static class Asteroids
 
         var (w, h) = Monitor.Current.AspectRatio;
         layer = new((w * 3, h * 3));
-        var c = Color.White;
-        var ship = new Shape((-0.5f, -0.5f, c), (-0.5f, 0.5f, c), (1f, 0f, c), (-0.5f, -0.5f, c))
-            { Position = (5, 15), IsSlowingDown = true };
-        var asteroids = new List<Shape>();
-        var shots = new List<Shape>();
-
-        Time.CallAfter(2f, () =>
+        var tilemap = new Tilemap(layer.TilemapSize);
+        var ship = new Shape("Y2ZABg32EMxwgIFhwX4obf8fCBBiDg4glUhi9shiAA==")
         {
-            if (asteroids.Count > 20)
-                return;
+            Type = Type.Ship,
+            Scale = (0.5f, 0.5f),
+            Position = (5, 15)
+        };
+        var shapes = new List<Shape>();
+        var playArea = new Solid(0, 0, layer.TilemapSize.width, layer.TilemapSize.height);
+        var highScore = 0;
+        var score = 0;
+        var shotCooldown = 0f;
 
-            var asteroid = new Shape(asteroidShapes[0])
-            {
-                Velocity = (1f, 5f).Random(),
-                Scale = ((0.1f, 1f).Random(3), (0.1f, 1f).Random(3)),
-                MoveAngle = (0f, 360f).Random(),
-                Position =
-                    (0f, 0f).ChooseOneFrom(float.NaN,
-                        (layer.TilemapSize.width, 0f),
-                        (layer.TilemapSize.width, layer.TilemapSize.height),
-                        (0f, layer.TilemapSize.height))
-            };
-            asteroids.Add(asteroid);
-        }, true);
-        Mouse.Button.Right.OnPress(() =>
-        {
-            var shot = new Shape((0, 0, Color.White), (1, 0, Color.White), (0, 0, Color.White))
-            {
-                Position = ship.Position,
-                Angle = ship.Angle,
-                MoveAngle = ship.Angle,
-                Velocity = 40f
-            };
-            shots.Add(shot);
-        });
+        Time.CallAfter(1f, SpawnAsteroid, true);
 
         while (Window.KeepOpen())
         {
+            if (score > highScore)
+                highScore = score;
+
+            if (Mouse.Button.Right.IsPressed())
+                TrySpawnShot();
+
+            tilemap.Flush();
             Time.Update();
+            shotCooldown -= Time.Delta;
+
+            tilemap.SetText((0, 0), $"BEST: {highScore}{Environment.NewLine}" +
+                                    $"SCORE: {score}{Environment.NewLine}{Environment.NewLine}" +
+                                    $"SHOT: {(shotCooldown < 0 ? "READY!" : $"{shotCooldown:F1}")}");
 
             HandleShip();
-
-            for (var i = 0; i < shots.Count; i++)
-            {
-                var shot = shots[i];
-                shot.UpdateAndDraw(layer);
-
-                if (shot.IsDestroyed == false)
-                    continue;
-
-                shots.Remove(shot);
-                i--;
-            }
-
-            // foreach (var asteroid in asteroids)
-            //     asteroid.UpdateAndDraw(layer);
+            HandleShapes();
 
             ship.UpdateAndDraw(layer);
-
+            layer.DrawTilemap(tilemap);
             layer.DrawCursor();
             layer.Draw();
         }
@@ -85,22 +63,93 @@ public static class Asteroids
             ship.Velocity = 15f;
             ship.Position = (5f, ship.Position.y);
         }
+        void SpawnAsteroid()
+        {
+            shapes.Add(new(asteroidShapes.ChooseOne())
+            {
+                Type = Type.Asteroid,
+                Velocity = (10f, 25f).Random(),
+                Scale = ((0.2f, 1.5f).Random(3), (0.2f, 1.5f).Random(3)),
+                MoveAngle = (170f, 190f).Random(),
+                Position = (playArea.Width + 10f, playArea.Height / 2f),
+                Angle = (0f, 360f).Random(),
+                Torque = (-10f, 10f).Random()
+            });
+        }
+        void TrySpawnShot()
+        {
+            if (shotCooldown > 0)
+                return;
+
+            shotCooldown = 5f;
+            shapes.Add(new((0, 0, Color.Orange), (2, 0, Color.Orange))
+            {
+                Type = Type.Shot,
+                Position = ship.Position,
+                Angle = ship.Angle,
+                MoveAngle = ship.Angle,
+                Velocity = 40f
+            });
+        }
+        void HandleShapes()
+        {
+            var shapesToDestroy = new List<Shape>();
+
+            foreach (var shape in shapes)
+            {
+                var type = shape.Type;
+                shape.UpdateAndDraw(layer);
+
+                if (type == Type.Shot)
+                    foreach (var asteroid in shapes)
+                        if (asteroid.Type == Type.Asteroid && shape.IsOverlapping(asteroid))
+                        {
+                            shapesToDestroy.AddRange(new[] { shape, asteroid });
+                            score++;
+                        }
+
+                if (type == Type.Asteroid && ship.IsOverlapping(shape))
+                {
+                    score = 0;
+                    shotCooldown = 0f;
+                    ship.Position = (5, 15);
+                    shapes.Clear();
+                    return;
+                }
+
+                var destroyShot = type == Type.Shot && playArea.IsOverlapping(shape) == false;
+                var destroyAsteroid = type == Type.Asteroid && shape.Position.x < -10;
+
+                if (destroyAsteroid)
+                    score++;
+
+                if (destroyShot || destroyAsteroid)
+                    shapesToDestroy.Add(shape);
+            }
+
+            foreach (var shape in shapesToDestroy)
+                shapes.Remove(shape);
+        }
     }
 
 #region Backend
     private static readonly string[] asteroidShapes =
     {
-        "TY9BDYAwDEW/AEI4IAAZ3NY5QBJHjpOAAA4IQAQSOCAAB/CXX2BNmr68dW1aoYwxKBcDEuvAeoSb8TLQs04mJwZ2+" +
-        "uRODHTM051Y/+soJwY2+sv7xJzBbL1PDDTxnyfW27fXtDe/paIvO7DOfocYWC3fmt0D"
+        "Y2NABg32ELxgPwOD0kEGhhsHGBj2HPhfVVUFYzMwTADiNQ4QMQgbqGcfA8MXqBiEzcCwA4gn2EPEIGwGBgV7kB6IGIQNxEC7FA6CxAA=",
+        "Y2dABg32EGxxgIFhAxAbODAwBBz4X1VVxcCgAWYzMCxxALEhYhA2UD0Q34CKQdgMDAv2g/RDxCBsBgYJoP4DUDEIm4FB6iDIZogYhA1UC5RbA7YXAA==",
+        "Y2NABg32ECxwgIFhChB3APGD/f+rqqpgbIhciwNEDMJmYJgDxEegYhA2UA6IE6B6IWwgBtIbDiD0guwAia0BiwEA",
+        "Y2VABg32EHxhP5A+wMAwB4gV9v+vqqpiYJgBZDMAxTmAtIYjRIwBzAZiBwYGCweIGITNwHAEiD2gYiB2gAPE3IoDIDEA"
     };
-    private static Layer? layer;
+    private static Layer layer = new();
+
+    private enum Type { Ship, Asteroid, Shot }
 
     private class Shape : LinePack
     {
+        public Type Type { get; set; }
         public Angle MoveAngle { get; set; }
         public float Velocity { get; set; }
-        public bool IsSlowingDown { get; set; }
-        public bool IsDestroyed { get; private set; }
+        public float Torque { get; set; }
 
         public Shape(string base64) : base(base64)
         {
@@ -110,17 +159,8 @@ public static class Asteroids
         }
         public void UpdateAndDraw(Layer layer)
         {
-            if (IsDestroyed)
-                return;
-
-            if (IsSlowingDown)
-                Velocity = Math.Max(Velocity - Time.Delta * 5f, 0);
-
             Position = new Point(Position).MoveAt(MoveAngle, Velocity, Time.Delta);
-
-            var playArea = new Solid(0, 0, layer.TilemapSize.width, layer.TilemapSize.height);
-            if (IsOverlapping(playArea) == false)
-                IsDestroyed = true;
+            Angle = new Angle(Angle).Rotate(Torque, Time.Delta);
 
             layer.DrawLines(ToBundlePoints());
         }

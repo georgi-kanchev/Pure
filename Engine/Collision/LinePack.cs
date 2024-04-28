@@ -286,7 +286,7 @@ public class LinePack : Pack<Line>
         var (ax, ay) = local.A;
         var (bx, by) = local.B;
         var m = Matrix3x2.Identity;
-        m *= Matrix3x2.CreateScale(Scale.width, Scale.height, new(Position.x, Position.y));
+        m *= Matrix3x2.CreateScale(Scale.width, Scale.height);
         m *= Matrix3x2.CreateRotation(MathF.PI / 180f * Angle);
         m *= Matrix3x2.CreateTranslation(new(Position.x, Position.y));
         var ra = Vector2.Transform(new(ax, ay), m);

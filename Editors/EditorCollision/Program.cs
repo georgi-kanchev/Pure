@@ -18,10 +18,15 @@ public static class Program
 
         editor.OnUpdateUi += () =>
         {
-            if (prevViewPos != editor.MapsEditor.View.Position)
-                UpdateViewOffsets();
+            var (vx, vy) = editor.MapsEditor.View.Position;
+            solidPack.Position = (-vx, -vy);
+            solidMap.Position = CanDrawLayer ? (0, 0) : (-vx, -vy);
+            linePack.Position = (-vx, -vy);
 
-            prevViewPos = editor.MapsEditor.View.Position;
+            if ((vx, vy) != prevViewPos)
+                solidMap.Update(editor.MapsEditor[currentLayer]);
+
+            prevViewPos = (vx, vy);
 
             if (CanDrawLayer)
             {
@@ -70,7 +75,6 @@ public static class Program
 
 #region Backend
     private static (float x, float y) clickPos;
-    private static (int x, int y) prevViewPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
     private static readonly List tools;
@@ -87,6 +91,7 @@ public static class Program
     private static string[] layers = { "Layer1" };
     private static int currentLayer;
     private static Tile currentTile;
+    private static (int x, int y) prevViewPos;
 
     private static bool CanDrawLayer
     {
@@ -243,6 +248,8 @@ public static class Program
                     if (i == 0)
                     {
                         editor.Prompt.Close();
+                        var (vx, vy) = editor.MapsEditor.View.Position;
+                        solidMap.Position = (-vx, -vy);
                         solidMap.Update(editor.MapsEditor[currentLayer]);
                         return;
                     }
@@ -274,21 +281,26 @@ public static class Program
 
             solid.Size = Snap((Math.Abs(solid.Size.width), Math.Abs(solid.Size.height)));
 
+            var (vx, vy) = editor.MapsEditor.View.Position;
             var curSolid = solid;
             if (CanEditGlobal)
             {
-                curSolid.Position = curSolid.Position;
+                curSolid.Position = (curSolid.Position.x + vx, curSolid.Position.y + vy);
                 if (curSolid.Size is { width: > 0, height: > 0 })
                     solidPack.Add(curSolid);
             }
-            else if (CanDrawLayer)
+            else if (CanDrawLayer && layer.IsHovered)
             {
                 curSolid.Position = (solid.Position.x - 1, solid.Position.y - 1);
                 if (curSolid.Size is { width: > 0, height: > 0 })
                     solidMap.SolidsAdd(currentTile, curSolid);
             }
             else if (CanEditLines)
-                linePack.Add(new Line(Snap(clickPos), Snap((mx, my)), solid.Color));
+            {
+                var a = Snap((clickPos.x + vx, clickPos.y + vy));
+                var b = Snap((mx + vx, my + vy));
+                linePack.Add(new Line(a, b, solid.Color));
+            }
         });
         Mouse.Button.Right.OnPress(() =>
         {
@@ -301,7 +313,7 @@ public static class Program
                     if (closestPoint.Distance(MousePos) > 1)
                         continue;
 
-                    linePack.Remove(line);
+                    linePack.RemoveAt(i);
                     i--;
                 }
 
@@ -313,7 +325,7 @@ public static class Program
                 for (var i = 0; i < solidPack.Count; i++)
                     if (solidPack[i].IsOverlapping(MousePos))
                     {
-                        solidPack.Remove(solidPack[i]);
+                        solidPack.RemoveAt(i);
                         i--;
                     }
 
@@ -414,8 +426,6 @@ public static class Program
                 solidMap = new(bytes);
             else if (selection == 2)
                 linePack = new(bytes);
-
-            UpdateViewOffsets();
         }
         catch (Exception)
         {
@@ -429,12 +439,12 @@ public static class Program
             var selection = tools.IndexOf(tools.ItemsSelected[0]);
 
             // ignore editor offset, keep original tilemap's view
-            var prevMapOffset = solidMap.Offset;
+            var prevMapOffset = solidMap.Position;
             var prevSolidOffset = solidPack.Position;
             var prevLineOffset = linePack.Position;
 
             solidPack.Position = originalMapViewPos;
-            solidMap.Offset = originalMapViewPos;
+            solidMap.Position = originalMapViewPos;
             linePack.Position = originalMapViewPos;
 
             var data = Array.Empty<byte>();
@@ -447,7 +457,7 @@ public static class Program
                 data = linePack.ToBytes();
 
             solidPack.Position = prevSolidOffset;
-            solidMap.Offset = prevMapOffset;
+            solidMap.Position = prevMapOffset;
             linePack.Position = prevLineOffset;
 
             return data;
@@ -469,15 +479,6 @@ public static class Program
             return;
 
         currentLayer = (currentLayer + offset).Limit((0, layers.Length - 1), true);
-    }
-
-    private static void UpdateViewOffsets()
-    {
-        var (x, y) = editor.MapsEditor.View.Position;
-        solidPack.Position = (-x, -y);
-        linePack.Position = (-x, -y);
-        solidMap.Offset = (-x, -y);
-        solidMap.Update(editor.MapsEditor[currentLayer]);
     }
 
     private static (float x, float y) Snap((float x, float y) pair)

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 public class SolidMap
 {
-    public (int x, int y) Offset { get; set; }
+    public (int x, int y) Position { get; set; }
 
     public int SolidsCount { get; private set; }
     public int IgnoredCellsCount
@@ -27,7 +27,7 @@ public class SolidMap
         var b = Decompress(bytes);
         var offset = 0;
 
-        Offset = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+        Position = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
 
         var ignoredCount = BitConverter.ToInt32(Get<int>());
         for (var i = 0; i < ignoredCount; i++)
@@ -77,8 +77,8 @@ public class SolidMap
     {
         var result = new List<byte>();
 
-        result.AddRange(BitConverter.GetBytes(Offset.x));
-        result.AddRange(BitConverter.GetBytes(Offset.y));
+        result.AddRange(BitConverter.GetBytes(Position.x));
+        result.AddRange(BitConverter.GetBytes(Position.y));
 
         result.AddRange(BitConverter.GetBytes(ignoredCells.Count));
         foreach (var cell in ignoredCells)
@@ -310,7 +310,7 @@ public class SolidMap
                 if (cellRects.ContainsKey(tile) == false)
                     continue;
 
-                var cell = (x + Offset.x, y + Offset.y);
+                var cell = (x + Position.x, y + Position.y);
                 tileIndices[cell] = tile;
             }
     }

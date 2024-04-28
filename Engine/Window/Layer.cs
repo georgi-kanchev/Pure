@@ -87,6 +87,11 @@ public class Layer
         verts = new(PrimitiveType.Quads);
     }
 
+    ~Layer()
+    {
+        verts.Dispose();
+    }
+
     public void DrawCursor(int tileId = 546, uint tint = 3789677055)
     {
         if (Mouse.isOverWindow == false)
@@ -124,8 +129,7 @@ public class Layer
             QueueRectangle((p.x, p.y), (1f / TileSize.width, 1f / TileSize.height), p.color);
         }
     }
-    public void DrawRectangles(
-        params (float x, float y, float width, float height, uint color)[]? rectangles)
+    public void DrawRectangles(params (float x, float y, float width, float height, uint color)[]? rectangles)
     {
         for (var i = 0; i < rectangles?.Length; i++)
         {
@@ -140,45 +144,6 @@ public class Layer
 
         foreach (var line in lines)
             QueueLine((line.ax, line.ay), (line.bx, line.by), line.color);
-
-        // old method of building lines point by point (very slow) -
-        // now there is a render texture & pixel scale and we are at true resolution
-        // so no need for it
-        // for (var i = 0; i < lines?.Length; i++)
-        // {
-        //     var l = lines[i];
-        //     var (tw, th) = TileSize;
-        //     var (ax, ay) = (l.ax, l.ay);
-        //     var (bx, by) = (l.bx, l.by);
-        //     var (dx, dy) = (MathF.Abs(bx - ax), -MathF.Abs(by - ay));
-        //     var (stepX, stepY) = (1f / tw * 0.999f, 1f / th * 0.999f);
-        //     var sx = ax < bx ? stepX : -stepY;
-        //     var sy = ay < by ? stepX : -stepY;
-        //     var err = dx + dy;
-        //     var steps = (int)MathF.Max(dx / stepX, -dy / stepY);
-        //
-        //     for (var t = 0; t <= steps; t++)
-        //     {
-        //         DrawPoints((ax, ay, l.color));
-        //
-        //         if (IsWithin(ax, bx, stepX) && IsWithin(ay, by, stepY))
-        //             break;
-        //
-        //         var e2 = 2f * err;
-        //
-        //         if (e2 > dy)
-        //         {
-        //             err += dy;
-        //             ax += sx;
-        //         }
-        //
-        //         if (e2 < dx == false)
-        //             continue;
-        //
-        //         err += dx;
-        //         ay += sy;
-        //     }
-        // }
     }
     public void DrawLines(params (float x, float y, uint color)[]? points)
     {
@@ -199,10 +164,8 @@ public class Layer
         }
     }
     public void DrawTiles(
-        (float x, float y) position,
-        (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) tile,
-        (int width, int height) groupSize = default,
-        bool isSameTile = default)
+        (float x, float y) position, (int id, uint tint, sbyte turns, bool isMirrored,
+            bool isFlipped) tile, (int width, int height) groupSize = default, bool isSameTile = default)
     {
         var (id, tint, angle, flipH, flipV) = tile;
         var (w, h) = groupSize;
@@ -422,6 +385,16 @@ public class Layer
 
     private void QueueLine((float x, float y) a, (float x, float y) b, uint tint)
     {
+        if (IsOverlapping(a) == false && IsOverlapping(b) == false) // fully outside?
+            return;
+
+        if (IsOverlapping(a) ^ IsOverlapping(b)) // halfway outside?
+        {
+            var line = TryCropLine(a, b);
+            a = (line.ax, line.ay);
+            b = (line.bx, line.by);
+        }
+
         var (tw, th) = TileSize;
         a.x *= tw;
         a.y *= th;
@@ -431,12 +404,12 @@ public class Layer
         const float THICKNESS = 0.5f;
         var color = new Color(tint);
         var dir = new Vector2(b.x - a.x, b.y - a.y);
-        var length = dir.Length();
+        var length = dir.Length() / 2f;
         var center = new Vector2((a.x + b.x) / 2, (a.y + b.y) / 2);
-        var tl = new Vector2(-length / 2f, -THICKNESS);
-        var tr = new Vector2(length / 2f, -THICKNESS);
-        var br = new Vector2(length / 2f, THICKNESS);
-        var bl = new Vector2(-length / 2f, THICKNESS);
+        var tl = new Vector2(-length, -THICKNESS);
+        var tr = new Vector2(length, -THICKNESS);
+        var br = new Vector2(length, THICKNESS);
+        var bl = new Vector2(-length, THICKNESS);
         var (texTl, texTr, texBr, texBl) = GetTexCoords(TileIdFull, (1, 1));
 
         var m = Matrix3x2.Identity;
@@ -448,15 +421,19 @@ public class Layer
         br = Vector2.Transform(br, m);
         bl = Vector2.Transform(bl, m);
 
-        verts.Append(TryCropVertex(new(new(tl.X, tl.Y), color, texTl), true));
-        verts.Append(TryCropVertex(new(new(tr.X, tr.Y), color, texTr), true));
-        verts.Append(TryCropVertex(new(new(br.X, br.Y), color, texBr), true));
-        verts.Append(TryCropVertex(new(new(bl.X, bl.Y), color, texBl), true));
+        verts.Append(new(new(tl.X, tl.Y), color, texTl));
+        verts.Append(new(new(tr.X, tr.Y), color, texTr));
+        verts.Append(new(new(br.X, br.Y), color, texBr));
+        verts.Append(new(new(bl.X, bl.Y), color, texBl));
     }
     private void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
     {
         var (tw, th) = TileSize;
         var (w, h) = size;
+
+        if (IsOverlapping(position) == false && IsOverlapping((position.x + w, position.y + h)) == false)
+            return;
+
         var (x, y) = (position.x * tw, position.y * th);
         var color = new Color(tint);
         var (texTl, texTr, texBr, texBl) = GetTexCoords(TileIdFull, (1, 1));
@@ -493,23 +470,36 @@ public class Layer
 
         return vertex;
     }
-
-    private static bool IsWithin(float number, float targetNumber, float range)
+    private (float ax, float ay, float bx, float by) TryCropLine((float x, float y) a, (float x, float y) b)
     {
-        return IsBetween(number, targetNumber - range, targetNumber + range);
-    }
-    private static bool IsBetween(float number, float rangeA, float rangeB)
-    {
-        if (rangeA > rangeB)
-            (rangeA, rangeB) = (rangeB, rangeA);
+        var (w, h) = tilemapSize;
+        var newA = (a.x, a.y);
+        var newB = (b.x, b.y);
+        var isOutsideA = IsOverlapping(a) == false;
+        var isOutsideB = IsOverlapping(b) == false;
+        var crossT = LinesCrossPoint(a.x, a.y, b.x, b.y, 0, 0, w, 0);
+        var crossR = LinesCrossPoint(a.x, a.y, b.x, b.y, w, 0, w, h);
+        var crossB = LinesCrossPoint(a.x, a.y, b.x, b.y, w, h, 0, h);
+        var crossL = LinesCrossPoint(a.x, a.y, b.x, b.y, 0, h, 0, 0);
 
-        var l = rangeA <= number;
-        var u = rangeB >= number;
-        return l && u;
+        TryCropSide(crossT);
+        TryCropSide(crossR);
+        TryCropSide(crossB);
+        TryCropSide(crossL);
+
+        return (newA.x, newA.y, newB.x, newB.y);
+
+        void TryCropSide((float x, float y) sideCrossPoint)
+        {
+            if (float.IsNaN(sideCrossPoint.x) || float.IsNaN(sideCrossPoint.y))
+                return;
+
+            newA = isOutsideA ? sideCrossPoint : a;
+            newB = isOutsideB ? sideCrossPoint : b;
+        }
     }
-    private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(
-        int tileId,
-        (int w, int h) size)
+
+    private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int tileId, (int w, int h) size)
     {
         var (w, h) = size;
         var (tw, th) = TileSize;
@@ -597,6 +587,27 @@ public class Layer
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
+    }
+    private static (float x, float y) LinesCrossPoint(float ax1, float ay1, float bx1, float by1, float ax2, float ay2, float bx2, float by2)
+    {
+        var dx1 = bx1 - ax1;
+        var dy1 = by1 - ay1;
+        var dx2 = bx2 - ax2;
+        var dy2 = by2 - ay2;
+        var det = dx1 * dy2 - dy1 * dx2;
+
+        if (det == 0)
+            return (float.NaN, float.NaN);
+
+        var s = ((ay1 - ay2) * dx2 - (ax1 - ax2) * dy2) / det;
+        var t = ((ay1 - ay2) * dx1 - (ax1 - ax2) * dy1) / det;
+
+        if (s is < 0 or > 1 || t is < 0 or > 1)
+            return (float.NaN, float.NaN);
+
+        var intersectionX = ax1 + s * dx1;
+        var intersectionY = ay1 + s * dy1;
+        return (intersectionX, intersectionY);
     }
 #endregion
 }
