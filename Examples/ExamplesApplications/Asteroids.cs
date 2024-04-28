@@ -22,7 +22,7 @@ public static class Asteroids
             Position = (5, 15)
         };
         var shapes = new List<Shape>();
-        var playArea = new Solid(0, 0, layer.TilemapSize.width, layer.TilemapSize.height);
+        var playArea = new Solid(0, 0, tilemap.View.Width, tilemap.View.Height);
         var highScore = 0;
         var score = 0;
         var shotCooldown = 0f;
@@ -56,7 +56,7 @@ public static class Asteroids
 
         void HandleShip()
         {
-            var mousePos = layer?.PixelToWorld(Mouse.CursorPosition) ?? (0, 0);
+            var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
             var targetAngle = new Point(ship.Position).Angle(mousePos);
             ship.Angle = new Angle(ship.Angle).RotateTo(targetAngle, 200f, Time.Delta).Limit((-30, 30));
             ship.MoveAngle = ship.Angle;
