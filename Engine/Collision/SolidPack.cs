@@ -72,6 +72,10 @@ public class SolidPack : Pack<Solid>
     {
         return linePack.IsOverlapping(this);
     }
+    public bool IsOverlapping(SolidMap solidMap)
+    {
+        return solidMap.IsOverlapping(this);
+    }
     public bool IsOverlapping(SolidPack solidPack)
     {
         for (var i = 0; i < Count; i++)
@@ -103,6 +107,10 @@ public class SolidPack : Pack<Solid>
                 return true;
 
         return false;
+    }
+    public bool IsOverlapping((float x, float y, uint color) point)
+    {
+        return IsOverlapping((point.x, point.y));
     }
 
     public SolidPack Duplicate()

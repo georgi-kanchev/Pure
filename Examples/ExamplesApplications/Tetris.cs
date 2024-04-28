@@ -211,7 +211,7 @@ public static class Tetris
         public static bool IsColliding(Point position)
         {
             var solid = new Solid(playArea.Position, playArea.Size);
-            var isAtEdge = position.Y > 1 && solid.IsOverlapping(position) == false;
+            var isAtEdge = position.Y > 1 && solid.IsOverlapping(position.XY) == false;
             var isAtFallen = fallen.ContainsKey(((int)position.Y, (int)position.X));
 
             return isAtEdge || isAtFallen;

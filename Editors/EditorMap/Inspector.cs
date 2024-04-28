@@ -131,9 +131,9 @@ internal class Inspector : Panel
         paletteColor = new() { Pick = { IsHidden = true } };
         paletteColor.OnDisplay(() =>
         {
-            editor.MapsUi.SetPalette(paletteColor, zOrder: 1);
-            editor.MapsUi.SetSlider(paletteColor.Opacity, zOrder: 1);
-            editor.MapsUi.SetPages(paletteColor.Brightness, zOrder: 1);
+            editor.MapsUi.SetPalette(paletteColor, 1);
+            editor.MapsUi.SetSlider(paletteColor.Opacity, 1);
+            editor.MapsUi.SetPages(paletteColor.Brightness, 1);
         });
         paletteColor.OnSampleDisplay((btn, color) =>
             editor.MapsUi[1].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, color)));
@@ -257,8 +257,8 @@ internal class Inspector : Panel
         if (i == 13)
         {
             editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetText(
-                position: (segment.x, segment.y),
-                text: "Tool:");
+                (segment.x, segment.y),
+                "Tool:");
             return;
         }
 
@@ -268,7 +268,7 @@ internal class Inspector : Panel
         if (i == 14 && palette.layer.IsHovered && editor.Prompt.IsHidden)
         {
             var (mx, my) = palette.mousePos;
-            var index = new Indices(my, mx).ToIndex(palette.map.Size.width);
+            var index = (my, mx).ToIndex1D(palette.map.Size);
             var text = $"{index} ({mx} {my})".Constrain((segment.width, segment.height));
             editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetText((segment.x, segment.y), text);
             return;

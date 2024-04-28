@@ -36,12 +36,7 @@ public struct Solid
     /// </summary>
     public uint Color { get; set; }
 
-    public Solid(
-        float x,
-        float y,
-        float width,
-        float height,
-        uint color = uint.MaxValue)
+    public Solid(float x, float y, float width, float height, uint color = uint.MaxValue)
     {
         X = x;
         Y = y;
@@ -49,10 +44,7 @@ public struct Solid
         Height = height;
         Color = color;
     }
-    public Solid(
-        (float x, float y) position,
-        (float width, float height) size,
-        uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
+    public Solid((float x, float y) position, (float width, float height) size, uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
     {
     }
     public Solid(byte[] bytes)
@@ -103,6 +95,14 @@ public struct Solid
         return $"{nameof(Position)}{Position} {nameof(Size)}{Size}";
     }
 
+    public bool IsOverlapping(LinePack linePack)
+    {
+        return linePack.IsOverlapping(this);
+    }
+    public bool IsOverlapping(SolidMap solidMap)
+    {
+        return solidMap.IsOverlapping(this);
+    }
     /// <param name="solidPack">
     /// The hitbox to test for overlap with.</param>
     /// <returns>True if this solid overlaps with the specified 
@@ -119,10 +119,8 @@ public struct Solid
     /// <returns>True if this solids overlap; otherwise, false.</returns>
     public bool IsOverlapping(Solid solid)
     {
-        var (x1, y1) = Position;
-        var (w1, h1) = Size;
-        var (x2, y2) = solid.Position;
-        var (w2, h2) = solid.Size;
+        var (x1, y1, w1, h1, _) = ToBundle();
+        var (x2, y2, w2, h2, _) = solid.ToBundle();
 
         return x1 < x2 + w2 &&
                x1 + w1 > x2 &&
@@ -135,7 +133,7 @@ public struct Solid
     /// line; otherwise, false.</returns>
     public bool IsOverlapping(Line line)
     {
-        return IsOverlapping(line.A) || IsOverlapping(line.B) || line.IsCrossing(this);
+        return IsOverlapping(line.A) || IsOverlapping(line.B) || line.IsOverlapping(this);
     }
     /// <param name="point">
     /// The line to test for overlap with.</param>
@@ -151,23 +149,62 @@ public struct Solid
         var containsY = y < py && py < y + h;
         return containsX && containsY;
     }
+    public bool IsOverlapping((float x, float y, uint color) point)
+    {
+        return IsOverlapping((point.x, point.y));
+    }
+
+    public bool IsContaining(LinePack linePack)
+    {
+        for (var i = 0; i < linePack.Count; i++)
+            if (IsContaining(linePack[i]) == false)
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(SolidMap solidMap)
+    {
+        return IsContaining(solidMap.ToArray());
+    }
+    public bool IsContaining(SolidPack solidPack)
+    {
+        for (var i = 0; i < solidPack.Count; i++)
+            if (IsContaining(solidPack[i]) == false)
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(Solid solid)
+    {
+        var (x, y, w, h, _) = solid.ToBundle();
+        return IsContaining((x, y)) && IsContaining((x + w, y + h));
+    }
+    public bool IsContaining(Line line)
+    {
+        return IsContaining(line.A) && IsContaining(line.B);
+    }
+    public bool IsContaining((float x, float y) point)
+    {
+        return IsOverlapping(point);
+    }
+    public bool IsContaining((float x, float y, uint color) point)
+    {
+        return IsOverlapping((point.x, point.y));
+    }
 
     public static implicit operator Solid((int x, int y, int width, int height) rectangle)
     {
         return new(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
     }
-    public static implicit operator Solid(
-        (int x, int y, int width, int height, uint color) bundle)
+    public static implicit operator Solid((int x, int y, int width, int height, uint color) bundle)
     {
         return new(bundle.x, bundle.y, bundle.width, bundle.height, bundle.color);
     }
-    public static implicit operator (int x, int y, int width, int height, uint color)(
-        Solid solid)
+    public static implicit operator (int x, int y, int width, int height, uint color)(Solid solid)
     {
         return ((int)solid.X, (int)solid.Y, (int)solid.Width, (int)solid.Height, solid.Color);
     }
-    public static implicit operator (int x, int y, int width, int height)(
-        Solid solid)
+    public static implicit operator (int x, int y, int width, int height)(Solid solid)
     {
         return ((int)solid.X, (int)solid.Y, (int)solid.Width, (int)solid.Height);
     }
@@ -175,18 +212,15 @@ public struct Solid
     {
         return new(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
     }
-    public static implicit operator Solid(
-        (float x, float y, float width, float height, uint color) bundle)
+    public static implicit operator Solid((float x, float y, float width, float height, uint color) bundle)
     {
         return new(bundle.x, bundle.y, bundle.width, bundle.height, bundle.color);
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)(
-        Solid solid)
+    public static implicit operator (float x, float y, float width, float height, uint color)(Solid solid)
     {
         return solid.ToBundle();
     }
-    public static implicit operator (float x, float y, float width, float height)(
-        Solid solid)
+    public static implicit operator (float x, float y, float width, float height)(Solid solid)
     {
         return (solid.Position.x, solid.Position.y, solid.Size.width, solid.Size.height);
     }

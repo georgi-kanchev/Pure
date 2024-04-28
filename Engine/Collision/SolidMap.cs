@@ -315,6 +315,18 @@ public class SolidMap
             }
     }
 
+    public bool IsOverlapping(LinePack linePack)
+    {
+        for (var i = 0; i < linePack.Count; i++)
+            if (IsOverlapping(linePack[i]))
+                return true;
+
+        return false;
+    }
+    public bool IsOverlapping(SolidMap solidMap)
+    {
+        return IsOverlapping(solidMap.ToArray());
+    }
     public bool IsOverlapping(SolidPack solidPack)
     {
         for (var i = 0; i < solidPack.Count; i++)
@@ -325,7 +337,7 @@ public class SolidMap
     }
     public bool IsOverlapping(Line line)
     {
-        return line.IsCrossing(this);
+        return line.IsOverlapping(GetNeighborRects(line).ToArray());
     }
     public bool IsOverlapping(Solid solid)
     {
@@ -345,6 +357,48 @@ public class SolidMap
                 return true;
 
         return false;
+    }
+    public bool IsOverlapping((float x, float y, uint color) point)
+    {
+        return IsOverlapping((point.x, point.y));
+    }
+
+    public bool IsContaining(LinePack linePack)
+    {
+        for (var i = 0; i < linePack.Count; i++)
+            if (IsContaining(linePack[i]) == false)
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(SolidMap solidMap)
+    {
+        return IsContaining(solidMap.ToArray());
+    }
+    public bool IsContaining(SolidPack solidPack)
+    {
+        for (var i = 0; i < solidPack.Count; i++)
+            if (IsContaining(solidPack[i]) == false)
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(Solid solid)
+    {
+        var (x, y, w, h, _) = solid.ToBundle();
+        return IsContaining((x, y)) && IsContaining((x + w, y + h));
+    }
+    public bool IsContaining(Line line)
+    {
+        return IsContaining(line.A) && IsContaining(line.B);
+    }
+    public bool IsContaining((float x, float y) point)
+    {
+        return IsOverlapping(point);
+    }
+    public bool IsContaining((float x, float y, uint color) point)
+    {
+        return IsOverlapping((point.x, point.y));
     }
 
     public Solid[] CalculateLight((float x, float y) position, int radius = 10)
@@ -431,7 +485,7 @@ public class SolidMap
     private readonly Dictionary<int, List<Solid>> cellRects = new();
     private readonly List<(int x, int y)> ignoredCells = new();
 
-    internal List<Solid> GetNeighborRects(Solid rect)
+    private List<Solid> GetNeighborRects(Solid rect)
     {
         var result = new List<Solid>();
         var (x, y) = rect.Position;
@@ -458,7 +512,7 @@ public class SolidMap
 
         return result;
     }
-    public List<Solid> GetNeighborRects(Line line)
+    internal List<Solid> GetNeighborRects(Line line)
     {
         var (x0, y0) = ((int)line.A.x, (int)line.A.y);
         var (x1, y1) = ((int)line.B.x, (int)line.B.y);
@@ -518,7 +572,10 @@ public class SolidMap
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
+
         return output.ToArray();
     }
     private static byte[] Decompress(byte[] data)

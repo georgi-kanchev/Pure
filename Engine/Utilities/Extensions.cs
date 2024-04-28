@@ -1377,6 +1377,17 @@ public static class Extensions
         return HashCode.Combine(parameters.a, parameters.b, parameters.c);
     }
 
+    public static int ToIndex1D(this (int x, int y) indexes, (int width, int height) size)
+    {
+        var result = indexes.x * size.width + indexes.y;
+        return Math.Clamp(result, 0, size.width * size.height);
+    }
+    public static (int x, int y) ToIndex2D(this int index, (int width, int height) size)
+    {
+        index = Math.Clamp(index, 0, size.width * size.height);
+        return (index % size.width, index / size.width);
+    }
+
 #region Backend
     private class Gate
     {

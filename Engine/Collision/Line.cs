@@ -103,10 +103,10 @@ public struct Line
         return $"A{A} B{B} Angle({Angle}°)";
     }
 
-    public bool IsCrossing(LinePack linePack)
+    public bool IsOverlapping(LinePack linePack)
     {
         for (var i = 0; i < linePack.Count; i++)
-            if (IsCrossing(linePack[i]))
+            if (IsOverlapping(linePack[i]))
                 return true;
 
         return false;
@@ -118,9 +118,9 @@ public struct Line
     /// <returns>
     /// True if this line is crossing with the specified map, otherwise false.
     /// </returns>
-    public bool IsCrossing(SolidMap solidMap)
+    public bool IsOverlapping(SolidMap solidMap)
     {
-        return IsCrossing(solidMap.GetNeighborRects(this).ToArray());
+        return solidMap.IsOverlapping(this);
     }
     /// <summary>
     /// Checks if this line is crossing with any of the rectangles in the specified hitbox.
@@ -129,10 +129,10 @@ public struct Line
     /// <returns>
     /// True if this line is crossing with the specified hitbox, otherwise false.
     /// </returns>
-    public bool IsCrossing(SolidPack solidPack)
+    public bool IsOverlapping(SolidPack solidPack)
     {
         for (var i = 0; i < solidPack.Count; i++)
-            if (IsCrossing(solidPack[i]))
+            if (IsOverlapping(solidPack[i]))
                 return true;
 
         return false;
@@ -144,7 +144,7 @@ public struct Line
     ///     True if this line is crossing with the specified
     ///     rectangle, otherwise false.
     /// </returns>
-    public bool IsCrossing(Solid solid)
+    public bool IsOverlapping(Solid solid)
     {
         var (x1, y1) = A;
         var (x2, y2) = B;
@@ -168,7 +168,7 @@ public struct Line
     /// </summary>
     /// <param name="line">The other line to check for crossing.</param>
     /// <returns>True if the lines cross, false otherwise.</returns>
-    public bool IsCrossing(Line line)
+    public bool IsOverlapping(Line line)
     {
         var (ax1, ay1) = A;
         var (bx1, by1) = B;
@@ -183,7 +183,7 @@ public struct Line
     ///     True if this line is crossing with the specified
     ///     rectangle, otherwise false.
     /// </returns>
-    public bool IsCrossing((float x, float y) point)
+    public bool IsOverlapping((float x, float y) point)
     {
         var (ax, ay) = A;
         var (bx, by) = B;
@@ -207,9 +207,9 @@ public struct Line
     ///     True if this line is crossing with the specified
     ///     rectangle, otherwise false.
     /// </returns>
-    public bool IsCrossing((float x, float y, uint color) point)
+    public bool IsOverlapping((float x, float y, uint color) point)
     {
-        return IsCrossing((point.x, point.y));
+        return IsOverlapping((point.x, point.y));
     }
 
     public (float x, float y, uint color)[] CrossPoints(LinePack linePack)
@@ -337,6 +337,7 @@ public struct Line
             distance > 1 ? (bx, ay, uint.MaxValue) :
             (ax + abx * distance, ay + aby * distance, uint.MaxValue);
     }
+
     public bool IsLeftOf((float x, float y) point)
     {
         var (px, py) = point;

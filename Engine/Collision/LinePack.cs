@@ -110,6 +110,10 @@ public class LinePack : Pack<Line>
 
         return false;
     }
+    public bool IsOverlapping(SolidMap solidMap)
+    {
+        return solidMap.IsOverlapping(this);
+    }
     public bool IsOverlapping(SolidPack solidPack)
     {
         for (var i = 0; i < Count; i++)
@@ -129,7 +133,7 @@ public class LinePack : Pack<Line>
     public bool IsOverlapping(Line line)
     {
         for (var i = 0; i < data.Count; i++)
-            if (this[i].IsCrossing(line))
+            if (this[i].IsOverlapping(line))
                 return true;
 
         return false;
@@ -137,10 +141,14 @@ public class LinePack : Pack<Line>
     public bool IsOverlapping((float x, float y) point)
     {
         for (var i = 0; i < Count; i++)
-            if (this[i].IsCrossing(point))
+            if (this[i].IsOverlapping(point))
                 return true;
 
         return false;
+    }
+    public bool IsOverlapping((float x, float y, uint color) point)
+    {
+        return IsOverlapping((point.x, point.y));
     }
 
     public (float x, float y, uint color)[] CrossPoints(LinePack linePack)
@@ -210,6 +218,20 @@ public class LinePack : Pack<Line>
         }
 
         return result;
+    }
+
+    public void NormalizeToPoint((float x, float y, uint color) point)
+    {
+        NormalizeToPoint((point.x, point.y));
+    }
+    public void NormalizeToPoint((float x, float y) point)
+    {
+        for (var i = 0; i < Count; i++)
+        {
+            var line = this[i];
+            line.NormalizeToPoint(point);
+            this[i] = line;
+        }
     }
 
     public LinePack Duplicate()

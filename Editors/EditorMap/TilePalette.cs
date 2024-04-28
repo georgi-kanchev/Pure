@@ -52,7 +52,7 @@ internal class TilePalette
         for (var i = 0; i < mh; i++)
             for (var j = 0; j < mw; j++)
             {
-                var id = new Indices(i, j).ToIndex(mw);
+                var id = (i, j).ToIndex1D((mw, mh));
                 var tile = new Tile(id, inspector.paletteColor.SelectedColor);
                 map.SetTile((j, i), tile);
             }
@@ -246,7 +246,7 @@ internal class TilePalette
         else if (tool == 13) // pick
         {
             var tile = tilemap.TileAt((mx, my));
-            var coords = Indices.FromIndex(tile.Id, layer.TilesetSize);
+            var coords = tile.Id.ToIndex2D(layer.TilesetSize);
             inspector.paletteColor.SelectedColor = tile.Tint;
             selectedPos = coords;
             selectedSz = (1, 1);
