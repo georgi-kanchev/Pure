@@ -206,7 +206,7 @@ public class Tilemap
         if (tiles == null || tiles.Length == 0)
             return;
 
-        var stack = new System.Collections.Generic.Stack<(int x, int y)>();
+        var stack = new Stack<(int x, int y)>();
         var initialTile = TileAt(position);
         stack.Push(position);
 
@@ -318,6 +318,15 @@ public class Tilemap
 
         for (var j = 0; j < text.Length; j++)
         {
+            if (text[j] == '\r' || text[j] == '\b')
+                continue;
+
+            if (text[j] == '\t')
+            {
+                x += 4;
+                continue;
+            }
+
             if (IsTag(j))
             {
                 var (color, tag, i) = colors[0];
@@ -335,7 +344,7 @@ public class Tilemap
                 }
             }
 
-            if (text[j].ToString() == Environment.NewLine)
+            if (text[j] == '\n')
             {
                 x = position.x;
                 y++;
@@ -734,7 +743,7 @@ public class Tilemap
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
@@ -785,7 +794,7 @@ public class Tilemap
         { '♠', 396 }, { '♥', 397 }, { '♣', 398 }, { '♦', 399 },
         { '♤', 400 }, { '♡', 401 }, { '♧', 402 }, { '♢', 403 },
 
-        { '▕', 432 },
+        { '▕', 432 }
     };
     private static readonly Dictionary<int, Random> randomCache = new();
 
@@ -913,5 +922,5 @@ public class Tilemap
         var (x, y, z) = SeedOffset;
         return HashCode.Combine(a + x, b + y, z);
     }
-#endregion
+    #endregion
 }

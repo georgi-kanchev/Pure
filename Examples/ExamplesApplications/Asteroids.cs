@@ -34,15 +34,15 @@ public static class Asteroids
             if (score > highScore)
                 highScore = score;
 
-            if (Mouse.Button.Right.IsPressed())
+            if (Mouse.Button.Left.IsPressed())
                 TrySpawnShot();
 
             tilemap.Flush();
             Time.Update();
             shotCooldown -= Time.Delta;
 
-            tilemap.SetText((0, 0), $"BEST: {highScore}{Environment.NewLine}" +
-                                    $"SCORE: {score}{Environment.NewLine}{Environment.NewLine}" +
+            tilemap.SetText((0, 0), $"BEST: {highScore}\n" +
+                                    $"SCORE: {score}\n\n" +
                                     $"SHOT: {(shotCooldown < 0 ? "READY!" : $"{shotCooldown:F1}")}");
 
             HandleShip();
@@ -63,6 +63,7 @@ public static class Asteroids
             ship.Velocity = 15f;
             ship.Position = (5f, ship.Position.y);
         }
+
         void SpawnAsteroid()
         {
             shapes.Add(new(asteroidShapes.ChooseOne())
@@ -76,6 +77,7 @@ public static class Asteroids
                 Torque = (-10f, 10f).Random()
             });
         }
+
         void TrySpawnShot()
         {
             if (shotCooldown > 0)
@@ -91,6 +93,7 @@ public static class Asteroids
                 Velocity = 40f
             });
         }
+
         void HandleShapes()
         {
             var shapesToDestroy = new List<Shape>();
@@ -101,12 +104,14 @@ public static class Asteroids
                 shape.UpdateAndDraw(layer);
 
                 if (type == Type.Shot)
+                {
                     foreach (var asteroid in shapes)
                         if (asteroid.Type == Type.Asteroid && shape.IsOverlapping(asteroid))
                         {
                             shapesToDestroy.AddRange(new[] { shape, asteroid });
                             score++;
                         }
+                }
 
                 if (type == Type.Asteroid && ship.IsOverlapping(shape))
                 {
@@ -132,7 +137,7 @@ public static class Asteroids
         }
     }
 
-#region Backend
+    #region Backend
     private static readonly string[] asteroidShapes =
     {
         "Y2NABg32ELxgPwOD0kEGhhsHGBj2HPhfVVUFYzMwTADiNQ4QMQgbqGcfA8MXqBiEzcCwA4gn2EPEIGwGBgV7kB6IGIQNxEC7FA6CxAA=",
@@ -142,7 +147,12 @@ public static class Asteroids
     };
     private static Layer layer = new();
 
-    private enum Type { Ship, Asteroid, Shot }
+    private enum Type
+    {
+        Ship,
+        Asteroid,
+        Shot
+    }
 
     private class Shape : LinePack
     {
@@ -165,5 +175,5 @@ public static class Asteroids
             layer.DrawLines(ToBundlePoints());
         }
     }
-#endregion
+    #endregion
 }
