@@ -8,7 +8,7 @@ public static class Run
 {
     public static void Main()
     {
-        Asteroids.Run();
+        //Asteroids.Run();
         //EightBallPool.Run();
         //FlappyBird.Run();
         //Tetris.Run();
@@ -21,7 +21,7 @@ public static class Run
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
-        //RunExampleUserInterface();
+        RunExampleUserInterface();
 
         //DefaultGraphics.Run();
         //Commands.Run();

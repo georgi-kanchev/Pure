@@ -860,7 +860,7 @@ public static class Extensions
         {
             input = input.Replace(" ", string.Empty);
             input = input.Replace(Environment.NewLine, string.Empty);
-            var matches = Regex.Matches(input, $"{tintBrush}([0-9a-fA-F]+){tintBrush}");
+            var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
             var output = new List<(int index, string tag)>();
 
             var offset = 0;
@@ -874,40 +874,41 @@ public static class Extensions
         }
         string RemoveColorTags(string input)
         {
-            var matches = Regex.Matches(input, $"{tintBrush}([0-9a-fA-F]+){tintBrush}");
+            var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
             var offset = 0;
+            var builder = new StringBuilder(input);
             foreach (Match match in matches)
             {
-                input = input.Remove(match.Index - offset, match.Length);
+                builder.Remove(match.Index - offset, match.Length);
                 offset += match.Length;
             }
 
-            return input;
+            return builder.ToString();
         }
         string ApplyColorTags(string input, List<(int index, string tag)> storedTags)
         {
             var realIndex = 0;
-            for (var i = 0; i < input.Length; i++)
+            var builder = new StringBuilder(input);
+            for (var i = 0; i < builder.Length; i++)
             {
-                var symbol = input[i];
-
-                if (char.IsWhiteSpace(symbol))
+                if (char.IsWhiteSpace(builder[i]))
                     continue;
 
-                if (storedTags.Count == 0)
-                    return input;
-
-                if (storedTags[0].index == realIndex)
+                // multiple tags on the same index?
+                while (storedTags.Count > 0 && storedTags[0].index == realIndex)
                 {
-                    input = input.Insert(i, storedTags[0].tag);
+                    builder.Insert(i, storedTags[0].tag);
                     i += storedTags[0].tag.Length;
                     storedTags.RemoveAt(0);
                 }
 
+                if (storedTags.Count == 0)
+                    return builder.ToString();
+
                 realIndex++;
             }
 
-            return input;
+            return builder.ToString();
         }
     }
     public static string Shorten(this string text, int maxLength, string indicator = "…")
