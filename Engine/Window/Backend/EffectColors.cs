@@ -13,17 +13,20 @@ uniform float saturation = 1.0;
 uniform float contrast = 1.0;
 uniform float brightness = 1.0;
 
-uniform vec4 replaceColorOld;
-uniform vec4 replaceColorNew;
+uniform int replaceColorsCount = 0;
+uniform vec4 replaceColorsOld[99];
+uniform vec4 replaceColorsNew[99];
 
 uniform vec4 tint;
+uniform vec4 overlay;
 
 void main(void)
 {
     vec4 color = texture2D(texture, gl_TexCoord[0].xy) * gl_Color;
 
-    if (distance(color, replaceColorOld) < 0.01)
-        color = replaceColorNew;
+    for(int i = 0; i < replaceColorsCount; i++)
+	    if (distance(color, replaceColorsOld[i]) < 0.01)
+		    color = replaceColorsNew[i];
 
     color.rgb = pow(color.rgb, vec3(1.0 / gamma));
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
@@ -32,6 +35,7 @@ void main(void)
     color.rgb *= brightness;
 
     color *= tint;
+    color.rgb = mix(color.rgb, overlay.rgb, overlay.a);
 
 	gl_FragColor = color;
 }";

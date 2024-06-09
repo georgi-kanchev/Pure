@@ -114,6 +114,15 @@ public class Layer
             shader?.SetUniform("tint", new Color(currTint));
         }
     }
+    public uint OverlayColor
+    {
+        get => overlayColor;
+        set
+        {
+            overlayColor = value;
+            shader?.SetUniform("overlay", new Color(overlayColor));
+        }
+    }
 
     public (float x, float y) Offset { get; set; }
     public float Zoom
@@ -378,8 +387,19 @@ public class Layer
 
     public void ReplaceColor(uint oldColor, uint newColor)
     {
-        shader?.SetUniform("replaceColorOld", new Color(oldColor));
-        shader?.SetUniform("replaceColorNew", new Color(newColor));
+        var pair = (oldColor, newColor);
+        if (oldColor == newColor || replaceColors.Contains(pair))
+        {
+            replaceColors.Remove(pair);
+            return;
+        }
+
+        replaceColors.Add(pair);
+
+        var index = replaceColors.Count - 1;
+        shader?.SetUniform("replaceColorsCount", replaceColors.Count);
+        shader?.SetUniform($"replaceColorsOld[{index}]", new Color(oldColor));
+        shader?.SetUniform($"replaceColorsNew[{index}]", new Color(newColor));
     }
     public void ResetToDefaults()
     {
@@ -398,6 +418,7 @@ public class Layer
 
 #region Backend
     internal readonly Shader? shader;
+    private readonly List<(uint, uint)> replaceColors = new();
     internal static readonly Dictionary<string, Texture> tilesets = new();
     internal readonly VertexArray verts;
     private static readonly List<(float, float)> cursorOffsets = new()
@@ -427,15 +448,9 @@ public class Layer
     }
 
     private string atlasPath;
-    private (int width, int height) tileGap;
-    private (int width, int height) tileSize;
-    private float zoom;
-    private (int width, int height) tilemapSize;
-    private uint currTint = uint.MaxValue;
-    private float gamma;
-    private float saturation;
-    private float contrast;
-    private float brightness;
+    private (int width, int height) tileGap, tileSize, tilemapSize;
+    private uint currTint = uint.MaxValue, overlayColor;
+    private float zoom, gamma, saturation, contrast, brightness;
 
     [MemberNotNull(nameof(TileIdFull), nameof(TileSize), nameof(tilesetPixelSize))]
     private void Init()
