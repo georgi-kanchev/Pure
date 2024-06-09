@@ -76,7 +76,7 @@ public static class Program
                         tilePalette.layer = layer;
                         tilePalette.map = map;
                     },
-                    () => tilePalette.Create(tilePalette.layer.TilesetSize));
+                    () => tilePalette.Create(tilePalette.layer.AtlasSize));
 
             if (index == 3) // save map
                 editor.PromptFileSave(Save());

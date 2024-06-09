@@ -43,6 +43,7 @@ public static class Collision
         tilemap.SetBackgrounds(background);
 
         collisionMap.Update(tilemap);
+
         Keyboard.Key.A.OnPress(() =>
         {
             var mousePos = layer.PixelToWorld(Mouse.CursorPosition);

@@ -231,7 +231,7 @@ public static class Program
             currentTile = editor.MapsEditor[currentLayer].TileAt(((int)x, (int)y));
 
             layer.TileGap = editor.LayerMap.TileGap;
-            layer.TilesetPath = editor.LayerMap.TilesetPath;
+            layer.AtlasPath = editor.LayerMap.AtlasPath;
             layer.TileSize = editor.LayerMap.TileSize;
             layer.TileIdFull = editor.LayerMap.TileIdFull;
             var (tw, th) = layer.TileSize;

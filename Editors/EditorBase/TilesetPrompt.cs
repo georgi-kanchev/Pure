@@ -71,11 +71,11 @@ internal class TilesetPrompt
         }
 
         var path = fileViewer.SelectedPaths[0];
-        editor.LayerGrid.TilesetPath = path;
-        editor.LayerMap.TilesetPath = path;
-        layer.TilesetPath = path;
+        editor.LayerGrid.AtlasPath = path;
+        editor.LayerMap.AtlasPath = path;
+        layer.AtlasPath = path;
 
-        if (editor.LayerMap.TilesetPath == "default")
+        if (editor.LayerMap.AtlasPath == "default")
         {
             editor.LayerGrid.ResetToDefaults();
             editor.LayerMap.ResetToDefaults();
@@ -158,7 +158,7 @@ internal class TilesetPrompt
         var ratio = MathF.Max(tw / 8f, th / 8f);
         var zoom = 3.8f / ratio;
         layer.Zoom = zoom;
-        map = new(layer.TilesetSize) { View = (0, 0, 10, 10) };
+        map = new(layer.AtlasSize) { View = (0, 0, 10, 10) };
 
         editor.SetGrid();
 

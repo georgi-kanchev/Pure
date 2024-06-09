@@ -1,12 +1,14 @@
 using System.Text.RegularExpressions;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Pure.Engine.Window;
 
 public class Monitor
 {
-    public static Monitor[] Monitors { get; }
+    public static Monitor[] Monitors
+    {
+        get => monitors.ToArray();
+    }
     public static Monitor Current
     {
         get => Monitors[Window.Monitor];
@@ -24,6 +26,7 @@ public class Monitor
 
 #region Backend
     internal (int x, int y) position;
+    private static readonly Monitor[] monitors;
 
     private Monitor()
     {
@@ -31,7 +34,7 @@ public class Monitor
 
     static Monitor()
     {
-        Monitors = Array.Empty<Monitor>();
+        monitors = Array.Empty<Monitor>();
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -42,7 +45,7 @@ public class Monitor
                 var m = new Monitor
                 {
                     Size = (monitor.Resolution.Width, monitor.Resolution.Height),
-                    position = (monitor.Resolution.X, monitor.Resolution.Y),
+                    position = (monitor.Resolution.X, monitor.Resolution.Y)
                 };
                 m.AspectRatio = GetAspectRatio(m.Size.width, m.Size.height);
                 m.Name = $"{monitor.Description} ({m.Size.width}x{m.Size.height} | " +
@@ -51,7 +54,7 @@ public class Monitor
                 monitors.Add(m);
             }
 
-            Monitors = monitors.ToArray();
+            Monitor.monitors = monitors.ToArray();
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
@@ -99,7 +102,7 @@ public class Monitor
             if (currentMonitor != null)
                 monitors.Add(currentMonitor);
 
-            Monitors = monitors.ToArray();
+            Monitor.monitors = monitors.ToArray();
         }
     }
 

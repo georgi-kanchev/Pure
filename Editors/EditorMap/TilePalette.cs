@@ -43,7 +43,7 @@ internal class TilePalette
         if (editor.Prompt.IsHidden == false)
             return;
 
-        var (tw, th) = layer.TilesetSize;
+        var (tw, th) = layer.AtlasSize;
         map.View = new(map.View.Position, (Math.Min(10, tw), Math.Min(10, th)));
         layer.TilemapSize = map.View.Size;
         var (mw, mh) = map.Size;
@@ -246,7 +246,7 @@ internal class TilePalette
         else if (tool == 13) // pick
         {
             var tile = tilemap.TileAt((mx, my));
-            var coords = tile.Id.ToIndex2D(layer.TilesetSize);
+            var coords = tile.Id.ToIndex2D(layer.AtlasSize);
             inspector.paletteColor.SelectedColor = tile.Tint;
             selectedPos = coords;
             selectedSz = (1, 1);

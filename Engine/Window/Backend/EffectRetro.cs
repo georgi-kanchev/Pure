@@ -1,28 +1,11 @@
 namespace Pure.Engine.Window;
 
-internal static class RetroShader
+internal class EffectRetro : Effect
 {
-    public static Shader? Create()
+    public override string Fragment
     {
-        try
-        {
-            return Shader.FromString(DEFAULT_VERT, null, RETRO_SCREEN_FRAG);
-        }
-        catch (Exception)
-        {
-            return default;
-        }
-    }
-
-#region Backend
-    private const string DEFAULT_VERT = @"
-void main()
-{
-	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-	gl_FrontColor = gl_Color;
-}";
-    private const string RETRO_SCREEN_FRAG = @"
+        get =>
+            @"
 uniform sampler2D texture;
 uniform vec2 viewSize;
 uniform vec2 offScreen;
@@ -110,5 +93,5 @@ void main(void)
 	
 	gl_FragColor = baseColor;
 }";
-#endregion
+    }
 }

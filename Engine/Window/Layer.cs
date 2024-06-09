@@ -1,26 +1,25 @@
-using System.Numerics;
-
 namespace Pure.Engine.Window;
 
+using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
 
 public class Layer
 {
-    public string TilesetPath
+    public string AtlasPath
     {
-        get => tilesetPath;
+        get => atlasPath;
         set
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                tilesetPath = "default";
+                atlasPath = "default";
                 Init();
                 return;
             }
 
             if (tilesets.TryGetValue(value, out var tileset))
             {
-                tilesetPath = value;
+                atlasPath = value;
                 tilesetPixelSize = tileset.Size;
                 return;
             }
@@ -28,12 +27,12 @@ public class Layer
             try
             {
                 tilesets[value] = new(value) { Repeated = true };
-                tilesetPath = value;
+                atlasPath = value;
                 tilesetPixelSize = tilesets[value].Size;
             }
             catch (Exception)
             {
-                tilesetPath = "default";
+                atlasPath = "default";
                 Init();
             }
         }
@@ -54,7 +53,7 @@ public class Layer
         get => tilemapSize;
         set => tilemapSize = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
     }
-    public (int width, int height) TilesetSize
+    public (int width, int height) AtlasSize
     {
         get
         {
@@ -70,6 +69,52 @@ public class Layer
         get => IsOverlapping(PixelToWorld(Mouse.CursorPosition));
     }
 
+    public float Gamma
+    {
+        get => gamma;
+        set
+        {
+            gamma = value;
+            shader?.SetUniform("gamma", gamma);
+        }
+    }
+    public float Saturation
+    {
+        get => saturation;
+        set
+        {
+            saturation = value;
+            shader?.SetUniform("saturation", saturation);
+        }
+    }
+    public float Contrast
+    {
+        get => contrast;
+        set
+        {
+            contrast = value;
+            shader?.SetUniform("contrast", contrast);
+        }
+    }
+    public float Brightness
+    {
+        get => brightness;
+        set
+        {
+            brightness = value;
+            shader?.SetUniform("brightness", brightness);
+        }
+    }
+    public uint Tint
+    {
+        get => currTint;
+        set
+        {
+            currTint = value;
+            shader?.SetUniform("tint", new Color(currTint));
+        }
+    }
+
     public (float x, float y) Offset { get; set; }
     public float Zoom
     {
@@ -82,9 +127,15 @@ public class Layer
         Init();
         TilemapSize = tilemapSize;
         Zoom = 1f;
-        tilesetPath = string.Empty;
-        TilesetPath = string.Empty;
+        atlasPath = string.Empty;
+        AtlasPath = string.Empty;
         verts = new(PrimitiveType.Quads);
+        shader = new EffectColors().Shader;
+        Tint = uint.MaxValue;
+        Gamma = 1f;
+        Saturation = 1f;
+        Contrast = 1f;
+        Brightness = 1f;
     }
 
     ~Layer()
@@ -325,13 +376,18 @@ public class Layer
         return (x, y);
     }
 
+    public void ReplaceColor(uint oldColor, uint newColor)
+    {
+        shader?.SetUniform("replaceColorOld", new Color(oldColor));
+        shader?.SetUniform("replaceColorNew", new Color(newColor));
+    }
     public void ResetToDefaults()
     {
         Init();
         Zoom = 1f;
         TileGap = (0, 0);
-        tilesetPath = string.Empty;
-        TilesetPath = string.Empty;
+        atlasPath = string.Empty;
+        AtlasPath = string.Empty;
         TileIdFull = 10;
     }
 
@@ -341,6 +397,7 @@ public class Layer
     }
 
 #region Backend
+    internal readonly Shader? shader;
     internal static readonly Dictionary<string, Texture> tilesets = new();
     internal readonly VertexArray verts;
     private static readonly List<(float, float)> cursorOffsets = new()
@@ -369,11 +426,16 @@ public class Layer
         //SaveDefaultGraphics("graphics.png");
     }
 
-    private string tilesetPath;
+    private string atlasPath;
     private (int width, int height) tileGap;
     private (int width, int height) tileSize;
     private float zoom;
     private (int width, int height) tilemapSize;
+    private uint currTint = uint.MaxValue;
+    private float gamma;
+    private float saturation;
+    private float contrast;
+    private float brightness;
 
     [MemberNotNull(nameof(TileIdFull), nameof(TileSize), nameof(tilesetPixelSize))]
     private void Init()
@@ -513,7 +575,7 @@ public class Layer
     }
     private (int, int) IndexToCoords(int index)
     {
-        var (tw, th) = TilesetSize;
+        var (tw, th) = AtlasSize;
         index = index < 0 ? 0 : index;
         index = index > tw * th - 1 ? tw * th - 1 : index;
 
@@ -521,7 +583,7 @@ public class Layer
     }
     private int CoordsToIndex(int x, int y)
     {
-        return y * TilesetSize.width + x;
+        return y * AtlasSize.width + x;
     }
     private static int Wrap(int number, int targetNumber)
     {

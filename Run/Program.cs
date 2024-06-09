@@ -21,12 +21,12 @@ public static class Run
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
-        RunExampleUserInterface();
+        //RunExampleUserInterface();
 
         //DefaultGraphics.Run();
         //Commands.Run();
         //Storages.Run();
-        //Collision.Run();
+        Collision.Run();
         //Pathfinding.Run();
         //LineOfSightAndLights.Run();
         //Audio.Run();

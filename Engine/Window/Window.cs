@@ -80,7 +80,7 @@ public static class Window
         set
         {
             if (value && retroShader == null && Shader.IsAvailable)
-                retroShader = RetroShader.Create();
+                retroShader = new EffectRetro().Shader;
 
             isRetro = value;
             TryCreate();
@@ -223,10 +223,10 @@ public static class Window
     {
         TryCreate();
 
-        var tex = Layer.tilesets[layer.TilesetPath];
+        var tex = Layer.tilesets[layer.AtlasPath];
         var centerX = layer.TilemapPixelSize.w / 2f * layer.Zoom;
         var centerY = layer.TilemapPixelSize.h / 2f * layer.Zoom;
-        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, null);
+        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, layer.shader);
 
         r.Transform.Translate(layer.Offset.x - centerX, layer.Offset.y - centerY);
         r.Transform.Scale(layer.Zoom, layer.Zoom);
@@ -286,7 +286,7 @@ public static class Window
 
         const uint SIZE = 64;
         var rend = new RenderTexture(SIZE, SIZE);
-        var texture = Layer.tilesets[layer.TilesetPath];
+        var texture = Layer.tilesets[layer.AtlasPath];
         var (bx, by) = IndexToCoords(tileBack.id, layer);
         var (fx, fy) = IndexToCoords(tile.id, layer);
         var (tw, th) = layer.TileSize;
@@ -480,7 +480,7 @@ public static class Window
 
     private static (int, int) IndexToCoords(int index, Layer layer)
     {
-        var (tw, th) = layer.TilesetSize;
+        var (tw, th) = layer.AtlasSize;
         index = index < 0 ? 0 : index;
         index = index > tw * th - 1 ? tw * th - 1 : index;
 
