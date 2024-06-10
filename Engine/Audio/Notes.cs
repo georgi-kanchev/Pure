@@ -41,18 +41,21 @@ public class Notes : Audio
         var b = Decompress(bytes);
         var offset = 0;
 
-        fade = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
-        duration = BitConverter.ToSingle(Get<float>());
-        wave = (Wave)BitConverter.ToInt32(Get<int>());
+        fade = (GetFloat(), GetFloat());
+        duration = GetFloat();
+        wave = (Wave)GetInt();
 
-        var dataLength = BitConverter.ToInt32(Get<int>());
-        notes = Encoding.UTF8.GetString(GetBytesFrom(b, dataLength, ref offset));
+        notes = Encoding.UTF8.GetString(GetBytesFrom(b, GetInt(), ref offset));
 
         Generate();
 
-        byte[] Get<T>()
+        float GetFloat()
         {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+        }
+        int GetInt()
+        {
+            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
         }
     }
     public Notes(string base64) : this(Convert.FromBase64String(base64))
@@ -259,7 +262,10 @@ public class Notes : Audio
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
+
         return output.ToArray();
     }
     private static byte[] Decompress(byte[] data)

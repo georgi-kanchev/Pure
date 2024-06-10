@@ -9,6 +9,7 @@ internal class TilePalette
     public Tilemap map;
     public Layer layer;
     public (int x, int y) mousePos;
+    public (int x, int y) start, end;
 
     public TilePalette(Editor editor)
     {
@@ -30,6 +31,55 @@ internal class TilePalette
         });
         Mouse.Button.Left.OnPress(OnMousePressed);
         Mouse.Button.Left.OnRelease(OnMouseRelease);
+
+        Keyboard.Key.C.OnPress(() =>
+        {
+            var ctrl = Keyboard.Key.ControlLeft.IsPressed() || Keyboard.Key.ControlRight.IsPressed();
+
+            if (ctrl == false || inspector?.tools.Current != 14) // select
+                return;
+
+            var (szw, szh) = (end.x - start.x, end.y - start.y);
+            var rect = new Solid(start.x, start.y, szw, szh, Color.White);
+            var tilemap = inspector?.GetSelectedTilemap();
+
+            copyTiles = tilemap?.TilesIn(rect.ToBundle());
+        });
+        Keyboard.Key.V.OnPress(() =>
+        {
+            var ctrl = Keyboard.Key.ControlLeft.IsPressed() || Keyboard.Key.ControlRight.IsPressed();
+
+            if (ctrl == false || inspector?.tools.Current != 14) // select
+                return;
+
+            var tilemap = inspector?.GetSelectedTilemap();
+            tilemap?.SetGroup(start, copyTiles ?? new Tile[0, 0]);
+        });
+        Keyboard.Key.X.OnPress(() =>
+        {
+            var ctrl = Keyboard.Key.ControlLeft.IsPressed() || Keyboard.Key.ControlRight.IsPressed();
+
+            if (ctrl == false || inspector?.tools.Current != 14) // select
+                return;
+
+            var (szw, szh) = (end.x - start.x, end.y - start.y);
+            var rect = new Solid(start.x, start.y, szw, szh, Color.White);
+            var tilemap = inspector?.GetSelectedTilemap();
+
+            copyTiles = tilemap?.TilesIn(rect.ToBundle());
+            tilemap?.SetArea(rect.ToBundle(), null, Tile.EMPTY);
+        });
+        Keyboard.Key.Delete.OnPress(() =>
+        {
+            if (inspector?.tools.Current != 14) // select
+                return;
+
+            var tilemap = inspector?.GetSelectedTilemap();
+            var (szw, szh) = (end.x - start.x, end.y - start.y);
+            var rect = new Solid(start.x, start.y, szw, szh, Color.White);
+
+            tilemap?.SetArea(rect.ToBundle(), null, Tile.EMPTY);
+        });
     }
     [MemberNotNull(nameof(map), nameof(layer))]
     public void Create((int width, int height) size)
@@ -40,11 +90,19 @@ internal class TilePalette
 
     public void Update(Inspector inspector)
     {
-        if (editor.Prompt.IsHidden == false)
+        prevMousePosWorld = editor.MousePositionWorld;
+
+        var tool = inspector.tools.Current;
+
+        inspector.paletteScrollH.IsHidden = tool > 8;
+        inspector.paletteScrollV.IsHidden = tool > 8;
+        inspector.paletteColor.IsHidden = tool > 8 && tool != 12;
+        
+        if (editor.Prompt.IsHidden == false || tool > 8)
             return;
 
-        var (tw, th) = layer.AtlasSize;
-        map.View = new(map.View.Position, (Math.Min(10, tw), Math.Min(10, th)));
+        var (tw, th) = layer.AtlasTileCount;
+        map.View = new(map.View.Position, (Math.Min(10, (int)tw), Math.Min(10, (int)th)));
         layer.TilemapSize = map.View.Size;
         var (mw, mh) = map.Size;
         var (vw, vh) = map.View.Size;
@@ -53,7 +111,7 @@ internal class TilePalette
             for (var j = 0; j < mw; j++)
             {
                 var id = (i, j).ToIndex1D((mw, mh));
-                var tile = new Tile(id, inspector.paletteColor.SelectedColor);
+                var tile = new Tile(id, Color.White);
                 map.SetTile((j, i), tile);
             }
 
@@ -84,25 +142,22 @@ internal class TilePalette
 
     public void TryDraw()
     {
-        if (IsPaintAllowed() == false)
-            return;
-
         var (mx, my) = ((int)editor.MousePositionWorld.x, (int)editor.MousePositionWorld.y);
-        var drawLayer = inspector.layers.ItemsSelected;
-        var tool = inspector.tools.Current;
+        var tool = inspector?.tools.Current ?? -1;
         var (sx, sy) = selected.Position;
         sx += map.View.X;
         sy += map.View.Y;
         var (sw, sh) = selected.Size;
         var tile = map.TileAt(((int)sx, (int)sy));
-        var color = new Color(tile.Tint) { A = 200 };
+        var selectedColor = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
+        var color = new Color(selectedColor) { A = 127 };
         var seed = (mx, my).ToSeed() + clickSeed;
         var tiles = GetSelectedTiles().Flatten();
         var randomTile = tiles.ChooseOne(seed);
-        var index = drawLayer.Length != 1 ? -1 : inspector.layers.IndexOf(drawLayer[0]);
-        var tilemap = index == -1 ? null : editor.MapsEditor[index];
+        var tilemap = inspector?.GetSelectedTilemap();
         var (szw, szh) = (end.x - start.x, end.y - start.y);
         tile.Tint = color;
+        randomTile.Tint = selectedColor;
 
         if (tool is 1) // group of tiles
             editor.LayerMap.DrawTiles((mx, my), tile, ((int)sw, (int)sh));
@@ -117,21 +172,22 @@ internal class TilePalette
                 (start.x + 1, start.y + 1, end.x, end.y, color),
                 (start.x, start.y + 1, end.x - 1, end.y, color));
 
-        if (Mouse.Button.Left.IsPressed())
+        if (IsPaintAllowed() && Mouse.Button.Left.IsPressed())
             OnMouseHold(randomTile, tilemap);
     }
 
 #region Backend
-    private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12, 13 };
+    private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12, 13, 14 };
     private Inspector? inspector;
     private (int x, int y) prevMousePos;
     private readonly Editor editor;
-    private (float x, float y) selectedPos;
+    private (float x, float y) selectedPos, prevMousePosWorld;
     private (float w, float h) selectedSz = (1, 1);
     private static int clickSeed;
+    private static bool isDrawingSelection, isDraggingTiles, isDraggingSelection;
+    private Tile[,]? draggingTiles, copyTiles;
 
     private Solid selected;
-    private (int x, int y) start, end;
 
     static TilePalette()
     {
@@ -141,7 +197,8 @@ internal class TilePalette
     {
         if (layer.IsHovered &&
             Mouse.Button.Left.IsPressed() &&
-            prevMousePos != mousePos)
+            prevMousePos != mousePos &&
+            isDrawingSelection == false)
         {
             var (szx, szy) = (mousePos.x - selectedPos.x, mousePos.y - selectedPos.y);
             selectedSz = (szx + (szx < 0 ? -1 : 1), szy + (szy < 0 ? -1 : 1));
@@ -162,10 +219,52 @@ internal class TilePalette
                Program.menu.IsHidden &&
                editor.MapPanel.IsHovered == false;
     }
+    private Tile[,] GetSelectedTiles()
+    {
+        var (sx, sy) = selected.Position;
+        sx += map.View.X;
+        sy += map.View.Y;
+        var (sw, sh) = selected.Size;
+        var tiles = map.TilesIn(((int)sx, (int)sy, (int)sw, (int)sh));
+        for (var i = 0; i < tiles.GetLength(1); i++)
+            for (var j = 0; j < tiles.GetLength(0); j++)
+                tiles[j, i].Tint = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
+
+        return tiles;
+    }
+
     private void OnMousePressed()
     {
         if (IsPaintAllowed() == false)
             return;
+
+        var tilemap = inspector.GetSelectedTilemap();
+
+        if (inspector.tools.Current == 14) // select
+        {
+            isDrawingSelection = false;
+            isDraggingSelection = false;
+            isDraggingTiles = false;
+
+            var (szw, szh) = (end.x - start.x, end.y - start.y);
+            var rect = new Solid(start.x, start.y, szw, szh, Color.White);
+            var ctrl = Keyboard.Key.ControlLeft.IsPressed() || Keyboard.Key.ControlRight.IsPressed();
+            if (rect.IsContaining(editor.MousePositionWorld))
+            {
+                isDraggingSelection = true;
+
+                if (ctrl == false)
+                    return;
+
+                isDraggingTiles = true;
+                draggingTiles = tilemap?.TilesIn(rect.ToBundle());
+                tilemap?.SetArea(rect.ToBundle(), null, Tile.EMPTY);
+
+                return;
+            }
+
+            isDrawingSelection = true;
+        }
 
         start = ((int)editor.MousePositionWorld.x, (int)editor.MousePositionWorld.y);
         end = (start.x + 1, start.y + 1);
@@ -176,7 +275,6 @@ internal class TilePalette
             return;
         }
 
-        var tilemap = inspector.GetSelectedTilemap();
         if (tilemap != null)
             tilemap.SeedOffset = (0, 0, clickSeed);
     }
@@ -246,13 +344,16 @@ internal class TilePalette
         else if (tool == 13) // pick
         {
             var tile = tilemap.TileAt((mx, my));
-            var coords = tile.Id.ToIndex2D(layer.AtlasSize);
+            var coords = tile.Id.ToIndex2D(layer.AtlasTileCount);
             inspector.paletteColor.SelectedColor = tile.Tint;
             selectedPos = coords;
             selectedSz = (1, 1);
         }
+        else if (tool == 14 && isDraggingTiles && draggingTiles != null) // select
+            tilemap.SetGroup(start, draggingTiles);
 
-        start = end;
+        if (tool != 14)
+            start = end;
 
         void ProcessRegion(Func<Tile, Tile> editTile)
         {
@@ -279,6 +380,20 @@ internal class TilePalette
         var (szw, szh) = (end.x - start.x, end.y - start.y);
         var (offX, offY) = (1, 1);
 
+        if (inspector.tools.Current == 14) // select
+        {
+            if (isDrawingSelection == false && isDraggingSelection == false)
+                return;
+
+            if (isDraggingSelection)
+            {
+                var (dx, dy) = ((int)prevMousePosWorld.x - mx, (int)prevMousePosWorld.y - my);
+                start = (start.x - dx, start.y - dy);
+                end = (end.x - dx, end.y - dy);
+                return;
+            }
+        }
+
         if (rectangleTools.Contains(inspector.tools.Current))
         {
             offX = szw > 0 ? offX : 0;
@@ -301,14 +416,6 @@ internal class TilePalette
             tilemap?.SetGroup(pos, GetSelectedTiles());
         else if (lmb && tool == 2) // single random tile of tiles
             tilemap?.SetTile(pos, randomTile);
-    }
-    private Tile[,] GetSelectedTiles()
-    {
-        var (sx, sy) = selected.Position;
-        sx += map.View.X;
-        sy += map.View.Y;
-        var (sw, sh) = selected.Size;
-        return map.TilesIn(((int)sx, (int)sy, (int)sw, (int)sh));
     }
 #endregion
 }

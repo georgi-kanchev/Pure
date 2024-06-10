@@ -4,6 +4,20 @@ using System.Runtime.InteropServices;
 
 public struct Tile
 {
+    /// <summary>Indicates whether this instance and a specified object are equal.</summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns>
+    /// <see langword="true" /> if <paramref name="obj" /> and this instance are the same type and represent the same value; otherwise, <see langword="false" />.</returns>
+    public override bool Equals(object? obj)
+    {
+        return obj is Tile other && Equals(other);
+    }
+    /// <summary>Returns the hash code for this instance.</summary>
+    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, Tint, Turns, IsMirrored, IsFlipped);
+    }
     public int Id { get; set; }
     public uint Tint { get; set; }
     public sbyte Turns { get; set; }
@@ -105,27 +119,27 @@ public struct Tile
 
     public static bool operator ==(Tile a, Tile b)
     {
-        return a.Id == b.Id &&
-               a.Tint == b.Tint &&
-               a.Turns == b.Turns &&
-               a.IsMirrored == b.IsMirrored &&
-               a.IsFlipped == b.IsFlipped;
+        return a.Equals(b);
     }
     public static bool operator !=(Tile a, Tile b)
     {
-        return a.Id != b.Id ||
-               a.Tint != b.Tint ||
-               a.Turns != b.Turns ||
-               a.IsMirrored != b.IsMirrored ||
-               a.IsFlipped != b.IsFlipped;
+        return a.Equals(b) == false;
+    }
+    public bool Equals(Tile tile)
+    {
+        return Id == tile.Id &&
+               Tint == tile.Tint &&
+               Turns == tile.Turns &&
+               IsMirrored == tile.IsMirrored &&
+               IsFlipped == tile.IsFlipped;
     }
 
-    #region General
+#region General
     public const int EMPTY = 0,
         FULL = 10,
-        #endregion
+#endregion
 
-        #region Shades
+#region Shades
         SHADE_TRANSPARENT = 0,
         SHADE_1 = 1,
         SHADE_2 = 2,
@@ -137,9 +151,9 @@ public struct Tile
         SHADE_8 = 8,
         SHADE_9 = 9,
         SHADE_OPAQUE = 10,
-        #endregion
+#endregion
 
-        #region Patterns
+#region Patterns
         PATTERN_1 = 11,
         PATTERN_2 = 12,
         PATTERN_3 = 13,
@@ -207,9 +221,9 @@ public struct Tile
         PATTERN_65 = 75,
         PATTERN_66 = 76,
         PATTERN_67 = 77,
-        #endregion
+#endregion
 
-        #region Uppercase Letters
+#region Uppercase Letters
         UPPERCASE_A = 78,
         UPPERCASE_B = 79,
         UPPERCASE_C = 80,
@@ -236,9 +250,9 @@ public struct Tile
         UPPERCASE_X = 101,
         UPPERCASE_Y = 102,
         UPPERCASE_Z = 103,
-        #endregion
+#endregion
 
-        #region Lowercase Letters
+#region Lowercase Letters
         LOWERCASE_A = 104,
         LOWERCASE_B = 105,
         LOWERCASE_C = 106,
@@ -265,9 +279,9 @@ public struct Tile
         LOWERCASE_X = 127,
         LOWERCASE_Y = 128,
         LOWERCASE_Z = 129,
-        #endregion
+#endregion
 
-        #region Numbers
+#region Numbers
         NUMBER_0 = 130,
         NUMBER_1 = 131,
         NUMBER_2 = 132,
@@ -278,9 +292,9 @@ public struct Tile
         NUMBER_7 = 137,
         NUMBER_8 = 138,
         NUMBER_9 = 139,
-        #endregion
+#endregion
 
-        #region Fragments
+#region Fragments
         FRACTION_ONE_EIGHT = 140,
         FRACTION_ONE_SEVENTH = 141,
         FRACTION_ONE_SIXTH = 142,
@@ -297,9 +311,9 @@ public struct Tile
         FRACTION_FOUR_FIFTHS = 153,
         FRACTION_FIVE_SIXTHS = 154,
         FRACTION_SEVEN_EIGHTS = 155,
-        #endregion
+#endregion
 
-        #region Subscripts
+#region Subscripts
         SUBSCRIPT_0_TH = 156,
         SUBSCRIPT_1_ST = 157,
         SUBSCRIPT_2_ND = 158,
@@ -313,9 +327,9 @@ public struct Tile
         SUBSCRIPT_10_TH = 166,
         SUBSCRIPT_11_TH = 167,
         SUBSCRIPT_12_TH = 168,
-        #endregion
+#endregion
 
-        #region Superscripts
+#region Superscripts
         SUPERSCRIPT_0_TH = 169,
         SUPERSCRIPT_1_ST = 170,
         SUPERSCRIPT_2_ND = 171,
@@ -329,9 +343,9 @@ public struct Tile
         SUPERSCRIPT_10_TH = 179,
         SUPERSCRIPT_11_TH = 180,
         SUPERSCRIPT_12_TH = 181,
-        #endregion
+#endregion
 
-        #region Math
+#region Math
         MATH_PLUS = 182,
         MATH_MINUS = 183,
         MATH_MULTIPLICATION = 184,
@@ -357,9 +371,9 @@ public struct Tile
         MATH_GREATER_EQUAL = 207,
         MATH_LESS = 208,
         MATH_GREATER = 209,
-        #endregion
+#endregion
 
-        #region Brackets
+#region Brackets
         BRACKET_ROUND_LEFT = 210,
         BRACKET_ROUND_RIGHT = 211,
         BRACKET_SQUARE_LEFT = 212,
@@ -368,18 +382,18 @@ public struct Tile
         BRACKET_CURLY_RIGHT = 215,
         BRACKET_ANGLE_LEFT = 208,
         BRACKET_ANGLE_RIGHT = 209,
-        #endregion
+#endregion
 
-        #region Geometry
+#region Geometry
         GEOMETRY_PERPENDICULAR = 216,
         GEOMETRY_PARALLEL = 217,
         GEOMETRY_ANGLE = 218,
         GEOMETRY_ANGLE_RIGHT = 219,
         GEOMETRY_SIMILAR = 220,
         GEOMETRY_DEGREE = 221,
-        #endregion
+#endregion
 
-        #region TextSymbols
+#region TextSymbols
         SYMBOL_CELCIUS = 222,
         SYMBOL_FAHRENHEIT = 223,
         SYMBOL_ASTERISK = 224,
@@ -396,9 +410,9 @@ public struct Tile
         SYMBOL_COPYRIGHT_AUDIO = 252,
         SYMBOL_COPYRIGHT = 253,
         SYMBOL_TRADE_MARK = 254,
-        #endregion
+#endregion
 
-        #region Punctuations
+#region Punctuations
         PUNCTUATION_TILDE = 220,
         PUNCTUATION_EXCLAMATION_MARK = 234,
         PUNCTUATION_QUESTION_MARK = 235,
@@ -417,9 +431,9 @@ public struct Tile
         PUNCTUATION_BACKSLASH = 248,
         PUNCTUATION_AT = 249,
         PUNCTUATION_AMPERSAND = 250,
-        #endregion
+#endregion
 
-        #region Boxes
+#region Boxes
         BOX_DEFAULT_STRAIGHT = 260,
         BOX_DEFAULT_CORNER = 261,
         BOX_DEFAULT_T_SHAPED = 262,
@@ -445,9 +459,9 @@ public struct Tile
         BOX_PIPE_BIG_T_SHAPED = 282,
         BOX_PIPE_BIG_CROSS = 283,
         BOX_CORNER_ROUND = 285,
-        #endregion
+#endregion
 
-        #region Bars
+#region Bars
         BAR_DEFAULT_EDGE = 286,
         BAR_DEFAULT_STRAIGHT = 287,
         BAR_HOLLOW_EDGE = 288,
@@ -466,9 +480,9 @@ public struct Tile
         BAR_GRID_BIG_STRAIGHT = 301,
         BAR_SPIKE_EDGE = 302,
         BAR_SPIKE_STRAIGHT = 303,
-        #endregion
+#endregion
 
-        #region Arrows
+#region Arrows
         ARROW = 520,
         ARROW_THIN = 521,
         ARROW_THICK = 522,
@@ -484,9 +498,9 @@ public struct Tile
         ARROW_TAILLESS_ROUND = 532,
         ARROW_TAILLESS = 533,
         ARROW_TAILLESS_DIAGONAL = 534,
-        #endregion
+#endregion
 
-        #region Icons
+#region Icons
         ICON_WAVE = 220,
         ICON_WAVES = 190,
         ICON_HOME = 338,
@@ -587,18 +601,19 @@ public struct Tile
         ICON_BUCKET = 413,
         ICON_PALETTE = 414,
         ICON_COLOR = 414,
-        #endregion
+        ICON_MOVE = 553,
+#endregion
 
-        #region Align
+#region Align
         ALIGN_HORIZONTAL_LEFT = 405,
         ALIGN_HORIZONTAL_MIDDLE = 406,
         ALIGN_HORIZONTAL_RIGHT = 407,
         ALIGN_VERTICAL_TOP = 408,
         ALIGN_VERTICAL_MIDDLE = 409,
         ALIGN_VERTICAL_BOTTOM = 410,
-        #endregion
+#endregion
 
-        #region Flow
+#region Flow
         FLOW_PREVIOUS = 416,
         FLOW_BACKTRACK = 417,
         FLOW_BACK = 418,
@@ -609,9 +624,9 @@ public struct Tile
         FLOW_PAUSE = 422,
         FLOW_RECORD = 423,
         FLOW_STOP = 424,
-        #endregion
+#endregion
 
-        #region Audio
+#region Audio
         AUDIO_VOLUME_MUTE = 425,
         AUDIO_VOLUME_LOW = 426,
         AUDIO_VOLUME_HIGH = 427,
@@ -622,9 +637,9 @@ public struct Tile
         AUDIO_MUSIC_SIGN_FLAT = 432,
         AUDIO_MUSIC_SIGN_NATURAL = 433,
         AUDIO_MUSIC_SIGN_SHARP = 434,
-        #endregion
+#endregion
 
-        #region Nature
+#region Nature
         NATURE_MOUNTAIN = 442,
         NATURE_WATER = 443,
         NATURE_WIND = 444,
@@ -634,9 +649,9 @@ public struct Tile
         NATURE_FLOWER = 447,
         NATURE_FISH = 448,
         NATURE_ANIMAL = 449,
-        #endregion
+#endregion
 
-        #region Faces
+#region Faces
         FACE_SMILING = 624,
         FACE_LAUGHING = 625,
         FACE_SAD = 626,
@@ -664,9 +679,9 @@ public struct Tile
         FACE_CONFIDENT = 647,
         FACE_SUSPICIOUS = 648,
         FACE_DISGUISED = 649,
-        #endregion
+#endregion
 
-        #region Games
+#region Games
         GAME_DICE_1 = 650,
         GAME_DICE_2 = 651,
         GAME_DICE_3 = 652,
@@ -693,9 +708,9 @@ public struct Tile
         GAME_CHESS_BISHOP_HOLLOW = 673,
         GAME_CHESS_QUEEN_HOLLOW = 674,
         GAME_CHESS_KING_HOLLOW = 675,
-        #endregion
+#endregion
 
-        #region Shapes
+#region Shapes
         SHAPE_SQUARE_SMALL = 598,
         SHAPE_SQUARE = 599,
         SHAPE_SQUARE_BIG = 600,
@@ -713,9 +728,9 @@ public struct Tile
         SHAPE_TRIANGLE_HOLLOW = 612,
         SHAPE_TRIANGLE_BIG_HOLLOW = 613,
         SHAPE_LINE = 614,
-        #endregion
+#endregion
 
-        #region Time
+#region Time
         TIME_1 = 572,
         TIME_2 = 573,
         TIME_3 = 574,
@@ -733,9 +748,9 @@ public struct Tile
         TIME_CLOCK_7_8 = 577,
         TIME_CLOCK_9 = 578,
         TIME_CLOCK_10_11 = 579,
-        #endregion
+#endregion
 
-        #region Cursors
+#region Cursors
         CURSOR_ARROW = 546,
         CURSOR_ARROW_WAIT = 547,
         CURSOR_WAIT = 548,
@@ -749,9 +764,9 @@ public struct Tile
         CURSOR_DISABLE = 556,
         CURSOR_SPLIT_VERTICAL = 557,
         CURSOR_SPLIT_HORIZONTAL = 558;
-    #endregion
+#endregion
 
-    #region Backend
+#region Backend
     internal const int BYTE_SIZE = 11;
-    #endregion
+#endregion
 }

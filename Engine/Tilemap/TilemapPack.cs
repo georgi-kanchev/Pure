@@ -1,7 +1,5 @@
 namespace Pure.Engine.Tilemap;
 
-using System.Runtime.InteropServices;
-
 // should have common properties such as size, views and text configuration
 // essentially - the tilemap pack should act as a single tilemap with multiple layers
 public class TilemapPack
@@ -45,21 +43,19 @@ public class TilemapPack
     {
         var b = Tilemap.Decompress(bytes);
         var offset = 0;
-        var count = BitConverter.ToInt32(GetBytes<int>());
-        Size = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
-        View = (BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()),
-            BitConverter.ToInt32(GetBytes<int>()), BitConverter.ToInt32(GetBytes<int>()));
+        var count = GetInt();
+        Size = (GetInt(), GetInt());
+        View = (GetInt(), GetInt(), GetInt(), GetInt());
 
         for (var i = 0; i < count; i++)
         {
-            var tmapByteCount = BitConverter.ToInt32(GetBytes<int>());
-            var bTmap = Tilemap.GetBytesFrom(b, tmapByteCount, ref offset);
+            var bTmap = Tilemap.GetBytesFrom(b, GetInt(), ref offset);
             data.Add(new(bTmap));
         }
 
-        byte[] GetBytes<T>()
+        int GetInt()
         {
-            return Tilemap.GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+            return BitConverter.ToInt32(Tilemap.GetBytesFrom(b, 4, ref offset));
         }
     }
     public TilemapPack(string base64) : this(Convert.FromBase64String(base64))

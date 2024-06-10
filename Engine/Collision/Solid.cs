@@ -52,15 +52,19 @@ public struct Solid
         var b = Decompress(bytes);
         var offset = 0;
 
-        X = BitConverter.ToSingle(Get());
-        Y = BitConverter.ToSingle(Get());
-        Width = BitConverter.ToSingle(Get());
-        Height = BitConverter.ToSingle(Get());
-        Color = BitConverter.ToUInt32(Get());
+        X = GetFloat();
+        Y = GetFloat();
+        Width = GetFloat();
+        Height = GetFloat();
+        Color = GetUInt();
 
-        byte[] Get()
+        float GetFloat()
         {
-            return GetBytesFrom(b, 4, ref offset);
+            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+        }
+        uint GetUInt()
+        {
+            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
         }
     }
     public Solid(string base64) : this(Convert.FromBase64String(base64))

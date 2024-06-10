@@ -1,4 +1,4 @@
-global using static Pure.Tools.Tilemapper.TilemapperUserInterface;
+global using static Pure.Tools.Tilemapper.TilemapperUI;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.Utilities;
@@ -30,10 +30,10 @@ public static class Program
             Input.PositionPrevious = Input.Position;
             Input.Position = layer.PixelToWorld(Mouse.CursorPosition);
             Input.Update(
-                buttonsPressed: Mouse.ButtonIdsPressed,
-                scrollDelta: Mouse.ScrollDelta,
-                keysPressed: KeyIdsPressed,
-                keysTyped: KeyTyped);
+                Mouse.ButtonIdsPressed,
+                Mouse.ScrollDelta,
+                KeyIdsPressed,
+                KeyTyped);
 
             blocks.Update();
 

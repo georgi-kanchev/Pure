@@ -224,10 +224,14 @@ public class Tilemap
 
             SetTile((x, y), tile, mask);
 
-            stack.Push((x - 1, y));
-            stack.Push((x + 1, y));
-            stack.Push((x, y - 1));
-            stack.Push((x, y + 1));
+            if (IsOverlapping((x - 1, y)))
+                stack.Push((x - 1, y));
+            if (IsOverlapping((x + 1, y)))
+                stack.Push((x + 1, y));
+            if (IsOverlapping((x, y - 1)))
+                stack.Push((x, y - 1));
+            if (IsOverlapping((x, y + 1)))
+                stack.Push((x, y + 1));
         }
     }
     public void Replace(
@@ -743,7 +747,7 @@ public class Tilemap
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
@@ -896,7 +900,9 @@ public class Tilemap
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -905,7 +911,9 @@ public class Tilemap
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -922,5 +930,5 @@ public class Tilemap
         var (x, y, z) = SeedOffset;
         return HashCode.Combine(a + x, b + y, z);
     }
-    #endregion
+#endregion
 }

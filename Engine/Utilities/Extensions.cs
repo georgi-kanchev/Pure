@@ -181,11 +181,11 @@ public static class Extensions
             (collection[j], collection[i]) = (collection[i], collection[j]);
         }
     }
-    public static T ChooseOne<T>(this IList<T> collection, float seed = float.NaN)
+    public static T? ChooseOne<T>(this IList<T> collection, float seed = float.NaN)
     {
-        return collection[Random((0, collection.Count - 1), seed)];
+        return collection.Count == 0 ? default : collection[Random((0, collection.Count - 1), seed)];
     }
-    public static T ChooseOneFrom<T>(this T choice, float seed = float.NaN, params T[]? choices)
+    public static T? ChooseOneFrom<T>(this T choice, float seed = float.NaN, params T[]? choices)
     {
         var list = choices == null ? new() : choices.ToList();
         list.Add(choice);
@@ -1306,15 +1306,15 @@ public static class Extensions
         range.b *= precision;
 
         var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
-        Random random;
+        var random = new Random(s);
 
-        if (randomCache.TryGetValue(s, out var r))
-            random = r;
-        else
-        {
-            random = new(s);
-            randomCache[s] = random;
-        }
+        // if (randomCache.TryGetValue(s, out var r))
+        //     random = r;
+        // else
+        // {
+        //     random = new(s);
+        //     randomCache[s] = random;
+        // }
 
         var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
 

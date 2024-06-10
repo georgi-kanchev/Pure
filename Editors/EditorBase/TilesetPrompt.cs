@@ -105,10 +105,10 @@ internal class TilesetPrompt
             return;
         }
 
-        var result = ((int)split[0].ToNumber(), (int)split[1].ToNumber());
-        editor.LayerGrid.TileSize = result;
-        editor.LayerMap.TileSize = result;
-        layer.TileSize = result;
+        var result = ((byte)split[0].ToNumber(), (byte)split[1].ToNumber());
+        editor.LayerGrid.AtlasTileSize = result;
+        editor.LayerMap.AtlasTileSize = result;
+        layer.AtlasTileSize = result;
         PromptTileGap();
     }
     private void PromptTileGap()
@@ -130,10 +130,10 @@ internal class TilesetPrompt
             return;
         }
 
-        var result = ((int)split[0].ToNumber(), (int)split[1].ToNumber());
-        editor.LayerGrid.TileGap = result;
-        editor.LayerMap.TileGap = result;
-        layer.TileGap = result;
+        var result = ((byte)split[0].ToNumber(), (byte)split[1].ToNumber());
+        editor.LayerGrid.AtlasTileGap = result;
+        editor.LayerMap.AtlasTileGap = result;
+        layer.AtlasTileGap = result;
 
         PromptTileFull();
     }
@@ -154,11 +154,11 @@ internal class TilesetPrompt
         editor.LayerMap.TileIdFull = result;
         layer.TileIdFull = result;
 
-        var (tw, th) = layer.TileSize;
+        var (tw, th) = layer.AtlasTileSize;
         var ratio = MathF.Max(tw / 8f, th / 8f);
         var zoom = 3.8f / ratio;
         layer.Zoom = zoom;
-        map = new(layer.AtlasSize) { View = (0, 0, 10, 10) };
+        map = new(layer.AtlasTileCount) { View = (0, 0, 10, 10) };
 
         editor.SetGrid();
 

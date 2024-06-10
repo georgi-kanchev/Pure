@@ -151,21 +151,35 @@ public static class Window
         var offset = 0;
 
         mode = (Mode)GetBytesFrom(b, 1, ref offset)[0];
-        var bTitleLength = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        var bTitleLength = GetInt();
         title = Encoding.UTF8.GetString(GetBytesFrom(b, bTitleLength, ref offset));
-        isRetro = BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
-        backgroundColor = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        monitor = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        pixelScale = BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
-        isVerticallySynced = BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
-        maximumFrameRate = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        var x = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
-        var y = BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
-        var w = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        var h = BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        isRetro = GetBool();
+        backgroundColor = GetUInt();
+        monitor = GetUInt();
+        pixelScale = GetFloat();
+        isVerticallySynced = GetBool();
+        maximumFrameRate = GetUInt();
+        var (x, y, w, h) = (GetInt(), GetInt(), GetUInt(), GetUInt());
         TryCreate();
         window.Position = new(x, y);
         window.Size = new(w, h);
+
+        float GetFloat()
+        {
+            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+        }
+        int GetInt()
+        {
+            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        }
+        uint GetUInt()
+        {
+            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        }
+        bool GetBool()
+        {
+            return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
+        }
     }
     public static void FromBase64(string base64)
     {
@@ -289,8 +303,8 @@ public static class Window
         var texture = Layer.tilesets[layer.AtlasPath];
         var (bx, by) = IndexToCoords(tileBack.id, layer);
         var (fx, fy) = IndexToCoords(tile.id, layer);
-        var (tw, th) = layer.TileSize;
-        var (gw, gh) = layer.TileGap;
+        var (tw, th) = layer.AtlasTileSize;
+        var (gw, gh) = layer.AtlasTileGap;
         tw += gw;
         th += gh;
         var verts = new Vertex[]
@@ -480,7 +494,7 @@ public static class Window
 
     private static (int, int) IndexToCoords(int index, Layer layer)
     {
-        var (tw, th) = layer.AtlasSize;
+        var (tw, th) = layer.AtlasTileCount;
         index = index < 0 ? 0 : index;
         index = index > tw * th - 1 ? tw * th - 1 : index;
 

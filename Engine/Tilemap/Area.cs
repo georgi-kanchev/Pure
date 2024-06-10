@@ -46,15 +46,19 @@ public struct Area
         var b = Decompress(bytes);
         var offset = 0;
 
-        X = BitConverter.ToInt32(Get());
-        Y = BitConverter.ToInt32(Get());
-        Width = BitConverter.ToInt32(Get());
-        Height = BitConverter.ToInt32(Get());
-        Color = BitConverter.ToUInt32(Get());
+        X = GetInt();
+        Y = GetInt();
+        Width = GetInt();
+        Height = GetInt();
+        Color = GetUInt();
 
-        byte[] Get()
+        int GetInt()
         {
-            return GetBytesFrom(b, 4, ref offset);
+            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        }
+        uint GetUInt()
+        {
+            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
         }
     }
     public Area(string base64) : this(Convert.FromBase64String(base64))

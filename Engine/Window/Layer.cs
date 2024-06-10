@@ -37,32 +37,37 @@ public class Layer
             }
         }
     }
+    public (byte width, byte height) AtlasTileCount
+    {
+        get
+        {
+            var (w, h) = ((int)tilesetPixelSize.X, (int)tilesetPixelSize.Y);
+            var (tw, th) = ((int)AtlasTileSize.width, (int)AtlasTileSize.height);
+            var (gw, gh) = ((int)AtlasTileGap.width, (int)AtlasTileGap.height);
+            var (rw, rh) = (w / (tw + gw), h / (th + gh));
+            return ((byte)rw, (byte)rh);
+        }
+    }
+    public (byte width, byte height) AtlasTileSize
+    {
+        get => atlasTileSize;
+        set => atlasTileSize =
+            ((byte)Math.Clamp((int)value.width, 0, 512), (byte)Math.Clamp((int)value.height, 0, 512));
+    }
+    public (byte width, byte height) AtlasTileGap
+    {
+        get => atlasTileGap;
+        set => atlasTileGap =
+            ((byte)Math.Clamp((int)value.width, 0, 512), (byte)Math.Clamp((int)value.height, 0, 512));
+    }
+
     public int TileIdFull { get; set; }
-    public (int width, int height) TileGap
-    {
-        get => tileGap;
-        set => tileGap = (Math.Clamp(value.width, 0, 512), Math.Clamp(value.height, 0, 512));
-    }
-    public (int width, int height) TileSize
-    {
-        get => tileSize;
-        set => tileSize = (Math.Clamp(value.width, 0, 512), Math.Clamp(value.height, 0, 512));
-    }
     public (int width, int height) TilemapSize
     {
         get => tilemapSize;
         set => tilemapSize = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
     }
-    public (int width, int height) AtlasSize
-    {
-        get
-        {
-            var (w, h) = ((int)tilesetPixelSize.X, (int)tilesetPixelSize.Y);
-            var (tw, th) = TileSize;
-            var (gw, gh) = TileGap;
-            return (w / (tw + gw), h / (th + gh));
-        }
-    }
+
     public bool IsOverflowing { get; set; }
     public bool IsHovered
     {
@@ -131,25 +136,84 @@ public class Layer
         set => zoom = Math.Clamp(value, 0, 1000f);
     }
 
+    public Layer(byte[] bytes)
+    {
+        var b = Decompress(bytes);
+        var offset = 0;
+
+        var bAtlasPath = GetInt();
+        AtlasPath = Encoding.UTF8.GetString(GetBytesFrom(b, bAtlasPath, ref offset));
+        atlasPath = AtlasPath;
+        AtlasTileGap = (GetByte(), GetByte());
+        AtlasTileSize = (GetByte(), GetByte());
+
+        TileIdFull = GetInt();
+        TilemapSize = (GetInt(), GetInt());
+
+        IsOverflowing = GetBool();
+
+        Gamma = GetFloat();
+        Saturation = GetFloat();
+        Contrast = GetFloat();
+        Brightness = GetFloat();
+        Tint = GetUInt();
+        OverlayColor = GetUInt();
+
+        IsOverflowing = GetBool();
+
+        Zoom = GetFloat();
+        Offset = (GetFloat(), GetFloat());
+
+        verts = new(PrimitiveType.Quads);
+
+        float GetFloat()
+        {
+            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+        }
+        int GetInt()
+        {
+            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        }
+        uint GetUInt()
+        {
+            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        }
+        bool GetBool()
+        {
+            return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
+        }
+        byte GetByte()
+        {
+            return GetBytesFrom(b, 1, ref offset)[0];
+        }
+    }
+    public Layer(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
     public Layer((int width, int height) tilemapSize = default)
     {
         Init();
-        TilemapSize = tilemapSize;
-        Zoom = 1f;
-        atlasPath = string.Empty;
-        AtlasPath = string.Empty;
         verts = new(PrimitiveType.Quads);
         shader = new EffectColors().Shader;
-        Tint = uint.MaxValue;
+
+        atlasPath = string.Empty;
+        AtlasPath = string.Empty;
+
+        TilemapSize = tilemapSize;
+
+        Zoom = 1f;
+
         Gamma = 1f;
         Saturation = 1f;
         Contrast = 1f;
         Brightness = 1f;
+        Tint = uint.MaxValue;
     }
 
     ~Layer()
     {
         verts.Dispose();
+        shader?.Dispose();
     }
 
     public void DrawCursor(int tileId = 546, uint tint = 3789677055)
@@ -186,7 +250,7 @@ public class Layer
         for (var i = 0; i < points?.Length; i++)
         {
             var p = points[i];
-            QueueRectangle((p.x, p.y), (1f / TileSize.width, 1f / TileSize.height), p.color);
+            QueueRectangle((p.x, p.y), (1f / AtlasTileSize.width, 1f / AtlasTileSize.height), p.color);
         }
     }
     public void DrawRectangles(params (float x, float y, float width, float height, uint color)[]? rectangles)
@@ -235,7 +299,7 @@ public class Layer
         var tiles = new int[Math.Abs(w), Math.Abs(h)];
         var (tileX, tileY) = IndexToCoords(id);
         var (x, y) = position;
-        var (tw, th) = TileSize;
+        var (tw, th) = AtlasTileSize;
 
         for (var i = 0; i < Math.Abs(h); i++)
             for (var j = 0; j < Math.Abs(w); j++)
@@ -294,7 +358,7 @@ public class Layer
     public void DrawTilemap((int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,] tilemap)
     {
         var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
-        var (tw, th) = TileSize;
+        var (tw, th) = AtlasTileSize;
 
         for (var y = 0; y < cellCountH; y++)
             for (var x = 0; x < cellCountW; x++)
@@ -356,7 +420,7 @@ public class Layer
         var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
         var (vw, vh) = Window.renderTextureViewSize;
         var (cw, ch) = TilemapSize;
-        var (tw, th) = TileSize;
+        var (tw, th) = AtlasTileSize;
         var (ox, oy) = Offset;
         var (mw, mh) = (cw * tw, ch * th);
         var (ww, wh, ow, oh) = Window.GetRenderOffset();
@@ -405,22 +469,62 @@ public class Layer
     {
         Init();
         Zoom = 1f;
-        TileGap = (0, 0);
+        AtlasTileGap = (0, 0);
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
         TileIdFull = 10;
     }
 
-    public static void SaveDefaultGraphics(string filePath)
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+        var bAtlasPath = Encoding.UTF8.GetBytes(AtlasPath);
+        result.AddRange(BitConverter.GetBytes(bAtlasPath.Length));
+        result.AddRange(bAtlasPath);
+        result.Add(AtlasTileGap.width);
+        result.Add(AtlasTileGap.height);
+        result.Add(AtlasTileSize.width);
+        result.Add(AtlasTileSize.height);
+
+        result.AddRange(BitConverter.GetBytes(TileIdFull));
+        result.AddRange(BitConverter.GetBytes(TilemapSize.width));
+        result.AddRange(BitConverter.GetBytes(TilemapSize.height));
+
+        result.AddRange(BitConverter.GetBytes(Gamma));
+        result.AddRange(BitConverter.GetBytes(Saturation));
+        result.AddRange(BitConverter.GetBytes(Contrast));
+        result.AddRange(BitConverter.GetBytes(Brightness));
+        result.AddRange(BitConverter.GetBytes(Tint));
+        result.AddRange(BitConverter.GetBytes(OverlayColor));
+
+        result.AddRange(BitConverter.GetBytes(IsOverflowing));
+
+        result.AddRange(BitConverter.GetBytes(Zoom));
+        result.AddRange(BitConverter.GetBytes(Offset.x));
+        result.AddRange(BitConverter.GetBytes(Offset.y));
+
+        return Compress(result.ToArray());
+    }
+
+    public static void DefaultGraphicsToFile(string filePath)
     {
         tilesets["default"].CopyToImage().SaveToFile(filePath);
     }
 
+    public static implicit operator byte[](Layer layer)
+    {
+        return layer.ToBytes();
+    }
+
 #region Backend
     internal readonly Shader? shader;
+    internal readonly VertexArray verts;
     private readonly List<(uint, uint)> replaceColors = new();
     internal static readonly Dictionary<string, Texture> tilesets = new();
-    internal readonly VertexArray verts;
     private static readonly List<(float, float)> cursorOffsets = new()
     {
         (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
@@ -433,7 +537,7 @@ public class Layer
         get
         {
             var (mw, mh) = TilemapSize;
-            var (tw, th) = TileSize;
+            var (tw, th) = AtlasTileSize;
             return (mw * tw, mh * th);
         }
     }
@@ -448,15 +552,16 @@ public class Layer
     }
 
     private string atlasPath;
-    private (int width, int height) tileGap, tileSize, tilemapSize;
+    private (byte width, byte height) atlasTileGap, atlasTileSize;
+    private (int width, int height) tilemapSize;
     private uint currTint = uint.MaxValue, overlayColor;
     private float zoom, gamma, saturation, contrast, brightness;
 
-    [MemberNotNull(nameof(TileIdFull), nameof(TileSize), nameof(tilesetPixelSize))]
+    [MemberNotNull(nameof(TileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]
     private void Init()
     {
         TileIdFull = 10;
-        TileSize = (8, 8);
+        AtlasTileSize = (8, 8);
         tilesetPixelSize = new(208, 208);
     }
 
@@ -472,7 +577,7 @@ public class Layer
             b = (line.bx, line.by);
         }
 
-        var (tw, th) = TileSize;
+        var (tw, th) = AtlasTileSize;
         a.x *= tw;
         a.y *= th;
         b.x *= tw;
@@ -505,10 +610,13 @@ public class Layer
     }
     private void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
     {
-        var (tw, th) = TileSize;
+        var (tw, th) = AtlasTileSize;
         var (w, h) = size;
 
-        if (IsOverlapping(position) == false && IsOverlapping((position.x + w, position.y + h)) == false)
+        if (IsOverlapping(position) == false &&
+            IsOverlapping((position.x + w, position.y)) == false &&
+            IsOverlapping((position.x + w, position.y + h)) == false &&
+            IsOverlapping((position.x, position.y + h)) == false)
             return;
 
         var (x, y) = (position.x * tw, position.y * th);
@@ -579,8 +687,8 @@ public class Layer
     private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int tileId, (int w, int h) size)
     {
         var (w, h) = size;
-        var (tw, th) = TileSize;
-        var (gw, gh) = TileGap;
+        var (tw, th) = AtlasTileSize;
+        var (gw, gh) = AtlasTileGap;
         var (tx, ty) = IndexToCoords(tileId);
         var tl = new Vector2f(tx * (tw + gw), ty * (th + gh));
         var tr = tl + new Vector2f(tw * w, 0);
@@ -590,7 +698,7 @@ public class Layer
     }
     private (int, int) IndexToCoords(int index)
     {
-        var (tw, th) = AtlasSize;
+        var (tw, th) = AtlasTileCount;
         index = index < 0 ? 0 : index;
         index = index > tw * th - 1 ? tw * th - 1 : index;
 
@@ -598,7 +706,7 @@ public class Layer
     }
     private int CoordsToIndex(int x, int y)
     {
-        return y * AtlasSize.width + x;
+        return y * AtlasTileCount.width + x;
     }
     private static int Wrap(int number, int targetNumber)
     {
@@ -685,6 +793,34 @@ public class Layer
         var intersectionX = ax1 + s * dx1;
         var intersectionY = ay1 + s * dy1;
         return (intersectionX, intersectionY);
+    }
+
+    private static byte[] Compress(byte[] data)
+    {
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
+            stream.Write(data, 0, data.Length);
+        }
+
+        return output.ToArray();
+    }
+    private static byte[] Decompress(byte[] data)
+    {
+        var input = new MemoryStream(data);
+        var output = new MemoryStream();
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
+            stream.CopyTo(output);
+        }
+
+        return output.ToArray();
+    }
+    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    {
+        var result = fromBytes[offset..(offset + amount)];
+        offset += amount;
+        return result;
     }
 #endregion
 }

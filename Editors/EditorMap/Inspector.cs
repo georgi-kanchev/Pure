@@ -1,5 +1,8 @@
 namespace Pure.Editors.EditorMap;
 
+using static Keyboard.Key;
+using static Tile;
+
 internal class Inspector : Panel
 {
     public readonly List layers, layersVisibility;
@@ -31,8 +34,8 @@ internal class Inspector : Panel
         layersVisibility.OnItemDisplay(item =>
         {
             var tile = item.IsSelected ?
-                new Tile(Tile.ICON_EYE_OPENED, Color.White) :
-                new(Tile.ICON_EYE_CLOSED, Color.Gray);
+                new Tile(ICON_EYE_OPENED, Color.White) :
+                new(ICON_EYE_CLOSED, Color.Gray);
             editor.MapsUi.SetButtonIcon(item, tile, 1);
         });
         layersVisibility.Select(0);
@@ -45,7 +48,7 @@ internal class Inspector : Panel
         var create = new Button();
         create.OnInteraction(Interaction.Trigger, LayerCreate);
         create.OnDisplay(() =>
-            editor.MapsUi.SetButtonIcon(create, new(Tile.CURSOR_CROSSHAIR, Color.Gray), 1));
+            editor.MapsUi.SetButtonIcon(create, new(CURSOR_CROSSHAIR, Color.Gray), 1));
 
         var remove = new Button();
         remove.OnInteraction(Interaction.Trigger, () =>
@@ -56,7 +59,7 @@ internal class Inspector : Panel
             remove.IsDisabled = remove.IsHidden;
         });
         remove.OnDisplay(() =>
-            editor.MapsUi.SetButtonIcon(remove, new(Tile.ICON_DELETE, Color.Gray), 1));
+            editor.MapsUi.SetButtonIcon(remove, new(ICON_DELETE, Color.Gray), 1));
 
         var flush = new Button();
         flush.OnInteraction(Interaction.Trigger, () =>
@@ -67,7 +70,7 @@ internal class Inspector : Panel
             }));
         flush.OnUpdate(() => ShowWhenLayerSelected(flush));
         flush.OnDisplay(() => editor.MapsUi.SetButtonIcon(flush,
-            new(Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Gray, 1), 1));
+            new(SHAPE_SQUARE_BIG_HOLLOW, Color.Gray, 1), 1));
 
         var rename = new InputBox { Value = string.Empty, Placeholder = "Rename…", IsSingleLine = true };
         rename.OnSubmit(() =>
@@ -81,30 +84,25 @@ internal class Inspector : Panel
         var up = new Button();
         up.OnInteraction(Interaction.Trigger, () => LayersMove(-1));
         up.OnUpdate(() => ShowWhenLayerSelected(up));
-        up.OnDisplay(() => editor.MapsUi.SetButtonIcon(up, new(Tile.ARROW, Color.Gray, 3), 1));
+        up.OnDisplay(() => editor.MapsUi.SetButtonIcon(up, new(ARROW, Color.Gray, 3), 1));
 
         var down = new Button();
         down.OnInteraction(Interaction.Trigger, () => LayersMove(1));
         down.OnUpdate(() => ShowWhenLayerSelected(down));
-        down.OnDisplay(() => editor.MapsUi.SetButtonIcon(down, new(Tile.ARROW, Color.Gray, 1), 1));
+        down.OnDisplay(() => editor.MapsUi.SetButtonIcon(down, new(ARROW, Color.Gray, 1), 1));
 
         //========
 
-        tools = new(count: 13) { ItemWidth = 1, ItemGap = 0 };
+        tools = new(count: 14) { ItemWidth = 1, ItemGap = 0 };
         tools.OnItemDisplay(item =>
         {
-            var hotkey = new[]
-            {
-                Keyboard.Key.G, Keyboard.Key.T, Keyboard.Key.R, Keyboard.Key.L, Keyboard.Key.E,
-                Keyboard.Key.I, Keyboard.Key.S, Keyboard.Key.B, Keyboard.Key.A, Keyboard.Key.V,
-                Keyboard.Key.H, Keyboard.Key.C, Keyboard.Key.P
-            };
+            var hotkey = new[] { G, T, R, L, E, O, K, B, A, V, H, C, P, S };
             var graphics = new[]
             {
-                Tile.SHAPE_SQUARE_SMALL_HOLLOW, Tile.GAME_DICE_6, Tile.SHAPE_SQUARE,
-                Tile.PUNCTUATION_SLASH, Tile.SHAPE_CIRCLE, Tile.SHAPE_CIRCLE_HOLLOW,
-                Tile.ICON_GRID, Tile.ICON_FILL, Tile.ICON_LOOP, Tile.ICON_MIRROR,
-                Tile.ICON_FLIP, Tile.ICON_PALETTE, Tile.ICON_PICK
+                SHAPE_SQUARE_SMALL_HOLLOW, GAME_DICE_6, SHAPE_SQUARE,
+                PUNCTUATION_SLASH, SHAPE_CIRCLE, SHAPE_CIRCLE_HOLLOW,
+                ICON_GRID, ICON_FILL, ICON_LOOP, ICON_MIRROR,
+                ICON_FLIP, ICON_PALETTE, ICON_PICK, SHAPE_SQUARE_HOLLOW
             };
             var index = tools.IndexOf(item);
             var id = graphics[index];
@@ -120,12 +118,16 @@ internal class Inspector : Panel
             {
                 "Group of tiles", "Single random tile", "Rectangle of random tiles",
                 "Line of random tiles", "Filled ellipse of random tiles",
-                "Hollow ellipse of random tiles",
-                "Replace all tiles of a kind with random tiles", "Fill with random tiles",
-                "Rotate rectangle of tiles", "Mirror rectangle of tiles vertically",
-                "Flip rectangle of tiles horizontally", "Color rectangle of tiles", "Pick a tile"
+                "Hollow ellipse of random tiles", "Replace all tiles of a kind with random tiles",
+                "Fill with random tiles", "Rotate rectangle of tiles", "Mirror rectangle of tiles vertically",
+                "Flip rectangle of tiles horizontally", "Color rectangle of tiles", "Pick a tile",
+                "Select tiles\n" +
+                "Ctrl = drag\n" +
+                "Ctrl+C/V/X = copy/paste/cut\n" +
+                "Delete = clear"
             };
             editor.Log(logs[tools.IndexOf(item)]);
+            tilePalette.start = tilePalette.end;
         });
 
         paletteColor = new() { Pick = { IsHidden = true } };
@@ -134,9 +136,13 @@ internal class Inspector : Panel
             editor.MapsUi.SetPalette(paletteColor, 1);
             editor.MapsUi.SetSlider(paletteColor.Opacity, 1);
             editor.MapsUi.SetPages(paletteColor.Brightness, 1);
+
+            var (px, py, pw, ph) = paletteColor.Area;
+            var tile = new Tile(FULL, paletteColor.SelectedColor);
+            editor.MapsUi[(int)Editor.LayerMapsUi.Front].SetArea((px, py + ph, pw, 2), null, tile);
         });
         paletteColor.OnSampleDisplay((btn, color) =>
-            editor.MapsUi[1].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, color)));
+            editor.MapsUi[1].SetTile(btn.Position, new(SHADE_OPAQUE, color)));
         paletteColor.Brightness.OnItemDisplay(btn =>
             editor.MapsUi.SetPagesItem(paletteColor.Brightness, btn));
 
@@ -265,7 +271,8 @@ internal class Inspector : Panel
         if (i >= inspectorItems.Length)
             return;
 
-        if (i == 14 && palette.layer.IsHovered && editor.Prompt.IsHidden)
+        var tool = tools.Current;
+        if (tool < 9 && i == 14 && palette.layer.IsHovered && editor.Prompt.IsHidden)
         {
             var (mx, my) = palette.mousePos;
             var index = (my, mx).ToIndex1D(palette.map.Size);
