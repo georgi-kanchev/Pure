@@ -59,6 +59,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorCollision", "Editors\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorStorage", "Editors\EditorStorage\EditorStorage.csproj", "{972E9BE4-83EE-4D0D-B172-673697BCD0CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flow", "Engine\Flow\Flow.csproj", "{7015866F-5374-4B0A-8B73-F48CE149F070}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +163,10 @@ Global
 		{972E9BE4-83EE-4D0D-B172-673697BCD0CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{972E9BE4-83EE-4D0D-B172-673697BCD0CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{972E9BE4-83EE-4D0D-B172-673697BCD0CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7015866F-5374-4B0A-8B73-F48CE149F070}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7015866F-5374-4B0A-8B73-F48CE149F070}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7015866F-5374-4B0A-8B73-F48CE149F070}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7015866F-5374-4B0A-8B73-F48CE149F070}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -192,5 +198,6 @@ Global
 		{20C377CD-FB66-4C04-9DAA-54812C63912B} = {A8122EE6-919B-43EB-842D-D157ACF49736}
 		{E7EF5EAB-28BF-485A-9D2E-9757EDC545F2} = {78311EB2-800C-49FB-AFDA-990722D71613}
 		{972E9BE4-83EE-4D0D-B172-673697BCD0CE} = {78311EB2-800C-49FB-AFDA-990722D71613}
+		{7015866F-5374-4B0A-8B73-F48CE149F070} = {A8122EE6-919B-43EB-842D-D157ACF49736}
 	EndGlobalSection
 EndGlobal

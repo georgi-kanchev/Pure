@@ -1,5 +1,6 @@
 namespace Pure.Examples.ExamplesApplications;
 
+using Engine.Flow;
 using Engine.Tilemap;
 using Engine.Window;
 using Engine.Utilities;
@@ -27,7 +28,7 @@ public static class Asteroids
         var score = 0;
         var shotCooldown = 0f;
 
-        Time.CallAfter(1f, SpawnAsteroid, true);
+        Delay.Wait(1f, SpawnAsteroid, true);
 
         while (Window.KeepOpen())
         {
@@ -63,10 +64,9 @@ public static class Asteroids
             ship.Velocity = 15f;
             ship.Position = (5f, ship.Position.y);
         }
-
         void SpawnAsteroid()
         {
-            shapes.Add(new(asteroidShapes.ChooseOne())
+            shapes.Add(new(asteroidShapes.ChooseOne() ?? "")
             {
                 Type = Type.Asteroid,
                 Velocity = (10f, 25f).Random(),
@@ -77,7 +77,6 @@ public static class Asteroids
                 Torque = (-10f, 10f).Random()
             });
         }
-
         void TrySpawnShot()
         {
             if (shotCooldown > 0)
@@ -93,7 +92,6 @@ public static class Asteroids
                 Velocity = 40f
             });
         }
-
         void HandleShapes()
         {
             var shapesToDestroy = new List<Shape>();
@@ -104,14 +102,12 @@ public static class Asteroids
                 shape.UpdateAndDraw(layer);
 
                 if (type == Type.Shot)
-                {
                     foreach (var asteroid in shapes)
                         if (asteroid.Type == Type.Asteroid && shape.IsOverlapping(asteroid))
                         {
                             shapesToDestroy.AddRange(new[] { shape, asteroid });
                             score++;
                         }
-                }
 
                 if (type == Type.Asteroid && ship.IsOverlapping(shape))
                 {
@@ -137,7 +133,7 @@ public static class Asteroids
         }
     }
 
-    #region Backend
+#region Backend
     private static readonly string[] asteroidShapes =
     {
         "Y2NABg32ELxgPwOD0kEGhhsHGBj2HPhfVVUFYzMwTADiNQ4QMQgbqGcfA8MXqBiEzcCwA4gn2EPEIGwGBgV7kB6IGIQNxEC7FA6CxAA=",
@@ -175,5 +171,5 @@ public static class Asteroids
             layer.DrawLines(ToBundlePoints());
         }
     }
-    #endregion
+#endregion
 }

@@ -6,9 +6,7 @@ using System.Globalization;
 public class CommandPack
 {
     public bool IsDisabled { get; set; }
-
-    public (char command, char value, char text, char array) Dividers { get; set; } =
-        (';', ' ', '`', '|');
+    public (char command, char value, char text, char array) Dividers { get; set; } = (';', ' ', '`', '|');
 
     public void Add(string command, Func<string?> onExecute)
     {

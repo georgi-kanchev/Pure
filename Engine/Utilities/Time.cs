@@ -102,18 +102,6 @@ public static class Time
         UpdatesPerSecond = 1f / Delta;
         UpdatesPerSecondAverage = UpdateCount / RuntimeClock;
         UpdateCount++;
-
-        var toBeRemoved = new List<Timer>();
-        foreach (var timer in timers)
-        {
-            timer.TryTrigger(delta);
-
-            if (timer.IsDisposed)
-                toBeRemoved.Add(timer);
-        }
-
-        foreach (var timer in toBeRemoved)
-            timers.Remove(timer);
     }
     /// <summary>
     /// Converts a duration in seconds to a formatted clock string.
@@ -143,7 +131,9 @@ public static class Time
             var sep = counter > 0 ? separator : string.Empty;
             var val = counter == 0 ?
                 (int)ts.TotalHours :
-                (units.HasFlag(Unit.AmPm) ? (int)Wrap(ts.Hours, 12) : ts.Hours);
+                units.HasFlag(Unit.AmPm) ?
+                    (int)Wrap(ts.Hours, 12) :
+                    ts.Hours;
             //val = val == 0 ? 12 : val;
             result += $"{sep}{val:D2}";
             counter++;
@@ -185,7 +175,7 @@ public static class Time
 
         float Wrap(float number, float range)
         {
-            return ((number % range) + range) % range;
+            return (number % range + range) % range;
         }
     }
     /// <summary>
@@ -216,97 +206,11 @@ public static class Time
             Conversion.DaysToWeeks => time / 7,
             Conversion.WeeksToHours => time * 168,
             Conversion.WeeksToDays => time * 7,
-            _ => 0,
+            _ => 0
         };
     }
 
-    /// <summary>
-    /// Calls a method after a specified number of seconds.
-    /// </summary>
-    /// <param name="seconds">The number of seconds to wait before calling the method.</param>
-    /// <param name="method">The method to call.</param>
-    /// <param name="isRepeating">Whether to repeat the call at the specified interval.</param>
-    public static void CallAfter(float seconds, Action method, bool isRepeating = false)
-    {
-        timers.Add(new(seconds, isRepeating, method));
-    }
-    /// <summary>
-    /// Cancels a scheduled method call.
-    /// </summary>
-    /// <param name="method">The method to cancel.</param>
-    public static void CancelCall(Action method)
-    {
-        var timersToRemove = new List<Timer>();
-        foreach (var t in timers)
-            if (t.method == method)
-                timersToRemove.Add(t);
-
-        foreach (var t in timersToRemove)
-            timers.Remove(t);
-    }
-    /// <summary>
-    /// Offsets the scheduled call time of a method.
-    /// </summary>
-    /// <param name="seconds">The number of seconds to offset the call time by.</param>
-    /// <param name="method">The method to offset the call time for.</param>
-    public static void OffsetCall(float seconds, Action method)
-    {
-        foreach (var t in timers)
-            if (t.method == method)
-                t.delay += seconds;
-    }
-
 #region Backend
-    private class Timer
-    {
-        private float time;
-        private readonly bool isLooping;
-
-        public Action? method;
-        public float delay;
-        public bool IsDisposed
-        {
-            get => method == null;
-        }
-
-        public Timer(float seconds, bool isLooping, Action method)
-        {
-            delay = seconds;
-            this.isLooping = isLooping;
-            this.method = method;
-        }
-
-        public void TryTrigger(float delta)
-        {
-            time += delta;
-
-            if (time < delay)
-                return;
-
-            Trigger(true);
-
-            if (isLooping == false)
-                Dispose();
-        }
-        private void Restart()
-        {
-            time = 0;
-        }
-        private void Trigger(bool reset)
-        {
-            method?.Invoke();
-
-            if (reset)
-                Restart();
-        }
-
-        private void Dispose()
-        {
-            method = null;
-        }
-    }
-
-    private static readonly List<Timer> timers = new();
     private static readonly Stopwatch dt = new();
 
     private static float Now
