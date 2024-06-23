@@ -5,8 +5,7 @@
 /// <typeparamref name="T"/> over time.
 /// </summary>
 /// <typeparam name="T">The type of the values in the animation.</typeparam>
-public class Animation<T>
-    where T : notnull
+public class Animation<T> where T : notnull
 {
     /// <summary>
     /// Gets the current value of the animation.
@@ -160,7 +159,7 @@ public class Animation<T>
         onLoop += method;
     }
 
-#region Backend
+    #region Backend
     private Action? onEnd, onLoop;
     private readonly T[] values;
 
@@ -184,5 +183,5 @@ public class Animation<T>
         Array.Copy(array, copy, array.Length);
         return copy;
     }
-#endregion
+    #endregion
 }

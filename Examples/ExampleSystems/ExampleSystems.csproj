@@ -11,6 +11,7 @@
         <ProjectReference Include="..\..\Engine\Audio\Audio.csproj"/>
         <ProjectReference Include="..\..\Engine\Collision\Collision.csproj"/>
         <ProjectReference Include="..\..\Engine\Commands\Commands.csproj"/>
+        <ProjectReference Include="..\..\Engine\Flow\Flow.csproj"/>
         <ProjectReference Include="..\..\Engine\LocalAreaNetwork\LocalAreaNetwork.csproj"/>
         <ProjectReference Include="..\..\Engine\Modding\Modding.csproj"/>
         <ProjectReference Include="..\..\Engine\Particles\Particles.csproj"/>

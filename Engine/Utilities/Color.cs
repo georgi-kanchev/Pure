@@ -1,12 +1,14 @@
-﻿using System.Text;
-
-namespace Pure.Engine.Utilities;
+﻿namespace Pure.Engine.Utilities;
 
 /// <summary>
 /// Represents a color in RGBA format and performs color operations.
 /// </summary>
 public struct Color
 {
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(r, g, b, a, v);
+    }
     public static Color Black
     {
         get => new(0, 0, 0);
@@ -196,10 +198,10 @@ public struct Color
     /// <returns>The new brightened color.</returns>
     public Color ToBright(float unit = 0.5f)
     {
-        var r = (byte)Map(unit, 0, 1, R, 255);
-        var g = (byte)Map(unit, 0, 1, G, 255);
-        var b = (byte)Map(unit, 0, 1, B, 255);
-        return new(r, g, b);
+        var red = (byte)Map(unit, 0, 1, R, 255);
+        var green = (byte)Map(unit, 0, 1, G, 255);
+        var blue = (byte)Map(unit, 0, 1, B, 255);
+        return new(red, green, blue);
     }
 
     /// <returns>
@@ -209,14 +211,6 @@ public struct Color
         return this;
     }
 
-    public override int GetHashCode()
-    {
-        return base.GetHashCode();
-    }
-    public override bool Equals(object? obj)
-    {
-        return base.Equals(obj);
-    }
     /// <returns>
     /// A string that represents this color.</returns>
     public override string ToString()
@@ -277,7 +271,16 @@ public struct Color
         return a.v != b.v;
     }
 
-#region Backend
+    public bool Equals(Color other)
+    {
+        return r == other.r && g == other.g && b == other.b && a == other.a && v == other.v;
+    }
+    public override bool Equals(object? obj)
+    {
+        return obj is Color other && Equals(other);
+    }
+
+    #region Backend
     private byte r, g, b, a;
     private uint v;
 
@@ -298,5 +301,5 @@ public struct Color
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-#endregion
+    #endregion
 }

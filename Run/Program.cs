@@ -17,7 +17,7 @@ public static class Run
         //Chat.Run();
 
         //Editors.EditorCollision.Program.Run();
-        Editors.EditorMap.Program.Run();
+        //Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
@@ -31,6 +31,7 @@ public static class Run
         //LineOfSightAndLights.Run();
         //Audio.Run();
         //UtilityExtensions.Run();
+        Flow.Run();
     }
 
     private static void RunExampleUserInterface()

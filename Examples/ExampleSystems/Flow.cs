@@ -1,0 +1,81 @@
+using Pure.Engine.Flow;
+
+using Path = Pure.Engine.Flow.Path;
+
+namespace Pure.Examples.ExamplesSystems;
+
+using Engine.Utilities;
+using Engine.Window;
+
+public static class Flow
+{
+    public static void Run()
+    {
+        var stateMachine = new StateMachine();
+        stateMachine.Add(null, TurnStart, Move, Attack, TurnEnd);
+        stateMachine.Add(TurnStart, ControlPlayer, ControlEnemy);
+        stateMachine.Add(Attack, Miss, Hit, Kill);
+        stateMachine.Add(Kill, Win, Lose);
+
+        Delay.Wait(1, () =>
+        {
+            Console.Clear();
+            Console.WriteLine(stateMachine.ToTree());
+        }, true);
+
+        while (Window.KeepOpen())
+        {
+            Time.Update();
+            Delay.Update(Time.Delta);
+            stateMachine.Update();
+        }
+
+        void TurnStart()
+        {
+            stateMachine.Get(Path.Running)?.Disable();
+            stateMachine.Run(Attack);
+        }
+
+        void ControlPlayer()
+        {
+        }
+
+        void ControlEnemy()
+        {
+        }
+
+        void Move()
+        {
+        }
+
+        void Attack()
+        {
+            stateMachine.Run(Win);
+        }
+
+        void Miss()
+        {
+        }
+
+        void Hit()
+        {
+        }
+
+        void Kill()
+        {
+        }
+
+        void Win()
+        {
+            stateMachine.Get(Path.Parent, Path.Previous);
+        }
+
+        void Lose()
+        {
+        }
+
+        void TurnEnd()
+        {
+        }
+    }
+}
