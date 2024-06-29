@@ -194,7 +194,7 @@ public class Layer
     {
         Init();
         verts = new(PrimitiveType.Quads);
-        shader = new EffectColors().Shader;
+        shader = new EffectLayer().Shader;
 
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
@@ -321,7 +321,7 @@ public class Layer
             for (var j = 0; j < w; j++)
             {
                 var (texTl, texTr, texBr, texBl) = GetTexCoords(tiles[j, i], (1, 1));
-                var (tx, ty) = ((x + j) * tw, (y + i) * th);
+                var (tx, ty) = (Math.Floor((x + j) * tw), Math.Floor((y + i) * th));
                 var c = new Color(tint);
                 var tl = new Vector2f((int)tx, (int)ty);
                 var br = new Vector2f((int)(tx + tw), (int)(ty + th));
@@ -627,10 +627,10 @@ public class Layer
         var tr = new Vector2f((int)br.X, (int)tl.Y);
         var bl = new Vector2f((int)tl.X, (int)br.Y);
 
-        verts.Append(TryCropVertex(new(tl, color, texTl), true));
-        verts.Append(TryCropVertex(new(tr, color, texTr), true));
-        verts.Append(TryCropVertex(new(br, color, texBr), true));
-        verts.Append(TryCropVertex(new(bl, color, texBl), true));
+        verts.Append(TryCropVertex(new(tl, color, texTl)));
+        verts.Append(TryCropVertex(new(tr, color, texTr)));
+        verts.Append(TryCropVertex(new(br, color, texBr)));
+        verts.Append(TryCropVertex(new(bl, color, texBl)));
     }
     private Vertex TryCropVertex(Vertex vertex, bool skipTexCoords = false)
     {
@@ -639,16 +639,15 @@ public class Layer
 
         var px = vertex.Position.X;
         var py = vertex.Position.Y;
-        var x = Math.Clamp(vertex.Position.X, 0, TilemapPixelSize.w);
-        var y = Math.Clamp(vertex.Position.Y, 0, TilemapPixelSize.h);
+        var x = Math.Clamp(px, 0, TilemapPixelSize.w);
+        var y = Math.Clamp(py, 0, TilemapPixelSize.h);
 
         vertex.Position = new(x, y);
 
         if (skipTexCoords)
             return vertex;
 
-        var dx = x - px;
-        var dy = y - py;
+        var (dx, dy) = (x - px, y - py);
         var tx = vertex.TexCoords.X + dx;
         var ty = vertex.TexCoords.Y + dy;
         vertex.TexCoords = new(tx, ty);

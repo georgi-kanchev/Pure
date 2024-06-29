@@ -80,7 +80,7 @@ public static class Window
         set
         {
             if (value && retroShader == null && Shader.IsAvailable)
-                retroShader = new EffectRetro().Shader;
+                retroShader = new EffectWindow().Shader;
 
             isRetro = value;
             TryCreate();
@@ -350,10 +350,9 @@ public static class Window
 
     private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating;
     private static string title = "Game";
-    private static uint backgroundColor, monitor;
+    private static uint backgroundColor, monitor, maximumFrameRate;
     private static Mode mode;
     private static float pixelScale = 5f;
-    private static uint maximumFrameRate;
 
     [MemberNotNull(nameof(window))]
     private static void TryCreate()
@@ -371,7 +370,7 @@ public static class Window
     {
         isRecreating = false;
 
-        var prevSize = new Vector2u(1280, 720);
+        var prevSize = new Vector2u(960, 540);
         var prevPos = new Vector2i();
         if (window != null)
         {
@@ -478,6 +477,7 @@ public static class Window
         {
             var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
             shader?.SetUniform("time", retroScreenTimer.ElapsedTime.AsSeconds());
+            shader?.SetUniform("pixelScale", pixelScale);
             shader?.SetUniform("randomVec", randVec);
             shader?.SetUniform("viewSize", new Vector2f(ww, wh));
             shader?.SetUniform("offScreen", new Vector2f(ow, oh));

@@ -69,7 +69,7 @@ public static class Collision
 
             layer.DrawTilemap(background);
             layer.DrawTilemap(tilemap);
-            layer.DrawRectangles(collisionMap);
+            //layer.DrawRectangles(collisionMap);
             layer.DrawLines(line);
             layer.DrawPoints(crossPoints);
             layer.DrawTiles(mousePosition, tile);

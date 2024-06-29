@@ -1,6 +1,6 @@
 namespace Pure.Engine.Window;
 
-internal class EffectColors : Effect
+internal class EffectLayer : Effect
 {
     public override string Fragment
     {
@@ -22,7 +22,8 @@ uniform vec4 overlay;
 
 void main(void)
 {
-    vec4 color = texture2D(texture, gl_TexCoord[0].xy) * gl_Color;
+	vec2 coord = gl_TexCoord[0].xy;
+    vec4 color = texture2D(texture, coord) * gl_Color;
 
     for(int i = 0; i < replaceColorsCount; i++)
 	    if (distance(color, replaceColorsOld[i]) < 0.01)

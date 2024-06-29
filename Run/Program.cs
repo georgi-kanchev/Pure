@@ -26,12 +26,12 @@ public static class Run
         //DefaultGraphics.Run();
         //Commands.Run();
         //Storages.Run();
-        //Collision.Run();
+        Collision.Run();
         //Pathfinding.Run();
         //LineOfSightAndLights.Run();
         //Audio.Run();
         //UtilityExtensions.Run();
-        Flow.Run();
+        //Flow.Run();
     }
 
     private static void RunExampleUserInterface()
