@@ -182,6 +182,7 @@ public static class EightBallPool
         void DrawBall(Ball ball)
         {
             var p = ball.Position;
+
             if (ball.Number <= 8)
             {
                 layer.DrawTiles(p, new Tile(Tile.SHAPE_CIRCLE_BIG, ball.Color));

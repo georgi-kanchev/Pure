@@ -242,7 +242,7 @@ public static class Program
             UpdateMap();
             promptPanel.Text = layers[currentLayer];
             editor.Prompt.Text = "Edit Tile Solids";
-            editor.Prompt.Open(promptPanel, buttonDecline: -1, isAutoClosing: false, buttonCount: 3,
+            editor.Prompt.Open(promptPanel, btnNo: -1, autoClose: false, btnCount: 3,
                 onButtonTrigger: i =>
                 {
                     if (i == 0)

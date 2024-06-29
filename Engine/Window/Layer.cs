@@ -1,7 +1,15 @@
 namespace Pure.Engine.Window;
 
+using SFML.Graphics.Glsl;
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
+
+[Flags]
+public enum Edge
+{
+    Top = 1 << 0, Bottom = 1 << 1, Left = 1 << 2, Right = 1 << 3, Corners = 1 << 4,
+    AllEdges = Top | Bottom | Left | Right, AllEdgesAndCorners = AllEdges | Corners
+}
 
 public class Layer
 {
@@ -127,6 +135,7 @@ public class Layer
             shader?.SetUniform("overlay", new Color(overlayColor));
         }
     }
+    public uint BackgroundColor { get; set; }
 
     public (float x, float y) Offset { get; set; }
     public float Zoom
@@ -135,6 +144,25 @@ public class Layer
         set => zoom = Math.Clamp(value, 0, 1000f);
     }
 
+    public Layer((int width, int height) tilemapSize = default)
+    {
+        Init();
+        verts = new(PrimitiveType.Quads);
+        shader = new EffectLayer().Shader;
+
+        atlasPath = string.Empty;
+        AtlasPath = string.Empty;
+
+        TilemapSize = tilemapSize;
+
+        Zoom = 1f;
+
+        Gamma = 1f;
+        Saturation = 1f;
+        Contrast = 1f;
+        Brightness = 1f;
+        Tint = uint.MaxValue;
+    }
     public Layer(byte[] bytes)
     {
         var b = Decompress(bytes);
@@ -155,6 +183,7 @@ public class Layer
         Brightness = GetFloat();
         Tint = GetUInt();
         OverlayColor = GetUInt();
+        BackgroundColor = GetUInt();
 
         Zoom = GetFloat();
         Offset = (GetFloat(), GetFloat());
@@ -181,31 +210,49 @@ public class Layer
     public Layer(string base64) : this(Convert.FromBase64String(base64))
     {
     }
-    public Layer((int width, int height) tilemapSize = default)
+
+    public void ToDefault()
     {
         Init();
-        verts = new(PrimitiveType.Quads);
-        shader = new EffectLayer().Shader;
-
+        Zoom = 1f;
+        AtlasTileGap = (0, 0);
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
-
-        TilemapSize = tilemapSize;
-
-        Zoom = 1f;
-
-        Gamma = 1f;
-        Saturation = 1f;
-        Contrast = 1f;
-        Brightness = 1f;
-        Tint = uint.MaxValue;
+        TileIdFull = 10;
     }
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
+    public byte[] ToBytes()
+    {
+        var result = new List<byte>();
+        var bAtlasPath = Encoding.UTF8.GetBytes(AtlasPath);
+        result.AddRange(BitConverter.GetBytes(bAtlasPath.Length));
+        result.AddRange(bAtlasPath);
+        result.Add(AtlasTileGap.width);
+        result.Add(AtlasTileGap.height);
+        result.Add(AtlasTileSize.width);
+        result.Add(AtlasTileSize.height);
 
-    // ~Layer()
-    // {
-    //     verts.Dispose();
-    //     shader?.Dispose();
-    // }
+        result.AddRange(BitConverter.GetBytes(TileIdFull));
+        result.AddRange(BitConverter.GetBytes(TilemapSize.width));
+        result.AddRange(BitConverter.GetBytes(TilemapSize.height));
+
+        result.AddRange(BitConverter.GetBytes(Gamma));
+        result.AddRange(BitConverter.GetBytes(Saturation));
+        result.AddRange(BitConverter.GetBytes(Contrast));
+        result.AddRange(BitConverter.GetBytes(Brightness));
+        result.AddRange(BitConverter.GetBytes(Tint));
+        result.AddRange(BitConverter.GetBytes(OverlayColor));
+        result.AddRange(BitConverter.GetBytes(BackgroundColor));
+
+        result.AddRange(BitConverter.GetBytes(Zoom));
+        result.AddRange(BitConverter.GetBytes(Offset.x));
+        result.AddRange(BitConverter.GetBytes(Offset.y));
+
+        return Compress(result.ToArray());
+    }
 
     public void DrawCursor(int tileId = 546, uint tint = 3789677055)
     {
@@ -278,9 +325,7 @@ public class Layer
             QueueLine((a.x, a.y), (b.x, b.y), a.color);
         }
     }
-    public void DrawTiles(
-        (float x, float y) position, (int id, uint tint, sbyte turns, bool isMirrored,
-            bool isFlipped) tile, (int width, int height) groupSize = default, bool isSameTile = default)
+    public void DrawTiles((float x, float y) position, (int id, uint tint, sbyte turns, bool mirror, bool flip) tile, (int width, int height) groupSize = default, bool sameTile = default)
     {
         var (id, tint, angle, flipH, flipV) = tile;
         var (w, h) = groupSize;
@@ -294,7 +339,7 @@ public class Layer
 
         for (var i = 0; i < Math.Abs(h); i++)
             for (var j = 0; j < Math.Abs(w); j++)
-                tiles[j, i] = CoordsToIndex(tileX + (isSameTile ? 0 : j), tileY + (isSameTile ? 0 : i));
+                tiles[j, i] = CoordsToIndex(tileX + (sameTile ? 0 : j), tileY + (sameTile ? 0 : i));
 
         if (w < 0)
             FlipVertically(tiles);
@@ -346,7 +391,7 @@ public class Layer
                 verts.Append(new(bl, c, texBl));
             }
     }
-    public void DrawTilemap((int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,] tilemap)
+    public void DrawTilemap((int id, uint tint, sbyte turns, bool mirror, bool flip)[,] tilemap)
     {
         var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
         var (tw, th) = AtlasTileSize;
@@ -396,6 +441,64 @@ public class Layer
                 verts.Append(new(bl, color, texBl));
             }
     }
+    public void DrawEdges((float x, float y, float width, float height) area, (uint target, uint edge) colors, Edge edges = Edge.AllEdges)
+    {
+        edgeCount++;
+
+        var i = edgeCount - 1;
+        var (x, y, w, h) = area;
+
+        x /= TilemapSize.width;
+        y /= TilemapSize.height;
+        w /= TilemapSize.width;
+        h /= TilemapSize.height;
+
+        shader?.SetUniform("edgeCount", edgeCount);
+        shader?.SetUniform($"edgeTarget[{i}]", new Color(colors.target));
+        shader?.SetUniform($"edgeColor[{i}]", new Color(colors.edge));
+        shader?.SetUniform($"edgeArea[{i}]", new Vec4(x, 1 - y, w, h));
+        shader?.SetUniform($"edgeType[{i}]", (int)edges);
+    }
+
+    public void ColorReplace(uint oldColor, uint newColor)
+    {
+        var pair = (oldColor, newColor);
+
+        if (replaceColors.Contains(pair))
+            return;
+
+        if (oldColor == newColor)
+        {
+            var foundIndex = -1;
+            for (var i = 0; i < replaceColors.Count; i++)
+                if (replaceColors[i].oldColor == oldColor)
+                {
+                    foundIndex = i;
+                    break;
+                }
+
+            if (foundIndex < 0)
+                return;
+
+            replaceColors.RemoveAt(foundIndex);
+            UpdateReplaceUniforms();
+
+            return;
+        }
+
+        replaceColors.Add(pair);
+        UpdateReplaceUniforms();
+
+        void UpdateReplaceUniforms()
+        {
+            shader?.SetUniform("replaceCount", replaceColors.Count);
+            for (var i = 0; i < replaceColors.Count; i++)
+            {
+                shader?.SetUniform($"replaceOld[{i}]", new Color(replaceColors[i].oldColor));
+                shader?.SetUniform($"replaceNew[{i}]", new Color(replaceColors[i].newColor));
+            }
+        }
+    }
 
     public bool IsOverlapping((float x, float y) position)
     {
@@ -440,65 +543,6 @@ public class Layer
         return (x, y);
     }
 
-    public void ReplaceColor(uint oldColor, uint newColor)
-    {
-        var pair = (oldColor, newColor);
-        if (oldColor == newColor || replaceColors.Contains(pair))
-        {
-            replaceColors.Remove(pair);
-            return;
-        }
-
-        replaceColors.Add(pair);
-
-        var index = replaceColors.Count - 1;
-        shader?.SetUniform("replaceColorsCount", replaceColors.Count);
-        shader?.SetUniform($"replaceColorsOld[{index}]", new Color(oldColor));
-        shader?.SetUniform($"replaceColorsNew[{index}]", new Color(newColor));
-    }
-    public void ResetToDefaults()
-    {
-        Init();
-        Zoom = 1f;
-        AtlasTileGap = (0, 0);
-        atlasPath = string.Empty;
-        AtlasPath = string.Empty;
-        TileIdFull = 10;
-    }
-
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        var bAtlasPath = Encoding.UTF8.GetBytes(AtlasPath);
-        result.AddRange(BitConverter.GetBytes(bAtlasPath.Length));
-        result.AddRange(bAtlasPath);
-        result.Add(AtlasTileGap.width);
-        result.Add(AtlasTileGap.height);
-        result.Add(AtlasTileSize.width);
-        result.Add(AtlasTileSize.height);
-
-        result.AddRange(BitConverter.GetBytes(TileIdFull));
-        result.AddRange(BitConverter.GetBytes(TilemapSize.width));
-        result.AddRange(BitConverter.GetBytes(TilemapSize.height));
-
-        result.AddRange(BitConverter.GetBytes(Gamma));
-        result.AddRange(BitConverter.GetBytes(Saturation));
-        result.AddRange(BitConverter.GetBytes(Contrast));
-        result.AddRange(BitConverter.GetBytes(Brightness));
-        result.AddRange(BitConverter.GetBytes(Tint));
-        result.AddRange(BitConverter.GetBytes(OverlayColor));
-
-        result.AddRange(BitConverter.GetBytes(Zoom));
-        result.AddRange(BitConverter.GetBytes(Offset.x));
-        result.AddRange(BitConverter.GetBytes(Offset.y));
-
-        return Compress(result.ToArray());
-    }
-
     public static void DefaultGraphicsToFile(string filePath)
     {
         tilesets["default"].CopyToImage().SaveToFile(filePath);
@@ -512,7 +556,7 @@ public class Layer
 #region Backend
     internal readonly Shader? shader;
     internal readonly VertexArray verts;
-    private readonly List<(uint, uint)> replaceColors = new();
+    private readonly List<(uint oldColor, uint newColor)> replaceColors = new();
     internal static readonly Dictionary<string, Texture> tilesets = new();
     private static readonly List<(float, float)> cursorOffsets = new()
     {
@@ -520,6 +564,7 @@ public class Layer
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
     };
 
+    internal int edgeCount;
     internal Vector2u tilesetPixelSize;
     internal (int w, int h) TilemapPixelSize
     {
@@ -558,13 +603,6 @@ public class Layer
     {
         if (IsOverlapping(a) == false && IsOverlapping(b) == false) // fully outside?
             return;
-
-        if (IsOverlapping(a) ^ IsOverlapping(b)) // halfway outside?
-        {
-            var line = TryCropLine(a, b);
-            a = (line.ax, line.ay);
-            b = (line.bx, line.by);
-        }
 
         var (tw, th) = AtlasTileSize;
         a.x *= tw;
@@ -620,35 +658,6 @@ public class Layer
         verts.Append(new(tr, color, texTr));
         verts.Append(new(br, color, texBr));
         verts.Append(new(bl, color, texBl));
-    }
-
-    private (float ax, float ay, float bx, float by) TryCropLine((float x, float y) a, (float x, float y) b)
-    {
-        var (w, h) = tilemapSize;
-        var newA = (a.x, a.y);
-        var newB = (b.x, b.y);
-        var isOutsideA = IsOverlapping(a) == false;
-        var isOutsideB = IsOverlapping(b) == false;
-        var crossT = LinesCrossPoint(a.x, a.y, b.x, b.y, 0, 0, w, 0);
-        var crossR = LinesCrossPoint(a.x, a.y, b.x, b.y, w, 0, w, h);
-        var crossB = LinesCrossPoint(a.x, a.y, b.x, b.y, w, h, 0, h);
-        var crossL = LinesCrossPoint(a.x, a.y, b.x, b.y, 0, h, 0, 0);
-
-        TryCropSide(crossT);
-        TryCropSide(crossR);
-        TryCropSide(crossB);
-        TryCropSide(crossL);
-
-        return (newA.x, newA.y, newB.x, newB.y);
-
-        void TryCropSide((float x, float y) sideCrossPoint)
-        {
-            if (float.IsNaN(sideCrossPoint.x) || float.IsNaN(sideCrossPoint.y))
-                return;
-
-            newA = isOutsideA ? sideCrossPoint : a;
-            newB = isOutsideB ? sideCrossPoint : b;
-        }
     }
 
     private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int tileId, (int w, int h) size)
@@ -739,27 +748,6 @@ public class Layer
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-    }
-    private static (float x, float y) LinesCrossPoint(float ax1, float ay1, float bx1, float by1, float ax2, float ay2, float bx2, float by2)
-    {
-        var dx1 = bx1 - ax1;
-        var dy1 = by1 - ay1;
-        var dx2 = bx2 - ax2;
-        var dy2 = by2 - ay2;
-        var det = dx1 * dy2 - dy1 * dx2;
-
-        if (det == 0)
-            return (float.NaN, float.NaN);
-
-        var s = ((ay1 - ay2) * dx2 - (ax1 - ax2) * dy2) / det;
-        var t = ((ay1 - ay2) * dx1 - (ax1 - ax2) * dy1) / det;
-
-        if (s is < 0 or > 1 || t is < 0 or > 1)
-            return (float.NaN, float.NaN);
-
-        var intersectionX = ax1 + s * dx1;
-        var intersectionY = ay1 + s * dy1;
-        return (intersectionX, intersectionY);
     }
 
     private static byte[] Compress(byte[] data)

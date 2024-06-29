@@ -5,12 +5,7 @@ using System.Runtime.InteropServices;
 
 public enum NoiseType
 {
-    OpenSimplex2,
-    OpenSimplex2S,
-    Cellular,
-    Perlin,
-    ValueCubic,
-    Value
+    OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value
 };
 
 public struct Point

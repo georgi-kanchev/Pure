@@ -146,8 +146,8 @@ internal class Inspector : Panel
         paletteColor.Brightness.OnItemDisplay(btn =>
             editor.MapsUi.SetPagesItem(paletteColor.Brightness, btn));
 
-        paletteScrollH = new(isVertical: false) { Size = (14, 1) };
-        paletteScrollV = new(isVertical: true) { Size = (1, 14) };
+        paletteScrollH = new(vertical: false) { Size = (14, 1) };
+        paletteScrollV = new(vertical: true) { Size = (1, 14) };
         paletteScrollH.OnDisplay(() => editor.MapsUi.SetScroll(paletteScrollH));
         paletteScrollV.OnDisplay(() => editor.MapsUi.SetScroll(paletteScrollV));
 

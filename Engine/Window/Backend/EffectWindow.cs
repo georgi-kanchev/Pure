@@ -2,7 +2,7 @@ namespace Pure.Engine.Window;
 
 internal class EffectWindow : Effect
 {
-    public override string Fragment
+    protected override string Fragment
     {
         get =>
             @"
@@ -68,18 +68,6 @@ void main(void)
 	vec2 remappedUV = curveRemapUV(screenCoords);
 	vec2 texCoords = gl_TexCoord[0].xy;
 	vec4 color = texture2D(texture, texCoords) * gl_Color;
-
-	// pretty cool edge effect that i cannot use elsewhere, other than the whole screen :(
-	// vec2 pixel = (1.0 / viewSize / 2.0) * 2.0;
-	// vec3 d = texture2D(texture, vec2(texCoords.x, texCoords.y + pixel.y)).rgb;
-	// vec3 u = texture2D(texture, vec2(texCoords.x, texCoords.y - pixel.y)).rgb;
-	// vec3 l = texture2D(texture, vec2(texCoords.x - pixel.x, texCoords.y)).rgb;
-	// vec3 r = texture2D(texture, vec2(texCoords.x + pixel.x, texCoords.y)).rgb;
-	// if (length(color.rgb - u) > 0.001 ||
-	// 	length(color.rgb - d) > 0.001 ||
-	// 	length(color.rgb - l) > 0.001 ||
-	// 	length(color.rgb - r) > 0.001)
-    //     color.rgb = vec3(0.0, 0.0, 0.0);
 
 	float scanDarkMultiplier = (1.0 + sin((-time * scanLineSpeed) + screenCoords.y * (10.0 / scanLineSize)) / 2.0);
 	float f = noise(64.0 * (screenCoords + randomVec));

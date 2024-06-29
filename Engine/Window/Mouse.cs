@@ -10,11 +10,7 @@ public static class Mouse
     /// </summary>
     public enum Button
     {
-        Left,
-        Right,
-        Middle,
-        Extra1,
-        Extra2
+        Left, Right, Middle, Extra1, Extra2
     }
 
     /// <summary>
@@ -22,19 +18,9 @@ public static class Mouse
     /// </summary>
     public enum Cursor
     {
-        Arrow,
-        ArrowWait,
-        Wait,
-        Text,
-        Hand,
-        ResizeHorizontal,
-        ResizeVertical,
-        ResizeTopLeftBottomRight,
-        ResizeBottomLeftTopRight,
-        Move,
-        Crosshair,
-        Help,
-        Disable
+        Arrow, ArrowWait, Wait, Text, Hand,
+        ResizeHorizontal, ResizeVertical, ResizeTopLeftBottomRight, ResizeBottomLeftTopRight,
+        Move, Crosshair, Help, Disable
     }
 
     /// <summary>

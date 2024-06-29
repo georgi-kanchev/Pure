@@ -247,18 +247,15 @@ public class LinePack : Pack<Line>
     {
         return linePack.ToArray();
     }
-    public static implicit operator (float x, float y, uint color)[](
-        LinePack linePack)
+    public static implicit operator (float x, float y, uint color)[](LinePack linePack)
     {
         return linePack.ToBundlePoints();
     }
-    public static implicit operator (float ax, float ay, float bx, float by, uint color)[](
-        LinePack linePack)
+    public static implicit operator (float ax, float ay, float bx, float by, uint color)[](LinePack linePack)
     {
         return linePack.ToBundle();
     }
-    public static implicit operator LinePack(
-        (float ax, float ay, float bx, float by, uint color)[] lines)
+    public static implicit operator LinePack((float ax, float ay, float bx, float by, uint color)[] lines)
     {
         var result = new Line[lines.Length];
         for (var i = 0; i < result.Length; i++)
@@ -266,8 +263,7 @@ public class LinePack : Pack<Line>
 
         return new(result);
     }
-    public static implicit operator LinePack(
-        (float x, float y, uint color)[] points)
+    public static implicit operator LinePack((float x, float y, uint color)[] points)
     {
         return new(points);
     }

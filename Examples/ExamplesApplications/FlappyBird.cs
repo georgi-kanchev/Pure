@@ -40,6 +40,8 @@ public static class FlappyBird
 
         InitializePipes();
 
+        layer.BackgroundColor = Color.Black;
+
         Keyboard.Key.Space.OnPress(() =>
         {
             birdVelocity = -8f;
@@ -150,10 +152,10 @@ public static class FlappyBird
 
             layer.DrawTilemap(background.ToBundle());
             layer.DrawTilemap(foreground.ToBundle());
-            var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile,
-                Color.Yellow, birdAngle);
+            var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
             layer.DrawTiles((BIRD_X, birdY), tile);
             layer.DrawCursor();
+
             layer.Draw();
         }
     }

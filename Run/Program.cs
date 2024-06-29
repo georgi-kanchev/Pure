@@ -9,15 +9,15 @@ public static class Run
     public static void Main()
     {
         //Asteroids.Run();
-        //EightBallPool.Run();
         //FlappyBird.Run();
+        //EightBallPool.Run();
         //Tetris.Run();
         //Minesweeper.Run();
         //Pong.Run();
         //Chat.Run();
 
         //Editors.EditorCollision.Program.Run();
-        //Editors.EditorMap.Program.Run();
+        Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
@@ -26,7 +26,7 @@ public static class Run
         //DefaultGraphics.Run();
         //Commands.Run();
         //Storages.Run();
-        Collision.Run();
+        //Collision.Run();
         //Pathfinding.Run();
         //LineOfSightAndLights.Run();
         //Audio.Run();

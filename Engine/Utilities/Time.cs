@@ -12,26 +12,12 @@ public static class Time
     /// </summary>
     public enum Conversion
     {
-#pragma warning disable CS1591
-        MillisecondsToSeconds,
-        MillisecondsToMinutes,
-        SecondsToMilliseconds,
-        SecondsToMinutes,
-        SecondsToHours,
-        MinutesToMilliseconds,
-        MinutesToSeconds,
-        MinutesToHours,
-        MinutesToDays,
-        HoursToSeconds,
-        HoursToMinutes,
-        HoursToDays,
-        HoursToWeeks,
-        DaysToMinutes,
-        DaysToHours,
-        DaysToWeeks,
-        WeeksToHours,
-        WeeksToDays
-#pragma warning restore CS1591
+        MillisecondsToSeconds, MillisecondsToMinutes,
+        SecondsToMilliseconds, SecondsToMinutes, SecondsToHours,
+        MinutesToMilliseconds, MinutesToSeconds, MinutesToHours, MinutesToDays,
+        HoursToSeconds, HoursToMinutes, HoursToDays, HoursToWeeks,
+        DaysToMinutes, DaysToHours, DaysToWeeks,
+        WeeksToHours, WeeksToDays
     }
 
     /// <summary>
@@ -41,15 +27,13 @@ public static class Time
     [Flags]
     public enum Unit
     {
-#pragma warning disable CS1591
-        Day = 1,
-        Hour = 2,
-        Minute = 4,
-        Second = 8,
-        Millisecond = 16,
-        AmPm = 32,
-        DisplayAmPm = 64,
-#pragma warning restore CS1591
+        Day = 1 << 0,
+        Hour = 1 << 1,
+        Minute = 1 << 2,
+        Second = 1 << 3,
+        Millisecond = 1 << 4,
+        AmPm = 1 << 5,
+        DisplayAmPm = 1 << 6
     }
 
     /// <summary>
@@ -110,10 +94,7 @@ public static class Time
     /// <param name="separator">The separator string to use between clock elements.</param>
     /// <param name="units">The units to include in the formatted string.</param>
     /// <returns>A formatted clock string.</returns>
-    public static string ToClock(
-        this float seconds,
-        string separator = ":",
-        Unit units = Unit.Hour | Unit.Minute | Unit.Second)
+    public static string ToClock(this float seconds, string separator = ":", Unit units = Unit.Hour | Unit.Minute | Unit.Second)
     {
         var ts = TimeSpan.FromSeconds(seconds);
         var result = string.Empty;

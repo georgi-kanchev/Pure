@@ -155,10 +155,10 @@ public class TilemapPack
         foreach (var t in data)
             t.Fill(mask, tiles);
     }
-    public void Flood((int x, int y) position, bool isExactTile, Area? mask = null, params Tile[] tiles)
+    public void Flood((int x, int y) position, bool exactTile, Area? mask = null, params Tile[] tiles)
     {
         foreach (var map in data)
-            map.Flood(position, isExactTile, mask, tiles);
+            map.Flood(position, exactTile, mask, tiles);
     }
 
     public Tile[] TilesAt((int x, int y) position)

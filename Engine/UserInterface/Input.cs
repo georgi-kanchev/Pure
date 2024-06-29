@@ -7,39 +7,20 @@ using System.Diagnostics;
 /// </summary>
 public enum Interaction
 {
-    Focus,
-    Unfocus,
-    Hover,
-    Unhover,
-    Press,
-    Release,
-    Trigger,
-    DoubleTrigger,
-    PressAndHold,
-    PressRight,
-    ReleaseRight,
-    PressMiddle,
-    ReleaseMiddle,
+    Focus, Unfocus,
+    Hover, Unhover,
+    Press, Release,
+    Trigger, DoubleTrigger,
+    PressAndHold, PressRight, ReleaseRight, PressMiddle, ReleaseMiddle,
     Scroll,
     Select
 }
 
 public enum MouseCursor
 {
-    None = -1,
-    Arrow,
-    ArrowWait,
-    Wait,
-    Text,
-    Hand,
-    ResizeHorizontal,
-    ResizeVertical,
-    ResizeDiagonal1,
-    ResizeDiagonal2,
-    Move,
-    Crosshair,
-    Help,
-    Disable
+    None = -1, Arrow, ArrowWait, Wait, Text, Hand,
+    ResizeHorizontal, ResizeVertical, ResizeDiagonal1, ResizeDiagonal2,
+    Move, Crosshair, Help, Disable
 }
 
 public enum MouseButton
@@ -54,26 +35,9 @@ public enum MouseButton
 /// </summary>
 internal enum Key
 {
-    Escape = 36,
-    ControlLeft = 37,
-    ShiftLeft = 38,
-    AltLeft = 39,
-    ControlRight = 41,
-    ShiftRight = 42,
-    AltRight = 43,
-    Enter = 58,
-    Backspace = 59,
-    Tab = 60,
-    PageUp = 61,
-    PageDown = 62,
-    End = 63,
-    Home = 64,
-    Insert = 65,
-    Delete = 66,
-    ArrowLeft = 71,
-    ArrowRight = 72,
-    ArrowUp = 73,
-    ArrowDown = 74
+    Escape = 36, ControlLeft = 37, ShiftLeft = 38, AltLeft = 39, ControlRight = 41, ShiftRight = 42,
+    AltRight = 43, Enter = 58, Backspace = 59, Tab = 60, PageUp = 61, PageDown = 62, End = 63, Home = 64,
+    Insert = 65, Delete = 66, ArrowLeft = 71, ArrowRight = 72, ArrowUp = 73, ArrowDown = 74
 }
 
 /// <summary>
@@ -86,12 +50,10 @@ public static class Input
     /// when the user interacts with that specific block.
     /// </summary>
     public static MouseCursor CursorResult { get; set; }
-
     /// <summary>
     /// The currently focused user interface block.
     /// </summary>
     public static Block? Focused { get; set; }
-
     /// <summary>
     /// The size of the tilemap being used by the user interface.
     /// </summary>
@@ -100,7 +62,6 @@ public static class Input
         get => tilemapSize;
         set => tilemapSize = (Math.Abs(value.width), Math.Abs(value.height));
     }
-
     /// <summary>
     /// Gets the current position of the input.
     /// </summary>
@@ -109,15 +70,9 @@ public static class Input
     /// Gets the previous position of the input.
     /// </summary>
     public static (float x, float y) PositionPrevious { get; set; }
-
     public static string? Clipboard { get; set; }
 
-    public static void Update(
-        int[]? buttonsPressed = default,
-        int scrollDelta = default,
-        int[]? keysPressed = default,
-        string? keysTyped = default,
-        string? clipboard = default)
+    public static void Update(int[]? buttonsPressed = default, int scrollDelta = default, int[]? keysPressed = default, string? keysTyped = default, string? clipboard = default)
     {
         Clipboard = clipboard;
 
@@ -166,7 +121,6 @@ public static class Input
         if (IsButtonJustPressed())
             Focused = default;
     }
-
     public static void OnTextCopy(Action method)
     {
         onTextCopy += method;

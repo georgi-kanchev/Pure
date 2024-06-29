@@ -32,11 +32,7 @@ public class Particle
     /// <param name="movement">The movement (angle and speed) of the particle.</param>
     /// <param name="age">The age of the particle.</param>
     /// <param name="color">The color of the particle.</param>
-    public Particle(
-        (float x, float y) position,
-        (float angle, float speed) movement,
-        float age = 1f,
-        uint color = uint.MaxValue)
+    public Particle((float x, float y) position, (float angle, float speed) movement, float age = 1f, uint color = uint.MaxValue)
     {
         Position = position;
         Movement = movement;
@@ -67,8 +63,7 @@ public class Particle
     /// <param name="particle">
     /// The particle to convert.</param>
     /// <returns>A bundle tuple containing the position, color, movement (angle and speed) and age of the particle.</returns>
-    public static implicit operator (float x, float y, uint color, float angle, float speed, float age)(
-        Particle particle)
+    public static implicit operator (float x, float y, uint color, float angle, float speed, float age)(Particle particle)
     {
         return (particle.Position.x, particle.Position.y, particle.Color, particle.Movement.angle,
             particle.Movement.speed, particle.Age);

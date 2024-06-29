@@ -4,9 +4,7 @@ namespace Pure.Engine.UserInterface;
 
 public enum Span
 {
-    Vertical,
-    Horizontal,
-    Dropdown
+    Vertical, Horizontal, Dropdown
 }
 
 /// <summary>
@@ -305,37 +303,37 @@ public class List : Block
         for (var i = 0; i < data.Count; i++)
             Select(i, false);
     }
-    public void Select(int index, bool isSelected = true)
+    public void Select(int index, bool selected = true)
     {
         if (HasIndex(index) == false)
             return;
 
-        if (IsSingleSelecting && singleSelectedIndex != index && isSelected)
+        if (IsSingleSelecting && singleSelectedIndex != index && selected)
         {
             foreach (var item in data)
                 item.isSelected = false;
 
-            this[index].isSelected = isSelected;
-            singleSelectedIndex = isSelected ? index : singleSelectedIndex;
+            this[index].isSelected = selected;
+            singleSelectedIndex = selected ? index : singleSelectedIndex;
 
             indexesSelected.Clear();
-            if (isSelected)
+            if (selected)
                 indexesSelected.Add(index);
 
             return;
         }
 
         var wasSel = this[index].isSelected;
-        this[index].isSelected = isSelected;
+        this[index].isSelected = selected;
 
-        if (isSelected && wasSel == false && indexesSelected.Contains(index) == false)
+        if (selected && wasSel == false && indexesSelected.Contains(index) == false)
             indexesSelected.Add(index);
-        else if (isSelected == false && wasSel && indexesSelected.Contains(index))
+        else if (selected == false && wasSel && indexesSelected.Contains(index))
             indexesSelected.Remove(index);
     }
-    public void Select(Button item, bool isSelected = true)
+    public void Select(Button item, bool selected = true)
     {
-        Select(IndexOf(item), isSelected);
+        Select(IndexOf(item), selected);
     }
 
     protected override void OnInput()

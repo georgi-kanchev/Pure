@@ -22,10 +22,10 @@ public static class Delay
     /// </summary>
     /// <param name="seconds">The number of seconds to wait before calling the method.</param>
     /// <param name="method">The method to call.</param>
-    /// <param name="isRepeating">Whether to repeat the call at the specified interval.</param>
-    public static void Wait(float seconds, Action method, bool isRepeating = false)
+    /// <param name="repeat">Whether to repeat the call at the specified interval.</param>
+    public static void Wait(float seconds, Action method, bool repeat = false)
     {
-        timers.Add(new(seconds, isRepeating, method));
+        timers.Add(new(seconds, repeat, method));
     }
     /// <summary>
     /// Cancels a scheduled method call.

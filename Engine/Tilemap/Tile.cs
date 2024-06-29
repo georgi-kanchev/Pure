@@ -4,32 +4,13 @@ using System.Runtime.InteropServices;
 
 public struct Tile
 {
-    /// <summary>Indicates whether this instance and a specified object are equal.</summary>
-    /// <param name="obj">The object to compare with the current instance.</param>
-    /// <returns>
-    /// <see langword="true" /> if <paramref name="obj" /> and this instance are the same type and represent the same value; otherwise, <see langword="false" />.</returns>
-    public override bool Equals(object? obj)
-    {
-        return obj is Tile other && Equals(other);
-    }
-    /// <summary>Returns the hash code for this instance.</summary>
-    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Id, Tint, Turns, IsMirrored, IsFlipped);
-    }
     public int Id { get; set; }
     public uint Tint { get; set; }
     public sbyte Turns { get; set; }
     public bool IsMirrored { get; set; }
     public bool IsFlipped { get; set; }
 
-    public Tile(
-        int id,
-        uint tint = uint.MaxValue,
-        sbyte turns = default,
-        bool isMirrored = false,
-        bool isFlipped = false)
+    public Tile(int id, uint tint = uint.MaxValue, sbyte turns = default, bool isMirrored = false, bool isFlipped = false)
     {
         Id = id;
         Tint = tint;
@@ -37,13 +18,13 @@ public struct Tile
         IsMirrored = isMirrored;
         IsFlipped = isFlipped;
     }
-    public Tile((int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) bundle)
+    public Tile((int id, uint tint, sbyte turns, bool mirror, bool flip) bundle)
     {
         Id = bundle.id;
         Tint = bundle.tint;
         Turns = bundle.turns;
-        IsMirrored = bundle.isMirrored;
-        IsFlipped = bundle.isFlipped;
+        IsMirrored = bundle.mirror;
+        IsFlipped = bundle.flip;
     }
     public Tile(byte[] bytes)
     {
@@ -81,7 +62,7 @@ public struct Tile
 
         return result.ToArray();
     }
-    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) ToBundle()
+    public (int id, uint tint, sbyte turns, bool mirror, bool flip) ToBundle()
     {
         return (Id, Tint, Turns, IsMirrored, IsFlipped);
     }
@@ -98,13 +79,11 @@ public struct Tile
     {
         return new(id);
     }
-    public static implicit operator
-        Tile((int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped) bundle)
+    public static implicit operator Tile((int id, uint tint, sbyte turns, bool mirror, bool flip) bundle)
     {
         return new(bundle);
     }
-    public static implicit operator
-        (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)(Tile tile)
+    public static implicit operator (int id, uint tint, sbyte turns, bool mirror, bool flip)(Tile tile)
     {
         return tile.ToBundle();
     }
@@ -119,19 +98,34 @@ public struct Tile
 
     public static bool operator ==(Tile a, Tile b)
     {
-        return a.Equals(b);
+        return a.Id == b.Id &&
+               a.Tint == b.Tint &&
+               a.Turns == b.Turns &&
+               a.IsMirrored == b.IsMirrored &&
+               a.IsFlipped == b.IsFlipped;
     }
     public static bool operator !=(Tile a, Tile b)
     {
-        return a.Equals(b) == false;
+        return a.Id != b.Id ||
+               a.Tint != b.Tint ||
+               a.Turns != b.Turns ||
+               a.IsMirrored != b.IsMirrored ||
+               a.IsFlipped != b.IsFlipped;
     }
-    public bool Equals(Tile tile)
+
+    /// <summary>Indicates whether this instance and a specified object are equal.</summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns>
+    /// <see langword="true" /> if <paramref name="obj" /> and this instance are the same type and represent the same value; otherwise, <see langword="false" />.</returns>
+    public override bool Equals(object? obj)
     {
-        return Id == tile.Id &&
-               Tint == tile.Tint &&
-               Turns == tile.Turns &&
-               IsMirrored == tile.IsMirrored &&
-               IsFlipped == tile.IsFlipped;
+        return obj is Tile other && this == other;
+    }
+    /// <summary>Returns the hash code for this instance.</summary>
+    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, Tint, Turns, IsMirrored, IsFlipped);
     }
 
 #region General

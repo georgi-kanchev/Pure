@@ -8,17 +8,8 @@ public class FileViewer : Block
 {
     public enum Directory
     {
-        Desktop,
-        Programs,
-        LocalApplicationData,
-        Favorites,
-        Recent,
-        UserProfile,
-        MyDocuments,
-        MyMusic,
-        MyVideos,
-        MyPictures,
-        Fonts
+        Desktop, Programs, LocalApplicationData, Favorites, Recent,
+        UserProfile, MyDocuments, MyMusic, MyVideos, MyPictures, Fonts
     }
 
     public Button User { get; private set; }
@@ -183,7 +174,7 @@ public class FileViewer : Block
             isReadOnly = true,
             hasParent = true,
             wasMaskSet = true,
-            IsSingleSelecting = true,
+            IsSingleSelecting = true
         };
         FilesAndFolders = new(position, 0)
         {
@@ -297,7 +288,7 @@ public class FileViewer : Block
 
         var selected = FilesAndFolders.ItemsSelected;
         var index = FilesAndFolders.IndexOf(selected[0]);
-        if (IsSelectingFolders ^ index < CountFolders)
+        if (IsSelectingFolders ^ (index < CountFolders))
             FilesAndFolders.Deselect();
     }
     internal override void OnChildrenUpdate()

@@ -126,13 +126,11 @@ public class SolidPack : Pack<Solid>
     {
         return solidPack.ToArray();
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)[](
-        SolidPack solidPack)
+    public static implicit operator (float x, float y, float width, float height, uint color)[](SolidPack solidPack)
     {
         return solidPack.ToBundle();
     }
-    public static implicit operator SolidPack(
-        (float x, float y, float width, float height, uint color)[] solids)
+    public static implicit operator SolidPack((float x, float y, float width, float height, uint color)[] solids)
     {
         var result = new Solid[solids.Length];
         for (var i = 0; i < result.Length; i++)

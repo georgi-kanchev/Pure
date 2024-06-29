@@ -70,9 +70,9 @@ public class Storage
     {
         LoadFromBytes(bytes);
     }
-    public Storage(string dataAsText, bool isBase64 = false)
+    public Storage(string dataAsText, bool base64 = false)
     {
-        if (isBase64)
+        if (base64)
         {
             LoadFromBytes(Convert.FromBase64String(dataAsText));
             return;
@@ -516,13 +516,11 @@ public class Storage
 
         var array = (Array)collection;
         if (array.Rank == 1)
-        {
             for (var i = 0; i < array.GetLength(0); i++)
             {
                 var separator = i == 0 ? string.Empty : DividersCollection.oneD;
                 result.Append(separator + TextFromPrimitiveOrTuple(array.GetValue(i)));
             }
-        }
         else if (array.Rank == 2)
         {
             for (var i = 0; i < array.GetLength(0); i++)
@@ -782,7 +780,9 @@ public class Storage
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -791,7 +791,9 @@ public class Storage
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }

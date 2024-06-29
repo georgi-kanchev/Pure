@@ -134,11 +134,7 @@ public static class Extensions
     /// <param name="uniqueId">The unique ID to associate the check with.</param>
     /// <param name="delay">The delay in seconds before the condition is considered held.</param>
     /// <param name="frequency">The frequency in seconds at which the result is true while held.</param>
-    public static bool PressAndHold(
-        this bool condition,
-        string uniqueId,
-        float delay = 0.5f,
-        float frequency = 0.06f)
+    public static bool PressAndHold(this bool condition, string uniqueId, float delay = 0.5f, float frequency = 0.06f)
     {
         if (condition.Once(uniqueId))
         {
@@ -451,17 +447,17 @@ public static class Extensions
         direction++;
         return Rotate(rotated, direction);
     }
-    public static void Flip<T>(this T[,] matrix, bool isMirrored, bool isFlipped)
+    public static void Flip<T>(this T[,] matrix, bool mirror, bool flip)
     {
         var rows = matrix.GetLength(0);
         var cols = matrix.GetLength(1);
 
-        if (isMirrored)
+        if (mirror)
             for (var i = 0; i < rows; i++)
                 for (var j = 0; j < cols / 2; j++)
                     (matrix[i, cols - j - 1], matrix[i, j]) = (matrix[i, j], matrix[i, cols - j - 1]);
 
-        if (isFlipped == false)
+        if (flip == false)
             return;
 
         for (var i = 0; i < rows / 2; i++)
@@ -730,14 +726,7 @@ public static class Extensions
         var padLeft = spaces / 2 + text.Length;
         return text.PadLeft(padLeft).PadRight(length);
     }
-    public static string Constrain(
-        this string text,
-        (int width, int height) size,
-        bool isWordWrapping = true,
-        Alignment alignment = TopLeft,
-        float scrollProgress = 0f,
-        float symbolProgress = 1f,
-        char tintBrush = '#')
+    public static string Constrain(this string text, (int width, int height) size, bool wordWrap = true, Alignment alignment = TopLeft, float scrollProgress = 0f, float symbolProgress = 1f, char tintBrush = '#')
     {
         if (string.IsNullOrEmpty(text) || size.width <= 0 || size.height <= 0)
             return string.Empty;
@@ -815,7 +804,7 @@ public static class Extensions
                     continue;
 
                 var lastLineIndex = size.width - 1;
-                var newLineIndex = isWordWrapping ?
+                var newLineIndex = wordWrap ?
                     GetSafeNewLineIndex(line, (uint)lastLineIndex) :
                     lastLineIndex;
 
@@ -829,7 +818,7 @@ public static class Extensions
                 }
 
                 // otherwise wordwrap
-                var endIndex = newLineIndex + (isWordWrapping ? 0 : 1);
+                var endIndex = newLineIndex + (wordWrap ? 0 : 1);
                 lineList[i] = line[..endIndex].TrimStart();
                 lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
                 ApplyNewLineToColors();
@@ -1001,15 +990,11 @@ public static class Extensions
     /// <param name="unit">The unit value to animate (ranged 0 to 1).</param>
     /// <param name="animation">The animation to apply.</param>
     /// <param name="curve">The animation curve to use.</param>
-    /// <param name="isRepeated">True if the animation should be repeated; false otherwise.</param>
+    /// <param name="repeat">True if the animation should be repeated; false otherwise.</param>
     /// <returns>The animated value based on the given parameters.</returns>
-    public static float Animate(
-        this float unit,
-        Animation animation,
-        AnimationCurve curve,
-        bool isRepeated = false)
+    public static float Animate(this float unit, Animation animation, AnimationCurve curve, bool repeat = false)
     {
-        var x = unit.Limit((0, 1), isRepeated);
+        var x = unit.Limit((0, 1), repeat);
         switch (animation)
         {
             case Animation.Line:
@@ -1098,15 +1083,15 @@ public static class Extensions
     /// </summary>
     /// <param name="number">The number to limit.</param>
     /// <param name="range">The range value.</param>
-    /// <param name="isOverflowing">Indicates whether the range is treated as circular, 
+    /// <param name="overflow">Indicates whether the range is treated as circular, 
     /// allowing overflow.</param>
     /// <returns>The limited float number.</returns>
-    public static float Limit(this float number, (float a, float b) range, bool isOverflowing = false)
+    public static float Limit(this float number, (float a, float b) range, bool overflow = false)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
 
-        if (isOverflowing)
+        if (overflow)
         {
             var d = range.b - range.a;
             return d == 0 ? range.a : ((number - range.a) % d + d) % d + range.a;
@@ -1125,12 +1110,12 @@ public static class Extensions
     /// </summary>
     /// <param name="number">The number to limit.</param>
     /// <param name="range">The range value.</param>
-    /// <param name="isOverflowing">Indicates whether the range is treated as circular, 
+    /// <param name="overflow">Indicates whether the range is treated as circular, 
     /// allowing overflow.</param>
     /// <returns>The limited int number.</returns>
-    public static int Limit(this int number, (int a, int b) range, bool isOverflowing = false)
+    public static int Limit(this int number, (int a, int b) range, bool overflow = false)
     {
-        return (int)Limit((float)number, range, isOverflowing);
+        return (int)Limit((float)number, range, overflow);
     }
     /// <param name="amount">
     /// The number of values to distribute.</param>
@@ -1152,23 +1137,23 @@ public static class Extensions
     }
     /// <param name="number">
     /// The number whose sign to adjust.</param>
-    /// <param name="isSigned">Indicates whether the sign of the number 
+    /// <param name="sign">Indicates whether the sign of the number 
     /// should be negative.</param>
     /// <returns>The absolute value of the float number 
     /// with the specified sign.</returns>
-    public static float Sign(this float number, bool isSigned)
+    public static float Sign(this float number, bool sign)
     {
-        return isSigned ? -MathF.Abs(number) : MathF.Abs(number);
+        return sign ? -MathF.Abs(number) : MathF.Abs(number);
     }
     /// <param name="number">
     /// The number whose sign to adjust.</param>
-    /// <param name="isSigned">Indicates whether the sign of the number 
+    /// <param name="sign">Indicates whether the sign of the number 
     /// should be negative.</param>
     /// <returns>The absolute value of the int number 
     /// with the specified sign.</returns>
-    public static int Sign(this int number, bool isSigned)
+    public static int Sign(this int number, bool sign)
     {
-        return (int)Sign((float)number, isSigned);
+        return (int)Sign((float)number, sign);
     }
     /// <param name="number">
     /// The float number to check.</param>
@@ -1179,10 +1164,7 @@ public static class Extensions
         var split = number.ToString(CultureInfo.CurrentCulture).Split(cultDecPoint);
         return split.Length > 1 ? split[1].Length : 0;
     }
-    public static bool IsBetween(
-        this float number,
-        (float a, float b) range,
-        (bool a, bool b) inclusive = default)
+    public static bool IsBetween(this float number, (float a, float b) range, (bool a, bool b) inclusive = default)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
@@ -1191,10 +1173,7 @@ public static class Extensions
         var u = inclusive.b ? range.b >= number : range.b > number;
         return l && u;
     }
-    public static bool IsBetween(
-        this int number,
-        (int a, int b) range,
-        (bool a, bool b) inclusive = default)
+    public static bool IsBetween(this int number, (int a, int b) range, (bool a, bool b) inclusive = default)
     {
         return IsBetween((float)number, range, inclusive);
     }
@@ -1273,7 +1252,7 @@ public static class Extensions
         return float.IsNaN(value) || float.IsInfinity(value) ? rangeOut.a : value;
     }
     /// <summary>
-    /// Maps a int number from one range of values to another range of values.
+    /// Maps an int number from one range of values to another range of values.
     /// </summary>
     /// <param name="number">The number to map.</param>
     /// <param name="range">The first input range.</param>
@@ -1291,10 +1270,7 @@ public static class Extensions
     /// <param name="seed">The seed to use for the random generator (default is NaN, 
     /// meaning randomly chosen).</param>
     /// <returns>A random float value between the specified range of values.</returns>
-    public static float Random(
-        this (float a, float b) range,
-        float precision = 0,
-        float seed = float.NaN)
+    public static float Random(this (float a, float b) range, float precision = 0, float seed = float.NaN)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);

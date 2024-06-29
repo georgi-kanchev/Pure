@@ -19,13 +19,13 @@ public static class Prompts
             Size = (16, 1),
             Value = string.Empty,
             Placeholder = "Message…",
-            IsSingleLine = true,
+            IsSingleLine = true
         };
-        input.OnDisplay(() => maps.SetInputBox(input, zOrder: 4));
+        input.OnDisplay(() => maps.SetInputBox(input, 4));
 
         var prompt = new Prompt();
-        prompt.OnDisplay(() => maps.SetPrompt(prompt, zOrder: 3));
-        prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, zOrder: 5));
+        prompt.OnDisplay(() => maps.SetPrompt(prompt, 3));
+        prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, 5));
 
         HOTKEY_LOG.OnPress(() =>
         {
@@ -44,7 +44,7 @@ public static class Prompts
             input.IsHidden = true;
 
             prompt.Text = $"This should be some{Environment.NewLine}important message!";
-            prompt.Open(buttonCount: 1);
+            prompt.Open(btnCount: 1);
         });
 
         return new Block[] { info, prompt };

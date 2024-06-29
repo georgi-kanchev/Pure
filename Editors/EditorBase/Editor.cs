@@ -314,7 +314,7 @@ public class Editor
     public void PromptMessage(string message)
     {
         Prompt.Text = message;
-        Prompt.Open(buttonCount: 1);
+        Prompt.Open(btnCount: 1);
     }
     public void PromptYesNo(string message, Action? onAccept)
     {

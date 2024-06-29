@@ -37,8 +37,7 @@ public struct Area
         Height = height;
         Color = color;
     }
-    public Area((int x, int y) position, (int width, int height) size, uint color = uint.MaxValue)
-        : this(position.x, position.y, size.width, size.height, color)
+    public Area((int x, int y) position, (int width, int height) size, uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
     {
     }
     public Area(byte[] bytes)
@@ -92,8 +91,7 @@ public struct Area
     {
         return new((int)rectangle.x, (int)rectangle.y, (int)rectangle.width, (int)rectangle.height);
     }
-    public static implicit operator Area(
-        (float x, float y, float width, float height, uint color) bundle)
+    public static implicit operator Area((float x, float y, float width, float height, uint color) bundle)
     {
         return new((int)bundle.x, (int)bundle.y, (int)bundle.width, (int)bundle.height, bundle.color);
     }

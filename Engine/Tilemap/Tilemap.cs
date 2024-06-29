@@ -112,7 +112,7 @@ public class Tilemap
     }
     /// <returns>
     /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-    public (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,] ToBundle()
+    public (int id, uint tint, sbyte turns, bool mirror, bool flip)[,] ToBundle()
     {
         return bundleCache;
     }
@@ -201,7 +201,7 @@ public class Tilemap
                 SetTile((x, y), tile, mask);
             }
     }
-    public void Flood((int x, int y) position, bool isExactTile, Area? mask = null, params Tile[]? tiles)
+    public void Flood((int x, int y) position, bool exactTile, Area? mask = null, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -215,11 +215,11 @@ public class Tilemap
             var (x, y) = stack.Pop();
             var curTile = TileAt((x, y));
             var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
-            var exactTile = curTile == tile || curTile != initialTile;
+            var exact = curTile == tile || curTile != initialTile;
             var onlyId = curTile.Id == tile.Id || curTile.Id != initialTile.Id;
 
-            if ((isExactTile && exactTile) ||
-                (isExactTile == false && onlyId))
+            if ((exactTile && exact) ||
+                (exactTile == false && onlyId))
                 continue;
 
             SetTile((x, y), tile, mask);
@@ -234,11 +234,7 @@ public class Tilemap
                 stack.Push((x, y + 1));
         }
     }
-    public void Replace(
-        Area area,
-        Tile targetTile,
-        Area? mask = null,
-        params Tile[] tiles)
+    public void Replace(Area area, Tile targetTile, Area? mask = null, params Tile[] tiles)
     {
         if (tiles.Length == 0)
             return;
@@ -307,12 +303,7 @@ public class Tilemap
             for (var j = 0; j < tiles.GetLength(0); j++)
                 SetTile((position.x + j, position.y + i), tiles[j, i], mask);
     }
-    public void SetText(
-        (int x, int y) position,
-        string? text,
-        uint tint = uint.MaxValue,
-        char tintBrush = '#',
-        Area? mask = null)
+    public void SetText((int x, int y) position, string? text, uint tint = uint.MaxValue, char tintBrush = '#', Area? mask = null)
     {
         if (string.IsNullOrWhiteSpace(text))
             return;
@@ -372,12 +363,7 @@ public class Tilemap
             return tagEnd < text.Length && text[i..tagEnd] == tag;
         }
     }
-    public void SetEllipse(
-        (int x, int y) center,
-        (int width, int height) radius,
-        bool isFilled,
-        Area? mask = null,
-        params Tile[]? tiles)
+    public void SetEllipse((int x, int y) center, (int width, int height) radius, bool fill, Area? mask = null, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -433,7 +419,7 @@ public class Tilemap
         {
             var c = center;
             var o = tiles.Length == 1;
-            if (isFilled == false)
+            if (fill == false)
             {
                 SetTile((c.x + x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y - y))),
                     mask);
@@ -454,11 +440,7 @@ public class Tilemap
         }
     }
 
-    public void SetLine(
-        (int x, int y) pointA,
-        (int x, int y) pointB,
-        Area? mask = null,
-        params Tile[]? tiles)
+    public void SetLine((int x, int y) pointA, (int x, int y) pointB, Area? mask = null, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -505,13 +487,7 @@ public class Tilemap
     /// <param name="cornerTileId">The identifier of the tile to use for the corners of the box.</param>
     /// <param name="borderTint">The color to tint the border tiles.</param>
     /// <param name="mask">An optional mask that skips any tile outside of it.</param>
-    public void SetBox(
-        Area area,
-        Tile tileFill,
-        int cornerTileId,
-        int borderTileId,
-        uint borderTint = uint.MaxValue,
-        Area? mask = null)
+    public void SetBox(Area area, Tile tileFill, int cornerTileId, int borderTileId, uint borderTint = uint.MaxValue, Area? mask = null)
     {
         var (x, y) = (area.X, area.Y);
         var (w, h) = (area.Width, area.Height);
@@ -553,21 +529,14 @@ public class Tilemap
     /// straight part of the bar.</param>
     /// <param name="tint">The color to tint the bar tiles.</param>
     /// <param name="size">The length of the bar in tiles.</param>
-    /// <param name="isVertical">Whether the bar should be vertical or horizontal.</param>
+    /// <param name="vertical">Whether the bar should be vertical or horizontal.</param>
     /// <param name="mask">An optional mask that skips any tile outside of it.</param>
-    public void SetBar(
-        (int x, int y) position,
-        int tileIdEdge,
-        int tileId,
-        uint tint = uint.MaxValue,
-        int size = 5,
-        bool isVertical = false,
-        Area? mask = null)
+    public void SetBar((int x, int y) position, int tileIdEdge, int tileId, uint tint = uint.MaxValue, int size = 5, bool vertical = false, Area? mask = null)
     {
         var (x, y) = position;
         var off = size == 1 ? 0 : 1;
 
-        if (isVertical)
+        if (vertical)
         {
             if (size > 1)
             {
@@ -628,10 +597,7 @@ public class Tilemap
     /// <param name="lowercase">The tile identifier for the lowercase 'a' character.</param>
     /// <param name="uppercase">The tile identifier for the uppercase 'A' character.</param>
     /// <param name="numbers">The tile identifier for the '0' character.</param>
-    public void ConfigureText(
-        int lowercase = Tile.LOWERCASE_A,
-        int uppercase = Tile.UPPERCASE_A,
-        int numbers = Tile.NUMBER_0)
+    public void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A, int numbers = Tile.NUMBER_0)
     {
         textIdLowercase = lowercase;
         textIdUppercase = uppercase;
@@ -725,7 +691,7 @@ public class Tilemap
     /// </summary>
     /// <param name="tilemap">The tilemap object to convert.</param>
     /// <returns>A new 2D array of tile bundles containing the tiles from the tilemap object.</returns>
-    public static implicit operator (int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,](
+    public static implicit operator (int id, uint tint, sbyte turns, bool mirror, bool flip)[,](
         Tilemap tilemap)
     {
         return tilemap.ToBundle();

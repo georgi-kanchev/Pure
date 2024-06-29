@@ -5,9 +5,9 @@ using SFML.System;
 
 public class Audio
 {
-    public Audio(string path, bool isStreaming)
+    public Audio(string path, bool stream)
     {
-        if (isStreaming)
+        if (stream)
             music = new(path);
         else
             sound = new(new SoundBuffer(path));
@@ -130,7 +130,7 @@ public class Audio
         sound?.Stop();
     }
 
-    #region Backend
+#region Backend
     private class Settings
     {
         public SoundStatus st;
@@ -215,5 +215,5 @@ public class Audio
         settings = result;
         return result;
     }
-    #endregion
+#endregion
 }

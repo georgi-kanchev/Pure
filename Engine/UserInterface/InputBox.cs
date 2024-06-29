@@ -8,14 +8,7 @@ using System.Text;
 [Flags]
 public enum SymbolGroup
 {
-    None = 0,
-    Letters = 1,
-    Digits = 2,
-    Punctuation = 4,
-    Math = 8,
-    Special = 16,
-    Space = 32,
-    Other = 64,
+    None = 0, Letters = 1, Digits = 2, Punctuation = 4, Math = 8, Special = 16, Space = 32, Other = 64,
     All = Letters | Digits | Punctuation | Math | Special | Space | Other
 }
 
@@ -200,10 +193,8 @@ public class InputBox : Block
                 return;
 
             if (lineIndex >= lines.Count)
-            {
                 for (var i = lines.Count - 1; i <= lineIndex; i++)
                     lines.Insert(i, string.Empty);
-            }
 
             if (value == null)
                 lines.RemoveAt(lineIndex);
@@ -281,7 +272,7 @@ public class InputBox : Block
         return (px - scrX + newX, py - scrY + newY);
     }
 
-    public void CursorMove((int x, int y) delta, bool isSelecting = false, bool isScrolling = true)
+    public void CursorMove((int x, int y) delta, bool select = false, bool scroll = true)
     {
         clicks = 0;
         cursorBlink.Restart();
@@ -326,10 +317,10 @@ public class InputBox : Block
 
         CursorIndices = (cx, cy); // clamp
 
-        if (isScrolling)
+        if (scroll)
             CursorScroll();
 
-        SelectionIndices = isSelecting ? SelectionIndices : CursorIndices;
+        SelectionIndices = select ? SelectionIndices : CursorIndices;
 
         if (delta.x != 0)
             cxDesired = cx;

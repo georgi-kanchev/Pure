@@ -2,10 +2,7 @@ namespace Pure.Engine.UserInterface;
 
 public enum Side
 {
-    Left,
-    Right,
-    Top,
-    Bottom
+    Left, Right, Top, Bottom
 }
 
 public class Layout : Block

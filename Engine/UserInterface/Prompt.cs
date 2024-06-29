@@ -7,13 +7,7 @@ public class Prompt : Block
         Init();
     }
 
-    public void Open(
-        Block? block = null,
-        bool isAutoClosing = true,
-        int buttonCount = 2,
-        int buttonAccept = default,
-        int buttonDecline = 1,
-        Action<int>? onButtonTrigger = null)
+    public void Open(Block? block = null, bool autoClose = true, int btnCount = 2, int btnYes = default, int btnNo = 1, Action<int>? onButtonTrigger = null)
     {
         if (block != null)
             block.IsFocused = true;
@@ -21,28 +15,28 @@ public class Prompt : Block
         currentBlock = block;
         UpdateBlockPosition();
 
-        buttonCount = Math.Max(buttonCount, 1);
+        btnCount = Math.Max(btnCount, 1);
         IsHidden = false;
 
         buttons.Clear();
-        for (var i = 0; i < buttonCount; i++)
+        for (var i = 0; i < btnCount; i++)
         {
             var btn = new Button((-1, -1))
             {
                 hasParent = true,
-                size = (1, 1),
+                size = (1, 1)
             };
             var index = i;
             btn.OnInteraction(Interaction.Trigger, () =>
             {
-                if (isAutoClosing)
+                if (autoClose)
                     Close();
 
                 onButtonTrigger?.Invoke(index);
             });
-            if (i == buttonAccept)
+            if (i == btnYes)
                 btn.Hotkey = ((int)Key.Enter, false);
-            if (i == buttonDecline)
+            if (i == btnNo)
                 btn.Hotkey = ((int)Key.Escape, false);
 
             buttons.Add(btn);
@@ -81,7 +75,7 @@ public class Prompt : Block
         IsMovable = false,
         IsRestricted = false,
         isTextReadonly = true,
-        hasParent = true,
+        hasParent = true
     };
 
     private void Init()

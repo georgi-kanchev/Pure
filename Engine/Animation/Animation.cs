@@ -5,7 +5,8 @@
 /// <typeparamref name="T"/> over time.
 /// </summary>
 /// <typeparam name="T">The type of the values in the animation.</typeparam>
-public class Animation<T> where T : notnull
+public class Animation<T>
+    where T : notnull
 {
     /// <summary>
     /// Gets the current value of the animation.
@@ -66,10 +67,10 @@ public class Animation<T> where T : notnull
     /// repetition, and values.
     /// </summary>
     /// <param name="duration">The duration of the animation in seconds.</param>
-    /// <param name="isLooping">A value indicating whether the animation should repeat from the beginning
+    /// <param name="loop">A value indicating whether the animation should repeat from the beginning
     /// after it has finished playing through all the values.</param>
     /// <param name="values">The values of the animation.</param>
-    public Animation(float duration, bool isLooping, params T[] values)
+    public Animation(float duration, bool loop, params T[] values)
     {
         if (values == null)
             throw new ArgumentNullException(nameof(values));
@@ -77,20 +78,19 @@ public class Animation<T> where T : notnull
         this.values = Copy(values);
         rawIndex = 0;
         Duration = duration;
-        IsLooping = isLooping;
+        IsLooping = loop;
         RawIndex = LOWER_BOUND;
     }
     /// <summary>
     /// Initializes a new instance of the animation with the specified values, 
     /// repeating and speed properties set.
     /// </summary>
-    /// <param name="isLooping">A value indicating whether the animation should repeat 
+    /// <param name="loop">A value indicating whether the animation should repeat 
     /// from the beginning after it has finished playing through all the values.</param>
     /// <param name="speed">The speed at which the animation should play, as values
     /// per second.</param>
     /// <param name="values">The values to be animated.</param>
-    public Animation(bool isLooping, float speed, params T[] values)
-        : this(0f, isLooping, values)
+    public Animation(bool loop, float speed, params T[] values) : this(0f, loop, values)
     {
         Speed = speed;
     }
@@ -99,8 +99,7 @@ public class Animation<T> where T : notnull
     /// and default properties of <code>Duration = 1f</code> and <code>IsRepeating = false</code>
     /// </summary>
     /// <param name="values">The values to be animated.</param>
-    public Animation(params T[] values)
-        : this(1f, false, values)
+    public Animation(params T[] values) : this(1f, false, values)
     {
     }
 
@@ -159,7 +158,7 @@ public class Animation<T> where T : notnull
         onLoop += method;
     }
 
-    #region Backend
+#region Backend
     private Action? onEnd, onLoop;
     private readonly T[] values;
 
@@ -183,5 +182,5 @@ public class Animation<T> where T : notnull
         Array.Copy(array, copy, array.Length);
         return copy;
     }
-    #endregion
+#endregion
 }

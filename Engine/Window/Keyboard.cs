@@ -62,19 +62,19 @@ public static class Keyboard
         pressed.Clear();
         KeyTyped = string.Empty;
     }
-    public static string ToText(this Key key, bool isShifted)
+    public static string ToText(this Key key, bool shift)
     {
         var i = key;
 
         if (IsBetween((int)i, (int)Key.A, (int)Key.Z))
         {
             var str = ((char)('A' + i)).ToString();
-            return isShifted ? str : str.ToLower();
+            return shift ? str : str.ToLower();
         }
         else if (IsBetween((int)i, (int)Key.Number0, (int)Key.Number9))
         {
             var n = i - Key.Number0;
-            return isShifted ? shiftNumbers[n] : ((char)('0' + n)).ToString();
+            return shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
         }
         else if (IsBetween((int)i, (int)Key.Numpad0, (int)Key.Numpad9))
         {
@@ -82,7 +82,7 @@ public static class Keyboard
             return ((char)('0' + n)).ToString();
         }
         else if (symbols.ContainsKey(key))
-            return isShifted ? symbols[key].Item2 : symbols[key].Item1;
+            return shift ? symbols[key].Item2 : symbols[key].Item1;
 
         return string.Empty;
     }

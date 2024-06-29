@@ -22,7 +22,7 @@ internal class Effect
         }
     }
 
-    public virtual string Vertex
+    protected virtual string Vertex
     {
         get =>
             @"
@@ -33,7 +33,7 @@ void main()
 	gl_FrontColor = gl_Color;
 }";
     }
-    public virtual string Fragment
+    protected virtual string Fragment
     {
         get =>
             @"

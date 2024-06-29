@@ -31,7 +31,10 @@ public class PathMap
 
         Init();
 
-        byte[] Get() => GetBytesFrom(b, 4, ref offset);
+        byte[] Get()
+        {
+            return GetBytesFrom(b, 4, ref offset);
+        }
     }
     public PathMap(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -99,21 +102,14 @@ public class PathMap
         return pathfind.GetNode(cell)?.penalty ?? float.NaN;
     }
 
-    public (float x, float y)[] FindPath(
-        (float x, float y) start,
-        (float x, float y) goal,
-        int slopeFactor = 1)
+    public (float x, float y)[] FindPath((float x, float y) start, (float x, float y) goal, int slopeFactor = 1)
     {
         if (Size.width < 1 || Size.height < 1)
             return Array.Empty<(float x, float y)>();
 
         return pathfind.FindPath(start, goal, false, out _, slopeFactor, uint.MaxValue);
     }
-    public (float x, float y, uint color)[] FindPath(
-        (float x, float y) start,
-        (float x, float y) goal,
-        uint color,
-        int slopeFactor = 1)
+    public (float x, float y, uint color)[] FindPath((float x, float y) start, (float x, float y) goal, uint color, int slopeFactor = 1)
     {
         if (Size.width < 1 || Size.height < 1)
             return Array.Empty<(float x, float y, uint color)>();

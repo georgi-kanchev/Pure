@@ -452,7 +452,7 @@ public static class Program
             promptText.Value = item.Text;
             promptText.SelectAll();
             editor.Prompt.Text = "Edit Text " + (isKey ? "Key" : "Value");
-            editor.Prompt.Open(promptText, buttonAccept: -1, onButtonTrigger: i =>
+            editor.Prompt.Open(promptText, btnYes: -1, onButtonTrigger: i =>
             {
                 if (i != 0)
                     return;

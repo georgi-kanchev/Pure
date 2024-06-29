@@ -31,9 +31,9 @@ public class Scroll : Block
         }
     }
 
-    public Scroll((int x, int y) position = default, bool isVertical = true) : base(position)
+    public Scroll((int x, int y) position = default, bool vertical = true) : base(position)
     {
-        IsVertical = isVertical;
+        IsVertical = vertical;
         Size = IsVertical ? (1, 10) : (10, 1);
         Init();
     }
@@ -154,7 +154,7 @@ public class Scroll : Block
         Slider.mask = mask;
 
         if ((IsVertical && Size.height > 2) ||
-            IsVertical == false && Size.width > 2)
+            (IsVertical == false && Size.width > 2))
             Slider.Update();
 
         Increase.Update();

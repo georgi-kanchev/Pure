@@ -6,10 +6,10 @@ public static class SlidersAndScrolls
     {
         Window.Title = "Pure - Sliders & Scrolls Example";
 
-        var sliderH = new Slider((0, 0), isVertical: false) { Size = (10, 10) };
-        var sliderV = new Slider((0, 0), isVertical: true) { Size = (10, 10) };
-        var scrollH = new Scroll((0, 0), isVertical: false);
-        var scrollV = new Scroll((0, 0), isVertical: true);
+        var sliderH = new Slider((0, 0), false) { Size = (10, 10) };
+        var sliderV = new Slider((0, 0), true) { Size = (10, 10) };
+        var scrollH = new Scroll((0, 0), false);
+        var scrollV = new Scroll((0, 0), true);
 
         sliderH.AlignInside((0.1f, 0.1f));
         sliderV.AlignInside((0.9f, 0.1f));

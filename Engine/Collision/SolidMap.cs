@@ -405,11 +405,7 @@ public class SolidMap
     {
         return CalculateSight(position, 0, radius, 360);
     }
-    public Solid[] CalculateSight(
-        (float x, float y) position,
-        float angle,
-        int radius = 10,
-        float fieldOfView = 60)
+    public Solid[] CalculateSight((float x, float y) position, float angle, int radius = 10, float fieldOfView = 60)
     {
         var (x, y) = position;
         var result = new ConcurrentStack<Solid>();
@@ -466,8 +462,7 @@ public class SolidMap
     {
         return solidMap.ToArray();
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)[](
-        SolidMap solidMap)
+    public static implicit operator (float x, float y, float width, float height, uint color)[](SolidMap solidMap)
     {
         return solidMap.ToBundle();
     }

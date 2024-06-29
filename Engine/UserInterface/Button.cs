@@ -19,7 +19,7 @@ public class Button : Block
                 isSelected = value;
         }
     }
-    public (int id, bool isHoldable) Hotkey { get; set; }
+    public (int id, bool holdable) Hotkey { get; set; }
 
     /// <summary>
     /// Initializes a new button instance with the specified position and default size of (10, 1).
@@ -51,7 +51,7 @@ public class Button : Block
         var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsSelected);
         PutInt(result, Hotkey.id);
-        PutBool(result, Hotkey.isHoldable);
+        PutBool(result, Hotkey.holdable);
         return Compress(result.ToArray());
     }
 
@@ -101,7 +101,7 @@ public class Button : Block
             hold.Restart();
         }
 
-        if (Hotkey.isHoldable == false)
+        if (Hotkey.holdable == false)
             return;
 
         var isJustHeld = false;

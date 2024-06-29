@@ -168,9 +168,7 @@ public struct Angle
 
         return (x / m, y / m);
     }
-    public static Angle BetweenPoints(
-        (float x, float y, uint color) point,
-        (float x, float y, uint color) target)
+    public static Angle BetweenPoints((float x, float y, uint color) point, (float x, float y, uint color) target)
     {
         return BetweenPoints((point.x, point.y), (target.x, target.y));
     }

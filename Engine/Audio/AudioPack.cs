@@ -10,10 +10,10 @@ public class AudioPack
         get => audios[index];
     }
 
-    public AudioPack(float trackDelay = 0.5f, bool isLooping = false)
+    public AudioPack(float trackDelay = 0.5f, bool loop = false)
     {
         TrackDelay = trackDelay;
-        IsLooping = isLooping;
+        IsLooping = loop;
     }
 
     public void AddTrack(string? tag, params Audio[] tracks)
@@ -147,7 +147,7 @@ public class AudioPack
             onAudioEndIndex[index] += method;
     }
 
-    #region Backend
+#region Backend
     private Action? onLoop, onEnd;
     private Action<(int index, string? tag)>? onAudioEndAny;
     private readonly Dictionary<string, Action<(int index, string? tag)>> onAudioEndTag = new();
@@ -196,5 +196,5 @@ public class AudioPack
             (collection[j], collection[i]) = (collection[i], collection[j]);
         }
     }
-    #endregion
+#endregion
 }

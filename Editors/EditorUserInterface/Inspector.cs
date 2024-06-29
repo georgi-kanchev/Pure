@@ -82,7 +82,7 @@ internal class Inspector : Panel
             { typeof(Layout), new() { restore, index, rate, cutTop, cutLeft, cutRight, cutBottom } },
             { typeof(FileViewer), new() { fileSelect } },
             { typeof(Stepper), new() { min, max, value, stepperStep } },
-            { typeof(List), new() { type, expanded, scroll, items, multiSelect, width, height, gap } },
+            { typeof(List), new() { type, expanded, scroll, items, multiSelect, width, height, gap } }
         };
 
         OnDisplay(() =>
@@ -247,7 +247,7 @@ internal class Inspector : Panel
         {
             var type = selected?.GetType();
 
-            if (type == null || type != kvp.Key && type.IsSubclassOf(kvp.Key) == false)
+            if (type == null || (type != kvp.Key && type.IsSubclassOf(kvp.Key) == false))
                 continue;
 
             y++;
@@ -310,9 +310,7 @@ internal class Inspector : Panel
             i.Placeholder = placeholder.Value;
         }
         else if (prevSelected is Button b)
-        {
             b.IsSelected = ((EditButton)blocks[typeof(Button)][0]).IsSelected;
-        }
         else if (prevSelected is Pages p)
         {
             var count = (Stepper)blocks[typeof(Pages)][0];
@@ -594,17 +592,17 @@ internal class Inspector : Panel
         (w, h) = e.Size;
 
         back.SetText(
-            position: (x, y),
-            text: e.Selection.Constrain((w, h), isWordWrapping: false),
-            tint: e.IsFocused ? Color.Blue : Color.Blue.ToBright());
-        middle.SetText((x, y), e.Text.Constrain((w, h), isWordWrapping: false));
+            (x, y),
+            e.Selection.Constrain((w, h), false),
+            e.IsFocused ? Color.Blue : Color.Blue.ToBright());
+        middle.SetText((x, y), e.Text.Constrain((w, h), false));
         middle.SetText((Position.x + 1, e.Position.y - 1), e.Placeholder, color);
 
         if (string.IsNullOrWhiteSpace(e.Text))
             middle.SetText(
-                position: (x, y),
-                text: e.Placeholder.Constrain((w, h), isWordWrapping: false),
-                tint: color.ToBright());
+                (x, y),
+                e.Placeholder.Constrain((w, h), false),
+                color.ToBright());
 
         if (e.IsCursorVisible)
             front.SetTile(e.PositionFromIndices(e.CursorIndices), new(Tile.SHAPE_LINE, Color.White, 2));

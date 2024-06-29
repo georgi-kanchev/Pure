@@ -169,8 +169,7 @@ public struct Color
     /// </summary>
     /// <param name="bundle">A bundle tuple containing the red, green, blue, and alpha
     /// components of the color.</param>
-    public Color((byte red, byte green, byte blue, byte alpha) bundle)
-        : this(bundle.red, bundle.green, bundle.blue, bundle.alpha)
+    public Color((byte red, byte green, byte blue, byte alpha) bundle) : this(bundle.red, bundle.green, bundle.blue, bundle.alpha)
     {
     }
     public Color(byte rgb, byte alpha = 255) : this(rgb, rgb, rgb, alpha)
@@ -228,7 +227,7 @@ public struct Color
     /// <returns>A new color instance initialized with the specified RGBA values.</returns>
     public static implicit operator Color((byte r, byte g, byte b, byte a) bundle)
     {
-        return new Color(bundle.r, bundle.g, bundle.b, bundle.a);
+        return new(bundle.r, bundle.g, bundle.b, bundle.a);
     }
     /// <param name="color">
     /// The color instance to convert.</param>
@@ -280,7 +279,7 @@ public struct Color
         return obj is Color other && Equals(other);
     }
 
-    #region Backend
+#region Backend
     private byte r, g, b, a;
     private uint v;
 
@@ -301,5 +300,5 @@ public struct Color
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }

@@ -77,8 +77,8 @@ internal class TilesetPrompt
 
         if (editor.LayerMap.AtlasPath == "default")
         {
-            editor.LayerGrid.ResetToDefaults();
-            editor.LayerMap.ResetToDefaults();
+            editor.LayerGrid.ToDefault();
+            editor.LayerMap.ToDefault();
             OnFail?.Invoke();
             editor.PromptMessage("Could not load image!");
             return;

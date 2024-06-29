@@ -14,9 +14,7 @@ namespace Pure.Engine.Window;
 /// </summary>
 public enum Mode
 {
-    Windowed,
-    Borderless,
-    Fullscreen
+    Windowed, Borderless, Fullscreen
 }
 
 /// <summary>
@@ -256,9 +254,15 @@ public static class Window
             new(new(-w / 2f, h / 2f), Color.White, new(0, h))
         };
 
+        // x y w h | rect
+        // r g b a | target color
+        // r g b a | edge color
+        // t - - - | type
+
         var view = anotherPass?.GetView();
+        layer.edgeCount = 0;
         layer.shader?.SetUniform("viewSize", new Vec2(view?.Size.X ?? 0, view?.Size.Y ?? 0));
-        anotherPass?.Clear(Color.Transparent);
+        anotherPass?.Clear(new(layer.BackgroundColor));
         anotherPass?.Draw(layer.verts, r);
         anotherPass?.Display();
 
@@ -308,11 +312,7 @@ public static class Window
 
         window.Position = new(x, y);
     }
-    public static void SetIconFromTile(
-        Layer layer,
-        (int id, uint tint) tile,
-        (int id, uint tint) tileBack = default,
-        bool isSavingAsFile = false)
+    public static void SetIconFromTile(Layer layer, (int id, uint tint) tile, (int id, uint tint) tileBack = default, bool saveAsFile = false)
     {
         TryCreate();
 
@@ -341,7 +341,7 @@ public static class Window
         var image = rend.Texture.CopyToImage();
         window.SetIcon(SIZE, SIZE, image.Pixels);
 
-        if (isSavingAsFile)
+        if (saveAsFile)
             image.SaveToFile("icon.png");
 
         rend.Dispose();

@@ -96,7 +96,7 @@ public struct Line
         return this;
     }
     /// <returns>
-    ///     A string representation of this line in the format of its bundle tuple.".
+    ///     A string representation of this line in the format of its bundle tuple.
     /// </returns>
     public override string ToString()
     {
@@ -406,29 +406,12 @@ public struct Line
     }
 
     // these two ugly methods are made with speed in mind, avoiding line constructors
-    private static bool LinesAreCrossing(
-        float ax1,
-        float ay1,
-        float bx1,
-        float by1,
-        float ax2,
-        float ay2,
-        float bx2,
-        float by2)
+    private static bool LinesAreCrossing(float ax1, float ay1, float bx1, float by1, float ax2, float ay2, float bx2, float by2)
     {
         var (x, y, _) = LinesCrossPoint(0, ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
         return float.IsNaN(x) == false && float.IsNaN(y) == false;
     }
-    private static (float x, float y, uint color) LinesCrossPoint(
-        uint color,
-        float ax1,
-        float ay1,
-        float bx1,
-        float by1,
-        float ax2,
-        float ay2,
-        float bx2,
-        float by2)
+    private static (float x, float y, uint color) LinesCrossPoint(uint color, float ax1, float ay1, float bx1, float by1, float ax2, float ay2, float bx2, float by2)
     {
         var dx1 = bx1 - ax1;
         var dy1 = by1 - ay1;

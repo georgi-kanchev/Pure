@@ -427,13 +427,7 @@ public abstract class Block
         return (x + w <= ex || x >= ex + ew || y + h <= ey || y >= ey + eh) == false;
     }
 
-    public void AlignEdges(
-        Side edge,
-        Side targetEdge,
-        (int x, int y, int width, int height)? rectangle = null,
-        float alignment = float.NaN,
-        int offset = 0,
-        bool isExceedingEdge = false)
+    public void AlignEdges(Side edge, Side targetEdge, (int x, int y, int width, int height)? rectangle = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
         var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
         var rw = rectangle?.width ?? Input.TilemapSize.width;
@@ -443,7 +437,7 @@ public abstract class Block
         var (rxw, ryh) = (rx + rw, ry + rh);
         var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
         var (cx, cy) = (x + w / 2, y + h / 2);
-        var ex = isExceedingEdge;
+        var ex = exceedEdge;
         var a = alignment;
         var notNan = float.IsNaN(a) == false;
 
@@ -476,9 +470,7 @@ public abstract class Block
 
         Position = (x, y);
     }
-    public void AlignInside(
-        (float horizontal, float vertical) alignment,
-        (int x, int y, int width, int height)? rectangle = null)
+    public void AlignInside((float horizontal, float vertical) alignment, (int x, int y, int width, int height)? rectangle = null)
     {
         var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
         var rw = rectangle?.width ?? Input.TilemapSize.width;
@@ -492,16 +484,11 @@ public abstract class Block
             float.IsNaN(alignment.horizontal) ? x : (int)newX,
             float.IsNaN(alignment.vertical) ? y : (int)newY);
     }
-    public void AlignOutside(
-        Side targetEdge,
-        (int x, int y, int width, int height)? rectangle = null,
-        float alignment = float.NaN,
-        int offset = 0,
-        bool isExceedingEdge = false)
+    public void AlignOutside(Side targetEdge, (int x, int y, int width, int height)? rectangle = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
         var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
         AlignEdges(opposites[(int)targetEdge], targetEdge, rectangle, alignment, offset + 1,
-            isExceedingEdge);
+            exceedEdge);
     }
     public void Fit((int x, int y, int width, int height)? rectangle = null)
     {
@@ -804,7 +791,9 @@ public abstract class Block
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -813,7 +802,9 @@ public abstract class Block
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
