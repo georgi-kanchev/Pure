@@ -68,7 +68,6 @@ public class Layer
         set => tilemapSize = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
     }
 
-    public bool IsOverflowing { get; set; }
     public bool IsHovered
     {
         get => IsOverlapping(PixelToWorld(Mouse.CursorPosition));
@@ -150,16 +149,12 @@ public class Layer
         TileIdFull = GetInt();
         TilemapSize = (GetInt(), GetInt());
 
-        IsOverflowing = GetBool();
-
         Gamma = GetFloat();
         Saturation = GetFloat();
         Contrast = GetFloat();
         Brightness = GetFloat();
         Tint = GetUInt();
         OverlayColor = GetUInt();
-
-        IsOverflowing = GetBool();
 
         Zoom = GetFloat();
         Offset = (GetFloat(), GetFloat());
@@ -177,10 +172,6 @@ public class Layer
         uint GetUInt()
         {
             return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        }
-        bool GetBool()
-        {
-            return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
         }
         byte GetByte()
         {
@@ -210,11 +201,11 @@ public class Layer
         Tint = uint.MaxValue;
     }
 
-    ~Layer()
-    {
-        verts.Dispose();
-        shader?.Dispose();
-    }
+    // ~Layer()
+    // {
+    //     verts.Dispose();
+    //     shader?.Dispose();
+    // }
 
     public void DrawCursor(int tileId = 546, uint tint = 3789677055)
     {
@@ -349,10 +340,10 @@ public class Layer
                     (texTr, texBr) = (texBr, texTr);
                 }
 
-                verts.Append(TryCropVertex(new(tl, c, texTl)));
-                verts.Append(TryCropVertex(new(tr, c, texTr)));
-                verts.Append(TryCropVertex(new(br, c, texBr)));
-                verts.Append(TryCropVertex(new(bl, c, texBl)));
+                verts.Append(new(tl, c, texTl));
+                verts.Append(new(tr, c, texTr));
+                verts.Append(new(br, c, texBr));
+                verts.Append(new(bl, c, texBl));
             }
     }
     public void DrawTilemap((int id, uint tint, sbyte turns, bool isMirrored, bool isFlipped)[,] tilemap)
@@ -501,8 +492,6 @@ public class Layer
         result.AddRange(BitConverter.GetBytes(Tint));
         result.AddRange(BitConverter.GetBytes(OverlayColor));
 
-        result.AddRange(BitConverter.GetBytes(IsOverflowing));
-
         result.AddRange(BitConverter.GetBytes(Zoom));
         result.AddRange(BitConverter.GetBytes(Offset.x));
         result.AddRange(BitConverter.GetBytes(Offset.y));
@@ -627,33 +616,12 @@ public class Layer
         var tr = new Vector2f((int)br.X, (int)tl.Y);
         var bl = new Vector2f((int)tl.X, (int)br.Y);
 
-        verts.Append(TryCropVertex(new(tl, color, texTl)));
-        verts.Append(TryCropVertex(new(tr, color, texTr)));
-        verts.Append(TryCropVertex(new(br, color, texBr)));
-        verts.Append(TryCropVertex(new(bl, color, texBl)));
+        verts.Append(new(tl, color, texTl));
+        verts.Append(new(tr, color, texTr));
+        verts.Append(new(br, color, texBr));
+        verts.Append(new(bl, color, texBl));
     }
-    private Vertex TryCropVertex(Vertex vertex, bool skipTexCoords = false)
-    {
-        if (IsOverflowing)
-            return vertex;
 
-        var px = vertex.Position.X;
-        var py = vertex.Position.Y;
-        var x = Math.Clamp(px, 0, TilemapPixelSize.w);
-        var y = Math.Clamp(py, 0, TilemapPixelSize.h);
-
-        vertex.Position = new(x, y);
-
-        if (skipTexCoords)
-            return vertex;
-
-        var (dx, dy) = (x - px, y - py);
-        var tx = vertex.TexCoords.X + dx;
-        var ty = vertex.TexCoords.Y + dy;
-        vertex.TexCoords = new(tx, ty);
-
-        return vertex;
-    }
     private (float ax, float ay, float bx, float by) TryCropLine((float x, float y) a, (float x, float y) b)
     {
         var (w, h) = tilemapSize;

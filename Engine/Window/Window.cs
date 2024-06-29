@@ -5,6 +5,7 @@ global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using System.IO.Compression;
 global using System.Text;
+using SFML.Graphics.Glsl;
 
 namespace Pure.Engine.Window;
 
@@ -240,12 +241,29 @@ public static class Window
         var tex = Layer.tilesets[layer.AtlasPath];
         var centerX = layer.TilemapPixelSize.w / 2f * layer.Zoom;
         var centerY = layer.TilemapPixelSize.h / 2f * layer.Zoom;
-        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, layer.shader);
+        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, null);
+        var r2 = new RenderStates(BlendMode.Alpha, Transform.Identity, anotherPass?.Texture, layer.shader);
 
         r.Transform.Translate(layer.Offset.x - centerX, layer.Offset.y - centerY);
         r.Transform.Scale(layer.Zoom, layer.Zoom);
 
-        renderTexture?.Draw(layer.verts, r);
+        var (w, h) = (renderTexture?.Size.X ?? 0, renderTexture?.Size.Y ?? 0);
+        var verts = new Vertex[]
+        {
+            new(new(-w / 2f, -h / 2f), Color.White, new(0, 0)),
+            new(new(w / 2f, -h / 2f), Color.White, new(w, 0)),
+            new(new(w / 2f, h / 2f), Color.White, new(w, h)),
+            new(new(-w / 2f, h / 2f), Color.White, new(0, h))
+        };
+
+        var view = anotherPass?.GetView();
+        layer.shader?.SetUniform("viewSize", new Vec2(view?.Size.X ?? 0, view?.Size.Y ?? 0));
+        anotherPass?.Clear(Color.Transparent);
+        anotherPass?.Draw(layer.verts, r);
+        anotherPass?.Display();
+
+        renderTexture?.Draw(verts, PrimitiveType.Quads, r2);
+
         layer.verts.Clear();
     }
     /// <summary>
@@ -337,7 +355,7 @@ public static class Window
 
 #region Backend
     internal static RenderWindow? window;
-    internal static RenderTexture? renderTexture;
+    internal static RenderTexture? renderTexture, anotherPass;
     internal static (int w, int h) renderTextureViewSize;
 
     private static Action? close;
@@ -431,6 +449,8 @@ public static class Window
     {
         renderTexture?.Dispose();
         renderTexture = null;
+        anotherPass?.Dispose();
+        anotherPass = null;
 
         var currentMonitor = Engine.Window.Monitor.Monitors[Monitor];
         var (w, h) = currentMonitor.Size;
@@ -439,6 +459,9 @@ public static class Window
         view.Center = new();
         renderTextureViewSize = ((int)view.Size.X, (int)view.Size.Y);
         renderTexture.SetView(view);
+
+        anotherPass = new(renderTexture.Size.X, renderTexture.Size.Y);
+        anotherPass.SetView(view);
     }
 
     private static void StartRetroAnimation()

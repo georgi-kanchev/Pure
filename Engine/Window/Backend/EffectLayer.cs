@@ -20,6 +20,8 @@ uniform vec4 replaceColorsNew[99];
 uniform vec4 tint;
 uniform vec4 overlay;
 
+uniform vec2 viewSize;
+
 void main(void)
 {
 	vec2 coord = gl_TexCoord[0].xy;
@@ -28,6 +30,12 @@ void main(void)
     for(int i = 0; i < replaceColorsCount; i++)
 	    if (distance(color, replaceColorsOld[i]) < 0.01)
 		    color = replaceColorsNew[i];
+
+	vec2 pixel = 1.0 / viewSize;
+	vec3 u = (texture2D(texture, vec2(coord.x, coord.y - pixel.y)) * gl_Color).rgb;
+	if (length(u - vec4(1.0, 0.0, 0.0, 1.0)) < 0.001 &&
+		length(color - vec4(1.0, 0.0, 0.0, 1.0)) >= 0.001)
+        color = vec4(0.0, 0.0, 0.0, 1.0);
 
     color.rgb = pow(color.rgb, vec3(1.0 / gamma));
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
