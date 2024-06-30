@@ -31,6 +31,7 @@ public static class Tetris
         while (Window.KeepOpen())
         {
             Time.Update();
+            Delay.Update(Time.Delta);
             Draw();
         }
 

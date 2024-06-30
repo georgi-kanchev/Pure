@@ -246,13 +246,10 @@ public static class Window
         r.Transform.Scale(layer.Zoom, layer.Zoom);
 
         var (w, h) = (renderTexture?.Size.X ?? 0, renderTexture?.Size.Y ?? 0);
-        var verts = new Vertex[]
-        {
-            new(new(-w / 2f, -h / 2f), Color.White, new(0, 0)),
-            new(new(w / 2f, -h / 2f), Color.White, new(w, 0)),
-            new(new(w / 2f, h / 2f), Color.White, new(w, h)),
-            new(new(-w / 2f, h / 2f), Color.White, new(0, h))
-        };
+        verts[0] = new(new(-w / 2f, -h / 2f), Color.White, new(0, 0));
+        verts[1] = new(new(w / 2f, -h / 2f), Color.White, new(w, 0));
+        verts[2] = new(new(w / 2f, h / 2f), Color.White, new(w, h));
+        verts[3] = new(new(-w / 2f, h / 2f), Color.White, new(0, h));
 
         // x y w h | rect
         // r g b a | target color
@@ -261,7 +258,10 @@ public static class Window
 
         var view = anotherPass?.GetView();
         layer.edgeCount = 0;
+        layer.waveCount = 0;
+        layer.blurCount = 0;
         layer.shader?.SetUniform("viewSize", new Vec2(view?.Size.X ?? 0, view?.Size.Y ?? 0));
+        layer.shader?.SetUniform("time", time.ElapsedTime.AsSeconds());
         anotherPass?.Clear(new(layer.BackgroundColor));
         anotherPass?.Draw(layer.verts, r);
         anotherPass?.Display();
@@ -270,9 +270,6 @@ public static class Window
 
         layer.verts.Clear();
     }
-    /// <summary>
-    /// Closes the window.
-    /// </summary>
     public static void Close()
     {
         if (window == null || renderTexture == null)
@@ -361,10 +358,11 @@ public static class Window
     private static Action? close;
     private static Shader? retroShader;
     private static readonly Random retroRand = new();
-    private static readonly Clock retroScreenTimer = new();
+    private static readonly Clock time = new();
     private static System.Timers.Timer? retroTurnoff;
     private static Clock? retroTurnoffTime;
     private const float RETRO_TURNOFF_TIME = 0.5f;
+    private static readonly Vertex[] verts = new Vertex[4];
 
     private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating;
     private static string title = "Game";
@@ -488,19 +486,15 @@ public static class Window
         var (tw, th) = (renderTexture.Size.X, renderTexture.Size.Y);
         var shader = IsRetro ? retroShader : null;
         var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, renderTexture.Texture, shader);
-        var verts = new Vertex[]
-        {
-            new(new(ow, oh), Color.White, new(0, 0)),
-            new(new(ww + ow, oh), Color.White, new(tw, 0)),
-            new(new(ww + ow, wh + oh), Color.White, new(tw, th)),
-            new(new(ow, wh + oh), Color.White, new(0, th))
-        };
+        verts[0] = new(new(ow, oh), Color.White, new(0, 0));
+        verts[1] = new(new(ww + ow, oh), Color.White, new(tw, 0));
+        verts[2] = new(new(ww + ow, wh + oh), Color.White, new(tw, th));
+        verts[3] = new(new(ow, wh + oh), Color.White, new(0, th));
 
         if (IsRetro)
         {
             var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
-            shader?.SetUniform("time", retroScreenTimer.ElapsedTime.AsSeconds());
-            shader?.SetUniform("pixelScale", pixelScale);
+            shader?.SetUniform("time", time.ElapsedTime.AsSeconds());
             shader?.SetUniform("randomVec", randVec);
             shader?.SetUniform("viewSize", new Vector2f(ww, wh));
             shader?.SetUniform("offScreen", new Vector2f(ow, oh));

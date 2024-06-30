@@ -117,6 +117,7 @@ public class Layer
             shader?.SetUniform("brightness", brightness);
         }
     }
+
     public uint Tint
     {
         get => currTint;
@@ -124,15 +125,6 @@ public class Layer
         {
             currTint = value;
             shader?.SetUniform("tint", new Color(currTint));
-        }
-    }
-    public uint OverlayColor
-    {
-        get => overlayColor;
-        set
-        {
-            overlayColor = value;
-            shader?.SetUniform("overlay", new Color(overlayColor));
         }
     }
     public uint BackgroundColor { get; set; }
@@ -182,7 +174,6 @@ public class Layer
         Contrast = GetFloat();
         Brightness = GetFloat();
         Tint = GetUInt();
-        OverlayColor = GetUInt();
         BackgroundColor = GetUInt();
 
         Zoom = GetFloat();
@@ -244,7 +235,6 @@ public class Layer
         result.AddRange(BitConverter.GetBytes(Contrast));
         result.AddRange(BitConverter.GetBytes(Brightness));
         result.AddRange(BitConverter.GetBytes(Tint));
-        result.AddRange(BitConverter.GetBytes(OverlayColor));
         result.AddRange(BitConverter.GetBytes(BackgroundColor));
 
         result.AddRange(BitConverter.GetBytes(Zoom));
@@ -460,7 +450,40 @@ public class Layer
         shader?.SetUniform($"edgeType[{i}]", (int)edges);
     }
 
-    public void ColorReplace(uint oldColor, uint newColor)
+    public void Blur((float x, float y, float width, float height) area, (float x, float y) strength, uint targetColor = 0)
+    {
+        blurCount++;
+        var (x, y, w, h) = area;
+        var (sx, sy) = strength;
+
+        x /= TilemapSize.width;
+        y /= TilemapSize.height;
+        w /= TilemapSize.width;
+        h /= TilemapSize.height;
+
+        shader?.SetUniform("blurCount", blurCount);
+        shader?.SetUniform($"blurArea[{blurCount - 1}]", new Vec4(x, 1 - y, w, h));
+        shader?.SetUniform($"blurStrength[{blurCount - 1}]", new Vec2(sx, sy));
+        shader?.SetUniform($"blurTarget[{blurCount - 1}]", new Color(targetColor));
+    }
+    public void Distort((float x, float y, float width, float height) area, (float x, float y) speed, (float x, float y) frequency, uint targetColor = 0)
+    {
+        waveCount++;
+        var (x, y, w, h) = area;
+        var (sx, sy) = speed;
+        var (fx, fy) = frequency;
+
+        x /= TilemapSize.width;
+        y /= TilemapSize.height;
+        w /= TilemapSize.width;
+        h /= TilemapSize.height;
+
+        shader?.SetUniform("waveCount", waveCount);
+        shader?.SetUniform($"waveArea[{waveCount - 1}]", new Vec4(x, 1 - y, w, h));
+        shader?.SetUniform($"waveSpeedFreq[{waveCount - 1}]", new Vec4(sx, sy, fx, fy));
+        shader?.SetUniform($"waveTarget[{waveCount - 1}]", new Color(targetColor));
+    }
+    public void ReplaceColor(uint oldColor, uint newColor)
     {
         var pair = (oldColor, newColor);
 
@@ -564,7 +587,7 @@ public class Layer
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
     };
 
-    internal int edgeCount;
+    internal int edgeCount, waveCount, blurCount;
     internal Vector2u tilesetPixelSize;
     internal (int w, int h) TilemapPixelSize
     {
@@ -588,7 +611,7 @@ public class Layer
     private string atlasPath;
     private (byte width, byte height) atlasTileGap, atlasTileSize;
     private (int width, int height) tilemapSize;
-    private uint currTint = uint.MaxValue, overlayColor;
+    private uint currTint = uint.MaxValue;
     private float zoom, gamma, saturation, contrast, brightness;
 
     [MemberNotNull(nameof(TileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]

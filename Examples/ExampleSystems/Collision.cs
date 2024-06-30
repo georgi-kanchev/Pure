@@ -14,6 +14,7 @@ public static class Collision
         var aspectRatio = Monitor.Current.AspectRatio;
         var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
         var background = new Tilemap(tilemap.Size);
+        var (w, h) = tilemap.Size;
 
         var collisionMap = new SolidMap();
         collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 0.5f, 1, Color.Yellow)); // lake
@@ -70,9 +71,13 @@ public static class Collision
             layer.DrawTilemap(background);
             layer.DrawTilemap(tilemap);
             //layer.DrawRectangles(collisionMap);
-            layer.DrawLines(line);
-            layer.DrawPoints(crossPoints);
-            layer.DrawTiles(mousePosition, tile);
+            //layer.DrawLines(line);
+            //layer.DrawPoints(crossPoints);
+            //layer.DrawTiles(mousePosition, tile);
+
+            layer.Blur((0, 0, w, h), (2f, 2f), Color.Blue);
+            layer.Distort((0, 0, w, h), (0, 4), (0, 100), Color.Blue.ToDark());
+            layer.Distort((0, 0, w, h), (0, 1), (0, 100), Color.Green.ToDark(0.7f).ToDark());
 
             layer.Draw();
         }

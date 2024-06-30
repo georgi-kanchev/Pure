@@ -2,8 +2,7 @@ namespace Pure.Engine.Window;
 
 internal class EffectLayer : Effect
 {
-    public const int MAX_REPLACE = 64;
-    public const int MAX_EDGE = 64;
+    public const int MAX_REPLACE = 64, MAX_WAVE = 48, MAX_BLUR = 48, MAX_EDGE = 32;
 
     protected override string Fragment
     {
@@ -15,10 +14,21 @@ uniform float gamma;
 uniform float saturation;
 uniform float contrast;
 uniform float brightness;
+uniform float time;
 
 uniform int replaceCount;
 uniform vec4 replaceOld[{MAX_REPLACE}];
 uniform vec4 replaceNew[{MAX_REPLACE}];
+
+uniform int waveCount;
+uniform vec4 waveTarget[{MAX_WAVE}];
+uniform vec4 waveArea[{MAX_WAVE}];
+uniform vec4 waveSpeedFreq[{MAX_WAVE}];
+
+uniform int blurCount;
+uniform vec4 blurTarget[{MAX_BLUR}];
+uniform vec4 blurArea[{MAX_BLUR}];
+uniform vec2 blurStrength[{MAX_BLUR}];
 
 uniform int edgeCount;
 uniform vec4 edgeTarget[{MAX_EDGE}];
@@ -27,10 +37,16 @@ uniform vec4 edgeArea[{MAX_EDGE}];
 uniform int edgeType[{MAX_EDGE}];
 
 uniform vec4 tint;
-uniform vec4 overlay;
 
 uniform vec2 viewSize;
 
+bool is_inside(vec2 coord, vec4 area, vec4 off)
+{{
+	vec2 pixel = 1.0 / viewSize;
+	return
+		coord.x > area.x + off.x && coord.x < area.x + area.z + off.y &&
+		coord.y > area.y - area.w + off.z && coord.y < area.y + off.w;
+}}
 bool is(vec3 a, vec3 b)
 {{
 	return distance(a, b) < 0.01;
@@ -43,14 +59,61 @@ bool isType(int value, int flag)
 
 void main(void)
 {{
+	vec2 pixel = 1.0 / viewSize;
 	vec2 coord = gl_TexCoord[0].xy;
-    vec4 color = texture2D(texture, coord) * gl_Color;
 
+	// waves
+	for(int i = 0; i < waveCount; i++)
+	{{
+		vec4 spFr = waveSpeedFreq[i];
+		vec4 a = waveArea[i];
+		vec4 off = vec4(-pixel.x, -pixel.x, pixel.y, pixel.y);		
+		vec4 t = waveTarget[i];		
+		bool is_target_color = t == vec4(0, 0, 0, 0) ||
+								(t != vec4(0, 0, 0, 0) && is(texture2D(texture, coord) * gl_Color, t));		
+
+		if (is_inside(coord, a, off) && is_target_color)
+		{{
+			coord.x += cos(coord.y * spFr.z + spFr.x * time) / viewSize.x / 1.5;
+			coord.y += sin(coord.x * spFr.w + spFr.y * time) / viewSize.y / 1.5;
+		}}
+	}}
+
+    vec4 color = texture2D(texture, coord) * gl_Color;
+	
+	// blur
+	for(int i = 0; i < blurCount; i++)
+	{{
+		vec4 a = blurArea[i];
+		vec4 off = vec4(-pixel.x, -pixel.x, pixel.y, pixel.y);		
+		vec4 t = blurTarget[i];	
+		vec2 s = blurStrength[i];	
+		bool is_target_color = t == vec4(0, 0, 0, 0) ||
+								(t != vec4(0, 0, 0, 0) && is(texture2D(texture, coord) * gl_Color, t));		
+
+		if (is_inside(coord, a, off) && is_target_color)
+		{{
+			vec2 blur = pixel * s;
+			vec4 blurResult =
+				texture2D(texture, coord) * 4.0 +
+				texture2D(texture, coord - blur.x) * 2.0 +
+				texture2D(texture, coord + blur.x) * 2.0 +
+				texture2D(texture, coord - blur.y) * 2.0 +
+				texture2D(texture, coord + blur.y) * 2.0 +
+				texture2D(texture, coord - blur.x - blur.y) * 1.0 +
+				texture2D(texture, coord - blur.x + blur.y) * 1.0 +
+				texture2D(texture, coord + blur.x - blur.y) * 1.0 +
+				texture2D(texture, coord + blur.x + blur.y) * 1.0;
+			color = (blurResult / 16.0);
+		}}
+	}}
+
+	// replace colors
     for(int i = 0; i < replaceCount; i++)
 	    if (distance(color, replaceOld[i]) < 0.01)
 		    color = replaceNew[i];
 
-	vec2 pixel = 1.0 / viewSize;
+	// edges
 	vec3 u = (texture2D(texture, vec2(coord.x, coord.y - pixel.y)) * gl_Color).rgb;
 	vec3 d = (texture2D(texture, vec2(coord.x, coord.y + pixel.y)) * gl_Color).rgb;
 	vec3 l = (texture2D(texture, vec2(coord.x + pixel.x, coord.y)) * gl_Color).rgb;
@@ -78,10 +141,9 @@ void main(void)
 		bool is_dl = !is_d && !is_l && is(dl, t);		
 		bool is_dr = !is_d && !is_r && is(dr, t);		
 		
-		bool is_inside = coord.x > a.x - pixel.x * 1.5 && coord.x < a.x + a.z &&
-						coord.y > a.y - a.w && coord.y < a.y + pixel.y * 1.5;
-		
-		if (!is(color, t) && is_inside)
+		vec4 off = vec4(-pixel.x * 1.5, pixel.x, 0, pixel.y * 1.5);
+
+		if (!is(color, t) && is_inside(coord, a, off))
 		{{
 			// types: Top = 1, Bottom = 2, Left = 4, Right = 8, Corners = 16
 			bool corners = isType(type, 16) && (is_ul || is_dl || is_ur || is_dr);
@@ -95,6 +157,7 @@ void main(void)
 		}}
 	}}
 
+	// color adjustments
     color.rgb = pow(color.rgb, vec3(1.0 / gamma));
     float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
     color.rgb = mix(vec3(luminance), color.rgb, saturation);
@@ -102,7 +165,6 @@ void main(void)
     color.rgb *= brightness;
 
     color *= tint;
-    color.rgb = mix(color.rgb, overlay.rgb, overlay.a);
 
 	gl_FragColor = color;
 }}";

@@ -12,7 +12,6 @@ uniform vec2 offScreen;
 uniform vec2 randomVec;
 uniform float time;
 uniform float turnoffAnimation;
-uniform float pixelScale;
 
 uniform vec2 curvature = vec2(4.0, 4.0);
 uniform vec2 scanLineOpacity = vec2(0.6, 1.0);

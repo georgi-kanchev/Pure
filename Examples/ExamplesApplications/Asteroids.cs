@@ -35,11 +35,12 @@ public static class Asteroids
             if (score > highScore)
                 highScore = score;
 
-            if (Mouse.Button.Left.IsPressed())
+            if (Keyboard.Key.Space.IsPressed())
                 TrySpawnShot();
 
             tilemap.Flush();
             Time.Update();
+            Delay.Update(Time.Delta);
             shotCooldown -= Time.Delta;
 
             tilemap.SetText((0, 0), $"BEST: {highScore}\n" +
