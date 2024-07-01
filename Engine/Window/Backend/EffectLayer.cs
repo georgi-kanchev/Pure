@@ -21,6 +21,8 @@ uniform vec3 light[{MAX}]; // x, y, radius
 uniform vec4 lightColor[{MAX}];
 uniform int obstacleCount;
 uniform vec4 obstacleArea[{MAX}];
+uniform bool lightMask;
+uniform bool lightFade;
 
 uniform int replaceCount;
 uniform vec4 replaceOld[{MAX}];
@@ -243,15 +245,6 @@ void main(void)
 		}}
 	}}
 
-	// color adjustments
-    color.rgb = pow(color.rgb, vec3(1.0 / gamma));
-    float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-    color.rgb = mix(vec3(luminance), color.rgb, saturation);
-    color.rgb = mix(vec3(0.5), color.rgb, contrast);
-    color.rgb *= brightness;
-
-    color *= tint;
-
 	// lights
 	for(int i = 0; i < lightCount; i++)
 	{{
@@ -277,15 +270,26 @@ void main(void)
 				}}
 			}}
 
-			float attenuation = 1.0 - (dist / l.z);
+			float attenuation = lightFade ? 1.0 - (dist / l.z) : 1.0;
 			color.rgb += c.rgb * c.a * attenuation;
 
+			if (lightMask)
+				color.a = shadow ? 0.0 : attenuation;
+
 			if (shadow)
-			{{
 				color.rgb = mix(color.rgb, vec3(0.0), c.a * attenuation);
-			}}
 		}}
+		else if (lightMask)
+			color.a = 0.0;
 	}}
+
+	// color adjustments
+    color.rgb = pow(color.rgb, vec3(1.0 / gamma));
+    float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+    color.rgb = mix(vec3(luminance), color.rgb, saturation);
+    color.rgb = mix(vec3(0.5), color.rgb, contrast);
+    color.rgb *= brightness;
+    color *= tint;
 
 	gl_FragColor = color;
 }}";

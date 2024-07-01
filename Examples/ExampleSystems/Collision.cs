@@ -84,7 +84,7 @@ public static class Collision
 
             layer.Light((30, 8), 5f, Color.Brown.ToTransparent(0.1f));
             layer.Light((39, 12), 5f, Color.Cyan.ToTransparent(0.2f));
-            layer.Light(mousePosition, 2f, Color.Yellow.ToTransparent(0.4f));
+            layer.Light(mousePosition, 3f, Color.Yellow.ToTransparent(0.4f));
             layer.BlockLight((30, 10, 2, 2));
             layer.BlockLight((34, 11, 2, 2));
             layer.BlockLight((33, 8, 2, 2));
@@ -112,10 +112,7 @@ public static class Collision
             tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
         }
     }
-    private static void SetBridge(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
-    {
-        tilemap.SetLine(pointA, pointB, null, new Tile(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
-    }
+    private static void SetBridge(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB) { tilemap.SetLine(pointA, pointB, null, new Tile(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark())); }
     private static void SetRoad(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
         var angle = pointA.x == pointB.x ? 1 : 0;

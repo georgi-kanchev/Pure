@@ -117,6 +117,24 @@ public class Layer
             shader?.SetUniform("brightness", brightness);
         }
     }
+    public bool IsLightFading
+    {
+        get => isLightFading;
+        set
+        {
+            shader?.SetUniform("lightFade", value);
+            isLightFading = value;
+        }
+    }
+    public bool IsLightMasking
+    {
+        get => isLightMasking;
+        set
+        {
+            shader?.SetUniform("lightMask", value);
+            isLightMasking = value;
+        }
+    }
 
     public uint Tint
     {
@@ -154,6 +172,7 @@ public class Layer
         Contrast = 1f;
         Brightness = 1f;
         Tint = uint.MaxValue;
+        IsLightFading = true;
     }
     public Layer(byte[] bytes)
     {
@@ -176,31 +195,21 @@ public class Layer
         Tint = GetUInt();
         BackgroundColor = GetUInt();
 
+        IsLightFading = GetBool();
+        isLightMasking = GetBool();
+
         Zoom = GetFloat();
         Offset = (GetFloat(), GetFloat());
 
         verts = new(PrimitiveType.Quads);
 
-        float GetFloat()
-        {
-            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
-        }
-        int GetInt()
-        {
-            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
-        }
-        uint GetUInt()
-        {
-            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        }
-        byte GetByte()
-        {
-            return GetBytesFrom(b, 1, ref offset)[0];
-        }
+        float GetFloat() { return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset)); }
+        int GetInt() { return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset)); }
+        bool GetBool() { return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset)); }
+        uint GetUInt() { return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset)); }
+        byte GetByte() { return GetBytesFrom(b, 1, ref offset)[0]; }
     }
-    public Layer(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
+    public Layer(string base64) : this(Convert.FromBase64String(base64)) { }
 
     public void ToDefault()
     {
@@ -211,10 +220,7 @@ public class Layer
         AtlasPath = string.Empty;
         TileIdFull = 10;
     }
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
+    public string ToBase64() { return Convert.ToBase64String(ToBytes()); }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -236,6 +242,9 @@ public class Layer
         result.AddRange(BitConverter.GetBytes(Brightness));
         result.AddRange(BitConverter.GetBytes(Tint));
         result.AddRange(BitConverter.GetBytes(BackgroundColor));
+
+        result.AddRange(BitConverter.GetBytes(IsLightFading));
+        result.AddRange(BitConverter.GetBytes(IsLightMasking));
 
         result.AddRange(BitConverter.GetBytes(Zoom));
         result.AddRange(BitConverter.GetBytes(Offset.x));
@@ -592,15 +601,9 @@ public class Layer
         return (x, y);
     }
 
-    public static void DefaultGraphicsToFile(string filePath)
-    {
-        tilesets["default"].CopyToImage().SaveToFile(filePath);
-    }
+    public static void DefaultGraphicsToFile(string filePath) { tilesets["default"].CopyToImage().SaveToFile(filePath); }
 
-    public static implicit operator byte[](Layer layer)
-    {
-        return layer.ToBytes();
-    }
+    public static implicit operator byte[](Layer layer) { return layer.ToBytes(); }
 
 #region Backend
     internal readonly Shader? shader;
@@ -639,6 +642,8 @@ public class Layer
     private (int width, int height) tilemapSize;
     private uint currTint = uint.MaxValue;
     private float zoom, gamma, saturation, contrast, brightness;
+    private bool isLightFading;
+    private bool isLightMasking;
 
     [MemberNotNull(nameof(TileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]
     private void Init()
@@ -729,14 +734,8 @@ public class Layer
 
         return (index % tw, index / tw);
     }
-    private int CoordsToIndex(int x, int y)
-    {
-        return y * AtlasTileCount.width + x;
-    }
-    private static int Wrap(int number, int targetNumber)
-    {
-        return (number % targetNumber + targetNumber) % targetNumber;
-    }
+    private int CoordsToIndex(int x, int y) { return y * AtlasTileCount.width + x; }
+    private static int Wrap(int number, int targetNumber) { return (number % targetNumber + targetNumber) % targetNumber; }
     private static void Shift<T>(IList<T> collection, int offset)
     {
         if (offset == default)

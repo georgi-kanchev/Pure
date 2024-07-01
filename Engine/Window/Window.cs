@@ -163,31 +163,13 @@ public static class Window
         window.Position = new(x, y);
         window.Size = new(w, h);
 
-        float GetFloat()
-        {
-            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
-        }
-        int GetInt()
-        {
-            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
-        }
-        uint GetUInt()
-        {
-            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        }
-        bool GetBool()
-        {
-            return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
-        }
+        float GetFloat() { return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset)); }
+        int GetInt() { return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset)); }
+        uint GetUInt() { return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset)); }
+        bool GetBool() { return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset)); }
     }
-    public static void FromBase64(string base64)
-    {
-        FromBytes(Convert.FromBase64String(base64));
-    }
-    public static string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
+    public static void FromBase64(string base64) { FromBytes(Convert.FromBase64String(base64)); }
+    public static string ToBase64() { return Convert.ToBase64String(ToBytes()); }
     public static byte[] ToBytes()
     {
         TryCreate();
@@ -347,10 +329,7 @@ public static class Window
         image.Dispose();
     }
 
-    public static void OnClose(Action method)
-    {
-        close += method;
-    }
+    public static void OnClose(Action method) { close += method; }
 
 #region Backend
     internal static RenderWindow? window;
