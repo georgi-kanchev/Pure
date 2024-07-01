@@ -260,6 +260,8 @@ public static class Window
         layer.edgeCount = 0;
         layer.waveCount = 0;
         layer.blurCount = 0;
+        layer.lightCount = 0;
+        layer.obstacleCount = 0;
         layer.shader?.SetUniform("viewSize", new Vec2(view?.Size.X ?? 0, view?.Size.Y ?? 0));
         layer.shader?.SetUniform("time", time.ElapsedTime.AsSeconds());
         anotherPass?.Clear(new(layer.BackgroundColor));

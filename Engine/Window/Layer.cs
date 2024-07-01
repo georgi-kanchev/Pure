@@ -450,6 +450,32 @@ public class Layer
         shader?.SetUniform($"edgeType[{i}]", (int)edges);
     }
 
+    public void BlockLight((float x, float y, float width, float height) area)
+    {
+        var (x, y, w, h) = area;
+
+        x /= TilemapSize.width;
+        y /= TilemapSize.height;
+        w /= TilemapSize.width;
+        h /= TilemapSize.height;
+
+        obstacleCount++;
+        shader?.SetUniform("obstacleCount", obstacleCount);
+        shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
+    }
+    public void Light((float x, float y) position, float radius, uint color)
+    {
+        var (x, y) = position;
+
+        x /= TilemapSize.width;
+        y /= TilemapSize.height;
+        radius /= TilemapSize.height;
+
+        lightCount++;
+        shader?.SetUniform("lightCount", lightCount);
+        shader?.SetUniform($"light[{lightCount - 1}]", new Vec3(x, 1 - y, radius));
+        shader?.SetUniform($"lightColor[{lightCount - 1}]", new Color(color));
+    }
     public void Blur((float x, float y, float width, float height) area, (float x, float y) strength, uint targetColor = 0)
     {
         blurCount++;
@@ -587,7 +613,7 @@ public class Layer
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
     };
 
-    internal int edgeCount, waveCount, blurCount;
+    internal int edgeCount, waveCount, blurCount, lightCount, obstacleCount;
     internal Vector2u tilesetPixelSize;
     internal (int w, int h) TilemapPixelSize
     {

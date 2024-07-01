@@ -2,7 +2,7 @@ namespace Pure.Engine.Window;
 
 internal class EffectLayer : Effect
 {
-    public const int MAX_REPLACE = 64, MAX_WAVE = 48, MAX_BLUR = 48, MAX_EDGE = 32;
+    public const int MAX = 32;
 
     protected override string Fragment
     {
@@ -16,25 +16,31 @@ uniform float contrast;
 uniform float brightness;
 uniform float time;
 
+uniform int lightCount;
+uniform vec3 light[{MAX}]; // x, y, radius
+uniform vec4 lightColor[{MAX}];
+uniform int obstacleCount;
+uniform vec4 obstacleArea[{MAX}];
+
 uniform int replaceCount;
-uniform vec4 replaceOld[{MAX_REPLACE}];
-uniform vec4 replaceNew[{MAX_REPLACE}];
+uniform vec4 replaceOld[{MAX}];
+uniform vec4 replaceNew[{MAX}];
 
 uniform int waveCount;
-uniform vec4 waveTarget[{MAX_WAVE}];
-uniform vec4 waveArea[{MAX_WAVE}];
-uniform vec4 waveSpeedFreq[{MAX_WAVE}];
+uniform vec4 waveTarget[{MAX}];
+uniform vec4 waveArea[{MAX}];
+uniform vec4 waveSpeedFreq[{MAX}];
 
 uniform int blurCount;
-uniform vec4 blurTarget[{MAX_BLUR}];
-uniform vec4 blurArea[{MAX_BLUR}];
-uniform vec2 blurStrength[{MAX_BLUR}];
+uniform vec4 blurTarget[{MAX}];
+uniform vec4 blurArea[{MAX}];
+uniform vec2 blurStrength[{MAX}];
 
 uniform int edgeCount;
-uniform vec4 edgeTarget[{MAX_EDGE}];
-uniform vec4 edgeColor[{MAX_EDGE}];
-uniform vec4 edgeArea[{MAX_EDGE}];
-uniform int edgeType[{MAX_EDGE}];
+uniform vec4 edgeTarget[{MAX}];
+uniform vec4 edgeColor[{MAX}];
+uniform vec4 edgeArea[{MAX}];
+uniform int edgeType[{MAX}];
 
 uniform vec4 tint;
 
@@ -42,7 +48,6 @@ uniform vec2 viewSize;
 
 bool is_inside(vec2 coord, vec4 area, vec4 off)
 {{
-	vec2 pixel = 1.0 / viewSize;
 	return
 		coord.x > area.x + off.x && coord.x < area.x + area.z + off.y &&
 		coord.y > area.y - area.w + off.z && coord.y < area.y + off.w;
@@ -52,9 +57,90 @@ bool is(vec3 a, vec3 b)
 	return distance(a, b) < 0.01;
 }}
 
-bool isType(int value, int flag)
+bool is_type(int value, int flag)
 {{
     return (value & flag) != 0;
+}}
+
+int compute_out_code(vec2 p, vec2 rectMin, vec2 rectMax)
+{{
+	// left: 1, right: 2, bottom: 4, top: 8
+    int code = 0;
+
+    if (p.x < rectMin.x)
+        code |= 1;
+    else if (p.x > rectMax.x)
+        code |= 2;
+
+    if (p.y < rectMin.y)
+        code |= 4;
+    else if (p.y > rectMax.y)
+        code |= 8;
+
+    return code;
+}}
+
+bool is_shadow(vec2 p0, vec2 p1, vec2 rectMin, vec2 rectMax)
+{{
+	float flipY = rectMax.y - rectMin.y;
+	rectMax.y -= flipY;
+	rectMin.y -= flipY;
+
+    int outcode0 = compute_out_code(p0, rectMin, rectMax);
+    int outcode1 = compute_out_code(p1, rectMin, rectMax);
+
+    bool accept = false;
+
+    while (true)
+	{{
+        if ((outcode0 | outcode1) == 0)
+		{{
+            // Both points inside the rectangle, trivially accept
+            accept = true;
+            break;
+        }}
+		else if ((outcode0 & outcode1) != 0)
+            break; // Both points share an outside zone, trivially reject
+        else
+		{{
+            // Calculate the line segment to clip from an outside point to an intersection with the rectangle
+            float x, y;
+            int outcodeOut = (outcode0 != 0) ? outcode0 : outcode1;
+
+            if ((outcodeOut & 8) != 0)
+			{{ // point is above the rectangle
+                x = p0.x + (p1.x - p0.x) * (rectMax.y - p0.y) / (p1.y - p0.y);
+                y = rectMax.y;
+            }}
+			else if ((outcodeOut & 4) != 0)
+			{{ // point is below the rectangle
+                x = p0.x + (p1.x - p0.x) * (rectMin.y - p0.y) / (p1.y - p0.y);
+                y = rectMin.y;
+            }}
+			else if ((outcodeOut & 2) != 0)
+			{{ // point is to the right of the rectangle
+                y = p0.y + (p1.y - p0.y) * (rectMax.x - p0.x) / (p1.x - p0.x);
+                x = rectMax.x;
+            }}
+			else if ((outcodeOut & 1) != 0)
+			{{ // point is to the left of the rectangle
+                y = p0.y + (p1.y - p0.y) * (rectMin.x - p0.x) / (p1.x - p0.x);
+                x = rectMin.x;
+            }}
+
+            if (outcodeOut == outcode0)
+			{{
+                p0 = vec2(x, y);
+                outcode0 = compute_out_code(p0, rectMin, rectMax);
+            }}
+			else
+			{{
+                p1 = vec2(x, y);
+                outcode1 = compute_out_code(p1, rectMin, rectMax);
+            }}
+        }}
+    }}
+    return accept;
 }}
 
 void main(void)
@@ -67,10 +153,10 @@ void main(void)
 	{{
 		vec4 spFr = waveSpeedFreq[i];
 		vec4 a = waveArea[i];
-		vec4 off = vec4(-pixel.x, -pixel.x, pixel.y, pixel.y);		
+		vec4 off = vec4(-pixel.x, -pixel.x, pixel.y, pixel.y);
 		vec4 t = waveTarget[i];		
-		bool is_target_color = t == vec4(0, 0, 0, 0) ||
-								(t != vec4(0, 0, 0, 0) && is(texture2D(texture, coord) * gl_Color, t));		
+		bool is_target_color = t == vec4(0.0) ||
+								(t != vec4(0.0) && is(texture2D(texture, coord) * gl_Color, t));		
 
 		if (is_inside(coord, a, off) && is_target_color)
 		{{
@@ -88,8 +174,8 @@ void main(void)
 		vec4 off = vec4(-pixel.x, -pixel.x, pixel.y, pixel.y);		
 		vec4 t = blurTarget[i];	
 		vec2 s = blurStrength[i];	
-		bool is_target_color = t == vec4(0, 0, 0, 0) ||
-								(t != vec4(0, 0, 0, 0) && is(texture2D(texture, coord) * gl_Color, t));		
+		bool is_target_color = t == vec4(0.0) ||
+								(t != vec4(0.0) && is(texture2D(texture, coord) * gl_Color, t));		
 
 		if (is_inside(coord, a, off) && is_target_color)
 		{{
@@ -146,11 +232,11 @@ void main(void)
 		if (!is(color, t) && is_inside(coord, a, off))
 		{{
 			// types: Top = 1, Bottom = 2, Left = 4, Right = 8, Corners = 16
-			bool corners = isType(type, 16) && (is_ul || is_dl || is_ur || is_dr);
-			bool top = isType(type, 1) && is_u;
-			bool bot = isType(type, 2) && is_d;
-			bool left = isType(type, 4) && is_l;
-			bool right = isType(type, 8) && is_r;
+			bool corners = is_type(type, 16) && (is_ul || is_dl || is_ur || is_dr);
+			bool top = is_type(type, 1) && is_u;
+			bool bot = is_type(type, 2) && is_d;
+			bool left = is_type(type, 4) && is_l;
+			bool right = is_type(type, 8) && is_r;
 
 			if (corners || top || bot || left || right)
 				color = c;
@@ -165,6 +251,41 @@ void main(void)
     color.rgb *= brightness;
 
     color *= tint;
+
+	// lights
+	for(int i = 0; i < lightCount; i++)
+	{{
+		vec3 l = light[i];
+		vec4 c = lightColor[i];
+		float aspect = viewSize.x / viewSize.y;
+		float dist = distance(vec2(coord.x, coord.y / aspect), vec2(l.x, l.y / aspect));	
+		
+		if (dist < l.z)
+		{{
+			bool shadow = false;
+			for(int j = 0; j < obstacleCount; j++)
+			{{
+				vec4 area = obstacleArea[j];
+				vec2 min = vec2(area.x, area.y);
+				vec2 max = vec2(area.x + area.z, area.y + area.w);
+				vec4 off = vec4(0.0);
+				
+				if (is_shadow(vec2(l.x, l.y), coord, min, max) && !is_inside(coord, area, off))
+				{{
+					shadow = true;
+					break;
+				}}
+			}}
+
+			float attenuation = 1.0 - (dist / l.z);
+			color.rgb += c.rgb * c.a * attenuation;
+
+			if (shadow)
+			{{
+				color.rgb = mix(color.rgb, vec3(0.0), c.a * attenuation);
+			}}
+		}}
+	}}
 
 	gl_FragColor = color;
 }}";

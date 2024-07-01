@@ -202,6 +202,14 @@ public struct Color
         var blue = (byte)Map(unit, 0, 1, B, 255);
         return new(red, green, blue);
     }
+    public Color ToTransparent(float unit = 0.5f)
+    {
+        return new(R, G, B, (byte)Map(unit, 0, 1, A, 0));
+    }
+    public Color ToOpaque(float unit = 0.5f)
+    {
+        return new(R, G, B, (byte)Map(unit, 0, 1, A, 255));
+    }
 
     /// <returns>
     /// A bundle tuple containing the red, green, blue, and alpha components of the color.</returns>
