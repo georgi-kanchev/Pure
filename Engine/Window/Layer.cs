@@ -11,6 +11,11 @@ public enum Edge
     AllEdges = Top | Bottom | Left | Right, AllEdgesAndCorners = AllEdges | Corners
 }
 
+public enum LightType
+{
+    ColoredLight, Mask, InvertedMask
+}
+
 public class Layer
 {
     public string AtlasPath
@@ -117,6 +122,7 @@ public class Layer
             shader?.SetUniform("brightness", brightness);
         }
     }
+
     public bool IsLightFading
     {
         get => isLightFading;
@@ -126,13 +132,14 @@ public class Layer
             isLightFading = value;
         }
     }
-    public bool IsLightMasking
+    public LightType LightType
     {
-        get => isLightMasking;
+        get => lightType;
         set
         {
-            shader?.SetUniform("lightMask", value);
-            isLightMasking = value;
+            shader?.SetUniform("lightMask", value is LightType.Mask or LightType.InvertedMask);
+            shader?.SetUniform("lightInvert", value == LightType.InvertedMask);
+            lightType = value;
         }
     }
 
@@ -196,7 +203,7 @@ public class Layer
         BackgroundColor = GetUInt();
 
         IsLightFading = GetBool();
-        isLightMasking = GetBool();
+        LightType = (LightType)GetByte();
 
         Zoom = GetFloat();
         Offset = (GetFloat(), GetFloat());
@@ -244,7 +251,7 @@ public class Layer
         result.AddRange(BitConverter.GetBytes(BackgroundColor));
 
         result.AddRange(BitConverter.GetBytes(IsLightFading));
-        result.AddRange(BitConverter.GetBytes(IsLightMasking));
+        result.AddRange(BitConverter.GetBytes((byte)LightType));
 
         result.AddRange(BitConverter.GetBytes(Zoom));
         result.AddRange(BitConverter.GetBytes(Offset.x));
@@ -643,7 +650,7 @@ public class Layer
     private uint currTint = uint.MaxValue;
     private float zoom, gamma, saturation, contrast, brightness;
     private bool isLightFading;
-    private bool isLightMasking;
+    private LightType lightType;
 
     [MemberNotNull(nameof(TileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]
     private void Init()

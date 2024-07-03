@@ -82,9 +82,9 @@ public static class Collision
             layer.Distort((0, 0, w, h), (0, 4), (0, 100), Color.Blue.ToDark());
             layer.Distort((0, 0, w, h), (0, 1), (0, 100), Color.Green.ToDark(0.7f).ToDark());
 
-            layer.Light((30, 8), 5f, Color.Brown.ToTransparent(0.1f));
-            layer.Light((39, 12), 5f, Color.Cyan.ToTransparent(0.2f));
-            layer.Light(mousePosition, 3f, Color.Yellow.ToTransparent(0.4f));
+            layer.Light((30, 8), 5f, Color.Red);
+            layer.Light((39, 12), 5f, Color.Green);
+            layer.Light(mousePosition, 5f, Color.Blue);
             layer.BlockLight((30, 10, 2, 2));
             layer.BlockLight((34, 11, 2, 2));
             layer.BlockLight((33, 8, 2, 2));

@@ -23,6 +23,7 @@ uniform int obstacleCount;
 uniform vec4 obstacleArea[{MAX}];
 uniform bool lightMask;
 uniform bool lightFade;
+uniform bool lightInvert;
 
 uniform int replaceCount;
 uniform vec4 replaceOld[{MAX}];
@@ -246,13 +247,14 @@ void main(void)
 	}}
 
 	// lights
+	float maskOpacity = 0.0;	
 	for(int i = 0; i < lightCount; i++)
 	{{
 		vec3 l = light[i];
 		vec4 c = lightColor[i];
 		float aspect = viewSize.x / viewSize.y;
 		float dist = distance(vec2(coord.x, coord.y / aspect), vec2(l.x, l.y / aspect));	
-		
+
 		if (dist < l.z)
 		{{
 			bool shadow = false;
@@ -271,17 +273,19 @@ void main(void)
 			}}
 
 			float attenuation = lightFade ? 1.0 - (dist / l.z) : 1.0;
-			color.rgb += c.rgb * c.a * attenuation;
 
 			if (lightMask)
-				color.a = shadow ? 0.0 : attenuation;
-
-			if (shadow)
-				color.rgb = mix(color.rgb, vec3(0.0), c.a * attenuation);
+				maskOpacity += shadow ? 0.0 : attenuation;
+			else
+			{{
+				color.rgb += c.rgb * c.a * attenuation;
+				color.rgb -= shadow ? mix(vec3(0.0), color.rgb, c.a * attenuation) : vec3(0.0, 0.0, 0.0);
+			}}
 		}}
-		else if (lightMask)
-			color.a = 0.0;
 	}}
+
+	color.a = lightMask ? maskOpacity : color.a;
+	color.a = lightMask && lightInvert ? 1.0 - color.a : color.a;	
 
 	// color adjustments
     color.rgb = pow(color.rgb, vec3(1.0 / gamma));
