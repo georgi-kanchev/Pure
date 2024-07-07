@@ -220,18 +220,10 @@ public struct Line
 
         return result.ToArray();
     }
-    /// <summary>
-    /// Calculates all points of intersection between this line and the rectangles of the
-    /// specified map.
-    /// </summary>
-    /// <param name="solidMap">The map to calculate the intersection points with.</param>
-    /// <returns>
-    /// An array of all points of intersection between this line and the specified map.
-    /// </returns>
     public (float x, float y, uint color)[] CrossPoints(SolidMap solidMap)
     {
         var neighbours = solidMap.GetNeighborRects(this);
-        var result = new List<(float, float, uint)>();
+        var result = new List<(float x, float y, uint color)>();
 
         foreach (var r in neighbours)
         {

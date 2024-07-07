@@ -17,8 +17,8 @@ public static class Collision
         var (w, h) = tilemap.Size;
 
         var collisionMap = new SolidMap();
-        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 0.5f, 1, Color.Yellow)); // lake
-        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1, 0.5f, Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1f, 1f, Color.Yellow)); // lake
         collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE, new Solid(0, 0, 1, 1)); // house roof
         collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Solid(0, 0, 1, 1)); // house wall
         collisionMap.SolidsAdd(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1)); // tree trunk
@@ -44,6 +44,7 @@ public static class Collision
         tilemap.SetBackgrounds(background);
 
         collisionMap.Update(tilemap);
+        var collisionPack = collisionMap.ToArray();
 
         layer.Tint = Color.Blue.ToBright();
 
@@ -65,7 +66,7 @@ public static class Collision
             var tint = isOverlapping ? Color.Red : Color.Green;
             var tile = new Tile(id, tint);
             var line = new Line((mousePosition.x - 1, mousePosition.y), (15, 15), Color.Red);
-            var crossPoints = line.CrossPoints(collisionMap);
+            var crossPoints = line.CrossPoints(collisionPack);
 
             hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
@@ -73,8 +74,8 @@ public static class Collision
             layer.DrawTilemap(background);
             layer.DrawTilemap(tilemap);
             //layer.DrawRectangles(collisionMap);
-            //layer.DrawLines(line);
-            //layer.DrawPoints(crossPoints);
+            layer.DrawLines(line);
+            layer.DrawPoints(crossPoints);
             //layer.DrawTiles(mousePosition, tile);
             layer.DrawCursor();
 
@@ -112,7 +113,10 @@ public static class Collision
             tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
         }
     }
-    private static void SetBridge(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB) { tilemap.SetLine(pointA, pointB, null, new Tile(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark())); }
+    private static void SetBridge(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
+    {
+        tilemap.SetLine(pointA, pointB, null, new Tile(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
+    }
     private static void SetRoad(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
         var angle = pointA.x == pointB.x ? 1 : 0;

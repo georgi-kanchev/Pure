@@ -8,7 +8,14 @@ public class SolidMap
 {
     public (int x, int y) Position { get; set; }
 
-    public int SolidsCount { get; private set; }
+    public int TileCount
+    {
+        get => cellRects.Count;
+    }
+    public int SolidsCount
+    {
+        get => arrayCache?.Length ?? 0;
+    }
     public int IgnoredCellsCount
     {
         get => ignoredCells.Count;
@@ -123,24 +130,7 @@ public class SolidMap
     }
     public Solid[] ToArray()
     {
-        var result = new List<Solid>();
-        foreach (var kvp in tileIndices)
-        {
-            if (ignoredCells.Contains(kvp.Key))
-                continue;
-
-            var rects = cellRects[kvp.Value];
-            var (cellX, cellY) = kvp.Key;
-            foreach (var rect in rects)
-            {
-                var rectangle = rect;
-                var (x, y) = rectangle.Position;
-                rectangle.Position = (cellX + x, cellY + y);
-                result.Add(rectangle);
-            }
-        }
-
-        return result.ToArray();
+        return arrayCache?.ToArray() ?? Array.Empty<Solid>();
     }
 
     public void SolidsAdd(int tileId, params Solid[]? solids)
@@ -152,7 +142,6 @@ public class SolidMap
             cellRects[tileId] = new();
 
         cellRects[tileId].AddRange(solids);
-        SolidsCount += solids.Length;
     }
     public void SolidsRemove(int tileId, params Solid[]? solids)
     {
@@ -161,8 +150,7 @@ public class SolidMap
 
         var rects = cellRects[tileId];
         foreach (var solid in solids)
-            if (rects.Remove(solid))
-                SolidsCount--;
+            rects.Remove(solid);
     }
     public Solid[] SolidsAt((int x, int y) cell)
     {
@@ -187,16 +175,12 @@ public class SolidMap
 
     public void SolidsClear()
     {
-        SolidsCount = 0;
         cellRects.Clear();
     }
     public void SolidsClear(int tileId)
     {
-        if (cellRects.ContainsKey(tileId) == false)
-            return;
-
-        SolidsCount -= cellRects[tileId].Count;
-        cellRects.Remove(tileId);
+        if (cellRects.ContainsKey(tileId))
+            cellRects.Remove(tileId);
     }
 
     public void IgnoredCellsAdd(params (int x, int y)[]? cells)
@@ -296,7 +280,7 @@ public class SolidMap
         ignoredCells.Clear();
     }
 
-    public void Update(int[,]? tileIds)
+    public void Update(int[,]? tileIds, bool mergeAdjacentSolids = true)
     {
         if (tileIds == null)
             return;
@@ -313,6 +297,33 @@ public class SolidMap
                 var cell = (x + Position.x, y + Position.y);
                 tileIndices[cell] = tile;
             }
+
+        // caching the resulting solid array to not create it on each get
+        var result = new List<Solid>();
+        foreach (var kvp in tileIndices)
+        {
+            if (ignoredCells.Contains(kvp.Key))
+                continue;
+
+            var rects = cellRects[kvp.Value];
+            var (cellX, cellY) = kvp.Key;
+            foreach (var rect in rects)
+            {
+                var rectangle = rect;
+                var (x, y) = rectangle.Position;
+                rectangle.Position = (cellX + x, cellY + y);
+                result.Add(rectangle);
+            }
+        }
+
+        arrayCache = result.ToArray();
+
+        if (mergeAdjacentSolids == false)
+            return;
+
+        var solidPack = new SolidPack(arrayCache);
+        solidPack.Merge();
+        arrayCache = solidPack;
     }
 
     public bool IsOverlapping(LinePack linePack)
@@ -479,6 +490,7 @@ public class SolidMap
     private readonly Dictionary<(int x, int y), int> tileIndices = new();
     private readonly Dictionary<int, List<Solid>> cellRects = new();
     private readonly List<(int x, int y)> ignoredCells = new();
+    private Solid[]? arrayCache;
 
     private List<Solid> GetNeighborRects(Solid rect)
     {
@@ -553,8 +565,7 @@ public class SolidMap
         var resultH = Math.Max((int)MathF.Ceiling(h * 2f), 1);
         return (resultW, resultH);
     }
-
-    public static float AngleDifference(float angle1, float angle2)
+    private static float AngleDifference(float angle1, float angle2)
     {
         return Math.Abs((angle2 - angle1 + 540) % 360 - 180);
     }

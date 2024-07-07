@@ -210,13 +210,30 @@ public class Layer
 
         verts = new(PrimitiveType.Quads);
 
-        float GetFloat() { return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset)); }
-        int GetInt() { return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset)); }
-        bool GetBool() { return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset)); }
-        uint GetUInt() { return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset)); }
-        byte GetByte() { return GetBytesFrom(b, 1, ref offset)[0]; }
+        float GetFloat()
+        {
+            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+        }
+        int GetInt()
+        {
+            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        }
+        bool GetBool()
+        {
+            return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
+        }
+        uint GetUInt()
+        {
+            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        }
+        byte GetByte()
+        {
+            return GetBytesFrom(b, 1, ref offset)[0];
+        }
     }
-    public Layer(string base64) : this(Convert.FromBase64String(base64)) { }
+    public Layer(string base64) : this(Convert.FromBase64String(base64))
+    {
+    }
 
     public void ToDefault()
     {
@@ -227,7 +244,10 @@ public class Layer
         AtlasPath = string.Empty;
         TileIdFull = 10;
     }
-    public string ToBase64() { return Convert.ToBase64String(ToBytes()); }
+    public string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -608,9 +628,15 @@ public class Layer
         return (x, y);
     }
 
-    public static void DefaultGraphicsToFile(string filePath) { tilesets["default"].CopyToImage().SaveToFile(filePath); }
+    public static void DefaultGraphicsToFile(string filePath)
+    {
+        tilesets["default"].CopyToImage().SaveToFile(filePath);
+    }
 
-    public static implicit operator byte[](Layer layer) { return layer.ToBytes(); }
+    public static implicit operator byte[](Layer layer)
+    {
+        return layer.ToBytes();
+    }
 
 #region Backend
     internal readonly Shader? shader;
@@ -741,8 +767,14 @@ public class Layer
 
         return (index % tw, index / tw);
     }
-    private int CoordsToIndex(int x, int y) { return y * AtlasTileCount.width + x; }
-    private static int Wrap(int number, int targetNumber) { return (number % targetNumber + targetNumber) % targetNumber; }
+    private int CoordsToIndex(int x, int y)
+    {
+        return y * AtlasTileCount.width + x;
+    }
+    private static int Wrap(int number, int targetNumber)
+    {
+        return (number % targetNumber + targetNumber) % targetNumber;
+    }
     private static void Shift<T>(IList<T> collection, int offset)
     {
         if (offset == default)
@@ -831,6 +863,55 @@ public class Layer
         var result = fromBytes[offset..(offset + amount)];
         offset += amount;
         return result;
+    }
+
+    private static (float x, float y, float width, float height)[] MinimizeRectangles((float x, float y, float width, float height)[] areas)
+    {
+        var result = areas.ToList();
+        var hasChanges = true;
+
+        while (hasChanges)
+        {
+            hasChanges = false;
+
+            for (var i = 0; i < result.Count; i++)
+            {
+                for (var j = i + 1; j < result.Count; j++)
+                {
+                    var merged = Merge(result[i], result[j]);
+                    if (merged == null)
+                        continue;
+
+                    result[i] = merged ?? default;
+                    result.RemoveAt(j);
+                    hasChanges = true;
+                    break;
+                }
+
+                if (hasChanges)
+                    break;
+            }
+        }
+
+        return result.ToArray();
+    }
+    private static (float x, float y, float width, float height)? Merge((float x, float y, float width, float height) r1, (float x, float y, float width, float height) r2)
+    {
+        if (Is(r1.y, r2.y) &&
+            Is(r1.height, r2.height) &&
+            (Is(r1.x + r1.width, r2.x) || Is(r2.x + r2.width, r1.x)))
+            return (Math.Min(r1.x, r2.x), r1.y, r1.width + r2.width, r1.height);
+        if (Is(r1.x, r2.x) &&
+            Is(r1.width, r2.width) &&
+            (Is(r1.y + r1.height, r2.y) || Is(r2.y + r2.height, r1.y)))
+            return (r1.x, Math.Min(r1.y, r2.y), r1.width, r1.height + r2.height);
+
+        return null;
+
+        bool Is(float a, float b)
+        {
+            return Math.Abs(a - b) < 0.001f;
+        }
     }
 #endregion
 }

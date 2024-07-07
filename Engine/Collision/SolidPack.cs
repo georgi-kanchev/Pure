@@ -68,6 +68,52 @@ public class SolidPack : Pack<Solid>
         return result;
     }
 
+    public void Merge()
+    {
+        var hasChanges = true;
+
+        while (hasChanges)
+        {
+            hasChanges = false;
+
+            for (var i = 0; i < data.Count; i++)
+            {
+                for (var j = i + 1; j < data.Count; j++)
+                {
+                    var merged = MergeSolids(data[i], data[j]);
+                    if (merged == null)
+                        continue;
+
+                    data[i] = merged ?? default;
+                    data.RemoveAt(j);
+                    hasChanges = true;
+                    break;
+                }
+
+                if (hasChanges)
+                    break;
+            }
+        }
+
+        Solid? MergeSolids(Solid a, Solid b)
+        {
+            if (Is(a.Y, b.Y) &&
+                Is(a.Height, b.Height) &&
+                (Is(a.X + a.Width, b.X) || Is(b.X + b.Width, a.X)))
+                return (Math.Min(a.X, b.X), a.Y, a.Width + b.Width, a.Height, a.Color);
+            if (Is(a.X, b.X) &&
+                Is(a.Width, b.Width) &&
+                (Is(a.Y + a.Height, b.Y) || Is(b.Y + b.Height, a.Y)))
+                return (a.X, Math.Min(a.Y, b.Y), a.Width, a.Height + b.Height, a.Color);
+
+            return null;
+        }
+        bool Is(float a, float b)
+        {
+            return Math.Abs(a - b) < 0.001f;
+        }
+    }
+
     public bool IsOverlapping(LinePack linePack)
     {
         return linePack.IsOverlapping(this);
