@@ -1,10 +1,12 @@
 ﻿global using SFML.Graphics;
 global using SFML.System;
 global using SFML.Window;
+
 global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using System.IO.Compression;
 global using System.Text;
+
 using SFML.Graphics.Glsl;
 
 namespace Pure.Engine.Window;
@@ -12,10 +14,7 @@ namespace Pure.Engine.Window;
 /// <summary>
 /// Possible window modes.
 /// </summary>
-public enum Mode
-{
-    Windowed, Borderless, Fullscreen
-}
+public enum Mode { Windowed, Borderless, Fullscreen }
 
 /// <summary>
 /// Provides access to an OS window and its properties.
@@ -103,7 +102,7 @@ public static class Window
                 return;
 
             monitor = (uint)Math.Min(value, Engine.Window.Monitor.Monitors.Length - 1);
-            RecreateRenderTexture();
+            RecreateRenderTextures();
             TryCreate();
             Center();
         }
@@ -115,7 +114,7 @@ public static class Window
         {
             pixelScale = value;
             TryCreate();
-            RecreateRenderTexture();
+            RecreateRenderTextures();
         }
     }
     public static bool IsVerticallySynced
@@ -163,13 +162,34 @@ public static class Window
         window.Position = new(x, y);
         window.Size = new(w, h);
 
-        float GetFloat() { return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset)); }
-        int GetInt() { return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset)); }
-        uint GetUInt() { return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset)); }
-        bool GetBool() { return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset)); }
+        float GetFloat()
+        {
+            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+        }
+
+        int GetInt()
+        {
+            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+        }
+
+        uint GetUInt()
+        {
+            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
+        }
+
+        bool GetBool()
+        {
+            return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
+        }
     }
-    public static void FromBase64(string base64) { FromBytes(Convert.FromBase64String(base64)); }
-    public static string ToBase64() { return Convert.ToBase64String(ToBytes()); }
+    public static void FromBase64(string base64)
+    {
+        FromBytes(Convert.FromBase64String(base64));
+    }
+    public static string ToBase64()
+    {
+        return Convert.ToBase64String(ToBytes());
+    }
     public static byte[] ToBytes()
     {
         TryCreate();
@@ -221,11 +241,10 @@ public static class Window
         var tex = Layer.tilesets[layer.AtlasPath];
         var centerX = layer.TilemapPixelSize.w / 2f * layer.Zoom;
         var centerY = layer.TilemapPixelSize.h / 2f * layer.Zoom;
-        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, tex, null);
-        var r2 = new RenderStates(BlendMode.Alpha, Transform.Identity, anotherPass?.Texture, layer.shader);
-
-        r.Transform.Translate(layer.Offset.x - centerX, layer.Offset.y - centerY);
-        r.Transform.Scale(layer.Zoom, layer.Zoom);
+        var tr = Transform.Identity;
+        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, anotherPass?.Texture, layer.shader);
+        tr.Translate(layer.Offset.x - centerX, layer.Offset.y - centerY);
+        tr.Scale(layer.Zoom, layer.Zoom);
 
         var (w, h) = (renderTexture?.Size.X ?? 0, renderTexture?.Size.Y ?? 0);
         verts[0] = new(new(-w / 2f, -h / 2f), Color.White, new(0, 0));
@@ -233,10 +252,11 @@ public static class Window
         verts[2] = new(new(w / 2f, h / 2f), Color.White, new(w, h));
         verts[3] = new(new(-w / 2f, h / 2f), Color.White, new(0, h));
 
-        // x y w h | rect
-        // r g b a | target color
-        // r g b a | edge color
-        // t - - - | type
+        shaderData?.Clear(Color.Transparent);
+        shaderData?.Draw(layer.shaderParams, new(tex));
+        shaderData?.Display();
+
+        //shaderData?.Texture.CopyToImage().SaveToFile("test.png");
 
         var view = anotherPass?.GetView();
         layer.edgeCount = 0;
@@ -246,13 +266,17 @@ public static class Window
         layer.obstacleCount = 0;
         layer.shader?.SetUniform("viewSize", new Vec2(view?.Size.X ?? 0, view?.Size.Y ?? 0));
         layer.shader?.SetUniform("time", time.ElapsedTime.AsSeconds());
+        layer.shader?.SetUniform("data", shaderData?.Texture);
+
         anotherPass?.Clear(new(layer.BackgroundColor));
-        anotherPass?.Draw(layer.verts, r);
+        anotherPass?.Draw(layer.verts, new(BlendMode.Alpha, tr, tex, null));
         anotherPass?.Display();
 
-        renderTexture?.Draw(verts, PrimitiveType.Quads, r2);
+        renderTexture?.Draw(verts, PrimitiveType.Quads, r);
+        renderTexture?.Draw(verts, PrimitiveType.Quads, new(shaderData?.Texture));
 
         layer.verts.Clear();
+        layer.shaderParams.Clear();
     }
     public static void Close()
     {
@@ -306,7 +330,7 @@ public static class Window
         var (gw, gh) = layer.AtlasTileGap;
         tw += gw;
         th += gh;
-        var verts = new Vertex[]
+        var vertices = new Vertex[]
         {
             new(new(0, 0), new(tileBack.tint), new(tw * bx, th * by)),
             new(new(SIZE, 0), new(tileBack.tint), new(tw * (bx + 1), th * by)),
@@ -317,7 +341,7 @@ public static class Window
             new(new(SIZE, SIZE), new(tile.tint), new(tw * (fx + 1), th * (fy + 1))),
             new(new(0, SIZE), new(tile.tint), new(tw * fx, th * (fy + 1)))
         };
-        rend.Draw(verts, PrimitiveType.Quads, new(texture));
+        rend.Draw(vertices, PrimitiveType.Quads, new(texture));
         rend.Display();
         var image = rend.Texture.CopyToImage();
         window.SetIcon(SIZE, SIZE, image.Pixels);
@@ -329,11 +353,14 @@ public static class Window
         image.Dispose();
     }
 
-    public static void OnClose(Action method) { close += method; }
+    public static void OnClose(Action method)
+    {
+        close += method;
+    }
 
-#region Backend
+    #region Backend
     internal static RenderWindow? window;
-    internal static RenderTexture? renderTexture, anotherPass;
+    internal static RenderTexture? renderTexture, anotherPass, shaderData;
     internal static (int w, int h) renderTextureViewSize;
 
     private static Action? close;
@@ -358,7 +385,7 @@ public static class Window
             return;
 
         if (renderTexture == null)
-            RecreateRenderTexture();
+            RecreateRenderTextures();
 
         Recreate();
     }
@@ -424,12 +451,14 @@ public static class Window
         Center();
     }
     [MemberNotNull(nameof(renderTexture))]
-    private static void RecreateRenderTexture()
+    private static void RecreateRenderTextures()
     {
         renderTexture?.Dispose();
         renderTexture = null;
         anotherPass?.Dispose();
         anotherPass = null;
+        shaderData?.Dispose();
+        shaderData = null;
 
         var currentMonitor = Engine.Window.Monitor.Monitors[Monitor];
         var (w, h) = currentMonitor.Size;
@@ -441,6 +470,9 @@ public static class Window
 
         anotherPass = new(renderTexture.Size.X, renderTexture.Size.Y);
         anotherPass.SetView(view);
+
+        shaderData = new(renderTexture.Size.X, renderTexture.Size.Y);
+        //shaderData.SetView(view);
     }
 
     private static void StartRetroAnimation()
@@ -519,9 +551,7 @@ public static class Window
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -530,9 +560,7 @@ public static class Window
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -542,5 +570,5 @@ public static class Window
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

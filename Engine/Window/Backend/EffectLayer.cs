@@ -9,6 +9,7 @@ internal class EffectLayer : Effect
         get =>
             $@"
 uniform sampler2D texture;
+uniform sampler2D data;
 
 uniform float gamma;
 uniform float saturation;

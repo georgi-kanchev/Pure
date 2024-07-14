@@ -47,6 +47,7 @@ public static class Collision
         var collisionPack = collisionMap.ToArray();
 
         layer.Tint = Color.Blue.ToBright();
+        //layer.Offset = (100, 0);
 
         Keyboard.Key.A.OnPress(() =>
         {
@@ -59,6 +60,8 @@ public static class Collision
         while (Window.KeepOpen())
         {
             Time.Update();
+
+            layer.ApplyLight((5f, 5f), 1f, Color.White);
 
             var mousePosition = layer.PixelToWorld(Mouse.CursorPosition);
             var isOverlapping = collisionMap.IsOverlapping(hitbox);

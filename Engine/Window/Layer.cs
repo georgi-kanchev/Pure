@@ -1,6 +1,7 @@
 namespace Pure.Engine.Window;
 
 using SFML.Graphics.Glsl;
+
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -11,10 +12,7 @@ public enum Edge
     AllEdges = Top | Bottom | Left | Right, AllEdgesAndCorners = AllEdges | Corners
 }
 
-public enum LightType
-{
-    ColoredLight, Mask, InvertedMask
-}
+public enum LightType { ColoredLight, Mask, InvertedMask }
 
 public class Layer
 {
@@ -166,6 +164,7 @@ public class Layer
         Init();
         verts = new(PrimitiveType.Quads);
         shader = new EffectLayer().Shader;
+        shaderParams = new(PrimitiveType.Points);
 
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
@@ -209,23 +208,28 @@ public class Layer
         Offset = (GetFloat(), GetFloat());
 
         verts = new(PrimitiveType.Quads);
+        shaderParams = new(PrimitiveType.Points);
 
         float GetFloat()
         {
             return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
         }
+
         int GetInt()
         {
             return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
         }
+
         bool GetBool()
         {
             return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
         }
+
         uint GetUInt()
         {
             return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
         }
+
         byte GetByte()
         {
             return GetBytesFrom(b, 1, ref offset)[0];
@@ -486,6 +490,26 @@ public class Layer
         shader?.SetUniform($"edgeType[{i}]", (int)edges);
     }
 
+    public void ApplyLight((float x, float y) position, float radius, uint color)
+    {
+        var (tx, ty) = ((int)position.x, (int)position.y);
+        var ox = BitConverter.GetBytes(position.x - tx);
+        var oy = BitConverter.GetBytes(position.y - ty);
+        var r = BitConverter.GetBytes(radius);
+
+        var p0 = new Color(ox[0], ox[1], ox[2], ox[3]);
+        var p1 = new Color(oy[0], oy[1], oy[2], oy[3]);
+        var p2 = new Color(r[0], r[1], r[2], r[3]);
+        var p3 = new Color(color);
+
+        var full = GetTexCoords(TileIdFull, (1, 1));
+        var (x, y) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
+        shaderParams.Append(new(new(x + 0, y + 0), p0, full.tl));
+        shaderParams.Append(new(new(x + 1, y + 0), p1, full.tl));
+        shaderParams.Append(new(new(x + 2, y + 0), p2, full.tl));
+        shaderParams.Append(new(new(x + 3, y + 0), p3, full.tl));
+    }
+
     public void BlockLight((float x, float y, float width, float height) area)
     {
         var (x, y, w, h) = area;
@@ -638,9 +662,9 @@ public class Layer
         return layer.ToBytes();
     }
 
-#region Backend
+    #region Backend
     internal readonly Shader? shader;
-    internal readonly VertexArray verts;
+    internal readonly VertexArray verts, shaderParams;
     private readonly List<(uint oldColor, uint newColor)> replaceColors = new();
     internal static readonly Dictionary<string, Texture> tilesets = new();
     private static readonly List<(float, float)> cursorOffsets = new()
@@ -759,7 +783,7 @@ public class Layer
         var bl = tl + new Vector2f(0, th * h);
         return (tl, tr, br, bl);
     }
-    private (int, int) IndexToCoords(int index)
+    private (int x, int y) IndexToCoords(int index)
     {
         var (tw, th) = AtlasTileCount;
         index = index < 0 ? 0 : index;
@@ -841,9 +865,7 @@ public class Layer
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -852,9 +874,7 @@ public class Layer
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -864,54 +884,5 @@ public class Layer
         offset += amount;
         return result;
     }
-
-    private static (float x, float y, float width, float height)[] MinimizeRectangles((float x, float y, float width, float height)[] areas)
-    {
-        var result = areas.ToList();
-        var hasChanges = true;
-
-        while (hasChanges)
-        {
-            hasChanges = false;
-
-            for (var i = 0; i < result.Count; i++)
-            {
-                for (var j = i + 1; j < result.Count; j++)
-                {
-                    var merged = Merge(result[i], result[j]);
-                    if (merged == null)
-                        continue;
-
-                    result[i] = merged ?? default;
-                    result.RemoveAt(j);
-                    hasChanges = true;
-                    break;
-                }
-
-                if (hasChanges)
-                    break;
-            }
-        }
-
-        return result.ToArray();
-    }
-    private static (float x, float y, float width, float height)? Merge((float x, float y, float width, float height) r1, (float x, float y, float width, float height) r2)
-    {
-        if (Is(r1.y, r2.y) &&
-            Is(r1.height, r2.height) &&
-            (Is(r1.x + r1.width, r2.x) || Is(r2.x + r2.width, r1.x)))
-            return (Math.Min(r1.x, r2.x), r1.y, r1.width + r2.width, r1.height);
-        if (Is(r1.x, r2.x) &&
-            Is(r1.width, r2.width) &&
-            (Is(r1.y + r1.height, r2.y) || Is(r2.y + r2.height, r1.y)))
-            return (r1.x, Math.Min(r1.y, r2.y), r1.width, r1.height + r2.height);
-
-        return null;
-
-        bool Is(float a, float b)
-        {
-            return Math.Abs(a - b) < 0.001f;
-        }
-    }
-#endregion
+    #endregion
 }
