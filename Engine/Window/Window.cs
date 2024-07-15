@@ -265,6 +265,8 @@ public static class Window
         layer.lightCount = 0;
         layer.obstacleCount = 0;
         layer.shader?.SetUniform("viewSize", new Vec2(view?.Size.X ?? 0, view?.Size.Y ?? 0));
+        layer.shader?.SetUniform("tilemapSize", new Vec2(layer.TilemapSize.width, layer.TilemapSize.height));
+        layer.shader?.SetUniform("tileSize", new Vec2(layer.AtlasTileSize.width, layer.AtlasTileSize.height));
         layer.shader?.SetUniform("time", time.ElapsedTime.AsSeconds());
         layer.shader?.SetUniform("data", shaderData?.Texture);
 

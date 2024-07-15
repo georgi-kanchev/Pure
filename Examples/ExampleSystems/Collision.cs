@@ -61,8 +61,6 @@ public static class Collision
         {
             Time.Update();
 
-            layer.ApplyLight((5f, 5f), 1f, Color.White);
-
             var mousePosition = layer.PixelToWorld(Mouse.CursorPosition);
             var isOverlapping = collisionMap.IsOverlapping(hitbox);
             var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_SMILING;
@@ -89,7 +87,7 @@ public static class Collision
             layer.Light((30, 8), 5f, Color.Red);
             layer.Light((39, 12), 5f, Color.Green);
             layer.Light(mousePosition, 5f, Color.Blue);
-            layer.BlockLight((30, 10, 2, 2));
+            layer.BlockLight((0.5f, 0.5f, w, h));
             layer.BlockLight((34, 11, 2, 2));
             layer.BlockLight((33, 8, 2, 2));
 

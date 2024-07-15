@@ -49,6 +49,8 @@ uniform int edgeType[{MAX}];
 uniform vec4 tint;
 
 uniform vec2 viewSize;
+uniform vec2 tilemapSize;
+uniform vec2 tileSize;
 
 bool is_inside(vec2 coord, vec4 area, vec4 off)
 {{
@@ -151,6 +153,12 @@ void main(void)
 {{
 	vec2 pixel = 1.0 / viewSize;
 	vec2 coord = gl_TexCoord[0].xy;
+
+	vec2 tileSz = pixel * tileSize;
+	vec2 tileCoord = floor(coord / tileSz) * tileSz;
+	vec4 data = texture2D(data, tileCoord);
+	if (data.a > 0)
+		discard;
 
 	// waves
 	for(int i = 0; i < waveCount; i++)
@@ -294,7 +302,7 @@ void main(void)
     color.rgb = mix(vec3(luminance), color.rgb, saturation);
     color.rgb = mix(vec3(0.5), color.rgb, contrast);
     color.rgb *= brightness;
-    color *= tint;
+    color *= tint;	
 
 	gl_FragColor = color;
 }}";

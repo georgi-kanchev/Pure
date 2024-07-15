@@ -492,9 +492,10 @@ public class Layer
 
     public void ApplyLight((float x, float y) position, float radius, uint color)
     {
-        var (tx, ty) = ((int)position.x, (int)position.y);
-        var ox = BitConverter.GetBytes(position.x - tx);
-        var oy = BitConverter.GetBytes(position.y - ty);
+        var (x, y) = position;
+        var (ix, iy) = ((int)position.x, (int)position.y);
+        var ox = BitConverter.GetBytes(x - ix);
+        var oy = BitConverter.GetBytes(y - iy);
         var r = BitConverter.GetBytes(radius);
 
         var p0 = new Color(ox[0], ox[1], ox[2], ox[3]);
@@ -503,25 +504,44 @@ public class Layer
         var p3 = new Color(color);
 
         var full = GetTexCoords(TileIdFull, (1, 1));
-        var (x, y) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
-        shaderParams.Append(new(new(x + 0, y + 0), p0, full.tl));
-        shaderParams.Append(new(new(x + 1, y + 0), p1, full.tl));
-        shaderParams.Append(new(new(x + 2, y + 0), p2, full.tl));
-        shaderParams.Append(new(new(x + 3, y + 0), p3, full.tl));
+        var (rx, ry) = (ix * AtlasTileSize.width, iy * AtlasTileSize.height);
+        shaderParams.Append(new(new(rx + 0, ry + 0), p0, full.tl));
+        shaderParams.Append(new(new(rx + 1, ry + 0), p1, full.tl));
+        shaderParams.Append(new(new(rx + 2, ry + 0), p2, full.tl));
+        shaderParams.Append(new(new(rx + 3, ry + 0), p3, full.tl));
     }
 
     public void BlockLight((float x, float y, float width, float height) area)
     {
+        // x /= TilemapSize.width;
+        // y /= TilemapSize.height;
+        // w /= TilemapSize.width;
+        // h /= TilemapSize.height;
+        //
+        // obstacleCount++;
+        // shader?.SetUniform("obstacleCount", obstacleCount);
+        // shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
+
         var (x, y, w, h) = area;
+        var (ix, iy) = ((int)x, (int)y);
+        var (mw, mh) = TilemapSize;
 
-        x /= TilemapSize.width;
-        y /= TilemapSize.height;
-        w /= TilemapSize.width;
-        h /= TilemapSize.height;
+        for (var j = y; j < y + h; j++)
+            for (var i = x; i < x + w; i++)
+            {
+                var (tx, ty) = ((int)Math.Clamp(i, ix, x + w), (int)Math.Clamp(j, iy, y + h));
+                var (fx, fy) = (i % 1f, j % 1f);
+                var ox = BitConverter.GetBytes(fx / mw);
+                var oy = BitConverter.GetBytes(fy / mh);
 
-        obstacleCount++;
-        shader?.SetUniform("obstacleCount", obstacleCount);
-        shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
+                var p0 = new Color(ox[0], ox[1], ox[2], ox[3]);
+                var p1 = new Color(oy[0], oy[1], oy[2], oy[3]);
+
+                var full = GetTexCoords(TileIdFull, (1, 1));
+                var (rx, ry) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
+                shaderParams.Append(new(new(rx + 0, ry + 1), p0, full.tl));
+                shaderParams.Append(new(new(rx + 1, ry + 1), p1, full.tl));
+            }
     }
     public void Light((float x, float y) position, float radius, uint color)
     {
