@@ -48,6 +48,7 @@ public static class Collision
 
         layer.Tint = Color.Blue.ToBright();
         //layer.Offset = (100, 0);
+        //layer.Zoom = 0.8f;
 
         Keyboard.Key.A.OnPress(() =>
         {
@@ -73,12 +74,12 @@ public static class Collision
             line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
 
             layer.DrawTilemap(background);
-            layer.DrawTilemap(tilemap);
+            //layer.DrawTilemap(tilemap);
             //layer.DrawRectangles(collisionMap);
-            layer.DrawLines(line);
-            layer.DrawPoints(crossPoints);
+            //layer.DrawLines(line);
+            //layer.DrawPoints(crossPoints);
             //layer.DrawTiles(mousePosition, tile);
-            layer.DrawCursor();
+            //layer.DrawCursor();
 
             layer.Blur((0, 0, w, h), (2f, 2f), Color.Blue);
             layer.Distort((0, 0, w, h), (0, 4), (0, 100), Color.Blue.ToDark());
@@ -87,7 +88,7 @@ public static class Collision
             layer.Light((30, 8), 5f, Color.Red);
             layer.Light((39, 12), 5f, Color.Green);
             layer.Light(mousePosition, 5f, Color.Blue);
-            layer.BlockLight((0.5f, 0.5f, w, h));
+            //layer.BlockLight((0f, 0f, 2, 2));
             layer.BlockLight((34, 11, 2, 2));
             layer.BlockLight((33, 8, 2, 2));
 

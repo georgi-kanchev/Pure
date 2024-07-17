@@ -1,12 +1,10 @@
 ﻿global using SFML.Graphics;
 global using SFML.System;
 global using SFML.Window;
-
 global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using System.IO.Compression;
 global using System.Text;
-
 using SFML.Graphics.Glsl;
 
 namespace Pure.Engine.Window;
@@ -256,7 +254,7 @@ public static class Window
         shaderData?.Draw(layer.shaderParams, new(tex));
         shaderData?.Display();
 
-        //shaderData?.Texture.CopyToImage().SaveToFile("test.png");
+        shaderData?.Texture.CopyToImage().SaveToFile("test.png");
 
         var view = anotherPass?.GetView();
         layer.edgeCount = 0;
@@ -360,7 +358,7 @@ public static class Window
         close += method;
     }
 
-    #region Backend
+#region Backend
     internal static RenderWindow? window;
     internal static RenderTexture? renderTexture, anotherPass, shaderData;
     internal static (int w, int h) renderTextureViewSize;
@@ -553,7 +551,9 @@ public static class Window
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -562,7 +562,9 @@ public static class Window
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -572,5 +574,5 @@ public static class Window
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

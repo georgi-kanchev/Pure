@@ -1,7 +1,6 @@
 namespace Pure.Engine.Window;
 
 using SFML.Graphics.Glsl;
-
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -505,10 +504,11 @@ public class Layer
 
         var full = GetTexCoords(TileIdFull, (1, 1));
         var (rx, ry) = (ix * AtlasTileSize.width, iy * AtlasTileSize.height);
-        shaderParams.Append(new(new(rx + 0, ry + 0), p0, full.tl));
-        shaderParams.Append(new(new(rx + 1, ry + 0), p1, full.tl));
-        shaderParams.Append(new(new(rx + 2, ry + 0), p2, full.tl));
-        shaderParams.Append(new(new(rx + 3, ry + 0), p3, full.tl));
+
+        shaderParams.Append(new(new(rx + 0, ry), p0, full.tl));
+        shaderParams.Append(new(new(rx + 1, ry), p1, full.tl));
+        shaderParams.Append(new(new(rx + 2, ry), p2, full.tl));
+        shaderParams.Append(new(new(rx + 3, ry), p3, full.tl));
     }
 
     public void BlockLight((float x, float y, float width, float height) area)
@@ -539,8 +539,9 @@ public class Layer
 
                 var full = GetTexCoords(TileIdFull, (1, 1));
                 var (rx, ry) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
-                shaderParams.Append(new(new(rx + 0, ry + 1), p0, full.tl));
-                shaderParams.Append(new(new(rx + 1, ry + 1), p1, full.tl));
+
+                shaderParams.Append(new(new(rx + 0, ry + 1), Color.Red, full.tl));
+                shaderParams.Append(new(new(rx + 1, ry + 1), Color.Red, full.tl));
             }
     }
     public void Light((float x, float y) position, float radius, uint color)
@@ -682,7 +683,7 @@ public class Layer
         return layer.ToBytes();
     }
 
-    #region Backend
+#region Backend
     internal readonly Shader? shader;
     internal readonly VertexArray verts, shaderParams;
     private readonly List<(uint oldColor, uint newColor)> replaceColors = new();
@@ -885,7 +886,9 @@ public class Layer
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -894,7 +897,9 @@ public class Layer
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -904,5 +909,5 @@ public class Layer
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }
