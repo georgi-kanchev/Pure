@@ -15,7 +15,7 @@ public static class Asteroids
 
         var (w, h) = Monitor.Current.AspectRatio;
         layer = new((w * 3, h * 3));
-        var tilemap = new Tilemap(layer.TilemapSize);
+        var tilemap = new Tilemap(layer.Size);
         var ship = new Shape("Y2ZABg32EMxwgIFhwX4obf8fCBBiDg4glUhi9shiAA==")
         {
             Type = Type.Ship,

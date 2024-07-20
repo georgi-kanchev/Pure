@@ -150,9 +150,9 @@ internal class TilesetPrompt
     {
         var result = (int)stepper.Value;
 
-        editor.LayerGrid.TileIdFull = result;
-        editor.LayerMap.TileIdFull = result;
-        layer.TileIdFull = result;
+        editor.LayerGrid.AtlasTileIdFull = result;
+        editor.LayerMap.AtlasTileIdFull = result;
+        layer.AtlasTileIdFull = result;
 
         var (tw, th) = layer.AtlasTileSize;
         var ratio = MathF.Max(tw / 8f, th / 8f);

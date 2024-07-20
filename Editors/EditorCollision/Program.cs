@@ -195,7 +195,7 @@ public static class Program
         };
         promptPanel.OnDisplay(() => editor.MapsUi.SetPanel(promptPanel, PROMPT_BACK));
 
-        layer.TilemapSize = map.Size;
+        layer.Size = map.Size;
         layer.Offset = (0f, -10f);
 
         SubscribeToClicks();
@@ -233,7 +233,7 @@ public static class Program
             layer.AtlasTileGap = editor.LayerMap.AtlasTileGap;
             layer.AtlasPath = editor.LayerMap.AtlasPath;
             layer.AtlasTileSize = editor.LayerMap.AtlasTileSize;
-            layer.TileIdFull = editor.LayerMap.TileIdFull;
+            layer.AtlasTileIdFull = editor.LayerMap.AtlasTileIdFull;
             var (tw, th) = layer.AtlasTileSize;
             var ratio = MathF.Max(tw / 8f, th / 8f);
             var zoom = 28f / ratio;

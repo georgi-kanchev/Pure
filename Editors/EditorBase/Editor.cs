@@ -160,9 +160,9 @@ public class Editor
 
             MapsUi.Flush();
 
-            LayerGrid.TilemapSize = MapGrid.View.Size;
-            LayerMap.TilemapSize = MapsEditor.View.Size;
-            LayerUi.TilemapSize = MapsUi.View.Size;
+            LayerGrid.Size = MapGrid.View.Size;
+            LayerMap.Size = MapsEditor.View.Size;
+            LayerUi.Size = MapsUi.View.Size;
 
             Input.Update(
                 Mouse.ButtonIdsPressed,
@@ -351,20 +351,20 @@ public class Editor
         var color = Color.Gray.ToDark(0.66f);
         var (x, y) = (0, 0);
 
-        MapGrid.Fill(null, new Tile(LayerMap.TileIdFull, Color.Brown.ToDark(0.8f)));
+        MapGrid.Fill(null, new Tile(LayerMap.AtlasTileIdFull, Color.Brown.ToDark(0.8f)));
 
         for (var i = 0; i < size.width + GRID_GAP; i += GRID_GAP)
         {
             var newX = x - (x + i) % GRID_GAP;
             MapGrid.SetLine((newX + i, y), (newX + i, y + size.height), null,
-                new Tile(LayerMap.TileIdFull, color));
+                new Tile(LayerMap.AtlasTileIdFull, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
             MapGrid.SetLine((x, newY + i), (x + size.width, newY + i), null,
-                new Tile(LayerMap.TileIdFull, color));
+                new Tile(LayerMap.AtlasTileIdFull, color));
         }
 
         OnSetGrid?.Invoke();

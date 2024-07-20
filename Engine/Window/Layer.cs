@@ -70,12 +70,12 @@ public class Layer
         set => atlasTileGap =
             ((byte)Math.Clamp((int)value.width, 0, 512), (byte)Math.Clamp((int)value.height, 0, 512));
     }
+    public int AtlasTileIdFull { get; set; }
 
-    public int TileIdFull { get; set; }
-    public (int width, int height) TilemapSize
+    public (int width, int height) Size
     {
-        get => tilemapSize;
-        set => tilemapSize = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
+        get => size;
+        set => size = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
     }
 
     public bool IsHovered
@@ -158,7 +158,7 @@ public class Layer
         set => zoom = Math.Clamp(value, 0, 1000f);
     }
 
-    public Layer((int width, int height) tilemapSize = default)
+    public Layer((int width, int height) size = default)
     {
         Init();
         verts = new(PrimitiveType.Quads);
@@ -168,8 +168,7 @@ public class Layer
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
 
-        TilemapSize = tilemapSize;
-
+        Size = size;
         Zoom = 1f;
 
         Gamma = 1f;
@@ -190,8 +189,8 @@ public class Layer
         AtlasTileGap = (GetByte(), GetByte());
         AtlasTileSize = (GetByte(), GetByte());
 
-        TileIdFull = GetInt();
-        TilemapSize = (GetInt(), GetInt());
+        AtlasTileIdFull = GetInt();
+        Size = (GetInt(), GetInt());
 
         Gamma = GetFloat();
         Saturation = GetFloat();
@@ -245,7 +244,7 @@ public class Layer
         AtlasTileGap = (0, 0);
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
-        TileIdFull = 10;
+        AtlasTileIdFull = 10;
     }
     public string ToBase64()
     {
@@ -262,9 +261,9 @@ public class Layer
         result.Add(AtlasTileSize.width);
         result.Add(AtlasTileSize.height);
 
-        result.AddRange(BitConverter.GetBytes(TileIdFull));
-        result.AddRange(BitConverter.GetBytes(TilemapSize.width));
-        result.AddRange(BitConverter.GetBytes(TilemapSize.height));
+        result.AddRange(BitConverter.GetBytes(AtlasTileIdFull));
+        result.AddRange(BitConverter.GetBytes(Size.width));
+        result.AddRange(BitConverter.GetBytes(Size.height));
 
         result.AddRange(BitConverter.GetBytes(Gamma));
         result.AddRange(BitConverter.GetBytes(Saturation));
@@ -477,10 +476,10 @@ public class Layer
         var i = edgeCount - 1;
         var (x, y, w, h) = area;
 
-        x /= TilemapSize.width;
-        y /= TilemapSize.height;
-        w /= TilemapSize.width;
-        h /= TilemapSize.height;
+        x /= Size.width;
+        y /= Size.height;
+        w /= Size.width;
+        h /= Size.height;
 
         shader?.SetUniform("edgeCount", edgeCount);
         shader?.SetUniform($"edgeTarget[{i}]", new Color(colors.target));
@@ -502,7 +501,7 @@ public class Layer
         var p2 = new Color(r[0], r[1], r[2], r[3]);
         var p3 = new Color(color);
 
-        var full = GetTexCoords(TileIdFull, (1, 1));
+        var full = GetTexCoords(AtlasTileIdFull, (1, 1));
         var (rx, ry) = (ix * AtlasTileSize.width, iy * AtlasTileSize.height);
 
         shaderParams.Append(new(new(rx + 0, ry), p0, full.tl));
@@ -524,7 +523,7 @@ public class Layer
 
         var (x, y, w, h) = area;
         var (ix, iy) = ((int)x, (int)y);
-        var (mw, mh) = TilemapSize;
+        var (mw, mh) = Size;
 
         for (var j = y; j < y + h; j++)
             for (var i = x; i < x + w; i++)
@@ -537,20 +536,20 @@ public class Layer
                 var p0 = new Color(ox[0], ox[1], ox[2], ox[3]);
                 var p1 = new Color(oy[0], oy[1], oy[2], oy[3]);
 
-                var full = GetTexCoords(TileIdFull, (1, 1));
+                var full = GetTexCoords(AtlasTileIdFull, (1, 1));
                 var (rx, ry) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
 
-                shaderParams.Append(new(new(rx + 0, ry + 1), Color.Red, full.tl));
-                shaderParams.Append(new(new(rx + 1, ry + 1), Color.Red, full.tl));
+                shaderParams.Append(new(new(rx + 0, ry + 1), Color.White, full.tl));
+                shaderParams.Append(new(new(rx + 1, ry + 1), Color.White, full.tl));
             }
     }
     public void Light((float x, float y) position, float radius, uint color)
     {
         var (x, y) = position;
 
-        x /= TilemapSize.width;
-        y /= TilemapSize.height;
-        radius /= TilemapSize.height;
+        x /= Size.width;
+        y /= Size.height;
+        radius /= Size.height;
 
         lightCount++;
         shader?.SetUniform("lightCount", lightCount);
@@ -563,10 +562,10 @@ public class Layer
         var (x, y, w, h) = area;
         var (sx, sy) = strength;
 
-        x /= TilemapSize.width;
-        y /= TilemapSize.height;
-        w /= TilemapSize.width;
-        h /= TilemapSize.height;
+        x /= Size.width;
+        y /= Size.height;
+        w /= Size.width;
+        h /= Size.height;
 
         shader?.SetUniform("blurCount", blurCount);
         shader?.SetUniform($"blurArea[{blurCount - 1}]", new Vec4(x, 1 - y, w, h));
@@ -580,10 +579,10 @@ public class Layer
         var (sx, sy) = speed;
         var (fx, fy) = frequency;
 
-        x /= TilemapSize.width;
-        y /= TilemapSize.height;
-        w /= TilemapSize.width;
-        h /= TilemapSize.height;
+        x /= Size.width;
+        y /= Size.height;
+        w /= Size.width;
+        h /= Size.height;
 
         shader?.SetUniform("waveCount", waveCount);
         shader?.SetUniform($"waveArea[{waveCount - 1}]", new Vec4(x, 1 - y, w, h));
@@ -633,17 +632,17 @@ public class Layer
     public bool IsOverlapping((float x, float y) position)
     {
         return position is { x: >= 0, y: >= 0 } &&
-               position.x <= TilemapSize.width &&
-               position.y <= TilemapSize.height;
+               position.x <= Size.width &&
+               position.y <= Size.height;
     }
     public (float x, float y) PixelToWorld((int x, int y) pixelPosition)
     {
-        if (Window.window == null || Window.renderTexture == null)
+        if (Window.window == null)
             return (float.NaN, float.NaN);
 
         var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
-        var (vw, vh) = Window.renderTextureViewSize;
-        var (cw, ch) = TilemapSize;
+        var (vw, vh) = Window.rendTexViewSz;
+        var (cw, ch) = Size;
         var (tw, th) = AtlasTileSize;
         var (ox, oy) = Offset;
         var (mw, mh) = (cw * tw, ch * th);
@@ -684,8 +683,9 @@ public class Layer
     }
 
 #region Backend
+    internal RenderTexture? queue, result, data;
     internal readonly Shader? shader;
-    internal readonly VertexArray verts, shaderParams;
+    private readonly VertexArray verts, shaderParams;
     private readonly List<(uint oldColor, uint newColor)> replaceColors = new();
     internal static readonly Dictionary<string, Texture> tilesets = new();
     private static readonly List<(float, float)> cursorOffsets = new()
@@ -700,7 +700,7 @@ public class Layer
     {
         get
         {
-            var (mw, mh) = TilemapSize;
+            var (mw, mh) = Size;
             var (tw, th) = AtlasTileSize;
             return (mw * tw, mh * th);
         }
@@ -717,16 +717,16 @@ public class Layer
 
     private string atlasPath;
     private (byte width, byte height) atlasTileGap, atlasTileSize;
-    private (int width, int height) tilemapSize;
+    private (int width, int height) size;
     private uint currTint = uint.MaxValue;
     private float zoom, gamma, saturation, contrast, brightness;
     private bool isLightFading;
     private LightType lightType;
 
-    [MemberNotNull(nameof(TileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]
+    [MemberNotNull(nameof(AtlasTileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]
     private void Init()
     {
-        TileIdFull = 10;
+        AtlasTileIdFull = 10;
         AtlasTileSize = (8, 8);
         tilesetPixelSize = new(208, 208);
     }
@@ -751,7 +751,7 @@ public class Layer
         var tr = new Vector2(length, -THICKNESS);
         var br = new Vector2(length, THICKNESS);
         var bl = new Vector2(-length, THICKNESS);
-        var (texTl, texTr, texBr, texBl) = GetTexCoords(TileIdFull, (1, 1));
+        var (texTl, texTr, texBr, texBl) = GetTexCoords(AtlasTileIdFull, (1, 1));
 
         var m = Matrix3x2.Identity;
         m *= Matrix3x2.CreateRotation((float)Math.Atan2(dir.Y, dir.X));
@@ -780,7 +780,7 @@ public class Layer
 
         var (x, y) = (position.x * tw, position.y * th);
         var color = new Color(tint);
-        var (texTl, texTr, texBr, texBl) = GetTexCoords(TileIdFull, (1, 1));
+        var (texTl, texTr, texBr, texBl) = GetTexCoords(AtlasTileIdFull, (1, 1));
         var tl = new Vector2f((int)x, (int)y);
         var br = new Vector2f((int)(x + tw * w), (int)(y + th * h));
         var tr = new Vector2f((int)br.X, (int)tl.Y);
@@ -790,6 +790,64 @@ public class Layer
         verts.Append(new(tr, color, texTr));
         verts.Append(new(br, color, texBr));
         verts.Append(new(bl, color, texBl));
+    }
+
+    internal void DrawQueue()
+    {
+        if (queue == null || queue.Size.X != Size.width || queue.Size.Y != Size.height)
+        {
+            queue?.Dispose();
+            data?.Dispose();
+            result?.Dispose();
+            queue = null;
+            data = null;
+            result = null;
+
+            var (tw, th) = AtlasTileSize;
+            var (rw, rh) = ((uint)Size.width * tw, (uint)Size.height * th);
+            queue = new(rw, rh);
+            data = new(rw, rh);
+            result = new(rw, rh);
+        }
+
+        var atlas = tilesets[AtlasPath];
+        var view = queue?.GetView();
+        var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
+        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, shader);
+
+        data?.Clear(Color.Transparent);
+        data?.Draw(shaderParams, new(atlas));
+        data?.Display();
+
+        edgeCount = 0;
+        waveCount = 0;
+        blurCount = 0;
+        lightCount = 0;
+        obstacleCount = 0;
+        shader?.SetUniform("viewSize", new Vec2(view?.Size.X ?? 0, view?.Size.Y ?? 0));
+        shader?.SetUniform("tileSize", new Vec2(AtlasTileSize.width, AtlasTileSize.height));
+        shader?.SetUniform("tileCount", new Vec2(Size.width, Size.height));
+        shader?.SetUniform("time", Window.time.ElapsedTime.AsSeconds());
+        shader?.SetUniform("data", data?.Texture);
+
+        queue?.Clear(new(Color.Blue)); //BackgroundColor));
+        queue?.Draw(verts, new(atlas));
+        queue?.Display();
+
+        Window.vertsWindow[0] = new(new(0, 0), Color.White, new(0, 0));
+        Window.vertsWindow[1] = new(new(w, 0), Color.White, new(w, 0));
+        Window.vertsWindow[2] = new(new(w, h), Color.White, new(w, h));
+        Window.vertsWindow[3] = new(new(0, h), Color.White, new(0, h));
+
+        result?.Clear(new(Color.Transparent));
+        result?.Draw(Window.vertsWindow, PrimitiveType.Quads, r);
+        result?.Display();
+
+        queue?.Texture.CopyToImage().SaveToFile("render.png");
+        data?.Texture.CopyToImage().SaveToFile("data.png");
+
+        verts.Clear();
+        shaderParams.Clear();
     }
 
     private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int tileId, (int w, int h) size)

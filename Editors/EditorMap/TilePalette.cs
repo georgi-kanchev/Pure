@@ -97,13 +97,13 @@ internal class TilePalette
         inspector.paletteScrollH.IsHidden = tool > 8;
         inspector.paletteScrollV.IsHidden = tool > 8;
         inspector.paletteColor.IsHidden = tool > 8 && tool != 12;
-        
+
         if (editor.Prompt.IsHidden == false || tool > 8)
             return;
 
         var (tw, th) = layer.AtlasTileCount;
         map.View = new(map.View.Position, (Math.Min(10, (int)tw), Math.Min(10, (int)th)));
-        layer.TilemapSize = map.View.Size;
+        layer.Size = map.View.Size;
         var (mw, mh) = map.Size;
         var (vw, vh) = map.View.Size;
 
@@ -131,7 +131,7 @@ internal class TilePalette
 
         if (layer.IsHovered)
             layer.DrawTiles(((int)mx, (int)my),
-                new Tile(layer.TileIdFull, new Color(50, 100, 255, 100)));
+                new Tile(layer.AtlasTileIdFull, new Color(50, 100, 255, 100)));
 
         UpdateSelected();
         var s = selected.ToBundle();

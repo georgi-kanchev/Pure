@@ -11,10 +11,10 @@ public static class Collision
     {
         Window.Title = "Pure - Collision Example";
 
+        Window.PixelScale = 3f;
         var aspectRatio = Monitor.Current.AspectRatio;
-        var tilemap = new Tilemap((aspectRatio.width * 3, aspectRatio.height * 3));
-        var background = new Tilemap(tilemap.Size);
-        var (w, h) = tilemap.Size;
+        var tilemaps = new TilemapPack(2, (aspectRatio.width * 3, aspectRatio.height * 3));
+        var (w, h) = tilemaps.Size;
 
         var collisionMap = new SolidMap();
         collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Color.Yellow)); // lake
@@ -29,26 +29,25 @@ public static class Collision
         // and the hitbox is not
         const float SCALE = 1f - 1f / 8f;
         var hitbox = new SolidPack(new Solid(0, 0, 1, 1)) { Scale = (SCALE, SCALE) };
-        var layer = new Layer(tilemap.Size);
+        var layer = new Layer((w, h));
 
-        tilemap.FillWithRandomGrass();
-        tilemap.SetLake((0, 0), (14, 9));
-        tilemap.SetLake((26, 18), (5, 7));
-        tilemap.SetLake((16, 24), (12, 6));
-        tilemap.SetHouses((30, 10), (34, 11), (33, 8));
-        tilemap.SetBridge((21, 16), (31, 16));
-        tilemap.SetRoad((32, 0), (32, 26));
-        tilemap.SetRoad((33, 10), (47, 10));
-        tilemap.SetRoad((20, 16), (0, 16));
-        tilemap.SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
-        tilemap.SetBackgrounds(background);
+        tilemaps[1].FillWithRandomGrass();
+        tilemaps[1].SetLake((0, 0), (14, 9));
+        tilemaps[1].SetLake((26, 18), (5, 7));
+        tilemaps[1].SetLake((16, 24), (12, 6));
+        tilemaps[1].SetHouses((30, 10), (34, 11), (33, 8));
+        tilemaps[1].SetBridge((21, 16), (31, 16));
+        tilemaps[1].SetRoad((32, 0), (32, 26));
+        tilemaps[1].SetRoad((33, 10), (47, 10));
+        tilemaps[1].SetRoad((20, 16), (0, 16));
+        tilemaps[1].SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
+        tilemaps[1].SetBackgrounds(tilemaps[0]);
 
-        collisionMap.Update(tilemap);
+        collisionMap.Update(tilemaps[1]);
         var collisionPack = collisionMap.ToArray();
 
         layer.Tint = Color.Blue.ToBright();
-        //layer.Offset = (100, 0);
-        //layer.Zoom = 0.8f;
+        //layer.Offset = (50, 0);
 
         Keyboard.Key.A.OnPress(() =>
         {
@@ -57,6 +56,11 @@ public static class Collision
             collisionMap.IgnoredCellsAdd(new Solid(mx - 1, my - 1, 3, 3));
         });
         Keyboard.Key.S.OnPress(() => collisionMap.IgnoredCellsClear());
+        Keyboard.Key.ArrowLeft.OnPress(() => tilemaps.View = (tilemaps.View.X - 1, tilemaps.View.Y, tilemaps.View.Width, tilemaps.View.Height));
+        Keyboard.Key.ArrowUp.OnPress(() => tilemaps.View = (tilemaps.View.X, tilemaps.View.Y - 1, tilemaps.View.Width, tilemaps.View.Height));
+        Keyboard.Key.ArrowDown.OnPress(() => tilemaps.View = (tilemaps.View.X, tilemaps.View.Y + 1, tilemaps.View.Width, tilemaps.View.Height));
+        Keyboard.Key.ArrowRight.OnPress(() => tilemaps.View = (tilemaps.View.X + 1, tilemaps.View.Y, tilemaps.View.Width, tilemaps.View.Height));
+        Keyboard.Key.W.OnPress(() => layer.Size = (layer.Size.width + 1, layer.Size.height));
 
         while (Window.KeepOpen())
         {
@@ -73,13 +77,13 @@ public static class Collision
             hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
 
-            layer.DrawTilemap(background);
-            //layer.DrawTilemap(tilemap);
+            layer.DrawTilemap(tilemaps[0].ViewUpdate());
+            layer.DrawTilemap(tilemaps[1].ViewUpdate());
             //layer.DrawRectangles(collisionMap);
             //layer.DrawLines(line);
             //layer.DrawPoints(crossPoints);
             //layer.DrawTiles(mousePosition, tile);
-            //layer.DrawCursor();
+            layer.DrawCursor();
 
             layer.Blur((0, 0, w, h), (2f, 2f), Color.Blue);
             layer.Distort((0, 0, w, h), (0, 4), (0, 100), Color.Blue.ToDark());
@@ -88,7 +92,7 @@ public static class Collision
             layer.Light((30, 8), 5f, Color.Red);
             layer.Light((39, 12), 5f, Color.Green);
             layer.Light(mousePosition, 5f, Color.Blue);
-            //layer.BlockLight((0f, 0f, 2, 2));
+            layer.BlockLight((0, 0, w, h));
             layer.BlockLight((34, 11, 2, 2));
             layer.BlockLight((33, 8, 2, 2));
 
