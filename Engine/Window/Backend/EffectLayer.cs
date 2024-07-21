@@ -90,6 +90,40 @@ int compute_out_code(vec2 p, vec2 rectMin, vec2 rectMax)
     return code;
 }}
 
+vec2 get_tile_coord(){{
+	vec2 coord = gl_TexCoord[0].xy;
+	vec2 texel = 1.0 / tileCount / tileSize;
+	vec2 texelCenter = vec2(texel.x / 2.0, -texel.y / 2.0);
+	return vec2(floor(coord.x * tileCount.x), ceil(coord.y * tileCount.y)) / tileCount + texelCenter;
+}}
+vec4 get_data(uint offsetX, uint offsetY){{
+	vec2 tileCoord = get_tile_coord();
+	vec2 texel = 1.0 / tileCount / tileSize;
+	tileCoord.x += texel.x * offsetX;
+	tileCoord.y += texel.y * offsetY;
+	return texture2D(data, tileCoord);
+}}
+float get_float(uint offsetX, uint offsetY) {{
+	vec4 data = get_data(offsetX, offsetY);
+	uint b0 = uint(data.r * 255.0);
+	uint b1 = uint(data.g * 255.0);
+	uint b2 = uint(data.b * 255.0);
+	uint b3 = uint(data.a * 255.0);
+    uint packedInt = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
+    return intBitsToFloat(int(packedInt));
+}}
+vec4 get_area(uint offsetX, uint offsetY) {{
+	vec4 data = get_data(offsetX, offsetY);
+	vec2 tileCoord = get_tile_coord();
+	vec2 texel = 1.0 / tileCount / tileSize;
+	vec2 tileSz = texel * tileSize;
+	float x = data.r * tileSz.x + tileCoord.x - texel.x;
+	float y = data.g * tileSz.y + tileCoord.y + texel.y;
+	float w = data.b * tileSz.x + texel.x;
+	float h = data.a * tileSz.y + texel.y;
+	return vec4(x, y, w, h);
+}}
+
 bool is_shadow(vec2 p0, vec2 p1, vec2 rectMin, vec2 rectMax)
 {{
 	float flipY = rectMax.y - rectMin.y;
@@ -157,13 +191,10 @@ void main(void)
 {{
 	vec2 coord = gl_TexCoord[0].xy;
 	vec4 color = texture2D(texture, coord) * gl_Color;
-	vec2 ratio = tileSize * tileCount / viewSize;
-	vec2 tileCoord = ivec2(coord / ratio * tileCount) / tileCount;
-	coord.y = 1.0 - coord.y;
-	vec4 dataColor = texture2D(data, coord);
-	
-	color += texture2D(data, tileCoord);
-	//color.rgb = vec3(0.0, coord.x / ratio.x, 0.0);	
+	vec4 area = get_area(0, 0);
+
+	if (is_inside(coord, area, vec4(0.0)))
+		discard;
 
 	gl_FragColor = color;
 }}";

@@ -523,24 +523,33 @@ public class Layer
 
         var (x, y, w, h) = area;
         var (ix, iy) = ((int)x, (int)y);
-        var (mw, mh) = Size;
 
-        for (var j = y; j < y + h; j++)
-            for (var i = x; i < x + w; i++)
+        for (var j = y; j <= y + h; j++)
+            for (var i = x; i <= x + w; i++)
             {
                 var (tx, ty) = ((int)Math.Clamp(i, ix, x + w), (int)Math.Clamp(j, iy, y + h));
-                var (fx, fy) = (i % 1f, j % 1f);
-                var ox = BitConverter.GetBytes(fx / mw);
-                var oy = BitConverter.GetBytes(fy / mh);
+                var isLeft = Math.Abs(i - x) <= 0.01f;
+                var isTop = Math.Abs(j - y) <= 0.01f;
+                var isRight = Math.Abs(i - (x + w)) <= 0.01f;
+                var isBottom = Math.Abs(j - (y + h)) <= 0.01f;
+                var rx = isLeft ? i - tx : 0f;
+                var ry = isTop ? j - ty : 0f;
+                var (rw, rh) = (1f, 1f);
 
-                var p0 = new Color(ox[0], ox[1], ox[2], ox[3]);
-                var p1 = new Color(oy[0], oy[1], oy[2], oy[3]);
+                rw = isLeft ? 1f - rx : rw;
+                rw = isRight ? i % 1f : rw;
+                rh = isTop ? 1f - ry : rh;
+                rh = isBottom ? 0f : rh;
 
+                ry = isTop ? 1f - ry : ry;
+                rh = isTop ? 1f - rh : rh;
+
+                var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
+                var (vx, vy) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
                 var full = GetTexCoords(AtlasTileIdFull, (1, 1));
-                var (rx, ry) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
 
-                shaderParams.Append(new(new(rx + 0, ry + 1), Color.White, full.tl));
-                shaderParams.Append(new(new(rx + 1, ry + 1), Color.White, full.tl));
+                shaderParams.Append(new(new(vx + 0, vy + 0.5f), res, full.tl));
+                //DrawRectangles((tx + rx, ty + ry, rw, rh, uint.MaxValue));
             }
     }
     public void Light((float x, float y) position, float radius, uint color)
@@ -830,7 +839,7 @@ public class Layer
         shader?.SetUniform("time", Window.time.ElapsedTime.AsSeconds());
         shader?.SetUniform("data", data?.Texture);
 
-        queue?.Clear(new(Color.Blue)); //BackgroundColor));
+        queue?.Clear(new(BackgroundColor));
         queue?.Draw(verts, new(atlas));
         queue?.Display();
 
@@ -843,8 +852,8 @@ public class Layer
         result?.Draw(Window.vertsWindow, PrimitiveType.Quads, r);
         result?.Display();
 
-        queue?.Texture.CopyToImage().SaveToFile("render.png");
-        data?.Texture.CopyToImage().SaveToFile("data.png");
+        //queue?.Texture.CopyToImage().SaveToFile("render.png");
+        //data?.Texture.CopyToImage().SaveToFile("data.png");
 
         verts.Clear();
         shaderParams.Clear();

@@ -229,7 +229,7 @@ public static class Window
         window.Clear(new(BackgroundColor));
         window.SetActive();
 
-        allLayers?.Clear(new(Color.Red)); //BackgroundColor));
+        allLayers?.Clear(new(BackgroundColor));
         return window.IsOpen;
     }
     public static void Draw(this Layer layer)
@@ -249,6 +249,7 @@ public static class Window
         vertsWindow[3] = new(new(-w / 2f, h / 2f), Color.White, new(0, h));
 
         allLayers?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.result?.Texture, null));
+        //allLayers?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.data?.Texture, null));
     }
     public static void Close()
     {

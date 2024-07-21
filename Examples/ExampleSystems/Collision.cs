@@ -11,7 +11,7 @@ public static class Collision
     {
         Window.Title = "Pure - Collision Example";
 
-        Window.PixelScale = 3f;
+        Window.PixelScale = 5f;
         var aspectRatio = Monitor.Current.AspectRatio;
         var tilemaps = new TilemapPack(2, (aspectRatio.width * 3, aspectRatio.height * 3));
         var (w, h) = tilemaps.Size;
@@ -60,7 +60,6 @@ public static class Collision
         Keyboard.Key.ArrowUp.OnPress(() => tilemaps.View = (tilemaps.View.X, tilemaps.View.Y - 1, tilemaps.View.Width, tilemaps.View.Height));
         Keyboard.Key.ArrowDown.OnPress(() => tilemaps.View = (tilemaps.View.X, tilemaps.View.Y + 1, tilemaps.View.Width, tilemaps.View.Height));
         Keyboard.Key.ArrowRight.OnPress(() => tilemaps.View = (tilemaps.View.X + 1, tilemaps.View.Y, tilemaps.View.Width, tilemaps.View.Height));
-        Keyboard.Key.W.OnPress(() => layer.Size = (layer.Size.width + 1, layer.Size.height));
 
         while (Window.KeepOpen())
         {
@@ -92,9 +91,10 @@ public static class Collision
             layer.Light((30, 8), 5f, Color.Red);
             layer.Light((39, 12), 5f, Color.Green);
             layer.Light(mousePosition, 5f, Color.Blue);
-            layer.BlockLight((0, 0, w, h));
-            layer.BlockLight((34, 11, 2, 2));
-            layer.BlockLight((33, 8, 2, 2));
+            //layer.BlockLight((0, 0, w, h));
+            var (vx, vy, vw, vh, vc) = tilemaps.View.ToBundle();
+            layer.BlockLight((mousePosition.x, mousePosition.y, 4, 4));
+            layer.BlockLight((33.5f, 8.5f, 2, 2));
 
             layer.Draw();
         }
