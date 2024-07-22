@@ -512,15 +512,6 @@ public class Layer
 
     public void BlockLight((float x, float y, float width, float height) area)
     {
-        // x /= TilemapSize.width;
-        // y /= TilemapSize.height;
-        // w /= TilemapSize.width;
-        // h /= TilemapSize.height;
-        //
-        // obstacleCount++;
-        // shader?.SetUniform("obstacleCount", obstacleCount);
-        // shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
-
         var (x, y, w, h) = area;
         var (ix, iy) = ((int)x, (int)y);
 
@@ -532,24 +523,20 @@ public class Layer
                 var isTop = Math.Abs(j - y) <= 0.01f;
                 var isRight = Math.Abs(i - (x + w)) <= 0.01f;
                 var isBottom = Math.Abs(j - (y + h)) <= 0.01f;
+
                 var rx = isLeft ? i - tx : 0f;
                 var ry = isTop ? j - ty : 0f;
-                var (rw, rh) = (1f, 1f);
+                var rw = isLeft ? 1f - rx : 1f;
+                var rh = isTop ? 1f - ry : 1f;
 
-                rw = isLeft ? 1f - rx : rw;
-                rw = isRight ? i % 1f : rw;
-                rh = isTop ? 1f - ry : rh;
-                rh = isBottom ? 0f : rh;
-
-                ry = isTop ? 1f - ry : ry;
-                rh = isTop ? 1f - rh : rh;
+                rw = isRight ? i - tx : rw;
+                rh = isBottom ? j - ty : rh;
 
                 var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
                 var (vx, vy) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
                 var full = GetTexCoords(AtlasTileIdFull, (1, 1));
 
                 shaderParams.Append(new(new(vx + 0, vy + 0.5f), res, full.tl));
-                //DrawRectangles((tx + rx, ty + ry, rw, rh, uint.MaxValue));
             }
     }
     public void Light((float x, float y) position, float radius, uint color)
@@ -825,7 +812,7 @@ public class Layer
         var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, shader);
 
         data?.Clear(Color.Transparent);
-        data?.Draw(shaderParams, new(atlas));
+        data?.Draw(shaderParams, new(BlendMode.None, Transform.Identity, atlas, null));
         data?.Display();
 
         edgeCount = 0;
@@ -853,7 +840,7 @@ public class Layer
         result?.Display();
 
         //queue?.Texture.CopyToImage().SaveToFile("render.png");
-        //data?.Texture.CopyToImage().SaveToFile("data.png");
+        data?.Texture.CopyToImage().SaveToFile("data.png");
 
         verts.Clear();
         shaderParams.Clear();

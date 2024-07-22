@@ -60,6 +60,7 @@ public static class Collision
         Keyboard.Key.ArrowUp.OnPress(() => tilemaps.View = (tilemaps.View.X, tilemaps.View.Y - 1, tilemaps.View.Width, tilemaps.View.Height));
         Keyboard.Key.ArrowDown.OnPress(() => tilemaps.View = (tilemaps.View.X, tilemaps.View.Y + 1, tilemaps.View.Width, tilemaps.View.Height));
         Keyboard.Key.ArrowRight.OnPress(() => tilemaps.View = (tilemaps.View.X + 1, tilemaps.View.Y, tilemaps.View.Width, tilemaps.View.Height));
+        Keyboard.Key.W.OnPress(() => layer.Size = (layer.Size.width + 1, layer.Size.height));
 
         while (Window.KeepOpen())
         {

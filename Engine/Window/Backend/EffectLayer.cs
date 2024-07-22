@@ -10,86 +10,17 @@ internal class EffectLayer : Effect
             $@"
 uniform sampler2D texture;
 uniform sampler2D data;
-
-uniform float gamma;
-uniform float saturation;
-uniform float contrast;
-uniform float brightness;
 uniform float time;
-
-uniform int lightCount;
-uniform vec3 light[{MAX}]; // x, y, radius
-uniform vec4 lightColor[{MAX}];
-uniform int obstacleCount;
-uniform vec4 obstacleArea[{MAX}];
-uniform bool lightMask;
-uniform bool lightFade;
-uniform bool lightInvert;
-
-uniform int replaceCount;
-uniform vec4 replaceOld[{MAX}];
-uniform vec4 replaceNew[{MAX}];
-
-uniform int waveCount;
-uniform vec4 waveTarget[{MAX}];
-uniform vec4 waveArea[{MAX}];
-uniform vec4 waveSpeedFreq[{MAX}];
-
-uniform int blurCount;
-uniform vec4 blurTarget[{MAX}];
-uniform vec4 blurArea[{MAX}];
-uniform vec2 blurStrength[{MAX}];
-
-uniform int edgeCount;
-uniform vec4 edgeTarget[{MAX}];
-uniform vec4 edgeColor[{MAX}];
-uniform vec4 edgeArea[{MAX}];
-uniform int edgeType[{MAX}];
-
-uniform vec4 tint;
-
 uniform vec2 viewSize;
 uniform vec2 tileSize;
 uniform vec2 tileCount;
 
-bool is_inside(vec2 coord, vec4 area, vec4 off)
+bool is_inside(vec2 coord, vec4 area)
 {{
 	return
-		coord.x > area.x + off.x && coord.x < area.x + area.z + off.y &&
-		coord.y > area.y - area.w + off.z && coord.y < area.y + off.w;
+		coord.x > area.x && coord.x < area.x + area.z &&
+		coord.y > area.y - area.w && coord.y < area.y;
 }}
-bool is(vec3 a, vec3 b)
-{{
-	return distance(a, b) < 0.005;
-}}
-bool is(vec2 a, vec2 b)
-{{
-	return distance(a, b) < 0.005;
-}}
-
-bool is_type(int value, int flag)
-{{
-    return (value & flag) != 0;
-}}
-
-int compute_out_code(vec2 p, vec2 rectMin, vec2 rectMax)
-{{
-	// left: 1, right: 2, bottom: 4, top: 8
-    int code = 0;
-
-    if (p.x < rectMin.x)
-        code |= 1;
-    else if (p.x > rectMax.x)
-        code |= 2;
-
-    if (p.y < rectMin.y)
-        code |= 4;
-    else if (p.y > rectMax.y)
-        code |= 8;
-
-    return code;
-}}
-
 vec2 get_tile_coord(){{
 	vec2 coord = gl_TexCoord[0].xy;
 	vec2 texel = 1.0 / tileCount / tileSize;
@@ -118,73 +49,10 @@ vec4 get_area(uint offsetX, uint offsetY) {{
 	vec2 texel = 1.0 / tileCount / tileSize;
 	vec2 tileSz = texel * tileSize;
 	float x = data.r * tileSz.x + tileCoord.x - texel.x;
-	float y = data.g * tileSz.y + tileCoord.y + texel.y;
-	float w = data.b * tileSz.x + texel.x;
-	float h = data.a * tileSz.y + texel.y;
+	float y = data.g * -tileSz.y + tileCoord.y + texel.y;
+	float w = data.b * tileSz.x + texel.x / 2.0;
+	float h = data.a * tileSz.y + texel.y / 2.0;
 	return vec4(x, y, w, h);
-}}
-
-bool is_shadow(vec2 p0, vec2 p1, vec2 rectMin, vec2 rectMax)
-{{
-	float flipY = rectMax.y - rectMin.y;
-	rectMax.y -= flipY;
-	rectMin.y -= flipY;
-
-    int outcode0 = compute_out_code(p0, rectMin, rectMax);
-    int outcode1 = compute_out_code(p1, rectMin, rectMax);
-
-    bool accept = false;
-
-    while (true)
-	{{
-        if ((outcode0 | outcode1) == 0)
-		{{
-            // Both points inside the rectangle, trivially accept
-            accept = true;
-            break;
-        }}
-		else if ((outcode0 & outcode1) != 0)
-            break; // Both points share an outside zone, trivially reject
-        else
-		{{
-            // Calculate the line segment to clip from an outside point to an intersection with the rectangle
-            float x, y;
-            int outcodeOut = (outcode0 != 0) ? outcode0 : outcode1;
-
-            if ((outcodeOut & 8) != 0)
-			{{ // point is above the rectangle
-                x = p0.x + (p1.x - p0.x) * (rectMax.y - p0.y) / (p1.y - p0.y);
-                y = rectMax.y;
-            }}
-			else if ((outcodeOut & 4) != 0)
-			{{ // point is below the rectangle
-                x = p0.x + (p1.x - p0.x) * (rectMin.y - p0.y) / (p1.y - p0.y);
-                y = rectMin.y;
-            }}
-			else if ((outcodeOut & 2) != 0)
-			{{ // point is to the right of the rectangle
-                y = p0.y + (p1.y - p0.y) * (rectMax.x - p0.x) / (p1.x - p0.x);
-                x = rectMax.x;
-            }}
-			else if ((outcodeOut & 1) != 0)
-			{{ // point is to the left of the rectangle
-                y = p0.y + (p1.y - p0.y) * (rectMin.x - p0.x) / (p1.x - p0.x);
-                x = rectMin.x;
-            }}
-
-            if (outcodeOut == outcode0)
-			{{
-                p0 = vec2(x, y);
-                outcode0 = compute_out_code(p0, rectMin, rectMax);
-            }}
-			else
-			{{
-                p1 = vec2(x, y);
-                outcode1 = compute_out_code(p1, rectMin, rectMax);
-            }}
-        }}
-    }}
-    return accept;
 }}
 
 void main(void)
@@ -192,14 +60,111 @@ void main(void)
 	vec2 coord = gl_TexCoord[0].xy;
 	vec4 color = texture2D(texture, coord) * gl_Color;
 	vec4 area = get_area(0, 0);
-
-	if (is_inside(coord, area, vec4(0.0)))
+	vec4 dataColor = texture2D(data, coord);
+	
+	if (is_inside(coord, area) && dataColor == vec4(0.0))
 		discard;
 
+	color += dataColor;
 	gl_FragColor = color;
 }}";
     }
 }
+
+// bool is(vec3 a, vec3 b)
+// {{
+// 	return distance(a, b) < 0.005;
+// }}
+// bool is(vec2 a, vec2 b)
+// {{
+// 	return distance(a, b) < 0.005;
+// }}
+
+// bool is_type(int value, int flag)
+// {{
+// 	return (value & flag) != 0;
+// }}
+//
+// int compute_out_code(vec2 p, vec2 rectMin, vec2 rectMax)
+// {{
+// 	// left: 1, right: 2, bottom: 4, top: 8
+// 	int code = 0;
+//
+// 	if (p.x < rectMin.x)
+// 		code |= 1;
+// 	else if (p.x > rectMax.x)
+// 		code |= 2;
+//
+// 	if (p.y < rectMin.y)
+// 		code |= 4;
+// 	else if (p.y > rectMax.y)
+// 		code |= 8;
+//
+// 	return code;
+// }}
+
+// bool is_shadow(vec2 p0, vec2 p1, vec2 rectMin, vec2 rectMax)
+// {{
+// 	float flipY = rectMax.y - rectMin.y;
+// 	rectMax.y -= flipY;
+// 	rectMin.y -= flipY;
+//
+// 	int outcode0 = compute_out_code(p0, rectMin, rectMax);
+// 	int outcode1 = compute_out_code(p1, rectMin, rectMax);
+//
+// 	bool accept = false;
+//
+// 	while (true)
+// 	{{
+// 		if ((outcode0 | outcode1) == 0)
+// 		{{
+// 			// Both points inside the rectangle, trivially accept
+// 			accept = true;
+// 			break;
+// 		}}
+// 		else if ((outcode0 & outcode1) != 0)
+// 			break; // Both points share an outside zone, trivially reject
+// 		else
+// 		{{
+// 			// Calculate the line segment to clip from an outside point to an intersection with the rectangle
+// 			float x, y;
+// 			int outcodeOut = (outcode0 != 0) ? outcode0 : outcode1;
+//
+// 			if ((outcodeOut & 8) != 0)
+// 			{{ // point is above the rectangle
+// 				x = p0.x + (p1.x - p0.x) * (rectMax.y - p0.y) / (p1.y - p0.y);
+// 				y = rectMax.y;
+// 			}}
+// 			else if ((outcodeOut & 4) != 0)
+// 			{{ // point is below the rectangle
+// 				x = p0.x + (p1.x - p0.x) * (rectMin.y - p0.y) / (p1.y - p0.y);
+// 				y = rectMin.y;
+// 			}}
+// 			else if ((outcodeOut & 2) != 0)
+// 			{{ // point is to the right of the rectangle
+// 				y = p0.y + (p1.y - p0.y) * (rectMax.x - p0.x) / (p1.x - p0.x);
+// 				x = rectMax.x;
+// 			}}
+// 			else if ((outcodeOut & 1) != 0)
+// 			{{ // point is to the left of the rectangle
+// 				y = p0.y + (p1.y - p0.y) * (rectMin.x - p0.x) / (p1.x - p0.x);
+// 				x = rectMin.x;
+// 			}}
+//
+// 			if (outcodeOut == outcode0)
+// 			{{
+// 				p0 = vec2(x, y);
+// 				outcode0 = compute_out_code(p0, rectMin, rectMax);
+// 			}}
+// 			else
+// 			{{
+// 				p1 = vec2(x, y);
+// 				outcode1 = compute_out_code(p1, rectMin, rectMax);
+// 			}}
+// 		}}
+// 	}}
+// 	return accept;
+// }}
 
 // waves
 //for(int i = 0; i < waveCount; i++)
