@@ -4,6 +4,7 @@ using Engine.Collision;
 using Engine.Tilemap;
 using Engine.Utilities;
 using Engine.Window;
+using static Engine.Utilities.Color;
 
 public static class Collision
 {
@@ -17,8 +18,8 @@ public static class Collision
         var (w, h) = tilemaps.Size;
 
         var collisionMap = new SolidMap();
-        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Color.Yellow)); // lake
-        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1f, 1f, Color.Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Yellow)); // lake
+        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1f, 1f, Yellow)); // lake
         collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE, new Solid(0, 0, 1, 1)); // house roof
         collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Solid(0, 0, 1, 1)); // house wall
         collisionMap.SolidsAdd(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1)); // tree trunk
@@ -46,8 +47,21 @@ public static class Collision
         collisionMap.Update(tilemaps[1]);
         var collisionPack = collisionMap.ToArray();
 
-        layer.Tint = Color.Blue.ToBright();
         //layer.Offset = (50, 0);
+
+        var waves = new SolidMap();
+        waves.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 1, 1, Blue.ToDark()));
+        waves.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1, 1, Blue.ToDark()));
+        waves.SolidsAdd(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
+        waves.Update(tilemaps[1]);
+        var wavesRects = waves.ToBundle();
+
+        var shadows = new SolidMap();
+        shadows.SolidsAdd(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1));
+        shadows.SolidsAdd(Tile.GEOMETRY_ANGLE, new Solid(0, 0, 1, 1));
+        shadows.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Solid(0, 0, 1, 1));
+        shadows.Update(tilemaps[1]);
+        var shadowsRects = shadows.ToBundle();
 
         Keyboard.Key.A.OnPress(() =>
         {
@@ -69,33 +83,31 @@ public static class Collision
             var mousePosition = layer.PixelToWorld(Mouse.CursorPosition);
             var isOverlapping = collisionMap.IsOverlapping(hitbox);
             var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_SMILING;
-            var tint = isOverlapping ? Color.Red : Color.Green;
+            var tint = isOverlapping ? Red : Green;
             var tile = new Tile(id, tint);
-            var line = new Line((mousePosition.x - 1, mousePosition.y), (15, 15), Color.Red);
+            var line = new Line((mousePosition.x - 1, mousePosition.y), (15, 15), Red);
             var crossPoints = line.CrossPoints(collisionPack);
 
             hitbox.Position = mousePosition;
-            line.Color = crossPoints.Length > 0 ? Color.Red : Color.Green;
+            line.Color = crossPoints.Length > 0 ? Red : Green;
 
             layer.DrawTilemap(tilemaps[0].ViewUpdate());
             layer.DrawTilemap(tilemaps[1].ViewUpdate());
+
+            layer.ApplyColorAdjustments(127, 127, 255, 255, (5, 10, 2, 2, Green));
             //layer.DrawRectangles(collisionMap);
             //layer.DrawLines(line);
             //layer.DrawPoints(crossPoints);
             //layer.DrawTiles(mousePosition, tile);
             layer.DrawCursor();
 
-            layer.Blur((0, 0, w, h), (2f, 2f), Color.Blue);
-            layer.Distort((0, 0, w, h), (0, 4), (0, 100), Color.Blue.ToDark());
-            layer.Distort((0, 0, w, h), (0, 1), (0, 100), Color.Green.ToDark(0.7f).ToDark());
+            layer.ApplyBlur((0, 0, w, h), (2f, 2f), Blue);
+            layer.ApplyWaves((0, 50), (0, 50), wavesRects);
 
-            layer.Light((30, 8), 5f, Color.Red);
-            layer.Light((39, 12), 5f, Color.Green);
-            layer.Light(mousePosition, 5f, Color.Blue);
-            //layer.BlockLight((0, 0, w, h));
-            var (vx, vy, vw, vh, vc) = tilemaps.View.ToBundle();
-            layer.BlockLight((mousePosition.x, mousePosition.y, 4, 4));
-            layer.BlockLight((33.5f, 8.5f, 2, 2));
+            var (mx, my) = mousePosition;
+            var light = Yellow.ToTransparent();
+            layer.ApplyLights(5f, LightFlags.Default, (30, 8, light), (39, 13, light), (mx, my, light));
+            layer.ApplyLightObstacles(shadowsRects);
 
             layer.Draw();
         }
@@ -116,27 +128,27 @@ public static class Collision
         {
             var (x, y) = t;
             tilemap.SetEllipse((x, y - 1), (1, 1), true, null,
-                new Tile(Tile.PATTERN_33, Color.Green.ToDark(0.7f)));
-            tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Color.Brown.ToDark(0.4f)));
+                new Tile(Tile.PATTERN_33, Green.ToDark(0.7f)));
+            tilemap.SetTile((x, y), new(Tile.UPPERCASE_I, Brown.ToDark(0.4f)));
         }
     }
     private static void SetBridge(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
-        tilemap.SetLine(pointA, pointB, null, new Tile(Tile.BAR_STRIP_STRAIGHT, Color.Brown.ToDark()));
+        tilemap.SetLine(pointA, pointB, null, new Tile(Tile.BAR_STRIP_STRAIGHT, Brown.ToDark()));
     }
     private static void SetRoad(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
         var angle = pointA.x == pointB.x ? 1 : 0;
         tilemap.SetLine(pointA, pointB, null,
-            new Tile(Tile.BAR_SPIKE_STRAIGHT, Color.Brown, (sbyte)angle));
+            new Tile(Tile.BAR_SPIKE_STRAIGHT, Brown, (sbyte)angle));
     }
     private static void SetHouses(this Tilemap tilemap, params (int x, int y)[] positions)
     {
         foreach (var t in positions)
         {
             var (x, y) = t;
-            var roof = new Tile(Tile.GEOMETRY_ANGLE, Color.Red.ToDark());
-            var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Color.Brown.ToBright());
+            var roof = new Tile(Tile.GEOMETRY_ANGLE, Red.ToDark());
+            var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Brown.ToBright());
 
             tilemap.SetTile((x, y), roof);
             roof.IsMirrored = true;
@@ -154,14 +166,14 @@ public static class Collision
     {
         tilemap.SetEllipse(position, radius, true, null, Tile.MATH_APPROXIMATE);
         tilemap.Replace((0, 0, tilemap.Size.width, tilemap.Size.height), Tile.MATH_APPROXIMATE, null,
-            new Tile(Tile.ICON_WAVE, Color.Blue),
-            new Tile(Tile.ICON_WAVE, Color.Blue, 2),
-            new Tile(Tile.ICON_WAVES, Color.Blue),
-            new Tile(Tile.ICON_WAVES, Color.Blue, 2));
+            new Tile(Tile.ICON_WAVE, Blue),
+            new Tile(Tile.ICON_WAVE, Blue, 2),
+            new Tile(Tile.ICON_WAVES, Blue),
+            new Tile(Tile.ICON_WAVES, Blue, 2));
     }
     private static void FillWithRandomGrass(this Tilemap tilemap)
     {
-        var color = Color.Green.ToDark(0.4f);
+        var color = Green.ToDark(0.4f);
         tilemap.Replace((0, 0, tilemap.Size.width, tilemap.Size.height), 0, null,
             new Tile(Tile.SHADE_1, color),
             new Tile(Tile.SHADE_1, color, 1),

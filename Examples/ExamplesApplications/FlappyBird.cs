@@ -156,7 +156,7 @@ public static class FlappyBird
             layer.DrawTiles((BIRD_X, birdY), tile);
             layer.DrawCursor();
 
-            layer.DrawEdges((BIRD_X, birdY, 1, 1), (Color.Yellow, Color.Red), Edge.AllEdgesAndCorners);
+            layer.ApplyEdges((BIRD_X, birdY, 1, 1), (Color.Yellow, Color.Red), Edge.AllEdgesAndCorners);
 
             layer.Draw();
         }

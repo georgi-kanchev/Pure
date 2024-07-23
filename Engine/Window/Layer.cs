@@ -11,7 +11,11 @@ public enum Edge
     AllEdges = Top | Bottom | Left | Right, AllEdgesAndCorners = AllEdges | Corners
 }
 
-public enum LightType { ColoredLight, Mask, InvertedMask }
+[Flags]
+public enum LightFlags
+{
+    Default = 0, Flat = 1 << 0, Mask = 1 << 1, Inverted = 1 << 2, ShadowInsideObstacles = 1 << 3
+}
 
 public class Layer
 {
@@ -83,72 +87,6 @@ public class Layer
         get => IsOverlapping(PixelToWorld(Mouse.CursorPosition));
     }
 
-    public float Gamma
-    {
-        get => gamma;
-        set
-        {
-            gamma = value;
-            shader?.SetUniform("gamma", gamma);
-        }
-    }
-    public float Saturation
-    {
-        get => saturation;
-        set
-        {
-            saturation = value;
-            shader?.SetUniform("saturation", saturation);
-        }
-    }
-    public float Contrast
-    {
-        get => contrast;
-        set
-        {
-            contrast = value;
-            shader?.SetUniform("contrast", contrast);
-        }
-    }
-    public float Brightness
-    {
-        get => brightness;
-        set
-        {
-            brightness = value;
-            shader?.SetUniform("brightness", brightness);
-        }
-    }
-
-    public bool IsLightFading
-    {
-        get => isLightFading;
-        set
-        {
-            shader?.SetUniform("lightFade", value);
-            isLightFading = value;
-        }
-    }
-    public LightType LightType
-    {
-        get => lightType;
-        set
-        {
-            shader?.SetUniform("lightMask", value is LightType.Mask or LightType.InvertedMask);
-            shader?.SetUniform("lightInvert", value == LightType.InvertedMask);
-            lightType = value;
-        }
-    }
-
-    public uint Tint
-    {
-        get => currTint;
-        set
-        {
-            currTint = value;
-            shader?.SetUniform("tint", new Color(currTint));
-        }
-    }
     public uint BackgroundColor { get; set; }
 
     public (float x, float y) Offset { get; set; }
@@ -170,13 +108,6 @@ public class Layer
 
         Size = size;
         Zoom = 1f;
-
-        Gamma = 1f;
-        Saturation = 1f;
-        Contrast = 1f;
-        Brightness = 1f;
-        Tint = uint.MaxValue;
-        IsLightFading = true;
     }
     public Layer(byte[] bytes)
     {
@@ -192,15 +123,7 @@ public class Layer
         AtlasTileIdFull = GetInt();
         Size = (GetInt(), GetInt());
 
-        Gamma = GetFloat();
-        Saturation = GetFloat();
-        Contrast = GetFloat();
-        Brightness = GetFloat();
-        Tint = GetUInt();
         BackgroundColor = GetUInt();
-
-        IsLightFading = GetBool();
-        LightType = (LightType)GetByte();
 
         Zoom = GetFloat();
         Offset = (GetFloat(), GetFloat());
@@ -216,11 +139,6 @@ public class Layer
         int GetInt()
         {
             return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
-        }
-
-        bool GetBool()
-        {
-            return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
         }
 
         uint GetUInt()
@@ -265,15 +183,7 @@ public class Layer
         result.AddRange(BitConverter.GetBytes(Size.width));
         result.AddRange(BitConverter.GetBytes(Size.height));
 
-        result.AddRange(BitConverter.GetBytes(Gamma));
-        result.AddRange(BitConverter.GetBytes(Saturation));
-        result.AddRange(BitConverter.GetBytes(Contrast));
-        result.AddRange(BitConverter.GetBytes(Brightness));
-        result.AddRange(BitConverter.GetBytes(Tint));
         result.AddRange(BitConverter.GetBytes(BackgroundColor));
-
-        result.AddRange(BitConverter.GetBytes(IsLightFading));
-        result.AddRange(BitConverter.GetBytes((byte)LightType));
 
         result.AddRange(BitConverter.GetBytes(Zoom));
         result.AddRange(BitConverter.GetBytes(Offset.x));
@@ -469,7 +379,83 @@ public class Layer
                 verts.Append(new(bl, color, texBl));
             }
     }
-    public void DrawEdges((float x, float y, float width, float height) area, (uint target, uint edge) colors, Edge edges = Edge.AllEdges)
+
+    // per tile shader data 8x8 pixels
+    //
+    // [tnta][tntc][adja][adjc][repa][repo][repn][blra]
+    // [blrt][blrs][wava][wavd][wavt][edga][edgt][edgc]
+    // [blck][    ][    ][    ][    ][    ][    ][    ]
+    // [    ][    ][    ][    ][    ][    ][    ][    ]
+    // [    ][    ][    ][    ][    ][    ][    ][    ]
+    // [    ][    ][    ][    ][    ][    ][    ][    ]
+    // [    ][    ][    ][    ][    ][    ][    ][    ]
+    // [    ][    ][    ][    ][    ][    ][    ][    ]
+    //
+    // tnta: tint area =          [x, y, w, h]
+    // tntc: tint color =         [r, g, b, a]
+    //
+    // adja: adjustments area =   [x, y, w, h]
+    // adjc: adjustments color =  [g, s, c, b] (g = gamma, s = saturation, c = contrast, b = brightness)
+    //
+    // repa: replace area =       [x, y, w, h]
+    // repo: replace color old =  [r, g, b, a]
+    // repn: replace color new =  [r, g, b, a]
+    //
+    // blra: blur area =          [x, y, w, h]
+    // blrt: blur target color =  [r, g, b, a]
+    // blrs: blur strength =      [x, y, _, _]
+    //
+    // wava: wave area =          [x, y, w, h]
+    // wavd: wave data =          [x, y, z, w] (xy = speed, zw = frequency)
+    // wavt: wave target color =  [r, g, b, a]
+    //
+    // edga: edges area =         [x, y, w, h]
+    // edgt: edges target color = [r, g, b, a]
+    // edgc: edges color =        [r, g, b, a]
+
+    public void ApplyLights(float radius, LightFlags flags, params (float x, float y, uint color)[] points)
+    {
+        radius /= Size.height;
+
+        shader?.SetUniform("lightFlags", (int)flags);
+
+        for (var i = 0; i < points?.Length; i++)
+        {
+            var (x, y, color) = points[i];
+            x /= Size.width;
+            y /= Size.height;
+
+            lightCount++;
+            shader?.SetUniform("lightCount", lightCount);
+            shader?.SetUniform($"light[{lightCount - 1}]", new Vec3(x, 1 - y, radius));
+            shader?.SetUniform($"lightColor[{lightCount - 1}]", new Color(color));
+        }
+    }
+    public void ApplyLightObstacles(params (float x, float y, float width, float height)[] areas)
+    {
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h) = areas[i];
+
+            x /= Size.width;
+            y /= Size.height;
+            w /= Size.width;
+            h /= Size.height;
+
+            obstacleCount++;
+            shader?.SetUniform("obstacleCount", obstacleCount);
+            shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
+        }
+    }
+    public void ApplyLightObstacles(params (float x, float y, float width, float height, uint _)[] areas)
+    {
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h, _) = areas[i];
+            ApplyLightObstacles((x, y, w, h));
+        }
+    }
+    public void ApplyEdges((float x, float y, float width, float height) area, (uint target, uint edge) colors, Edge edges = Edge.AllEdges)
     {
         edgeCount++;
 
@@ -487,72 +473,7 @@ public class Layer
         shader?.SetUniform($"edgeArea[{i}]", new Vec4(x, 1 - y, w, h));
         shader?.SetUniform($"edgeType[{i}]", (int)edges);
     }
-
-    public void ApplyLight((float x, float y) position, float radius, uint color)
-    {
-        var (x, y) = position;
-        var (ix, iy) = ((int)position.x, (int)position.y);
-        var ox = BitConverter.GetBytes(x - ix);
-        var oy = BitConverter.GetBytes(y - iy);
-        var r = BitConverter.GetBytes(radius);
-
-        var p0 = new Color(ox[0], ox[1], ox[2], ox[3]);
-        var p1 = new Color(oy[0], oy[1], oy[2], oy[3]);
-        var p2 = new Color(r[0], r[1], r[2], r[3]);
-        var p3 = new Color(color);
-
-        var full = GetTexCoords(AtlasTileIdFull, (1, 1));
-        var (rx, ry) = (ix * AtlasTileSize.width, iy * AtlasTileSize.height);
-
-        shaderParams.Append(new(new(rx + 0, ry), p0, full.tl));
-        shaderParams.Append(new(new(rx + 1, ry), p1, full.tl));
-        shaderParams.Append(new(new(rx + 2, ry), p2, full.tl));
-        shaderParams.Append(new(new(rx + 3, ry), p3, full.tl));
-    }
-
-    public void BlockLight((float x, float y, float width, float height) area)
-    {
-        var (x, y, w, h) = area;
-        var (ix, iy) = ((int)x, (int)y);
-
-        for (var j = y; j <= y + h; j++)
-            for (var i = x; i <= x + w; i++)
-            {
-                var (tx, ty) = ((int)Math.Clamp(i, ix, x + w), (int)Math.Clamp(j, iy, y + h));
-                var isLeft = Math.Abs(i - x) <= 0.01f;
-                var isTop = Math.Abs(j - y) <= 0.01f;
-                var isRight = Math.Abs(i - (x + w)) <= 0.01f;
-                var isBottom = Math.Abs(j - (y + h)) <= 0.01f;
-
-                var rx = isLeft ? i - tx : 0f;
-                var ry = isTop ? j - ty : 0f;
-                var rw = isLeft ? 1f - rx : 1f;
-                var rh = isTop ? 1f - ry : 1f;
-
-                rw = isRight ? i - tx : rw;
-                rh = isBottom ? j - ty : rh;
-
-                var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
-                var (vx, vy) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
-                var full = GetTexCoords(AtlasTileIdFull, (1, 1));
-
-                shaderParams.Append(new(new(vx + 0, vy + 0.5f), res, full.tl));
-            }
-    }
-    public void Light((float x, float y) position, float radius, uint color)
-    {
-        var (x, y) = position;
-
-        x /= Size.width;
-        y /= Size.height;
-        radius /= Size.height;
-
-        lightCount++;
-        shader?.SetUniform("lightCount", lightCount);
-        shader?.SetUniform($"light[{lightCount - 1}]", new Vec3(x, 1 - y, radius));
-        shader?.SetUniform($"lightColor[{lightCount - 1}]", new Color(color));
-    }
-    public void Blur((float x, float y, float width, float height) area, (float x, float y) strength, uint targetColor = 0)
+    public void ApplyBlur((float x, float y, float width, float height) area, (float x, float y) strength, uint targetColor = 0)
     {
         blurCount++;
         var (x, y, w, h) = area;
@@ -568,24 +489,17 @@ public class Layer
         shader?.SetUniform($"blurStrength[{blurCount - 1}]", new Vec2(sx, sy));
         shader?.SetUniform($"blurTarget[{blurCount - 1}]", new Color(targetColor));
     }
-    public void Distort((float x, float y, float width, float height) area, (float x, float y) speed, (float x, float y) frequency, uint targetColor = 0)
+    public void ApplyWaves((sbyte x, sbyte y) speed, (byte x, byte y) frequency, params (float x, float y, float width, float height, uint targetColor)[] areas)
     {
-        waveCount++;
-        var (x, y, w, h) = area;
-        var (sx, sy) = speed;
-        var (fx, fy) = frequency;
-
-        x /= Size.width;
-        y /= Size.height;
-        w /= Size.width;
-        h /= Size.height;
-
-        shader?.SetUniform("waveCount", waveCount);
-        shader?.SetUniform($"waveArea[{waveCount - 1}]", new Vec4(x, 1 - y, w, h));
-        shader?.SetUniform($"waveSpeedFreq[{waveCount - 1}]", new Vec4(sx, sy, fx, fy));
-        shader?.SetUniform($"waveTarget[{waveCount - 1}]", new Color(targetColor));
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h, c) = areas[i];
+            SetShaderData((x, y, w, h), (2, 1), Color.Transparent, true);
+            SetShaderData((x, y, w, h), (3, 1), new((byte)speed.x, (byte)speed.y, frequency.x, frequency.y), false);
+            SetShaderData((x, y, w, h), (4, 1), new(c), false);
+        }
     }
-    public void ReplaceColor(uint oldColor, uint newColor)
+    public void ApplyColorReplacement(uint oldColor, uint newColor)
     {
         var pair = (oldColor, newColor);
 
@@ -622,6 +536,15 @@ public class Layer
                 shader?.SetUniform($"replaceOld[{i}]", new Color(replaceColors[i].oldColor));
                 shader?.SetUniform($"replaceNew[{i}]", new Color(replaceColors[i].newColor));
             }
+        }
+    }
+    public void ApplyColorAdjustments(sbyte gamma, byte saturation, byte contrast, byte brightness, params (float x, float y, float width, float height, uint targetColor)[] areas)
+    {
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h, c) = areas[i];
+            SetShaderData((x, y, w, h), (2, 0), Color.Transparent, true);
+            SetShaderData((x, y, w, h), (3, 0), new((byte)(gamma + 127), saturation, contrast, brightness), false);
         }
     }
 
@@ -690,7 +613,7 @@ public class Layer
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
     };
 
-    internal int edgeCount, waveCount, blurCount, lightCount, obstacleCount;
+    internal int edgeCount, blurCount, lightCount, obstacleCount;
     internal Vector2u tilesetPixelSize;
     internal (int w, int h) TilemapPixelSize
     {
@@ -714,10 +637,7 @@ public class Layer
     private string atlasPath;
     private (byte width, byte height) atlasTileGap, atlasTileSize;
     private (int width, int height) size;
-    private uint currTint = uint.MaxValue;
-    private float zoom, gamma, saturation, contrast, brightness;
-    private bool isLightFading;
-    private LightType lightType;
+    private float zoom;
 
     [MemberNotNull(nameof(AtlasTileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]
     private void Init()
@@ -787,6 +707,39 @@ public class Layer
         verts.Append(new(br, color, texBr));
         verts.Append(new(bl, color, texBl));
     }
+    private void SetShaderData((float x, float y, float width, float height) area, (int x, int y) tilePixel, Color data, bool includeArea)
+    {
+        var (x, y, w, h) = area;
+        var (ix, iy) = ((int)x, (int)y);
+
+        for (var j = y; j <= y + h; j++)
+            for (var i = x; i <= x + w; i++)
+            {
+                var (tx, ty) = ((int)Math.Clamp(i, ix, x + w), (int)Math.Clamp(j, iy, y + h));
+                var isLeft = Math.Abs(i - x) <= 0.01f;
+                var isTop = Math.Abs(j - y) <= 0.01f;
+                var isRight = Math.Abs(i - (x + w)) <= 0.01f;
+                var isBottom = Math.Abs(j - (y + h)) <= 0.01f;
+
+                var rx = isLeft ? i - tx : 0f;
+                var ry = isTop ? j - ty : 0f;
+                var rw = isLeft ? 1f - rx : 1f;
+                var rh = isTop ? 1f - ry : 1f;
+
+                rw = isRight ? i - tx : rw;
+                rh = isBottom ? j - ty : rh;
+
+                var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
+                var (vx, vy) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
+                var full = GetTexCoords(AtlasTileIdFull, (1, 1));
+                var (px, py) = tilePixel;
+
+                shaderParams.Append(new(new(vx + px, vy + 0.5f + py), data, full.tl));
+
+                if (includeArea)
+                    shaderParams.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl));
+            }
+    }
 
     internal void DrawQueue()
     {
@@ -816,7 +769,6 @@ public class Layer
         data?.Display();
 
         edgeCount = 0;
-        waveCount = 0;
         blurCount = 0;
         lightCount = 0;
         obstacleCount = 0;
@@ -840,7 +792,7 @@ public class Layer
         result?.Display();
 
         //queue?.Texture.CopyToImage().SaveToFile("render.png");
-        data?.Texture.CopyToImage().SaveToFile("data.png");
+        //data?.Texture.CopyToImage().SaveToFile("data.png");
 
         verts.Clear();
         shaderParams.Clear();
@@ -870,6 +822,7 @@ public class Layer
     {
         return y * AtlasTileCount.width + x;
     }
+
     private static int Wrap(int number, int targetNumber)
     {
         return (number % targetNumber + targetNumber) % targetNumber;
