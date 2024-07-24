@@ -15,7 +15,7 @@ uniform vec2 tileCount;" +
             // light uniforms
             @"
 uniform int lightCount;
-uniform vec3 light[20]; // x, y, radius, type
+uniform vec3 light[20]; // x, y, radius
 uniform vec4 lightColor[20];
 uniform int obstacleCount;
 uniform vec4 obstacleArea[200];
@@ -23,9 +23,13 @@ uniform int lightFlags;" +
 
             // utility functions
             @"
-bool is_inside(vec2 coord, vec4 area) {
-	return coord.x > area.x && coord.x < area.x + area.z &&
-		   coord.y > area.y - area.w && coord.y < area.y;
+bool is_inside(vec2 coord, vec4 area, vec4 off) {
+	vec2 texel = 1.0 / tileCount / tileSize;
+	off.xz *= texel.x;
+	off.yw *= texel.y;
+
+	return coord.x > area.x - off.x && coord.x < area.x + area.z + off.z &&
+		   coord.y > area.y - area.w - off.w && coord.y < area.y + off.y;
 }
 bool is(vec4 a, vec4 b) {
 	return distance(a, b) < 0.005;
@@ -72,6 +76,7 @@ vec4 get_area(uint offsetX, uint offsetY) {
 	float h = data.a * tileSz.y + texel.y / 2.0;
 	return vec4(x, y, w, h);
 }" +
+
             // light functions
             @"
 int compute_out_code(vec2 p, vec2 rectMin, vec2 rectMax) {
@@ -166,7 +171,7 @@ vec4 compute_lights(vec2 coord, vec4 color) {
 			vec4 area = obstacleArea[j];
 			vec2 min = vec2(area.x, area.y);
 			vec2 max = min + vec2(area.z, area.w);
-			bool obstacleInShadow = is_inside(coord, area) && !has_bit(lightFlags, 8);						
+			bool obstacleInShadow = is_inside(coord, area, vec4(0.0)) && !has_bit(lightFlags, 8);						
 
 			if (!obstacleInShadow && is_shadow(vec2(l.x, l.y), coord, min, max))
 			{
@@ -197,39 +202,144 @@ vec2 compute_waves(vec2 coord) {
 	vec2 viewSize = tileSize * tileCount;
 	vec4 multiplier = vec4(20.0, 20.0, 600.0, 600.0);
 	vec2 texel = 1.0 / tileCount / tileSize;
-	vec4 area = get_area(2, 1);
-	vec4 spFr = get_data(3, 1);
-	vec4 target = get_data(4, 1);
-	bool is_target_color = target == vec4(0.0) ||
-						  (target != vec4(0.0) && is(texture2D(texture, coord) * gl_Color, target));		
+	vec4 area = get_area(0, 4);
+	vec4 spFr = get_data(1, 4);
+	vec4 target = get_data(2, 4);
+	vec4 color = texture2D(texture, coord) * gl_Color;
+	bool isTargetColor = target == vec4(0.0) || (target != vec4(0.0) && is(color, target));		
 	
 	spFr.x = spFr.x < 0.5 ? -spFr.x : spFr.x - 0.5;
 	spFr.y = spFr.y < 0.5 ? -spFr.y : spFr.y - 0.5;
 	spFr *= multiplier;
 
-	if (is_inside(coord, area) && is_target_color) {
+	if (is_inside(coord, area, vec4(0.0)) && isTargetColor) {
 		coord.x += cos(coord.y * spFr.z + spFr.x * time) / viewSize.x / 1.5;
 		coord.y += sin(coord.x * spFr.w + spFr.y * time) / viewSize.y / 1.5;
 	}
 	return coord;
 }" +
-// color adjust functions
+            // color adjust functions
             @"
 vec4 compute_color_adjust(vec2 coord, vec4 color) {
-	vec4 area = get_area(2, 0);
+	vec4 area = get_area(0, 3);
+	vec4 target = get_data(2, 3);
+	bool isTargetColor = target == vec4(0.0) || (!is(target, vec4(0.0)) && is(color, target));	
+	vec4 off = vec4(0.0, 0.0, 0.5, 0.5);	
 
-	if (!is_inside(coord, area))
+	if (!is_inside(coord, area, off) || !isTargetColor)
 		return color;
 	
-	vec4 data = get_data(3, 0);
-	float gamma = data.x > 0.5 ? map(data.x, 0.5, 1.0, 2.0, 1.0) : map(data.x, 0.0, 0.5, 1.0, 0.0);
-	
+	float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+	vec4 data = get_data(1, 3);
+	float gamma = data.x < 0.5 ? map(data.x, 0.0, 0.5, 6.0, 1.0) : map(data.x, 0.5, 1.0, 1.0, 0.0);
+	float saturation = data.y < 0.5 ? map(data.y, 0.0, 0.5, 0.0, 1.0) : map(data.y, 0.5, 1.0, 1.0, 10.0);
+	float contrast = data.z < 0.5 ? map(data.z, 0.0, 0.5, 0.0, 1.0) : map(data.z, 0.5, 1.0, 1.0, 3.0);
+	float brightness = data.w < 0.5 ? map(data.w, 0.0, 0.5, 0.0, 1.0) : map(data.w, 0.5, 1.0, 1.0, 4.0);
+
 	color.rgb = pow(color.rgb, vec3(gamma));
-	//float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-	//color.rgb = mix(vec3(luminance), color.rgb, data.y);
-	//color.rgb = mix(vec3(0.5), color.rgb, data.z);
-	//color.rgb *= data.w;
-	//color *= tint;
+	color.rgb = mix(vec3(luminance), color.rgb, saturation);
+	color.rgb = mix(vec3(0.5), color.rgb, contrast);
+	color.rgb *= brightness;
+	return color;
+}" +
+            // color tint functions
+            @"
+vec4 compute_color_tint(vec2 coord, vec4 color) {
+	vec4 area = get_area(0, 0);
+	vec4 target = get_data(2, 0);
+	bool isTargetColor = target == vec4(0.0) || (!is(target, vec4(0.0)) && is(color, target));	
+	vec4 off = vec4(0.0, 0.0, 0.5, 0.5);	
+
+	if (!is_inside(coord, area, off) || !isTargetColor)
+		return color;
+	
+	vec4 tint = get_data(1, 0);
+	tint.rgb = mix(color.rgb, tint.rgb, tint.a);
+	tint.a = color.a;	
+
+	return color * tint;
+}" +
+            // color replace functions
+            @"
+vec4 compute_color_replace(vec2 coord, vec4 color) {
+	vec4 area = get_area(0, 2);
+	vec4 target = get_data(1, 2);
+	bool isTargetColor = target == vec4(0.0) || (!is(target, vec4(0.0)) && is(color, target));	
+	vec4 off = vec4(0.0, 0.0, 0.5, 0.5);	
+
+	if (!is_inside(coord, area, off) || !isTargetColor)
+		return color;
+	
+	return get_data(2, 2);
+}" +
+            // blur functions
+            @"
+vec4 compute_blur(vec2 coord, vec4 color) {
+	vec4 a = get_area(0, 1);
+	vec4 off = vec4(0.0);
+	vec4 t = get_data(1, 1);
+	bool isTargetColor = t == vec4(0.0) || (t != vec4(0.0) && is(color, t));		
+
+	if (!is_inside(coord, a, off) || !isTargetColor)
+		return color;
+
+	vec2 s = get_data(2, 1);
+	vec2 texel = 1.0 / tileCount / tileSize;
+	vec2 blur = texel * s;
+	vec4 blurResult =
+		texture2D(texture, coord) * 4.0 +
+		texture2D(texture, coord - blur.x) * 2.0 +
+		texture2D(texture, coord + blur.x) * 2.0 +
+		texture2D(texture, coord - blur.y) * 2.0 +
+		texture2D(texture, coord + blur.y) * 2.0 +
+		texture2D(texture, coord - blur.x - blur.y) * 1.0 +
+		texture2D(texture, coord - blur.x + blur.y) * 1.0 +
+		texture2D(texture, coord + blur.x - blur.y) * 1.0 +
+		texture2D(texture, coord + blur.x + blur.y) * 1.0;
+	color = (blurResult / 16.0);
+	return color;
+}" +
+            // edges functions
+            @"
+vec4 compute_edges(vec2 coord, vec4 color) {
+	vec2 texel = 1.0 / tileCount / tileSize;
+	vec3 u = (texture2D(texture, vec2(coord.x, coord.y - texel.y)) * gl_Color).rgb;
+	vec3 d = (texture2D(texture, vec2(coord.x, coord.y + texel.y)) * gl_Color).rgb;
+	vec3 l = (texture2D(texture, vec2(coord.x + texel.x, coord.y)) * gl_Color).rgb;
+	vec3 r = (texture2D(texture, vec2(coord.x - texel.x, coord.y)) * gl_Color).rgb;
+	
+	vec3 ul = (texture2D(texture, vec2(coord.x + texel.x, coord.y - texel.y)) * gl_Color).rgb;
+	vec3 dl = (texture2D(texture, vec2(coord.x + texel.x, coord.y + texel.y)) * gl_Color).rgb;
+	vec3 ur = (texture2D(texture, vec2(coord.x - texel.x, coord.y - texel.y)) * gl_Color).rgb;
+	vec3 dr = (texture2D(texture, vec2(coord.x - texel.x, coord.y + texel.y)) * gl_Color).rgb;
+	
+	vec4 a = get_area(0, 5);
+	vec4 t = get_data(1, 5);
+	vec4 c = get_data(2, 5);
+	int type = int(get_data(3, 5).x * 255);
+
+	bool is_u = is(u, t);
+	bool is_d = is(d, t);
+	bool is_l = is(l, t);
+	bool is_r = is(r, t);
+
+	bool is_ul = !is_u && !is_l && is(ul, t);
+	bool is_ur = !is_u && !is_r && is(ur, t);
+	bool is_dl = !is_d && !is_l && is(dl, t);
+	bool is_dr = !is_d && !is_r && is(dr, t);
+	
+	if (!is(color, t) && is_inside(coord, a, vec4(0.0)))
+	{
+		// types: Top = 1, Bottom = 2, Left = 4, Right = 8, Corners = 16
+		bool corners = has_bit(type, 16) && (is_ul || is_dl || is_ur || is_dr);
+		bool top = has_bit(type, 1) && is_u;
+		bool bot = has_bit(type, 2) && is_d;
+		bool left = has_bit(type, 4) && is_l;
+		bool right = has_bit(type, 8) && is_r;
+
+		if (corners || top || bot || left || right)
+			color = c;
+	}
 	return color;
 }" +
 
@@ -239,95 +349,14 @@ void main(void) {
 	vec2 coord = compute_waves(gl_TexCoord[0].xy);
 	vec4 color = texture2D(texture, coord) * gl_Color;
 	
+	color = compute_edges(coord, color);
+	color = compute_color_replace(coord, color);
+	color = compute_blur(coord, color);
+	color = compute_color_adjust(coord, color);
 	color = compute_lights(coord, color);
-	color = compute_color_adjust(coord, color);	
+	color = compute_color_tint(coord, color);
 
 	gl_FragColor = color;
 }";
     }
 }
-
-//// blur
-//for(int i = 0; i < blurCount; i++)
-//{
-//	vec4 a = blurArea[i];
-//	vec4 off = vec4(-pixel.x, -pixel.x, pixel.y, pixel.y);		
-//	vec4 t = blurTarget[i];	
-//	vec2 s = blurStrength[i];	
-//	bool is_target_color = t == vec4(0.0) ||
-//							(t != vec4(0.0) && is(texture2D(texture, coord) * gl_Color, t));		
-//
-//	if (is_inside(coord, a, off) && is_target_color)
-//	{
-//		vec2 blur = pixel * s;
-//		vec4 blurResult =
-//			texture2D(texture, coord) * 4.0 +
-//			texture2D(texture, coord - blur.x) * 2.0 +
-//			texture2D(texture, coord + blur.x) * 2.0 +
-//			texture2D(texture, coord - blur.y) * 2.0 +
-//			texture2D(texture, coord + blur.y) * 2.0 +
-//			texture2D(texture, coord - blur.x - blur.y) * 1.0 +
-//			texture2D(texture, coord - blur.x + blur.y) * 1.0 +
-//			texture2D(texture, coord + blur.x - blur.y) * 1.0 +
-//			texture2D(texture, coord + blur.x + blur.y) * 1.0;
-//		color = (blurResult / 16.0);
-//	}
-//}
-//
-//// replace colors
-//for(int i = 0; i < replaceCount; i++)
-//    if (distance(color, replaceOld[i]) < 0.01)
-//	    color = replaceNew[i];
-//
-//// edges
-//vec3 u = (texture2D(texture, vec2(coord.x, coord.y - pixel.y)) * gl_Color).rgb;
-//vec3 d = (texture2D(texture, vec2(coord.x, coord.y + pixel.y)) * gl_Color).rgb;
-//vec3 l = (texture2D(texture, vec2(coord.x + pixel.x, coord.y)) * gl_Color).rgb;
-//vec3 r = (texture2D(texture, vec2(coord.x - pixel.x, coord.y)) * gl_Color).rgb;
-//
-//vec3 ul = (texture2D(texture, vec2(coord.x + pixel.x, coord.y - pixel.y)) * gl_Color).rgb;
-//vec3 dl = (texture2D(texture, vec2(coord.x + pixel.x, coord.y + pixel.y)) * gl_Color).rgb;
-//vec3 ur = (texture2D(texture, vec2(coord.x - pixel.x, coord.y - pixel.y)) * gl_Color).rgb;
-//vec3 dr = (texture2D(texture, vec2(coord.x - pixel.x, coord.y + pixel.y)) * gl_Color).rgb;
-//
-//for(int i = 0; i < edgeCount; i++)
-//{
-//	vec4 t = edgeTarget[i];
-//	vec4 c = edgeColor[i];
-//	vec4 a = edgeArea[i];
-//	int type = edgeType[i];		
-//
-//	bool is_u = is(u, t);
-//	bool is_d = is(d, t);
-//	bool is_l = is(l, t);
-//	bool is_r = is(r, t);
-//
-//	bool is_ul = !is_u && !is_l && is(ul, t);		
-//	bool is_ur = !is_u && !is_r && is(ur, t);		
-//	bool is_dl = !is_d && !is_l && is(dl, t);		
-//	bool is_dr = !is_d && !is_r && is(dr, t);		
-//	
-//	vec4 off = vec4(-pixel.x * 1.5, pixel.x, 0, pixel.y * 1.5);
-//
-//	if (!is(color, t) && is_inside(coord, a, off))
-//	{
-//		// types: Top = 1, Bottom = 2, Left = 4, Right = 8, Corners = 16
-//		bool corners = has_bit(type, 16) && (is_ul || is_dl || is_ur || is_dr);
-//		bool top = has_bit(type, 1) && is_u;
-//		bool bot = has_bit(type, 2) && is_d;
-//		bool left = has_bit(type, 4) && is_l;
-//		bool right = has_bit(type, 8) && is_r;
-//
-//		if (corners || top || bot || left || right)
-//			color = c;
-//	}
-//}
-//
-
-//// color adjustments
-//color.rgb = pow(color.rgb, vec3(1.0 / gamma));
-//float luminance = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-//color.rgb = mix(vec3(luminance), color.rgb, saturation);
-//color.rgb = mix(vec3(0.5), color.rgb, contrast);
-//color.rgb *= brightness;
-//color *= tint;

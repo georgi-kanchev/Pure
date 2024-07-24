@@ -63,6 +63,12 @@ public static class Collision
         shadows.Update(tilemaps[1]);
         var shadowsRects = shadows.ToBundle();
 
+        var trees = new SolidMap();
+        trees.SolidsAdd(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1, Brown.ToDark(0.4f)));
+        trees.SolidsAdd(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
+        trees.Update(tilemaps[1], false);
+        var treesRect = trees.ToBundle();
+
         Keyboard.Key.A.OnPress(() =>
         {
             var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
@@ -94,15 +100,16 @@ public static class Collision
             layer.DrawTilemap(tilemaps[0].ViewUpdate());
             layer.DrawTilemap(tilemaps[1].ViewUpdate());
 
-            layer.ApplyColorAdjustments(127, 127, 255, 255, (5, 10, 2, 2, Green));
             //layer.DrawRectangles(collisionMap);
             //layer.DrawLines(line);
             //layer.DrawPoints(crossPoints);
             //layer.DrawTiles(mousePosition, tile);
             layer.DrawCursor();
 
-            layer.ApplyBlur((0, 0, w, h), (2f, 2f), Blue);
+            layer.ApplyBlur((127, 127), (0, 0, w, h, Blue));
             layer.ApplyWaves((0, 50), (0, 50), wavesRects);
+            layer.ApplyColorReplacement(Cyan, (0, 0, w, h, Red));
+            layer.ApplyEdges(Cyan, Edge.AllEdges, treesRect);
 
             var (mx, my) = mousePosition;
             var light = Yellow.ToTransparent();

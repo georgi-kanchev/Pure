@@ -380,39 +380,57 @@ public class Layer
             }
     }
 
-    // per tile shader data 8x8 pixels
-    //
-    // [tnta][tntc][adja][adjc][repa][repo][repn][blra]
-    // [blrt][blrs][wava][wavd][wavt][edga][edgt][edgc]
-    // [blck][    ][    ][    ][    ][    ][    ][    ]
-    // [    ][    ][    ][    ][    ][    ][    ][    ]
-    // [    ][    ][    ][    ][    ][    ][    ][    ]
-    // [    ][    ][    ][    ][    ][    ][    ][    ]
-    // [    ][    ][    ][    ][    ][    ][    ][    ]
-    // [    ][    ][    ][    ][    ][    ][    ][    ]
-    //
-    // tnta: tint area =          [x, y, w, h]
-    // tntc: tint color =         [r, g, b, a]
-    //
-    // adja: adjustments area =   [x, y, w, h]
-    // adjc: adjustments color =  [g, s, c, b] (g = gamma, s = saturation, c = contrast, b = brightness)
-    //
-    // repa: replace area =       [x, y, w, h]
-    // repo: replace color old =  [r, g, b, a]
-    // repn: replace color new =  [r, g, b, a]
-    //
-    // blra: blur area =          [x, y, w, h]
-    // blrt: blur target color =  [r, g, b, a]
-    // blrs: blur strength =      [x, y, _, _]
-    //
-    // wava: wave area =          [x, y, w, h]
-    // wavd: wave data =          [x, y, z, w] (xy = speed, zw = frequency)
-    // wavt: wave target color =  [r, g, b, a]
-    //
-    // edga: edges area =         [x, y, w, h]
-    // edgt: edges target color = [r, g, b, a]
-    // edgc: edges color =        [r, g, b, a]
+    public void ApplyColorReplacement(uint newColor, params (float x, float y, float width, float height, uint oldColor)[] areas)
+    {
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h, c) = areas[i];
+            SetShaderData((x, y, w, h), (0, 2), Color.Transparent, true);
+            SetShaderData((x, y, w, h), (1, 2), new(c), false);
+            SetShaderData((x, y, w, h), (2, 2), new(newColor), false);
+        }
+    }
+    public void ApplyColorAdjustments(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params (float x, float y, float width, float height)[] areas)
+    {
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h) = areas[i];
+            ApplyColorAdjustments(gamma, saturation, contrast, brightness, (x, y, w, h, 0));
+        }
+    }
+    public void ApplyColorAdjustments(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params (float x, float y, float width, float height, uint targetColor)[] areas)
+    {
+        var g = (byte)(gamma + 128);
+        var s = (byte)(saturation + 128);
+        var ct = (byte)(contrast + 128);
+        var b = (byte)(brightness + 128);
 
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h, c) = areas[i];
+            SetShaderData((x, y, w, h), (0, 3), Color.Transparent, true);
+            SetShaderData((x, y, w, h), (1, 3), new(g, s, ct, b), false);
+            SetShaderData((x, y, w, h), (2, 3), new(c), false);
+        }
+    }
+    public void ApplyColorTint(uint tint, params (float x, float y, float width, float height)[] areas)
+    {
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h) = areas[i];
+            ApplyColorTint(tint, (x, y, w, h, 0));
+        }
+    }
+    public void ApplyColorTint(uint tint, params (float x, float y, float width, float height, uint targetColor)[] areas)
+    {
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h, c) = areas[i];
+            SetShaderData((x, y, w, h), (0, 0), Color.Transparent, true);
+            SetShaderData((x, y, w, h), (1, 0), new(tint), false);
+            SetShaderData((x, y, w, h), (2, 0), new(c), false);
+        }
+    }
     public void ApplyLights(float radius, LightFlags flags, params (float x, float y, uint color)[] points)
     {
         radius /= Size.height;
@@ -455,96 +473,45 @@ public class Layer
             ApplyLightObstacles((x, y, w, h));
         }
     }
-    public void ApplyEdges((float x, float y, float width, float height) area, (uint target, uint edge) colors, Edge edges = Edge.AllEdges)
+    public void ApplyEdges(uint color, Edge edges, params (float x, float y, float width, float height, uint targetColor)[] areas)
     {
-        edgeCount++;
-
-        var i = edgeCount - 1;
-        var (x, y, w, h) = area;
-
-        x /= Size.width;
-        y /= Size.height;
-        w /= Size.width;
-        h /= Size.height;
-
-        shader?.SetUniform("edgeCount", edgeCount);
-        shader?.SetUniform($"edgeTarget[{i}]", new Color(colors.target));
-        shader?.SetUniform($"edgeColor[{i}]", new Color(colors.edge));
-        shader?.SetUniform($"edgeArea[{i}]", new Vec4(x, 1 - y, w, h));
-        shader?.SetUniform($"edgeType[{i}]", (int)edges);
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h, c) = areas[i];
+            SetShaderData((x, y, w, h), (0, 5), Color.Transparent, true);
+            SetShaderData((x, y, w, h), (1, 5), new(c), false);
+            SetShaderData((x, y, w, h), (2, 5), new(color), false);
+            SetShaderData((x, y, w, h), (3, 5), new((byte)edges, 0, 0, 0), false);
+        }
     }
-    public void ApplyBlur((float x, float y, float width, float height) area, (float x, float y) strength, uint targetColor = 0)
+    public void ApplyBlur((byte x, byte y) strength, params (float x, float y, float width, float height, uint targetColor)[] areas)
     {
-        blurCount++;
-        var (x, y, w, h) = area;
         var (sx, sy) = strength;
 
-        x /= Size.width;
-        y /= Size.height;
-        w /= Size.width;
-        h /= Size.height;
-
-        shader?.SetUniform("blurCount", blurCount);
-        shader?.SetUniform($"blurArea[{blurCount - 1}]", new Vec4(x, 1 - y, w, h));
-        shader?.SetUniform($"blurStrength[{blurCount - 1}]", new Vec2(sx, sy));
-        shader?.SetUniform($"blurTarget[{blurCount - 1}]", new Color(targetColor));
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h, c) = areas[i];
+            SetShaderData((x, y, w, h), (0, 1), Color.Transparent, true);
+            SetShaderData((x, y, w, h), (1, 1), new(c), false);
+            SetShaderData((x, y, w, h), (2, 1), new(sx, sy, 0, 0), false);
+        }
+    }
+    public void ApplyBlur((byte x, byte y) strength, params (float x, float y, float width, float height)[] areas)
+    {
+        for (var i = 0; i < areas?.Length; i++)
+        {
+            var (x, y, w, h) = areas[i];
+            ApplyBlur(strength, (x, y, w, h, 0));
+        }
     }
     public void ApplyWaves((sbyte x, sbyte y) speed, (byte x, byte y) frequency, params (float x, float y, float width, float height, uint targetColor)[] areas)
     {
         for (var i = 0; i < areas?.Length; i++)
         {
             var (x, y, w, h, c) = areas[i];
-            SetShaderData((x, y, w, h), (2, 1), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (3, 1), new((byte)speed.x, (byte)speed.y, frequency.x, frequency.y), false);
-            SetShaderData((x, y, w, h), (4, 1), new(c), false);
-        }
-    }
-    public void ApplyColorReplacement(uint oldColor, uint newColor)
-    {
-        var pair = (oldColor, newColor);
-
-        if (replaceColors.Contains(pair))
-            return;
-
-        if (oldColor == newColor)
-        {
-            var foundIndex = -1;
-            for (var i = 0; i < replaceColors.Count; i++)
-                if (replaceColors[i].oldColor == oldColor)
-                {
-                    foundIndex = i;
-                    break;
-                }
-
-            if (foundIndex < 0)
-                return;
-
-            replaceColors.RemoveAt(foundIndex);
-            UpdateReplaceUniforms();
-
-            return;
-        }
-
-        replaceColors.Add(pair);
-        UpdateReplaceUniforms();
-
-        void UpdateReplaceUniforms()
-        {
-            shader?.SetUniform("replaceCount", replaceColors.Count);
-            for (var i = 0; i < replaceColors.Count; i++)
-            {
-                shader?.SetUniform($"replaceOld[{i}]", new Color(replaceColors[i].oldColor));
-                shader?.SetUniform($"replaceNew[{i}]", new Color(replaceColors[i].newColor));
-            }
-        }
-    }
-    public void ApplyColorAdjustments(sbyte gamma, byte saturation, byte contrast, byte brightness, params (float x, float y, float width, float height, uint targetColor)[] areas)
-    {
-        for (var i = 0; i < areas?.Length; i++)
-        {
-            var (x, y, w, h, c) = areas[i];
-            SetShaderData((x, y, w, h), (2, 0), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (3, 0), new((byte)(gamma + 127), saturation, contrast, brightness), false);
+            SetShaderData((x, y, w, h), (0, 4), Color.Transparent, true);
+            SetShaderData((x, y, w, h), (1, 4), new((byte)speed.x, (byte)speed.y, frequency.x, frequency.y), false);
+            SetShaderData((x, y, w, h), (2, 4), new(c), false);
         }
     }
 
@@ -602,10 +569,47 @@ public class Layer
     }
 
 #region Backend
+    // per tile shader data map (8x8 pixels)
+    //
+    // [tnta][tntc][tntt][    ][    ][    ][    ][    ]
+    // [blra][blrt][blrs][    ][    ][    ][    ][    ]
+    // [repa][repo][repn][    ][    ][    ][    ][    ]
+    // [adja][adjd][adjt][    ][    ][    ][    ][    ]
+    // [wava][wavd][wavt][    ][    ][    ][    ][    ]
+    // [edga][edgt][edgc][edgy][    ][    ][    ][    ]
+    // [blka][    ][    ][    ][    ][    ][    ][    ]
+    // [    ][    ][    ][    ][    ][    ][    ][    ]
+    //
+    // tnta: tint area =          [x, y, w, h]
+    // tntc: tint color =         [r, g, b, a]
+    // tntt: tint target color =  [r, g, b, a]
+    //
+    // adja: adjustments area =   [x, y, w, h]
+    // adjd: adjustments data =   [g, s, c, b] (g = gamma, s = saturation, c = contrast, b = brightness)
+    // adjt: adj target color =   [r, g, b, a]
+    //
+    // repa: replace area =       [x, y, w, h]
+    // repo: replace color old =  [r, g, b, a]
+    // repn: replace color new =  [r, g, b, a]
+    //
+    // blra: blur area =          [x, y, w, h]
+    // blrt: blur target color =  [r, g, b, a]
+    // blrs: blur strength =      [x, y, _, _]
+    //
+    // wava: wave area =          [x, y, w, h]
+    // wavd: wave data =          [x, y, z, w] (xy = speed, zw = frequency)
+    // wavt: wave target color =  [r, g, b, a]
+    //
+    // edga: edges area =         [x, y, w, h]
+    // edgt: edges target color = [r, g, b, a]
+    // edgc: edges color =        [r, g, b, a]
+    // edgy: edges type =         [t, _, _, _]
+    //
+    // blka: light block area =   [x, y, w, h]
+
     internal RenderTexture? queue, result, data;
     internal readonly Shader? shader;
     private readonly VertexArray verts, shaderParams;
-    private readonly List<(uint oldColor, uint newColor)> replaceColors = new();
     internal static readonly Dictionary<string, Texture> tilesets = new();
     private static readonly List<(float, float)> cursorOffsets = new()
     {
@@ -613,7 +617,7 @@ public class Layer
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
     };
 
-    internal int edgeCount, blurCount, lightCount, obstacleCount;
+    internal int lightCount, obstacleCount;
     internal Vector2u tilesetPixelSize;
     internal (int w, int h) TilemapPixelSize
     {
@@ -768,11 +772,8 @@ public class Layer
         data?.Draw(shaderParams, new(BlendMode.None, Transform.Identity, atlas, null));
         data?.Display();
 
-        edgeCount = 0;
-        blurCount = 0;
         lightCount = 0;
         obstacleCount = 0;
-        shader?.SetUniform("viewSize", new Vec2(view?.Size.X ?? 0, view?.Size.Y ?? 0));
         shader?.SetUniform("tileSize", new Vec2(AtlasTileSize.width, AtlasTileSize.height));
         shader?.SetUniform("tileCount", new Vec2(Size.width, Size.height));
         shader?.SetUniform("time", Window.time.ElapsedTime.AsSeconds());

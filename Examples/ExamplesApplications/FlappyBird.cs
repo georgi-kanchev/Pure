@@ -155,9 +155,6 @@ public static class FlappyBird
             var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
             layer.DrawTiles((BIRD_X, birdY), tile);
             layer.DrawCursor();
-
-            layer.ApplyEdges((BIRD_X, birdY, 1, 1), (Color.Yellow, Color.Red), Edge.AllEdgesAndCorners);
-
             layer.Draw();
         }
     }
