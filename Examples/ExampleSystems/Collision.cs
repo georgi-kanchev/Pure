@@ -47,8 +47,6 @@ public static class Collision
         collisionMap.Update(tilemaps[1]);
         var collisionPack = collisionMap.ToArray();
 
-        //layer.Offset = (50, 0);
-
         var waves = new SolidMap();
         waves.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 1, 1, Blue.ToDark()));
         waves.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1, 1, Blue.ToDark()));
@@ -108,8 +106,7 @@ public static class Collision
 
             layer.ApplyBlur((127, 127), (0, 0, w, h, Blue));
             layer.ApplyWaves((0, 50), (0, 50), wavesRects);
-            layer.ApplyColorReplacement(Cyan, (0, 0, w, h, Red));
-            layer.ApplyEdges(Cyan, Edge.AllEdges, treesRect);
+            layer.ApplyColorTint(Blue.ToBright(), (0, 0, w, h));
 
             var (mx, my) = mousePosition;
             var light = Yellow.ToTransparent();

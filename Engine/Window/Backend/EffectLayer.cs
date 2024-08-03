@@ -224,7 +224,7 @@ vec4 compute_color_adjust(vec2 coord, vec4 color) {
 	vec4 area = get_area(0, 3);
 	vec4 target = get_data(2, 3);
 	bool isTargetColor = target == vec4(0.0) || (!is(target, vec4(0.0)) && is(color, target));	
-	vec4 off = vec4(0.0, 0.0, 0.5, 0.5);	
+	vec4 off = vec4(0.0, 0.0, 0.4, 0.4);	
 
 	if (!is_inside(coord, area, off) || !isTargetColor)
 		return color;
@@ -248,7 +248,7 @@ vec4 compute_color_tint(vec2 coord, vec4 color) {
 	vec4 area = get_area(0, 0);
 	vec4 target = get_data(2, 0);
 	bool isTargetColor = target == vec4(0.0) || (!is(target, vec4(0.0)) && is(color, target));	
-	vec4 off = vec4(0.0, 0.0, 0.5, 0.5);	
+	vec4 off = vec4(0.0, 0.0, 0.4, 0.4);	
 
 	if (!is_inside(coord, area, off) || !isTargetColor)
 		return color;
@@ -265,7 +265,7 @@ vec4 compute_color_replace(vec2 coord, vec4 color) {
 	vec4 area = get_area(0, 2);
 	vec4 target = get_data(1, 2);
 	bool isTargetColor = target == vec4(0.0) || (!is(target, vec4(0.0)) && is(color, target));	
-	vec4 off = vec4(0.0, 0.0, 0.5, 0.5);	
+	vec4 off = vec4(0.0, 0.0, 0.4, 0.4);	
 
 	if (!is_inside(coord, area, off) || !isTargetColor)
 		return color;
@@ -307,12 +307,12 @@ vec4 compute_edges(vec2 coord, vec4 color) {
 	vec3 d = (texture2D(texture, vec2(coord.x, coord.y + texel.y)) * gl_Color).rgb;
 	vec3 l = (texture2D(texture, vec2(coord.x + texel.x, coord.y)) * gl_Color).rgb;
 	vec3 r = (texture2D(texture, vec2(coord.x - texel.x, coord.y)) * gl_Color).rgb;
-	
+
 	vec3 ul = (texture2D(texture, vec2(coord.x + texel.x, coord.y - texel.y)) * gl_Color).rgb;
 	vec3 dl = (texture2D(texture, vec2(coord.x + texel.x, coord.y + texel.y)) * gl_Color).rgb;
 	vec3 ur = (texture2D(texture, vec2(coord.x - texel.x, coord.y - texel.y)) * gl_Color).rgb;
 	vec3 dr = (texture2D(texture, vec2(coord.x - texel.x, coord.y + texel.y)) * gl_Color).rgb;
-	
+
 	vec4 a = get_area(0, 5);
 	vec4 t = get_data(1, 5);
 	vec4 c = get_data(2, 5);
@@ -327,7 +327,7 @@ vec4 compute_edges(vec2 coord, vec4 color) {
 	bool is_ur = !is_u && !is_r && is(ur, t);
 	bool is_dl = !is_d && !is_l && is(dl, t);
 	bool is_dr = !is_d && !is_r && is(dr, t);
-	
+
 	if (!is(color, t) && is_inside(coord, a, vec4(0.0)))
 	{
 		// types: Top = 1, Bottom = 2, Left = 4, Right = 8, Corners = 16

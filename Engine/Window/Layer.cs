@@ -763,7 +763,6 @@ public class Layer
         }
 
         var atlas = tilesets[AtlasPath];
-        var view = queue?.GetView();
         var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
         var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, shader);
 
@@ -792,7 +791,7 @@ public class Layer
         result?.Display();
 
         //queue?.Texture.CopyToImage().SaveToFile("render.png");
-        //data?.Texture.CopyToImage().SaveToFile("data.png");
+        data?.Texture.CopyToImage().SaveToFile("data.png");
 
         verts.Clear();
         shaderParams.Clear();
