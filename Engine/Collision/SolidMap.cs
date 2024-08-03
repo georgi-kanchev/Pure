@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 public class SolidMap
 {
-    public (int x, int y) Position { get; set; }
+    public (int x, int y) Offset { get; set; }
 
     public int TileCount
     {
@@ -34,7 +34,7 @@ public class SolidMap
         var b = Decompress(bytes);
         var offset = 0;
 
-        Position = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+        Offset = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
 
         var ignoredCount = BitConverter.ToInt32(Get<int>());
         for (var i = 0; i < ignoredCount; i++)
@@ -84,8 +84,8 @@ public class SolidMap
     {
         var result = new List<byte>();
 
-        result.AddRange(BitConverter.GetBytes(Position.x));
-        result.AddRange(BitConverter.GetBytes(Position.y));
+        result.AddRange(BitConverter.GetBytes(Offset.x));
+        result.AddRange(BitConverter.GetBytes(Offset.y));
 
         result.AddRange(BitConverter.GetBytes(ignoredCells.Count));
         foreach (var cell in ignoredCells)
@@ -294,7 +294,7 @@ public class SolidMap
                 if (cellRects.ContainsKey(tile) == false)
                     continue;
 
-                var cell = (x + Position.x, y + Position.y);
+                var cell = (x + Offset.x, y + Offset.y);
                 tileIndices[cell] = tile;
             }
 
@@ -412,13 +412,13 @@ public class SolidMap
         return IsOverlapping((point.x, point.y));
     }
 
-    public Solid[] CalculateLight((float x, float y) position, int radius = 10)
+    public Solid[] CalculateLight((float x, float y) point, int radius = 10)
     {
-        return CalculateSight(position, 0, radius, 360);
+        return CalculateSight(point, 0, radius, 360);
     }
-    public Solid[] CalculateSight((float x, float y) position, float angle, int radius = 10, float fieldOfView = 60)
+    public Solid[] CalculateSight((float x, float y) point, float angle, int radius = 10, float fieldOfView = 60)
     {
-        var (x, y) = position;
+        var (x, y) = point;
         var result = new ConcurrentStack<Solid>();
         var diameter = 2 * radius + 1;
         var radiusSquared = radius * radius;
@@ -451,7 +451,7 @@ public class SolidMap
                 {
                     shouldAdd = false;
 
-                    if (solid.IsOverlapping(position))
+                    if (solid.IsOverlapping(point))
                         return;
                     else
                         break;

@@ -20,7 +20,7 @@ public static class Program
         {
             var (vx, vy) = editor.MapsEditor.View.Position;
             solidPack.Position = (-vx, -vy);
-            solidMap.Position = CanDrawLayer ? (0, 0) : (-vx, -vy);
+            solidMap.Offset = CanDrawLayer ? (0, 0) : (-vx, -vy);
             linePack.Position = (-vx, -vy);
 
             if ((vx, vy) != prevViewPos)
@@ -249,7 +249,7 @@ public static class Program
                     {
                         editor.Prompt.Close();
                         var (vx, vy) = editor.MapsEditor.View.Position;
-                        solidMap.Position = (-vx, -vy);
+                        solidMap.Offset = (-vx, -vy);
                         solidMap.Update(editor.MapsEditor[currentLayer]);
                         return;
                     }
@@ -439,12 +439,12 @@ public static class Program
             var selection = tools.IndexOf(tools.ItemsSelected[0]);
 
             // ignore editor offset, keep original tilemap's view
-            var prevMapOffset = solidMap.Position;
+            var prevMapOffset = solidMap.Offset;
             var prevSolidOffset = solidPack.Position;
             var prevLineOffset = linePack.Position;
 
             solidPack.Position = originalMapViewPos;
-            solidMap.Position = originalMapViewPos;
+            solidMap.Offset = originalMapViewPos;
             linePack.Position = originalMapViewPos;
 
             var data = Array.Empty<byte>();
@@ -457,7 +457,7 @@ public static class Program
                 data = linePack.ToBytes();
 
             solidPack.Position = prevSolidOffset;
-            solidMap.Position = prevMapOffset;
+            solidMap.Offset = prevMapOffset;
             linePack.Position = prevLineOffset;
 
             return data;
