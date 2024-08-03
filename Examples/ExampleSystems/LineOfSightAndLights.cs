@@ -34,7 +34,7 @@ public static class LineOfSightAndLights
             Time.Update();
             angle += Time.Delta * 60;
 
-            var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
+            var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
             var sight = (SolidPack)solidMap.CalculateSight((mx, my), angle, 20);
 
             layer.DrawTilemap(tilemap);

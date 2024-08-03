@@ -80,7 +80,10 @@ public class BlockPack
 
         return;
 
-        int GetInt() => BitConverter.ToInt32(GetBytes(b, 4, ref offset));
+        int GetInt()
+        {
+            return BitConverter.ToInt32(GetBytes(b, 4, ref offset));
+        }
     }
     public BlockPack(string base64) : this(Convert.FromBase64String(base64))
     {

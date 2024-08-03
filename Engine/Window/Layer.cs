@@ -81,12 +81,6 @@ public class Layer
         get => size;
         set => size = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
     }
-
-    public bool IsHovered
-    {
-        get => IsOverlapping(PixelToWorld(Mouse.CursorPosition));
-    }
-
     public uint BackgroundColor { get; set; }
 
     public (float x, float y) Offset { get; set; }
@@ -94,6 +88,11 @@ public class Layer
     {
         get => zoom;
         set => zoom = Math.Clamp(value, 0, 1000f);
+    }
+
+    public bool IsHovered
+    {
+        get => IsOverlapping(PixelToPosition(Mouse.CursorPosition));
     }
 
     public Layer((int width, int height) size = default)
@@ -218,7 +217,7 @@ public class Layer
         tile.tint = tint;
         tile.ang = angle;
 
-        var (x, y) = PixelToWorld(Mouse.CursorPosition);
+        var (x, y) = PixelToPosition(Mouse.CursorPosition);
         DrawTiles((x - offX, y - offY), tile);
     }
     public void DrawPoints(params (float x, float y, uint color)[]? points)
@@ -521,12 +520,12 @@ public class Layer
                position.x <= Size.width &&
                position.y <= Size.height;
     }
-    public (float x, float y) PixelToWorld((int x, int y) pixelPosition)
+    public (float x, float y) PixelToPosition((int x, int y) pixel)
     {
         if (Window.window == null)
             return (float.NaN, float.NaN);
 
-        var (px, py) = (pixelPosition.x * 1f, pixelPosition.y * 1f);
+        var (px, py) = (pixel.x * 1f, pixel.y * 1f);
         var (vw, vh) = Window.rendTexViewSz;
         var (cw, ch) = Size;
         var (tw, th) = AtlasTileSize;

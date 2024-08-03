@@ -1,8 +1,6 @@
-﻿using System.Text;
+﻿namespace Pure.Engine.Audio;
 
-namespace Pure.Engine.Audio;
-
-using System.Runtime.InteropServices;
+using System.Text;
 using System.IO.Compression;
 using SFML.Audio;
 using static MathF;
@@ -12,22 +10,14 @@ using static MathF;
 /// </summary>
 public enum Wave
 {
-    Sine,
-    Square,
-    Triangle,
-    Sawtooth,
-    Noise
+    Sine, Square, Triangle, Sawtooth, Noise
 }
 
 public class Notes : Audio
 {
     public (char separator, char pause, char repeat) Symbols { get; set; } = ('_', '.', '~');
 
-    public Notes(
-        string notes,
-        float duration = 0.2f,
-        Wave wave = Wave.Square,
-        (float start, float end) fade = default)
+    public Notes(string notes, float duration = 0.2f, Wave wave = Wave.Square, (float start, float end) fade = default)
     {
         this.notes = notes;
         this.duration = duration;
@@ -84,6 +74,12 @@ public class Notes : Audio
 
         return Compress(result.ToArray());
     }
+
+    public Notes Duplicate()
+    {
+        return new(ToBytes());
+    }
+
     /// <summary>
     /// Save the notes to an audio file. Here is a complete list of all the supported
     /// audio formats: <br></br>
@@ -94,11 +90,6 @@ public class Notes : Audio
     public void ToFile(string path)
     {
         buffer?.SaveToFile(path);
-    }
-
-    public Notes Duplicate()
-    {
-        return new(ToBytes());
     }
 
     public static implicit operator byte[](Notes notes)

@@ -17,7 +17,7 @@ public static class Palettes
         palette.OnSampleDisplay((sample, color) =>
             maps[1].SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color)));
         palette.Brightness.OnItemDisplay(item =>
-            maps.SetPagesItem(palette.Brightness, item, zOrder: 2));
+            maps.SetPagesItem(palette.Brightness, item, 2));
 
         //===============
 
@@ -35,7 +35,7 @@ public static class Palettes
                        $"{Color.Pink.ToBrush()}color " +
                        $"{Color.Yellow.ToBrush()}picking";
 
-            var progress = Time.RuntimeClock / 2f; 
+            var progress = Time.RuntimeClock / 2f;
             text = text.Constrain((w, h), alignment: Alignment.Center, symbolProgress: progress);
             maps[1].SetText((x, y), text);
         });

@@ -10,13 +10,13 @@ public struct Tile
     public bool IsMirrored { get; set; }
     public bool IsFlipped { get; set; }
 
-    public Tile(int id, uint tint = uint.MaxValue, sbyte turns = default, bool isMirrored = false, bool isFlipped = false)
+    public Tile(int id, uint tint = uint.MaxValue, sbyte turns = default, bool mirror = false, bool flip = false)
     {
         Id = id;
         Tint = tint;
         Turns = turns;
-        IsMirrored = isMirrored;
-        IsFlipped = isFlipped;
+        IsMirrored = mirror;
+        IsFlipped = flip;
     }
     public Tile((int id, uint tint, sbyte turns, bool mirror, bool flip) bundle)
     {
@@ -71,6 +71,21 @@ public struct Tile
         return $"Tile {Id}";
     }
 
+    /// <summary>Indicates whether this instance and a specified object are equal.</summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns>
+    /// <see langword="true" /> if <paramref name="obj" /> and this instance are the same type and represent the same value; otherwise, <see langword="false" />.</returns>
+    public override bool Equals(object? obj)
+    {
+        return obj is Tile other && this == other;
+    }
+    /// <summary>Returns the hash code for this instance.</summary>
+    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, Tint, Turns, IsMirrored, IsFlipped);
+    }
+
     public static implicit operator int(Tile tile)
     {
         return tile.Id;
@@ -111,21 +126,6 @@ public struct Tile
                a.Turns != b.Turns ||
                a.IsMirrored != b.IsMirrored ||
                a.IsFlipped != b.IsFlipped;
-    }
-
-    /// <summary>Indicates whether this instance and a specified object are equal.</summary>
-    /// <param name="obj">The object to compare with the current instance.</param>
-    /// <returns>
-    /// <see langword="true" /> if <paramref name="obj" /> and this instance are the same type and represent the same value; otherwise, <see langword="false" />.</returns>
-    public override bool Equals(object? obj)
-    {
-        return obj is Tile other && this == other;
-    }
-    /// <summary>Returns the hash code for this instance.</summary>
-    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Id, Tint, Turns, IsMirrored, IsFlipped);
     }
 
 #region General

@@ -33,9 +33,9 @@ public static class Audio
         playlist.AddTrack(null, track1, track2);
         playlist.Play();
         playlist.OnEnd(() => Console.WriteLine($"Playlist ended"));
-        playlist.OnEndAudioAny(audio => Console.WriteLine($"Any Index {audio.index} ended"));
-        playlist.OnEndAudioIndex(0, audio => Console.WriteLine($"Index {audio.index} ended"));
-        playlist.OnEndAudioIndex(1, audio => Console.WriteLine($"Index {audio.index} ended"));
+        playlist.OnAnyTrackEnd(audio => Console.WriteLine($"Any Index {audio.index} ended"));
+        playlist.OnIndexTrackEnd(0, audio => Console.WriteLine($"Index {audio.index} ended"));
+        playlist.OnIndexTrackEnd(1, audio => Console.WriteLine($"Index {audio.index} ended"));
 
         while (Window.KeepOpen())
         {

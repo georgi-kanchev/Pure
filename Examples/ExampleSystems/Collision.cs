@@ -71,7 +71,7 @@ public static class Collision
 
         Keyboard.Key.A.OnPress(() =>
         {
-            var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
+            var mousePos = layer.PixelToPosition(Mouse.CursorPosition);
             var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
             collisionMap.IgnoredCellsAdd(new Solid(mx - 1, my - 1, 3, 3));
         });
@@ -86,7 +86,7 @@ public static class Collision
         {
             Time.Update();
 
-            var mousePosition = layer.PixelToWorld(Mouse.CursorPosition);
+            var mousePosition = layer.PixelToPosition(Mouse.CursorPosition);
             var isOverlapping = collisionMap.IsOverlapping(hitbox);
             var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_SMILING;
             var tint = isOverlapping ? Red : Green;

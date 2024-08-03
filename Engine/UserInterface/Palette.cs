@@ -111,7 +111,7 @@ public class Palette : Block
         0x_00_00_FF_FF, // Blue
         0x_7F_00_FF_FF, // Blue Magenta
         0x_FF_00_FF_FF, // Magenta
-        0x_FF_00_7F_FF, // Red Magenta
+        0x_FF_00_7F_FF // Red Magenta
     };
     private bool isPicking;
     private uint selectedColor = uint.MaxValue;
@@ -134,7 +134,7 @@ public class Palette : Block
             Current = brightnessCurrentPage,
             ItemWidth = $"{brightnessPageCount}".Length,
             hasParent = true,
-            wasMaskSet = true,
+            wasMaskSet = true
         };
         Pick = new((x + w - 1, y + h - 1)) { hasParent = true, wasMaskSet = true };
 

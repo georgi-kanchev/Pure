@@ -58,7 +58,7 @@ public static class Asteroids
 
         void HandleShip()
         {
-            var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
+            var mousePos = layer.PixelToPosition(Mouse.CursorPosition);
             var targetAngle = new Point(ship.Position).Angle(mousePos);
             ship.Angle = new Angle(ship.Angle).RotateTo(targetAngle, 200f, Time.Delta).Limit((-30, 30));
             ship.MoveAngle = ship.Angle;

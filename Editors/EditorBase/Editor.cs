@@ -184,7 +184,7 @@ public class Editor
 
             //========
 
-            var (x, y) = LayerMap.PixelToWorld(Mouse.CursorPosition);
+            var (x, y) = LayerMap.PixelToPosition(Mouse.CursorPosition);
             var (vw, vy) = MapsEditor.View.Position;
             prevWorld = MousePositionWorld;
             MousePositionWorld = (x + vw, y + vy);
@@ -208,7 +208,7 @@ public class Editor
             //========
 
             prevUi = MousePositionUi;
-            MousePositionUi = LayerUi.PixelToWorld(Mouse.CursorPosition);
+            MousePositionUi = LayerUi.PixelToPosition(Mouse.CursorPosition);
             Input.Position = MousePositionUi;
             Input.PositionPrevious = prevUi;
             Input.TilemapSize = MapsUi.View.Size;

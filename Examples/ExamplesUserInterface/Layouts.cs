@@ -14,10 +14,10 @@ public static class Layouts
         var nl = Environment.NewLine;
         var layoutElements = new Block[] { new Button(), new Button(), new Slider(), new InputBox() };
         var layoutFull = new Layout { Size = (20, 20) };
-        layoutFull.Cut(index: 0, side: Side.Right, rate: 0.4f);
-        layoutFull.Cut(index: 0, side: Side.Bottom, rate: 0.3f);
-        layoutFull.Cut(index: 2, side: Side.Top, rate: 0.5f);
-        layoutFull.Cut(index: 1, side: Side.Top, rate: 0.4f);
+        layoutFull.Cut(0, Side.Right, 0.4f);
+        layoutFull.Cut(0, Side.Bottom, 0.3f);
+        layoutFull.Cut(2, Side.Top, 0.5f);
+        layoutFull.Cut(1, Side.Top, 0.4f);
         layoutFull.OnDisplay(() =>
         {
             layoutFull.Size = (
@@ -53,10 +53,10 @@ public static class Layouts
 
         var layoutEmpty = new Layout();
         layoutEmpty.AlignInside((0.05f, 0.5f));
-        layoutEmpty.Cut(index: 0, side: Side.Right, rate: 0.4f);
-        layoutEmpty.Cut(index: 0, side: Side.Bottom, rate: 0.6f);
-        layoutEmpty.Cut(index: 1, side: Side.Top, rate: 0.25f);
-        layoutEmpty.Cut(index: 1, side: Side.Bottom, rate: 0.4f);
+        layoutEmpty.Cut(0, Side.Right, 0.4f);
+        layoutEmpty.Cut(0, Side.Bottom, 0.6f);
+        layoutEmpty.Cut(1, Side.Top, 0.25f);
+        layoutEmpty.Cut(1, Side.Bottom, 0.4f);
         layoutEmpty.OnDisplaySegment((segment, index) =>
             maps.SetLayoutSegment(segment, index, true));
 

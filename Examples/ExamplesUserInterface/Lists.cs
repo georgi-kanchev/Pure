@@ -27,7 +27,7 @@ public static class Lists
         {
             ItemSize = (6, 3),
             ItemGap = 1,
-            Size = (11, 4),
+            Size = (11, 4)
         };
         listHorizontal.AlignInside((0.95f, 0.5f));
         listHorizontal.OnDisplay(() =>

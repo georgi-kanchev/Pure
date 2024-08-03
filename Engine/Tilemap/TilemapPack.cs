@@ -25,7 +25,7 @@ public class TilemapPack
 
     public Tilemap this[int index]
     {
-        get => Get(index);
+        get => data[index];
     }
 
     public TilemapPack()
@@ -87,15 +87,6 @@ public class TilemapPack
         return Tilemap.Compress(result.ToArray());
     }
 
-    public Tilemap[] ViewUpdate()
-    {
-        var result = new Tilemap[Count];
-        for (var i = 0; i < Count; i++)
-            result[i] = data[i].ViewUpdate();
-
-        return result;
-    }
-
     public void Shift(int offset, params Tilemap[]? tilemaps)
     {
         if (tilemaps == null || tilemaps.Length == 0 || offset == 0)
@@ -104,10 +95,6 @@ public class TilemapPack
         Shift(data, offset, tilemaps);
     }
 
-    public Tilemap Get(int index)
-    {
-        return data[index];
-    }
     public void Add(params Tilemap[]? tilemaps)
     {
         if (tilemaps == null || tilemaps.Length == 0)
@@ -136,14 +123,6 @@ public class TilemapPack
     {
         data.Clear();
     }
-    public int IndexOf(Tilemap? tilemap)
-    {
-        return tilemap == null || data.Contains(tilemap) == false ? -1 : data.IndexOf(tilemap);
-    }
-    public bool IsContaining(Tilemap? tilemap)
-    {
-        return tilemap != null && data.Contains(tilemap);
-    }
 
     public void Flush()
     {
@@ -155,39 +134,44 @@ public class TilemapPack
         foreach (var t in data)
             t.Fill(mask, tiles);
     }
-    public void Flood((int x, int y) position, bool exactTile, Area? mask = null, params Tile[] tiles)
+    public void Flood((int x, int y) cell, bool exactTile, Area? mask = null, params Tile[] tiles)
     {
         foreach (var map in data)
-            map.Flood(position, exactTile, mask, tiles);
+            map.Flood(cell, exactTile, mask, tiles);
     }
 
-    public Tile[] TilesAt((int x, int y) position)
-    {
-        var result = new Tile[Count];
-        for (var i = 0; i < data.Count; i++)
-            result[i] = data[i].TileAt(position);
-
-        return result;
-    }
-    public bool IsInside((int x, int y) position)
-    {
-        return data.Count > 0 && data[0].IsOverlapping(position);
-    }
-
-    public void ConfigureText(
-        int lowercase = Tile.LOWERCASE_A,
-        int uppercase = Tile.UPPERCASE_A,
-        int numbers = Tile.NUMBER_0)
+    public void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A, int numbers = Tile.NUMBER_0)
     {
         for (var i = 0; i < Count; i++)
             data[i].ConfigureText(lowercase, uppercase, numbers);
     }
-    public void ConfigureText(string symbols, int startId)
+    public void ConfigureText(string symbols, int leftmostTileId)
     {
         for (var i = 0; i < symbols.Length; i++)
-            data[i].ConfigureText(symbols, startId);
+            data[i].ConfigureText(symbols, leftmostTileId);
     }
 
+    public int IndexOf(Tilemap? tilemap)
+    {
+        return tilemap == null || data.Contains(tilemap) == false ? -1 : data.IndexOf(tilemap);
+    }
+    public bool IsOverlapping((int x, int y) cell)
+    {
+        return data.Count > 0 && data[0].IsOverlapping(cell);
+    }
+    public bool IsContaining(Tilemap? tilemap)
+    {
+        return tilemap != null && data.Contains(tilemap);
+    }
+
+    public Tile[] TilesAt((int x, int y) cell)
+    {
+        var result = new Tile[Count];
+        for (var i = 0; i < data.Count; i++)
+            result[i] = data[i].TileAt(cell);
+
+        return result;
+    }
     public int TileIdFrom(char symbol)
     {
         // not very reliable method since the user might configure text on each
@@ -195,12 +179,21 @@ public class TilemapPack
         // multiple tilemaps with COMMON properties, therefore same text configuration
         return data[0].TileIdFrom(symbol);
     }
-    public int[] TileIDsFrom(string text)
+    public int[] TileIdsFrom(string text)
     {
         // not very reliable method since the user might configure text on each
         // tilemap individually but the idea of the tilemap manager is to bundle
         // multiple tilemaps with COMMON properties, therefore same text configuration
         return data[0].TileIdsFrom(text);
+    }
+
+    public Tilemap[] ViewUpdate()
+    {
+        var result = new Tilemap[Count];
+        for (var i = 0; i < Count; i++)
+            result[i] = data[i].ViewUpdate();
+
+        return result;
     }
 
     public TilemapPack Duplicate()

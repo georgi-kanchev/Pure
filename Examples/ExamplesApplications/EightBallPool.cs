@@ -67,7 +67,7 @@ public static class EightBallPool
                     return;
 
                 var power = Math.Min(Time.Clock - timeAtPress, 2);
-                var mousePos = layer.PixelToWorld(Mouse.CursorPosition);
+                var mousePos = layer.PixelToPosition(Mouse.CursorPosition);
 
                 balls[0].MoveAngle = Angle.BetweenPoints(mousePos, balls[0].Position + new Point(0.5f));
                 balls[0].Speed = power * 75;
@@ -80,7 +80,7 @@ public static class EightBallPool
             if (isAnyBallMoving)
                 return;
 
-            var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
+            var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
             var a = balls[0].Position + (0.5f, 0.5f);
             var angle = Angle.BetweenPoints(a, (mx, my));
             var power = isCharging && isCanceled == false ? Math.Min(Time.Clock - timeAtPress, 2) : 0;

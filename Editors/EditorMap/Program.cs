@@ -93,7 +93,7 @@ public static class Program
             if (editor.Prompt.IsHidden == false || inspector.IsHovered)
                 return;
 
-            var (mx, my) = editor.LayerUi.PixelToWorld(Mouse.CursorPosition);
+            var (mx, my) = editor.LayerUi.PixelToPosition(Mouse.CursorPosition);
             menu.IsHidden = false;
             menu.IsDisabled = false;
             menu.Position = ((int)mx + 1, (int)my + 1);

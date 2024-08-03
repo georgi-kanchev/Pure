@@ -24,7 +24,7 @@ internal class TilePalette
                 layer.IsHovered == false)
                 return;
 
-            var pos = layer.PixelToWorld(Mouse.CursorPosition);
+            var pos = layer.PixelToPosition(Mouse.CursorPosition);
             var (vx, vy) = map.View.Position;
             selectedPos = ((int)pos.x + vx, (int)pos.y + vy);
             selectedSz = (1, 1);
@@ -122,7 +122,7 @@ internal class TilePalette
         var h = (int)MathF.Round(inspector.paletteScrollV.Slider.Progress * (mh - vh));
         map.View = new((w, h), map.View.Size);
 
-        var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
+        var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
         prevMousePos = mousePos;
         mousePos = ((int)mx + w, (int)my + h);
 

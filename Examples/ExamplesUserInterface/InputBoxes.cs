@@ -14,7 +14,7 @@ public static class InputBoxes
             Size = (20, 1),
             Value = string.Empty,
             Placeholder = "Chat message…",
-            IsSingleLine = true,
+            IsSingleLine = true
         };
         var scroll = new Scroll { IsHidden = true, IsDisabled = true };
         chat.AlignInside((0.1f, 0.95f));
@@ -47,7 +47,7 @@ public static class InputBoxes
         {
             Size = (12, 12),
             Value = string.Empty,
-            Placeholder = "Type some text on multiple lines…",
+            Placeholder = "Type some text on multiple lines…"
         };
         multiLine.AlignInside((0.1f, 0.1f));
         multiLine.OnDisplay(() => maps.SetInputBox(multiLine));
@@ -81,7 +81,7 @@ public static class InputBoxes
             Value = string.Empty,
             Placeholder = "Math equation…",
             SymbolGroup = SymbolGroup.Math | SymbolGroup.Digits,
-            IsSingleLine = true,
+            IsSingleLine = true
         };
         equation.AlignInside((0.95f, 0.9f));
         equation.OnSubmit(() => mathResult = $"{equation.Value.Calculate()}");

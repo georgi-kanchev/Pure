@@ -132,16 +132,16 @@ public class AudioPack
     {
         onLoop += method;
     }
-    public void OnEndAudioAny(Action<(int index, string? tag)> method)
+    public void OnAnyTrackEnd(Action<(int index, string? tag)> method)
     {
         onAudioEndAny += method;
     }
-    public void OnEndAudioTag(string tag, Action<(int index, string? tag)> method)
+    public void OnTagTrackEnd(string tag, Action<(int index, string? tag)> method)
     {
         if (onAudioEndTag.TryAdd(tag, method) == false)
             onAudioEndTag[tag] += method;
     }
-    public void OnEndAudioIndex(int index, Action<(int index, string? tag)> method)
+    public void OnIndexTrackEnd(int index, Action<(int index, string? tag)> method)
     {
         if (onAudioEndIndex.TryAdd(index, method) == false)
             onAudioEndIndex[index] += method;

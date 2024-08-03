@@ -28,7 +28,7 @@ public static class Pathfinding
 
         while (Window.KeepOpen())
         {
-            var (mx, my) = layer.PixelToWorld(Mouse.CursorPosition);
+            var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
             var lines = pathMap.FindPath((25.5f, 0.5f), (mx, my), Color.Red);
             var points = pathMap.FindPath((25.5f, 0.5f), (mx, my), Color.Green);
 

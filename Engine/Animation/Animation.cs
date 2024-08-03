@@ -5,8 +5,7 @@
 /// <typeparamref name="T"/> over time.
 /// </summary>
 /// <typeparam name="T">The type of the values in the animation.</typeparam>
-public class Animation<T>
-    where T : notnull
+public class Animation<T> where T : notnull
 {
     /// <summary>
     /// Gets the current value of the animation.
@@ -22,6 +21,15 @@ public class Animation<T>
     {
         get => (int)MathF.Round(RawIndex);
     }
+    /// <summary>
+    /// Gets or sets the current progress of the animation as a value between 0 and 1.
+    /// </summary>
+    public float CurrentProgress
+    {
+        get => Map(rawIndex, LOWER_BOUND, values.Length, 0, 1);
+        set => rawIndex = Map(value, 0, 1, LOWER_BOUND, values.Length);
+    }
+
     /// <summary>
     /// Gets or sets the duration of the animation in seconds.
     /// </summary>
@@ -42,14 +50,6 @@ public class Animation<T>
     /// Gets or sets a value indicating whether the animation is paused.
     /// </summary>
     public bool IsPaused { get; set; }
-    /// <summary>
-    /// Gets or sets the current progress of the animation as a value between 0 and 1.
-    /// </summary>
-    public float CurrentProgress
-    {
-        get => Map(rawIndex, LOWER_BOUND, values.Length, 0, 1);
-        set => rawIndex = Map(value, 0, 1, LOWER_BOUND, values.Length);
-    }
 
     /// <summary>
     /// Gets or sets the value at the specified index.
@@ -132,6 +132,15 @@ public class Animation<T>
             onEnd?.Invoke();
     }
 
+    public void OnEnd(Action method)
+    {
+        onEnd += method;
+    }
+    public void OnLoop(Action method)
+    {
+        onLoop += method;
+    }
+
     /// <summary>
     /// Implicitly converts an array of values to an Animation object.
     /// </summary>
@@ -147,15 +156,6 @@ public class Animation<T>
     public static implicit operator T[](Animation<T> animation)
     {
         return animation.ToArray();
-    }
-
-    public void OnEnd(Action method)
-    {
-        onEnd += method;
-    }
-    public void OnLoop(Action method)
-    {
-        onLoop += method;
     }
 
 #region Backend

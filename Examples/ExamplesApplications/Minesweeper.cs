@@ -89,7 +89,7 @@ public static class Minesweeper
                     return;
                 }
 
-                var (x, y) = layer.PixelToWorld(Mouse.CursorPosition);
+                var (x, y) = layer.PixelToPosition(Mouse.CursorPosition);
                 var pos = ((int)x, (int)y);
                 var id = maps[0].TileAt(pos).Id;
 
@@ -106,7 +106,7 @@ public static class Minesweeper
             });
             Mouse.Button.Right.OnPress(() =>
             {
-                var (x, y) = layer.PixelToWorld(Mouse.CursorPosition);
+                var (x, y) = layer.PixelToPosition(Mouse.CursorPosition);
                 Flag(((int)x, (int)y));
             });
         }

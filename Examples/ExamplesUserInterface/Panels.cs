@@ -34,10 +34,10 @@ public static class Panels
             var (x, y) = panelButton.Position;
             var (w, h) = panelButton.Size;
 
-            maps.SetPanel(panelButton, zOrder: 2);
+            maps.SetPanel(panelButton, 2);
             button.Position = (x + 1, y + 1);
             button.Size = (w - 2, h - 2);
-            maps.SetButton(button, zOrder: 2);
+            maps.SetButton(button, 2);
         });
 
         return new Block[] { panelText, panelButton, button };

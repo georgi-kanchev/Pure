@@ -28,7 +28,7 @@ public static class Program
             maps.Flush();
 
             Input.PositionPrevious = Input.Position;
-            Input.Position = layer.PixelToWorld(Mouse.CursorPosition);
+            Input.Position = layer.PixelToPosition(Mouse.CursorPosition);
             Input.Update(
                 Mouse.ButtonIdsPressed,
                 Mouse.ScrollDelta,

@@ -119,11 +119,11 @@ public static class Program
     }
     private static (float x, float y) MousePos
     {
-        get => editor.LayerMap.PixelToWorld(Mouse.CursorPosition);
+        get => editor.LayerMap.PixelToPosition(Mouse.CursorPosition);
     }
     private static (float x, float y) MousePosPrompt
     {
-        get => layer.PixelToWorld(Mouse.CursorPosition);
+        get => layer.PixelToPosition(Mouse.CursorPosition);
     }
 
     static Program()
