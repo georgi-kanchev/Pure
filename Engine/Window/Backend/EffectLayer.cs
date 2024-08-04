@@ -16,6 +16,7 @@ uniform vec2 tileCount;" +
             @"
 uniform int lightCount;
 uniform vec3 light[20]; // x, y, radius
+uniform vec2 lightCone[20]; // width, angle
 uniform vec4 lightColor[20];
 uniform int obstacleCount;
 uniform vec4 obstacleArea[200];
@@ -95,7 +96,12 @@ int compute_out_code(vec2 p, vec2 rectMin, vec2 rectMax) {
 
 	return code;
 }
-
+bool is_inside_cone(vec2 point, vec2 lightPos, float coneAngle, float coneDirection) {
+    vec2 direction = vec2(cos(radians(coneDirection)), sin(radians(coneDirection)));
+    vec2 lightToPoint = normalize(point - lightPos);
+    float angle = degrees(acos(dot(direction, lightToPoint)));
+    return angle <= coneAngle / 2.0;
+}
 bool is_shadow(vec2 p0, vec2 p1, vec2 rectMin, vec2 rectMax) {
 	float flipY = rectMax.y - rectMin.y;
 	rectMax.y -= flipY;
@@ -158,11 +164,14 @@ vec4 compute_lights(vec2 coord, vec4 color) {
 	for(int i = 0; i < lightCount; i++)
 	{
 		vec3 l = light[i];
+		vec2 cone = lightCone[i];
 		vec4 c = lightColor[i];
 		float aspect = viewSize.x / viewSize.y;
-		float dist = distance(vec2(coord.x, coord.y / aspect), vec2(l.x, l.y / aspect));	
+		vec2 crd = vec2(coord.x, coord.y / aspect);
+		vec2 pos = vec2(l.x, l.y / aspect);
+		float dist = distance(crd, pos);	
 
-		if (dist >= l.z)
+		if (dist >= l.z || !is_inside_cone(crd, pos, cone.x, -cone.y))
 			continue;
 
 		bool shadow = false;
@@ -185,11 +194,7 @@ vec4 compute_lights(vec2 coord, vec4 color) {
 		if (isMask)
 			maskOpacity += shadow ? 0.0 : attenuation;
 		else
-		{
-			color.rgb += c.rgb * c.a * attenuation;
-			color.rgb -= shadow ? mix(vec3(0.0), color.rgb, c.a * attenuation) : vec3(0.0, 0.0, 0.0);
-		}
-
+			color.rgb += shadow ? vec3(0.0) : c.rgb * c.a * attenuation;
 	}
 	color.a = isMask ? maskOpacity : color.a;
 	color.a = isMask && isInverted ? 1.0 - color.a : color.a;

@@ -106,11 +106,12 @@ public static class Collision
 
             layer.ApplyBlur((127, 127), (0, 0, w, h, Blue));
             layer.ApplyWaves((0, 50), (0, 50), wavesRects);
-            layer.ApplyColorTint(Blue.ToBright(), (0, 0, w, h));
+            //layer.ApplyColorTint(Blue.ToBright(), (0, 0, w, h));
 
             var (mx, my) = mousePosition;
-            var light = Yellow.ToTransparent();
-            layer.ApplyLights(5f, LightFlags.Default, (30, 8, light), (39, 13, light), (mx, my, light));
+            var light = Yellow; //.ToTransparent();
+            // (30, 8, light), (39, 13, light),
+            layer.ApplyLights(8f, (120f, Time.Clock * 40f), (mx, my, light));
             layer.ApplyLightObstacles(shadowsRects);
 
             layer.Draw();

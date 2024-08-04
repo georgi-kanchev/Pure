@@ -138,6 +138,7 @@ public abstract class Block
                 text = value ?? string.Empty;
         }
     }
+
     /// <summary>
     /// Gets or sets a value indicating whether the user interface block is hidden.
     /// </summary>

@@ -14,7 +14,7 @@ public enum Edge
 [Flags]
 public enum LightFlags
 {
-    Default = 0, Flat = 1 << 0, Mask = 1 << 1, Inverted = 1 << 2, ShadowInsideObstacles = 1 << 3
+    Default = 0, Flat = 1 << 0, Mask = 1 << 1, Inverted = 1 << 2, ObstaclesInShadow = 1 << 3
 }
 
 public class Layer
@@ -83,6 +83,15 @@ public class Layer
     }
     public uint BackgroundColor { get; set; }
 
+    public LightFlags LightFlags
+    {
+        get => lightFlags;
+        set
+        {
+            lightFlags = value;
+            shader?.SetUniform("lightFlags", (int)value);
+        }
+    }
     public (float x, float y) Offset { get; set; }
     public float Zoom
     {
@@ -430,11 +439,10 @@ public class Layer
             SetShaderData((x, y, w, h), (2, 0), new(c), false);
         }
     }
-    public void ApplyLights(float radius, LightFlags flags, params (float x, float y, uint color)[] points)
+    public void ApplyLights(float radius, (float width, float angle) cone, params (float x, float y, uint color)[] points)
     {
         radius /= Size.height;
-
-        shader?.SetUniform("lightFlags", (int)flags);
+        var (w, ang) = cone;
 
         for (var i = 0; i < points?.Length; i++)
         {
@@ -444,7 +452,9 @@ public class Layer
 
             lightCount++;
             shader?.SetUniform("lightCount", lightCount);
+
             shader?.SetUniform($"light[{lightCount - 1}]", new Vec3(x, 1 - y, radius));
+            shader?.SetUniform($"lightCone[{lightCount - 1}]", new Vec2(w, ang));
             shader?.SetUniform($"lightColor[{lightCount - 1}]", new Color(color));
         }
     }
@@ -641,6 +651,7 @@ public class Layer
     private (byte width, byte height) atlasTileGap, atlasTileSize;
     private (int width, int height) size;
     private float zoom;
+    private LightFlags lightFlags;
 
     [MemberNotNull(nameof(AtlasTileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]
     private void Init()
@@ -790,8 +801,8 @@ public class Layer
         result?.Draw(Window.vertsWindow, PrimitiveType.Quads, r);
         result?.Display();
 
-        //queue?.Texture.CopyToImage().SaveToFile("render.png");
-        data?.Texture.CopyToImage().SaveToFile("data.png");
+        //result?.Texture.CopyToImage().SaveToFile("render.png");
+        //data?.Texture.CopyToImage().SaveToFile("data.png");
 
         verts.Clear();
         shaderParams.Clear();
