@@ -137,6 +137,7 @@ public class Layer
         Offset = (GetFloat(), GetFloat());
 
         verts = new(PrimitiveType.Quads);
+        shader = new EffectLayer().Shader;
         shaderParams = new(PrimitiveType.Points);
 
         float GetFloat()

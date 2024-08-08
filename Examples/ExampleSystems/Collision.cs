@@ -11,8 +11,8 @@ public static class Collision
     public static void Run()
     {
         Window.Title = "Pure - Collision Example";
-
         Window.PixelScale = 5f;
+
         var aspectRatio = Monitor.Current.AspectRatio;
         var tilemaps = new TilemapPack(2, (aspectRatio.width * 3, aspectRatio.height * 3));
         var (w, h) = tilemaps.Size;
@@ -54,32 +54,6 @@ public static class Collision
         waves.Update(tilemaps[1]);
         var wavesRects = waves.ToBundle();
 
-        var shadows = new SolidMap();
-        shadows.SolidsAdd(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1));
-        shadows.SolidsAdd(Tile.GEOMETRY_ANGLE, new Solid(0, 0, 1, 1));
-        shadows.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Solid(0, 0, 1, 1));
-        shadows.Update(tilemaps[1]);
-        var shadowsRects = shadows.ToBundle();
-
-        var trees = new SolidMap();
-        trees.SolidsAdd(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1, Brown.ToDark(0.4f)));
-        trees.SolidsAdd(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
-        trees.Update(tilemaps[1], false);
-        var treesRect = trees.ToBundle();
-
-        Keyboard.Key.A.OnPress(() =>
-        {
-            var mousePos = layer.PixelToPosition(Mouse.CursorPosition);
-            var (mx, my) = ((int)mousePos.x, (int)mousePos.y);
-            collisionMap.IgnoredCellsAdd(new Solid(mx - 1, my - 1, 3, 3));
-        });
-        Keyboard.Key.S.OnPress(() => collisionMap.IgnoredCellsClear());
-        Keyboard.Key.ArrowLeft.OnPress(() => tilemaps.View = (tilemaps.View.X - 1, tilemaps.View.Y, tilemaps.View.Width, tilemaps.View.Height));
-        Keyboard.Key.ArrowUp.OnPress(() => tilemaps.View = (tilemaps.View.X, tilemaps.View.Y - 1, tilemaps.View.Width, tilemaps.View.Height));
-        Keyboard.Key.ArrowDown.OnPress(() => tilemaps.View = (tilemaps.View.X, tilemaps.View.Y + 1, tilemaps.View.Width, tilemaps.View.Height));
-        Keyboard.Key.ArrowRight.OnPress(() => tilemaps.View = (tilemaps.View.X + 1, tilemaps.View.Y, tilemaps.View.Width, tilemaps.View.Height));
-        Keyboard.Key.W.OnPress(() => layer.Size = (layer.Size.width + 1, layer.Size.height));
-
         while (Window.KeepOpen())
         {
             Time.Update();
@@ -95,24 +69,16 @@ public static class Collision
             hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Red : Green;
 
-            layer.DrawTilemap(tilemaps[0].ViewUpdate());
-            layer.DrawTilemap(tilemaps[1].ViewUpdate());
+            layer.DrawTilemap(tilemaps[0]);
+            layer.DrawTilemap(tilemaps[1]);
 
             //layer.DrawRectangles(collisionMap);
-            //layer.DrawLines(line);
-            //layer.DrawPoints(crossPoints);
-            //layer.DrawTiles(mousePosition, tile);
-            layer.DrawCursor();
+            layer.DrawLines(line);
+            layer.DrawPoints(crossPoints);
+            layer.DrawTiles(mousePosition, tile);
 
             layer.ApplyBlur((127, 127), (0, 0, w, h, Blue));
             layer.ApplyWaves((0, 50), (0, 50), wavesRects);
-            //layer.ApplyColorTint(Blue.ToBright(), (0, 0, w, h));
-
-            var (mx, my) = mousePosition;
-            var light = Yellow; //.ToTransparent();
-            // (30, 8, light), (39, 13, light),
-            layer.ApplyLights(8f, (120f, Time.Clock * 40f), (mx, my, light));
-            layer.ApplyLightObstacles(shadowsRects);
 
             layer.Draw();
         }
