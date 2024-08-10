@@ -1,6 +1,7 @@
 namespace Pure.Engine.Window;
 
 using SFML.Graphics.Glsl;
+
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -179,26 +180,26 @@ public class Layer
     }
     public byte[] ToBytes()
     {
-        var result = new List<byte>();
+        var bytes = new List<byte>();
         var bAtlasPath = Encoding.UTF8.GetBytes(AtlasPath);
-        result.AddRange(BitConverter.GetBytes(bAtlasPath.Length));
-        result.AddRange(bAtlasPath);
-        result.Add(AtlasTileGap.width);
-        result.Add(AtlasTileGap.height);
-        result.Add(AtlasTileSize.width);
-        result.Add(AtlasTileSize.height);
+        bytes.AddRange(BitConverter.GetBytes(bAtlasPath.Length));
+        bytes.AddRange(bAtlasPath);
+        bytes.Add(AtlasTileGap.width);
+        bytes.Add(AtlasTileGap.height);
+        bytes.Add(AtlasTileSize.width);
+        bytes.Add(AtlasTileSize.height);
 
-        result.AddRange(BitConverter.GetBytes(AtlasTileIdFull));
-        result.AddRange(BitConverter.GetBytes(Size.width));
-        result.AddRange(BitConverter.GetBytes(Size.height));
+        bytes.AddRange(BitConverter.GetBytes(AtlasTileIdFull));
+        bytes.AddRange(BitConverter.GetBytes(Size.width));
+        bytes.AddRange(BitConverter.GetBytes(Size.height));
 
-        result.AddRange(BitConverter.GetBytes(BackgroundColor));
+        bytes.AddRange(BitConverter.GetBytes(BackgroundColor));
 
-        result.AddRange(BitConverter.GetBytes(Zoom));
-        result.AddRange(BitConverter.GetBytes(Offset.x));
-        result.AddRange(BitConverter.GetBytes(Offset.y));
+        bytes.AddRange(BitConverter.GetBytes(Zoom));
+        bytes.AddRange(BitConverter.GetBytes(Offset.x));
+        bytes.AddRange(BitConverter.GetBytes(Offset.y));
 
-        return Compress(result.ToArray());
+        return Compress(bytes.ToArray());
     }
 
     public void DrawCursor(int tileId = 546, uint tint = 3789677055)
@@ -314,11 +315,11 @@ public class Layer
 
                 var tr = new Vector2f((int)br.X, (int)tl.Y);
                 var bl = new Vector2f((int)tl.X, (int)br.Y);
-                var rotated = GetRotatedPoints((sbyte)-angle, texTl, texTr, texBr, texBl);
-                texTl = rotated[0];
-                texTr = rotated[1];
-                texBr = rotated[2];
-                texBl = rotated[3];
+                var rotated = GetRotatedPoints(angle, texTl, texTr, texBr, texBl);
+                texTl = rotated.p1;
+                texTr = rotated.p2;
+                texBr = rotated.p3;
+                texBl = rotated.p4;
 
                 if (groupSize.width < 0)
                 {
@@ -357,7 +358,7 @@ public class Layer
                 var br = new Vector2f((x + 1) * tw, (y + 1) * th);
                 var bl = new Vector2f(x * tw, (y + 1) * th);
                 var (texTl, texTr, texBr, texBl) = GetTexCoords(id, (1, 1));
-                var rotated = GetRotatedPoints(angle, tl, tr, br, bl);
+                var rotated = GetRotatedPoints((sbyte)-angle, tl, tr, br, bl);
                 var (flipX, flipY) = (isFlippedHorizontally, isFlippedVertically);
 
                 if (flipX)
@@ -372,10 +373,10 @@ public class Layer
                     (texTr, texBr) = (texBr, texTr);
                 }
 
-                tl = rotated[0];
-                tr = rotated[1];
-                br = rotated[2];
-                bl = rotated[3];
+                tl = rotated.p1;
+                tr = rotated.p2;
+                br = rotated.p3;
+                bl = rotated.p4;
 
                 tl = new((int)tl.X, (int)tl.Y);
                 tr = new((int)tr.X, (int)tr.Y);
@@ -578,7 +579,7 @@ public class Layer
         return layer.ToBytes();
     }
 
-#region Backend
+    #region Backend
     // per tile shader data map (8x8 pixels)
     //
     // [tnta][tntc][tntt][    ][    ][    ][    ][    ]
@@ -834,47 +835,29 @@ public class Layer
         return y * AtlasTileCount.width + x;
     }
 
-    private static int Wrap(int number, int targetNumber)
+    private static (Vector2f p1, Vector2f p2, Vector2f p3, Vector2f p4) GetRotatedPoints(sbyte turns, Vector2f p1, Vector2f p2, Vector2f p3, Vector2f p4)
     {
-        return (number % targetNumber + targetNumber) % targetNumber;
-    }
-    private static void Shift<T>(IList<T> collection, int offset)
-    {
-        if (offset == default)
-            return;
-
-        if (offset < 0)
+        var rotations = Math.Abs(turns) % 4;
+        for (var i = 0; i < rotations; i++)
         {
-            offset = Math.Abs(offset);
-            for (var j = 0; j < offset; j++)
+            if (turns > 0)
             {
-                var temp = new T[collection.Count];
-                for (var i = 0; i < collection.Count - 1; i++)
-                    temp[i] = collection[i + 1];
-                temp[^1] = collection[0];
-
-                for (var i = 0; i < temp.Length; i++)
-                    collection[i] = temp[i];
+                var last = p4;
+                p4 = p3;
+                p3 = p2;
+                p2 = p1;
+                p1 = last;
+                continue;
             }
 
-            return;
+            var first = p1;
+            p1 = p2;
+            p2 = p3;
+            p3 = p4;
+            p4 = first;
         }
 
-        for (var j = 0; j < offset; j++)
-        {
-            var tmp = new T[collection.Count];
-            for (var i = 1; i < collection.Count; i++)
-                tmp[i] = collection[i - 1];
-            tmp[0] = collection[tmp.Length - 1];
-
-            for (var i = 0; i < tmp.Length; i++)
-                collection[i] = tmp[i];
-        }
-    }
-    private static Vector2f[] GetRotatedPoints(sbyte turns, params Vector2f[] points)
-    {
-        Shift(points, Wrap(-turns, 4));
-        return points;
+        return (p1, p2, p3, p4);
     }
     private static void FlipHorizontally<T>(T[,] matrix)
     {
@@ -904,9 +887,7 @@ public class Layer
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -915,9 +896,7 @@ public class Layer
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -927,5 +906,5 @@ public class Layer
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

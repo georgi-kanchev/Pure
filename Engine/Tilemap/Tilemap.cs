@@ -76,7 +76,7 @@ public class Tilemap
             for (var j = 0; j < w; j++)
             {
                 var bTile = GetBytesFrom(b, Tile.BYTE_SIZE, ref offset);
-                SetTile((j, i), new(bTile), null);
+                SetTile((j, i), new(bTile));
             }
 
         return;
@@ -120,10 +120,9 @@ public class Tilemap
 
     public void Flush()
     {
-        var (w, h) = Size;
-        data = new Tile[w, h];
-        ids = new int[w, h];
-        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
+        Array.Clear(data);
+        Array.Clear(ids);
+        Array.Clear(bundleCache);
     }
     public void Fill(Area? mask = null, params Tile[]? tiles)
     {
@@ -643,21 +642,21 @@ public class Tilemap
     public Tilemap ViewUpdate()
     {
         var (vx, vy, vw, vh, _) = View.ToBundle();
-        var newData = new Tile[vw, vh];
+        var result = new Tilemap((View.Width, View.Height));
         var i = 0;
         for (var x = vx; x != vx + vw; x++)
         {
             var j = 0;
             for (var y = vy; y != vy + vh; y++)
             {
-                newData[i, j] = TileAt((x, y));
+                result.SetTile((i, j), TileAt((x, y)));
                 j++;
             }
 
             i++;
         }
 
-        return new(newData);
+        return result;
     }
 
     public Tilemap Duplicate()
@@ -709,7 +708,7 @@ public class Tilemap
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
@@ -764,9 +763,9 @@ public class Tilemap
     };
     private static readonly Dictionary<int, Random> randomCache = new();
 
-    private Tile[,] data;
-    private (int, uint, sbyte, bool, bool)[,] bundleCache;
-    private int[,] ids;
+    private readonly Tile[,] data;
+    private readonly (int, uint, sbyte, bool, bool)[,] bundleCache;
+    private readonly int[,] ids;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)
     {
@@ -862,9 +861,7 @@ public class Tilemap
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -873,9 +870,7 @@ public class Tilemap
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -892,5 +887,5 @@ public class Tilemap
         var (x, y, z) = SeedOffset;
         return HashCode.Combine(a + x, b + y, z);
     }
-#endregion
+    #endregion
 }
