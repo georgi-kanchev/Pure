@@ -708,7 +708,7 @@ public class Tilemap
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
@@ -761,7 +761,6 @@ public class Tilemap
 
         { '▕', 432 }
     };
-    private static readonly Dictionary<int, Random> randomCache = new();
 
     private readonly Tile[,] data;
     private readonly (int, uint, sbyte, bool, bool)[,] bundleCache;
@@ -800,16 +799,7 @@ public class Tilemap
         rangeB *= precision;
 
         var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
-        Random random;
-
-        if (randomCache.TryGetValue(s, out var r))
-            random = r;
-        else
-        {
-            random = new(s);
-            randomCache[s] = random;
-        }
-
+        var random = new Random(s);
         var randInt = random.Next((int)rangeA, Limit((int)rangeB, (int)rangeA, (int)rangeB) + 1);
 
         return randInt / precision;
@@ -861,7 +851,9 @@ public class Tilemap
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -870,7 +862,9 @@ public class Tilemap
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -885,7 +879,26 @@ public class Tilemap
     {
         var (a, b) = parameters;
         var (x, y, z) = SeedOffset;
-        return HashCode.Combine(a + x, b + y, z);
+
+        return ToSeed(z, a + x, b + y);
     }
-    #endregion
+    private static int ToSeed(int number, params int[] parameters)
+    {
+        var seed = 2654435769L;
+        Seed(number);
+        foreach (var p in parameters)
+            seed = Seed(p);
+
+        return (int)seed;
+
+        long Seed(int a)
+        {
+            seed ^= a;
+            seed = (seed ^ (seed >> 16)) * 2246822519L;
+            seed = (seed ^ (seed >> 13)) * 3266489917L;
+            seed ^= seed >> 16;
+            return (int)seed;
+        }
+    }
+#endregion
 }

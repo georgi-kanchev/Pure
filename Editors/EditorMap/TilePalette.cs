@@ -151,7 +151,7 @@ internal class TilePalette
         var tile = map.TileAt(((int)sx, (int)sy));
         var selectedColor = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
         var color = new Color(selectedColor) { A = 200 };
-        var seed = (mx, my).ToSeed() + clickSeed;
+        var seed = mx.ToSeed(my) + clickSeed;
         var tiles = GetSelectedTiles().Flatten();
         var randomTile = tiles.ChooseOne(seed);
         var tilemap = inspector?.GetSelectedTilemap();

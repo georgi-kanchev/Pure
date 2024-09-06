@@ -1,7 +1,6 @@
 namespace Pure.Engine.Window;
 
 using SFML.Graphics.Glsl;
-
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -200,6 +199,16 @@ public class Layer
         bytes.AddRange(BitConverter.GetBytes(Offset.y));
 
         return Compress(bytes.ToArray());
+    }
+
+    public void Fit()
+    {
+        Offset = (0f, 0f);
+        var (mw, mh) = Monitor.Current.Size;
+        var (ww, wh) = Window.Size;
+        var (w, h) = (Size.width * AtlasTileSize.width, Size.height * AtlasTileSize.height);
+        var (rw, rh) = ((float)mw / ww, (float)mh / wh);
+        Zoom = Math.Min((float)ww / w * rw, (float)wh / h * rh);
     }
 
     public void DrawCursor(int tileId = 546, uint tint = 3789677055)
@@ -579,7 +588,7 @@ public class Layer
         return layer.ToBytes();
     }
 
-    #region Backend
+#region Backend
     // per tile shader data map (8x8 pixels)
     //
     // [tnta][tntc][tntt][    ][    ][    ][    ][    ]
@@ -887,7 +896,9 @@ public class Layer
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -896,7 +907,9 @@ public class Layer
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -906,5 +919,5 @@ public class Layer
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

@@ -1283,17 +1283,7 @@ public static class Extensions
 
         var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
         var random = new Random(s);
-
-        // if (randomCache.TryGetValue(s, out var r))
-        //     random = r;
-        // else
-        // {
-        //     random = new(s);
-        //     randomCache[s] = random;
-        // }
-
         var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
-
         return randInt / precision;
     }
     /// <summary>
@@ -1319,8 +1309,8 @@ public static class Extensions
     public static bool HasChance(this float percent, float seed = float.NaN)
     {
         percent = percent.Limit((0, 100));
-        var n = Random((1f, 100f), 0f,
-            seed); // should not roll 0 so it doesn't return true with 0% (outside of roll)
+        // should not roll 0 so it doesn't return true with 0% (outside of roll)
+        var n = Random((1f, 100f), 0f, seed);
         return n <= percent;
     }
     /// <summary>
@@ -1337,21 +1327,23 @@ public static class Extensions
         return HasChance((float)percent, seed);
     }
 
-    public static int ToSeed(this (float a, float b) parameters)
+    public static int ToSeed(this int number, params int[] parameters)
     {
-        return HashCode.Combine(parameters.a, parameters.b);
-    }
-    public static int ToSeed(this (float a, float b, float c) parameters)
-    {
-        return HashCode.Combine(parameters.a, parameters.b, parameters.c);
-    }
-    public static int ToSeed(this (int a, int b) parameters)
-    {
-        return HashCode.Combine(parameters.a, parameters.b);
-    }
-    public static int ToSeed(this (int a, int b, int c) parameters)
-    {
-        return HashCode.Combine(parameters.a, parameters.b, parameters.c);
+        var seed = 2654435769L;
+        Seed(number);
+        foreach (var p in parameters)
+            seed = Seed(p);
+
+        return (int)seed;
+
+        long Seed(int a)
+        {
+            seed ^= a;
+            seed = (seed ^ (seed >> 16)) * 2246822519L;
+            seed = (seed ^ (seed >> 13)) * 3266489917L;
+            seed ^= seed >> 16;
+            return (int)seed;
+        }
     }
 
     public static int ToIndex1D(this (int x, int y) indexes, (int width, int height) size)
