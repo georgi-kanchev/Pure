@@ -23,11 +23,7 @@ public static class TilemapperUI
             GetInteractionColor(checkbox, color),
             mask: checkbox.Mask);
     }
-    public static void SetButton(
-        this TilemapPack maps,
-        Button button,
-        int zOrder = 0,
-        bool isDisplayingSelection = false)
+    public static void SetButton(this TilemapPack maps, Button button, int zOrder = 0, bool isDisplayingSelection = false)
     {
         var b = button;
         var (w, h) = b.Size;
@@ -103,11 +99,7 @@ public static class TilemapperUI
             maps[zOrder + 2].SetTile(ib.PositionFromIndices(ib.CursorIndices),
                 new(Tile.SHAPE_LINE, Color.White, 2), ib.Mask);
     }
-    public static void SetFileViewerItem(
-        this TilemapPack maps,
-        FileViewer fileViewer,
-        Button item,
-        int zOrder = 1)
+    public static void SetFileViewerItem(this TilemapPack maps, FileViewer fileViewer, Button item, int zOrder = 1)
     {
         var color = item.IsSelected ? Color.Green : Color.Gray.ToBright();
         var (x, y) = item.Position;
@@ -339,12 +331,7 @@ public static class TilemapperUI
             prompt.Text.Constrain((prompt.Size.width, lines), alignment: Alignment.Center),
             mask: prompt.Mask);
     }
-    public static void SetPromptItem(
-        this TilemapPack maps,
-        Prompt prompt,
-        Button item,
-        int zOrder = 2,
-        params Tile[]? tiles)
+    public static void SetPromptItem(this TilemapPack maps, Prompt prompt, Button item, int zOrder = 2, params Tile[]? tiles)
     {
         var index = prompt.IndexOf(item);
         var tile = new Tile(
@@ -467,12 +454,7 @@ public static class TilemapperUI
                 new(Tile.MATH_GREATER, GetInteractionColor(list, Color.Gray.ToBright()), 1),
                 list.Mask);
     }
-    public static void SetListItem(
-        this TilemapPack maps,
-        List list,
-        Button item,
-        int zOrder = 1,
-        bool isSelectHighlighting = true)
+    public static void SetListItem(this TilemapPack maps, List list, Button item, int zOrder = 1, bool isSelectHighlighting = true)
     {
         var color = item.IsSelected && isSelectHighlighting ? Color.Green : Color.Gray.ToBright(0.3f);
         var (x, y) = item.Position;
@@ -491,12 +473,7 @@ public static class TilemapperUI
             GetInteractionColor(item, color),
             mask: item.Mask);
     }
-    public static void SetLayoutSegment(
-        this TilemapPack maps,
-        (int x, int y, int width, int height) segment,
-        int index,
-        bool isIndexVisible,
-        int zOrder = 0)
+    public static void SetLayoutSegment(this TilemapPack maps, (int x, int y, int width, int height) segment, int index, bool isIndexVisible, int zOrder = 0)
     {
         var color = new Color(
             (byte)(20, 200).Random(seed / (index + 1f)),
@@ -532,7 +509,7 @@ public static class TilemapperUI
         return baseColor;
     }
 
-#region Backend
+    #region Backend
     private static readonly int seed;
 
     static TilemapperUI()
@@ -557,5 +534,5 @@ public static class TilemapperUI
             if (i < maps.Count)
                 maps[i].SetArea((x, y, w, h), block.Mask, Tile.SHADE_TRANSPARENT);
     }
-#endregion
+    #endregion
 }

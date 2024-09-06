@@ -4,6 +4,7 @@ using Engine.Collision;
 using Engine.Tilemap;
 using Engine.Utilities;
 using Engine.Window;
+
 using static Engine.Utilities.Color;
 
 public static class Collision
@@ -130,10 +131,7 @@ public static class Collision
             tilemap.SetTile((x + 1, y + 1), walls);
         }
     }
-    private static void SetLake(
-        this Tilemap tilemap,
-        (int x, int y) position,
-        (int width, int height) radius)
+    private static void SetLake(this Tilemap tilemap, (int x, int y) position, (int width, int height) radius)
     {
         tilemap.SetEllipse(position, radius, true, null, Tile.MATH_APPROXIMATE);
         tilemap.Replace((0, 0, tilemap.Size.width, tilemap.Size.height), Tile.MATH_APPROXIMATE, null,
