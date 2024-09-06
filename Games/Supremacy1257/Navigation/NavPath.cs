@@ -1,20 +1,18 @@
 using Pure.Engine.Collision;
-using Pure.Engine.Utilities;
 
 namespace Supremacy1257;
 
 public class NavPath
 {
-    public uint Color { get; set; }
-    public Line Line { get; }
+    public Line Line { get; set; }
     public NavPoint A { get; }
     public NavPoint B { get; }
 
-    public NavPath(NavPoint a, NavPoint b)
+    public NavPath(NavPoint a, NavPoint b, Line line)
     {
-        Color = uint.MaxValue;
         A = a;
         B = b;
-        Line = new(A.Position, B.Position, Color);
+
+        Line = line;
     }
 }

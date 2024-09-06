@@ -572,8 +572,8 @@ public class Layer
         x += cw / 2f;
         y += ch / 2f;
 
-        x -= ox * cw / Zoom;
-        y -= oy * ch / Zoom;
+        x -= ox * cw;
+        y -= oy * ch;
 
         return (x, y);
     }

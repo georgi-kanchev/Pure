@@ -7,6 +7,7 @@ namespace Supremacy1257;
 
 public class World
 {
+    public int Full { get; }
     public int Water { get; }
     public int Mount1 { get; }
     public int Mount2 { get; }
@@ -22,6 +23,10 @@ public class World
     {
         get => tilemaps[1];
     }
+    public Tilemap Territories
+    {
+        get => tilemaps[2];
+    }
 
     public World(int width, int height)
     {
@@ -32,8 +37,9 @@ public class World
             AtlasTileGap = (1, 1),
             AtlasTileSize = (12, 12)
         };
-        tilemaps = new(2, Size);
+        tilemaps = new(3, Size);
 
+        Full = (0, 10).ToIndex1D(Layer.AtlasTileCount);
         Water = (6, 22).ToIndex1D(Layer.AtlasTileCount);
         Mount1 = (2, 13).ToIndex1D(Layer.AtlasTileCount);
         Mount2 = (2, 14).ToIndex1D(Layer.AtlasTileCount);
@@ -46,22 +52,21 @@ public class World
 
     public void Update()
     {
-        var mousePos = Mouse.CursorPosition;
-        HandleCamera(mousePos - prevMousePos);
-        prevMousePos = mousePos;
+        HandleCamera();
 
         for (var i = 0; i < tilemaps.Count; i++)
             Layer.DrawTilemap(tilemaps[i]);
-
-        Layer.Draw();
     }
 
 #region Backend
     private Point prevMousePos;
     private readonly TilemapPack tilemaps;
 
-    private void HandleCamera(Point mouseDelta)
+    private void HandleCamera()
     {
+        var mousePos = Mouse.CursorPosition;
+        var mouseDelta = mousePos - prevMousePos;
+        prevMousePos = mousePos;
         var (aw, ah) = Monitor.Current.AspectRatio;
         var (ww, wh) = Window.Size;
         var delta = mouseDelta * ((float)aw / ww, (float)ah / wh) / Layer.Zoom * 122.5f;
@@ -76,8 +81,7 @@ public class World
     {
         var (ground, terrain) = (tilemaps[0], tilemaps[1]);
         var tileCount = Layer.AtlasTileCount;
-        var full = (0, 10).ToIndex1D(tileCount);
-        var grass = new Tile(full, Color.Green.ToDark(0.45f));
+        var grass = new Tile(Full, Color.Green.ToDark(0.45f));
         var grass1 = new Tile((2, 9).ToIndex1D(tileCount), Color.White.ToDark(0.3f));
         var waterT = (6, 19).ToIndex1D(tileCount);
         var waterR = new Tile(waterT, Color.White, 1);
@@ -150,7 +154,7 @@ public class World
                 var colorF = Color.White.ToDark(trees.Map((0.6f, 1f), (0.1f, 0.65f)));
                 var colorB = Color.Green.ToDark(trees.Map((0.6f, 1f), (0.5f, 0.75f)));
 
-                ground.SetTile((x, y), new(full, colorB));
+                ground.SetTile((x, y), new(Full, colorB));
                 terrain.SetTile((x, y), new Tile[]
                 {
                     new(trees1, colorF), new(trees2, colorF),
@@ -164,10 +168,10 @@ public class World
             var (mapW, mapH) = (map.Size.width - 1, map.Size.height - 1);
             var color = Color.Brown.ToDark();
 
-            map.SetLine((0, 0), (mapW, 0), null, new Tile(full, color));
-            map.SetLine((mapW, 0), (mapW, mapH), null, new Tile(full, color));
-            map.SetLine((mapW, mapH), (0, mapH), null, new Tile(full, color));
-            map.SetLine((0, mapH), (0, 0), null, new Tile(full, color));
+            map.SetLine((0, 0), (mapW, 0), null, new Tile(Full, color));
+            map.SetLine((mapW, 0), (mapW, mapH), null, new Tile(Full, color));
+            map.SetLine((mapW, mapH), (0, mapH), null, new Tile(Full, color));
+            map.SetLine((0, mapH), (0, 0), null, new Tile(Full, color));
         }
     }
 #endregion

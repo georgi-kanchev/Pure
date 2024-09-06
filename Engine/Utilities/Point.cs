@@ -194,6 +194,23 @@ public struct Point
         return base.Equals(obj);
     }
 
+    public static Point? Average(params Point[]? points)
+    {
+        if (points == null || points.Length == 0)
+            return null;
+
+        var sumX = 0f;
+        var sumY = 0f;
+
+        foreach (var p in points)
+        {
+            sumX += p.X;
+            sumY += p.Y;
+        }
+
+        return new Point(sumX / points.Length, sumY / points.Length);
+    }
+
     public static implicit operator Point((int x, int y) position)
     {
         return new(position.x, position.y);
