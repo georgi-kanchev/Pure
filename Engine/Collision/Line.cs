@@ -174,6 +174,11 @@ public struct Line
         var (bx1, by1) = B;
         var (ax2, ay2) = line.A;
         var (bx2, by2) = line.B;
+
+        if ((A == line.B && B == line.A) ||
+            (A == line.A && B == line.B))
+            return true;
+
         return LinesAreCrossing(ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
     }
     /// <param name="point">

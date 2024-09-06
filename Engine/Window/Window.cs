@@ -5,7 +5,6 @@ global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using System.IO.Compression;
 global using System.Text;
-using SFML.Graphics.Glsl;
 
 namespace Pure.Engine.Window;
 
@@ -240,7 +239,7 @@ public static class Window
 
         var tr = Transform.Identity;
         tr.Translate(layer.Offset.x, layer.Offset.y);
-        tr.Scale(layer.Zoom, layer.Zoom);
+        tr.Scale(layer.Zoom, layer.Zoom, -layer.Offset.x, -layer.Offset.y);
 
         var (w, h) = (layer.result?.Texture.Size.X ?? 0, layer.result?.Texture.Size.Y ?? 0);
         vertsWindow[0] = new(new(-w / 2f, -h / 2f), Color.White, new(0, 0));
