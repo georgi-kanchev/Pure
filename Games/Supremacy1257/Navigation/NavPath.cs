@@ -15,4 +15,9 @@ public class NavPath
 
         Line = line;
     }
+
+    public override string ToString()
+    {
+        return $"Angle: {Line.Angle}";
+    }
 }

@@ -8,15 +8,15 @@ public class Territory
 {
     public LinePack Border { get; } = new();
 
-    public Territory(NavPoint navPoint, World world, Color color)
+    public Territory(NavPoint navPoint, World world, Tile tile)
     {
         this.navPoint = navPoint;
         this.world = world;
-        this.color = color;
+        this.tile = tile;
 
         GenerateTerritory();
         EnsurePointIsInsideBorder();
-        //ApplyTerritoryTiles();
+        ApplyTerritoryTiles();
     }
 
     public void Update()
@@ -25,40 +25,27 @@ public class Territory
     }
 
 #region Backend
-    private readonly Color color;
+    private readonly Tile tile;
     private readonly NavPoint navPoint;
     private readonly World world;
 
     private void GenerateTerritory()
     {
-        var paths = navPoint.Connections;
-        var midwayPoints = new List<Point>();
-        var sortedLines = new SortedDictionary<float, Line>();
+        var sortedPaths = new SortedDictionary<float, Point>();
 
-        foreach (var path in paths)
+        foreach (var path in navPoint.Connections)
         {
-            var distA = ((Point)path.Line.A).Distance(navPoint.Position);
-            var distB = ((Point)path.Line.B).Distance(navPoint.Position);
-            var closestPoint = distA < distB ? path.Line.A : path.Line.B;
-            var ang = navPoint.Position.Angle(closestPoint);
-            sortedLines[ang] = path.Line;
+            var oppositePoint = path.A == navPoint ? path.B : path.A;
+            var angle = new Line(navPoint.Position, oppositePoint.Position).Angle;
+            sortedPaths[angle] = oppositePoint.Position;
         }
 
-        foreach (var (ang, line) in sortedLines)
-        {
-            var a = (Point)line.A;
-            var b = (Point)line.B;
-            midwayPoints.Add(a.PercentTo(50f, b));
-        }
+        var borderPoints = sortedPaths.Values.ToList();
 
-        for (var i = 1; i < midwayPoints.Count; i++)
-        {
-            var a = midwayPoints[i - 1];
-            var b = midwayPoints[i];
-            Border.Add(new Line(a, b, color));
-        }
+        for (var i = 1; i < borderPoints.Count; i++)
+            Border.Add(new Line(borderPoints[i - 1], borderPoints[i], tile.Tint));
 
-        Border.Add(new Line(Border[0].A, Border[^1].B, color));
+        Border.Add(new Line(Border[0].A, Border[^1].B, tile.Tint));
     }
     private void EnsurePointIsInsideBorder()
     {
@@ -98,24 +85,23 @@ public class Territory
         if (addLines == false)
             return;
 
-        Border.Add(new Line(insideLine.A, navPoint.Position, color));
-        Border.Add(new Line(insideLine.B, navPoint.Position, color));
+        Border.Add(new Line(insideLine.A, navPoint.Position));
+        Border.Add(new Line(insideLine.B, navPoint.Position));
     }
     private void ApplyTerritoryTiles()
     {
         var points = new List<Point>();
-        var tile = new Tile(world.Full, color);
         for (var i = 0; i < Border.Count; i++)
         {
             var (la, lb) = (Border[i].A, Border[i].B);
             var (a, b) = (((int)la.x, (int)la.y), ((int)lb.x, (int)lb.y));
-            world.Territories.SetLine(a, b, null, tile);
+            world.Territory.SetLine(a, b, null, tile);
             points.Add(la);
             points.Add(lb);
         }
 
         var center = Point.Average(points.ToArray()) ?? new Point(-1, -1);
-        world.Territories.Flood(center, false, null, tile);
+        world.Territory.Flood(center, false, null, tile);
     }
 #endregion
 }

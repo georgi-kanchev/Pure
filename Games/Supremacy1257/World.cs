@@ -23,7 +23,7 @@ public class World
     {
         get => tilemaps[1];
     }
-    public Tilemap Territories
+    public Tilemap Territory
     {
         get => tilemaps[2];
     }
@@ -55,7 +55,11 @@ public class World
         HandleCamera();
 
         for (var i = 0; i < tilemaps.Count; i++)
-            Layer.DrawTilemap(tilemaps[i]);
+            if (tilemaps[i] != Territory)
+                Layer.DrawTilemap(tilemaps[i]);
+
+        if (Keyboard.Key.T.IsPressed())
+            Layer.DrawTilemap(Territory);
     }
 
 #region Backend

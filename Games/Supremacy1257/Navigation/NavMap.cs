@@ -1,5 +1,4 @@
 using Pure.Engine.Utilities;
-using Pure.Engine.Window;
 
 namespace Supremacy1257;
 
@@ -8,7 +7,7 @@ public class NavMap
     public List<NavPath> Paths { get; } = new();
     public List<NavPoint> Points { get; } = new();
 
-    public NavMap(World world, int pointCount = 300, int spreadSteps = 10, float targetDistance = 7f)
+    public NavMap(World world, int pointCount = 300, int spreadSteps = 15, float targetDistance = 7f)
     {
         this.world = world;
 
@@ -41,30 +40,36 @@ public class NavMap
             i--;
         }
 
-        CacheDrawDataPoints();
-
         GeneratePaths();
-        CacheDrawDataPaths();
     }
 
     public void Update()
     {
-        world.Layer.DrawLines(paths);
-        world.Layer.DrawPoints(points);
+        foreach (var path in Paths)
+        {
+            var (ax, ay) = path.A.Position.XY;
+            var (bx, by) = path.B.Position.XY;
+
+            var colorA = world.Territory.TileAt(((int)ax, (int)ay)).Tint;
+            var colorB = world.Territory.TileAt(((int)bx, (int)by)).Tint;
+            var color = Color.White;
+            color = colorA == colorB ? Color.White : color;
+            color = colorA != colorB ? Color.Red : color;
+            color = colorA == 0 || colorB == 0 ? Color.Gray : color;
+
+            path.Line = new(path.Line.A, path.Line.B, color);
+
+            world.Layer.DrawLines(path.Line);
+        }
     }
 
 #region Backend
     private readonly World world;
-    private (float x, float y, uint color)[]? points;
-    private (float ax, float ay, float bx, float by, uint color)[]? paths;
 
     private void Generate(int pointCount, int spreadSteps, float targetDistance)
     {
         GeneratePoints(pointCount, spreadSteps, targetDistance);
-        CacheDrawDataPoints();
-
         GeneratePaths();
-        CacheDrawDataPaths();
     }
     private void GeneratePoints(int pointCount, int spreadSteps, float targetDistance)
     {
@@ -93,6 +98,7 @@ public class NavMap
         }
 
         RemovePointClusters();
+        CenterPoints();
 
         NavPoint ComputeCentroid(NavPoint pt, float distance)
         {
@@ -137,13 +143,11 @@ public class NavMap
             Points.Clear();
             Points.AddRange(remainingPoints);
         }
-    }
-    private void CacheDrawDataPoints()
-    {
-        var drawPts = new List<(float x, float y, uint color)>();
-        foreach (var p in Points)
-            drawPts.Add(p.Position);
-        points = drawPts.ToArray();
+        void CenterPoints()
+        {
+            foreach (var point in Points)
+                point.Position = new(((int)point.Position.X + 0.5f, (int)point.Position.Y + 0.5f));
+        }
     }
     private void GeneratePaths()
     {
@@ -226,13 +230,6 @@ public class NavMap
                 }
             }
         }
-    }
-    private void CacheDrawDataPaths()
-    {
-        var drawLines = new List<(float ax, float ay, float bx, float by, uint color)>();
-        foreach (var path in Paths)
-            drawLines.Add(path.Line);
-        paths = drawLines.ToArray();
     }
 #endregion
 }

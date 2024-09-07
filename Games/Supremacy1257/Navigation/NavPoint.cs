@@ -15,4 +15,9 @@ public class NavPoint
     {
         Position = point;
     }
+
+    public override string ToString()
+    {
+        return $"{Position} Connections: {Connections.Count}";
+    }
 }

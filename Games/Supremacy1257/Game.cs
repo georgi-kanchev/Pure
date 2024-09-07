@@ -20,7 +20,7 @@ public class Game
         };
         var world = new World(100, 100);
         var navMap = new NavMap(world);
-        navMap.ReducePointsOnTile(40f, world.Water);
+        //navMap.ReducePointsOnTile(40f, world.Water);
         world.Layer.Fit();
         ui.Fit();
 
@@ -33,8 +33,11 @@ public class Game
             for (var i = 0; i < navMap.Points.Count; i++)
                 if (navMap.Points[i].Position.Distance(mousePos) < 1f)
                 {
-                    var color = new[] { Color.White, Color.Red, Color.Blue, Color.Green, Color.Azure }.ChooseOne();
-                    var territory = new Territory(navMap.Points[i], world, color);
+                    var color = new[]
+                    {
+                        Color.Red.ToDark(), Color.Brown, Color.Azure, Color.Gray, Color.Purple, Color.Violet
+                    }.ChooseOne();
+                    var territory = new Territory(navMap.Points[i], world, new(world.Full, color));
                     territories.Add(territory);
                 }
         });
