@@ -1,16 +1,12 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
-
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.TiledLoader;
-
 global using static Pure.Tools.Tilemapper.TilemapperUI;
-
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
-
 using System.IO.Compression;
 using System.Text;
 
@@ -20,22 +16,12 @@ public class Editor
 {
     public enum LayerMapsEditor
     {
-        Back,
-        Middle,
-        Front,
-        Count
+        Back, Middle, Front, Count
     }
 
     public enum LayerMapsUi
     {
-        Back,
-        Middle,
-        Front,
-        PromptFade,
-        PromptBack,
-        PromptMiddle,
-        PromptFront,
-        Count
+        Back, Middle, Front, PromptFade, PromptBack, PromptMiddle, PromptFront, Count
     }
 
     public Layer LayerGrid { get; }
@@ -427,7 +413,7 @@ public class Editor
         });
     }
 
-    #region Backend
+#region Backend
     private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
     private const int GRID_GAP = 10;
     private readonly InputBox promptSize;
@@ -607,35 +593,19 @@ public class Editor
     }
     private void TryViewZoom()
     {
-        if (Mouse.ScrollDelta == 0 || IsDisabledViewZoom)
-            return;
-
-        var mousePos = (Point)MousePositionRaw;
-        var viewPos = (Point)ViewPosition;
-        var (ww, wh) = Window.Size;
-        var pos = (Point)(ww / 2f, wh / 2f);
-        var zoomInDist = mousePos.Distance(pos);
-        var zoomInAngle = new Angle(mousePos.Angle(pos));
-        var zoomInPos = viewPos.MoveAt(zoomInAngle, zoomInDist / 10f * ViewZoom);
-        var zoomOutPos = viewPos.PercentTo(15f, (0, 0));
-
-        ViewZoom *= Mouse.ScrollDelta > 0 ? 1.1f : 0.9f;
-
-        if (Math.Abs(ViewZoom - ZOOM_MIN) > 0.01f &&
-            Math.Abs(ViewZoom - ZOOM_MAX) > 0.01f)
-            ViewPosition = Mouse.ScrollDelta > 0 ? zoomInPos : zoomOutPos;
+        if (Mouse.ScrollDelta != 0 && IsDisabledViewZoom == false)
+            ViewZoom *= Mouse.ScrollDelta > 0 ? 1.05f : 0.95f;
     }
     private void ViewMove()
     {
-        var (mw, mh) = Monitor.Current.Size;
-        var (ww, wh) = Window.Size;
-        var (aw, ah) = (mw / ww, mh / wh);
         var (mx, my) = MousePositionRaw;
         var (px, py) = prevRaw;
+        var (aw, ah) = Monitor.Current.AspectRatio;
+        var (ww, wh) = Window.Size;
 
         ViewPosition = (
-            ViewPosition.x + (mx - px) / PIXEL_SCALE * aw,
-            ViewPosition.y + (my - py) / PIXEL_SCALE * ah);
+            ViewPosition.x + (mx - px) * ((float)aw / ww) / LayerMap.Zoom * 122.5f,
+            ViewPosition.y + (my - py) * ((float)ah / wh) / LayerMap.Zoom * 122.5f);
     }
 
     private static string GrabString(byte[] fromBytes, ref int byteOffset)
@@ -659,7 +629,9 @@ public class Editor
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -668,7 +640,9 @@ public class Editor
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -693,5 +667,5 @@ public class Editor
 
         return maps;
     }
-    #endregion
+#endregion
 }
