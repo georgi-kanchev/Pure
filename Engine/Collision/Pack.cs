@@ -17,7 +17,7 @@ public abstract class Pack<T>
         set => data[index] = value;
     }
 
-    public Pack(params T[] data)
+    protected Pack(params T[] data)
     {
         Add(data);
     }
@@ -48,7 +48,7 @@ public abstract class Pack<T>
             data.RemoveAt(i);
     }
 
-#region Backend
+    #region Backend
     protected readonly List<T> data = new();
 
     protected abstract T LocalToGlobal(T local);
@@ -57,9 +57,7 @@ public abstract class Pack<T>
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -68,9 +66,7 @@ public abstract class Pack<T>
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -80,5 +76,5 @@ public abstract class Pack<T>
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

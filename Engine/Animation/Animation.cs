@@ -7,12 +7,14 @@
 /// <typeparam name="T">The type of the values in the animation.</typeparam>
 public class Animation<T> where T : notnull
 {
+    public List<T> Values { get; } = new();
+
     /// <summary>
     /// Gets the current value of the animation.
     /// </summary>
     public T CurrentValue
     {
-        get => values[CurrentIndex];
+        get => Values[CurrentIndex];
     }
     /// <summary>
     /// Gets the current index of the animation.
@@ -26,8 +28,8 @@ public class Animation<T> where T : notnull
     /// </summary>
     public float CurrentProgress
     {
-        get => Map(rawIndex, LOWER_BOUND, values.Length, 0, 1);
-        set => rawIndex = Map(value, 0, 1, LOWER_BOUND, values.Length);
+        get => Map(rawIndex, LOWER_BOUND, Values.Count, 0, 1);
+        set => rawIndex = Map(value, 0, 1, LOWER_BOUND, Values.Count);
     }
 
     /// <summary>
@@ -39,8 +41,8 @@ public class Animation<T> where T : notnull
     /// </summary>
     public float Speed
     {
-        get => Duration / values.Length;
-        set => Duration = value * values.Length;
+        get => Duration / Values.Count;
+        set => Duration = value * Values.Count;
     }
     /// <summary>
     /// Gets or sets a value indicating whether the animation should repeat.
@@ -52,17 +54,6 @@ public class Animation<T> where T : notnull
     public bool IsPaused { get; set; }
 
     /// <summary>
-    /// Gets or sets the value at the specified index.
-    /// </summary>
-    /// <param name="index">The index of the value to get or set.</param>
-    /// <returns>The value at the specified index.</returns>
-    public T this[int index]
-    {
-        get => values[index];
-        set => values[index] = value;
-    }
-
-    /// <summary>
     /// Initializes a new instance of the animation with the specified duration, 
     /// repetition, and values.
     /// </summary>
@@ -70,12 +61,11 @@ public class Animation<T> where T : notnull
     /// <param name="loop">A value indicating whether the animation should repeat from the beginning
     /// after it has finished playing through all the values.</param>
     /// <param name="values">The values of the animation.</param>
-    public Animation(float duration, bool loop, params T[] values)
+    public Animation(float duration, bool loop, params T[]? values)
     {
-        if (values == null)
-            throw new ArgumentNullException(nameof(values));
+        if (values is { Length: > 0 })
+            Values.AddRange(values);
 
-        this.values = Copy(values);
         rawIndex = 0;
         Duration = duration;
         IsLooping = loop;
@@ -90,7 +80,7 @@ public class Animation<T> where T : notnull
     /// <param name="speed">The speed at which the animation should play, as values
     /// per second.</param>
     /// <param name="values">The values to be animated.</param>
-    public Animation(bool loop, float speed, params T[] values) : this(0f, loop, values)
+    public Animation(bool loop, float speed, params T[]? values) : this(0f, loop, values)
     {
         Speed = speed;
     }
@@ -99,15 +89,8 @@ public class Animation<T> where T : notnull
     /// and default properties of <code>Duration = 1f</code> and <code>IsRepeating = false</code>
     /// </summary>
     /// <param name="values">The values to be animated.</param>
-    public Animation(params T[] values) : this(1f, false, values)
+    public Animation(params T[]? values) : this(1f, false, values)
     {
-    }
-
-    /// <returns>
-    /// An array copy containing the values in the animation sequence.</returns>
-    public T[] ToArray()
-    {
-        return Copy(values);
     }
 
     /// <summary>
@@ -121,10 +104,10 @@ public class Animation<T> where T : notnull
 
         RawIndex += deltaTime / Speed;
 
-        if ((int)MathF.Round(RawIndex) < values.Length)
+        if ((int)MathF.Round(RawIndex) < Values.Count)
             return;
 
-        RawIndex = IsLooping ? LOWER_BOUND : values.Length - 1;
+        RawIndex = IsLooping ? LOWER_BOUND : Values.Count - 1;
 
         if (IsLooping)
             onLoop?.Invoke();
@@ -141,26 +124,25 @@ public class Animation<T> where T : notnull
         onLoop += method;
     }
 
-    /// <summary>
-    /// Implicitly converts an array of values to an Animation object.
-    /// </summary>
-    /// <param name="values">The values to be animated.</param>
+    public static implicit operator Animation<T>(List<T> values)
+    {
+        return new(values.ToArray());
+    }
     public static implicit operator Animation<T>(T[] values)
     {
         return new(values);
     }
-    /// <summary>
-    /// Implicitly converts an Animation object to an array of values.
-    /// </summary>
-    /// <param name="animation">The Animation object to convert.</param>
     public static implicit operator T[](Animation<T> animation)
     {
-        return animation.ToArray();
+        return animation.Values.ToArray();
+    }
+    public static implicit operator List<T>(Animation<T> animation)
+    {
+        return animation.Values.ToList();
     }
 
-#region Backend
+    #region Backend
     private Action? onEnd, onLoop;
-    private readonly T[] values;
 
     private float rawIndex;
     private const float LOWER_BOUND = -0.499f;
@@ -168,7 +150,7 @@ public class Animation<T> where T : notnull
     private float RawIndex
     {
         get => rawIndex;
-        set => rawIndex = Math.Clamp(value, LOWER_BOUND, values.Length);
+        set => rawIndex = Math.Clamp(value, LOWER_BOUND, Values.Count);
     }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)
@@ -182,5 +164,5 @@ public class Animation<T> where T : notnull
         Array.Copy(array, copy, array.Length);
         return copy;
     }
-#endregion
+    #endregion
 }

@@ -2,7 +2,9 @@
 
 using System.Text;
 using System.IO.Compression;
+
 using SFML.Audio;
+
 using static MathF;
 
 /// <summary>
@@ -15,7 +17,7 @@ public enum Wave
 
 public class Notes : Audio
 {
-    public (char separator, char pause, char repeat) Symbols { get; set; } = ('_', '.', '~');
+    public (char space, char pause, char repeat) Symbols { get; set; } = (' ', '.', '~');
 
     public Notes(string notes, float duration = 0.2f, Wave wave = Wave.Square, (float start, float end) fade = default)
     {
@@ -43,6 +45,7 @@ public class Notes : Audio
         {
             return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
         }
+
         int GetInt()
         {
             return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
@@ -101,7 +104,7 @@ public class Notes : Audio
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private readonly string notes;
     private readonly float duration;
     private readonly Wave wave;
@@ -143,14 +146,14 @@ public class Notes : Audio
             (chord.Length != 2 && chord.Length != 3)) // invalid
             return 0; // pause
 
-        var notes = new List<string> { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" };
+        var allNodes = new List<string> { "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#" };
 
         chord = chord == "E#" ? "F" : chord;
         chord = chord == "B#" ? "C" : chord;
 
         var hasOctave =
             int.TryParse((chord.Length == 3 ? chord[2] : chord[1]).ToString(), out var octave);
-        var keyNumber = notes.IndexOf(chord[0..^1]);
+        var keyNumber = allNodes.IndexOf(chord[0..^1]);
 
         if (hasOctave == false || keyNumber == -1)
             return float.NaN;
@@ -206,7 +209,7 @@ public class Notes : Audio
     }
     private List<string> GetValidNotes(string notes)
     {
-        var chordsSplit = notes.Split(Symbols.separator, StringSplitOptions.RemoveEmptyEntries);
+        var chordsSplit = notes.Split(Symbols.space, StringSplitOptions.RemoveEmptyEntries);
         var validChords = new List<string>();
 
         foreach (var t in chordsSplit)
@@ -253,9 +256,7 @@ public class Notes : Audio
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -273,5 +274,5 @@ public class Notes : Audio
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

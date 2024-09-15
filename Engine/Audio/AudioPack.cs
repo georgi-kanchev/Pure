@@ -2,44 +2,18 @@ namespace Pure.Engine.Audio;
 
 public class AudioPack
 {
+    public List<Audio> Tracks { get; } = new();
+
     public float TrackDelay { get; set; }
     public bool IsLooping { get; set; }
 
-    public Audio this[int index]
-    {
-        get => audios[index];
-    }
-
-    public AudioPack(float trackDelay = 0.5f, bool loop = false)
+    public AudioPack(float trackDelay = 0.5f, bool loop = false, params Audio[]? tracks)
     {
         TrackDelay = trackDelay;
         IsLooping = loop;
-    }
 
-    public void AddTrack(string? tag, params Audio[] tracks)
-    {
-        foreach (var track in tracks)
-        {
-            audios.Add(track);
-
-            if (tag == null)
-                continue;
-
-            if (tags.ContainsKey(tag) == false)
-                tags[tag] = new();
-
-            tags[tag].Add(track);
-        }
-    }
-    public void Shuffle(string? tag = null)
-    {
-        if (tag != null)
-        {
-            Shuffle(tags[tag]);
-            return;
-        }
-
-        Shuffle(audios);
+        if (tracks is { Length: > 0 })
+            Tracks.AddRange(tracks);
     }
 
     public void Play()
@@ -72,24 +46,48 @@ public class AudioPack
         StopCurrent();
     }
 
-    public Audio Pick()
+    public void Tag(string? tag, params Audio[] tracks)
     {
-        return audios[new Random().Next(0, audios.Count)];
+        if (tag == null)
+            return;
+
+        foreach (var track in tracks)
+        {
+            if (tags.ContainsKey(tag) == false)
+                tags[tag] = new();
+
+            tags[tag].Add(track);
+        }
     }
-    public Audio Pick(string? tag)
+    public void Shuffle(string? tag = null)
     {
-        return tag == null ? Pick() : tags[tag][new Random().Next(0, tags[tag].Count)];
+        if (tag != null)
+        {
+            Shuffle(tags[tag]);
+            return;
+        }
+
+        Shuffle(Tracks);
+    }
+
+    public Audio PickOne()
+    {
+        return Tracks[new Random().Next(0, Tracks.Count)];
+    }
+    public Audio PickOne(string? tag)
+    {
+        return tag == null ? PickOne() : tags[tag][new Random().Next(0, tags[tag].Count)];
     }
 
     public void Update(float deltaTime)
     {
-        if (audios.Count == 0 || isPlaying == false)
+        if (Tracks.Count == 0 || isPlaying == false)
             return;
 
         time += deltaTime;
 
-        var audio = audios[currentIndex];
-        var delay = currentIndex == audios.Count - 1 ? 0 : TrackDelay; // no delay on last track
+        var audio = Tracks[currentIndex];
+        var delay = currentIndex == Tracks.Count - 1 ? 0 : TrackDelay; // no delay on last track
         if (time >= audio.Duration + delay)
         {
             var tag = default(string);
@@ -109,7 +107,7 @@ public class AudioPack
             Skip();
         }
 
-        if (currentIndex != audios.Count)
+        if (currentIndex != Tracks.Count)
             return;
 
         if (IsLooping)
@@ -132,22 +130,22 @@ public class AudioPack
     {
         onLoop += method;
     }
-    public void OnAnyTrackEnd(Action<(int index, string? tag)> method)
+    public void OnTrackEndAny(Action<(int index, string? tag)> method)
     {
         onAudioEndAny += method;
     }
-    public void OnTagTrackEnd(string tag, Action<(int index, string? tag)> method)
+    public void OnTrackEndTag(string tag, Action<(int index, string? tag)> method)
     {
         if (onAudioEndTag.TryAdd(tag, method) == false)
             onAudioEndTag[tag] += method;
     }
-    public void OnIndexTrackEnd(int index, Action<(int index, string? tag)> method)
+    public void OnTrackEndIndex(int index, Action<(int index, string? tag)> method)
     {
         if (onAudioEndIndex.TryAdd(index, method) == false)
             onAudioEndIndex[index] += method;
     }
 
-#region Backend
+    #region Backend
     private Action? onLoop, onEnd;
     private Action<(int index, string? tag)>? onAudioEndAny;
     private readonly Dictionary<string, Action<(int index, string? tag)>> onAudioEndTag = new();
@@ -159,32 +157,31 @@ public class AudioPack
 
     private bool IsInvalid
     {
-        get => audios.Count == 0 || currentIndex < 0 || currentIndex >= audios.Count;
+        get => Tracks.Count == 0 || currentIndex < 0 || currentIndex >= Tracks.Count;
     }
 
     private readonly Dictionary<string, List<Audio>> tags = new();
-    private readonly List<Audio> audios = new();
 
     private void PlayCurrent()
     {
         if (IsInvalid)
             return;
 
-        audios[currentIndex].Play();
+        Tracks[currentIndex].Play();
     }
     private void PauseCurrent()
     {
         if (IsInvalid)
             return;
 
-        audios[currentIndex].Pause();
+        Tracks[currentIndex].Pause();
     }
     private void StopCurrent()
     {
         if (IsInvalid)
             return;
 
-        audios[currentIndex].Stop();
+        Tracks[currentIndex].Stop();
     }
 
     private static void Shuffle<T>(IList<T> collection)
@@ -196,5 +193,5 @@ public class AudioPack
             (collection[j], collection[i]) = (collection[i], collection[j]);
         }
     }
-#endregion
+    #endregion
 }

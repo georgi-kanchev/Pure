@@ -5,17 +5,6 @@ using SFML.System;
 
 public class Audio
 {
-    public Audio(string path, bool stream)
-    {
-        if (stream)
-            music = new(path);
-        else
-            sound = new(new SoundBuffer(path));
-
-        Volume = 0.5f;
-        Pitch = 1;
-    }
-
     public static float GlobalVolume
     {
         get => Listener.GlobalVolume / 100f;
@@ -114,6 +103,17 @@ public class Audio
         get => Get().st == SoundStatus.Stopped;
     }
 
+    public Audio(string path, bool stream)
+    {
+        if (stream)
+            music = new(path);
+        else
+            sound = new(new SoundBuffer(path));
+
+        Volume = 0.5f;
+        Pitch = 1;
+    }
+
     public void Play()
     {
         music?.Play();
@@ -130,7 +130,7 @@ public class Audio
         sound?.Stop();
     }
 
-#region Backend
+    #region Backend
     private class Settings
     {
         public SoundStatus st;
@@ -215,5 +215,5 @@ public class Audio
         settings = result;
         return result;
     }
-#endregion
+    #endregion
 }
