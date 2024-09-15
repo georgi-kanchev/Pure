@@ -1,6 +1,7 @@
 using Pure.Engine.Tilemap;
 using Pure.Engine.Utilities;
 using Pure.Engine.Window;
+
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Supremacy1257;
@@ -62,7 +63,7 @@ public class World
             Layer.DrawTilemap(Territory);
     }
 
-#region Backend
+    #region Backend
     private Point prevMousePos;
     private readonly TilemapPack tilemaps;
 
@@ -140,10 +141,11 @@ public class World
                     }.ChooseOne(Game.SEED.ToSeed(x, y, 2)));
             }
 
-        terrain.SetAutoTile(terrain, new Tile[] { -1, 0, -1, -1, Water, -1, -1, Water, -1 }, waterT);
-        terrain.SetAutoTile(terrain, new Tile[] { -1, -1, -1, Water, Water, 0, -1, -1, -1 }, waterR);
-        terrain.SetAutoTile(terrain, new Tile[] { -1, Water, -1, -1, Water, -1, -1, 0, -1 }, waterB);
-        terrain.SetAutoTile(terrain, new Tile[] { -1, -1, -1, 0, Water, Water, -1, -1, -1 }, waterL);
+        terrain.AddAutoTileRule(new int[] { -1, 0, -1, -1, Water, -1, -1, Water, -1 }, waterT);
+        terrain.AddAutoTileRule(new int[] { -1, -1, -1, Water, Water, 0, -1, -1, -1 }, waterR);
+        terrain.AddAutoTileRule(new int[] { -1, Water, -1, -1, Water, -1, -1, 0, -1 }, waterB);
+        terrain.AddAutoTileRule(new int[] { -1, -1, -1, 0, Water, Water, -1, -1, -1 }, waterL);
+        terrain.SetAutoTiles(terrain);
         terrain.Replace(terrain, 0, null, grass1, grass, grass, grass, grass);
 
         for (var y = 0; y < Size.height; y++)
@@ -178,5 +180,5 @@ public class World
             map.SetLine((0, mapH), (0, 0), null, new Tile(Full, color));
         }
     }
-#endregion
+    #endregion
 }

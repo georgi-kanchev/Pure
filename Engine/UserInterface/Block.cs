@@ -16,7 +16,7 @@ public abstract class Block
         set
         {
             Position = (value.x, value.y);
-            Size = (value.x, value.y);
+            Size = (value.width, value.height);
         }
     }
     public (int x, int y, int width, int height) Mask
@@ -704,7 +704,7 @@ public abstract class Block
         return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
     }
 
-#region Backend
+    #region Backend
     internal (int, int) position,
         size,
         listSizeTrimOffset,
@@ -792,9 +792,7 @@ public abstract class Block
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -803,9 +801,7 @@ public abstract class Block
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -821,5 +817,5 @@ public abstract class Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-#endregion
+    #endregion
 }

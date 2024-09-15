@@ -495,36 +495,44 @@ public class Tilemap
         if (size != 2)
             SetArea((x + off, y, size - 2, 1), mask, new Tile(tileId, tint));
     }
-    public void SetAutoTile(Area area, Tile[] rule, Tile substitute, Area? mask = null)
-    {
-        if (rule is not { Length: 9 })
-            return;
 
-        var changes = new Dictionary<(int x, int y), Tile>();
+    public void SetAutoTiles(Area area, Area? mask = null)
+    {
+        var result = new Dictionary<(int x, int y), Tile>();
 
         for (var i = area.X; i < area.Height; i++)
             for (var j = area.Y; j < area.Width; j++)
-            {
-                var isMatch = true;
-
-                for (var k = 0; k < rule.Length; k++)
+                foreach (var (rule, replacement) in autoTiles)
                 {
-                    var (ox, oy) = (k % 3 - 1, k / 3 - 1);
-                    var offTile = TileAt((j + ox, i + oy));
+                    var isMatch = true;
 
-                    if (offTile.Id == rule[k].Id || rule[k] < 0)
-                        continue;
+                    for (var k = 0; k < rule.Count; k++)
+                    {
+                        var (ox, oy) = (k % 3 - 1, k / 3 - 1);
+                        var offTile = TileAt((j + ox, i + oy));
 
-                    isMatch = false;
-                    break;
+                        if (offTile.Id == rule[k] || rule[k] < 0)
+                            continue;
+
+                        isMatch = false;
+                        break;
+                    }
+
+                    if (isMatch)
+                        result[(j, i)] = replacement;
                 }
 
-                if (isMatch)
-                    changes.Add((j, i), substitute);
-            }
-
-        foreach (var kvp in changes)
+        foreach (var kvp in result)
             SetTile(kvp.Key, kvp.Value, mask);
+    }
+    public void AddAutoTileRule(int[] matchIds, Tile replacedCenter)
+    {
+        if (matchIds is { Length: 9 })
+            autoTiles.Add((matchIds.ToList(), replacedCenter));
+    }
+    public void ClearAutoTileRules()
+    {
+        autoTiles.Clear();
     }
 
     /// <summary>
@@ -708,7 +716,7 @@ public class Tilemap
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
@@ -761,6 +769,7 @@ public class Tilemap
 
         { '▕', 432 }
     };
+    private readonly List<(List<int> rule, Tile replacement)> autoTiles = new();
 
     private readonly Tile[,] data;
     private readonly (int, uint, sbyte, bool, bool)[,] bundleCache;
@@ -851,9 +860,7 @@ public class Tilemap
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -862,9 +869,7 @@ public class Tilemap
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -900,5 +905,5 @@ public class Tilemap
             return (int)seed;
         }
     }
-#endregion
+    #endregion
 }

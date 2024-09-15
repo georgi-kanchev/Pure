@@ -4,8 +4,6 @@ namespace Pure.Editors.EditorMap;
 
 internal class TilePalette
 {
-    public const float ZOOM_DEFAULT = 3.8f;
-
     public Tilemap map;
     public Layer layer;
     public (int x, int y) mousePos;
@@ -85,7 +83,7 @@ internal class TilePalette
     public void Create((int width, int height) size)
     {
         map = new(size) { View = (0, 0, 10, 10) };
-        layer = new(map.View.Size) { Zoom = ZOOM_DEFAULT, Offset = (755, 340) };
+        layer = new(map.View.Size) { Zoom = 3.8f, Offset = (198, 88) };
     }
 
     public void Update(Inspector inspector)
@@ -131,11 +129,11 @@ internal class TilePalette
 
         if (layer.IsHovered)
             layer.DrawTiles(((int)mx, (int)my),
-                new Tile(layer.AtlasTileIdFull, new Color(50, 100, 255, 100)));
+                new Tile(layer.AtlasTileIdFull, new Color(50, 100, 255, 150)));
 
         UpdateSelected();
         var s = selected.ToBundle();
-        layer.DrawRectangles((s.x, s.y, s.width, s.height, new Color(50, 255, 100, 100)));
+        layer.DrawRectangles((s.x, s.y, s.width, s.height, new Color(50, 255, 100, 150)));
 
         layer.Draw();
     }
@@ -175,8 +173,21 @@ internal class TilePalette
         if (IsPaintAllowed() && Mouse.Button.Left.IsPressed())
             OnMouseHold(randomTile, tilemap);
     }
+    public Tile[,] GetSelectedTiles()
+    {
+        var (sx, sy) = selected.Position;
+        sx += map.View.X;
+        sy += map.View.Y;
+        var (sw, sh) = selected.Size;
+        var tiles = map.TilesIn(((int)sx, (int)sy, (int)sw, (int)sh));
+        for (var i = 0; i < tiles.GetLength(1); i++)
+            for (var j = 0; j < tiles.GetLength(0); j++)
+                tiles[j, i].Tint = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
 
-#region Backend
+        return tiles;
+    }
+
+    #region Backend
     private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12, 13, 14 };
     private Inspector? inspector;
     private (int x, int y) prevMousePos;
@@ -218,19 +229,6 @@ internal class TilePalette
                editor.Prompt.IsHidden &&
                Program.menu.IsHidden &&
                editor.MapPanel.IsHovered == false;
-    }
-    private Tile[,] GetSelectedTiles()
-    {
-        var (sx, sy) = selected.Position;
-        sx += map.View.X;
-        sy += map.View.Y;
-        var (sw, sh) = selected.Size;
-        var tiles = map.TilesIn(((int)sx, (int)sy, (int)sw, (int)sh));
-        for (var i = 0; i < tiles.GetLength(1); i++)
-            for (var j = 0; j < tiles.GetLength(0); j++)
-                tiles[j, i].Tint = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
-
-        return tiles;
     }
 
     private void OnMousePressed()
@@ -346,6 +344,7 @@ internal class TilePalette
             var tile = tilemap.TileAt((mx, my));
             var coords = tile.Id.ToIndex2D(layer.AtlasTileCount);
             inspector.paletteColor.SelectedColor = tile.Tint;
+            inspector.pickedTile = tile;
             selectedPos = coords;
             selectedSz = (1, 1);
         }
@@ -417,5 +416,5 @@ internal class TilePalette
         else if (lmb && tool == 2) // single random tile of tiles
             tilemap?.SetTile(pos, randomTile);
     }
-#endregion
+    #endregion
 }

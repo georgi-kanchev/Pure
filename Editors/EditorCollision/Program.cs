@@ -1,12 +1,15 @@
 ﻿namespace Pure.Editors.EditorCollision;
 
 using EditorBase;
+
 using Tools.Tilemapper;
+
 using Engine.Collision;
 using Engine.Utilities;
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
+
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -73,7 +76,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private static (float x, float y) clickPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
@@ -103,7 +106,8 @@ public static class Program
                editor.Prompt.IsHidden &&
                editor.MapPanel.IsHovered == false &&
                menu.IsHovered == false &&
-               tools.IsHovered == false;
+               tools.IsHovered == false &&
+               palette.IsHovered == false;
     }
     private static bool CanEditGlobal
     {
@@ -196,7 +200,7 @@ public static class Program
         promptPanel.OnDisplay(() => editor.MapsUi.SetPanel(promptPanel, PROMPT_BACK));
 
         layer.Size = map.Size;
-        layer.Offset = (0f, -10f);
+        layer.Offset = (0f, 0f);
 
         SubscribeToClicks();
     }
@@ -487,5 +491,5 @@ public static class Program
         var (sx, sy) = (1f / l.AtlasTileSize.width, 1f / l.AtlasTileSize.height);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }
-#endregion
+    #endregion
 }
