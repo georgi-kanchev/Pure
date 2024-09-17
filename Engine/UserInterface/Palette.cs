@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 public class Palette : Block
 {
     public Slider Opacity { get; private set; }
-    public Pages Brightness { get; private set; }
+    public Slider Brightness { get; private set; }
     public Button Pick { get; private set; }
 
     public uint SelectedColor
@@ -21,23 +21,25 @@ public class Palette : Block
         }
     }
 
-    public Palette((int x, int y) position = default, int brightnessLevels = 30) : base(position)
+    public Palette((int x, int y) position = default) : base(position)
     {
         Size = (13, 3);
 
-        Init(brightnessLevels, brightnessLevels / 2, 1f);
+        Init(0.5f, 1f);
     }
     public Palette(byte[] bytes) : base(bytes)
     {
         var b = Decompress(bytes);
         SelectedColor = GrabUInt(b);
-        var opacity = GrabFloat(b);
-        var index = GrabInt(b);
-        var count = GrabInt(b);
-        var page = GrabInt(b);
-        Init(count, page, opacity);
-        Opacity.progress = opacity;
-        Opacity.index = index;
+        var opProgress = GrabFloat(b);
+        var opIndex = GrabInt(b);
+        var brProgress = GrabFloat(b);
+        var brIndex = GrabInt(b);
+        Init(brProgress, opProgress);
+        Opacity.progress = opProgress;
+        Opacity.index = opIndex;
+        Brightness.progress = brProgress;
+        Brightness.index = brIndex;
     }
     public Palette(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -53,8 +55,8 @@ public class Palette : Block
         PutUInt(result, SelectedColor);
         PutFloat(result, Opacity.Progress);
         PutInt(result, Opacity.index);
-        PutInt(result, Brightness.Count);
-        PutInt(result, Brightness.Current);
+        PutFloat(result, Brightness.Progress);
+        PutInt(result, Brightness.index);
         return Compress(result.ToArray());
     }
 
@@ -120,21 +122,16 @@ public class Palette : Block
     internal Func<(float x, float y), uint>? pick;
 
     [MemberNotNull(nameof(Opacity), nameof(Brightness), nameof(Pick))]
-    private void Init(int brightnessPageCount, int brightnessCurrentPage, float opacityProgress)
+    private void Init(float brightnessProgress, float opacityProgress)
     {
         OnUpdate(OnUpdate);
         var (x, y) = Position;
         var (w, h) = Size;
-        brightnessPageCount = Math.Clamp(brightnessPageCount, 1, 99);
 
         Opacity = new((x, y)) { Progress = opacityProgress, hasParent = true, wasMaskSet = true };
-        Brightness = new((x, y + 2), brightnessPageCount)
+        Brightness = new((x, y + 2))
         {
-            size = (w - 1, 1),
-            Current = brightnessCurrentPage,
-            ItemWidth = $"{brightnessPageCount}".Length,
-            hasParent = true,
-            wasMaskSet = true
+            Progress = brightnessProgress, size = (w - 1, 1), hasParent = true, wasMaskSet = true
         };
         Pick = new((x + w - 1, y + h - 1)) { hasParent = true, wasMaskSet = true };
 
@@ -144,7 +141,11 @@ public class Palette : Block
         {
             var btn = new Button((x + i, y + 1)) { size = (1, 1), hasParent = true, wasMaskSet = true };
             var index = i;
-            btn.OnInteraction(Interaction.Trigger, () => SelectedColor = GetColor(index));
+            btn.OnUpdate(() =>
+            {
+                if (btn.IsHovered && btn.IsPressed())
+                    SelectedColor = GetColor(index);
+            });
             colorButtons.Add(btn);
         }
     }
@@ -230,8 +231,7 @@ public class Palette : Block
     private uint GetColor(int index)
     {
         var color = ToOpacity(palette[index], Opacity.Progress);
-        var value = Map(Brightness.Current, 1, Brightness.Count, 0, 1);
-        color = ToBrightness(color, value);
+        color = ToBrightness(color, Brightness.Progress);
         return color;
     }
 

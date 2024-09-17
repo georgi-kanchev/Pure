@@ -64,7 +64,7 @@ public static class Program
         inspector.AlignInside((1f, 0.5f));
 
         promptSlider = new() { Size = (15, 1) };
-        promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, BACK));
+        promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, "", BACK));
 
         fileName = new() { Size = (20, 1), IsSingleLine = true };
         fileName.OnDisplay(() => maps.SetInputBox(fileName, BACK));
@@ -133,10 +133,8 @@ public static class Program
                 panel.SizeMinimum = (15, 5);
 
                 block.OnDisplay(() => editor.MapsEditor.SetPalette(palette));
-                block.OnDisplay(() => editor.MapsEditor.SetPages(palette.Brightness));
+                block.OnDisplay(() => editor.MapsEditor.SetSlider(palette.Brightness));
 
-                palette.Brightness.OnItemDisplay(item =>
-                    editor.MapsEditor.SetPagesItem(palette.Brightness, item));
                 palette.OnSampleDisplay((btn, c) =>
                     editor.MapsEditor[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
                 break;

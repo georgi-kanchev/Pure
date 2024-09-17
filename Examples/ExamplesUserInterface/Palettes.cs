@@ -9,15 +9,9 @@ public static class Palettes
         var palette = new Palette { Size = (13, 3) };
         palette.AlignInside((0.5f, 0.5f));
         palette.OnPick(position => maps[1].TileAt(((int)position.x, (int)position.y)).Tint);
-        palette.OnDisplay(() =>
-        {
-            maps.SetPalette(palette);
-            maps.SetPages(palette.Brightness);
-        });
+        palette.OnDisplay(() => maps.SetPalette(palette));
         palette.OnSampleDisplay((sample, color) =>
             maps[1].SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color)));
-        palette.Brightness.OnItemDisplay(item =>
-            maps.SetPagesItem(palette.Brightness, item, 2));
 
         //===============
 

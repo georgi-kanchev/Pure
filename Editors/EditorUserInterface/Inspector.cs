@@ -336,8 +336,8 @@ internal class Inspector : Panel
             var brightnessMax = (Stepper)blocks[typeof(Palette)][0];
             var brightness = (Stepper)blocks[typeof(Palette)][1];
             var opacity = (Stepper)blocks[typeof(Palette)][2];
-            pl.Brightness.Count = (int)brightnessMax.Value;
-            pl.Brightness.Current = (int)brightness.Value;
+            //pl.Brightness.Count = (int)brightnessMax.Value;
+            //pl.Brightness.Current = (int)brightness.Value;
             pl.Opacity.Progress = opacity.Value;
         }
         else if (prevSelected is Slider s)
@@ -471,9 +471,9 @@ internal class Inspector : Panel
             var brightnessMax = (Stepper)blocks[typeof(Palette)][0];
             var brightness = (Stepper)blocks[typeof(Palette)][1];
             var opacity = (Stepper)blocks[typeof(Palette)][2];
-            brightnessMax.Value = pl.Brightness.Count;
-            brightness.Range = (1, brightnessMax.Value);
-            brightness.Value = pl.Brightness.Current;
+            //brightnessMax.Value = pl.Brightness.Count;
+            //brightness.Range = (1, brightnessMax.Value);
+            //brightness.Value = pl.Brightness.Current;
             opacity.Value = pl.Opacity.Progress;
         }
         else if (selected is Slider s)

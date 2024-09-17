@@ -1,15 +1,12 @@
 ﻿namespace Pure.Editors.EditorCollision;
 
 using EditorBase;
-
 using Tools.Tilemapper;
-
 using Engine.Collision;
 using Engine.Utilities;
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
-
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -76,7 +73,7 @@ public static class Program
         editor.Run();
     }
 
-    #region Backend
+#region Backend
     private static (float x, float y) clickPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
@@ -164,10 +161,9 @@ public static class Program
         palette.OnDisplay(() =>
         {
             editor.MapsUi.SetPalette(palette, MIDDLE);
-            editor.MapsUi.SetPages(palette.Brightness, MIDDLE);
+            editor.MapsUi.SetSlider(palette.Opacity, "", MIDDLE);
+            editor.MapsUi.SetSlider(palette.Brightness, "", MIDDLE);
         });
-        palette.Brightness.OnItemDisplay(btn =>
-            editor.MapsUi.SetPagesItem(palette.Brightness, btn, FRONT));
         palette.OnSampleDisplay((btn, color) =>
             editor.MapsUi[FRONT].SetTile(btn.Position, new(Tile.FULL, color)));
         palette.AlignInside((0.8f, 0f));
@@ -491,5 +487,5 @@ public static class Program
         var (sx, sy) = (1f / l.AtlasTileSize.width, 1f / l.AtlasTileSize.height);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }
-    #endregion
+#endregion
 }
