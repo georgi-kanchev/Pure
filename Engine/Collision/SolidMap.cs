@@ -1,11 +1,12 @@
 ﻿namespace Pure.Engine.Collision;
 
-using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 
 public class SolidMap
 {
+    public List<(int x, int y)> IgnoredCells { get; } = new();
+
     public (int x, int y) Offset { get; set; }
 
     public int TileCount
@@ -15,15 +16,6 @@ public class SolidMap
     public int SolidsCount
     {
         get => arrayCache?.Length ?? 0;
-    }
-    public int IgnoredCellsCount
-    {
-        get => ignoredCells.Count;
-    }
-
-    public (int x, int y)[] IgnoredCells
-    {
-        get => ignoredCells.ToArray();
     }
 
     public SolidMap()
@@ -38,7 +30,7 @@ public class SolidMap
 
         var ignoredCount = BitConverter.ToInt32(Get<int>());
         for (var i = 0; i < ignoredCount; i++)
-            IgnoredCellsAdd((BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>())));
+            IgnoredCells.Add((BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>())));
 
         var cellRectCount = BitConverter.ToInt32(Get<int>());
         for (var i = 0; i < cellRectCount; i++)
@@ -54,7 +46,7 @@ public class SolidMap
                 var h = BitConverter.ToSingle(Get<float>());
                 var color = BitConverter.ToUInt32(Get<uint>());
 
-                SolidsAdd(tileId, new Solid(x, y, w, h, color));
+                AddSolids(tileId, new Solid(x, y, w, h, color));
             }
         }
 
@@ -87,8 +79,8 @@ public class SolidMap
         result.AddRange(BitConverter.GetBytes(Offset.x));
         result.AddRange(BitConverter.GetBytes(Offset.y));
 
-        result.AddRange(BitConverter.GetBytes(ignoredCells.Count));
-        foreach (var cell in ignoredCells)
+        result.AddRange(BitConverter.GetBytes(IgnoredCells.Count));
+        foreach (var cell in IgnoredCells)
         {
             result.AddRange(BitConverter.GetBytes(cell.x));
             result.AddRange(BitConverter.GetBytes(cell.y));
@@ -133,7 +125,7 @@ public class SolidMap
         return arrayCache?.ToArray() ?? Array.Empty<Solid>();
     }
 
-    public void SolidsAdd(int tileId, params Solid[]? solids)
+    public void AddSolids(int tileId, params Solid[]? solids)
     {
         if (solids == null || solids.Length == 0)
             return;
@@ -143,7 +135,7 @@ public class SolidMap
 
         cellRects[tileId].AddRange(solids);
     }
-    public void SolidsRemove(int tileId, params Solid[]? solids)
+    public void RemoveSolids(int tileId, params Solid[]? solids)
     {
         if (solids == null || solids.Length == 0 || cellRects.ContainsKey(tileId) == false)
             return;
@@ -154,7 +146,7 @@ public class SolidMap
     }
     public Solid[] SolidsAt((int x, int y) cell)
     {
-        if (tileIndices.ContainsKey(cell) == false || ignoredCells.Contains(cell))
+        if (tileIndices.ContainsKey(cell) == false || IgnoredCells.Contains(cell))
             return Array.Empty<Solid>();
 
         var id = tileIndices[cell];
@@ -173,26 +165,17 @@ public class SolidMap
             cellRects[tileId].ToArray();
     }
 
-    public void SolidsClear()
+    public void ClearSolids()
     {
         cellRects.Clear();
     }
-    public void SolidsClear(int tileId)
+    public void ClearSolids(int tileId)
     {
         if (cellRects.ContainsKey(tileId))
             cellRects.Remove(tileId);
     }
 
-    public void IgnoredCellsAdd(params (int x, int y)[]? cells)
-    {
-        if (cells == null || cells.Length == 0)
-            return;
-
-        foreach (var cell in cells)
-            if (ignoredCells.Contains(cell) == false)
-                ignoredCells.Add(cell);
-    }
-    public void IgnoredCellsAdd(params Solid[]? cellRegions)
+    public void AddIgnoredCellsIn(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -210,20 +193,14 @@ public class SolidMap
                     if (i > Math.Abs(rw * rh))
                         return;
 
-                    IgnoredCellsAdd((x, y));
+                    if (IgnoredCells.Contains((x, y)) == false)
+                        IgnoredCells.Add((x, y));
+
                     i++;
                 }
         }
     }
-    public void IgnoredCellsRemove(params (int x, int y)[]? cells)
-    {
-        if (cells == null || cells.Length == 0)
-            return;
-
-        foreach (var t in cells)
-            ignoredCells.Remove(t);
-    }
-    public void IgnoredCellsRemove(params Solid[]? cellRegions)
+    public void RemoveIgnoredCellsIn(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -241,7 +218,7 @@ public class SolidMap
                     if (i > Math.Abs(rw * rh))
                         return;
 
-                    IgnoredCellsRemove((x, y));
+                    IgnoredCells.Remove((x, y));
                     i++;
                 }
         }
@@ -265,19 +242,15 @@ public class SolidMap
                     if (i > Math.Abs(rw * rh))
                         return result.ToArray();
 
-                    var index = ignoredCells.IndexOf((x, y));
+                    var index = IgnoredCells.IndexOf((x, y));
                     if (index >= 0)
-                        result.Add(ignoredCells[index]);
+                        result.Add(IgnoredCells[index]);
 
                     i++;
                 }
         }
 
         return result.ToArray();
-    }
-    public void IgnoredCellsClear()
-    {
-        ignoredCells.Clear();
     }
 
     public void Update(int[,]? tileIds, bool mergeAdjacentSolids = true)
@@ -302,7 +275,7 @@ public class SolidMap
         var result = new List<Solid>();
         foreach (var kvp in tileIndices)
         {
-            if (ignoredCells.Contains(kvp.Key))
+            if (IgnoredCells.Contains(kvp.Key))
                 continue;
 
             var rects = cellRects[kvp.Value];
@@ -412,58 +385,6 @@ public class SolidMap
         return IsOverlapping((point.x, point.y));
     }
 
-    public Solid[] CalculateLight((float x, float y) point, int radius = 10)
-    {
-        return CalculateSight(point, 0, radius, 360);
-    }
-    public Solid[] CalculateSight((float x, float y) point, float angle, int radius = 10, float fieldOfView = 60)
-    {
-        var (x, y) = point;
-        var result = new ConcurrentStack<Solid>();
-        var diameter = 2 * radius + 1;
-        var radiusSquared = radius * radius;
-        var halfFieldOfView = fieldOfView / 2;
-        var diameterSquared = diameter * diameter;
-        var rect = new Solid(x, y, radius / 2f + 1, radius / 2f + 1);
-        var solidsToCheck = GetNeighborRects(rect);
-
-        angle = AngleWrap(angle);
-
-        Parallel.For(0, diameterSquared, index =>
-        {
-            var i = index / diameter - radius;
-            var j = index % diameter - radius;
-
-            if (i * i + j * j > radiusSquared)
-                return;
-
-            var (endX, endY) = ((int)x + j, (int)y + i);
-            var line = new Line((x, y), (endX + 0.5f, endY + 0.5f));
-            var diff = AngleDifference(angle, line.Angle);
-
-            if (Math.Abs(diff) > halfFieldOfView)
-                return;
-
-            var shouldAdd = true;
-
-            foreach (var solid in solidsToCheck)
-                if (solid.IsOverlapping(line))
-                {
-                    shouldAdd = false;
-
-                    if (solid.IsOverlapping(point))
-                        return;
-                    else
-                        break;
-                }
-
-            if (shouldAdd)
-                result.Push(new(endX, endY, 1, 1));
-        });
-
-        return result.ToArray();
-    }
-
     public SolidMap Duplicate()
     {
         return new(ToBytes());
@@ -489,7 +410,6 @@ public class SolidMap
 #region Backend
     private readonly Dictionary<(int x, int y), int> tileIndices = new();
     private readonly Dictionary<int, List<Solid>> cellRects = new();
-    private readonly List<(int x, int y)> ignoredCells = new();
     private Solid[]? arrayCache;
 
     private List<Solid> GetNeighborRects(Solid rect)
@@ -503,7 +423,7 @@ public class SolidMap
             {
                 var cell = ((int)x + i, (int)y + j);
 
-                if (tileIndices.ContainsKey(cell) == false || ignoredCells.Contains(cell))
+                if (tileIndices.ContainsKey(cell) == false || IgnoredCells.Contains(cell))
                     continue;
 
                 var id = tileIndices[cell];

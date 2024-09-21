@@ -4,7 +4,6 @@ using Engine.Collision;
 using Engine.Tilemap;
 using Engine.Utilities;
 using Engine.Window;
-
 using static Engine.Utilities.Color;
 
 public static class Collision
@@ -19,12 +18,12 @@ public static class Collision
         var (w, h) = tilemaps.Size;
 
         var collisionMap = new SolidMap();
-        collisionMap.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Yellow)); // lake
-        collisionMap.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1f, 1f, Yellow)); // lake
-        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE, new Solid(0, 0, 1, 1)); // house roof
-        collisionMap.SolidsAdd(Tile.GEOMETRY_ANGLE_RIGHT, new Solid(0, 0, 1, 1)); // house wall
-        collisionMap.SolidsAdd(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1)); // tree trunk
-        collisionMap.SolidsAdd(Tile.PATTERN_33, new Solid(0, 0, 1, 1)); // tree top
+        collisionMap.AddSolids(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Yellow)); // lake
+        collisionMap.AddSolids(Tile.ICON_WAVES, new Solid(0, 0, 1f, 1f, Yellow)); // lake
+        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE, new Solid(0, 0, 1, 1)); // house roof
+        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE_RIGHT, new Solid(0, 0, 1, 1)); // house wall
+        collisionMap.AddSolids(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1)); // tree trunk
+        collisionMap.AddSolids(Tile.PATTERN_33, new Solid(0, 0, 1, 1)); // tree top
 
         // icon tiles are 7x7, not 8x8, cut one row & column,
         // hitbox and tile on screen might mismatch since the tile is pixel perfect
@@ -49,9 +48,9 @@ public static class Collision
         var collisionPack = collisionMap.ToArray();
 
         var waves = new SolidMap();
-        waves.SolidsAdd(Tile.ICON_WAVE, new Solid(0, 0, 1, 1, Blue.ToDark()));
-        waves.SolidsAdd(Tile.ICON_WAVES, new Solid(0, 0, 1, 1, Blue.ToDark()));
-        waves.SolidsAdd(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
+        waves.AddSolids(Tile.ICON_WAVE, new Solid(0, 0, 1, 1, Blue.ToDark()));
+        waves.AddSolids(Tile.ICON_WAVES, new Solid(0, 0, 1, 1, Blue.ToDark()));
+        waves.AddSolids(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
         waves.Update(tilemaps[1]);
         var wavesRects = waves.ToBundle();
 

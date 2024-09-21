@@ -5,7 +5,7 @@ using System.IO.Compression;
 /// <summary>
 /// Represents a solid in 2D space defined by its position and size.
 /// </summary>
-public struct Solid
+public struct Solid : IEquatable<Solid>
 {
     public float X { get; set; }
     public float Y { get; set; }
@@ -194,6 +194,38 @@ public struct Solid
     public bool IsContaining((float x, float y, uint color) point)
     {
         return IsOverlapping((point.x, point.y));
+    }
+
+    /// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
+    /// <param name="other">An object to compare with this object.</param>
+    /// <returns>
+    /// <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.</returns>
+    public bool Equals(Solid other)
+    {
+        return X.Equals(other.X) && Y.Equals(other.Y) && Width.Equals(other.Width) && Height.Equals(other.Height) && Color == other.Color;
+    }
+    /// <summary>Indicates whether this instance and a specified object are equal.</summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns>
+    /// <see langword="true" /> if <paramref name="obj" /> and this instance are the same type and represent the same value; otherwise, <see langword="false" />.</returns>
+    public override bool Equals(object? obj)
+    {
+        return obj is Solid other && Equals(other);
+    }
+    /// <summary>Returns the hash code for this instance.</summary>
+    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(X, Y, Width, Height, Color);
+    }
+
+    public static bool operator ==(Solid left, Solid right)
+    {
+        return left.Equals(right);
+    }
+    public static bool operator !=(Solid left, Solid right)
+    {
+        return !(left == right);
     }
 
     public static implicit operator Solid((int x, int y, int width, int height) rectangle)

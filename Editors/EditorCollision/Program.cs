@@ -293,7 +293,7 @@ public static class Program
             {
                 curSolid.Position = (solid.Position.x - 1, solid.Position.y - 1);
                 if (curSolid.Size is { width: > 0, height: > 0 })
-                    solidMap.SolidsAdd(currentTile, curSolid);
+                    solidMap.AddSolids(currentTile, curSolid);
             }
             else if (CanEditLines)
             {
@@ -344,7 +344,7 @@ public static class Program
                 if (rect.IsOverlapping(MousePosPrompt) == false)
                     continue;
 
-                solidMap.SolidsRemove(currentTile, r);
+                solidMap.RemoveSolids(currentTile, r);
             }
         });
     }
