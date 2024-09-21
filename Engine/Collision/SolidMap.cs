@@ -13,7 +13,7 @@ public class SolidMap
     {
         get => cellRects.Count;
     }
-    public int SolidsCount
+    public int Count
     {
         get => arrayCache?.Length ?? 0;
     }
@@ -374,7 +374,7 @@ public class SolidMap
     }
     public bool IsContaining(Line line)
     {
-        return IsContaining(line.A) && IsContaining(line.B);
+        return IsContaining(line.A) && IsContaining(line.B) && line.CrossPoints(this).Length == 0;
     }
     public bool IsContaining((float x, float y) point)
     {

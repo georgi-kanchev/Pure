@@ -11,7 +11,7 @@ public static class EightBallPool
     {
         Window.Title = "Pure - Pool Example";
 
-        var lineCollisions = new LinePack(LINE_COLLISIONS);
+        var tableCollisions = new LinePack(LINE_COLLISIONS);
         var tilemaps = new TilemapPack(TILEMAPS);
         var layer = new Layer((48, 27));
         var balls = new List<Ball>();
@@ -29,6 +29,7 @@ public static class EightBallPool
 
         HandleInput();
 
+        tableCollisions.MergeClosestPoints();
         while (Window.KeepOpen())
         {
             Time.Update();
@@ -45,7 +46,15 @@ public static class EightBallPool
                 DrawBall(ball);
             }
 
+            if (Keyboard.Key.A.IsPressed())
+                ;
+            var mousePos = layer.PixelToPosition(Mouse.CursorPosition);
+            var yes = tableCollisions.IsContaining(mousePos) ? 50 : 0;
+            var area = new Area { Size = tilemaps[0].Size };
+            layer.ApplyColorAdjustments((sbyte)yes, 0, 0, 0, area.ToBundle());
+
             DrawStick();
+            layer.DrawLines(tableCollisions.ToBundle());
             layer.DrawCursor();
             layer.Draw();
         }
@@ -163,9 +172,9 @@ public static class EightBallPool
         }
         void TryWallCollision(Ball ball)
         {
-            for (var i = 0; i < lineCollisions.Count; i++)
+            for (var i = 0; i < tableCollisions.Count; i++)
             {
-                var line = lineCollisions[i];
+                var line = tableCollisions[i];
                 var pos = ball.Position + 0.5f;
                 var closestPoint = (Point)line.ClosestPoint(pos.XY);
                 var distance = closestPoint.Distance(pos);

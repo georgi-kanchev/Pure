@@ -102,6 +102,31 @@ public class LinePack : Pack<Line>
         return result.ToArray();
     }
 
+    public void MergeClosestPoints(float distance = 0.3f)
+    {
+        for (var i = 0; i < data.Count; i++)
+            for (var j = 0; j < data.Count; j++)
+            {
+                if (data[i].A == data[j].A && data[i].B == data[j].B)
+                    continue;
+
+                const float MIN = 0.001f;
+                var (ia, ib) = (data[i].A, data[i].B);
+                var (ja, jb) = (data[j].A, data[j].B);
+
+                var distA = Vector2.Distance(new(ia.x, ia.y), new(ja.x, ja.y));
+                var distB = Vector2.Distance(new(ib.x, ib.y), new(jb.x, jb.y));
+                var distC = Vector2.Distance(new(ia.x, ia.y), new(jb.x, jb.y));
+
+                if (distA > MIN && distA < distance)
+                    data[j] = new(ia, jb, data[j].Color);
+                else if (distB > MIN && distB < distance)
+                    data[j] = new(ja, ib, data[j].Color);
+                else if (distC > MIN && distC < distance)
+                    data[j] = new(ja, ia, data[j].Color);
+            }
+    }
+
     public bool IsOverlapping(LinePack linePack)
     {
         for (var j = 0; j < linePack.Count; j++)
@@ -151,6 +176,57 @@ public class LinePack : Pack<Line>
         return IsOverlapping((point.x, point.y));
     }
 
+    public bool IsContaining(LinePack linePack)
+    {
+        for (var i = 0; i < linePack.Count; i++)
+            if (IsContaining(linePack[i]) == false || IsOverlapping(linePack[i]))
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(SolidMap solidMap)
+    {
+        var pack = solidMap.ToArray();
+        for (var i = 0; i < solidMap.Count; i++)
+            if (IsContaining(pack) == false || solidMap.IsOverlapping(this))
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(SolidPack solidPack)
+    {
+        for (var i = 0; i < solidPack.Count; i++)
+            if (IsContaining(solidPack[i]) == false || IsOverlapping(solidPack[i]))
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(Solid solid)
+    {
+        var (x, y, w, h, _) = solid.ToBundle();
+        return IsContaining((x, y)) &&
+               IsContaining((x + w, y)) &&
+               IsContaining((x + w, y + h)) &&
+               IsContaining((x, y + h)) &&
+               IsOverlapping(solid) == false;
+    }
+    public bool IsContaining(Line line)
+    {
+        return IsContaining(line.A) && IsContaining(line.B) && IsOverlapping(line) == false;
+    }
+    public bool IsContaining((float x, float y) point)
+    {
+        if (data.Count < 3)
+            return false;
+
+        var line = new Line((point.x, point.y), (99999f, 99999f));
+        return line.CrossPoints(this).Length % 2 == 1;
+    }
+    public bool IsContaining((float x, float y, uint color) point)
+    {
+        return IsContaining((point.x, point.y));
+    }
+
     public (float x, float y, uint color)[] CrossPoints(LinePack linePack)
     {
         var result = new List<(float x, float y, uint color)>();
@@ -187,7 +263,10 @@ public class LinePack : Pack<Line>
     {
         var result = new List<(float x, float y, uint color)>();
         for (var i = 0; i < data.Count; i++)
-            result.Add(data[i].CrossPoint(line));
+        {
+            var crossPoint = data[i].CrossPoint(line);
+            result.Add(crossPoint);
+        }
 
         return result.ToArray();
     }

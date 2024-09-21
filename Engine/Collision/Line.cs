@@ -221,7 +221,11 @@ public struct Line
     {
         var result = new List<(float x, float y, uint color)>();
         for (var i = 0; i < linePack.Count; i++)
-            result.Add(CrossPoint(linePack[i]));
+        {
+            var crossPoint = CrossPoint(linePack[i]);
+            if (float.IsNaN(crossPoint.x) == false && float.IsNaN(crossPoint.y) == false)
+                result.Add(crossPoint);
+        }
 
         return result.ToArray();
     }

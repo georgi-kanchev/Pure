@@ -159,6 +159,44 @@ public class SolidPack : Pack<Solid>
         return IsOverlapping((point.x, point.y));
     }
 
+    public bool IsContaining(LinePack linePack)
+    {
+        for (var i = 0; i < linePack.Count; i++)
+            if (IsContaining(linePack[i]) == false)
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(SolidMap solidMap)
+    {
+        return IsContaining(solidMap.ToArray());
+    }
+    public bool IsContaining(SolidPack solidPack)
+    {
+        for (var i = 0; i < solidPack.Count; i++)
+            if (IsContaining(solidPack[i]) == false)
+                return false;
+
+        return true;
+    }
+    public bool IsContaining(Solid solid)
+    {
+        var (x, y, w, h, _) = solid.ToBundle();
+        return IsContaining((x, y)) && IsContaining((x + w, y + h));
+    }
+    public bool IsContaining(Line line)
+    {
+        return IsContaining(line.A) && IsContaining(line.B);
+    }
+    public bool IsContaining((float x, float y) point)
+    {
+        return IsOverlapping(point);
+    }
+    public bool IsContaining((float x, float y, uint color) point)
+    {
+        return IsOverlapping((point.x, point.y));
+    }
+
     public SolidPack Duplicate()
     {
         return new(ToBytes());
