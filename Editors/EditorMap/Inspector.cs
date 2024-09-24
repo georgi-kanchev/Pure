@@ -1,7 +1,9 @@
 namespace Pure.Editors.EditorMap;
 
 using static Keyboard.Key;
+
 using static Tile;
+
 using static Color;
 
 internal class Inspector : Panel
@@ -40,16 +42,16 @@ internal class Inspector : Panel
             {
                 var (mx, my) = tilePalette.mousePos;
                 var index = (my, mx).ToIndex1D(tilePalette.map.Size);
-                editor.MapsUi[FRONT].SetText((X + 1, Y + 29), $"{index} ({mx} {my})");
+                editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 29), $"{index} ({mx} {my})");
             }
 
             void SetLine(params int[] ys)
             {
                 foreach (var curY in ys)
                 {
-                    editor.MapsUi[MIDDLE].SetLine((x, curY), (x + w, curY), null, tileMid);
-                    editor.MapsUi[MIDDLE].SetTile((x, curY), tileLeft);
-                    editor.MapsUi[MIDDLE].SetTile((x + w - 1, curY), tileRight);
+                    editor.MapsUi.Tilemaps[MIDDLE].SetLine((x, curY), (x + w, curY), null, tileMid);
+                    editor.MapsUi.Tilemaps[MIDDLE].SetTile((x, curY), tileLeft);
+                    editor.MapsUi.Tilemaps[MIDDLE].SetTile((x + w - 1, curY), tileRight);
                 }
             }
         });
@@ -61,26 +63,28 @@ internal class Inspector : Panel
         AddTools(tilePalette);
         AddPaletteColor();
 
-        editor.Ui.Add(this, tools, paletteColor, layersVisibility, layers, paletteScrollV, paletteScrollH);
-        editor.Ui.Add(paletteScroll);
-        editor.Ui.Add(autoButtons);
-        editor.Ui.Add(layerButtons);
-        editor.Ui.Add(orientButtons);
+        editor.Ui.Blocks.AddRange(new Block[]
+            { this, tools, paletteColor, layersVisibility, layers, paletteScrollV, paletteScrollH });
+        editor.Ui.Blocks.AddRange(paletteScroll);
+        editor.Ui.Blocks.AddRange(autoButtons);
+        editor.Ui.Blocks.AddRange(layerButtons);
+        editor.Ui.Blocks.AddRange(orientButtons);
     }
 
     public Tilemap? GetSelectedTilemap()
     {
-        var drawLayer = layers.ItemsSelected;
-        var index = drawLayer.Length != 1 ? -1 : layers.IndexOf(drawLayer[0]);
-        return index == -1 ? null : editor.MapsEditor[index];
+        var drawLayer = layers.SelectedItems;
+        var index = drawLayer.Count != 1 ? -1 : layers.Items.IndexOf(drawLayer[0]);
+        return index == -1 ? null : editor.MapsEditor.Tilemaps[index];
     }
 
-#region Backend
+    #region Backend
     private const int MIDDLE = (int)Editor.LayerMapsUi.Middle, FRONT = (int)Editor.LayerMapsUi.Front;
     private readonly Editor editor;
     private sbyte tileTurns;
 
-    [MemberNotNull(nameof(layers)), MemberNotNull(nameof(layersVisibility))]
+    [MemberNotNull(nameof(layers))]
+    [MemberNotNull(nameof(layersVisibility))]
     private Block[] AddLayers()
     {
         var (x, y) = (X + 1, Y + 1);
@@ -92,18 +96,16 @@ internal class Inspector : Panel
                 new(ICON_EYE_CLOSED, Gray);
             editor.MapsUi.SetButtonIcon(item, tile, 1);
         });
-        layersVisibility.Select(0);
+        layersVisibility.Select(layersVisibility.Items[0]);
         layersVisibility.OnItemInteraction(Interaction.Trigger, item =>
-        {
-            editor.MapsEditorVisible[layersVisibility.IndexOf(item)] = item.IsSelected;
-        });
+            editor.MapsEditorVisible[layersVisibility.Items.IndexOf(item)] = item.IsSelected);
 
         layers = new((x + layersVisibility.Width, y), 1) { ItemSize = (13, 1), Size = (13, 5) };
         layers.OnUpdate(() => layersVisibility.Scroll.Slider.Progress = layers?.Scroll.Slider.Progress ?? 0);
         layers.OnDisplay(() => editor.MapsUi.SetList(layers));
         layers.OnItemDisplay(item => editor.MapsUi.SetListItem(layers, item));
-        layers[0].Text = "Layer1";
-        layers.Select(0);
+        layers.Items[0].Text = "Layer1";
+        layers.Select(layers.Items[0]);
 
         var rename = new InputBox((x, y + layers.Height))
         {
@@ -131,8 +133,8 @@ internal class Inspector : Panel
         const string FLUSH = "Flush selected layers?";
         flush.OnInteraction(Interaction.Trigger, () => editor.PromptYesNo(FLUSH, () =>
         {
-            for (var i = 0; i < layers.ItemsSelected.Length; i++)
-                editor.MapsEditor[i].Flush();
+            for (var i = 0; i < layers.SelectedItems.Count; i++)
+                editor.MapsEditor.Tilemaps[i].Flush();
         }));
         flush.OnUpdate(() => ShowIfLayerSelected(flush));
         flush.OnDisplay(() => editor.MapsUi.SetButtonIcon(flush, new(SHAPE_SQUARE_BIG_HOLLOW, Gray), 1));
@@ -153,68 +155,74 @@ internal class Inspector : Panel
         {
             var item = new Button { Text = "NewLayer" };
             var size = editor.MapsEditor.Size;
-            var isEmpty = editor.MapsEditor.Count == 0;
+            var isEmpty = editor.MapsEditor.Tilemaps.Count == 0;
             size = isEmpty ? (50, 50) : size;
 
-            layers.Add(item);
-            layersVisibility.Add(new Button { IsSelected = true });
-            editor.MapsEditor.Add(new Tilemap(size));
+            layers.Items.Add(item);
+            layersVisibility.Items.Add(new Button { IsSelected = true });
+            editor.MapsEditor.Tilemaps.Add(new Tilemap(size));
             RecreateMapVisibilities();
 
             if (isEmpty)
                 editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (50, 50));
         }
+
         void LayersRename(string name)
         {
-            var selected = layers.ItemsSelected;
+            var selected = layers.SelectedItems;
             foreach (var item in selected)
                 item.Text = name;
         }
+
         void LayersRemove()
         {
-            var selected = layers.ItemsSelected;
+            var selected = layers.SelectedItems;
             foreach (var item in selected)
             {
-                var index = layers.IndexOf(item);
-                editor.MapsEditor.Remove(editor.MapsEditor[index]);
-                layers.Remove(item);
-                layersVisibility.Remove(layersVisibility[index]);
+                var index = layers.Items.IndexOf(item);
+                editor.MapsEditor.Tilemaps.Remove(editor.MapsEditor.Tilemaps[index]);
+                layers.Items.Remove(item);
+                layersVisibility.Items.Remove(layersVisibility.Items[index]);
             }
 
             RecreateMapVisibilities();
         }
+
         void LayersMove(int direction)
         {
-            var selected = layers.ItemsSelected;
-            var maps = new Tilemap[selected.Length];
-            var vis = new Button[selected.Length];
-            for (var i = 0; i < selected.Length; i++)
+            var selected = layers.SelectedItems;
+            var maps = new Tilemap[selected.Count];
+            var vis = new Button[selected.Count];
+            for (var i = 0; i < selected.Count; i++)
             {
-                var index = layers.IndexOf(selected[i]);
-                maps[i] = editor.MapsEditor[index];
-                vis[i] = layersVisibility[index];
+                var index = layers.Items.IndexOf(selected[i]);
+                maps[i] = editor.MapsEditor.Tilemaps[index];
+                vis[i] = layersVisibility.Items[index];
             }
 
-            layers.Shift(direction, layers.ItemsSelected);
-            layersVisibility.Shift(direction, vis);
-            editor.MapsEditor.Shift(direction, maps);
+            layers.Items.Shift(direction, layers.SelectedItems.ToArray());
+            layersVisibility.Items.Shift(direction, vis);
+            editor.MapsEditor.Tilemaps.Shift(direction, maps);
             RecreateMapVisibilities();
         }
+
         void ShowIfLayerSelected(Block block)
         {
-            block.IsHidden = layers.ItemsSelected.Length == 0;
+            block.IsHidden = layers.SelectedItems.Count == 0;
             block.IsDisabled = block.IsHidden;
         }
+
         void ShowIfMoreThan1LayerSelected(Block block)
         {
-            block.IsHidden = layers.Count < 2 || layers.ItemsSelected.Length == 0;
+            block.IsHidden = layers.Count < 2 || layers.SelectedItems.Count == 0;
             block.IsDisabled = block.IsHidden;
         }
+
         void RecreateMapVisibilities()
         {
             editor.MapsEditorVisible.Clear();
             for (var i = 0; i < layersVisibility.Count; i++)
-                editor.MapsEditorVisible.Add(layersVisibility[i].IsSelected);
+                editor.MapsEditorVisible.Add(layersVisibility.Items[i].IsSelected);
         }
     }
     [MemberNotNull(nameof(tools))]
@@ -236,7 +244,7 @@ internal class Inspector : Panel
             var (itemX, itemY) = item.Position;
             item.Hotkey = ((int)hotkey[index], false);
             editor.MapsUi.SetButtonIcon(item, new(id, item.IsSelected ? Green : Gray), 1);
-            editor.MapsUi[MIDDLE].SetText((itemX, itemY + 1), $"{hotkey[index]}", Gray.ToDark(0.4f));
+            editor.MapsUi.Tilemaps[MIDDLE].SetText((itemX, itemY + 1), $"{hotkey[index]}", Gray.ToDark(0.4f));
         });
         tools.OnItemInteraction(Interaction.Trigger, item =>
         {
@@ -255,7 +263,7 @@ internal class Inspector : Panel
             editor.Log(logs[tools.IndexOf(item)]);
             tilePalette.start = tilePalette.end;
         });
-        tools.OnDisplay(() => editor.MapsUi[FRONT].SetText((tools.X, tools.Y - 1), "Tool:"));
+        tools.OnDisplay(() => editor.MapsUi.Tilemaps[FRONT].SetText((tools.X, tools.Y - 1), "Tool:"));
     }
     [MemberNotNull(nameof(paletteColor))]
     private void AddPaletteColor()
@@ -267,11 +275,12 @@ internal class Inspector : Panel
 
             var (px, py, pw, ph) = paletteColor.Area;
             var tile = new Tile(FULL, paletteColor.SelectedColor);
-            editor.MapsUi[FRONT].SetArea((px, py + ph, pw, MIDDLE), null, tile);
+            editor.MapsUi.Tilemaps[FRONT].SetArea((px, py + ph, pw, MIDDLE), null, tile);
         });
-        paletteColor.OnSampleDisplay((btn, color) => editor.MapsUi[MIDDLE].SetTile(btn.Position, new(SHADE_OPAQUE, color)));
+        paletteColor.OnSampleDisplay((btn, color) => editor.MapsUi.Tilemaps[MIDDLE].SetTile(btn.Position, new(SHADE_OPAQUE, color)));
     }
-    [MemberNotNull(nameof(paletteScrollV)), MemberNotNull(nameof(paletteScrollH))]
+    [MemberNotNull(nameof(paletteScrollV))]
+    [MemberNotNull(nameof(paletteScrollH))]
     private Button[] AddPaletteScrolls()
     {
         paletteScrollV = new((X + 14, Y + 29)) { Size = (1, 14) };
@@ -290,7 +299,7 @@ internal class Inspector : Panel
         var add = new Button { Size = (8, 1), Text = "Add Rule", Position = (x, y + 1) };
         add.OnInteraction(Interaction.Trigger, () =>
         {
-            var layer = layers.IndexOf(layers.ItemsSelected[0]);
+            var layer = layers.Items.IndexOf(layers.SelectedItems[0]);
             var rule = new List<int>();
             foreach (var btn in auto)
             {
@@ -298,15 +307,15 @@ internal class Inspector : Panel
                 btn.Text = "any";
             }
 
-            editor.MapsEditor[layer].AddAutoTileRule(rule.ToArray(), pickedTile);
+            editor.MapsEditor.Tilemaps[layer].AddAutoTileRule(rule.ToArray(), pickedTile);
         });
         add.OnDisplay(() => editor.MapsUi.SetButton(add, FRONT));
 
         var apply = new Button((x, y + 2)) { Size = (11, 1), Text = "Apply Rules" };
         apply.OnInteraction(Interaction.Trigger, () =>
         {
-            var layer = layers.IndexOf(layers.ItemsSelected[0]);
-            editor.MapsEditor[layer].SetAutoTiles(editor.MapsEditor[layer]);
+            var layer = layers.Items.IndexOf(layers.SelectedItems[0]);
+            editor.MapsEditor.Tilemaps[layer].SetAutoTiles(editor.MapsEditor.Tilemaps[layer]);
         });
 
         var clear = new Button((x + 13, y + 1)) { Size = (1, 1) };
@@ -314,8 +323,8 @@ internal class Inspector : Panel
         {
             editor.PromptYesNo("Clear all auto tile rules?", () =>
             {
-                var layer = layers.IndexOf(layers.ItemsSelected[0]);
-                editor.MapsEditor[layer].ClearAutoTileRules();
+                var layer = layers.Items.IndexOf(layers.SelectedItems[0]);
+                editor.MapsEditor.Tilemaps[layer].ClearAutoTileRules();
             });
         });
 
@@ -345,8 +354,8 @@ internal class Inspector : Panel
                 $"Use pick tool{Environment.NewLine}on a map tile!" :
                 $"Id{pickedTile.Id} Turns{pickedTile.Turns}{Environment.NewLine}" +
                 $"Flip{(pickedTile.IsFlipped ? "+" : "-")} Mirror{(pickedTile.IsMirrored ? "+" : "-")}";
-            editor.MapsUi[FRONT].SetText((x, y), "Auto Tiles:");
-            editor.MapsUi[FRONT].SetText((x, y + 3), pickText, empty ? White : pickedTile.Tint);
+            editor.MapsUi.Tilemaps[FRONT].SetText((x, y), "Auto Tiles:");
+            editor.MapsUi.Tilemaps[FRONT].SetText((x, y + 3), pickText, empty ? White : pickedTile.Tint);
             editor.MapsUi.SetButton(apply, FRONT);
             editor.MapsUi.SetButtonIcon(clear, new(ICON_DELETE, Gray), FRONT);
 
@@ -372,14 +381,14 @@ internal class Inspector : Panel
         var m = new Button((X + 2, Y + 27)) { Size = (1, 1) };
         m.OnDisplay(() =>
         {
-            editor.MapsUi[FRONT].SetText((m.X - 1, m.Y), "M");
+            editor.MapsUi.Tilemaps[FRONT].SetText((m.X - 1, m.Y), "M");
             editor.MapsUi.SetButtonIcon(m, new(ICON_MIRROR, m.IsSelected ? Green : Gray), FRONT);
         });
 
         var f = new Button((X + 5, m.Y)) { Size = (1, 1) };
         f.OnDisplay(() =>
         {
-            editor.MapsUi[FRONT].SetText((f.X - 1, f.Y), "F");
+            editor.MapsUi.Tilemaps[FRONT].SetText((f.X - 1, f.Y), "F");
             editor.MapsUi.SetButtonIcon(f, new(ICON_FLIP, f.IsSelected ? Green : Gray), FRONT);
         });
 
@@ -387,11 +396,11 @@ internal class Inspector : Panel
         turns.OnInteraction(Interaction.Trigger, () => tileTurns++);
         turns.OnDisplay(() =>
         {
-            editor.MapsUi[FRONT].SetTile((turns.X - 1, turns.Y), new(ARROW_HOLLOW, White, tileTurns));
+            editor.MapsUi.Tilemaps[FRONT].SetTile((turns.X - 1, turns.Y), new(ARROW_HOLLOW, White, tileTurns));
             editor.MapsUi.SetButtonIcon(turns, new(ICON_ROTATE, Gray), FRONT);
         });
 
         return new Block[] { m, f, turns };
     }
-#endregion
+    #endregion
 }

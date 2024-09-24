@@ -21,7 +21,7 @@ public static class ButtonsAndCheckboxes
         button.OnDisplay(() =>
         {
             maps.SetButton(button);
-            maps[1].SetText((0, 0), $"The {button.Text} was pressed {counter} times.");
+            maps.Tilemaps[1].SetText((0, 0), $"The {button.Text} was pressed {counter} times.");
         });
 
         // ==============
@@ -38,7 +38,7 @@ public static class ButtonsAndCheckboxes
         buttonDisabled.AlignInside((0.5f, 0.8f));
         buttonDisabled.OnDisplay(() =>
         {
-            maps[0].SetText(buttonDisabled.Position, buttonDisabled.Text,
+            maps.Tilemaps[0].SetText(buttonDisabled.Position, buttonDisabled.Text,
                 Color.Gray.ToDark(0.7f));
         });
 

@@ -2,8 +2,10 @@
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
+
 global using static Pure.Editors.EditorUserInterface.Program;
 global using static Pure.Tools.Tilemapper.TilemapperUI;
+
 global using Pure.Editors.EditorBase;
 
 namespace Pure.Editors.EditorUserInterface;
@@ -51,7 +53,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     static Program()
     {
         editor = new("Pure - User Interface Editor");
@@ -76,8 +78,8 @@ public static class Program
 
         Mouse.Button.Left.OnRelease(() =>
         {
-            for (var i = panels.Count - 1; i >= 0; i--)
-                if (panels[i].IsOverlapping(editor.MousePositionWorld))
+            for (var i = panels.Blocks.Count - 1; i >= 0; i--)
+                if (panels.Blocks[i].IsOverlapping(editor.MousePositionWorld))
                     return;
 
             if (inspector.IsHovered == false && editor.Prompt.IsHidden)
@@ -85,11 +87,7 @@ public static class Program
         });
     }
 
-    internal static void BlockCreate(
-        string typeName,
-        (int x, int y) position,
-        Span type = default,
-        byte[]? bytes = default)
+    internal static void BlockCreate(string typeName, (int x, int y) position, Span type = default, byte[]? bytes = default)
     {
         var block = default(Block);
         var panel = new Panel { IsRestricted = false, SizeMinimum = (3, 3) };
@@ -136,7 +134,7 @@ public static class Program
                 block.OnDisplay(() => editor.MapsEditor.SetSlider(palette.Brightness));
 
                 palette.OnSampleDisplay((btn, c) =>
-                    editor.MapsEditor[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
+                    editor.MapsEditor.Tilemaps[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
                 break;
             }
             case nameof(Slider):
@@ -196,31 +194,31 @@ public static class Program
 
         panel.OnInteraction(Interaction.Press, () => OnPanelPress(panel));
         panel.OnDisplay(() => OnPanelDisplay(panel));
-        panel.OnResize(delta => OnPanelResize(panel, delta));
-        panel.OnDrag(delta => OnDragPanel(panel, delta));
+        panel.OnResize(_ => OnPanelResize(panel));
+        panel.OnDrag(_ => OnDragPanel(panel));
 
         panel.Size = (block.Size.width + 2, block.Size.height + 2);
         panel.Text = block.Text;
         panel.Position = (block.Position.x - 1, block.Position.y - 1);
 
-        ui.Add(block);
-        panels.Add(panel);
+        ui.Blocks.Add(block);
+        panels.Blocks.Add(panel);
 
         editor.Log("Added " + block.Text);
         Input.Focused = null;
     }
     internal static void BlockRemove(Block block)
     {
-        var panel = panels[ui.IndexOf(block)];
-        panels.Remove(panel);
-        ui.Remove(block);
+        var panel = panels.Blocks[ui.IndexOf(block)];
+        panels.Blocks.Remove(panel);
+        ui.Blocks.Remove(block);
 
         if (selected == block)
             selected = null;
     }
     internal static void BlockToTop(Block block)
     {
-        var panel = panels[ui.IndexOf(block)];
+        var panel = panels.Blocks[ui.IndexOf(block)];
         panels.BringToFront(panel);
         ui.BringToFront(block);
         selected = block;
@@ -240,13 +238,13 @@ public static class Program
         if (editor.Prompt.IsHidden == false || notOverEditPanel == false || isHoveringMenu)
             return;
 
-        selected = ui[panels.IndexOf(panel)];
+        selected = ui.Blocks[panels.IndexOf(panel)];
         panel.IsHidden = false;
     }
     private static void OnPanelDisplay(Panel panel)
     {
         var index = panels.IndexOf(panel);
-        var e = ui[index];
+        var e = ui.Blocks[index];
 
         e.Position = (panel.Position.x + 1, panel.Position.y + 1);
         e.Size = (panel.Size.width - 2, panel.Size.height - 2);
@@ -260,9 +258,9 @@ public static class Program
         if (selected != e)
             return;
 
-        var back = editor.MapsEditor[(int)Editor.LayerMapsEditor.Back];
+        var back = editor.MapsEditor.Tilemaps[(int)Editor.LayerMapsEditor.Back];
         back.SetBox(panel.Area, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
-        back.SetArea((textPos.Item1, textPos.y, panel.Text.Length, 1), default);
+        back.SetArea((textPos.Item1, textPos.y, panel.Text.Length, 1));
         back.SetText(textPos, panel.Text, Color.Cyan);
 
         var (x, y) = (panel.Position.x, panel.Position.y - 1);
@@ -279,13 +277,13 @@ public static class Program
         var pos = (x + curX, y);
         back.SetTile(pos, new(Tile.ICON_EYE_OPENED, Color.Red));
     }
-    private static void OnPanelResize(Panel panel, (int width, int height) delta)
+    private static void OnPanelResize(Panel panel)
     {
         editor.Log($"{panel.Text} {panel.Size.width - 2}x{panel.Size.height - 2}");
     }
-    private static void OnDragPanel(Panel panel, (int width, int height) delta)
+    private static void OnDragPanel(Panel panel)
     {
         editor.Log($"{panel.Text} {panel.Position.x + 1}, {panel.Position.y + 1}");
     }
-#endregion
+    #endregion
 }

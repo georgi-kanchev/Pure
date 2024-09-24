@@ -24,7 +24,7 @@ internal class MenuAdd : Menu
         {
             IsHidden = true;
 
-            var index = IndexOf(item);
+            var index = Items.IndexOf(item);
             if (index == 10)
             {
                 menus[MenuType.AddList].Show(Position);

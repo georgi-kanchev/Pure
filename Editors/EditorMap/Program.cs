@@ -1,10 +1,13 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
+
 global using Pure.Editors.EditorBase;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
+
 global using static Pure.Tools.Tilemapper.TilemapperUI;
+
 global using System.Text;
 using System.IO.Compression;
 
@@ -23,7 +26,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private static readonly Editor editor;
     private static readonly Inspector inspector;
     private static readonly TilePalette tilePalette;
@@ -35,8 +38,8 @@ public static class Program
         var (mw, mh) = (50, 50);
 
         editor = new("Pure - Map Editor");
-        editor.MapsEditor.Clear();
-        editor.MapsEditor.Add(new Tilemap((mw, mh)));
+        editor.MapsEditor.Tilemaps.Clear();
+        editor.MapsEditor.Tilemaps.Add(new Tilemap((mw, mh)));
         editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
         editor.MapsEditorVisible.Clear();
         editor.MapsEditorVisible.Add(true);
@@ -66,7 +69,7 @@ public static class Program
         {
             menu.IsHidden = true;
             menu.IsDisabled = true;
-            var index = menu.IndexOf(btn);
+            var index = menu.Items.IndexOf(btn);
 
             if (index == 1) // load tileset
                 editor.PromptTileset(
@@ -101,13 +104,13 @@ public static class Program
 
         void InitializeLayers(string[] layers)
         {
-            inspector.layers.Clear();
-            inspector.layersVisibility.Clear();
+            inspector.layers.Items.Clear();
+            inspector.layersVisibility.Items.Clear();
             editor.MapsEditorVisible.Clear();
             foreach (var layer in layers)
             {
-                inspector.layers.Add(new Button { Text = layer });
-                inspector.layersVisibility.Add(new Button());
+                inspector.layers.Items.Add(new Button { Text = layer });
+                inspector.layersVisibility.Items.Add(new Button());
                 editor.MapsEditorVisible.Add(true);
             }
         }
@@ -127,7 +130,7 @@ public static class Program
             // should be ignored by the engine but not by the editor
             PutInt(bytes, layers.Count);
             for (var i = 0; i < layers.Count; i++)
-                PutString(bytes, layers[i].Text);
+                PutString(bytes, layers.Items[i].Text);
 
             return Compress(bytes.ToArray());
         }
@@ -158,9 +161,7 @@ public static class Program
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -169,11 +170,9 @@ public static class Program
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
-#endregion
+    #endregion
 }

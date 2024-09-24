@@ -216,8 +216,8 @@ public class Editor
 
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-            for (var i = 0; i < MapsUi.Count; i++)
-                LayerUi.DrawTilemap(MapsUi[i].ToBundle());
+            foreach (var map in MapsUi.Tilemaps)
+                LayerUi.DrawTilemap(map.ToBundle());
 
             LayerUi.DrawCursor();
 
@@ -392,8 +392,8 @@ public class Editor
                     maps = LoadMap(bytes, ref result);
                 }
 
-                MapsEditor.Clear();
-                MapsEditor.Add(maps);
+                MapsEditor.Tilemaps.Clear();
+                MapsEditor.Tilemaps.AddRange(maps.Tilemaps);
 
                 onLoad.Invoke(result);
             }
@@ -410,8 +410,8 @@ public class Editor
             var bytes = Convert.FromBase64String(PromptInput.Value);
             var result = Array.Empty<string>();
             var maps = LoadMap(bytes, ref result);
-            MapsEditor.Clear();
-            MapsEditor.Add(maps);
+            MapsEditor.Tilemaps.Clear();
+            MapsEditor.Tilemaps.AddRange(maps.Tilemaps);
 
             onLoad.Invoke(result);
         });
@@ -453,7 +453,7 @@ public class Editor
         });
         btnViewSize.OnDisplay(() => MapsUi.SetButton(btnViewSize));
 
-        Ui.Add(btnMapSize, btnViewSize);
+        Ui.Blocks.AddRange(new[] { btnMapSize, btnViewSize });
     }
     private void ResizePressMap(int i)
     {
@@ -468,8 +468,8 @@ public class Editor
 
         ChangeMapSize((w, h));
 
-        for (var j = 0; j < packCopy.Count; j++)
-            MapsEditor[j].SetGroup((0, 0), packCopy[j]);
+        for (var j = 0; j < packCopy.Tilemaps.Count; j++)
+            MapsEditor.Tilemaps[j].SetGroup((0, 0), packCopy.Tilemaps[j]);
         MapsEditor.View = new(MapsEditor.View.Position, (vw, vh));
 
         SetGrid();
@@ -506,10 +506,10 @@ public class Editor
             var color = btn.GetInteractionColor(Color.Gray.ToBright());
             var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (sbyte)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
-            MapsUi[(int)LayerMapsUi.Front].SetTile(btn.Position, rotations == 4 ? center : arrow);
+            MapsUi.Tilemaps[(int)LayerMapsUi.Front].SetTile(btn.Position, rotations == 4 ? center : arrow);
         });
 
-        Ui.Add(btn);
+        Ui.Blocks.Add(btn);
 
         void Trigger()
         {
@@ -547,17 +547,17 @@ public class Editor
         MapPanel.Size = (22, 3);
         MapPanel.Update();
 
-        MapsUi[(int)LayerMapsUi.Back].SetBox(MapPanel.Area,
+        MapsUi.Tilemaps[(int)LayerMapsUi.Back].SetBox(MapPanel.Area,
             new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()),
             Tile.BOX_CORNER_ROUND,
             Tile.SHADE_OPAQUE,
             Color.Gray.ToDark());
 
-        MapsUi[FRONT].SetText((0, 0), $"FPS:{fps}");
-        MapsUi[FRONT].SetText((11, bottomY - 2), $"{mw} x {mh}");
-        MapsUi[FRONT].SetText((12, bottomY), $"{vw} x {vh}");
+        MapsUi.Tilemaps[FRONT].SetText((0, 0), $"FPS:{fps}");
+        MapsUi.Tilemaps[FRONT].SetText((11, bottomY - 2), $"{mw} x {mh}");
+        MapsUi.Tilemaps[FRONT].SetText((12, bottomY), $"{vw} x {vh}");
 
-        MapsUi[FRONT].SetText((x, bottomY),
+        MapsUi.Tilemaps[FRONT].SetText((x, bottomY),
             $"Cursor {(int)mx}, {(int)my}".Constrain((TEXT_WIDTH, 1), alignment: Alignment.Center));
 
         if (infoTextTimer <= 0)
@@ -567,7 +567,7 @@ public class Editor
         }
 
         var text = infoText.Constrain((TEXT_WIDTH, TEXT_HEIGHT), alignment: Alignment.Top, scrollProgress: 1f);
-        MapsUi[FRONT].SetText((x, 0), text);
+        MapsUi.Tilemaps[FRONT].SetText((x, 0), text);
     }
 
     private void TryViewInteract()

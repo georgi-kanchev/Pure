@@ -15,7 +15,7 @@ internal class MenuAddList : Menu
         OnItemInteraction(Interaction.Trigger, item =>
         {
             IsHidden = true;
-            BlockCreate(nameof(List), MenuMain.clickPositionWorld, (Span)(IndexOf(item) - 1));
+            BlockCreate(nameof(List), MenuMain.clickPositionWorld, (Span)(Items.IndexOf(item) - 1));
         });
     }
 }

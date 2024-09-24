@@ -2,6 +2,7 @@ namespace Pure.Engine.UserInterface;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+
 using static Environment;
 
 public class FileViewer : Block
@@ -61,8 +62,8 @@ public class FileViewer : Block
             var result = new List<string>();
 
             for (var i = 0; i < FilesAndFolders.Count; i++)
-                if (FilesAndFolders[i].IsSelected)
-                    result.Add(Path.Join(CurrentDirectory, FilesAndFolders[i].Text));
+                if (FilesAndFolders.Items[i].IsSelected)
+                    result.Add(Path.Join(CurrentDirectory, FilesAndFolders.Items[i].Text));
 
             return result.ToArray();
         }
@@ -108,7 +109,7 @@ public class FileViewer : Block
 
     public bool IsFolder(Button item)
     {
-        return FilesAndFolders.IndexOf(item) < CountFolders;
+        return FilesAndFolders.Items.IndexOf(item) < CountFolders;
     }
     public static string GetPath(Directory directory)
     {
@@ -143,7 +144,7 @@ public class FileViewer : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private string dir = "default";
     private FileSystemWatcher watcher;
     private static string DefaultPath
@@ -204,7 +205,7 @@ public class FileViewer : Block
 
         for (var i = 0; i < drives.Count; i++)
         {
-            var drive = HardDrives[i];
+            var drive = HardDrives.Items[i];
             drive.OnInteraction(Interaction.Scroll, ApplyScroll);
             drive.OnInteraction(Interaction.Select, () => CurrentDirectory = drive.Text);
             drive.text = drives[i];
@@ -230,7 +231,7 @@ public class FileViewer : Block
             files = System.IO.Directory.GetFiles(path);
         }
 
-        FilesAndFolders.InternalClear();
+        FilesAndFolders.Items.Clear();
 
         CountFolders = 0;
         CountFiles = 0;
@@ -260,7 +261,7 @@ public class FileViewer : Block
             Text = $"{Path.GetFileName(path)}",
             isTextReadonly = true
         };
-        FilesAndFolders.InternalAdd(item);
+        FilesAndFolders.Items.Add(item);
 
         item.OnInteraction(Interaction.DoubleTrigger, () =>
         {
@@ -283,11 +284,11 @@ public class FileViewer : Block
     {
         LimitSizeMin((3, 3 + HardDrives.Count));
 
-        if (FilesAndFolders is not { IsSingleSelecting: true, ItemsSelected.Length: 1 })
+        if (FilesAndFolders is not { IsSingleSelecting: true, SelectedItems.Count: 1 })
             return;
 
-        var selected = FilesAndFolders.ItemsSelected;
-        var index = FilesAndFolders.IndexOf(selected[0]);
+        var selected = FilesAndFolders.SelectedItems;
+        var index = FilesAndFolders.Items.IndexOf(selected[0]);
         if (IsSelectingFolders ^ (index < CountFolders))
             FilesAndFolders.Deselect();
     }
@@ -362,5 +363,5 @@ public class FileViewer : Block
 
         return result;
     }
-#endregion
+    #endregion
 }

@@ -13,6 +13,7 @@ public enum Span
 /// </summary>
 public class List : Block
 {
+    public List<Button> Items { get; } = new();
     public Scroll Scroll { get; private set; }
 
     /// <summary>
@@ -20,7 +21,7 @@ public class List : Block
     /// </summary>
     public int Count
     {
-        get => data.Count;
+        get => Items.Count;
     }
     /// <summary>
     /// Gets or sets a value indicating whether the list allows single selection or not.
@@ -56,7 +57,7 @@ public class List : Block
 
             isReadOnly = value;
 
-            foreach (var item in data)
+            foreach (var item in Items)
                 item.isTextReadonly = value;
         }
     }
@@ -66,16 +67,7 @@ public class List : Block
                IsCollapsed == false;
     }
 
-    public Button[] ItemsSelected
-    {
-        get
-        {
-            var result = new Button[indexesSelected.Count];
-            for (var i = 0; i < indexesSelected.Count; i++)
-                result[i] = this[indexesSelected[i]];
-            return result;
-        }
-    }
+    public List<Button> SelectedItems { get; } = new();
 
     /// <summary>
     /// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
@@ -97,19 +89,13 @@ public class List : Block
         set => itemGap = Math.Max(value, 0);
     }
 
-    public Button this[int index]
-    {
-        get => data[index];
-    }
-
     /// <summary>
     /// Initializes a new list instance with the specified position, size and number of items.
     /// </summary>
     /// <param name="position">The position of the top-left corner of the list.</param>
     /// <param name="itemCount">The initial number of buttons in the list.</param>
     /// <param name="span">The type of the list.</param>
-    public List((int x, int y) position = default, int itemCount = 10, Span span = Span.Vertical)
-        : base(position)
+    public List((int x, int y) position = default, int itemCount = 10, Span span = Span.Vertical) : base(position)
     {
         Init();
         Size = (12, 8);
@@ -117,8 +103,8 @@ public class List : Block
         originalHeight = Size.height;
         Span = span;
 
-        var items = InternalCreateAmount(itemCount);
-        Add(items);
+        var items = CreateAmount(itemCount);
+        Items.AddRange(items);
 
         isInitialized = true;
 
@@ -127,6 +113,9 @@ public class List : Block
 
         IsSingleSelecting = true;
         IsCollapsed = true;
+
+        if (Items.Count > 0)
+            Select(Items[0]);
     }
     public List(byte[] bytes) : base(bytes)
     {
@@ -140,13 +129,13 @@ public class List : Block
         var scrollProgress = GrabFloat(b);
         var scrollIndex = GrabInt(b);
 
-        var items = InternalCreateAmount(GrabInt(b));
-        InternalAdd(items);
+        var items = CreateAmount(GrabInt(b));
+        Items.AddRange(items);
 
         for (var i = 0; i < Count; i++)
         {
-            Select(i, GrabBool(b));
-            this[i].text = GrabString(b);
+            Select(Items[i], GrabBool(b));
+            Items[i].text = GrabString(b);
         }
 
         Scroll.Slider.progress = scrollProgress;
@@ -181,159 +170,33 @@ public class List : Block
 
         for (var i = 0; i < Count; i++)
         {
-            PutBool(result, this[i].IsSelected);
-            PutBool(result, this[i].IsDisabled);
-            PutString(result, this[i].Text);
+            PutBool(result, Items[i].IsSelected);
+            PutBool(result, Items[i].IsDisabled);
+            PutString(result, Items[i].Text);
         }
 
         return Compress(result.ToArray());
     }
     public Button[] ToArray()
     {
-        return data.ToArray();
-    }
-
-    public void Shift(int offset, params Button[]? items)
-    {
-        // this implementation is from Utility.Extensions with some adjustments
-
-        if (items == null || items.Length == 0 || items.Length == data.Count || offset == 0)
-            return;
-
-        var results = new List<int>();
-        var indexes = new List<int>();
-        var itemList = items.ToList();
-        var prevTargetIndex = -1;
-        var max = data.Count - 1;
-
-        foreach (var item in items)
-            indexes.Add(data.IndexOf(item));
-
-        indexes.Sort();
-
-        if (offset > 0)
-            indexes.Reverse();
-
-        foreach (var currIndex in indexes)
-        {
-            var item = data[currIndex];
-
-            if (item == null || data.Contains(item) == false)
-                continue;
-
-            var index = data.IndexOf(item);
-            var targetIndex = Math.Clamp(index + offset, 0, max);
-
-            // prevent items order change
-            if (index > 0 &&
-                index < max &&
-                itemList.Contains(data[index + (offset > 0 ? 1 : -1)]))
-                continue;
-
-            // prevent overshooting of multiple items which would change the order
-            var isOvershooting = (targetIndex == 0 && prevTargetIndex == 0) ||
-                                 (targetIndex == max && prevTargetIndex == max) ||
-                                 results.Contains(targetIndex);
-            var i = indexes.IndexOf(data.IndexOf(item));
-            var result = isOvershooting ? offset < 0 ? i : max - i : targetIndex;
-
-            data.Remove(item);
-            data.Insert(result, item);
-            prevTargetIndex = targetIndex;
-            results.Add(result);
-
-            var prevSel = indexesSelected.IndexOf(index);
-            indexesSelected.Remove(index);
-
-            // use insert and prev index to keep order
-            if (prevSel != -1)
-                indexesSelected.Insert(prevSel, result);
-        }
-    }
-    public void Add(params Button[] items)
-    {
-        Insert(data.Count, items);
-    }
-    public void Insert(int index, params Button[]? items)
-    {
-        if (items == null || items.Length == 0 || hasParent)
-            return;
-
-        InternalInsert(index, items);
-    }
-    public void Remove(params Button[]? items)
-    {
-        if (items == null || items.Length == 0 || hasParent)
-            return;
-
-        InternalRemove(items);
-    }
-    /// <summary>
-    /// Clears all items from the list and resets the selection.
-    /// </summary>
-    public void Clear()
-    {
-        if (hasParent == false)
-            InternalClear();
-    }
-
-    /// <summary>
-    /// Determines whether the list contains the specified item.
-    /// </summary>
-    /// <param name="item">The item to locate in the list.</param>
-    /// <returns>True if the item is found in the list; otherwise, false.</returns>
-    public bool IsContaining(Button item)
-    {
-        return data.Contains(item);
-    }
-    /// <summary>
-    /// Searches for the specified item and returns the zero-based index of the first occurrence
-    /// within the entire list.
-    /// </summary>
-    /// <param name="item">The item to locate in the list.</param>
-    /// <returns>The zero-based index of the first occurrence of the item within the entire list,
-    /// if found; otherwise, -1.</returns>
-    public int IndexOf(Button item)
-    {
-        return data.IndexOf(item);
+        return Items.ToArray();
     }
 
     public void Deselect()
     {
-        for (var i = 0; i < data.Count; i++)
-            Select(i, false);
+        foreach (var btn in Items)
+            Select(btn, false);
     }
-    public void Select(int index, bool selected = true)
+    public void Select(Button? item, bool selected = true)
     {
-        if (HasIndex(index) == false)
+        if (item == null)
             return;
 
-        if (IsSingleSelecting && singleSelectedIndex != index && selected)
-        {
-            foreach (var item in data)
-                item.isSelected = false;
+        if (IsSingleSelecting)
+            foreach (var btn in Items)
+                btn.isSelected = false;
 
-            this[index].isSelected = selected;
-            singleSelectedIndex = selected ? index : singleSelectedIndex;
-
-            indexesSelected.Clear();
-            if (selected)
-                indexesSelected.Add(index);
-
-            return;
-        }
-
-        var wasSel = this[index].isSelected;
-        this[index].isSelected = selected;
-
-        if (selected && wasSel == false && indexesSelected.Contains(index) == false)
-            indexesSelected.Add(index);
-        else if (selected == false && wasSel && indexesSelected.Contains(index))
-            indexesSelected.Remove(index);
-    }
-    public void Select(Button item, bool selected = true)
-    {
-        Select(IndexOf(item), selected);
+        item.isSelected = selected;
     }
 
     protected override void OnInput()
@@ -351,7 +214,7 @@ public class List : Block
         if (itemInteractions.TryAdd(interaction, method) == false)
             itemInteractions[interaction] += method;
 
-        foreach (var item in data)
+        foreach (var item in Items)
             item.OnInteraction(interaction, () => method.Invoke(item));
     }
 
@@ -369,14 +232,12 @@ public class List : Block
         return new(bytes);
     }
 
-#region Backend
-    private int singleSelectedIndex = -1, originalHeight;
-    private readonly List<Button> data = new();
+    #region Backend
+    private int originalHeight;
     private bool isSingleSelecting, isCollapsed;
     private readonly bool isInitialized;
     private int itemGap;
     internal (int width, int height) itemSize = (6, 1);
-    private readonly List<int> indexesSelected = new();
     internal bool isReadOnly;
 
     private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
@@ -387,8 +248,8 @@ public class List : Block
         get
         {
             var (maxW, maxH) = ItemSize;
-            var totalW = data.Count * (maxW + ItemGap) - ItemGap;
-            var totalH = data.Count * (maxH + ItemGap) - ItemGap;
+            var totalW = Items.Count * (maxW + ItemGap) - ItemGap;
+            var totalH = Items.Count * (maxH + ItemGap) - ItemGap;
 
             return (totalW > Size.width, totalH > Size.height);
         }
@@ -417,36 +278,7 @@ public class List : Block
             item.OnInteraction(kvp.Key, () => kvp.Value.Invoke(item));
     }
 
-    internal void InternalAdd(params Button[] items)
-    {
-        InternalInsert(data.Count, items);
-    }
-    internal void InternalInsert(int index, params Button[] items)
-    {
-        foreach (var item in items)
-        {
-            InitItem(item);
-            data.Insert(index, item);
-            AdjustIndexesAbove(index, 1);
-        }
-    }
-    internal void InternalRemove(params Button[] items)
-    {
-        foreach (var item in items)
-        {
-            var index = IndexOf(item);
-            indexesSelected.Remove(index);
-
-            AdjustIndexesAbove(index, -1);
-            data.Remove(item);
-        }
-    }
-    internal void InternalClear()
-    {
-        indexesSelected.Clear();
-        data.Clear();
-    }
-    private static Button[] InternalCreateAmount(int count)
+    private static Button[] CreateAmount(int count)
     {
         var result = new Button[count];
         for (var i = 0; i < count; i++)
@@ -457,6 +289,16 @@ public class List : Block
 
     internal void OnUpdate()
     {
+        SelectedItems.Clear();
+        foreach (var btn in Items)
+        {
+            if (btn.hasParent == false)
+                InitItem(btn);
+
+            if (btn.isSelected)
+                SelectedItems.Add(btn);
+        }
+
         if (Input.IsButtonJustPressed() && IsHovered == false)
             IsCollapsed = true;
 
@@ -468,7 +310,7 @@ public class List : Block
         {
             // it's possible to have no scroll, single item with width/height of 1
             // that should affect the minimum size, it is possible to be (1, 1)
-            var singleItem = data.Count == 1;
+            var singleItem = Items.Count == 1;
             var (w, h) = ItemSize;
             LimitSizeMin((
                 singleItem && w == 1 ? 1 : 2,
@@ -476,8 +318,8 @@ public class List : Block
         }
 
         ItemSize = itemSize; // reclamp value
-        var totalWidth = data.Count * (ItemSize.width + ItemGap);
-        var totalHeight = data.Count * (ItemSize.height + ItemGap);
+        var totalWidth = Items.Count * (ItemSize.width + ItemGap);
+        var totalHeight = Items.Count * (ItemSize.height + ItemGap);
         var totalSize = Span == Span.Horizontal ? totalWidth : totalHeight;
         Scroll.step = 1f / totalSize;
         Scroll.isVertical = Span != Span.Horizontal;
@@ -501,9 +343,9 @@ public class List : Block
         Scroll.position = (x + w - 1, y);
         Scroll.size = (1, h);
 
-        if (IsCollapsed && isInitialized && singleSelectedIndex >= 0)
+        if (IsCollapsed && isInitialized && SelectedItems.Count > 0)
         {
-            var selectedItem = this[singleSelectedIndex];
+            var selectedItem = SelectedItems[0];
             selectedItem.position = Position;
             selectedItem.mask = mask;
 
@@ -525,15 +367,15 @@ public class List : Block
         if (IsScrollAvailable)
             Scroll.Update();
 
-        for (var i = 0; i < data.Count; i++)
+        for (var i = 0; i < Items.Count; i++)
         {
-            var item = data[i];
+            var item = Items[i];
 
             item.mask = mask;
 
             if (Span == Span.Horizontal)
             {
-                var totalWidth = data.Count * (ItemSize.width + ItemGap);
+                var totalWidth = Items.Count * (ItemSize.width + ItemGap);
                 var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalWidth - w - ItemGap);
                 var offsetX = (int)MathF.Round(p);
                 offsetX = Math.Max(offsetX, 0);
@@ -541,7 +383,7 @@ public class List : Block
             }
             else
             {
-                var totalHeight = data.Count * (ItemSize.height + ItemGap);
+                var totalHeight = Items.Count * (ItemSize.height + ItemGap);
                 var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalHeight - h - ItemGap);
                 var offsetY = (int)MathF.Round(p);
                 offsetY = Math.Max(offsetY, 0);
@@ -565,12 +407,12 @@ public class List : Block
     }
     internal override void OnChildrenDisplay()
     {
-        if (isInitialized == false || data.Count == 0)
+        if (isInitialized == false || Items.Count == 0)
             return;
 
-        if (IsCollapsed && isInitialized && singleSelectedIndex >= 0)
+        if (IsCollapsed && isInitialized && SelectedItems.Count > 0)
         {
-            var selectedItem = this[singleSelectedIndex];
+            var selectedItem = SelectedItems[0];
 
             if (selectedItem.IsHidden)
                 return;
@@ -579,7 +421,7 @@ public class List : Block
             return;
         }
 
-        foreach (var item in data)
+        foreach (var item in Items)
             if (IsOverlapping(item) && item.IsHidden == false)
                 itemDisplays?.Invoke(item);
     }
@@ -588,25 +430,12 @@ public class List : Block
     {
         if (IsSingleSelecting)
             Select(item);
-        else
-        {
-            var index = IndexOf(item);
-            if (item.IsSelected && indexesSelected.Contains(index) == false)
-                indexesSelected.Add(index);
-            else if (item.IsSelected == false)
-                indexesSelected.Remove(index);
-        }
 
         if (Span != Span.Dropdown)
             return;
 
         IsCollapsed = IsCollapsed == false;
         Select(item);
-    }
-
-    private bool HasIndex(int index)
-    {
-        return index >= 0 && index < data.Count;
     }
     private void TryTrimItem(Block item)
     {
@@ -645,17 +474,10 @@ public class List : Block
         item.size = (newWidth, newHeight);
     }
 
-    private void AdjustIndexesAbove(int index, int offset)
-    {
-        for (var i = 0; i < indexesSelected.Count; i++)
-            if (index <= indexesSelected[i])
-                indexesSelected[i] += offset;
-    }
-
     private static float Map(float number, float a1, float a2, float b1, float b2)
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-#endregion
+    #endregion
 }

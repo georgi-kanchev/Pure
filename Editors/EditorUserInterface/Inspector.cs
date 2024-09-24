@@ -110,7 +110,7 @@ internal class Inspector : Panel
         });
     }
 
-#region Backend
+    #region Backend
     private class EditButton : Button
     {
         public EditButton((int x, int y) position) : base(position)
@@ -121,7 +121,7 @@ internal class Inspector : Panel
                     return;
 
                 var prompt = editor.Prompt;
-                var panel = panels[ui.IndexOf(selected)];
+                var panel = panels.Blocks[ui.IndexOf(selected)];
                 var (uw, uh) = editor.MapsUi.View.Size;
                 var (ew, eh) = editor.MapsEditor.View.Size;
 
@@ -176,9 +176,9 @@ internal class Inspector : Panel
                         (InputBox)inspector.blocks[typeof(List)][3];
                     var list = isViewer ? ((FileViewer)selected).FilesAndFolders : (List)selected;
                     var index = inspector.itemSelections.IndexOf(this);
-                    var item = list[index + items.ScrollIndices.y];
+                    var item = list.Items[index + items.ScrollIndices.y];
 
-                    if (list.IsSingleSelecting && list.IndexOf(list.ItemsSelected[0]) == index)
+                    if (list.IsSingleSelecting && list.Items.IndexOf(list.SelectedItems[0]) == index)
                         return;
 
                     list.Select(item, IsSelected);
@@ -221,7 +221,7 @@ internal class Inspector : Panel
         var textPos = (Position.x + offset, Position.y);
         const int CORNER = Tile.BOX_HOLLOW_CORNER;
         const int STRAIGHT = Tile.BOX_HOLLOW_STRAIGHT;
-        var front = editor.MapsUi[(int)Editor.LayerMapsUi.Front];
+        var front = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Front];
         var color = Color.Gray.ToDark(0.66f);
         var (bottomX, bottomY) = (Position.x + 1, Position.y + Size.height - 2);
         var (topX, topY) = (Position.x + 1, Position.y + 1);
@@ -230,7 +230,7 @@ internal class Inspector : Panel
         SetClear(Editor.LayerMapsUi.Middle, this);
         SetClear(Editor.LayerMapsUi.Front, this);
 
-        SetBackground(editor.MapsUi[(int)Editor.LayerMapsUi.Back], this, color);
+        SetBackground(editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Back], this, color);
 
         front.SetBox(Area, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
         front.SetText(textPos, Text, Color.Yellow);
@@ -293,7 +293,7 @@ internal class Inspector : Panel
         if (prevSelected == null)
             return;
 
-        var panel = panels[ui.IndexOf(selected)];
+        var panel = panels.Blocks[ui.IndexOf(selected)];
         var disabled = (EditButton)blocks[typeof(Block)][0];
         var hidden = (EditButton)blocks[typeof(Block)][1];
         var text = (InputBox)blocks[typeof(Block)][2];
@@ -386,19 +386,19 @@ internal class Inspector : Panel
 
             var prev = new List<bool>();
             for (var j = 0; j < l.Count; j++)
-                prev.Add(l[j].IsSelected);
+                prev.Add(l.Items[j].IsSelected);
 
-            l.Clear();
+            l.Items.Clear();
             var split = items.Value.Split(Environment.NewLine);
             foreach (var t in split)
-                l.Add(new Button { Text = t });
+                l.Items.Add(new Button { Text = t });
 
             for (var j = 0; j < l.Count; j++)
             {
                 if (j >= prev.Count)
                     break;
 
-                l.Select(l[j], prev[j]);
+                l.Select(l.Items[j], prev[j]);
             }
         }
         else if (prevSelected is FileViewer v)
@@ -541,7 +541,7 @@ internal class Inspector : Panel
 
             var value = string.Empty;
             for (var j = 0; j < l.Count; j++)
-                value += $"{(j > 0 ? Environment.NewLine : string.Empty)}{l[j].Text}";
+                value += $"{(j > 0 ? Environment.NewLine : string.Empty)}{l.Items[j].Text}";
 
             items.Value = value;
             items.SelectionIndices = (0, 0);
@@ -552,7 +552,7 @@ internal class Inspector : Panel
 
     private void UpdateButton(Button btn, (int x, int y) position)
     {
-        var front = editor.MapsUi[(int)Editor.LayerMapsUi.Front];
+        var front = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Front];
 
         btn.Position = position;
         btn.Size = (Size.width - 2, 1);
@@ -570,9 +570,9 @@ internal class Inspector : Panel
     private void UpdateInputBox(InputBox inputBox, (int x, int y) position)
     {
         var e = inputBox;
-        var back = editor.MapsUi[(int)Editor.LayerMapsUi.Back];
-        var middle = editor.MapsUi[(int)Editor.LayerMapsUi.Middle];
-        var front = editor.MapsUi[(int)Editor.LayerMapsUi.Front];
+        var back = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Back];
+        var middle = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Middle];
+        var front = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Front];
         var color = Color.Gray;
         var isListItems = e.Placeholder.Contains("Items");
         var (x, y) = e.Position;
@@ -616,8 +616,8 @@ internal class Inspector : Panel
     {
         var e = stepper;
         var color = Color.Gray;
-        var middle = editor.MapsUi[(int)Editor.LayerMapsUi.Middle];
-        var front = editor.MapsUi[(int)Editor.LayerMapsUi.Front];
+        var middle = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Middle];
+        var front = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Front];
         var value = e.Step.Precision() == 0 ? $"{e.Value}" : $"{e.Value:F2}";
         e.Position = position;
         e.Size = (Size.width - 2, 2);
@@ -644,13 +644,13 @@ internal class Inspector : Panel
     }
     private void UpdateListItems(List list, InputBox inputBoxEditor)
     {
-        var middle = editor.MapsUi[(int)Editor.LayerMapsUi.Middle];
+        var middle = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Middle];
         var length = Math.Min(list.Count, itemSelections.Count);
 
         for (var i = 0; i < length; i++)
         {
             var index = i + inputBoxEditor.ScrollIndices.y;
-            var item = list[index];
+            var item = list.Items[index];
             var btn = itemSelections[i];
             var c = GetColor(btn, (item.IsSelected ? Color.Green : Color.Red).ToDark());
             var tile = new Tile(item.IsSelected ? Tile.ICON_TICK : Tile.LOWERCASE_X, c);
@@ -714,7 +714,7 @@ internal class Inspector : Panel
     }
     private static void SetClear(Editor.LayerMapsUi layer, Block block)
     {
-        editor.MapsUi[(int)layer].SetArea(block.Area, null, 0);
+        editor.MapsUi.Tilemaps[(int)layer].SetArea(block.Area, null, 0);
     }
-#endregion
+    #endregion
 }

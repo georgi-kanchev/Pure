@@ -33,7 +33,7 @@ public static class Layouts
                 var text = $"- Useful for containing structured elements{nl}{nl}" +
                            $"- Can be dynamically resized without losing its ratios";
                 text = text.Constrain((segment.width, segment.height));
-                maps[1].SetText((segment.x, segment.y), text);
+                maps.Tilemaps[1].SetText((segment.x, segment.y), text);
                 return;
             }
 

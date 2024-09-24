@@ -8,10 +8,10 @@ public static class Palettes
 
         var palette = new Palette { Size = (13, 3) };
         palette.AlignInside((0.5f, 0.5f));
-        palette.OnPick(position => maps[1].TileAt(((int)position.x, (int)position.y)).Tint);
+        palette.OnPick(position => maps.Tilemaps[1].TileAt(((int)position.x, (int)position.y)).Tint);
         palette.OnDisplay(() => maps.SetPalette(palette));
         palette.OnSampleDisplay((sample, color) =>
-            maps[1].SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color)));
+            maps.Tilemaps[1].SetTile(sample.Position, new(Tile.SHADE_OPAQUE, color)));
 
         //===============
 
@@ -31,7 +31,7 @@ public static class Palettes
 
             var progress = Time.RuntimeClock / 2f;
             text = text.Constrain((w, h), alignment: Alignment.Center, symbolProgress: progress);
-            maps[1].SetText((x, y), text);
+            maps.Tilemaps[1].SetText((x, y), text);
         });
 
         return new Block[] { hack, palette };

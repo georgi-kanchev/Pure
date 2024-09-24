@@ -12,7 +12,7 @@ public static class EightBallPool
         Window.Title = "Pure - Pool Example";
 
         var tableCollisions = new LinePack(LINE_COLLISIONS);
-        var tilemaps = new TilemapPack(TILEMAPS);
+        var maps = new TilemapPack(TILEMAPS);
         var layer = new Layer((48, 27));
         var balls = new List<Ball>();
         var timeAtPress = 0f;
@@ -34,8 +34,8 @@ public static class EightBallPool
         {
             Time.Update();
 
-            for (var i = 0; i < tilemaps.Count; i++)
-                layer.DrawTilemap(tilemaps[i]);
+            foreach (var map in maps.Tilemaps)
+                layer.DrawTilemap(map);
 
             isAnyBallMoving = false;
             foreach (var ball in balls)
@@ -46,11 +46,9 @@ public static class EightBallPool
                 DrawBall(ball);
             }
 
-            if (Keyboard.Key.A.IsPressed())
-                ;
             var mousePos = layer.PixelToPosition(Mouse.CursorPosition);
             var yes = tableCollisions.IsContaining(mousePos) ? 50 : 0;
-            var area = new Area { Size = tilemaps[0].Size };
+            var area = new Area { Size = maps.Tilemaps[0].Size };
             layer.ApplyColorAdjustments((sbyte)yes, 0, 0, 0, area.ToBundle());
 
             DrawStick();
@@ -84,6 +82,7 @@ public static class EightBallPool
             });
             Mouse.Button.Right.OnPress(() => isCanceled = true);
         }
+
         void DrawStick()
         {
             if (isAnyBallMoving)
@@ -125,6 +124,7 @@ public static class EightBallPool
                 balls[n].Number = n;
             }
         }
+
         void MoveBall(Ball ball)
         {
             ball.Position = ball.Position.MoveAt(ball.MoveAngle, ball.Speed, Time.Delta);
@@ -133,6 +133,7 @@ public static class EightBallPool
             if (ball.Speed > 0)
                 isAnyBallMoving = true;
         }
+
         void TryBallCollision(Ball ball)
         {
             foreach (var otherBall in balls)
@@ -170,6 +171,7 @@ public static class EightBallPool
                 otherBall.Speed *= penaltyMultiplier;
             }
         }
+
         void TryWallCollision(Ball ball)
         {
             for (var i = 0; i < tableCollisions.Count; i++)
@@ -188,6 +190,7 @@ public static class EightBallPool
                 ball.Speed *= 0.75f;
             }
         }
+
         void DrawBall(Ball ball)
         {
             var p = ball.Position;

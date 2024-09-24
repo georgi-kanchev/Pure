@@ -17,7 +17,7 @@ public static class TiledLoader
             var name = element.Attributes["name"]?.Value;
             var (layer, data) = GetLayer(layerList, tmxPath, name);
 
-            result.Add(ParseData(layer, data));
+            result.Tilemaps.Add(ParseData(layer, data));
             names.Add(name ?? string.Empty);
         }
 

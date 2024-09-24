@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
+
 using static Alignment;
 
 /// <summary>
@@ -273,15 +274,15 @@ public static class Extensions
                 collection[i] = tmp[i];
         }
     }
-    public static void Shift<T>(this IList<T> collection, int offset, params int[]? indices)
+    public static void Shift<T>(this IList<T> collection, int offset, params int[]? affectedIndexes)
     {
-        if (indices == null || indices.Length == 0 || indices.Length == collection.Count || offset == 0)
+        if (affectedIndexes == null || affectedIndexes.Length == 0 || offset == 0)
             return;
 
         if (collection is List<T> list)
         {
             var results = new List<int>();
-            var indexList = indices.ToList();
+            var indexList = affectedIndexes.ToList();
             var prevTargetIndex = -1;
             var max = list.Count - 1;
 
@@ -296,13 +297,12 @@ public static class Extensions
                     continue;
 
                 var item = list[currIndex];
-                var index = currIndex;
-                var targetIndex = Math.Clamp(index + offset, 0, max);
+                var targetIndex = Math.Clamp(currIndex + offset, 0, max);
 
                 // prevent items order change
-                if (index > 0 &&
-                    index < max &&
-                    indexList.Contains(index + (offset > 0 ? 1 : -1)))
+                if (currIndex > 0 &&
+                    currIndex < max &&
+                    indexList.Contains(currIndex + (offset > 0 ? 1 : -1)))
                     continue;
 
                 // prevent overshooting of multiple items which would change the order
@@ -312,7 +312,7 @@ public static class Extensions
                 var i = indexList.IndexOf(currIndex);
                 var result = isOvershooting ? offset < 0 ? i : max - i : targetIndex;
 
-                list.RemoveAt(index);
+                list.RemoveAt(currIndex);
                 list.Insert(result, item);
                 prevTargetIndex = targetIndex;
                 results.Add(result);
@@ -323,10 +323,21 @@ public static class Extensions
 
         // if not a list then convert it
         var tempList = collection.ToList();
-        Shift(tempList, offset, indices);
+        Shift(tempList, offset, affectedIndexes);
 
         for (var i = 0; i < tempList.Count; i++)
             collection[i] = tempList[i];
+    }
+    public static void Shift<T>(this IList<T> collection, int offset, params T[]? affectedItems)
+    {
+        if (affectedItems == null || affectedItems.Length == 0 || offset == 0)
+            return;
+
+        var affectedIndexes = new int[affectedItems.Length];
+        for (var i = 0; i < affectedItems.Length; i++)
+            affectedIndexes[i] = collection.IndexOf(affectedItems[i]);
+
+        Shift(collection, offset, affectedIndexes);
     }
     /// <summary>
     /// Computes the intersection between the elements of two collections.
@@ -622,9 +633,7 @@ public static class Extensions
             using var compressedStream = new MemoryStream();
             using (var compressorStream =
                    new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
-            {
                 uncompressedStream.CopyTo(compressorStream);
-            }
 
             compressedBytes = compressedStream.ToArray();
         }
@@ -781,6 +790,7 @@ public static class Extensions
             line = ApplyColorTags(line, tags);
             return line;
         }
+
         void TryAlignVertically()
         {
             var yDiff = size.height - lineList.Count;
@@ -792,6 +802,7 @@ public static class Extensions
                 for (var i = 0; i < yDiff; i++)
                     lineList.Insert(0, string.Empty);
         }
+
         void TryWordWrap()
         {
             for (var i = 0; i < lineList.Count; i++)
@@ -861,6 +872,7 @@ public static class Extensions
 
             return output;
         }
+
         string RemoveColorTags(string input)
         {
             var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
@@ -874,6 +886,7 @@ public static class Extensions
 
             return builder.ToString();
         }
+
         string ApplyColorTags(string input, List<(int index, string tag)> storedTags)
         {
             var realIndex = 0;
@@ -1357,7 +1370,7 @@ public static class Extensions
         return (index % size.width, index / size.width);
     }
 
-#region Backend
+    #region Backend
     private class Gate
     {
         public int entries;
@@ -1373,5 +1386,5 @@ public static class Extensions
         holdFrequency.Start();
         holdDelay.Start();
     }
-#endregion
+    #endregion
 }

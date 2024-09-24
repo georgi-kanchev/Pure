@@ -1,9 +1,12 @@
 global using static Pure.Tools.Tilemapper.TilemapperUI;
+
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
+
 global using static Pure.Engine.Window.Keyboard;
+
 global using Key = Pure.Engine.Window.Keyboard.Key;
 global using Monitor = Pure.Engine.Window.Monitor;
 
@@ -39,8 +42,8 @@ public static class Program
 
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-            for (var i = 0; i < maps.Count; i++)
-                layer.DrawTilemap(maps[i].ToBundle());
+            foreach (var map in maps.Tilemaps)
+                layer.DrawTilemap(map);
 
             layer.DrawCursor();
             layer.Draw();

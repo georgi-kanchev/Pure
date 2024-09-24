@@ -35,7 +35,7 @@ public static class InputBoxes
         {
             var text = messages.Constrain((w, h), alignment: Alignment.BottomRight,
                 scrollProgress: scroll.Slider.Progress);
-            maps[0].SetText((x, y), text);
+            maps.Tilemaps[0].SetText((x, y), text);
             maps.SetInputBox(chat);
         });
         scroll.OnDisplay(() => maps.SetScroll(scroll));
@@ -68,7 +68,7 @@ public static class InputBoxes
         password.OnDisplay(() =>
         {
             var pos = password.Position;
-            maps[0].SetText((pos.x, pos.y - 1), pass);
+            maps.Tilemaps[0].SetText((pos.x, pos.y - 1), pass);
             maps.SetInputBox(password);
         });
 
@@ -88,7 +88,7 @@ public static class InputBoxes
         equation.OnDisplay(() =>
         {
             var pos = equation.Position;
-            maps[0].SetText((pos.x, pos.y - 1), mathResult);
+            maps.Tilemaps[0].SetText((pos.x, pos.y - 1), mathResult);
             maps.SetInputBox(equation);
         });
 

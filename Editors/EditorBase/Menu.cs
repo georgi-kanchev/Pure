@@ -6,14 +6,13 @@ public class Menu : List
 {
     public bool IsHidingOnClick { get; set; } = true;
 
-    public Menu(Editor editor, params string[] options) : base((int.MaxValue, int.MaxValue),
-        options.Length)
+    public Menu(Editor editor, params string[] options) : base((int.MaxValue, int.MaxValue), options.Length)
     {
         Size = (15, 15);
         ItemSize = (Size.width, 1);
 
         for (var i = 0; i < options.Length; i++)
-            this[i].Text = options[i];
+            Items[i].Text = options[i];
 
         OnDisplay(() => editor.MapsUi.SetList(this, 1));
         OnItemDisplay(item =>
@@ -43,7 +42,7 @@ public class Menu : List
                 IsHidden = true;
         });
 
-        editor.Ui.Add(new Block[] { this });
+        editor.Ui.Blocks.Add(this);
     }
 
     public void Show((int x, int y) position)

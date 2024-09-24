@@ -10,7 +10,7 @@ public static class Run
     {
         //Asteroids.Run();
         //FlappyBird.Run();
-        EightBallPool.Run();
+        //EightBallPool.Run();
         //Tetris.Run();
         //Minesweeper.Run();
         //Pong.Run();
@@ -21,7 +21,7 @@ public static class Run
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
-        //RunExampleUserInterface();
+        RunExampleUserInterface();
 
         //DefaultGraphics.Run();
         //Commands.Run();
@@ -36,18 +36,18 @@ public static class Run
 
     private static void RunExampleUserInterface()
     {
-        var (maps, blocks) = Program.Initialize();
-        //blocks.Add(ButtonsAndCheckboxes.Create(maps));
-        //blocks.Add(SlidersAndScrolls.Create(maps));
-        //blocks.Add(FileViewers.Create(maps));
-        blocks.Add(InputBoxes.Create(maps));
-        //blocks.Add(Panels.Create(maps));
-        //blocks.Add(Layouts.Create(maps));
-        //blocks.Add(Lists.Create(maps));
-        //blocks.Add(Steppers.Create(maps));
-        //blocks.Add(Pagination.Create(maps));
-        //blocks.Add(Prompts.Create(maps));
-        //blocks.Add(Palettes.Create(maps));
-        Program.Run(maps, blocks);
+        var (maps, ui) = Program.Initialize();
+        //ui.AddRange(ButtonsAndCheckboxes.Create(maps));
+        //ui.AddRange(SlidersAndScrolls.Create(maps));
+        //ui.AddRange(FileViewers.Create(maps));
+        //ui.AddRange(InputBoxes.Create(maps));
+        //ui.AddRange(Panels.Create(maps));
+        //ui.AddRange(Layouts.Create(maps));
+        ui.Blocks.AddRange(Lists.Create(maps));
+        //ui.AddRange(Steppers.Create(maps));
+        //ui.AddRange(Pagination.Create(maps));
+        //ui.AddRange(Prompts.Create(maps));
+        //ui.AddRange(Palettes.Create(maps));
+        Program.Run(maps, ui);
     }
 }

@@ -4,6 +4,7 @@ using Engine.Collision;
 using Engine.Tilemap;
 using Engine.Utilities;
 using Engine.Window;
+
 using static Engine.Utilities.Color;
 
 public static class Collision
@@ -14,8 +15,8 @@ public static class Collision
         Window.PixelScale = 5f;
 
         var aspectRatio = Monitor.Current.AspectRatio;
-        var tilemaps = new TilemapPack(2, (aspectRatio.width * 3, aspectRatio.height * 3));
-        var (w, h) = tilemaps.Size;
+        var maps = new TilemapPack(2, (aspectRatio.width * 3, aspectRatio.height * 3));
+        var (w, h) = maps.Size;
 
         var collisionMap = new SolidMap();
         collisionMap.AddSolids(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Yellow)); // lake
@@ -32,26 +33,26 @@ public static class Collision
         var hitbox = new SolidPack(new Solid(0, 0, 1, 1)) { Scale = (SCALE, SCALE) };
         var layer = new Layer((w, h));
 
-        tilemaps[1].FillWithRandomGrass();
-        tilemaps[1].SetLake((0, 0), (14, 9));
-        tilemaps[1].SetLake((26, 18), (5, 7));
-        tilemaps[1].SetLake((16, 24), (12, 6));
-        tilemaps[1].SetHouses((30, 10), (34, 11), (33, 8));
-        tilemaps[1].SetBridge((21, 16), (31, 16));
-        tilemaps[1].SetRoad((32, 0), (32, 26));
-        tilemaps[1].SetRoad((33, 10), (47, 10));
-        tilemaps[1].SetRoad((20, 16), (0, 16));
-        tilemaps[1].SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
-        tilemaps[1].SetBackgrounds(tilemaps[0]);
+        maps.Tilemaps[1].FillWithRandomGrass();
+        maps.Tilemaps[1].SetLake((0, 0), (14, 9));
+        maps.Tilemaps[1].SetLake((26, 18), (5, 7));
+        maps.Tilemaps[1].SetLake((16, 24), (12, 6));
+        maps.Tilemaps[1].SetHouses((30, 10), (34, 11), (33, 8));
+        maps.Tilemaps[1].SetBridge((21, 16), (31, 16));
+        maps.Tilemaps[1].SetRoad((32, 0), (32, 26));
+        maps.Tilemaps[1].SetRoad((33, 10), (47, 10));
+        maps.Tilemaps[1].SetRoad((20, 16), (0, 16));
+        maps.Tilemaps[1].SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
+        maps.Tilemaps[1].SetBackgrounds(maps.Tilemaps[0]);
 
-        collisionMap.Update(tilemaps[1]);
+        collisionMap.Update(maps.Tilemaps[1]);
         var collisionPack = collisionMap.ToArray();
 
         var waves = new SolidMap();
         waves.AddSolids(Tile.ICON_WAVE, new Solid(0, 0, 1, 1, Blue.ToDark()));
         waves.AddSolids(Tile.ICON_WAVES, new Solid(0, 0, 1, 1, Blue.ToDark()));
         waves.AddSolids(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
-        waves.Update(tilemaps[1]);
+        waves.Update(maps.Tilemaps[1]);
         var wavesRects = waves.ToBundle();
 
         while (Window.KeepOpen())
@@ -69,8 +70,8 @@ public static class Collision
             hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Red : Green;
 
-            layer.DrawTilemap(tilemaps[0]);
-            layer.DrawTilemap(tilemaps[1]);
+            layer.DrawTilemap(maps.Tilemaps[0]);
+            layer.DrawTilemap(maps.Tilemaps[1]);
 
             //layer.DrawRectangles(collisionMap);
             layer.DrawLines(line);

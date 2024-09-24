@@ -4,17 +4,15 @@ using System.Text;
 
 public class BlockPack
 {
-    public int Count
-    {
-        get => data.Count;
-    }
+    public List<Block> Blocks { get; } = new();
+
     public (int x, int y, int width, int height) Mask
     {
         get => mask;
         set
         {
             mask = value;
-            foreach (var block in data)
+            foreach (var block in Blocks)
                 block.Mask = mask;
         }
     }
@@ -25,7 +23,7 @@ public class BlockPack
             var (tlx, tly) = (int.MaxValue, int.MaxValue);
             var (brx, bry) = (int.MinValue, int.MinValue);
 
-            foreach (var block in data)
+            foreach (var block in Blocks)
             {
                 var (x, y, w, h) = block.Area;
 
@@ -37,11 +35,6 @@ public class BlockPack
 
             return (tlx, tly, brx - tlx, bry - tly);
         }
-    }
-
-    public Block this[int index]
-    {
-        get => data[index];
     }
 
     public BlockPack()
@@ -65,17 +58,17 @@ public class BlockPack
             offset -= typeStrBytesLength + 4;
             var bBlock = GetBytes(b, byteCount, ref offset);
 
-            if (typeStr == nameof(Button)) Add(new Button(bBlock));
-            else if (typeStr == nameof(FileViewer)) Add(new FileViewer(bBlock));
-            else if (typeStr == nameof(InputBox)) Add(new InputBox(bBlock));
-            else if (typeStr == nameof(Layout)) Add(new Layout(bBlock));
-            else if (typeStr == nameof(List)) Add(new List(bBlock));
-            else if (typeStr == nameof(Pages)) Add(new Pages(bBlock));
-            else if (typeStr == nameof(Palette)) Add(new Palette(bBlock));
-            else if (typeStr == nameof(Panel)) Add(new Panel(bBlock));
-            else if (typeStr == nameof(Scroll)) Add(new Scroll(bBlock));
-            else if (typeStr == nameof(Slider)) Add(new Slider(bBlock));
-            else if (typeStr == nameof(Stepper)) Add(new Stepper(bBlock));
+            if (typeStr == nameof(Button)) Blocks.Add(new Button(bBlock));
+            else if (typeStr == nameof(FileViewer)) Blocks.Add(new FileViewer(bBlock));
+            else if (typeStr == nameof(InputBox)) Blocks.Add(new InputBox(bBlock));
+            else if (typeStr == nameof(Layout)) Blocks.Add(new Layout(bBlock));
+            else if (typeStr == nameof(List)) Blocks.Add(new List(bBlock));
+            else if (typeStr == nameof(Pages)) Blocks.Add(new Pages(bBlock));
+            else if (typeStr == nameof(Palette)) Blocks.Add(new Palette(bBlock));
+            else if (typeStr == nameof(Panel)) Blocks.Add(new Panel(bBlock));
+            else if (typeStr == nameof(Scroll)) Blocks.Add(new Scroll(bBlock));
+            else if (typeStr == nameof(Slider)) Blocks.Add(new Slider(bBlock));
+            else if (typeStr == nameof(Stepper)) Blocks.Add(new Stepper(bBlock));
         }
 
         return;
@@ -89,10 +82,6 @@ public class BlockPack
     {
     }
 
-    public Block[] ToArray()
-    {
-        return data.ToArray();
-    }
     public string ToBase64()
     {
         return Convert.ToBase64String(ToBytes());
@@ -100,9 +89,9 @@ public class BlockPack
     public byte[] ToBytes()
     {
         var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(data.Count));
+        result.AddRange(BitConverter.GetBytes(Blocks.Count));
 
-        foreach (var block in data)
+        foreach (var block in Blocks)
         {
             var bytes = block.ToBytes();
             result.AddRange(BitConverter.GetBytes(bytes.Length));
@@ -112,33 +101,6 @@ public class BlockPack
         return Block.Compress(result.ToArray());
     }
 
-    public void Add(params Block[]? blocks)
-    {
-        if (blocks == null || blocks.Length == 0)
-            return;
-
-        data.AddRange(blocks);
-    }
-    public void Insert(int index, params Block[]? blocks)
-    {
-        if (blocks == null || blocks.Length == 0)
-            return;
-
-        data.InsertRange(index, blocks);
-    }
-    public void Remove(params Block[]? blocks)
-    {
-        if (blocks == null || blocks.Length == 0)
-            return;
-
-        foreach (var block in blocks)
-            data.Remove(block);
-    }
-    public void Clear()
-    {
-        data.Clear();
-    }
-
     public void BringToFront(params Block[]? blocks)
     {
         if (blocks == null || blocks.Length == 0)
@@ -146,8 +108,8 @@ public class BlockPack
 
         for (var i = blocks.Length - 1; i >= 0; i--)
         {
-            Remove(blocks[i]);
-            Add(blocks[i]);
+            Blocks.Remove(blocks[i]);
+            Blocks.Add(blocks[i]);
         }
     }
     public void Stack((int x, int y) pivot, Side direction, float alignment = 0f, int gap = 0)
@@ -155,36 +117,36 @@ public class BlockPack
         var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
         var opposite = opposites[(int)direction];
 
-        for (var i = 0; i < data.Count; i++)
+        for (var i = 0; i < Blocks.Count; i++)
         {
             if (i == 0)
             {
-                data[i].Position = pivot;
+                Blocks[i].Position = pivot;
                 continue;
             }
 
-            data[i].AlignEdges(opposite, direction, data[i - 1], alignment, gap + 1);
+            Blocks[i].AlignEdges(opposite, direction, Blocks[i - 1], alignment, gap + 1);
         }
     }
 
     public int IndexOf(Block? block)
     {
-        return block == null ? -1 : data.IndexOf(block);
+        return block == null ? -1 : Blocks.IndexOf(block);
     }
     public bool IsContaining(Block? block)
     {
-        return block != null && data.Contains(block);
+        return block != null && Blocks.Contains(block);
     }
 
     public void Update()
     {
-        foreach (var e in data)
+        foreach (var e in Blocks)
         {
-            var prevCount = data.Count;
+            var prevCount = Blocks.Count;
 
             e.Update();
 
-            if (data.Count != prevCount) // was the data modified by this update?
+            if (Blocks.Count != prevCount) // was the data modified by this update?
                 return; // run away
         }
     }
@@ -204,11 +166,10 @@ public class BlockPack
     }
     public static implicit operator Block[](BlockPack blockPack)
     {
-        return blockPack.ToArray();
+        return blockPack.Blocks.ToArray();
     }
 
-#region Backend
-    private readonly List<Block> data = new();
+    #region Backend
     private (int x, int y, int width, int height) mask;
 
     private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
@@ -217,5 +178,5 @@ public class BlockPack
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

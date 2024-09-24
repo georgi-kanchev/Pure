@@ -18,15 +18,15 @@ public class World
 
     public Tilemap Ground
     {
-        get => tilemaps[0];
+        get => tilemaps.Tilemaps[0];
     }
     public Tilemap Terrain
     {
-        get => tilemaps[1];
+        get => tilemaps.Tilemaps[1];
     }
     public Tilemap Territory
     {
-        get => tilemaps[2];
+        get => tilemaps.Tilemaps[2];
     }
 
     public World(int width, int height)
@@ -55,9 +55,9 @@ public class World
     {
         HandleCamera();
 
-        for (var i = 0; i < tilemaps.Count; i++)
-            if (tilemaps[i] != Territory)
-                Layer.DrawTilemap(tilemaps[i]);
+        foreach (var map in tilemaps.Tilemaps)
+            if (map != Territory)
+                Layer.DrawTilemap(map);
 
         if (Keyboard.Key.T.IsPressed())
             Layer.DrawTilemap(Territory);
@@ -84,7 +84,7 @@ public class World
     }
     private void GenerateTerrain()
     {
-        var (ground, terrain) = (tilemaps[0], tilemaps[1]);
+        var (ground, terrain) = (tilemaps.Tilemaps[0], tilemaps.Tilemaps[1]);
         var tileCount = Layer.AtlasTileCount;
         var grass = new Tile(Full, Color.Green.ToDark(0.45f));
         var grass1 = new Tile((2, 9).ToIndex1D(tileCount), Color.White.ToDark(0.3f));
@@ -109,7 +109,7 @@ public class World
         for (var y = 0; y < Size.height; y++)
             for (var x = 0; x < Size.width; x++)
             {
-                var height = new Point(x, y).ToNoise(NoiseType.ValueCubic, 20f, Game.SEED);
+                var height = new Point(x, y).ToNoise(NoiseType.ValueCubic, 20f);
                 var mountShade = height.Map((0.3f, 0.0f), (0f, 0.6f));
 
                 if (height > 0.55f)
@@ -141,17 +141,17 @@ public class World
                     }.ChooseOne(Game.SEED.ToSeed(x, y, 2)));
             }
 
-        terrain.AddAutoTileRule(new int[] { -1, 0, -1, -1, Water, -1, -1, Water, -1 }, waterT);
-        terrain.AddAutoTileRule(new int[] { -1, -1, -1, Water, Water, 0, -1, -1, -1 }, waterR);
-        terrain.AddAutoTileRule(new int[] { -1, Water, -1, -1, Water, -1, -1, 0, -1 }, waterB);
-        terrain.AddAutoTileRule(new int[] { -1, -1, -1, 0, Water, Water, -1, -1, -1 }, waterL);
+        terrain.AddAutoTileRule(new[] { -1, 0, -1, -1, Water, -1, -1, Water, -1 }, waterT);
+        terrain.AddAutoTileRule(new[] { -1, -1, -1, Water, Water, 0, -1, -1, -1 }, waterR);
+        terrain.AddAutoTileRule(new[] { -1, Water, -1, -1, Water, -1, -1, 0, -1 }, waterB);
+        terrain.AddAutoTileRule(new[] { -1, -1, -1, 0, Water, Water, -1, -1, -1 }, waterL);
         terrain.SetAutoTiles(terrain);
         terrain.Replace(terrain, 0, null, grass1, grass, grass, grass, grass);
 
         for (var y = 0; y < Size.height; y++)
             for (var x = 0; x < Size.width; x++)
             {
-                var height = new Point(x, y).ToNoise(NoiseType.ValueCubic, 20f, Game.SEED);
+                var height = new Point(x, y).ToNoise(NoiseType.ValueCubic, 20f);
                 var trees = new Point(x, y).ToNoise(NoiseType.ValueCubic);
 
                 if (trees < 0.6f || height.IsBetween((0.3f, 0.55f)) == false)
@@ -168,9 +168,8 @@ public class World
                 }.ChooseOne(Game.SEED.ToSeed(x, y, 3)));
             }
 
-        for (var i = 0; i < tilemaps.Count; i++)
+        foreach (var map in tilemaps.Tilemaps)
         {
-            var map = tilemaps[i];
             var (mapW, mapH) = (map.Size.width - 1, map.Size.height - 1);
             var color = Color.Brown.ToDark();
 

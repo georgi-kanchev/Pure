@@ -21,7 +21,7 @@ public static class Panels
 
             maps.SetPanel(panelText);
             text = text.Constrain((w - 2, h - 2));
-            maps[1].SetText((x + 1, y + 1), text, Color.Green);
+            maps.Tilemaps[1].SetText((x + 1, y + 1), text, Color.Green);
         });
 
         //============

@@ -22,15 +22,15 @@ internal class MenuMain : Menu
         {
             IsHidden = true;
 
-            var index = IndexOf(item);
+            var index = Items.IndexOf(item);
             if (index == 1)
                 menus[MenuType.Add].Show(Position);
             else if (index == 3)
                 editor.PromptConfirm(() =>
                 {
                     selected = null;
-                    ui.Clear();
-                    panels.Clear();
+                    ui.Blocks.Clear();
+                    panels.Blocks.Clear();
                 });
             else if (index == 4)
                 editor.PromptFileSave(ui.ToBytes());
@@ -60,11 +60,10 @@ internal class MenuMain : Menu
         var loadedUi = new BlockPack(bytes);
 
         selected = null;
-        ui.Clear();
-        panels.Clear();
-        for (var i = 0; i < loadedUi.Count; i++)
+        ui.Blocks.Clear();
+        panels.Blocks.Clear();
+        foreach (var block in loadedUi.Blocks)
         {
-            var block = loadedUi[i];
             var bBytes = block.ToBytes();
             var span = Span.Vertical;
 

@@ -1,12 +1,15 @@
 ﻿namespace Pure.Editors.EditorCollision;
 
 using EditorBase;
+
 using Tools.Tilemapper;
+
 using Engine.Collision;
 using Engine.Utilities;
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
+
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -24,7 +27,7 @@ public static class Program
             linePack.Position = (-vx, -vy);
 
             if ((vx, vy) != prevViewPos)
-                solidMap.Update(editor.MapsEditor[currentLayer]);
+                solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
 
             prevViewPos = (vx, vy);
 
@@ -73,7 +76,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private static (float x, float y) clickPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
@@ -108,15 +111,15 @@ public static class Program
     }
     private static bool CanEditGlobal
     {
-        get => CanEdit && tools[0].IsSelected;
+        get => CanEdit && tools.Items[0].IsSelected;
     }
     private static bool CanEditTile
     {
-        get => CanEdit && tools[1].IsSelected;
+        get => CanEdit && tools.Items[1].IsSelected;
     }
     private static bool CanEditLines
     {
-        get => CanEdit && tools[2].IsSelected;
+        get => CanEdit && tools.Items[2].IsSelected;
     }
     private static (float x, float y) MousePos
     {
@@ -131,8 +134,8 @@ public static class Program
     {
         editor = new("Pure - Collision Editor");
         var (mw, mh) = editor.MapsEditor.Size;
-        editor.MapsEditor.Clear();
-        editor.MapsEditor.Add(new Tilemap((mw, mh)), new Tilemap((mw, mh)));
+        editor.MapsEditor.Tilemaps.Clear();
+        editor.MapsEditor.Tilemaps.AddRange(new[] { new Tilemap((mw, mh)), new Tilemap((mw, mh)) });
         editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
         CreateMenu();
 
@@ -146,16 +149,18 @@ public static class Program
             ItemSize = (10, 1),
             IsSingleSelecting = true
         };
-        tools.Add(
+        tools.Items.AddRange(new[]
+        {
             new Button { Text = "Line Pack" },
             new Button { Text = "Solid Map" },
-            new Button { Text = "Solid Pack" });
+            new Button { Text = "Solid Pack" }
+        });
         tools.AlignInside((1f, 0f));
         tools.OnDisplay(() => editor.MapsUi.SetList(tools, FRONT));
         tools.OnUpdate(() => tools.IsHidden = editor.Prompt.IsHidden == false);
         tools.OnItemDisplay(item => editor.MapsUi.SetListItem(tools, item, FRONT));
-        tools.OnItemInteraction(Interaction.Trigger, btn => menu[5].Text = $"{btn.Text}… ");
-        tools[0].Interact(Interaction.Trigger);
+        tools.OnItemInteraction(Interaction.Trigger, btn => menu.Items[5].Text = $"{btn.Text}… ");
+        tools.Items[0].Interact(Interaction.Trigger);
 
         palette = new() { Pick = { IsHidden = true } };
         palette.OnDisplay(() =>
@@ -165,10 +170,10 @@ public static class Program
             editor.MapsUi.SetSlider(palette.Brightness, "", MIDDLE);
         });
         palette.OnSampleDisplay((btn, color) =>
-            editor.MapsUi[FRONT].SetTile(btn.Position, new(Tile.FULL, color)));
+            editor.MapsUi.Tilemaps[FRONT].SetTile(btn.Position, new(Tile.FULL, color)));
         palette.AlignInside((0.8f, 0f));
 
-        editor.Ui.Add(tools, palette);
+        editor.Ui.Blocks.AddRange(new Block[] { tools, palette });
 
         // override the default prompt buttons
         editor.OnPromptItemDisplay = item =>
@@ -228,7 +233,7 @@ public static class Program
             var (x, y) = MousePos;
             x += editor.MapsEditor.View.X;
             y += editor.MapsEditor.View.Y;
-            currentTile = editor.MapsEditor[currentLayer].TileAt(((int)x, (int)y));
+            currentTile = editor.MapsEditor.Tilemaps[currentLayer].TileAt(((int)x, (int)y));
 
             layer.AtlasTileGap = editor.LayerMap.AtlasTileGap;
             layer.AtlasPath = editor.LayerMap.AtlasPath;
@@ -250,7 +255,7 @@ public static class Program
                         editor.Prompt.Close();
                         var (vx, vy) = editor.MapsEditor.View.Position;
                         solidMap.Offset = (-vx, -vy);
-                        solidMap.Update(editor.MapsEditor[currentLayer]);
+                        solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
                         return;
                     }
 
@@ -370,8 +375,8 @@ public static class Program
         };
         menu.OnItemInteraction(Interaction.Trigger, btn =>
         {
-            var index = menu.IndexOf(btn);
-            var selection = tools.IndexOf(tools.ItemsSelected[0]);
+            var index = menu.Items.IndexOf(btn);
+            var selection = tools.Items.IndexOf(tools.SelectedItems[0]);
 
             if (index == 1) // load tileset
                 editor.PromptTileset(null, null);
@@ -380,14 +385,14 @@ public static class Program
                 {
                     layers = result;
                     originalMapViewPos = editor.MapsEditor.View.Position;
-                    solidMap.Update(editor.MapsEditor[currentLayer]);
+                    solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
                 });
             else if (index == 4) // paste tilemap
                 editor.PromptLoadMapBase64(result =>
                 {
                     layers = result;
                     originalMapViewPos = editor.MapsEditor.View.Position;
-                    solidMap.Update(editor.MapsEditor[currentLayer]);
+                    solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
                 });
             else if (index == 6) // new
                 editor.PromptConfirm(() =>
@@ -418,7 +423,7 @@ public static class Program
     {
         try
         {
-            var selection = tools.IndexOf(tools.ItemsSelected[0]);
+            var selection = tools.Items.IndexOf(tools.SelectedItems[0]);
 
             if (selection == 0)
                 solidPack = new(bytes);
@@ -436,7 +441,7 @@ public static class Program
     {
         try
         {
-            var selection = tools.IndexOf(tools.ItemsSelected[0]);
+            var selection = tools.Items.IndexOf(tools.SelectedItems[0]);
 
             // ignore editor offset, keep original tilemap's view
             var prevMapOffset = solidMap.Offset;
@@ -487,5 +492,5 @@ public static class Program
         var (sx, sy) = (1f / l.AtlasTileSize.width, 1f / l.AtlasTileSize.height);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }
-#endregion
+    #endregion
 }

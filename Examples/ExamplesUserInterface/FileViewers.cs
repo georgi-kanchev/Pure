@@ -49,7 +49,7 @@ public static class FileViewers
             paths += $"{Environment.NewLine}{Environment.NewLine}{path}";
 
         var (x, y, w, h) = (e.Position.x, e.Position.y + e.Size.height - 1, e.Size.width, 20);
-        maps[0].SetText((x, y - 1), fileViewer.Text);
-        maps[0].SetText((x, y), paths.Constrain((w, h)));
+        maps.Tilemaps[0].SetText((x, y - 1), fileViewer.Text);
+        maps.Tilemaps[0].SetText((x, y), paths.Constrain((w, h)));
     }
 }

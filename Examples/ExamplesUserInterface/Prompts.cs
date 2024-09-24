@@ -12,7 +12,7 @@ public static class Prompts
         var info = new Button { Position = (int.MaxValue, 0) };
         var text = $"Press <{HOTKEY_LOG}> to type and log{Environment.NewLine}" +
                    $"Press <{HOTKEY_MSG}> to show a message";
-        info.OnDisplay(() => maps[0].SetText((0, 0), text));
+        info.OnDisplay(() => maps.Tilemaps[0].SetText((0, 0), text));
 
         var input = new InputBox
         {

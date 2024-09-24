@@ -267,7 +267,7 @@ internal class TilePalette
         start = ((int)editor.MousePositionWorld.x, (int)editor.MousePositionWorld.y);
         end = (start.x + 1, start.y + 1);
 
-        if (inspector.layers.ItemsSelected.Length != 1)
+        if (inspector.layers.SelectedItems.Count != 1)
         {
             editor.PromptMessage("Select a single layer to draw on.");
             return;
