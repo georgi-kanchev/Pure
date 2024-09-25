@@ -142,23 +142,24 @@ internal class TilePalette
     {
         var (mx, my) = ((int)editor.MousePositionWorld.x, (int)editor.MousePositionWorld.y);
         var tool = inspector?.tools.Current ?? -1;
-        var (sx, sy) = selected.Position;
-        sx += map.View.X;
-        sy += map.View.Y;
-        var (sw, sh) = selected.Size;
-        var tile = map.TileAt(((int)sx, (int)sy));
         var selectedColor = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
         var color = new Color(selectedColor) { A = 200 };
         var seed = mx.ToSeed(my) + clickSeed;
-        var tiles = GetSelectedTiles().Flatten();
-        var randomTile = tiles.ChooseOne(seed);
+        var tiles = GetSelectedTiles();
+
+        for (var i = 0; i < tiles.GetLength(1); i++)
+            for (var j = 0; j < tiles.GetLength(0); j++)
+                tiles[j, i].Tint = color;
+
+        var preview = new Tilemap(tiles);
+        var randomTile = tiles.Flatten().ChooseOne(seed);
         var tilemap = inspector?.GetSelectedTilemap();
         var (szw, szh) = (end.x - start.x, end.y - start.y);
-        tile.Tint = color;
-        randomTile.Tint = selectedColor;
+
+        preview.View = new((-mx, -my), tilemap?.Size ?? (1, 1));
 
         if (tool is 1) // group of tiles
-            editor.LayerMap.DrawTiles((mx, my), tile, ((int)sw, (int)sh));
+            editor.LayerMap.DrawTilemap(preview.ViewUpdate());
         else if (tool is 2 or 7 or 8) // single random tile of tiles/replace/fill
             editor.LayerMap.DrawTiles((mx, my), randomTile);
         else if (rectangleTools.Contains(tool)) // rectangle/ellipse of random tiles
@@ -178,16 +179,24 @@ internal class TilePalette
         var (sx, sy) = selected.Position;
         sx += map.View.X;
         sy += map.View.Y;
+        var (m, f) = (inspector?.tileOrientation.mirror ?? false, inspector?.tileOrientation.flip ?? false);
         var (sw, sh) = selected.Size;
         var tiles = map.TilesIn(((int)sx, (int)sy, (int)sw, (int)sh));
         for (var i = 0; i < tiles.GetLength(1); i++)
             for (var j = 0; j < tiles.GetLength(0); j++)
+            {
                 tiles[j, i].Tint = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
+                tiles[j, i].Turns = inspector?.tileTurns ?? 0;
+                tiles[j, i].IsMirrored = m;
+                tiles[j, i].IsFlipped = f;
+            }
+
+        tiles = tiles.Rotate(-inspector?.tileTurns ?? 0);
 
         return tiles;
     }
 
-    #region Backend
+#region Backend
     private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12, 13, 14 };
     private Inspector? inspector;
     private (int x, int y) prevMousePos;
@@ -378,6 +387,11 @@ internal class TilePalette
         var lmb = Mouse.Button.Left.IsPressed();
         var (szw, szh) = (end.x - start.x, end.y - start.y);
         var (offX, offY) = (1, 1);
+        var (m, f) = (inspector.tileOrientation.mirror, inspector.tileOrientation.flip);
+        randomTile.Tint = inspector.paletteColor.SelectedColor;
+        randomTile.Turns = inspector.tileTurns;
+        randomTile.IsMirrored = m;
+        randomTile.IsFlipped = f;
 
         if (inspector.tools.Current == 14) // select
         {
@@ -416,5 +430,5 @@ internal class TilePalette
         else if (lmb && tool == 2) // single random tile of tiles
             tilemap?.SetTile(pos, randomTile);
     }
-    #endregion
+#endregion
 }

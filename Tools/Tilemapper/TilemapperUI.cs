@@ -4,7 +4,6 @@ using Engine.Window;
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Utilities;
-
 using static Engine.Tilemap.Tile;
 using static Engine.Utilities.Color;
 
@@ -367,6 +366,7 @@ public static class TilemapperUI
     public static void SetPalette(this TilemapPack maps, Palette palette, int zOrder = 0)
     {
         var p = palette;
+        var color = new Color(p.SelectedColor) { A = 255 };
 
         Clear(maps, p, zOrder);
         maps.Tilemaps[zOrder].SetArea(
@@ -383,7 +383,7 @@ public static class TilemapperUI
         var opMax = opVert ? p.Opacity.Height : p.Opacity.Width;
         for (var i = 0; i < opMax; i++)
         {
-            var curTile = new Tile(i.Map((0, opMax), (0, 11)));
+            var curTile = new Tile(i.Map((0, opMax), (0, 11)), color);
             var (offX, offY) = opVert ? (0, i) : (i, 0);
             maps.Tilemaps[zOrder].SetTile((p.Opacity.X + offX, p.Opacity.Y + offY), curTile, p.Mask);
         }
@@ -519,7 +519,7 @@ public static class TilemapperUI
         return baseColor;
     }
 
-    #region Backend
+#region Backend
     private static readonly int seed;
 
     static TilemapperUI()
@@ -544,5 +544,5 @@ public static class TilemapperUI
             if (i < maps.Tilemaps.Count)
                 maps.Tilemaps[i].SetArea((x, y, w, h), block.Mask, SHADE_TRANSPARENT);
     }
-    #endregion
+#endregion
 }

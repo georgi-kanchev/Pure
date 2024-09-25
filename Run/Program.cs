@@ -17,11 +17,11 @@ public static class Run
         //Chat.Run();
 
         //Editors.EditorCollision.Program.Run();
-        //Editors.EditorMap.Program.Run();
+        Editors.EditorMap.Program.Run();
         //Editors.EditorUserInterface.Program.Run();
         //Editors.EditorStorage.Program.Run();
 
-        RunExampleUserInterface();
+        //RunExampleUserInterface();
 
         //DefaultGraphics.Run();
         //Commands.Run();

@@ -1,9 +1,7 @@
 namespace Pure.Editors.EditorMap;
 
 using static Keyboard.Key;
-
 using static Tile;
-
 using static Color;
 
 internal class Inspector : Panel
@@ -13,6 +11,9 @@ internal class Inspector : Panel
     public Scroll paletteScrollV;
     public Scroll paletteScrollH;
     public Pages tools;
+
+    public (bool mirror, bool flip) tileOrientation;
+    public sbyte tileTurns;
 
     public Tile pickedTile;
 
@@ -36,7 +37,7 @@ internal class Inspector : Panel
             var tileMid = new Tile(BOX_GRID_STRAIGHT, Blue);
             var tileRight = new Tile(BOX_GRID_T_SHAPED, Blue, 2);
 
-            SetLine(8, 17, 21, 26, 28);
+            SetLine(8, 18, 22, 26, 28);
 
             if (tools?.Current < 9 && tilePalette.layer.IsHovered && editor.Prompt.IsHidden)
             {
@@ -78,13 +79,11 @@ internal class Inspector : Panel
         return index == -1 ? null : editor.MapsEditor.Tilemaps[index];
     }
 
-    #region Backend
+#region Backend
     private const int MIDDLE = (int)Editor.LayerMapsUi.Middle, FRONT = (int)Editor.LayerMapsUi.Front;
     private readonly Editor editor;
-    private sbyte tileTurns;
 
-    [MemberNotNull(nameof(layers))]
-    [MemberNotNull(nameof(layersVisibility))]
+    [MemberNotNull(nameof(layers)), MemberNotNull(nameof(layersVisibility))]
     private Block[] AddLayers()
     {
         var (x, y) = (X + 1, Y + 1);
@@ -159,8 +158,8 @@ internal class Inspector : Panel
             size = isEmpty ? (50, 50) : size;
 
             layers.Items.Add(item);
-            layersVisibility.Items.Add(new Button { IsSelected = true });
-            editor.MapsEditor.Tilemaps.Add(new Tilemap(size));
+            layersVisibility.Items.Add(new() { IsSelected = true });
+            editor.MapsEditor.Tilemaps.Add(new(size));
             RecreateMapVisibilities();
 
             if (isEmpty)
@@ -228,7 +227,7 @@ internal class Inspector : Panel
     [MemberNotNull(nameof(tools))]
     private void AddTools(TilePalette tilePalette)
     {
-        tools = new((X + 1, Y + 19), 14) { ItemWidth = 1, ItemGap = 0, Size = (14, 1) };
+        tools = new((X + 1, 20), 14) { ItemWidth = 1, ItemGap = 0, Size = (14, 1) };
         tools.OnItemDisplay(item =>
         {
             var hotkey = new[] { G, T, R, L, E, O, K, B, A, V, H, C, P, S };
@@ -268,19 +267,21 @@ internal class Inspector : Panel
     [MemberNotNull(nameof(paletteColor))]
     private void AddPaletteColor()
     {
-        paletteColor = new((X + 1, 22)) { Pick = { IsHidden = true } };
+        paletteColor = new((X + 2, 23)) { Pick = { IsHidden = true } };
         paletteColor.OnDisplay(() =>
         {
             editor.MapsUi.SetPalette(paletteColor, MIDDLE);
 
-            var (px, py, pw, ph) = paletteColor.Area;
+            var (px, py) = paletteColor.Position;
+            var area = (px - 1, py, 1, 3);
             var tile = new Tile(FULL, paletteColor.SelectedColor);
-            editor.MapsUi.Tilemaps[FRONT].SetArea((px, py + ph, pw, MIDDLE), null, tile);
+            editor.MapsUi.Tilemaps[0].SetArea(area, null, new Tile(FULL, Black));
+            editor.MapsUi.Tilemaps[MIDDLE].SetArea(area, null, new Tile(SHADE_5, Gray));
+            editor.MapsUi.Tilemaps[FRONT].SetArea(area, null, tile);
         });
         paletteColor.OnSampleDisplay((btn, color) => editor.MapsUi.Tilemaps[MIDDLE].SetTile(btn.Position, new(SHADE_OPAQUE, color)));
     }
-    [MemberNotNull(nameof(paletteScrollV))]
-    [MemberNotNull(nameof(paletteScrollH))]
+    [MemberNotNull(nameof(paletteScrollV)), MemberNotNull(nameof(paletteScrollH))]
     private Button[] AddPaletteScrolls()
     {
         paletteScrollV = new((X + 14, Y + 29)) { Size = (1, 14) };
@@ -345,7 +346,7 @@ internal class Inspector : Panel
             for (var i = 0; i < auto.Count; i++)
             {
                 var curX = x + i % 3 * 5;
-                var curY = y + 5 + i / 3;
+                var curY = y + 6 + i / 3;
                 auto[i].Position = (curX, curY);
             }
 
@@ -355,7 +356,7 @@ internal class Inspector : Panel
                 $"Id{pickedTile.Id} Turns{pickedTile.Turns}{Environment.NewLine}" +
                 $"Flip{(pickedTile.IsFlipped ? "+" : "-")} Mirror{(pickedTile.IsMirrored ? "+" : "-")}";
             editor.MapsUi.Tilemaps[FRONT].SetText((x, y), "Auto Tiles:");
-            editor.MapsUi.Tilemaps[FRONT].SetText((x, y + 3), pickText, empty ? White : pickedTile.Tint);
+            editor.MapsUi.Tilemaps[FRONT].SetText((x, y + 4), pickText, empty ? White : pickedTile.Tint);
             editor.MapsUi.SetButton(apply, FRONT);
             editor.MapsUi.SetButtonIcon(clear, new(ICON_DELETE, Gray), FRONT);
 
@@ -381,6 +382,7 @@ internal class Inspector : Panel
         var m = new Button((X + 2, Y + 27)) { Size = (1, 1) };
         m.OnDisplay(() =>
         {
+            tileOrientation = (m.IsSelected, tileOrientation.flip);
             editor.MapsUi.Tilemaps[FRONT].SetText((m.X - 1, m.Y), "M");
             editor.MapsUi.SetButtonIcon(m, new(ICON_MIRROR, m.IsSelected ? Green : Gray), FRONT);
         });
@@ -388,6 +390,7 @@ internal class Inspector : Panel
         var f = new Button((X + 5, m.Y)) { Size = (1, 1) };
         f.OnDisplay(() =>
         {
+            tileOrientation = (tileOrientation.mirror, f.IsSelected);
             editor.MapsUi.Tilemaps[FRONT].SetText((f.X - 1, f.Y), "F");
             editor.MapsUi.SetButtonIcon(f, new(ICON_FLIP, f.IsSelected ? Green : Gray), FRONT);
         });
@@ -396,11 +399,12 @@ internal class Inspector : Panel
         turns.OnInteraction(Interaction.Trigger, () => tileTurns++);
         turns.OnDisplay(() =>
         {
-            editor.MapsUi.Tilemaps[FRONT].SetTile((turns.X - 1, turns.Y), new(ARROW_HOLLOW, White, tileTurns));
-            editor.MapsUi.SetButtonIcon(turns, new(ICON_ROTATE, Gray), FRONT);
+            var color = tileTurns % 4 == 0 ? Gray : Green;
+            editor.MapsUi.Tilemaps[FRONT].SetTile((turns.X - 1, turns.Y), new(ARROW, White, tileTurns));
+            editor.MapsUi.SetButtonIcon(turns, new(ICON_ROTATE, color), FRONT);
         });
 
         return new Block[] { m, f, turns };
     }
-    #endregion
+#endregion
 }
