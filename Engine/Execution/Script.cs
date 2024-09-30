@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Modding;
+﻿namespace Pure.Engine.Execution;
 
 using MoonSharp.Interpreter;
 

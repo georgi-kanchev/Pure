@@ -5,6 +5,12 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>Pure-Window</PackageId>
+        <Title>Pure-Window</Title>
+        <Authors>gojur</Authors>
+        <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
+        <RepositoryType>game-engine</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,12 +1,12 @@
-namespace Pure.Engine.Flow;
-
-public enum Path
-{
-    Running, RunningPrevious, Root, Parent, Child, First, Last, Next, Previous
-}
+namespace Pure.Engine.Execution;
 
 public class StateMachine
 {
+    public enum Path
+    {
+        Running, RunningPrevious, Root, Parent, Child, First, Last, Next, Previous
+    }
+
     public State? this[Action? method]
     {
         get
@@ -140,7 +140,7 @@ public class StateMachine
         return result[..^1];
     }
 
-    #region Backend
+#region Backend
     private readonly Dictionary<string, State> roots = new();
     private State? previous;
     private State? current;
@@ -151,5 +151,5 @@ public class StateMachine
         Run(state.method);
         return state;
     }
-    #endregion
+#endregion
 }

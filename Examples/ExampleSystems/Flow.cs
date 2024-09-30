@@ -1,6 +1,5 @@
-using Pure.Engine.Flow;
-
-using Path = Pure.Engine.Flow.Path;
+using Pure.Engine.Execution;
+using Path = Pure.Engine.Execution.StateMachine.Path;
 
 namespace Pure.Examples.ExamplesSystems;
 

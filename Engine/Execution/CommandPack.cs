@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Commands;
+﻿namespace Pure.Engine.Execution;
 
 using System.Text.RegularExpressions;
 using System.Globalization;
