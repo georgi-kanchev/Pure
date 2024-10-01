@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>Pure-LocalAreaNetwork</PackageId>
+        <Title>Pure-LocalAreaNetwork</Title>
+        <Authors>gojur</Authors>
+        <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
+        <RepositoryType>game-engine</RepositoryType>
+        <RootNamespace>Pure.Engine.LocalAreaNetwork</RootNamespace>
+    </PropertyGroup>
+
+</Project>

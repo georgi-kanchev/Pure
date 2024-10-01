@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Pure.Editors.Base</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Engine\Collision\Pure.Engine.Collision.csproj" />
+        <ProjectReference Include="..\..\Engine\Tilemap\Pure.Engine.Tilemap.csproj" />
+        <ProjectReference Include="..\..\Engine\UserInterface\Pure.Engine.UserInterface.csproj" />
+        <ProjectReference Include="..\..\Engine\Utilities\Pure.Engine.Utilities.csproj" />
+        <ProjectReference Include="..\..\Engine\Window\Pure.Engine.Window.csproj" />
+        <ProjectReference Include="..\..\Tools\TiledLoader\Pure.Tools.TiledLoader.csproj" />
+        <ProjectReference Include="..\..\Tools\Tilemapper\Pure.Tools.Tilemapper.csproj" />
+    </ItemGroup>
+
+</Project>

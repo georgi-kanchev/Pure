@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Pure.Editors.Storage</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Engine\Storage\Pure.Engine.Storage.csproj" />
+        <ProjectReference Include="..\Base\Pure.Editors.Base.csproj" />
+    </ItemGroup>
+
+</Project>

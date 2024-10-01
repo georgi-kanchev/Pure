@@ -3,27 +3,27 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Utilities", "Engine\Pure.Engine.Utilities\Pure.Engine.Utilities.csproj", "{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Utilities", "Engine\Utilities\Pure.Engine.Utilities.csproj", "{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.UserInterface", "Engine\Pure.Engine.UserInterface\Pure.Engine.UserInterface.csproj", "{3A2602AA-081E-47E2-89E1-610CA6C15367}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.UserInterface", "Engine\UserInterface\Pure.Engine.UserInterface.csproj", "{3A2602AA-081E-47E2-89E1-610CA6C15367}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Collision", "Engine\Pure.Engine.Collision\Pure.Engine.Collision.csproj", "{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Collision", "Engine\Collision\Pure.Engine.Collision.csproj", "{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Animation", "Engine\Pure.Engine.Animation\Pure.Engine.Animation.csproj", "{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Animation", "Engine\Animation\Pure.Engine.Animation.csproj", "{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Tilemap", "Engine\Pure.Engine.Tilemap\Pure.Engine.Tilemap.csproj", "{E10DCE19-23F2-4CB0-89E5-1254144DE690}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Tilemap", "Engine\Tilemap\Pure.Engine.Tilemap.csproj", "{E10DCE19-23F2-4CB0-89E5-1254144DE690}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Storage", "Engine\Pure.Engine.Storage\Pure.Engine.Storage.csproj", "{91635CA2-C003-4DB0-8143-B0BF0924DDAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Storage", "Engine\Storage\Pure.Engine.Storage.csproj", "{91635CA2-C003-4DB0-8143-B0BF0924DDAB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Audio", "Engine\Pure.Engine.Audio\Pure.Engine.Audio.csproj", "{09AA518A-1AA0-4198-9478-893E3DF05855}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Audio", "Engine\Audio\Pure.Engine.Audio.csproj", "{09AA518A-1AA0-4198-9478-893E3DF05855}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Window", "Engine\Pure.Engine.Window\Pure.Engine.Window.csproj", "{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Window", "Engine\Window\Pure.Engine.Window.csproj", "{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Particles", "Engine\Pure.Engine.Particles\Pure.Engine.Particles.csproj", "{4D12C66C-1D47-4EDE-A380-75326E12FEBB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Particles", "Engine\Particles\Pure.Engine.Particles.csproj", "{4D12C66C-1D47-4EDE-A380-75326E12FEBB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.LocalAreaNetwork", "Engine\Pure.Engine.LocalAreaNetwork\Pure.Engine.LocalAreaNetwork.csproj", "{46834276-33C0-4687-AC41-883F98118246}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.LocalAreaNetwork", "Engine\LocalAreaNetwork\Pure.Engine.LocalAreaNetwork.csproj", "{46834276-33C0-4687-AC41-883F98118246}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.UserInterface", "Editors\Pure.Editors.UserInterface\Pure.Editors.UserInterface.csproj", "{3E733970-E290-4636-B9BC-A28A298DA403}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.UserInterface", "Editors\UserInterface\Pure.Editors.UserInterface.csproj", "{3E733970-E290-4636-B9BC-A28A298DA403}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Engine", "Engine", "{A8122EE6-919B-43EB-842D-D157ACF49736}"
 EndProject
@@ -31,31 +31,31 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Editors", "Editors", "{7831
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{A08B8B6D-B9DC-414E-A40A-87AB5BC439D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Examples.UserInterface", "Examples\Pure.Examples.UserInterface\Pure.Examples.UserInterface.csproj", "{3EA16102-CC34-435E-B4C1-8A8F40BB6BDA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Examples.UserInterface", "Examples\UserInterface\Pure.Examples.UserInterface.csproj", "{3EA16102-CC34-435E-B4C1-8A8F40BB6BDA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Examples.Systems", "Examples\Pure.Examples.Systems\Pure.Examples.Systems.csproj", "{1FAF4CBC-051E-48BF-886D-2BD0B4433270}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Examples.Systems", "Examples\Systems\Pure.Examples.Systems.csproj", "{1FAF4CBC-051E-48BF-886D-2BD0B4433270}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Examples.Games", "Examples\Pure.Examples.Games\Pure.Examples.Games.csproj", "{8DB34788-CD0C-4CDC-9F62-5DC7BCD5987B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Examples.Games", "Examples\Games\Pure.Examples.Games.csproj", "{8DB34788-CD0C-4CDC-9F62-5DC7BCD5987B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Hub", "Pure.Hub\Pure.Hub.csproj", "{FA0C1689-C04C-444E-846F-94AC2E748FBC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Hub", "Hub\Pure.Hub.csproj", "{FA0C1689-C04C-444E-846F-94AC2E748FBC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{4AC51807-EF05-4EBE-8687-02D7E795F9DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Tools.Tilemapper", "Tools\Pure.Tools.Tilemapper\Pure.Tools.Tilemapper.csproj", "{10B8A18F-9D0A-402D-BDE1-F18951220239}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Tools.Tilemapper", "Tools\Tilemapper\Pure.Tools.Tilemapper.csproj", "{10B8A18F-9D0A-402D-BDE1-F18951220239}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Map", "Editors\Pure.Editors.Map\Pure.Editors.Map.csproj", "{10CE6E3E-4CC5-4C6B-905A-6691C8949391}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Map", "Editors\Map\Pure.Editors.Map.csproj", "{10CE6E3E-4CC5-4C6B-905A-6691C8949391}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Base", "Editors\Pure.Editors.Base\Pure.Editors.Base.csproj", "{D107BDEB-B26B-4C33-BC13-112B55BB02B1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Base", "Editors\Base\Pure.Editors.Base.csproj", "{D107BDEB-B26B-4C33-BC13-112B55BB02B1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Tools.TiledLoader", "Tools\Pure.Tools.TiledLoader\Pure.Tools.TiledLoader.csproj", "{4EC3003B-BFD8-4321-B8DE-0F11002662C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Tools.TiledLoader", "Tools\TiledLoader\Pure.Tools.TiledLoader.csproj", "{4EC3003B-BFD8-4321-B8DE-0F11002662C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Engine.Pathfinding", "Engine\Pure.Engine.Pathfinding\Pure.Engine.Pathfinding.csproj", "{20C377CD-FB66-4C04-9DAA-54812C63912B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Engine.Pathfinding", "Engine\Pathfinding\Pure.Engine.Pathfinding.csproj", "{20C377CD-FB66-4C04-9DAA-54812C63912B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Collision", "Editors\Pure.Editors.Collision\Pure.Editors.Collision.csproj", "{E7EF5EAB-28BF-485A-9D2E-9757EDC545F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Collision", "Editors\Collision\Pure.Editors.Collision.csproj", "{E7EF5EAB-28BF-485A-9D2E-9757EDC545F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Storage", "Editors\Pure.Editors.Storage\Pure.Editors.Storage.csproj", "{972E9BE4-83EE-4D0D-B172-673697BCD0CE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Storage", "Editors\Storage\Pure.Editors.Storage.csproj", "{972E9BE4-83EE-4D0D-B172-673697BCD0CE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Engine.Execution", "Engine\Pure.Engine.Execution\Pure.Engine.Execution.csproj", "{7015866F-5374-4B0A-8B73-F48CE149F070}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Engine.Execution", "Engine\Execution\Pure.Engine.Execution.csproj", "{7015866F-5374-4B0A-8B73-F48CE149F070}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
