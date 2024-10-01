@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PackageId>Pure-Execution</PackageId>
+        <Title>Pure-Execution</Title>
+        <Authors>gojur</Authors>
+        <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
+        <RepositoryType>game-engine</RepositoryType>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MoonSharp" Version="2.0.0"/>
+    </ItemGroup>
+
+</Project>
