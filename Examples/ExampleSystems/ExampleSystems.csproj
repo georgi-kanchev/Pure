@@ -7,18 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Engine\Animation\Animation.csproj"/>
-        <ProjectReference Include="..\..\Engine\Audio\Audio.csproj"/>
-        <ProjectReference Include="..\..\Engine\Collision\Collision.csproj"/>
-        <ProjectReference Include="..\..\Engine\Execution\Execution.csproj"/>
-        <ProjectReference Include="..\..\Engine\LocalAreaNetwork\LocalAreaNetwork.csproj"/>
-        <ProjectReference Include="..\..\Engine\Particles\Particles.csproj"/>
-        <ProjectReference Include="..\..\Engine\Pathfinding\Pathfinding.csproj"/>
-        <ProjectReference Include="..\..\Engine\Storage\Storage.csproj"/>
-        <ProjectReference Include="..\..\Engine\Tilemap\Tilemap.csproj"/>
-        <ProjectReference Include="..\..\Engine\UserInterface\UserInterface.csproj"/>
-        <ProjectReference Include="..\..\Engine\Utilities\Utilities.csproj"/>
-        <ProjectReference Include="..\..\Engine\Window\Window.csproj"/>
+        <ProjectReference Include="..\..\Engine\Pure.Animation\Pure.Animation.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Audio\Pure.Audio.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Collision\Pure.Collision.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Execution\Pure.Execution.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.LocalAreaNetwork\Pure.LocalAreaNetwork.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Particles\Pure.Particles.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Pathfinding\Pure.Pathfinding.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Storage\Pure.Storage.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Tilemap\Pure.Tilemap.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.UserInterface\Pure.UserInterface.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Utilities\Pure.Utilities.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Window\Pure.Window.csproj" />
     </ItemGroup>
 
 </Project>

@@ -8,10 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Engine\Tilemap\Tilemap.csproj"/>
-        <ProjectReference Include="..\..\Engine\UserInterface\UserInterface.csproj"/>
-        <ProjectReference Include="..\..\Engine\Utilities\Utilities.csproj"/>
-        <ProjectReference Include="..\..\Engine\Window\Window.csproj"/>
+        <ProjectReference Include="..\..\Engine\Pure.Tilemap\Pure.Tilemap.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.UserInterface\Pure.UserInterface.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Utilities\Pure.Utilities.csproj" />
+        <ProjectReference Include="..\..\Engine\Pure.Window\Pure.Window.csproj" />
         <ProjectReference Include="..\EditorBase\EditorBase.csproj"/>
     </ItemGroup>
 

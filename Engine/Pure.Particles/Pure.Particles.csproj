@@ -5,11 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>Pure-Storage</PackageId>
-    <Title>Pure-Storage</Title>
+    <PackageId>Pure-Particles</PackageId>
+    <Title>Pure-Particles</Title>
     <Authors>gojur</Authors>
     <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
     <RepositoryType>game-engine</RepositoryType>
+    <RootNamespace>Particles</RootNamespace>
   </PropertyGroup>
 
 </Project>

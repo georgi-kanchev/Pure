@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Engine\Storage\Storage.csproj"/>
+        <ProjectReference Include="..\..\Engine\Pure.Storage\Pure.Storage.csproj" />
         <ProjectReference Include="..\EditorBase\EditorBase.csproj"/>
     </ItemGroup>
 

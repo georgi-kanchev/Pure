@@ -3,12 +3,20 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageId>Pure-LocalAreaNetwork</PackageId>
-        <Title>Pure-LocalAreaNetwork</Title>
+        <PackageId>Pure-Utilities</PackageId>
+        <Title>Pure-Utilities</Title>
         <Authors>gojur</Authors>
         <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
         <RepositoryType>game-engine</RepositoryType>
+        <RootNamespace>Utilities</RootNamespace>
     </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="SFML.Window">
+            <HintPath>..\..\..\..\.nuget\packages\sfml.window\2.5.1\lib\netstandard2.0\SFML.Window.dll</HintPath>
+        </Reference>
+    </ItemGroup>
 
 </Project>

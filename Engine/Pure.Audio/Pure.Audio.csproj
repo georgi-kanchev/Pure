@@ -5,17 +5,16 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageId>Pure-Utilities</PackageId>
-        <Title>Pure-Utilities</Title>
+        <PackageId>Pure-Audio</PackageId>
+        <Title>Pure-Audio</Title>
         <Authors>gojur</Authors>
         <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
         <RepositoryType>game-engine</RepositoryType>
+        <RootNamespace>Audio</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="SFML.Window">
-            <HintPath>..\..\..\..\.nuget\packages\sfml.window\2.5.1\lib\netstandard2.0\SFML.Window.dll</HintPath>
-        </Reference>
+        <PackageReference Include="SFML.Audio" Version="2.6.0"/>
     </ItemGroup>
 
 </Project>

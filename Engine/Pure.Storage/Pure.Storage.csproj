@@ -5,15 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>Pure-Tilemap</PackageId>
-    <Title>Pure-Tilemap</Title>
+    <PackageId>Pure-Storage</PackageId>
+    <Title>Pure-Storage</Title>
     <Authors>gojur</Authors>
     <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
     <RepositoryType>game-engine</RepositoryType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <DocumentationFile></DocumentationFile>
+    <RootNamespace>Storage</RootNamespace>
   </PropertyGroup>
 
 </Project>

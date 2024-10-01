@@ -3,25 +3,25 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Utilities", "Engine\Utilities\Utilities.csproj", "{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Utilities", "Engine\Pure.Utilities\Pure.Utilities.csproj", "{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserInterface", "Engine\UserInterface\UserInterface.csproj", "{3A2602AA-081E-47E2-89E1-610CA6C15367}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.UserInterface", "Engine\Pure.UserInterface\Pure.UserInterface.csproj", "{3A2602AA-081E-47E2-89E1-610CA6C15367}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Collision", "Engine\Collision\Collision.csproj", "{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Collision", "Engine\Pure.Collision\Pure.Collision.csproj", "{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Animation", "Engine\Animation\Animation.csproj", "{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Animation", "Engine\Pure.Animation\Pure.Animation.csproj", "{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tilemap", "Engine\Tilemap\Tilemap.csproj", "{E10DCE19-23F2-4CB0-89E5-1254144DE690}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Tilemap", "Engine\Pure.Tilemap\Pure.Tilemap.csproj", "{E10DCE19-23F2-4CB0-89E5-1254144DE690}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Storage", "Engine\Storage\Storage.csproj", "{91635CA2-C003-4DB0-8143-B0BF0924DDAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Storage", "Engine\Pure.Storage\Pure.Storage.csproj", "{91635CA2-C003-4DB0-8143-B0BF0924DDAB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Audio", "Engine\Audio\Audio.csproj", "{09AA518A-1AA0-4198-9478-893E3DF05855}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Audio", "Engine\Pure.Audio\Pure.Audio.csproj", "{09AA518A-1AA0-4198-9478-893E3DF05855}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Window", "Engine\Window\Window.csproj", "{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Window", "Engine\Pure.Window\Pure.Window.csproj", "{91B7A7E7-A9D4-4BEC-9419-88B356F28C52}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Particles", "Engine\Particles\Particles.csproj", "{4D12C66C-1D47-4EDE-A380-75326E12FEBB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Particles", "Engine\Pure.Particles\Pure.Particles.csproj", "{4D12C66C-1D47-4EDE-A380-75326E12FEBB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocalAreaNetwork", "Engine\LocalAreaNetwork\LocalAreaNetwork.csproj", "{46834276-33C0-4687-AC41-883F98118246}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.LocalAreaNetwork", "Engine\Pure.LocalAreaNetwork\Pure.LocalAreaNetwork.csproj", "{46834276-33C0-4687-AC41-883F98118246}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorUserInterface", "Editors\EditorUserInterface\EditorUserInterface.csproj", "{3E733970-E290-4636-B9BC-A28A298DA403}"
 EndProject
@@ -49,13 +49,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorBase", "Editors\Edito
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TiledLoader", "Tools\TiledLoader\TiledLoader.csproj", "{4EC3003B-BFD8-4321-B8DE-0F11002662C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pathfinding", "Engine\Pathfinding\Pathfinding.csproj", "{20C377CD-FB66-4C04-9DAA-54812C63912B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Pathfinding", "Engine\Pure.Pathfinding\Pure.Pathfinding.csproj", "{20C377CD-FB66-4C04-9DAA-54812C63912B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorCollision", "Editors\EditorCollision\EditorCollision.csproj", "{E7EF5EAB-28BF-485A-9D2E-9757EDC545F2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorStorage", "Editors\EditorStorage\EditorStorage.csproj", "{972E9BE4-83EE-4D0D-B172-673697BCD0CE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Execution", "Engine\Execution\Execution.csproj", "{7015866F-5374-4B0A-8B73-F48CE149F070}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Execution", "Engine\Pure.Execution\Pure.Execution.csproj", "{7015866F-5374-4B0A-8B73-F48CE149F070}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Games", "Games", "{6ECD2A82-274D-499A-A2B8-AA3E90717BC4}"
 EndProject

@@ -4,18 +4,17 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageId>Pure-Window</PackageId>
-        <Title>Pure-Window</Title>
+        <PackageId>Pure-Execution</PackageId>
+        <Title>Pure-Execution</Title>
         <Authors>gojur</Authors>
         <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
         <RepositoryType>game-engine</RepositoryType>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <RootNamespace>Execution</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MonitorDetails" Version="1.0.0"/>
-        <PackageReference Include="SFML.Graphics" Version="2.6.0" />
+        <PackageReference Include="MoonSharp" Version="2.0.0"/>
     </ItemGroup>
 
 </Project>

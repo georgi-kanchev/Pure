@@ -1,19 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageId>Pure-Audio</PackageId>
-        <Title>Pure-Audio</Title>
+        <PackageId>Pure-Pathfinding</PackageId>
+        <Title>Pure-Pathfinding</Title>
         <Authors>gojur</Authors>
         <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
         <RepositoryType>game-engine</RepositoryType>
+        <RootNamespace>Pathfinding</RootNamespace>
     </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="SFML.Audio" Version="2.6.0"/>
-    </ItemGroup>
 
 </Project>

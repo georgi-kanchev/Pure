@@ -10,6 +10,7 @@
     <Authors>gojur</Authors>
     <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
     <RepositoryType>game-engine</RepositoryType>
+    <RootNamespace>UserInterface</RootNamespace>
   </PropertyGroup>
 
 </Project>
