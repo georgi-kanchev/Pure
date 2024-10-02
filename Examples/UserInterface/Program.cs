@@ -1,4 +1,4 @@
-global using static Pure.Tools.Tilemapper.TilemapperUI;
+global using static Pure.Tools.Tilemapper.MapperUI;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.Utilities;

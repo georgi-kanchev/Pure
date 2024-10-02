@@ -54,10 +54,7 @@ public static class TiledLoader
 
         return xml.GetElementsByTagName("layer");
     }
-    private static (XmlElement layer, XmlNode data) GetLayer(
-        XmlNodeList layers,
-        string tmxPath,
-        string? layerName)
+    private static (XmlElement layer, XmlNode data) GetLayer(XmlNodeList layers, string tmxPath, string? layerName)
     {
         var layer = default(XmlElement);
         var data = default(XmlNode);

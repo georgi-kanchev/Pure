@@ -643,10 +643,6 @@ public class Tilemap
         return result;
     }
 
-    /// <summary>
-    /// Updates the view of the tilemap.
-    /// </summary>
-    /// <returns>The updated tilemap view.</returns>
     public Tilemap ViewUpdate()
     {
         var (vx, vy, vw, vh, _) = View.ToBundle();
@@ -716,7 +712,7 @@ public class Tilemap
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
@@ -860,7 +856,9 @@ public class Tilemap
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -869,7 +867,9 @@ public class Tilemap
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -905,5 +905,5 @@ public class Tilemap
             return (int)seed;
         }
     }
-    #endregion
+#endregion
 }

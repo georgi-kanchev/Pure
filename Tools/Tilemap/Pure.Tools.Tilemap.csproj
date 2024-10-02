@@ -4,7 +4,6 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>Pure.Examples.UserInterface</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,7 +11,6 @@
         <ProjectReference Include="..\..\Engine\UserInterface\Pure.Engine.UserInterface.csproj"/>
         <ProjectReference Include="..\..\Engine\Utilities\Pure.Engine.Utilities.csproj"/>
         <ProjectReference Include="..\..\Engine\Window\Pure.Engine.Window.csproj"/>
-        <ProjectReference Include="..\..\Tools\Tilemap\Pure.Tools.Tilemap.csproj"/>
     </ItemGroup>
 
 </Project>

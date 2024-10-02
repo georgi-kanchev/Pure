@@ -3,7 +3,7 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
 global using static Pure.Editors.UserInterface.Program;
-global using static Pure.Tools.Tilemapper.TilemapperUI;
+global using static Pure.Tools.Tilemapper.MapperUI;
 global using Pure.Editors.Base;
 
 namespace Pure.Editors.UserInterface;

@@ -52,11 +52,11 @@ namespace Pure.Engine.Utilities;
 using System.Runtime.CompilerServices;
 
 // Switch between using floats or doubles for input position
-using FNLfloat = System.Single;
+using FNLfloat = Single;
 
 //using FNLfloat = System.Double;
 
-public class FastNoiseLite
+internal class FastNoiseLite
 {
     private const short INLINE = 256; // MethodImplOptions.AggressiveInlining;
     private const short OPTIMISE = 512; // MethodImplOptions.AggressiveOptimization;
@@ -491,7 +491,7 @@ public class FastNoiseLite
         0.38268343236509f, 0.923879532511287f, 0.923879532511287f, 0.38268343236509f, 0.923879532511287f,
         -0.38268343236509f, 0.38268343236509f, -0.923879532511287f,
         -0.38268343236509f, -0.923879532511287f, -0.923879532511287f, -0.38268343236509f,
-        -0.923879532511287f, 0.38268343236509f, -0.38268343236509f, 0.923879532511287f,
+        -0.923879532511287f, 0.38268343236509f, -0.38268343236509f, 0.923879532511287f
     };
 
     private static readonly float[] RandVecs2D =
@@ -591,7 +591,7 @@ public class FastNoiseLite
         -0.5395221479f, 0.841971408f, 0.6579370318f, 0.7530729462f,
         0.01426758847f, -0.9998982128f, -0.6734383991f, 0.7392433447f, 0.639412098f, -0.7688642071f,
         0.9211571421f, 0.3891908523f, -0.146637214f, -0.9891903394f, -0.782318098f, 0.6228791163f,
-        -0.5039610839f, -0.8637263605f, -0.7743120191f, -0.6328039957f,
+        -0.5039610839f, -0.8637263605f, -0.7743120191f, -0.6328039957f
     };
 
     private static readonly float[] Gradients3D =
@@ -834,8 +834,8 @@ public class FastNoiseLite
     [MethodImpl(INLINE)]
     private static float CubicLerp(float a, float b, float c, float d, float t)
     {
-        var p = (d - c) - (a - b);
-        return t * t * t * p + t * t * ((a - b) - p) + t * (c - a) + b;
+        var p = d - c - (a - b);
+        return t * t * t * p + t * t * (a - b - p) + t * (c - a) + b;
     }
 
     [MethodImpl(INLINE)]
@@ -1405,9 +1405,7 @@ public class FastNoiseLite
         var a = 0.5f - x0 * x0 - y0 * y0;
         if (a <= 0) n0 = 0;
         else
-        {
-            n0 = (a * a) * (a * a) * GradCoord(seed, i, j, x0, y0);
-        }
+            n0 = a * a * (a * a) * GradCoord(seed, i, j, x0, y0);
 
         var c = (float)(2 * (1 - 2 * G2) * (1 / G2 - 2)) * t +
                 ((float)(-2 * (1 - 2 * G2) * (1 - 2 * G2)) + a);
@@ -1416,7 +1414,7 @@ public class FastNoiseLite
         {
             var x2 = x0 + (2 * (float)G2 - 1);
             var y2 = y0 + (2 * (float)G2 - 1);
-            n2 = (c * c) * (c * c) * GradCoord(seed, i + PrimeX, j + PrimeY, x2, y2);
+            n2 = c * c * (c * c) * GradCoord(seed, i + PrimeX, j + PrimeY, x2, y2);
         }
 
         if (y0 > x0)
@@ -1426,9 +1424,7 @@ public class FastNoiseLite
             var b = 0.5f - x1 * x1 - y1 * y1;
             if (b <= 0) n1 = 0;
             else
-            {
-                n1 = (b * b) * (b * b) * GradCoord(seed, i, j + PrimeY, x1, y1);
-            }
+                n1 = b * b * (b * b) * GradCoord(seed, i, j + PrimeY, x1, y1);
         }
         else
         {
@@ -1437,9 +1433,7 @@ public class FastNoiseLite
             var b = 0.5f - x1 * x1 - y1 * y1;
             if (b <= 0) n1 = 0;
             else
-            {
-                n1 = (b * b) * (b * b) * GradCoord(seed, i + PrimeX, j, x1, y1);
-            }
+                n1 = b * b * (b * b) * GradCoord(seed, i + PrimeX, j, x1, y1);
         }
 
         return (n0 + n1 + n2) * 99.83685446303647f;
@@ -1476,14 +1470,12 @@ public class FastNoiseLite
         k *= PrimeZ;
 
         float value = 0;
-        var a = (0.6f - x0 * x0) - (y0 * y0 + z0 * z0);
+        var a = 0.6f - x0 * x0 - (y0 * y0 + z0 * z0);
 
         for (var l = 0;; l++)
         {
             if (a > 0)
-            {
-                value += (a * a) * (a * a) * GradCoord(seed, i, j, k, x0, y0, z0);
-            }
+                value += a * a * (a * a) * GradCoord(seed, i, j, k, x0, y0, z0);
 
             if (ax0 >= ay0 && ax0 >= az0)
             {
@@ -1491,7 +1483,9 @@ public class FastNoiseLite
                 if (b > 1)
                 {
                     b -= 1;
-                    value += (b * b) * (b * b) *
+                    value += b *
+                             b *
+                             (b * b) *
                              GradCoord(seed, i - xNSign * PrimeX, j, k, x0 + xNSign, y0, z0);
                 }
             }
@@ -1501,7 +1495,9 @@ public class FastNoiseLite
                 if (b > 1)
                 {
                     b -= 1;
-                    value += (b * b) * (b * b) *
+                    value += b *
+                             b *
+                             (b * b) *
                              GradCoord(seed, i, j - yNSign * PrimeY, k, x0, y0 + yNSign, z0);
                 }
             }
@@ -1511,7 +1507,9 @@ public class FastNoiseLite
                 if (b > 1)
                 {
                     b -= 1;
-                    value += (b * b) * (b * b) *
+                    value += b *
+                             b *
+                             (b * b) *
                              GradCoord(seed, i, j, k - zNSign * PrimeZ, x0, y0, z0 + zNSign);
                 }
             }
@@ -1526,7 +1524,7 @@ public class FastNoiseLite
             y0 = yNSign * ay0;
             z0 = zNSign * az0;
 
-            a += (0.75f - ax0) - (ay0 + az0);
+            a += 0.75f - ax0 - (ay0 + az0);
 
             i += (xNSign >> 1) & PrimeX;
             j += (yNSign >> 1) & PrimeY;
@@ -1572,14 +1570,14 @@ public class FastNoiseLite
         var x0 = xi - t;
         var y0 = yi - t;
 
-        var a0 = (2.0f / 3.0f) - x0 * x0 - y0 * y0;
-        var value = (a0 * a0) * (a0 * a0) * GradCoord(seed, i, j, x0, y0);
+        var a0 = 2.0f / 3.0f - x0 * x0 - y0 * y0;
+        var value = a0 * a0 * (a0 * a0) * GradCoord(seed, i, j, x0, y0);
 
         var a1 = (float)(2 * (1 - 2 * G2) * (1 / G2 - 2)) * t +
                  ((float)(-2 * (1 - 2 * G2) * (1 - 2 * G2)) + a0);
         var x1 = x0 - (float)(1 - 2 * G2);
         var y1 = y0 - (float)(1 - 2 * G2);
-        value += (a1 * a1) * (a1 * a1) * GradCoord(seed, i1, j1, x1, y1);
+        value += a1 * a1 * (a1 * a1) * GradCoord(seed, i1, j1, x1, y1);
 
         // Nested conditionals were faster than compact bit logic/arithmetic.
         var xmyi = xi - yi;
@@ -1589,44 +1587,40 @@ public class FastNoiseLite
             {
                 var x2 = x0 + (float)(3 * G2 - 2);
                 var y2 = y0 + (float)(3 * G2 - 1);
-                var a2 = (2.0f / 3.0f) - x2 * x2 - y2 * y2;
+                var a2 = 2.0f / 3.0f - x2 * x2 - y2 * y2;
                 if (a2 > 0)
-                {
-                    value += (a2 * a2) * (a2 * a2) *
+                    value += a2 *
+                             a2 *
+                             (a2 * a2) *
                              GradCoord(seed, i + (PrimeX << 1), j + PrimeY, x2, y2);
-                }
             }
             else
             {
                 var x2 = x0 + (float)G2;
                 var y2 = y0 + (float)(G2 - 1);
-                var a2 = (2.0f / 3.0f) - x2 * x2 - y2 * y2;
+                var a2 = 2.0f / 3.0f - x2 * x2 - y2 * y2;
                 if (a2 > 0)
-                {
-                    value += (a2 * a2) * (a2 * a2) * GradCoord(seed, i, j + PrimeY, x2, y2);
-                }
+                    value += a2 * a2 * (a2 * a2) * GradCoord(seed, i, j + PrimeY, x2, y2);
             }
 
             if (yi - xmyi > 1)
             {
                 var x3 = x0 + (float)(3 * G2 - 1);
                 var y3 = y0 + (float)(3 * G2 - 2);
-                var a3 = (2.0f / 3.0f) - x3 * x3 - y3 * y3;
+                var a3 = 2.0f / 3.0f - x3 * x3 - y3 * y3;
                 if (a3 > 0)
-                {
-                    value += (a3 * a3) * (a3 * a3) *
+                    value += a3 *
+                             a3 *
+                             (a3 * a3) *
                              GradCoord(seed, i + PrimeX, j + (PrimeY << 1), x3, y3);
-                }
             }
             else
             {
                 var x3 = x0 + (float)(G2 - 1);
                 var y3 = y0 + (float)G2;
-                var a3 = (2.0f / 3.0f) - x3 * x3 - y3 * y3;
+                var a3 = 2.0f / 3.0f - x3 * x3 - y3 * y3;
                 if (a3 > 0)
-                {
-                    value += (a3 * a3) * (a3 * a3) * GradCoord(seed, i + PrimeX, j, x3, y3);
-                }
+                    value += a3 * a3 * (a3 * a3) * GradCoord(seed, i + PrimeX, j, x3, y3);
             }
         }
         else
@@ -1635,42 +1629,34 @@ public class FastNoiseLite
             {
                 var x2 = x0 + (float)(1 - G2);
                 var y2 = y0 - (float)G2;
-                var a2 = (2.0f / 3.0f) - x2 * x2 - y2 * y2;
+                var a2 = 2.0f / 3.0f - x2 * x2 - y2 * y2;
                 if (a2 > 0)
-                {
-                    value += (a2 * a2) * (a2 * a2) * GradCoord(seed, i - PrimeX, j, x2, y2);
-                }
+                    value += a2 * a2 * (a2 * a2) * GradCoord(seed, i - PrimeX, j, x2, y2);
             }
             else
             {
                 var x2 = x0 + (float)(G2 - 1);
                 var y2 = y0 + (float)G2;
-                var a2 = (2.0f / 3.0f) - x2 * x2 - y2 * y2;
+                var a2 = 2.0f / 3.0f - x2 * x2 - y2 * y2;
                 if (a2 > 0)
-                {
-                    value += (a2 * a2) * (a2 * a2) * GradCoord(seed, i + PrimeX, j, x2, y2);
-                }
+                    value += a2 * a2 * (a2 * a2) * GradCoord(seed, i + PrimeX, j, x2, y2);
             }
 
             if (yi < xmyi)
             {
                 var x2 = x0 - (float)G2;
                 var y2 = y0 - (float)(G2 - 1);
-                var a2 = (2.0f / 3.0f) - x2 * x2 - y2 * y2;
+                var a2 = 2.0f / 3.0f - x2 * x2 - y2 * y2;
                 if (a2 > 0)
-                {
-                    value += (a2 * a2) * (a2 * a2) * GradCoord(seed, i, j - PrimeY, x2, y2);
-                }
+                    value += a2 * a2 * (a2 * a2) * GradCoord(seed, i, j - PrimeY, x2, y2);
             }
             else
             {
                 var x2 = x0 + (float)G2;
                 var y2 = y0 + (float)(G2 - 1);
-                var a2 = (2.0f / 3.0f) - x2 * x2 - y2 * y2;
+                var a2 = 2.0f / 3.0f - x2 * x2 - y2 * y2;
                 if (a2 > 0)
-                {
-                    value += (a2 * a2) * (a2 * a2) * GradCoord(seed, i, j + PrimeY, x2, y2);
-                }
+                    value += a2 * a2 * (a2 * a2) * GradCoord(seed, i, j + PrimeY, x2, y2);
             }
         }
 
@@ -1708,15 +1694,21 @@ public class FastNoiseLite
         var y0 = yi + yNMask;
         var z0 = zi + zNMask;
         var a0 = 0.75f - x0 * x0 - y0 * y0 - z0 * z0;
-        var value = (a0 * a0) * (a0 * a0) * GradCoord(seed,
-            i + (xNMask & PrimeX), j + (yNMask & PrimeY), k + (zNMask & PrimeZ), x0, y0, z0);
+        var value = a0 *
+                    a0 *
+                    (a0 * a0) *
+                    GradCoord(seed,
+                        i + (xNMask & PrimeX), j + (yNMask & PrimeY), k + (zNMask & PrimeZ), x0, y0, z0);
 
         var x1 = xi - 0.5f;
         var y1 = yi - 0.5f;
         var z1 = zi - 0.5f;
         var a1 = 0.75f - x1 * x1 - y1 * y1 - z1 * z1;
-        value += (a1 * a1) * (a1 * a1) * GradCoord(seed2,
-            i + PrimeX, j + PrimeY, k + PrimeZ, x1, y1, z1);
+        value += a1 *
+                 a1 *
+                 (a1 * a1) *
+                 GradCoord(seed2,
+                     i + PrimeX, j + PrimeY, k + PrimeZ, x1, y1, z1);
 
         var xAFlipMask0 = ((xNMask | 1) << 1) * x1;
         var yAFlipMask0 = ((yNMask | 1) << 1) * y1;
@@ -1732,8 +1724,11 @@ public class FastNoiseLite
             var x2 = x0 - (xNMask | 1);
             var y2 = y0;
             var z2 = z0;
-            value += (a2 * a2) * (a2 * a2) * GradCoord(seed,
-                i + (~xNMask & PrimeX), j + (yNMask & PrimeY), k + (zNMask & PrimeZ), x2, y2, z2);
+            value += a2 *
+                     a2 *
+                     (a2 * a2) *
+                     GradCoord(seed,
+                         i + (~xNMask & PrimeX), j + (yNMask & PrimeY), k + (zNMask & PrimeZ), x2, y2, z2);
         }
         else
         {
@@ -1743,8 +1738,11 @@ public class FastNoiseLite
                 var x3 = x0;
                 var y3 = y0 - (yNMask | 1);
                 var z3 = z0 - (zNMask | 1);
-                value += (a3 * a3) * (a3 * a3) * GradCoord(seed,
-                    i + (xNMask & PrimeX), j + (~yNMask & PrimeY), k + (~zNMask & PrimeZ), x3, y3, z3);
+                value += a3 *
+                         a3 *
+                         (a3 * a3) *
+                         GradCoord(seed,
+                             i + (xNMask & PrimeX), j + (~yNMask & PrimeY), k + (~zNMask & PrimeZ), x3, y3, z3);
             }
 
             var a4 = xAFlipMask1 + a1;
@@ -1753,8 +1751,11 @@ public class FastNoiseLite
                 var x4 = (xNMask | 1) + x1;
                 var y4 = y1;
                 var z4 = z1;
-                value += (a4 * a4) * (a4 * a4) * GradCoord(seed2,
-                    i + (xNMask & (PrimeX * 2)), j + PrimeY, k + PrimeZ, x4, y4, z4);
+                value += a4 *
+                         a4 *
+                         (a4 * a4) *
+                         GradCoord(seed2,
+                             i + (xNMask & (PrimeX * 2)), j + PrimeY, k + PrimeZ, x4, y4, z4);
                 skip5 = true;
             }
         }
@@ -1766,8 +1767,11 @@ public class FastNoiseLite
             var x6 = x0;
             var y6 = y0 - (yNMask | 1);
             var z6 = z0;
-            value += (a6 * a6) * (a6 * a6) * GradCoord(seed,
-                i + (xNMask & PrimeX), j + (~yNMask & PrimeY), k + (zNMask & PrimeZ), x6, y6, z6);
+            value += a6 *
+                     a6 *
+                     (a6 * a6) *
+                     GradCoord(seed,
+                         i + (xNMask & PrimeX), j + (~yNMask & PrimeY), k + (zNMask & PrimeZ), x6, y6, z6);
         }
         else
         {
@@ -1777,8 +1781,11 @@ public class FastNoiseLite
                 var x7 = x0 - (xNMask | 1);
                 var y7 = y0;
                 var z7 = z0 - (zNMask | 1);
-                value += (a7 * a7) * (a7 * a7) * GradCoord(seed,
-                    i + (~xNMask & PrimeX), j + (yNMask & PrimeY), k + (~zNMask & PrimeZ), x7, y7, z7);
+                value += a7 *
+                         a7 *
+                         (a7 * a7) *
+                         GradCoord(seed,
+                             i + (~xNMask & PrimeX), j + (yNMask & PrimeY), k + (~zNMask & PrimeZ), x7, y7, z7);
             }
 
             var a8 = yAFlipMask1 + a1;
@@ -1787,8 +1794,11 @@ public class FastNoiseLite
                 var x8 = x1;
                 var y8 = (yNMask | 1) + y1;
                 var z8 = z1;
-                value += (a8 * a8) * (a8 * a8) * GradCoord(seed2,
-                    i + PrimeX, j + (yNMask & (PrimeY << 1)), k + PrimeZ, x8, y8, z8);
+                value += a8 *
+                         a8 *
+                         (a8 * a8) *
+                         GradCoord(seed2,
+                             i + PrimeX, j + (yNMask & (PrimeY << 1)), k + PrimeZ, x8, y8, z8);
                 skip9 = true;
             }
         }
@@ -1800,8 +1810,11 @@ public class FastNoiseLite
             var xA = x0;
             var yA = y0;
             var zA = z0 - (zNMask | 1);
-            value += (aA * aA) * (aA * aA) * GradCoord(seed,
-                i + (xNMask & PrimeX), j + (yNMask & PrimeY), k + (~zNMask & PrimeZ), xA, yA, zA);
+            value += aA *
+                     aA *
+                     (aA * aA) *
+                     GradCoord(seed,
+                         i + (xNMask & PrimeX), j + (yNMask & PrimeY), k + (~zNMask & PrimeZ), xA, yA, zA);
         }
         else
         {
@@ -1811,8 +1824,11 @@ public class FastNoiseLite
                 var xB = x0 - (xNMask | 1);
                 var yB = y0 - (yNMask | 1);
                 var zB = z0;
-                value += (aB * aB) * (aB * aB) * GradCoord(seed,
-                    i + (~xNMask & PrimeX), j + (~yNMask & PrimeY), k + (zNMask & PrimeZ), xB, yB, zB);
+                value += aB *
+                         aB *
+                         (aB * aB) *
+                         GradCoord(seed,
+                             i + (~xNMask & PrimeX), j + (~yNMask & PrimeY), k + (zNMask & PrimeZ), xB, yB, zB);
             }
 
             var aC = zAFlipMask1 + a1;
@@ -1821,8 +1837,11 @@ public class FastNoiseLite
                 var xC = x1;
                 var yC = y1;
                 var zC = (zNMask | 1) + z1;
-                value += (aC * aC) * (aC * aC) * GradCoord(seed2,
-                    i + PrimeX, j + PrimeY, k + (zNMask & (PrimeZ << 1)), xC, yC, zC);
+                value += aC *
+                         aC *
+                         (aC * aC) *
+                         GradCoord(seed2,
+                             i + PrimeX, j + PrimeY, k + (zNMask & (PrimeZ << 1)), xC, yC, zC);
                 skipD = true;
             }
         }
@@ -1835,8 +1854,11 @@ public class FastNoiseLite
                 var x5 = x1;
                 var y5 = (yNMask | 1) + y1;
                 var z5 = (zNMask | 1) + z1;
-                value += (a5 * a5) * (a5 * a5) * GradCoord(seed2,
-                    i + PrimeX, j + (yNMask & (PrimeY << 1)), k + (zNMask & (PrimeZ << 1)), x5, y5, z5);
+                value += a5 *
+                         a5 *
+                         (a5 * a5) *
+                         GradCoord(seed2,
+                             i + PrimeX, j + (yNMask & (PrimeY << 1)), k + (zNMask & (PrimeZ << 1)), x5, y5, z5);
             }
         }
 
@@ -1848,8 +1870,11 @@ public class FastNoiseLite
                 var x9 = (xNMask | 1) + x1;
                 var y9 = y1;
                 var z9 = (zNMask | 1) + z1;
-                value += (a9 * a9) * (a9 * a9) * GradCoord(seed2,
-                    i + (xNMask & (PrimeX * 2)), j + PrimeY, k + (zNMask & (PrimeZ << 1)), x9, y9, z9);
+                value += a9 *
+                         a9 *
+                         (a9 * a9) *
+                         GradCoord(seed2,
+                             i + (xNMask & (PrimeX * 2)), j + PrimeY, k + (zNMask & (PrimeZ << 1)), x9, y9, z9);
             }
         }
 
@@ -1861,8 +1886,11 @@ public class FastNoiseLite
                 var xD = (xNMask | 1) + x1;
                 var yD = (yNMask | 1) + y1;
                 var zD = z1;
-                value += (aD * aD) * (aD * aD) * GradCoord(seed2,
-                    i + (xNMask & (PrimeX << 1)), j + (yNMask & (PrimeY << 1)), k + PrimeZ, xD, yD, zD);
+                value += aD *
+                         aD *
+                         (aD * aD) *
+                         GradCoord(seed2,
+                             i + (xNMask & (PrimeX << 1)), j + (yNMask & (PrimeY << 1)), k + PrimeZ, xD, yD, zD);
             }
         }
 
@@ -1960,7 +1988,7 @@ public class FastNoiseLite
                         var vecX = (float)(xi - x) + RandVecs2D[idx] * cellularJitter;
                         var vecY = (float)(yi - y) + RandVecs2D[idx | 1] * cellularJitter;
 
-                        var newDistance = (FastAbs(vecX) + FastAbs(vecY)) + (vecX * vecX + vecY * vecY);
+                        var newDistance = FastAbs(vecX) + FastAbs(vecY) + (vecX * vecX + vecY * vecY);
 
                         distance1 = FastMax(FastMin(distance1, newDistance), distance0);
                         if (newDistance < distance0)
@@ -1984,9 +2012,7 @@ public class FastNoiseLite
             distance0 = FastSqrt(distance0);
 
             if (mCellularReturnType >= CellularReturnType.Distance2)
-            {
                 distance1 = FastSqrt(distance1);
-            }
         }
 
         switch (mCellularReturnType)
@@ -2121,7 +2147,9 @@ public class FastNoiseLite
                             var vecY = (float)(yi - y) + RandVecs3D[idx | 1] * cellularJitter;
                             var vecZ = (float)(zi - z) + RandVecs3D[idx | 2] * cellularJitter;
 
-                            var newDistance = (FastAbs(vecX) + FastAbs(vecY) + FastAbs(vecZ)) +
+                            var newDistance = FastAbs(vecX) +
+                                              FastAbs(vecY) +
+                                              FastAbs(vecZ) +
                                               (vecX * vecX + vecY * vecY + vecZ * vecZ);
 
                             distance1 = FastMax(FastMin(distance1, newDistance), distance0);
@@ -2151,9 +2179,7 @@ public class FastNoiseLite
             distance0 = FastSqrt(distance0);
 
             if (mCellularReturnType >= CellularReturnType.Distance2)
-            {
                 distance1 = FastSqrt(distance1);
-            }
         }
 
         switch (mCellularReturnType)
@@ -2262,19 +2288,20 @@ public class FastNoiseLite
         var y3 = y1 + unchecked(PrimeY * 2);
 
         return CubicLerp(
-            CubicLerp(ValCoord(seed, x0, y0), ValCoord(seed, x1, y0), ValCoord(seed, x2, y0),
-                ValCoord(seed, x3, y0),
-                xs),
-            CubicLerp(ValCoord(seed, x0, y1), ValCoord(seed, x1, y1), ValCoord(seed, x2, y1),
-                ValCoord(seed, x3, y1),
-                xs),
-            CubicLerp(ValCoord(seed, x0, y2), ValCoord(seed, x1, y2), ValCoord(seed, x2, y2),
-                ValCoord(seed, x3, y2),
-                xs),
-            CubicLerp(ValCoord(seed, x0, y3), ValCoord(seed, x1, y3), ValCoord(seed, x2, y3),
-                ValCoord(seed, x3, y3),
-                xs),
-            ys) * (1 / (1.5f * 1.5f));
+                   CubicLerp(ValCoord(seed, x0, y0), ValCoord(seed, x1, y0), ValCoord(seed, x2, y0),
+                       ValCoord(seed, x3, y0),
+                       xs),
+                   CubicLerp(ValCoord(seed, x0, y1), ValCoord(seed, x1, y1), ValCoord(seed, x2, y1),
+                       ValCoord(seed, x3, y1),
+                       xs),
+                   CubicLerp(ValCoord(seed, x0, y2), ValCoord(seed, x1, y2), ValCoord(seed, x2, y2),
+                       ValCoord(seed, x3, y2),
+                       xs),
+                   CubicLerp(ValCoord(seed, x0, y3), ValCoord(seed, x1, y3), ValCoord(seed, x2, y3),
+                       ValCoord(seed, x3, y3),
+                       xs),
+                   ys) *
+               (1 / (1.5f * 1.5f));
     }
 
     private float SingleValueCubic(int seed, FNLfloat x, FNLfloat y, FNLfloat z)
@@ -2302,47 +2329,48 @@ public class FastNoiseLite
         var z3 = z1 + unchecked(PrimeZ * 2);
 
         return CubicLerp(
-            CubicLerp(
-                CubicLerp(ValCoord(seed, x0, y0, z0), ValCoord(seed, x1, y0, z0),
-                    ValCoord(seed, x2, y0, z0), ValCoord(seed, x3, y0, z0), xs),
-                CubicLerp(ValCoord(seed, x0, y1, z0), ValCoord(seed, x1, y1, z0),
-                    ValCoord(seed, x2, y1, z0), ValCoord(seed, x3, y1, z0), xs),
-                CubicLerp(ValCoord(seed, x0, y2, z0), ValCoord(seed, x1, y2, z0),
-                    ValCoord(seed, x2, y2, z0), ValCoord(seed, x3, y2, z0), xs),
-                CubicLerp(ValCoord(seed, x0, y3, z0), ValCoord(seed, x1, y3, z0),
-                    ValCoord(seed, x2, y3, z0), ValCoord(seed, x3, y3, z0), xs),
-                ys),
-            CubicLerp(
-                CubicLerp(ValCoord(seed, x0, y0, z1), ValCoord(seed, x1, y0, z1),
-                    ValCoord(seed, x2, y0, z1), ValCoord(seed, x3, y0, z1), xs),
-                CubicLerp(ValCoord(seed, x0, y1, z1), ValCoord(seed, x1, y1, z1),
-                    ValCoord(seed, x2, y1, z1), ValCoord(seed, x3, y1, z1), xs),
-                CubicLerp(ValCoord(seed, x0, y2, z1), ValCoord(seed, x1, y2, z1),
-                    ValCoord(seed, x2, y2, z1), ValCoord(seed, x3, y2, z1), xs),
-                CubicLerp(ValCoord(seed, x0, y3, z1), ValCoord(seed, x1, y3, z1),
-                    ValCoord(seed, x2, y3, z1), ValCoord(seed, x3, y3, z1), xs),
-                ys),
-            CubicLerp(
-                CubicLerp(ValCoord(seed, x0, y0, z2), ValCoord(seed, x1, y0, z2),
-                    ValCoord(seed, x2, y0, z2), ValCoord(seed, x3, y0, z2), xs),
-                CubicLerp(ValCoord(seed, x0, y1, z2), ValCoord(seed, x1, y1, z2),
-                    ValCoord(seed, x2, y1, z2), ValCoord(seed, x3, y1, z2), xs),
-                CubicLerp(ValCoord(seed, x0, y2, z2), ValCoord(seed, x1, y2, z2),
-                    ValCoord(seed, x2, y2, z2), ValCoord(seed, x3, y2, z2), xs),
-                CubicLerp(ValCoord(seed, x0, y3, z2), ValCoord(seed, x1, y3, z2),
-                    ValCoord(seed, x2, y3, z2), ValCoord(seed, x3, y3, z2), xs),
-                ys),
-            CubicLerp(
-                CubicLerp(ValCoord(seed, x0, y0, z3), ValCoord(seed, x1, y0, z3),
-                    ValCoord(seed, x2, y0, z3), ValCoord(seed, x3, y0, z3), xs),
-                CubicLerp(ValCoord(seed, x0, y1, z3), ValCoord(seed, x1, y1, z3),
-                    ValCoord(seed, x2, y1, z3), ValCoord(seed, x3, y1, z3), xs),
-                CubicLerp(ValCoord(seed, x0, y2, z3), ValCoord(seed, x1, y2, z3),
-                    ValCoord(seed, x2, y2, z3), ValCoord(seed, x3, y2, z3), xs),
-                CubicLerp(ValCoord(seed, x0, y3, z3), ValCoord(seed, x1, y3, z3),
-                    ValCoord(seed, x2, y3, z3), ValCoord(seed, x3, y3, z3), xs),
-                ys),
-            zs) * (1 / (1.5f * 1.5f * 1.5f));
+                   CubicLerp(
+                       CubicLerp(ValCoord(seed, x0, y0, z0), ValCoord(seed, x1, y0, z0),
+                           ValCoord(seed, x2, y0, z0), ValCoord(seed, x3, y0, z0), xs),
+                       CubicLerp(ValCoord(seed, x0, y1, z0), ValCoord(seed, x1, y1, z0),
+                           ValCoord(seed, x2, y1, z0), ValCoord(seed, x3, y1, z0), xs),
+                       CubicLerp(ValCoord(seed, x0, y2, z0), ValCoord(seed, x1, y2, z0),
+                           ValCoord(seed, x2, y2, z0), ValCoord(seed, x3, y2, z0), xs),
+                       CubicLerp(ValCoord(seed, x0, y3, z0), ValCoord(seed, x1, y3, z0),
+                           ValCoord(seed, x2, y3, z0), ValCoord(seed, x3, y3, z0), xs),
+                       ys),
+                   CubicLerp(
+                       CubicLerp(ValCoord(seed, x0, y0, z1), ValCoord(seed, x1, y0, z1),
+                           ValCoord(seed, x2, y0, z1), ValCoord(seed, x3, y0, z1), xs),
+                       CubicLerp(ValCoord(seed, x0, y1, z1), ValCoord(seed, x1, y1, z1),
+                           ValCoord(seed, x2, y1, z1), ValCoord(seed, x3, y1, z1), xs),
+                       CubicLerp(ValCoord(seed, x0, y2, z1), ValCoord(seed, x1, y2, z1),
+                           ValCoord(seed, x2, y2, z1), ValCoord(seed, x3, y2, z1), xs),
+                       CubicLerp(ValCoord(seed, x0, y3, z1), ValCoord(seed, x1, y3, z1),
+                           ValCoord(seed, x2, y3, z1), ValCoord(seed, x3, y3, z1), xs),
+                       ys),
+                   CubicLerp(
+                       CubicLerp(ValCoord(seed, x0, y0, z2), ValCoord(seed, x1, y0, z2),
+                           ValCoord(seed, x2, y0, z2), ValCoord(seed, x3, y0, z2), xs),
+                       CubicLerp(ValCoord(seed, x0, y1, z2), ValCoord(seed, x1, y1, z2),
+                           ValCoord(seed, x2, y1, z2), ValCoord(seed, x3, y1, z2), xs),
+                       CubicLerp(ValCoord(seed, x0, y2, z2), ValCoord(seed, x1, y2, z2),
+                           ValCoord(seed, x2, y2, z2), ValCoord(seed, x3, y2, z2), xs),
+                       CubicLerp(ValCoord(seed, x0, y3, z2), ValCoord(seed, x1, y3, z2),
+                           ValCoord(seed, x2, y3, z2), ValCoord(seed, x3, y3, z2), xs),
+                       ys),
+                   CubicLerp(
+                       CubicLerp(ValCoord(seed, x0, y0, z3), ValCoord(seed, x1, y0, z3),
+                           ValCoord(seed, x2, y0, z3), ValCoord(seed, x3, y0, z3), xs),
+                       CubicLerp(ValCoord(seed, x0, y1, z3), ValCoord(seed, x1, y1, z3),
+                           ValCoord(seed, x2, y1, z3), ValCoord(seed, x3, y1, z3), xs),
+                       CubicLerp(ValCoord(seed, x0, y2, z3), ValCoord(seed, x1, y2, z3),
+                           ValCoord(seed, x2, y2, z3), ValCoord(seed, x3, y2, z3), xs),
+                       CubicLerp(ValCoord(seed, x0, y3, z3), ValCoord(seed, x1, y3, z3),
+                           ValCoord(seed, x2, y3, z3), ValCoord(seed, x3, y3, z3), xs),
+                       ys),
+                   zs) *
+               (1 / (1.5f * 1.5f * 1.5f));
     }
 
     // Value Noise
@@ -2711,7 +2739,7 @@ public class FastNoiseLite
         var a = 0.5f - x0 * x0 - y0 * y0;
         if (a > 0)
         {
-            var aaaa = (a * a) * (a * a);
+            var aaaa = a * a * (a * a);
             float xo, yo;
             if (outGradOnly)
                 GradCoordOut(seed, i, j, out xo, out yo);
@@ -2727,7 +2755,7 @@ public class FastNoiseLite
         {
             var x2 = x0 + (2 * (float)G2 - 1);
             var y2 = y0 + (2 * (float)G2 - 1);
-            var cccc = (c * c) * (c * c);
+            var cccc = c * c * (c * c);
             float xo, yo;
             if (outGradOnly)
                 GradCoordOut(seed, i + PrimeX, j + PrimeY, out xo, out yo);
@@ -2744,7 +2772,7 @@ public class FastNoiseLite
             var b = 0.5f - x1 * x1 - y1 * y1;
             if (b > 0)
             {
-                var bbbb = (b * b) * (b * b);
+                var bbbb = b * b * (b * b);
                 float xo, yo;
                 if (outGradOnly)
                     GradCoordOut(seed, i, j + PrimeY, out xo, out yo);
@@ -2761,7 +2789,7 @@ public class FastNoiseLite
             var b = 0.5f - x1 * x1 - y1 * y1;
             if (b > 0)
             {
-                var bbbb = (b * b) * (b * b);
+                var bbbb = b * b * (b * b);
                 float xo, yo;
                 if (outGradOnly)
                     GradCoordOut(seed, i + PrimeX, j, out xo, out yo);
@@ -2821,12 +2849,12 @@ public class FastNoiseLite
         float vx, vy, vz;
         vx = vy = vz = 0;
 
-        var a = (0.6f - x0 * x0) - (y0 * y0 + z0 * z0);
+        var a = 0.6f - x0 * x0 - (y0 * y0 + z0 * z0);
         for (var l = 0;; l++)
         {
             if (a > 0)
             {
-                var aaaa = (a * a) * (a * a);
+                var aaaa = a * a * (a * a);
                 float xo, yo, zo;
                 if (outGradOnly)
                     GradCoordOut(seed, i, j, k, out xo, out yo, out zo);
@@ -2867,7 +2895,7 @@ public class FastNoiseLite
             if (b > 1)
             {
                 b -= 1;
-                var bbbb = (b * b) * (b * b);
+                var bbbb = b * b * (b * b);
                 float xo, yo, zo;
                 if (outGradOnly)
                     GradCoordOut(seed, i1, j1, k1, out xo, out yo, out zo);
@@ -2888,7 +2916,7 @@ public class FastNoiseLite
             y0 = yNSign * ay0;
             z0 = zNSign * az0;
 
-            a += (0.75f - ax0) - (ay0 + az0);
+            a += 0.75f - ax0 - (ay0 + az0);
 
             i += (xNSign >> 1) & PrimeX;
             j += (yNSign >> 1) & PrimeY;

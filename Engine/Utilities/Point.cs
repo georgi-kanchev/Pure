@@ -3,12 +3,9 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 
-public enum NoiseType
-{
-    OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value
-};
+public enum NoiseType { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value }
 
-public struct Point
+public struct Point : IEquatable<Point>
 {
     public static Point NaN
     {
@@ -156,7 +153,7 @@ public struct Point
         var y = Map(percent, 0, 100, Y, target.Y);
         return new(x, y);
     }
-    public float ToNoise(NoiseType type = NoiseType.Perlin, float scale = 10f, int seed = 0)
+    public float ToNoise(NoiseType type = NoiseType.ValueCubic, float scale = 10f, int seed = 0)
     {
         var noise = new FastNoiseLite(seed);
         noise.SetNoiseType((FastNoiseLite.NoiseType)type);
@@ -209,6 +206,11 @@ public struct Point
         }
 
         return new Point(sumX / points.Length, sumY / points.Length);
+    }
+
+    public bool Equals(Point other)
+    {
+        return val.Equals(other.val) && Color == other.Color;
     }
 
     public static implicit operator Point((int x, int y) position)

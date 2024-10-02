@@ -7,7 +7,7 @@ using Engine.Utilities;
 using static Engine.Tilemap.Tile;
 using static Engine.Utilities.Color;
 
-public static class TilemapperUI
+public static class MapperUI
 {
     public static bool IsInteractable { get; set; } = true;
 
@@ -522,7 +522,7 @@ public static class TilemapperUI
 #region Backend
     private static readonly int seed;
 
-    static TilemapperUI()
+    static MapperUI()
     {
         seed = (-1_000_000, 1_000_000).Random();
     }

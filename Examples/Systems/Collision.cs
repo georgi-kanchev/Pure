@@ -11,7 +11,6 @@ public static class Collision
     public static void Run()
     {
         Window.Title = "Pure - Collision Example";
-        Window.PixelScale = 5f;
 
         var aspectRatio = Monitor.Current.AspectRatio;
         var maps = new TilemapPack(2, (aspectRatio.width * 3, aspectRatio.height * 3));

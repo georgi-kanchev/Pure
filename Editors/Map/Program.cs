@@ -4,7 +4,7 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
-global using static Pure.Tools.Tilemapper.TilemapperUI;
+global using static Pure.Tools.Tilemapper.MapperUI;
 global using System.Text;
 using System.IO.Compression;
 

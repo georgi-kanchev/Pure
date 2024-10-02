@@ -4,7 +4,7 @@ global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.TiledLoader;
-global using static Pure.Tools.Tilemapper.TilemapperUI;
+global using static Pure.Tools.Tilemapper.MapperUI;
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
 using System.IO.Compression;

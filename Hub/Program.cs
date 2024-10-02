@@ -16,7 +16,7 @@ public static class Program
         var editors = new List(itemCount: 4) { Size = (14, 4), ItemSize = (14, 1), Text = "Editors:" };
         var apps = new List(itemCount: 7) { Size = (15, 7), ItemSize = (15, 1), Text = "Example Games:" };
         var uis = new List(itemCount: 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
-        var systems = new List(itemCount: 5) { Size = (22, 5), ItemSize = (22, 1), Text = "Example Systems:" };
+        var systems = new List(itemCount: 6) { Size = (22, 6), ItemSize = (22, 1), Text = "Example Systems:" };
 
         editors.Edit("Collision", "Map", "Storage", "User Interface");
         editors.AlignInside((0.75f, 0.25f));
@@ -46,10 +46,11 @@ public static class Program
             () => RunUI(Palettes.Create(maps)));
         OnDisplay(uis);
 
-        systems.Edit("Default Graphics", "Collision", "Line of Sight & Lights", "Pathfinding", "Audio");
+        systems.Edit("Default Graphics", "Collision", "Line of Sight & Lights", "Pathfinding", "Audio",
+            "Terrain Generation");
         systems.AlignInside((0.05f, 0.77f));
         OnTrigger(systems, DefaultGraphics.Run, Collision.Run, LineOfSightAndLights.Run,
-            Pathfinding.Run, Audio.Run);
+            Pathfinding.Run, Audio.Run, TerrainGeneration.Run);
         OnDisplay(systems);
 
         ui.Blocks.AddRange(new Block[] { editors, apps, uis, systems });
@@ -86,3 +87,8 @@ public static class Program
         }
     }
 }
+
+
+
+
+
