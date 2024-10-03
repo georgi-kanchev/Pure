@@ -224,7 +224,7 @@ public static class Program
 
     private static void OnPanelPress(Panel panel)
     {
-        var notOverEditPanel = inspector.IsHovered == false || inspector.IsHidden;
+        var notOverPanel = inspector.IsHovered == false || inspector.IsHidden;
         var isHoveringMenu = false;
         foreach (var kvp in menus)
             if (kvp.Value is { IsHovered: true, IsHidden: false })
@@ -233,7 +233,7 @@ public static class Program
                 break;
             }
 
-        if (editor.Prompt.IsHidden == false || notOverEditPanel == false || isHoveringMenu)
+        if (editor.Prompt.IsHidden == false || notOverPanel == false || isHoveringMenu)
             return;
 
         selected = ui.Blocks[panels.IndexOf(panel)];

@@ -8,7 +8,29 @@ using System.Text;
 [Flags]
 public enum SymbolGroup
 {
-    None = 0, Letters = 1, Digits = 2, Punctuation = 4, Math = 8, Special = 16, Space = 32, Other = 64,
+    None = 1 << 0,
+    /// <summary>
+    /// abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+    /// </summary>
+    Letters = 1 << 1,
+    /// <summary>
+    /// 0123456789.,
+    /// </summary>
+    Digits = 1 << 2,
+    /// <summary>
+    /// ,.;:!?-()[]{}\"'
+    /// </summary>
+    Punctuation = 1 << 3,
+    /// <summary>
+    /// +-*/=ᐸᐳ%(),^
+    /// </summary>
+    Math = 1 << 4,
+    /// <summary>
+    /// @#＆_|\\/^
+    /// </summary>
+    Special = 1 << 5,
+    Space = 1 << 6,
+    Other = 1 << 7,
     All = Letters | Digits | Punctuation | Math | Special | Space | Other
 }
 
@@ -409,7 +431,7 @@ public class InputBox : Block
     private static readonly Dictionary<SymbolGroup, string> symbolSets = new()
     {
         { SymbolGroup.Letters, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" },
-        { SymbolGroup.Digits, "0123456789." },
+        { SymbolGroup.Digits, "0123456789.," },
         { SymbolGroup.Punctuation, ",.;:!?-()[]{}\"'" },
         { SymbolGroup.Math, "+-*/=<>%(),^" },
         { SymbolGroup.Special, "@#&_|\\/^" },
@@ -515,8 +537,8 @@ public class InputBox : Block
     private void UpdateText()
     {
         var str = new StringBuilder();
-        var maxW = Size.width - 1;
-        var maxY = Math.Min(scrY + Size.height, lines.Count);
+        var maxW = Width - 1;
+        var maxY = Math.Min(scrY + Height, lines.Count);
         for (var i = scrY; i < maxY; i++)
         {
             var newLine = i == scrY ? string.Empty : Environment.NewLine;
@@ -526,6 +548,20 @@ public class InputBox : Block
 
             if (SymbolMask != null)
                 result = Regex.Replace(result, ".", SymbolMask);
+
+            if (Width > 3 && scrX > 0 && line.Length > 0)
+            {
+                var chars = (string.IsNullOrEmpty(result) ? " " : result).ToCharArray();
+                chars[0] = '…';
+                result = new(chars);
+            }
+
+            if (scrX < line.Length - maxW - 1 && line.Length > maxW - 1)
+            {
+                var chars = (string.IsNullOrEmpty(result) ? " " : result).ToCharArray();
+                chars[^1] = '…';
+                result = new(chars);
+            }
 
             str.Append(newLine + result);
         }

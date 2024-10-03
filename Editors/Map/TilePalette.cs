@@ -86,7 +86,7 @@ internal class TilePalette
         layer = new(map.View.Size) { Zoom = 3.8f, Offset = (198, 88) };
     }
 
-    public void Update(Inspector inspector)
+    public void Update(Inspector inspector, TerrainPanel terrainPanel)
     {
         prevMousePosWorld = editor.MousePositionWorld;
 
@@ -114,6 +114,7 @@ internal class TilePalette
             }
 
         this.inspector = inspector;
+        this.terrainPanel = terrainPanel;
         inspector.paletteScrollH.Step = 1f / (mw - vw);
         inspector.paletteScrollV.Step = 1f / (mh - vh);
         var w = (int)MathF.Round(inspector.paletteScrollH.Slider.Progress * (mw - vw));
@@ -199,6 +200,7 @@ internal class TilePalette
 #region Backend
     private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12, 13, 14 };
     private Inspector? inspector;
+    private TerrainPanel? terrainPanel;
     private (int x, int y) prevMousePos;
     private readonly Editor editor;
     private (float x, float y) selectedPos, prevMousePosWorld;
@@ -206,7 +208,6 @@ internal class TilePalette
     private static int clickSeed;
     private static bool isDrawingSelection, isDraggingTiles, isDraggingSelection;
     private Tile[,]? draggingTiles, copyTiles;
-
     private Solid selected;
 
     static TilePalette()
@@ -235,6 +236,7 @@ internal class TilePalette
     private bool IsPaintAllowed()
     {
         return inspector is { IsHovered: false } &&
+               terrainPanel is { IsHovered: false } &&
                editor.Prompt.IsHidden &&
                Program.menu.IsHidden &&
                editor.MapPanel.IsHovered == false;

@@ -34,15 +34,8 @@ public class List : Block
         get => isCollapsed && Span == Span.Dropdown;
         set
         {
-            if (Span != Span.Dropdown)
-                return;
-
-            if (value == false)
-                Size = (Size.width, originalHeight);
-            else if (isCollapsed == false)
-                originalHeight = Size.height;
-
-            isCollapsed = value;
+            if (Span == Span.Dropdown)
+                isCollapsed = value;
         }
     }
     public bool IsReadOnly
@@ -98,7 +91,6 @@ public class List : Block
         Init();
         Size = (6, 8);
         ItemGap = span == Span.Horizontal ? 1 : 0;
-        originalHeight = Size.height;
         Span = span;
 
         var items = CreateAmount(itemCount);
@@ -110,7 +102,6 @@ public class List : Block
             return;
 
         IsSingleSelecting = true;
-        IsCollapsed = true;
 
         if (Items.Count > 0)
             Select(Items[0]);
@@ -139,11 +130,6 @@ public class List : Block
         Scroll.Slider.progress = scrollProgress;
         Scroll.Slider.index = scrollIndex;
         isInitialized = true;
-
-        originalHeight = Size.height;
-
-        if (Span == Span.Dropdown)
-            IsCollapsed = true;
     }
     public List(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -281,7 +267,7 @@ public class List : Block
 
 #region Backend
     private int originalHeight;
-    private bool isSingleSelecting, isCollapsed;
+    private bool isSingleSelecting, isCollapsed, veryFirstUpdate = true;
     private readonly bool isInitialized;
     private int itemGap;
     internal (int width, int height) itemSize = (5, 1);
@@ -336,6 +322,14 @@ public class List : Block
 
     internal void OnUpdate()
     {
+        // this is to give time to dropdown to accept size when not collapsed
+        if (veryFirstUpdate)
+        {
+            veryFirstUpdate = false;
+            originalHeight = Height;
+            IsCollapsed = true;
+        }
+
         SelectedItems.Clear();
         foreach (var btn in Items)
         {
@@ -371,8 +365,8 @@ public class List : Block
         Scroll.step = 1f / totalSize;
         Scroll.isVertical = Span != Span.Horizontal;
 
-        if (IsCollapsed)
-            Size = (Size.width, 1);
+        if (Span == Span.Dropdown)
+            Height = IsCollapsed ? 1 : originalHeight;
     }
     internal override void ApplyScroll()
     {

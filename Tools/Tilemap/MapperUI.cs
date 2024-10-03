@@ -82,24 +82,33 @@ public static class MapperUI
     }
     public static void SetInputBox(this TilemapPack maps, InputBox inputBox, int zOrder = 0)
     {
-        var ib = inputBox;
+        var box = inputBox;
         var bgColor = Gray.ToDark(0.4f);
-        var selectColor = ib.IsFocused ? Blue : Blue.ToBright();
+        var selectColor = box.IsFocused ? Blue : Blue.ToBright();
+        var selection = box.Selection.Constrain(box.Size, false);
+        var text = box.Text.Constrain(box.Size, false);
+        var placeholder = box.Placeholder.Constrain(box.Size);
+        var cursor = new Tile(SHAPE_LINE, White, 2);
+        var scrollY = box.ScrollIndices.y;
+        var textAboveOrBelow = new Tile(FULL, Gray.ToDark(0.3f), 3);
+        var (w, h) = box.Size;
 
         Clear(maps, inputBox, zOrder);
-        maps.Tilemaps[zOrder].SetArea(ib.Area, ib.Mask, new Tile(SHADE_OPAQUE, bgColor));
-        maps.Tilemaps[zOrder].SetText(ib.Position, ib.Selection.Constrain(ib.Size, false),
-            selectColor, mask: ib.Mask);
-        maps.Tilemaps[zOrder + 1].SetText(ib.Position, ib.Text.Constrain(ib.Size, false),
-            mask: ib.Mask);
+        maps.Tilemaps[zOrder].SetArea(box.Area, box.Mask, new Tile(SHADE_OPAQUE, bgColor));
+        maps.Tilemaps[zOrder].SetText(box.Position, selection, selectColor, mask: box.Mask);
+        maps.Tilemaps[zOrder + 1].SetText(box.Position, text, mask: box.Mask);
 
-        if (string.IsNullOrEmpty(ib.Value))
-            maps.Tilemaps[zOrder + 1]
-                .SetText(ib.Position, ib.Placeholder.Constrain(ib.Size), Gray, mask: ib.Mask);
+        if (string.IsNullOrEmpty(box.Value))
+            maps.Tilemaps[zOrder + 1].SetText(box.Position, placeholder, Gray, mask: box.Mask);
 
-        if (ib.IsCursorVisible)
-            maps.Tilemaps[zOrder + 2].SetTile(ib.PositionFromIndices(ib.CursorIndices),
-                new(SHAPE_LINE, White, 2), ib.Mask);
+        if (scrollY > 0)
+            maps.Tilemaps[zOrder + 0].SetArea((box.X, box.Y, w, 1), null, textAboveOrBelow);
+
+        if (scrollY < box.LineCount - box.Height)
+            maps.Tilemaps[zOrder + 0].SetArea((box.X, box.Y + h - 1, w, 1), null, textAboveOrBelow);
+
+        if (box.IsCursorVisible)
+            maps.Tilemaps[zOrder + 2].SetTile(box.PositionFromIndices(box.CursorIndices), cursor, box.Mask);
     }
     public static void SetFileViewerItem(this TilemapPack maps, FileViewer fileViewer, Button item, int zOrder = 1)
     {

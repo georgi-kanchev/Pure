@@ -19,13 +19,14 @@ public static class Program
 
         editor.OnUpdateUi += tilePalette.TryDraw;
         editor.OnUpdateEditor += UpdateEditor;
-        editor.OnUpdateLate += () => tilePalette.Update(inspector);
+        editor.OnUpdateLate += () => tilePalette.Update(inspector, terrainPanel);
         editor.Run();
     }
 
 #region Backend
     private static readonly Editor editor;
     private static readonly Inspector inspector;
+    private static readonly TerrainPanel terrainPanel;
     private static readonly TilePalette tilePalette;
 
     internal static Menu menu;
@@ -43,6 +44,7 @@ public static class Program
 
         tilePalette = new(editor);
         inspector = new(editor, tilePalette);
+        terrainPanel = new(editor, inspector, tilePalette);
 
         CreateMenu();
     }
@@ -90,7 +92,7 @@ public static class Program
 
         Mouse.Button.Right.OnPress(() =>
         {
-            if (editor.Prompt.IsHidden == false || inspector.IsHovered)
+            if (editor.Prompt.IsHidden == false || inspector.IsHovered || terrainPanel.IsHovered)
                 return;
 
             var (mx, my) = editor.LayerUi.PixelToPosition(Mouse.CursorPosition);
@@ -140,7 +142,7 @@ public static class Program
 
     private static void UpdateEditor()
     {
-        editor.IsDisabledViewInteraction = inspector.IsHovered;
+        editor.IsDisabledViewInteraction = inspector.IsHovered || terrainPanel.IsHovered;
     }
 
     private static void PutInt(List<byte> intoBytes, int value)

@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 /// </summary>
 public class Tilemap
 {
+    public List<(int[] matchIds, Tile replacedCenter)> AutoTiles { get; } = new();
     public (int x, int y, int z) SeedOffset { get; set; }
 
     /// <summary>
@@ -502,11 +503,14 @@ public class Tilemap
 
         for (var i = area.X; i < area.Height; i++)
             for (var j = area.Y; j < area.Width; j++)
-                foreach (var (rule, replacement) in autoTiles)
+                foreach (var (rule, replacement) in AutoTiles)
                 {
+                    if (rule is not { Length: 9 })
+                        continue;
+
                     var isMatch = true;
 
-                    for (var k = 0; k < rule.Count; k++)
+                    for (var k = 0; k < rule.Length; k++)
                     {
                         var (ox, oy) = (k % 3 - 1, k / 3 - 1);
                         var offTile = TileAt((j + ox, i + oy));
@@ -524,15 +528,6 @@ public class Tilemap
 
         foreach (var kvp in result)
             SetTile(kvp.Key, kvp.Value, mask);
-    }
-    public void AddAutoTileRule(int[] matchIds, Tile replacedCenter)
-    {
-        if (matchIds is { Length: 9 })
-            autoTiles.Add((matchIds.ToList(), replacedCenter));
-    }
-    public void ClearAutoTileRules()
-    {
-        autoTiles.Clear();
     }
 
     /// <summary>
@@ -765,7 +760,6 @@ public class Tilemap
 
         { '▕', 432 }
     };
-    private readonly List<(List<int> rule, Tile replacement)> autoTiles = new();
 
     private readonly Tile[,] data;
     private readonly (int, uint, sbyte, bool, bool)[,] bundleCache;

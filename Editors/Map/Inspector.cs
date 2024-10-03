@@ -58,7 +58,6 @@ internal class Inspector : Panel
         });
 
         var layerButtons = AddLayers();
-        var autoButtons = AddAutoTiles(tilePalette);
         var paletteScroll = AddPaletteScrolls();
         var orientButtons = AddOrientations();
         AddTools(tilePalette);
@@ -67,7 +66,6 @@ internal class Inspector : Panel
         editor.Ui.Blocks.AddRange(new Block[]
             { this, tools, paletteColor, layersVisibility, layers, paletteScrollV, paletteScrollH });
         editor.Ui.Blocks.AddRange(paletteScroll);
-        editor.Ui.Blocks.AddRange(autoButtons);
         editor.Ui.Blocks.AddRange(layerButtons);
         editor.Ui.Blocks.AddRange(orientButtons);
     }
@@ -291,91 +289,6 @@ internal class Inspector : Panel
         var paletteScroll = new Button((paletteScrollH.X, paletteScrollV.Y + 1)) { Size = (13, 13) };
         paletteScroll.OnInteraction(Interaction.Scroll, () => paletteScrollV.Slider.Move(Mouse.ScrollDelta));
         return new[] { paletteScroll };
-    }
-    private Block[] AddAutoTiles(TilePalette tilePalette)
-    {
-        var (x, y) = (X + 1, Y + 9);
-        var auto = new List<Button>();
-
-        var add = new Button { Size = (8, 1), Text = "Add Rule", Position = (x, y + 1) };
-        add.OnInteraction(Interaction.Trigger, () =>
-        {
-            var layer = layers.Items.IndexOf(layers.SelectedItems[0]);
-            var rule = new List<int>();
-            foreach (var btn in auto)
-            {
-                rule.Add(btn.Text == "any" ? -1 : int.Parse(btn.Text));
-                btn.Text = "any";
-            }
-
-            editor.MapsEditor.Tilemaps[layer].AddAutoTileRule(rule.ToArray(), pickedTile);
-        });
-        add.OnDisplay(() => editor.MapsUi.SetButton(add, FRONT));
-
-        var apply = new Button((x, y + 2)) { Size = (11, 1), Text = "Apply Rules" };
-        apply.OnInteraction(Interaction.Trigger, () =>
-        {
-            var layer = layers.Items.IndexOf(layers.SelectedItems[0]);
-            editor.MapsEditor.Tilemaps[layer].SetAutoTiles(editor.MapsEditor.Tilemaps[layer]);
-        });
-
-        var clear = new Button((x + 13, y + 1)) { Size = (1, 1) };
-        clear.OnInteraction(Interaction.Trigger, () =>
-        {
-            editor.PromptYesNo("Clear all auto tile rules?", () =>
-            {
-                var layer = layers.Items.IndexOf(layers.SelectedItems[0]);
-                editor.MapsEditor.Tilemaps[layer].ClearAutoTileRules();
-            });
-        });
-
-        for (var i = 0; i < 9; i++)
-        {
-            var btn = new Button { Text = "any", Size = (4, 1) };
-            auto.Add(btn);
-            btn.OnInteraction(Interaction.Trigger, () =>
-            {
-                var selected = tilePalette.GetSelectedTiles().Flatten();
-                if (selected.Length == 1)
-                    btn.Text = btn.Text == "any" ? $"{selected[0].Id}" : "any";
-            });
-        }
-
-        OnDisplay(() =>
-        {
-            for (var i = 0; i < auto.Count; i++)
-            {
-                var curX = x + i % 3 * 5;
-                var curY = y + 6 + i / 3;
-                auto[i].Position = (curX, curY);
-            }
-
-            var empty = pickedTile == default;
-            var pickText = empty ?
-                $"Use pick tool{Environment.NewLine}on a map tile!" :
-                $"Id{pickedTile.Id} Turns{pickedTile.Turns}{Environment.NewLine}" +
-                $"Flip{(pickedTile.IsFlipped ? "+" : "-")} Mirror{(pickedTile.IsMirrored ? "+" : "-")}";
-            editor.MapsUi.Tilemaps[FRONT].SetText((x, y), "Auto Tiles:");
-            editor.MapsUi.Tilemaps[FRONT].SetText((x, y + 4), pickText, empty ? White : pickedTile.Tint);
-            editor.MapsUi.SetButton(apply, FRONT);
-            editor.MapsUi.SetButtonIcon(clear, new(ICON_DELETE, Gray), FRONT);
-
-            var sameCount = 1;
-            var prevId = "";
-            foreach (var btn in auto)
-            {
-                sameCount += btn.Text == prevId ? 1 : 0;
-                prevId = btn.Text;
-                editor.MapsUi.SetButton(btn, FRONT);
-            }
-
-            add.IsDisabled = sameCount == 9 || pickedTile == default;
-        });
-
-        var result = new List<Block>();
-        result.AddRange(auto);
-        result.AddRange(new[] { add, apply, clear });
-        return result.ToArray();
     }
     private Block[] AddOrientations()
     {
