@@ -5,19 +5,14 @@ namespace Pure.Tools.Tilemap;
 
 public class MapGenerator
 {
-    public Engine.Tilemap.Tilemap Tilemap { get; set; }
+    public Engine.Tilemap.Tilemap? Tilemap { get; set; }
     public Dictionary<byte, Tile> DepthRanges { get; } = new();
     public int AffectedTileId { get; set; }
 
-    public NoiseType NoiseType { get; set; } = NoiseType.ValueCubic;
-    public float NoiseScale { get; set; } = 10f;
+    public Noise Noise { get; set; } = Noise.ValueCubic;
+    public float Scale { get; set; } = 10f;
     public int Seed { get; set; }
     public (int x, int y) Offset { get; set; }
-
-    public MapGenerator(Engine.Tilemap.Tilemap tilemap)
-    {
-        Tilemap = tilemap;
-    }
 
     public void Apply()
     {
@@ -34,7 +29,7 @@ public class MapGenerator
                 if (AffectedTileId != currTileId)
                     continue;
 
-                var value = new Point(x + Offset.x, y + Offset.y).ToNoise(NoiseType, NoiseScale, Seed);
+                var value = new Point(x + Offset.x, y + Offset.y).ToNoise(Noise, Scale, Seed);
                 var currBottom = 0f;
                 foreach (var (rule, tile) in DepthRanges)
                 {

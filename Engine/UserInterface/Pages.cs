@@ -31,10 +31,11 @@ public class Pages : Block
             var prev = current;
             current = Math.Clamp(value, 1, Count);
 
-            UpdatePages();
+            if (prev == current)
+                return;
 
-            if (prev != current)
-                Interact(Interaction.Select);
+            UpdatePages();
+            Interact(Interaction.Select);
         }
     }
 
@@ -262,6 +263,9 @@ public class Pages : Block
             page.position = pos;
             page.mask = mask;
             page.Update();
+
+            if (i == Current - 1)
+                page.isSelected = true;
         }
     }
     internal override void ApplyScroll()

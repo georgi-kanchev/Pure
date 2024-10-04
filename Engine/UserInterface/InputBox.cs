@@ -608,7 +608,6 @@ public class InputBox : Block
 
     private void TrySelect()
     {
-        var isSamePosClick = false;
         var (hx, hy) = Input.Position;
         var ix = (int)Math.Round(scrX + hx - Position.x);
         var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
@@ -618,7 +617,6 @@ public class InputBox : Block
         {
             cursorBlink.Restart();
             clickDelay.Restart();
-            isSamePosClick = lastClickIndices == (ix, iy);
             lastClickIndices = (ix, iy);
         }
 
@@ -630,29 +628,14 @@ public class InputBox : Block
             return;
         }
 
-        if (isSamePosClick == false)
+        if (IsPressedAndHeld && hasMoved)
         {
             // hold & drag inside
-            if (IsPressedAndHeld && hasMoved)
-                MoveCursor();
-
-            if (Input.IsButtonJustPressed() == false)
-                return;
-
-            // click
-            MoveCursor();
-            SelectionIndices = CursorIndices;
-
-            return;
-
-            void MoveCursor()
-            {
-                cy = iy;
-                cx = ix;
-                CursorIndices = (cx, cy);
-                cxDesired = cx;
-                CursorScroll();
-            }
+            cy = iy;
+            cx = ix;
+            CursorIndices = (cx, cy);
+            cxDesired = cx;
+            CursorScroll();
         }
 
         // hold & drag outside
@@ -682,11 +665,19 @@ public class InputBox : Block
     }
     private void TryCycleSelected()
     {
-        clicks = clicks == 4 ? 1 : clicks + 1;
-
-        var (x, y) = Position;
         var (hx, hy) = Input.Position;
         var isWholeLineSelected = sx == 0 && cx == lines[cy].Length;
+        var ix = (int)Math.Round(scrX + hx - Position.x);
+        var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
+
+        if (lastClickIndices != (ix, iy))
+        {
+            CursorIndices = (ix, iy);
+            SelectionIndices = (ix, iy);
+            return; // not clicking on the same spot?
+        }
+
+        clicks = clicks == 4 ? 1 : clicks + 1;
 
         var skipWord = clicks == 2 && SymbolMask != null; // there are only whole lines
         clicks += skipWord ? 1 : 0;
@@ -696,10 +687,7 @@ public class InputBox : Block
 
         if (clicks == 1) // cursor to mouse
         {
-            var ix = (int)Math.Round(scrX + hx - Position.x);
-            var iy = (int)Math.Clamp(scrY + hy - Position.y, 0, lines.Count - 1);
             CursorIndices = (ix, iy);
-            CursorScroll();
             SelectionIndices = (ix, iy);
         }
         else if (clicks == 2) // select word
@@ -711,8 +699,7 @@ public class InputBox : Block
         }
         else if (clicks == 3) // select line
         {
-            var p = PositionToIndices((x + lines[cy].Length, y + cy));
-            CursorIndices = (p.symbol, cy);
+            CursorIndices = (lines[cy].Length, cy);
             CursorScroll();
             SelectionIndices = (0, cy);
         }

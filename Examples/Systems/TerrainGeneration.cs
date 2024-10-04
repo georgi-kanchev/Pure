@@ -16,7 +16,7 @@ public static class TerrainGeneration
         var aspectRatio = Monitor.Current.AspectRatio;
         var layer = new Layer((aspectRatio.width * 5, aspectRatio.height * 5));
         var terrain = new Tilemap(layer.Size);
-        var generator = new MapGenerator(terrain);
+        var generator = new MapGenerator { Tilemap = terrain };
 
         RegenerateMap();
 
@@ -61,7 +61,3 @@ public static class TerrainGeneration
         }
     }
 }
-
-
-
-

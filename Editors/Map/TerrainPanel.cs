@@ -1,3 +1,5 @@
+using Pure.Tools.Tilemap;
+
 namespace Pure.Editors.Map;
 
 using static Tile;
@@ -10,18 +12,19 @@ internal class TerrainPanel : Panel
         this.editor = editor;
         this.inspector = inspector;
 
+        var h = editor.MapsUi.Size.height;
         Text = string.Empty;
-        Size = (15, editor.MapsUi.Size.height - 8);
+        Size = (15, h - 8);
         IsMovable = false;
         IsResizable = false;
         AlignInside((0f, 0.35f));
 
-        var toggle = new Button((X, Y + Height + 1)) { Text = "Terrain Panel", Size = (13, 1) };
+        var toggle = new Button((X, h - 5)) { Text = "Terrain Panel", Size = (13, 1) };
         toggle.OnDisplay(() => editor.MapsUi.SetButton(toggle, 0, true));
 
         OnDisplay(() =>
         {
-            X = toggle.IsSelected ? 0 : -100;
+            X = toggle.IsSelected && GetLayer() >= 0 ? 0 : -100;
 
             editor.MapsUi.SetPanel(this);
 
@@ -29,15 +32,16 @@ internal class TerrainPanel : Panel
             var tileMid = new Tile(BOX_GRID_STRAIGHT, Blue);
             var tileRight = new Tile(BOX_GRID_T_SHAPED, Blue, 2);
 
-            SetLine(16, 19);
+            SetLine(17);
 
             void SetLine(params int[] ys)
             {
                 foreach (var curY in ys)
                 {
-                    editor.MapsUi.Tilemaps[MIDDLE].SetLine((X, curY), (X + Width - 1, curY), null, tileMid);
-                    editor.MapsUi.Tilemaps[MIDDLE].SetTile((X, curY), tileLeft);
-                    editor.MapsUi.Tilemaps[MIDDLE].SetTile((X + Width - 1, curY), tileRight);
+                    editor.MapsUi.Tilemaps[MIDDLE].SetLine(
+                        (X, Y + curY), (X + Width - 1, Y + curY), null, tileMid);
+                    editor.MapsUi.Tilemaps[MIDDLE].SetTile((X, Y + curY), tileLeft);
+                    editor.MapsUi.Tilemaps[MIDDLE].SetTile((X + Width - 1, Y + curY), tileRight);
                 }
             }
         });
@@ -52,68 +56,99 @@ internal class TerrainPanel : Panel
 
 #region Backend
     private const int MIDDLE = (int)Editor.LayerMapsUi.Middle, FRONT = (int)Editor.LayerMapsUi.Front;
+    private int lastPickedTile = int.MaxValue, lastLayer = -1;
     private readonly Editor editor;
     private readonly Inspector inspector;
+    private readonly MapGenerator generator = new();
 
     private Block[] AddAutoTiles(TilePalette tilePalette)
     {
         var matchIds = new List<Button>();
-
-        var add = new Button { Size = (13, 1), Text = "Add This Rule" };
-        add.OnInteraction(Interaction.Trigger, () =>
-        {
-            var layer = inspector.layers.Items.IndexOf(inspector.layers.SelectedItems[0]);
-            var rule = new List<int>();
-            foreach (var btn in matchIds)
-            {
-                rule.Add(btn.Text == "any" ? -1 : int.Parse(btn.Text));
-                btn.Text = "any";
-            }
-
-            editor.MapsEditor.Tilemaps[layer].AutoTiles.Add((rule.ToArray(), inspector.pickedTile));
-        });
-
-        var apply = new Button { Size = (13, 1) };
-        apply.OnInteraction(Interaction.Trigger, () =>
-        {
-            var layer = inspector.layers.Items.IndexOf(inspector.layers.SelectedItems[0]);
-            editor.MapsEditor.Tilemaps[layer].SetAutoTiles(editor.MapsEditor.Tilemaps[layer]);
-        });
-
-        var clear = new Button { Size = (13, 1) };
-        clear.OnInteraction(Interaction.Trigger, () =>
-        {
-            var layer = inspector.layers.Items.IndexOf(inspector.layers.SelectedItems[0]);
-            var autoCount = editor.MapsEditor.Tilemaps[layer].AutoTiles.Count;
-            editor.PromptYesNo($"Clear all {autoCount} auto tile rules?", () =>
-            {
-                editor.MapsEditor.Tilemaps[layer].AutoTiles.Clear();
-            });
-        });
+        var add = new Button { Size = (1, 1) };
+        var apply = new Button { Size = (13, 3), Text = "Apply Rules" };
+        var remove = new Button { Size = (1, 1) };
+        var pages = new Pages(count: 1) { Size = (6, 1), ItemWidth = 2 };
+        var autoTiles = GetAutoTiles();
 
         for (var i = 0; i < 9; i++)
         {
             var btn = new Button { Text = "any", Size = (3, 1) };
+            var index = i;
             matchIds.Add(btn);
             btn.OnInteraction(Interaction.Trigger, () =>
             {
                 var selected = tilePalette.GetSelectedTiles().Flatten();
+
                 if (selected.Length == 1)
                     btn.Text = btn.Text == "any" ? $"{selected[0].Id}" : "any";
+
+                if (autoTiles.Count <= 0)
+                    return;
+
+                var id = btn.Text == "any" ? -1 : int.Parse(btn.Text);
+                autoTiles[pages.Current - 1].matchIds[index] = id;
             });
         }
 
+        pages.OnInteraction(Interaction.Select, () =>
+        {
+            if (autoTiles.Count == 0)
+                return;
+
+            inspector.pickedTile = autoTiles[pages.Current - 1].replacedCenter;
+            for (var i = 0; i < matchIds.Count; i++)
+            {
+                var id = autoTiles[pages.Current - 1].matchIds[i];
+                matchIds[i].Text = id < 0 ? "any" : $"{id}";
+            }
+        });
+
+        add.OnInteraction(Interaction.Trigger, () =>
+        {
+            var rule = new List<int>();
+            foreach (var btn in matchIds)
+                rule.Add(btn.Text == "any" ? -1 : int.Parse(btn.Text));
+
+            autoTiles.Add((rule.ToArray(), inspector.pickedTile));
+        });
+        apply.OnInteraction(Interaction.Trigger, () =>
+        {
+            var layer = GetLayer();
+            editor.MapsEditor.Tilemaps[layer].SetAutoTiles(editor.MapsEditor.Tilemaps[layer]);
+        });
+        remove.OnInteraction(Interaction.Trigger, () =>
+        {
+            editor.PromptYesNo("Remove this autotile rule?", () => autoTiles.RemoveAt(pages.Current - 1));
+        });
+        pages.OnItemDisplay(page => editor.MapsUi.SetPagesItem(pages, page));
+
         OnDisplay(() =>
         {
-            add.Position = (X + 1, Y + 13);
-            apply.Position = (X + 1, Y + 15);
-            clear.Position = (X + 1, Y + 16);
+            var layer = GetLayer();
 
-            var layer = inspector.layers.Items.IndexOf(inspector.layers.SelectedItems[0]);
-            var autoCount = editor.MapsEditor.Tilemaps[layer].AutoTiles.Count;
-            apply.Text = $"Set {autoCount} Rules";
-            clear.Text = $"Cut {autoCount} Rules";
-            clear.IsDisabled = autoCount == 0;
+            add.Position = (X + 13, Y + 13);
+            apply.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 1, Y + 14);
+            remove.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 12, Y + 13);
+
+            if (pages.Count != autoTiles.Count || layer != lastLayer)
+            {
+                pages.Count = autoTiles.Count;
+                pages.Interact(Interaction.Select);
+            }
+
+            if (autoTiles.Count > 0 && inspector.pickedTile != lastPickedTile)
+            {
+                var curr = autoTiles[pages.Current - 1];
+                curr.replacedCenter = inspector.pickedTile;
+                autoTiles[pages.Current - 1] = curr;
+            }
+
+            lastPickedTile = inspector.pickedTile;
+            lastLayer = layer;
+
+            pages.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 1, Y + 13);
+
+            remove.IsDisabled = autoTiles.Count == 0;
 
             for (var i = 0; i < matchIds.Count; i++)
             {
@@ -131,7 +166,6 @@ internal class TerrainPanel : Panel
                 $"Flip: {(pickedTile.IsFlipped ? "yes" : "no")}{Environment.NewLine}" +
                 $"Mirror: {(pickedTile.IsMirrored ? "yes" : "no")}";
 
-            //editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 1), "Auto Tiles:");
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 6),
                 $"To change the{Environment.NewLine}center to:", White);
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 8), pickText, Gray);
@@ -144,55 +178,138 @@ internal class TerrainPanel : Panel
                 editor.MapsUi.Tilemaps[FRONT].SetArea(colorArea, null, new Tile(FULL, pickedTile.Tint));
             }
 
-            editor.MapsUi.SetButton(add, FRONT);
-            editor.MapsUi.SetButton(clear, FRONT);
+            editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), FRONT);
+            editor.MapsUi.SetButtonIcon(remove, new(ICON_TRASH, Gray), FRONT);
             editor.MapsUi.SetButton(apply, FRONT);
+            editor.MapsUi.SetPages(pages);
 
-            var sameCount = 1;
-            var prevId = "";
             foreach (var btn in matchIds)
-            {
-                sameCount += btn.Text == prevId ? 1 : 0;
-                prevId = btn.Text;
                 editor.MapsUi.SetButton(btn, FRONT);
-            }
-
-            add.IsDisabled = sameCount == 9 || pickedTile == default;
         });
 
         var result = new List<Block>();
         result.AddRange(matchIds);
-        result.AddRange(new[] { add, apply, clear });
+        result.AddRange(new Block[] { add, apply, remove, pages });
         return result.ToArray();
     }
     private Block[] AddTerrainBlocks()
     {
+        var result = new List<Block>();
         var noiseType = new List((0, 0), 6, Span.Dropdown) { Size = (13, 6), ItemSize = (13, 1) };
+        var scale = new InputBox
+        {
+            Value = "10", MaximumSymbolCount = 6, Size = (7, 1), SymbolGroup = SymbolGroup.Digits
+        };
+        var seed = new InputBox
+        {
+            Value = "0", MaximumSymbolCount = 7, Size = (8, 1), SymbolGroup = SymbolGroup.Digits
+        };
+        var generate = new Button { Text = "Generate!", Size = (13, 3) };
+        var autoGenerate = new Button { Text = "Auto Generate", Size = (13, 1) };
+
+        for (var i = 0; i < 5; i++)
+        {
+            var offsets = new (int x, int y)[] { (1, 0), (0, 1), (-1, 0), (0, -1), (0, 0) };
+            var btn = new Button { Size = (1, 1) };
+            var (x, y) = offsets[i];
+            var index = i;
+
+            if (x != 0 && y != 0)
+                btn.OnInteraction(Interaction.PressAndHold, Trigger);
+
+            btn.OnInteraction(Interaction.Trigger, Trigger);
+            btn.OnInteraction(Interaction.PressAndHold, Trigger);
+            btn.OnDisplay(() =>
+            {
+                btn.Position = (X + 2 + x, Y + 25 + y);
+                var color = btn.GetInteractionColor(Gray);
+                var arrow = new Tile(ARROW_TAILLESS_ROUND, color, (sbyte)index);
+                var center = new Tile(SHAPE_CIRCLE, color);
+                editor.MapsUi.Tilemaps[FRONT].SetTile(btn.Position, index == 4 ? center : arrow);
+            });
+
+            result.Add(btn);
+
+            void Trigger()
+            {
+                var off = (generator.Offset.x + x, generator.Offset.y + y);
+                generator.Offset = x == 0 && y == 0 ? (0, 0) : off;
+                TryAutoGenerate();
+            }
+        }
+
         noiseType.OnItemDisplay(item => editor.MapsUi.SetListItem(noiseType, item));
         noiseType.Edit(
-            nameof(NoiseType.OpenSimplex2),
-            nameof(NoiseType.OpenSimplex2S),
-            nameof(NoiseType.Cellular),
-            nameof(NoiseType.Perlin),
-            nameof(NoiseType.ValueCubic),
-            nameof(NoiseType.Value));
+            nameof(Noise.OpenSimplex2),
+            nameof(Noise.OpenSimplex2S),
+            nameof(Noise.Cellular),
+            nameof(Noise.Perlin),
+            nameof(Noise.ValueCubic),
+            nameof(Noise.Value));
         noiseType.Select(noiseType.Items[4]);
 
-        var scale = new InputBox { Size = (7, 1), SymbolGroup = SymbolGroup.Digits };
+        noiseType.OnItemInteraction(Interaction.Select, btn =>
+        {
+            generator.Noise = (Noise)noiseType.Items.IndexOf(btn);
+            TryAutoGenerate();
+        });
+
+        scale.OnType(_ =>
+        {
+            var success = int.TryParse(scale.Text, out var value);
+            generator.Scale = success ? value : 0;
+        });
+        seed.OnType(_ =>
+        {
+            var success = int.TryParse(seed.Text, out var value);
+            generator.Seed = success ? value : 0;
+            TryAutoGenerate();
+        });
+        generate.OnInteraction(Interaction.Trigger, () =>
+        {
+            generator.Tilemap = editor.MapsEditor.Tilemaps[GetLayer()];
+            generator.Apply();
+        });
 
         OnDisplay(() =>
         {
-            new Point().ToNoise(NoiseType.Cellular);
-            noiseType.Position = (X + 1, 21);
-            scale.Position = (X + 7, 23);
+            noiseType.Position = (X + 1, Y + 19);
+            scale.Position = (X + 7, Y + 21);
+            seed.Position = (X + 6, Y + 22);
+            autoGenerate.Position = (X + 1, Y + 32);
+            generate.Position = (X + 1, Y + 33);
 
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 18), "Noise Type:", White);
             editor.MapsUi.SetList(noiseType);
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 21), "Scale:", White);
             editor.MapsUi.SetInputBox(scale);
+            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 22), "Seed:", White);
+            editor.MapsUi.SetInputBox(seed);
+            editor.MapsUi.Tilemaps[FRONT].SetText((X + 4, Y + 25), $"{generator.Offset}", White);
+
+            editor.MapsUi.SetButton(generate, MIDDLE);
+            editor.MapsUi.SetButton(autoGenerate, MIDDLE, true);
         });
 
-        return new Block[] { noiseType, scale };
+        result.AddRange(new Block[] { scale, seed, autoGenerate, generate, noiseType });
+        return result.ToArray();
+
+        void TryAutoGenerate()
+        {
+            if (autoGenerate.IsSelected)
+                generate.Interact(Interaction.Trigger);
+        }
+    }
+
+    private int GetLayer()
+    {
+        var selected = inspector.layers.SelectedItems;
+        return selected.Count != 1 ? -1 : inspector.layers.Items.IndexOf(selected[0]);
+    }
+    private List<(int[] matchIds, Tile replacedCenter)> GetAutoTiles()
+    {
+        var layer = GetLayer();
+        return layer == -1 ? new() : editor.MapsEditor.Tilemaps[GetLayer()].AutoTiles;
     }
 #endregion
 }

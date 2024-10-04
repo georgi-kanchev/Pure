@@ -3,7 +3,7 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 
-public enum NoiseType { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value }
+public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value }
 
 public struct Point : IEquatable<Point>
 {
@@ -153,13 +153,13 @@ public struct Point : IEquatable<Point>
         var y = Map(percent, 0, 100, Y, target.Y);
         return new(x, y);
     }
-    public float ToNoise(NoiseType type = NoiseType.ValueCubic, float scale = 10f, int seed = 0)
+    public float ToNoise(Noise noise = Noise.ValueCubic, float scale = 10f, int seed = 0)
     {
-        var noise = new FastNoiseLite(seed);
-        noise.SetNoiseType((FastNoiseLite.NoiseType)type);
-        noise.SetFrequency(1f / scale);
+        var noiseValue = new FastNoiseLite(seed);
+        noiseValue.SetNoiseType((FastNoiseLite.NoiseType)noise);
+        noiseValue.SetFrequency(1f / scale);
 
-        return noise.GetNoise(X, Y).Map((-1, 1), (0, 1));
+        return noiseValue.GetNoise(X, Y).Map((-1, 1), (0, 1));
     }
     public float Distance(Point targetPoint)
     {

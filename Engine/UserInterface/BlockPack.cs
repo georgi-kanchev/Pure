@@ -137,6 +137,14 @@ public class BlockPack
     {
         return block != null && Blocks.Contains(block);
     }
+    public bool IsOverlapping((float x, float y) point)
+    {
+        foreach (var block in Blocks)
+            if (block.IsOverlapping(point))
+                return true;
+
+        return false;
+    }
 
     public void Update()
     {
@@ -169,7 +177,7 @@ public class BlockPack
         return blockPack.Blocks.ToArray();
     }
 
-    #region Backend
+#region Backend
     private (int x, int y, int width, int height) mask;
 
     private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
@@ -178,5 +186,5 @@ public class BlockPack
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

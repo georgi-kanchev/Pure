@@ -293,6 +293,20 @@ internal class Inspector : Panel
     private Block[] AddOrientations()
     {
         var m = new Button((X + 2, Y + 27)) { Size = (1, 1) };
+        var f = new Button((X + 5, m.Y)) { Size = (1, 1) };
+        var turns = new Button((X + 10, m.Y)) { Size = (1, 1) };
+
+        OnDisplay(() =>
+        {
+            var disabled = tools.Current >= 9;
+            m.IsHidden = disabled;
+            m.IsDisabled = disabled;
+            f.IsHidden = disabled;
+            f.IsDisabled = disabled;
+            turns.IsDisabled = disabled;
+            turns.IsHidden = disabled;
+        });
+
         m.OnDisplay(() =>
         {
             tileOrientation = (m.IsSelected, tileOrientation.flip);
@@ -300,7 +314,6 @@ internal class Inspector : Panel
             editor.MapsUi.SetButtonIcon(m, new(ICON_MIRROR, m.IsSelected ? Green : Gray), FRONT);
         });
 
-        var f = new Button((X + 5, m.Y)) { Size = (1, 1) };
         f.OnDisplay(() =>
         {
             tileOrientation = (tileOrientation.mirror, f.IsSelected);
@@ -308,7 +321,6 @@ internal class Inspector : Panel
             editor.MapsUi.SetButtonIcon(f, new(ICON_FLIP, f.IsSelected ? Green : Gray), FRONT);
         });
 
-        var turns = new Button((X + 10, m.Y)) { Size = (1, 1) };
         turns.OnInteraction(Interaction.Trigger, () => tileTurns++);
         turns.OnDisplay(() =>
         {
