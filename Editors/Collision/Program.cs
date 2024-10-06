@@ -378,16 +378,16 @@ public static class Program
             if (index == 1) // load tileset
                 editor.PromptTileset(null, null);
             else if (index == 3) // load tilemap
-                editor.PromptLoadMap(result =>
+                editor.PromptLoadMap((resultLayers, _) =>
                 {
-                    layers = result;
+                    layers = resultLayers;
                     originalMapViewPos = editor.MapsEditor.View.Position;
                     solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
                 });
             else if (index == 4) // paste tilemap
-                editor.PromptLoadMapBase64(result =>
+                editor.PromptLoadMapBase64((resultLayers, _) =>
                 {
-                    layers = result;
+                    layers = resultLayers;
                     originalMapViewPos = editor.MapsEditor.View.Position;
                     solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
                 });

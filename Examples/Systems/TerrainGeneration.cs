@@ -16,7 +16,7 @@ public static class TerrainGeneration
         var aspectRatio = Monitor.Current.AspectRatio;
         var layer = new Layer((aspectRatio.width * 5, aspectRatio.height * 5));
         var terrain = new Tilemap(layer.Size);
-        var generator = new MapGenerator { Tilemap = terrain };
+        var generator = new MapGenerator();
 
         RegenerateMap();
 
@@ -35,24 +35,24 @@ public static class TerrainGeneration
         void RegenerateMap()
         {
             terrain.Flush();
-            generator.DepthRanges.Clear();
-            generator.DepthRanges[90] = new(Tile.ICON_WAVES, Color.Blue.ToDark()); // deep water
-            generator.DepthRanges[100] = new(Tile.ICON_WAVES, Color.Blue); // shallow water
-            generator.DepthRanges[105] = new(Tile.SHADE_2, Color.Yellow.ToDark()); // beaches/dirt patches
-            generator.DepthRanges[125] = new(Tile.SHADE_1, Color.Green.ToDark()); // grass
-            generator.DepthRanges[140] = new(Tile.BRACKET_ROUND_RIGHT, Color.Green.ToDark(), 3); // hills
-            generator.DepthRanges[160] = new(Tile.NATURE_MOUNTAIN, Color.Gray); // rocky mountains
-            generator.DepthRanges[255] = new(Tile.NATURE_MOUNTAIN, Color.White); // snowy mountains
-            generator.AffectedTileId = Tile.EMPTY;
+            generator.Elevations.Clear();
+            generator.Elevations[90] = new(Tile.ICON_WAVES, Color.Blue.ToDark()); // deep water
+            generator.Elevations[100] = new(Tile.ICON_WAVES, Color.Blue); // shallow water
+            generator.Elevations[105] = new(Tile.SHADE_2, Color.Yellow.ToDark()); // beaches/dirt patches
+            generator.Elevations[125] = new(Tile.SHADE_1, Color.Green.ToDark()); // grass
+            generator.Elevations[140] = new(Tile.BRACKET_ROUND_RIGHT, Color.Green.ToDark(), 3); // hills
+            generator.Elevations[160] = new(Tile.NATURE_MOUNTAIN, Color.Gray); // rocky mountains
+            generator.Elevations[255] = new(Tile.NATURE_MOUNTAIN, Color.White); // snowy mountains
+            generator.TargetTileId = Tile.EMPTY;
             generator.Seed = 333;
-            generator.Apply();
+            generator.Apply(terrain);
 
-            generator.DepthRanges.Clear();
-            generator.DepthRanges[100] = new(Tile.NATURE_TREE_DECIDUOUS, Color.Green.ToDark(0.65f));
-            generator.DepthRanges[125] = new(Tile.NATURE_TREE_CONIFEROUS, Color.Green.ToDark(0.7f));
-            generator.AffectedTileId = Tile.SHADE_1; // some trees on the grass
+            generator.Elevations.Clear();
+            generator.Elevations[100] = new(Tile.NATURE_TREE_DECIDUOUS, Color.Green.ToDark(0.65f));
+            generator.Elevations[125] = new(Tile.NATURE_TREE_CONIFEROUS, Color.Green.ToDark(0.7f));
+            generator.TargetTileId = Tile.SHADE_1; // some trees on the grass
             generator.Seed = 444;
-            generator.Apply();
+            generator.Apply(terrain);
         }
         void Scroll(int deltaX, int deltaY)
         {

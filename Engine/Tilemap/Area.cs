@@ -143,8 +143,11 @@ public struct Area
     {
         var input = new MemoryStream(data);
         var output = new MemoryStream();
-        using var stream = new DeflateStream(input, CompressionMode.Decompress);
-        stream.CopyTo(output);
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
+            stream.CopyTo(output);
+        }
+
         return output.ToArray();
     }
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)

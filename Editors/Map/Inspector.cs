@@ -13,7 +13,8 @@ internal class Inspector : Panel
     public Pages tools;
 
     public (bool mirror, bool flip) tileOrientation;
-    public sbyte tileTurns;
+    public int tileTurns;
+    public Button mirror, flip;
 
     public Tile pickedTile;
 
@@ -37,7 +38,7 @@ internal class Inspector : Panel
             var tileMid = new Tile(BOX_GRID_STRAIGHT, Blue);
             var tileRight = new Tile(BOX_GRID_T_SHAPED, Blue, 2);
 
-            SetLine(8, 18, 22, 26, 28);
+            SetLine(14, 18, 23, 28);
 
             if (tools?.Current < 9 && tilePalette.layer.IsHovered && editor.Prompt.IsHidden)
             {
@@ -85,7 +86,7 @@ internal class Inspector : Panel
     private Block[] AddLayers()
     {
         var (x, y) = (X + 1, Y + 1);
-        layersVisibility = new((x, y), 1) { ItemSize = (1, 1), Size = (1, 5) };
+        layersVisibility = new((x, y), 1) { ItemSize = (1, 1), Size = (1, 11) };
         layersVisibility.OnItemDisplay(item =>
         {
             var tile = item.IsSelected ?
@@ -97,7 +98,7 @@ internal class Inspector : Panel
         layersVisibility.OnItemInteraction(Interaction.Trigger, item =>
             editor.MapsEditorVisible[layersVisibility.Items.IndexOf(item)] = item.IsSelected);
 
-        layers = new((x + layersVisibility.Width, y), 1) { ItemSize = (13, 1), Size = (13, 5) };
+        layers = new((x + layersVisibility.Width, y), 1) { ItemSize = (13, 1), Size = (13, 11) };
         layers.OnUpdate(() => layersVisibility.Scroll.Slider.Progress = layers?.Scroll.Slider.Progress ?? 0);
         layers.OnDisplay(() => editor.MapsUi.SetList(layers));
         layers.OnItemDisplay(item => editor.MapsUi.SetListItem(layers, item));
@@ -106,10 +107,13 @@ internal class Inspector : Panel
 
         var rename = new InputBox((x, y + layers.Height))
         {
-            Value = string.Empty, Placeholder = "Rename…", IsSingleLine = true, Size = (14, 1)
+            Value = string.Empty, Placeholder = "Rename…", Size = (14, 1)
         };
         rename.OnSubmit(() =>
         {
+            if (string.IsNullOrEmpty(rename.Value))
+                return;
+
             LayersRename(rename.Value);
             rename.Value = string.Empty;
         });
@@ -211,21 +215,21 @@ internal class Inspector : Panel
 
         void ShowIfMoreThan1LayerSelected(Block block)
         {
-            block.IsHidden = layers.Count < 2 || layers.SelectedItems.Count == 0;
+            block.IsHidden = layers.Items.Count < 2 || layers.SelectedItems.Count == 0;
             block.IsDisabled = block.IsHidden;
         }
 
         void RecreateMapVisibilities()
         {
             editor.MapsEditorVisible.Clear();
-            for (var i = 0; i < layersVisibility.Count; i++)
+            for (var i = 0; i < layersVisibility.Items.Count; i++)
                 editor.MapsEditorVisible.Add(layersVisibility.Items[i].IsSelected);
         }
     }
     [MemberNotNull(nameof(tools))]
     private void AddTools(TilePalette tilePalette)
     {
-        tools = new((X + 1, 20), 14) { ItemWidth = 1, ItemGap = 0, Size = (14, 1) };
+        tools = new((X + 1, 16), 14) { ItemWidth = 1, ItemGap = 0, Size = (14, 1) };
         tools.OnItemDisplay(item =>
         {
             var hotkey = new[] { G, T, R, L, E, O, K, B, A, V, H, C, P, S };
@@ -265,9 +269,10 @@ internal class Inspector : Panel
     [MemberNotNull(nameof(paletteColor))]
     private void AddPaletteColor()
     {
-        paletteColor = new((X + 2, 23)) { Pick = { IsHidden = true } };
+        paletteColor = new((X + 2, 25)) { Pick = { IsHidden = true } };
         paletteColor.OnDisplay(() =>
         {
+            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, 24), "Tint:");
             editor.MapsUi.SetPalette(paletteColor, MIDDLE);
 
             var (px, py) = paletteColor.Position;
@@ -290,46 +295,52 @@ internal class Inspector : Panel
         paletteScroll.OnInteraction(Interaction.Scroll, () => paletteScrollV.Slider.Move(Mouse.ScrollDelta));
         return new[] { paletteScroll };
     }
+    [MemberNotNull(nameof(mirror), nameof(flip))]
     private Block[] AddOrientations()
     {
-        var m = new Button((X + 2, Y + 27)) { Size = (1, 1) };
-        var f = new Button((X + 5, m.Y)) { Size = (1, 1) };
-        var turns = new Button((X + 10, m.Y)) { Size = (1, 1) };
+        mirror = new((X + 1, 20)) { Size = (1, 1) };
+        flip = new((X + 1, 21)) { Size = (1, 1) };
+        var turns = new Button((X + 1, 22)) { Size = (1, 1) };
 
         OnDisplay(() =>
         {
             var disabled = tools.Current >= 9;
-            m.IsHidden = disabled;
-            m.IsDisabled = disabled;
-            f.IsHidden = disabled;
-            f.IsDisabled = disabled;
+
+            if (disabled == false)
+                editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, 19), "Orientation:");
+
+            mirror.IsHidden = disabled;
+            mirror.IsDisabled = disabled;
+            flip.IsHidden = disabled;
+            flip.IsDisabled = disabled;
             turns.IsDisabled = disabled;
             turns.IsHidden = disabled;
         });
 
-        m.OnDisplay(() =>
+        mirror.OnDisplay(() =>
         {
-            tileOrientation = (m.IsSelected, tileOrientation.flip);
-            editor.MapsUi.Tilemaps[FRONT].SetText((m.X - 1, m.Y), "M");
-            editor.MapsUi.SetButtonIcon(m, new(ICON_MIRROR, m.IsSelected ? Green : Gray), FRONT);
+            tileOrientation = (mirror.IsSelected, tileOrientation.flip);
+            editor.MapsUi.Tilemaps[FRONT].SetText((mirror.X + 2, mirror.Y), "Mirror");
+            editor.MapsUi.SetButtonIcon(mirror, new(ICON_MIRROR, mirror.IsSelected ? Green : Gray), FRONT);
         });
 
-        f.OnDisplay(() =>
+        flip.OnDisplay(() =>
         {
-            tileOrientation = (tileOrientation.mirror, f.IsSelected);
-            editor.MapsUi.Tilemaps[FRONT].SetText((f.X - 1, f.Y), "F");
-            editor.MapsUi.SetButtonIcon(f, new(ICON_FLIP, f.IsSelected ? Green : Gray), FRONT);
+            tileOrientation = (tileOrientation.mirror, flip.IsSelected);
+            editor.MapsUi.Tilemaps[FRONT].SetText((flip.X + 2, flip.Y), "Flip");
+            editor.MapsUi.SetButtonIcon(flip, new(ICON_FLIP, flip.IsSelected ? Green : Gray), FRONT);
         });
 
         turns.OnInteraction(Interaction.Trigger, () => tileTurns++);
         turns.OnDisplay(() =>
         {
             var color = tileTurns % 4 == 0 ? Gray : Green;
-            editor.MapsUi.Tilemaps[FRONT].SetTile((turns.X - 1, turns.Y), new(ARROW, White, tileTurns));
+            editor.MapsUi.Tilemaps[FRONT].SetText((turns.X + 2, turns.Y), "Angle");
+            editor.MapsUi.Tilemaps[FRONT].SetTile((turns.X + 2, turns.Y), new(UPPERCASE_A, White, tileTurns));
             editor.MapsUi.SetButtonIcon(turns, new(ICON_ROTATE, color), FRONT);
         });
 
-        return new Block[] { m, f, turns };
+        return new Block[] { mirror, flip, turns };
     }
 #endregion
 }

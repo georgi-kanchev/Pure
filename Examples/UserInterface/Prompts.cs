@@ -18,8 +18,7 @@ public static class Prompts
         {
             Size = (16, 1),
             Value = string.Empty,
-            Placeholder = "Message…",
-            IsSingleLine = true
+            Placeholder = "Message…"
         };
         input.OnDisplay(() => maps.SetInputBox(input, 4));
 

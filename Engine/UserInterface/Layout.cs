@@ -76,6 +76,11 @@ public class Layout : Block
         var seg = new Segment(rate, side, segments[index]);
         segments.Add(seg);
     }
+    public void Cut(int index, Side side, int size)
+    {
+        var rate = (float)size / (side is Side.Top or Side.Bottom ? Height : Width);
+        Cut(index, side, rate);
+    }
     public void Restore()
     {
         segments.Clear();

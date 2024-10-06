@@ -2,9 +2,7 @@
 
 using System.Text;
 using System.IO.Compression;
-
 using SFML.Audio;
-
 using static MathF;
 
 /// <summary>
@@ -104,7 +102,7 @@ public class Notes : Audio
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private readonly string notes;
     private readonly float duration;
     private readonly Wave wave;
@@ -256,7 +254,9 @@ public class Notes : Audio
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -264,8 +264,11 @@ public class Notes : Audio
     {
         var input = new MemoryStream(data);
         var output = new MemoryStream();
-        using var stream = new DeflateStream(input, CompressionMode.Decompress);
-        stream.CopyTo(output);
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
+            stream.CopyTo(output);
+        }
+
         return output.ToArray();
     }
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
@@ -274,5 +277,5 @@ public class Notes : Audio
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

@@ -16,9 +16,8 @@ internal class TilesetPrompt
         pair = new()
         {
             Size = (20, 1),
-            SymbolGroup = SymbolGroup.Digits | SymbolGroup.Space,
-            Value = string.Empty,
-            IsSingleLine = true
+            SymbolGroup = SymbolGroup.Decimals | SymbolGroup.Space,
+            Value = string.Empty
         };
         pair.OnDisplay(() => maps.SetInputBox(pair, BACK));
 

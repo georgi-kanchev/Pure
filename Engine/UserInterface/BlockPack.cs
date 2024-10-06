@@ -6,37 +6,6 @@ public class BlockPack
 {
     public List<Block> Blocks { get; } = new();
 
-    public (int x, int y, int width, int height) Mask
-    {
-        get => mask;
-        set
-        {
-            mask = value;
-            foreach (var block in Blocks)
-                block.Mask = mask;
-        }
-    }
-    public (int x, int y, int width, int height) Area
-    {
-        get
-        {
-            var (tlx, tly) = (int.MaxValue, int.MaxValue);
-            var (brx, bry) = (int.MinValue, int.MinValue);
-
-            foreach (var block in Blocks)
-            {
-                var (x, y, w, h) = block.Area;
-
-                tlx = x < tlx ? x : tlx;
-                tly = y < tly ? y : tly;
-                brx = x + w >= brx ? x + w : brx;
-                bry = y + h >= bry ? y + h : bry;
-            }
-
-            return (tlx, tly, brx - tlx, bry - tly);
-        }
-    }
-
     public BlockPack()
     {
     }
@@ -129,14 +98,6 @@ public class BlockPack
         }
     }
 
-    public int IndexOf(Block? block)
-    {
-        return block == null ? -1 : Blocks.IndexOf(block);
-    }
-    public bool IsContaining(Block? block)
-    {
-        return block != null && Blocks.Contains(block);
-    }
     public bool IsOverlapping((float x, float y) point)
     {
         foreach (var block in Blocks)
@@ -178,8 +139,6 @@ public class BlockPack
     }
 
 #region Backend
-    private (int x, int y, int width, int height) mask;
-
     private static byte[] GetBytes(byte[] fromBytes, int amount, ref int offset)
     {
         var result = fromBytes[offset..(offset + amount)];

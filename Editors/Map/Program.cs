@@ -7,6 +7,7 @@ global using Pure.Engine.Window;
 global using static Pure.Tools.Tilemapper.MapperUI;
 global using System.Text;
 using System.IO.Compression;
+using Pure.Tools.Tilemap;
 
 namespace Pure.Editors.Map;
 
@@ -83,11 +84,11 @@ public static class Program
             if (index == 3) // save map
                 editor.PromptFileSave(Save());
             else if (index == 4) // load map
-                editor.PromptLoadMap(InitializeLayers);
+                editor.PromptLoadMap(LoadMap);
             else if (index == 5)
                 Window.Clipboard = Convert.ToBase64String(Save());
             else if (index == 6)
-                editor.PromptLoadMapBase64(InitializeLayers);
+                editor.PromptLoadMapBase64(LoadMap);
         });
 
         Mouse.Button.Right.OnPress(() =>
@@ -101,7 +102,7 @@ public static class Program
             menu.Position = ((int)mx + 1, (int)my + 1);
         });
 
-        void InitializeLayers(string[] layers)
+        void LoadMap(string[] layers, MapGenerator? gen)
         {
             inspector.layers.Items.Clear();
             inspector.layersVisibility.Items.Clear();
@@ -109,9 +110,17 @@ public static class Program
             foreach (var layer in layers)
             {
                 inspector.layers.Items.Add(new() { Text = layer });
-                inspector.layersVisibility.Items.Add(new());
+                inspector.layersVisibility.Items.Add(new() { IsSelected = true });
                 editor.MapsEditorVisible.Add(true);
             }
+
+            inspector.layers.Select(inspector.layers.Items[0]);
+
+            if (gen == null)
+                return;
+
+            terrainPanel.generator = gen;
+            terrainPanel.UpdateUI();
         }
     }
 
@@ -127,9 +136,11 @@ public static class Program
 
             // hijack the end of the file to save some extra info
             // should be ignored by the engine but not by the editor
-            PutInt(bytes, layers.Count);
-            for (var i = 0; i < layers.Count; i++)
+            PutInt(bytes, layers.Items.Count);
+            for (var i = 0; i < layers.Items.Count; i++)
                 PutString(bytes, layers.Items[i].Text);
+
+            bytes.AddRange(terrainPanel.generator.ToBytes());
 
             return Compress(bytes.ToArray());
         }

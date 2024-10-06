@@ -121,7 +121,7 @@ internal class Inspector : Panel
                     return;
 
                 var prompt = editor.Prompt;
-                var panel = panels.Blocks[ui.IndexOf(selected)];
+                var panel = panels.Blocks[ui.Blocks.IndexOf(selected)];
                 var (uw, uh) = editor.MapsUi.View.Size;
                 var (ew, eh) = editor.MapsEditor.View.Size;
 
@@ -293,7 +293,7 @@ internal class Inspector : Panel
         if (prevSelected == null)
             return;
 
-        var panel = panels.Blocks[ui.IndexOf(selected)];
+        var panel = panels.Blocks[ui.Blocks.IndexOf(selected)];
         var disabled = (EditButton)blocks[typeof(Block)][0];
         var hidden = (EditButton)blocks[typeof(Block)][1];
         var text = (InputBox)blocks[typeof(Block)][2];
@@ -385,7 +385,7 @@ internal class Inspector : Panel
             l.IsSingleSelecting = multi.IsSelected == false;
 
             var prev = new List<bool>();
-            for (var j = 0; j < l.Count; j++)
+            for (var j = 0; j < l.Items.Count; j++)
                 prev.Add(l.Items[j].IsSelected);
 
             l.Items.Clear();
@@ -393,7 +393,7 @@ internal class Inspector : Panel
             foreach (var t in split)
                 l.Items.Add(new() { Text = t });
 
-            for (var j = 0; j < l.Count; j++)
+            for (var j = 0; j < l.Items.Count; j++)
             {
                 if (j >= prev.Count)
                     break;
@@ -540,7 +540,7 @@ internal class Inspector : Panel
             itemGap.Value = l.ItemGap;
 
             var value = string.Empty;
-            for (var j = 0; j < l.Count; j++)
+            for (var j = 0; j < l.Items.Count; j++)
                 value += $"{(j > 0 ? Environment.NewLine : string.Empty)}{l.Items[j].Text}";
 
             items.Value = value;
@@ -645,7 +645,7 @@ internal class Inspector : Panel
     private void UpdateListItems(List list, InputBox inputBoxEditor)
     {
         var middle = editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Middle];
-        var length = Math.Min(list.Count, itemSelections.Count);
+        var length = Math.Min(list.Items.Count, itemSelections.Count);
 
         for (var i = 0; i < length; i++)
         {
@@ -662,10 +662,10 @@ internal class Inspector : Panel
 
             // double clicking a button will enter a different folder so this
             // loop is iterating over an old data/length - so abandon
-            var prevSize = list.Count;
+            var prevSize = list.Items.Count;
             btn.Update();
 
-            if (prevSize != list.Count)
+            if (prevSize != list.Items.Count)
                 return;
 
             middle.SetTile(btn.Position, tile);

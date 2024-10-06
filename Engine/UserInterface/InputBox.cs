@@ -16,22 +16,26 @@ public enum SymbolGroup
     /// <summary>
     /// 0123456789.,
     /// </summary>
-    Digits = 1 << 2,
+    Decimals = 1 << 2,
+    /// <summary>
+    /// 0123456789
+    /// </summary>
+    Integers = 1 << 3,
     /// <summary>
     /// ,.;:!?-()[]{}\"'
     /// </summary>
-    Punctuation = 1 << 3,
+    Punctuation = 1 << 4,
     /// <summary>
     /// +-*/=ᐸᐳ%(),^
     /// </summary>
-    Math = 1 << 4,
+    Math = 1 << 5,
     /// <summary>
     /// @#＆_|\\/^
     /// </summary>
-    Special = 1 << 5,
-    Space = 1 << 6,
-    Other = 1 << 7,
-    All = Letters | Digits | Punctuation | Math | Special | Space | Other
+    Special = 1 << 6,
+    Space = 1 << 7,
+    Other = 1 << 8,
+    All = Letters | Decimals | Integers | Punctuation | Math | Special | Space | Other
 }
 
 /// <summary>
@@ -75,7 +79,7 @@ public class InputBox : Block
         }
     }
     public bool IsReadOnly { get; set; }
-    public bool IsSingleLine { get; set; }
+    public bool IsMultiLine { get; set; }
     public SymbolGroup SymbolGroup
     {
         get => symbolGroup;
@@ -247,7 +251,7 @@ public class InputBox : Block
         Init();
         var b = Decompress(bytes);
         IsReadOnly = GrabBool(b);
-        IsSingleLine = GrabBool(b);
+        IsMultiLine = GrabBool(b);
         Placeholder = GrabString(b);
         Value = GrabString(b);
         SymbolGroup = (SymbolGroup)GrabByte(b);
@@ -265,7 +269,7 @@ public class InputBox : Block
     {
         var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsReadOnly);
-        PutBool(result, IsSingleLine);
+        PutBool(result, IsMultiLine);
         PutString(result, Placeholder);
         PutString(result, Value);
         PutByte(result, (byte)SymbolGroup);
@@ -431,7 +435,8 @@ public class InputBox : Block
     private static readonly Dictionary<SymbolGroup, string> symbolSets = new()
     {
         { SymbolGroup.Letters, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" },
-        { SymbolGroup.Digits, "0123456789.," },
+        { SymbolGroup.Decimals, "0123456789." },
+        { SymbolGroup.Integers, "0123456789" },
         { SymbolGroup.Punctuation, ",.;:!?-()[]{}\"'" },
         { SymbolGroup.Math, "+-*/=<>%(),^" },
         { SymbolGroup.Special, "@#&_|\\/^" },
@@ -481,7 +486,7 @@ public class InputBox : Block
 
     protected override void OnInput()
     {
-        if (IsReadOnly == false && IsFocused && IsSingleLine && JustPressed(Key.Enter))
+        if (IsReadOnly == false && IsFocused && IsMultiLine == false && JustPressed(Key.Enter))
             submit?.Invoke();
 
         var isBellowElement = IsFocused == false || Input.FocusedPrevious != this;
@@ -496,7 +501,7 @@ public class InputBox : Block
         var shouldDelete = isAllowedType ||
                            Allowed(Key.Backspace, isHolding) ||
                            Allowed(Key.Delete, isHolding) ||
-                           (Allowed(Key.Enter, isHolding) && IsSingleLine == false);
+                           (Allowed(Key.Enter, isHolding) && IsMultiLine);
 
         var justDeletedSelected = false;
         if (TryCopyPasteCut(ref justDeletedSelected, ref shouldDelete, out var isPasting))
@@ -682,7 +687,7 @@ public class InputBox : Block
         var skipWord = clicks == 2 && SymbolMask != null; // there are only whole lines
         clicks += skipWord ? 1 : 0;
 
-        var skipLine = clicks == 3 && (IsSingleLine || isWholeLineSelected);
+        var skipLine = clicks == 3 && (IsMultiLine == false || isWholeLineSelected);
         clicks += skipLine ? 1 : 0;
 
         if (clicks == 1) // cursor to mouse
@@ -814,7 +819,7 @@ public class InputBox : Block
 
         var (w, _) = Size;
 
-        if (Allowed(Key.Enter, isHolding) && IsSingleLine == false)
+        if (Allowed(Key.Enter, isHolding) && IsMultiLine)
         {
             // insert line above?
             if (cx == 0)

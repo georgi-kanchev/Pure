@@ -4,6 +4,7 @@ namespace Pure.Editors.Map;
 
 internal class TilePalette
 {
+    public bool justPickedTile;
     public Tilemap map;
     public Layer layer;
     public (int x, int y) mousePos;
@@ -89,6 +90,7 @@ internal class TilePalette
     public void Update(Inspector inspector, TerrainPanel terrainPanel)
     {
         prevMousePosWorld = editor.MousePositionWorld;
+        justPickedTile = false;
 
         var tool = inspector.tools.Current;
 
@@ -325,7 +327,7 @@ internal class TilePalette
         else if (tool == 7) // replace
             tilemap.Replace((0, 0, tw, th), tilemap.TileAt(start), null, tiles);
         else if (tool == 8) // fill
-            tilemap.Flood((mx, my), false, null, tiles);
+            tilemap.Flood((mx, my), true, null, tiles);
         else if (tool == 9) // rotate
             ProcessRegion(tile =>
             {
@@ -356,6 +358,10 @@ internal class TilePalette
             var coords = tile.Id.ToIndex2D(layer.AtlasTileCount);
             inspector.paletteColor.SelectedColor = tile.Tint;
             inspector.pickedTile = tile;
+            justPickedTile = true;
+            inspector.mirror.IsSelected = tile.IsMirrored;
+            inspector.flip.IsSelected = tile.IsFlipped;
+            inspector.tileTurns = tile.Turns;
             selectedPos = coords;
             selectedSz = (1, 1);
         }

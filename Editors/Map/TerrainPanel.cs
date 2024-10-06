@@ -1,12 +1,13 @@
 using Pure.Tools.Tilemap;
+using static Pure.Engine.Tilemap.Tile;
+using static Pure.Engine.Utilities.Color;
 
 namespace Pure.Editors.Map;
 
-using static Tile;
-using static Color;
-
 internal class TerrainPanel : Panel
 {
+    public MapGenerator generator = new();
+
     public TerrainPanel(Editor editor, Inspector inspector, TilePalette tilePalette)
     {
         this.editor = editor;
@@ -47,26 +48,42 @@ internal class TerrainPanel : Panel
         });
 
         var autoButtons = AddAutoTiles(tilePalette);
-        var terrainBlocks = AddTerrainBlocks();
+        var terrainBlocks = AddTerrainBlocks(tilePalette);
 
         editor.Ui.Blocks.AddRange(new Block[] { this, toggle });
         editor.Ui.Blocks.AddRange(autoButtons);
         editor.Ui.Blocks.AddRange(terrainBlocks);
     }
 
+    public void UpdateUI()
+    {
+        noiseType.Select(noiseType.Items[(int)generator.Noise]);
+        scale.Value = $"{generator.Scale}";
+        seed.Value = $"{generator.Seed}";
+
+        tiles.Items.Clear();
+        foreach (var (depth, tile) in generator.Elevations.OrderBy(x => x.Key))
+            tiles.Items.Add(new() { Text = $"{depth}|{tile.Id}" });
+
+        TryAutoGenerate();
+    }
+
 #region Backend
     private const int MIDDLE = (int)Editor.LayerMapsUi.Middle, FRONT = (int)Editor.LayerMapsUi.Front;
-    private int lastPickedTile = int.MaxValue, lastLayer = -1;
+    private int lastLayer = -1;
     private readonly Editor editor;
     private readonly Inspector inspector;
-    private readonly MapGenerator generator = new();
+    private Button? generate, autoGenerate;
+    private List tiles;
+    private List noiseType;
+    private InputBox scale, seed;
 
     private Block[] AddAutoTiles(TilePalette tilePalette)
     {
         var matchIds = new List<Button>();
         var add = new Button { Size = (1, 1) };
-        var apply = new Button { Size = (13, 3), Text = "Apply Rules" };
         var remove = new Button { Size = (1, 1) };
+        var apply = new Button { Size = (13, 3), Text = "Apply Rules" };
         var pages = new Pages(count: 1) { Size = (6, 1), ItemWidth = 2 };
         var autoTiles = GetAutoTiles();
 
@@ -136,14 +153,13 @@ internal class TerrainPanel : Panel
                 pages.Interact(Interaction.Select);
             }
 
-            if (autoTiles.Count > 0 && inspector.pickedTile != lastPickedTile)
+            if (autoTiles.Count > 0 && tilePalette.justPickedTile)
             {
                 var curr = autoTiles[pages.Current - 1];
                 curr.replacedCenter = inspector.pickedTile;
                 autoTiles[pages.Current - 1] = curr;
             }
 
-            lastPickedTile = inspector.pickedTile;
             lastLayer = layer;
 
             pages.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 1, Y + 13);
@@ -192,20 +208,25 @@ internal class TerrainPanel : Panel
         result.AddRange(new Block[] { add, apply, remove, pages });
         return result.ToArray();
     }
-    private Block[] AddTerrainBlocks()
+    [MemberNotNull(nameof(tiles), nameof(noiseType), nameof(scale), nameof(seed))]
+    private Block[] AddTerrainBlocks(TilePalette tilePalette)
     {
         var result = new List<Block>();
-        var noiseType = new List((0, 0), 6, Span.Dropdown) { Size = (13, 6), ItemSize = (13, 1) };
-        var scale = new InputBox
+        noiseType = new((0, 0), 6, Span.Dropdown) { Size = (13, 6), ItemSize = (13, 1) };
+        scale = new()
         {
-            Value = "10", MaximumSymbolCount = 6, Size = (7, 1), SymbolGroup = SymbolGroup.Digits
+            Value = "10", MaximumSymbolCount = 5, Size = (6, 1), SymbolGroup = SymbolGroup.Decimals
         };
-        var seed = new InputBox
+        seed = new()
         {
-            Value = "0", MaximumSymbolCount = 7, Size = (8, 1), SymbolGroup = SymbolGroup.Digits
+            Value = "0", MaximumSymbolCount = 5, Size = (6, 1), SymbolGroup = SymbolGroup.Decimals
         };
-        var generate = new Button { Text = "Generate!", Size = (13, 3) };
-        var autoGenerate = new Button { Text = "Auto Generate", Size = (13, 1) };
+        generate = new() { Text = "Generate!", Size = (13, 3) };
+        autoGenerate = new() { IsSelected = true, Text = "Auto Generate", Size = (13, 1) };
+        tiles = new(itemCount: 0) { IsSingleSelecting = true, Size = (9, 4), ItemSize = (9, 1) };
+        var add = new Button { Size = (1, 1) };
+        var edit = new Button { Size = (1, 1) };
+        var remove = new Button { Size = (1, 1) };
 
         for (var i = 0; i < 5; i++)
         {
@@ -239,13 +260,8 @@ internal class TerrainPanel : Panel
         }
 
         noiseType.OnItemDisplay(item => editor.MapsUi.SetListItem(noiseType, item));
-        noiseType.Edit(
-            nameof(Noise.OpenSimplex2),
-            nameof(Noise.OpenSimplex2S),
-            nameof(Noise.Cellular),
-            nameof(Noise.Perlin),
-            nameof(Noise.ValueCubic),
-            nameof(Noise.Value));
+        noiseType.Edit(nameof(Noise.OpenSimplex2), nameof(Noise.OpenSimplex2S), nameof(Noise.Cellular),
+            nameof(Noise.Perlin), nameof(Noise.ValueCubic), nameof(Noise.Value));
         noiseType.Select(noiseType.Items[4]);
 
         noiseType.OnItemInteraction(Interaction.Select, btn =>
@@ -254,12 +270,13 @@ internal class TerrainPanel : Panel
             TryAutoGenerate();
         });
 
-        scale.OnType(_ =>
+        scale.OnSubmit(() =>
         {
-            var success = int.TryParse(scale.Text, out var value);
-            generator.Scale = success ? value : 0;
+            var success = float.TryParse(scale.Text, out var value);
+            generator.Scale = success ? value : 10;
+            TryAutoGenerate();
         });
-        seed.OnType(_ =>
+        seed.OnSubmit(() =>
         {
             var success = int.TryParse(seed.Text, out var value);
             generator.Seed = success ? value : 0;
@@ -267,38 +284,120 @@ internal class TerrainPanel : Panel
         });
         generate.OnInteraction(Interaction.Trigger, () =>
         {
-            generator.Tilemap = editor.MapsEditor.Tilemaps[GetLayer()];
-            generator.Apply();
+            var layer = GetLayer();
+            if (layer == -1)
+                return;
+
+            var map = editor.MapsEditor.Tilemaps[layer];
+            map.Flush();
+            generator.Apply(map);
+        });
+        tiles.OnItemDisplay(btn => editor.MapsUi.SetListItem(tiles, btn));
+
+        add.OnInteraction(Interaction.Trigger, () =>
+        {
+            generator.Elevations[GetFreeDepth()] = inspector.pickedTile;
+            UpdateUI();
+        });
+        edit.OnInteraction(Interaction.Trigger, () =>
+        {
+            foreach (var btn in tiles.SelectedItems)
+            {
+                var depth = byte.Parse(btn.Text.Split("|")[0]);
+                var tile = generator.Elevations[depth];
+
+                editor.PromptInput.SymbolGroup = SymbolGroup.Integers;
+                editor.PromptInput.Value = "";
+                editor.Prompt.Text = "Set terrain tile height 0…255:";
+                editor.Prompt.Open(editor.PromptInput, onButtonTrigger: i =>
+                {
+                    if (i != 0)
+                        return;
+
+                    byte.TryParse(editor.PromptInput.Value, out var newDepth);
+                    newDepth = GetFreeDepth(newDepth);
+                    generator.Elevations.Remove(depth);
+                    generator.Elevations[newDepth] = tile;
+                    UpdateUI();
+                });
+            }
+        });
+        remove.OnInteraction(Interaction.Trigger, () =>
+        {
+            editor.PromptYesNo("Remove this terrain tile height?", () =>
+            {
+                foreach (var btn in tiles.SelectedItems)
+                {
+                    var depth = byte.Parse(btn.Text.Split("|")[0]);
+                    generator.Elevations.Remove(depth);
+                }
+
+                UpdateUI();
+            });
         });
 
         OnDisplay(() =>
         {
             noiseType.Position = (X + 1, Y + 19);
-            scale.Position = (X + 7, Y + 21);
-            seed.Position = (X + 6, Y + 22);
+            scale.Position = (X + 8, Y + 21);
+            seed.Position = (X + 8, Y + 22);
+            tiles.Position = (X + 5, Y + 26);
+            add.Position = (X + 5, Y + 30);
+            edit.Position = (X + 7, Y + 30);
+            remove.Position = (X + 13, Y + 30);
             autoGenerate.Position = (X + 1, Y + 32);
             generate.Position = (X + 1, Y + 33);
 
-            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 18), "Noise Type:", White);
-            editor.MapsUi.SetList(noiseType);
-            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 21), "Scale:", White);
+            if (tilePalette.justPickedTile)
+            {
+                var selected = tiles.SelectedItems;
+                foreach (var btn in selected)
+                {
+                    var depth = byte.Parse(btn.Text.Split("|")[0]);
+                    generator.Elevations[depth] = inspector.pickedTile;
+                }
+
+                if (selected.Count > 0)
+                    UpdateUI();
+            }
+
+            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 21), "Scale", White);
             editor.MapsUi.SetInputBox(scale);
-            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 22), "Seed:", White);
+            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 22), "Seed", White);
             editor.MapsUi.SetInputBox(seed);
-            editor.MapsUi.Tilemaps[FRONT].SetText((X + 4, Y + 25), $"{generator.Offset}", White);
+            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 23),
+                $"Offset {generator.Offset.x} {generator.Offset.y}", White);
+
+            editor.MapsUi.Tilemaps[FRONT].SetText((X + 5, Y + 25), "Height|Id", White);
+            editor.MapsUi.SetList(tiles);
+
+            if (tiles.SelectedItems.Count > 0)
+                editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 28), $"use{Environment.NewLine}" +
+                                                                       $"pick{Environment.NewLine}" +
+                                                                       $"tool", Gray);
+
+            editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), MIDDLE);
+            editor.MapsUi.SetButtonIcon(edit, new(ICON_PEN, Gray), MIDDLE);
+            editor.MapsUi.SetButtonIcon(remove, new(ICON_TRASH, Gray), MIDDLE);
+
+            editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 18), "Noise Type", White);
+            editor.MapsUi.SetList(noiseType);
 
             editor.MapsUi.SetButton(generate, MIDDLE);
             editor.MapsUi.SetButton(autoGenerate, MIDDLE, true);
         });
 
-        result.AddRange(new Block[] { scale, seed, autoGenerate, generate, noiseType });
-        return result.ToArray();
-
-        void TryAutoGenerate()
+        result.AddRange(new Block[]
         {
-            if (autoGenerate.IsSelected)
-                generate.Interact(Interaction.Trigger);
-        }
+            add, edit, remove, scale, seed, tiles, autoGenerate, generate, noiseType
+        });
+        return result.ToArray();
+    }
+
+    private void TryAutoGenerate()
+    {
+        if (autoGenerate is { IsSelected: true })
+            generate?.Interact(Interaction.Trigger);
     }
 
     private int GetLayer()
@@ -310,6 +409,19 @@ internal class TerrainPanel : Panel
     {
         var layer = GetLayer();
         return layer == -1 ? new() : editor.MapsEditor.Tilemaps[GetLayer()].AutoTiles;
+    }
+    private byte GetFreeDepth(byte starting = 0)
+    {
+        var freeDepth = starting;
+        foreach (var (depth, _) in generator.Elevations)
+        {
+            if (generator.Elevations.ContainsKey(freeDepth) == false)
+                break;
+
+            freeDepth = (byte)(depth + 1);
+        }
+
+        return freeDepth;
     }
 #endregion
 }

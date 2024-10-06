@@ -9,6 +9,7 @@ global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
 using System.IO.Compression;
 using System.Text;
+using Pure.Tools.Tilemap;
 
 namespace Pure.Editors.Base;
 
@@ -95,8 +96,7 @@ public class Editor
         {
             Value = string.Empty,
             Size = (25, 1),
-            SymbolGroup = SymbolGroup.Digits | SymbolGroup.Space,
-            IsSingleLine = true
+            SymbolGroup = SymbolGroup.Decimals | SymbolGroup.Space
         };
         promptSize.OnDisplay(() => MapsUi.SetInputBox(promptSize, (int)LayerMapsUi.PromptBack));
 
@@ -128,12 +128,7 @@ public class Editor
                 Prompt.TriggerButton(0);
         });
 
-        PromptInput = new()
-        {
-            Size = (30, 1),
-            Value = string.Empty,
-            IsSingleLine = true
-        };
+        PromptInput = new() { Size = (30, 1), Value = string.Empty };
         PromptInput.OnDisplay(() => MapsUi.SetInputBox(PromptInput, BACK));
 
         tilesetPrompt = new(this);
@@ -262,6 +257,9 @@ public class Editor
             if (i != 0)
                 return;
 
+            Prompt.Text = "Provide a File Name:";
+            PromptInput.SymbolGroup = SymbolGroup.All;
+            PromptInput.Value = "name.map";
             Prompt.Open(PromptInput, onButtonTrigger: j =>
             {
                 if (j != 0)
@@ -360,7 +358,7 @@ public class Editor
         OnSetGrid?.Invoke();
     }
 
-    public void PromptLoadMap(Action<string[]> onLoad)
+    public void PromptLoadMap(Action<string[], MapGenerator?> onLoad)
     {
         Prompt.Text = "Select a File:";
         PromptFileViewer.IsSelectingFolders = false;
@@ -371,27 +369,28 @@ public class Editor
 
             var selectedPaths = PromptFileViewer.SelectedPaths;
             var file = selectedPaths.Length == 1 ? selectedPaths[0] : PromptFileViewer.CurrentDirectory;
-            var result = Array.Empty<string>();
+            var resultLayers = Array.Empty<string>();
 
             try
             {
+                var gen = default(MapGenerator);
                 var maps = default(TilemapPack);
                 if (Path.GetExtension(file) == ".tmx" && file != null)
                 {
                     var (layers, tilemapPack) = TiledLoader.Load(file);
                     maps = tilemapPack;
-                    result = layers;
+                    resultLayers = layers;
                 }
                 else
                 {
                     var bytes = File.ReadAllBytes($"{file}");
-                    maps = LoadMap(bytes, ref result);
+                    maps = LoadMap(bytes, ref resultLayers, ref gen);
                 }
 
                 MapsEditor.Tilemaps.Clear();
                 MapsEditor.Tilemaps.AddRange(maps.Tilemaps);
 
-                onLoad.Invoke(result);
+                onLoad.Invoke(resultLayers, gen);
             }
             catch (Exception)
             {
@@ -399,17 +398,18 @@ public class Editor
             }
         });
     }
-    public void PromptLoadMapBase64(Action<string[]> onLoad)
+    public void PromptLoadMapBase64(Action<string[], MapGenerator?> onLoad)
     {
         PromptBase64(() =>
         {
             var bytes = Convert.FromBase64String(PromptInput.Value);
-            var result = Array.Empty<string>();
-            var maps = LoadMap(bytes, ref result);
+            var layers = Array.Empty<string>();
+            var gen = default(MapGenerator);
+            var maps = LoadMap(bytes, ref layers, ref gen);
             MapsEditor.Tilemaps.Clear();
             MapsEditor.Tilemaps.AddRange(maps.Tilemaps);
 
-            onLoad.Invoke(result);
+            onLoad.Invoke(layers, gen);
         });
     }
 
@@ -625,16 +625,6 @@ public class Editor
         return result;
     }
 
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
     private static byte[] Decompress(byte[] data)
     {
         var input = new MemoryStream(data);
@@ -647,7 +637,7 @@ public class Editor
         return output.ToArray();
     }
 
-    private static TilemapPack LoadMap(byte[] bytes, ref string[] result)
+    private static TilemapPack LoadMap(byte[] bytes, ref string[] result, ref MapGenerator? gen)
     {
         var maps = new TilemapPack(bytes);
         var decompressed = Decompress(bytes);
@@ -656,7 +646,7 @@ public class Editor
         if (decompressed.Length == measure)
             return maps;
 
-        // has hijacked data
+        // has hijacked data, means it was editor exported
         var hijackedBytes = decompressed[measure..];
         var byteOffset = 0;
         var layerCount = GrabInt(hijackedBytes, ref byteOffset);
@@ -665,6 +655,7 @@ public class Editor
         for (var i = 0; i < layerCount; i++)
             result[i] = GrabString(hijackedBytes, ref byteOffset);
 
+        gen = new(hijackedBytes[byteOffset..]);
         return maps;
     }
 #endregion

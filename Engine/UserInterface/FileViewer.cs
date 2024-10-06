@@ -2,7 +2,6 @@ namespace Pure.Engine.UserInterface;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-
 using static Environment;
 
 public class FileViewer : Block
@@ -61,7 +60,7 @@ public class FileViewer : Block
         {
             var result = new List<string>();
 
-            for (var i = 0; i < FilesAndFolders.Count; i++)
+            for (var i = 0; i < FilesAndFolders.Items.Count; i++)
                 if (FilesAndFolders.Items[i].IsSelected)
                     result.Add(Path.Join(CurrentDirectory, FilesAndFolders.Items[i].Text));
 
@@ -144,7 +143,7 @@ public class FileViewer : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private string dir = "default";
     private FileSystemWatcher watcher;
     private static string DefaultPath
@@ -282,7 +281,7 @@ public class FileViewer : Block
     }
     internal void OnUpdate()
     {
-        LimitSizeMin((3, 3 + HardDrives.Count));
+        LimitSizeMin((3, 3 + HardDrives.Items.Count));
 
         if (FilesAndFolders is not { IsSingleSelecting: true, SelectedItems.Count: 1 })
             return;
@@ -296,7 +295,7 @@ public class FileViewer : Block
     {
         var (x, y) = Position;
         var (w, h) = Size;
-        var hds = HardDrives.Count;
+        var hds = HardDrives.Items.Count;
 
         HardDrives.size = (w, hds);
         HardDrives.position = (x, y);
@@ -363,5 +362,5 @@ public class FileViewer : Block
 
         return result;
     }
-    #endregion
+#endregion
 }

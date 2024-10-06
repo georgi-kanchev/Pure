@@ -154,8 +154,10 @@ public class PathMap
     private static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
-        using var stream = new DeflateStream(output, CompressionLevel.Optimal);
-        stream.Write(data, 0, data.Length);
+        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
+            stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -163,8 +165,11 @@ public class PathMap
     {
         var input = new MemoryStream(data);
         var output = new MemoryStream();
-        using var stream = new DeflateStream(input, CompressionMode.Decompress);
-        stream.CopyTo(output);
+        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
+            stream.CopyTo(output);
+        }
+
         return output.ToArray();
     }
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)

@@ -66,7 +66,7 @@ public static class Program
         promptSlider = new() { Size = (15, 1) };
         promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, "", BACK));
 
-        fileName = new() { Size = (20, 1), IsSingleLine = true };
+        fileName = new() { Size = (20, 1) };
         fileName.OnDisplay(() => maps.SetInputBox(fileName, BACK));
 
         // submenus need higher update priority to not close upon parent menu opening them
@@ -207,7 +207,7 @@ public static class Program
     }
     internal static void BlockRemove(Block block)
     {
-        var panel = panels.Blocks[ui.IndexOf(block)];
+        var panel = panels.Blocks[ui.Blocks.IndexOf(block)];
         panels.Blocks.Remove(panel);
         ui.Blocks.Remove(block);
 
@@ -216,7 +216,7 @@ public static class Program
     }
     internal static void BlockToTop(Block block)
     {
-        var panel = panels.Blocks[ui.IndexOf(block)];
+        var panel = panels.Blocks[ui.Blocks.IndexOf(block)];
         panels.BringToFront(panel);
         ui.BringToFront(block);
         selected = block;
@@ -236,12 +236,12 @@ public static class Program
         if (editor.Prompt.IsHidden == false || notOverPanel == false || isHoveringMenu)
             return;
 
-        selected = ui.Blocks[panels.IndexOf(panel)];
+        selected = ui.Blocks[panels.Blocks.IndexOf(panel)];
         panel.IsHidden = false;
     }
     private static void OnPanelDisplay(Panel panel)
     {
-        var index = panels.IndexOf(panel);
+        var index = panels.Blocks.IndexOf(panel);
         var e = ui.Blocks[index];
 
         e.Position = (panel.Position.x + 1, panel.Position.y + 1);

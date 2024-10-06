@@ -1,7 +1,6 @@
 ﻿namespace Pure.Engine.Tilemap;
 
 using System.IO.Compression;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -30,7 +29,7 @@ public class Tilemap
 
         Size = (w, h);
         data = new Tile[w, h];
-        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
+        bundleCache = new (int, uint, int, bool, bool)[w, h];
         ids = new int[w, h];
         View = (0, 0, size.width, size.height);
     }
@@ -48,7 +47,7 @@ public class Tilemap
         var h = tileData.GetLength(1);
         Size = (w, h);
         data = Duplicate(tileData);
-        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
+        bundleCache = new (int, uint, int, bool, bool)[w, h];
         ids = new int[w, h];
         View = (0, 0, w, h);
 
@@ -63,28 +62,24 @@ public class Tilemap
     {
         var b = Decompress(bytes);
         var offset = 0;
-        var w = BitConverter.ToInt32(Get<int>());
-        var h = BitConverter.ToInt32(Get<int>());
+        var (w, h) = (GetInt(), GetInt());
 
         data = new Tile[w, h];
-        bundleCache = new (int, uint, sbyte, bool, bool)[w, h];
+        bundleCache = new (int, uint, int, bool, bool)[w, h];
         ids = new int[w, h];
         Size = (w, h);
-        View = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()),
-            BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+        View = (GetInt(), GetInt(), GetInt(), GetInt());
 
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
             {
-                var bTile = GetBytesFrom(b, Tile.BYTE_SIZE, ref offset);
+                var bTile = GetBytesFrom(b, 7, ref offset);
                 SetTile((j, i), new(bTile));
             }
 
-        return;
-
-        byte[] Get<T>()
+        int GetInt()
         {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
         }
     }
     public Tilemap(string base64) : this(Convert.FromBase64String(base64))
@@ -114,7 +109,7 @@ public class Tilemap
     }
     /// <returns>
     /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-    public (int id, uint tint, sbyte turns, bool mirror, bool flip)[,] ToBundle()
+    public (int id, uint tint, int turns, bool mirror, bool flip)[,] ToBundle()
     {
         return bundleCache;
     }
@@ -686,7 +681,7 @@ public class Tilemap
     /// </summary>
     /// <param name="tilemap">The tilemap object to convert.</param>
     /// <returns>A new 2D array of tile bundles containing the tiles from the tilemap object.</returns>
-    public static implicit operator (int id, uint tint, sbyte turns, bool mirror, bool flip)[,](Tilemap tilemap)
+    public static implicit operator (int id, uint tint, int turns, bool mirror, bool flip)[,](Tilemap tilemap)
     {
         return tilemap.ToBundle();
     }
@@ -762,7 +757,7 @@ public class Tilemap
     };
 
     private readonly Tile[,] data;
-    private readonly (int, uint, sbyte, bool, bool)[,] bundleCache;
+    private readonly (int, uint, int, bool, bool)[,] bundleCache;
     private readonly int[,] ids;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)

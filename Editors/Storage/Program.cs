@@ -110,7 +110,7 @@ public static class Program
         promptText = new() { Size = (50, 30) };
         promptText.OnDisplay(() =>
             editor.MapsUi.SetInputBox(promptText, (int)Editor.LayerMapsUi.PromptBack));
-        promptNumber = new() { Size = (20, 1), SymbolGroup = SymbolGroup.Digits | SymbolGroup.Math };
+        promptNumber = new() { Size = (20, 1), SymbolGroup = SymbolGroup.Decimals | SymbolGroup.Math };
         promptNumber.OnDisplay(() =>
             editor.MapsUi.SetInputBox(promptNumber, (int)Editor.LayerMapsUi.PromptBack));
 
@@ -189,7 +189,7 @@ public static class Program
         else if (creating == DataType.Tuple)
         {
             if (emptyData == false)
-                for (var i = 0; i < list.Count; i++)
+                for (var i = 0; i < list.Items.Count; i++)
                     list.Items[i].Text = GetDefaultValue(i);
         }
         else if (creating is DataType.List or DataType.Dictionary)
@@ -274,7 +274,7 @@ public static class Program
     }
     private static void OnPanelDisplay(Panel panel)
     {
-        var i = panels.IndexOf(panel);
+        var i = panels.Blocks.IndexOf(panel);
         var list = (List)data.Blocks[i];
         var removeKey = (Button)removeKeys.Blocks[i];
         var add = (Button)adds.Blocks[i];
@@ -284,7 +284,7 @@ public static class Program
         var (x, y) = panel.Position;
         var (w, h) = panel.Size;
 
-        panel.SizeMaximum = (int.MaxValue, list.Count + 2);
+        panel.SizeMaximum = (int.MaxValue, list.Items.Count + 2);
 
         if (add.Text == nameof(DataType.Value))
         {
@@ -295,15 +295,15 @@ public static class Program
         }
         else if (add.Text == nameof(DataType.Tuple))
         {
-            remove.IsHidden = list.Count < 3;
-            add.IsHidden = list.Count > 7;
+            remove.IsHidden = list.Items.Count < 3;
+            add.IsHidden = list.Items.Count > 7;
             move.IsHidden = false;
         }
         else
         {
-            remove.IsHidden = list.Count < 2;
+            remove.IsHidden = list.Items.Count < 2;
             add.IsHidden = false;
-            move.IsHidden = list.Count < 2;
+            move.IsHidden = list.Items.Count < 2;
         }
 
         var offX = move.IsHidden ? 1 : 3;
@@ -502,7 +502,7 @@ public static class Program
     }
     private static void OnRemoveClick(List list, Button item)
     {
-        var index = removes.IndexOf(list);
+        var index = removes.Blocks.IndexOf(list);
         var itemIndex = list.Items.IndexOf(item);
         var valueList = (List)data.Blocks[index];
         var moveList = (List)moves.Blocks[index];
@@ -515,14 +515,14 @@ public static class Program
         moveList.Items.Remove(moveList.Items[itemIndex]);
         removeList.Items.Remove(removeList.Items[itemIndex]);
 
-        if (keysList.Count > 0)
+        if (keysList.Items.Count > 0)
             keysList.Items.Remove(keysList.Items[itemIndex]);
 
         valueList.Text = types.ToString(",");
     }
     private static void OnMoveClick(List list, Button item)
     {
-        var index = moves.IndexOf(list);
+        var index = moves.Blocks.IndexOf(list);
         var itemIndex = list.Items.IndexOf(item);
         var valueList = (List)data.Blocks[index];
         var keysList = (List)dictKeys.Blocks[index];
@@ -532,14 +532,14 @@ public static class Program
         types.Shift(-1, itemIndex);
         valueList.Items.Shift(-1, valueList.Items[itemIndex]);
 
-        if (add.Text == nameof(DataType.Dictionary) && keysList.Count > 0)
+        if (add.Text == nameof(DataType.Dictionary) && keysList.Items.Count > 0)
             keysList.Items.Shift(-1, keysList.Items[itemIndex]);
 
         valueList.Text = types.ToString(",");
     }
     private static void OnRemoveKeyClick(Button button)
     {
-        var index = removeKeys.IndexOf(button);
+        var index = removeKeys.Blocks.IndexOf(button);
 
         editor.PromptYesNo($"Delete '{panels.Blocks[index].Text}'?", () =>
         {
@@ -554,14 +554,14 @@ public static class Program
     }
     private static void OnAddClick(Button button)
     {
-        var index = adds.IndexOf(button);
+        var index = adds.Blocks.IndexOf(button);
         var list = (List)data.Blocks[index];
         var type = adds.Blocks[index].Text;
 
         if (type == nameof(DataType.Tuple))
         {
             selectedTypes.Clear();
-            values.Items[0].Text = $"Value {list.Count + 1}/{list.Count + 1}… ";
+            values.Items[0].Text = $"Value {list.Items.Count + 1}/{list.Items.Count + 1}… ";
             creating = DataType.TupleAdd;
             lastIndexAdd = index;
 
@@ -754,7 +754,7 @@ public static class Program
     private static string GetUniqueText(List list, string text, Button? ignoreItem = null)
     {
         var texts = new List<string>();
-        for (var i = 0; i < list.Count; i++)
+        for (var i = 0; i < list.Items.Count; i++)
             if (ignoreItem != list.Items[i])
                 texts.Add(list.Items[i].Text);
 
@@ -837,8 +837,8 @@ public static class Program
     }
     private static Array CreateArray(Storage storage, string type, List list)
     {
-        var instance = Array.CreateInstance(GetType(type), list.Count);
-        for (var i = 0; i < list.Count; i++)
+        var instance = Array.CreateInstance(GetType(type), list.Items.Count);
+        for (var i = 0; i < list.Items.Count; i++)
             instance.SetValue(ObjectFromText(storage, type, list.Items[i].Text, out _), i);
 
         return instance;
@@ -848,7 +848,7 @@ public static class Program
         var resultType = typeof(Dictionary<,>).MakeGenericType(typeof(string), GetType(type));
         var instance = Activator.CreateInstance(resultType);
 
-        for (var i = 0; i < list.Count; i++)
+        for (var i = 0; i < list.Items.Count; i++)
         {
             var value = ObjectFromText(storage, type, list.Items[i].Text, out _);
             resultType.GetMethod("Add")?.Invoke(instance, new[] { keys.Items[i].Text, value });
@@ -912,8 +912,8 @@ public static class Program
             var v = FilterPlaceholders(storage, multipleValues[i]);
             v = v.Replace(storage.Dividers.text, string.Empty);
 
-            if ((i == list.Count && isDict == false) ||
-                (i / 2 == list.Count && isDict))
+            if ((i == list.Items.Count && isDict == false) ||
+                (i / 2 == list.Items.Count && isDict))
             {
                 list.Items.Add(new());
                 remove.Items.Add(new());

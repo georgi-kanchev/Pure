@@ -15,13 +15,6 @@ public class List : Block
     public Scroll Scroll { get; private set; }
 
     /// <summary>
-    /// Gets the number of items in the list.
-    /// </summary>
-    public int Count
-    {
-        get => Items.Count;
-    }
-    /// <summary>
     /// Gets or sets a value indicating whether the list allows single selection or not.
     /// </summary>
     public bool IsSingleSelecting
@@ -121,7 +114,7 @@ public class List : Block
         var items = CreateAmount(GrabInt(b));
         Items.AddRange(items);
 
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < Items.Count; i++)
         {
             Select(Items[i], GrabBool(b));
             Items[i].text = GrabString(b);
@@ -150,9 +143,9 @@ public class List : Block
         PutInt(result, ItemSize.height);
         PutFloat(result, Scroll.Slider.Progress);
         PutFloat(result, Scroll.Slider.index);
-        PutInt(result, Count);
+        PutInt(result, Items.Count);
 
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < Items.Count; i++)
         {
             PutBool(result, Items[i].IsSelected);
             PutBool(result, Items[i].IsDisabled);
@@ -160,10 +153,6 @@ public class List : Block
         }
 
         return Compress(result.ToArray());
-    }
-    public Button[] ToArray()
-    {
-        return Items.ToArray();
     }
 
     public void Edit(params string[]? items)

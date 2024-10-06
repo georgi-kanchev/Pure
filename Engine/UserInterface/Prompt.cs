@@ -9,9 +9,6 @@ public class Prompt : Block
 
     public void Open(Block? block = null, bool autoClose = true, int btnCount = 2, int btnYes = default, int btnNo = 1, Action<int>? onButtonTrigger = null)
     {
-        if (block != null)
-            block.IsFocused = true;
-
         currentBlock = block;
         UpdateBlockPosition();
 
@@ -41,6 +38,9 @@ public class Prompt : Block
 
             buttons.Add(btn);
         }
+        
+        if (block != null)
+            block.IsFocused = true;
     }
     public void Close()
     {

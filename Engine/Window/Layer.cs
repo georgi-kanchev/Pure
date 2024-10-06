@@ -285,7 +285,7 @@ public class Layer
             QueueLine((a.x, a.y), (b.x, b.y), a.color);
         }
     }
-    public void DrawTiles((float x, float y) position, (int id, uint tint, sbyte turns, bool mirror, bool flip) tile, (int width, int height) groupSize = default, bool sameTile = default)
+    public void DrawTiles((float x, float y) position, (int id, uint tint, int turns, bool mirror, bool flip) tile, (int width, int height) groupSize = default, bool sameTile = default)
     {
         var (id, tint, angle, flipH, flipV) = tile;
         var (w, h) = groupSize;
@@ -327,7 +327,7 @@ public class Layer
 
                 var tr = new Vector2f((int)br.X, (int)tl.Y);
                 var bl = new Vector2f((int)tl.X, (int)br.Y);
-                var rotated = GetRotatedPoints(angle, texTl, texTr, texBr, texBl);
+                var rotated = GetRotatedPoints((sbyte)angle, texTl, texTr, texBr, texBl);
                 texTl = rotated.p1;
                 texTr = rotated.p2;
                 texBr = rotated.p3;
@@ -351,7 +351,7 @@ public class Layer
                 verts.Append(new(bl, c, texBl));
             }
     }
-    public void DrawTilemap((int id, uint tint, sbyte turns, bool mirror, bool flip)[,] tilemap)
+    public void DrawTilemap((int id, uint tint, int turns, bool mirror, bool flip)[,] tilemap)
     {
         var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
         var (tw, th) = AtlasTileSize;
