@@ -7,7 +7,6 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
-
 using static Alignment;
 
 /// <summary>
@@ -633,7 +632,9 @@ public static class Extensions
             using var compressedStream = new MemoryStream();
             using (var compressorStream =
                    new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
+            {
                 uncompressedStream.CopyTo(compressorStream);
+            }
 
             compressedBytes = compressedStream.ToArray();
         }
@@ -687,12 +688,12 @@ public static class Extensions
         }
         catch
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (OperatingSystem.IsWindows())
             {
                 url = url.Replace("&", "^&");
                 Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (OperatingSystem.IsLinux())
                 Process.Start("xdg-open", url);
             else
                 Console.WriteLine($"Could not load URL '{url}'.");
@@ -1370,7 +1371,7 @@ public static class Extensions
         return (index % size.width, index / size.width);
     }
 
-    #region Backend
+#region Backend
     private class Gate
     {
         public int entries;
@@ -1386,5 +1387,5 @@ public static class Extensions
         holdFrequency.Start();
         holdDelay.Start();
     }
-    #endregion
+#endregion
 }

@@ -338,13 +338,13 @@ public class FileViewer : Block
         var result = new List<string>();
         var drives = DriveInfo.GetDrives();
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (OperatingSystem.IsWindows())
         {
             foreach (var drive in drives)
                 if (drive.DriveType == DriveType.Fixed)
                     result.Add(drive.Name);
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if (OperatingSystem.IsLinux())
         {
             var sep = Path.DirectorySeparatorChar.ToString();
             var uuids = System.IO.Directory.GetFiles($"{sep}dev{sep}disk{sep}by-uuid{sep}");

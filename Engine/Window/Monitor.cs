@@ -34,9 +34,9 @@ public class Monitor
 
     static Monitor()
     {
-        monitors = Array.Empty<Monitor>();
+        monitors = [];
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (OperatingSystem.IsWindows())
         {
             var data = new MonitorDetails.Reader().GetMonitorDetails();
             var monitors = new List<Monitor>();
@@ -56,7 +56,7 @@ public class Monitor
 
             Monitor.monitors = monitors.ToArray();
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if (OperatingSystem.IsLinux())
         {
             var process = new Process();
             process.StartInfo.UseShellExecute = false;

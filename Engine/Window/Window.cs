@@ -420,6 +420,7 @@ public static class Window
         Mouse.IsCursorVisible = Mouse.IsCursorVisible;
         Mouse.TryUpdateSystemCursor();
 
+        Scale(0.5f);
         Center();
     }
     [MemberNotNull(nameof(allLayers))]
