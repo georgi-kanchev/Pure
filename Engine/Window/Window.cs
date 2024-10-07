@@ -102,6 +102,7 @@ public static class Window
             RecreateRenderTextures();
             TryCreate();
             Center();
+            Scale(0.5f);
         }
     }
     public static float PixelScale
