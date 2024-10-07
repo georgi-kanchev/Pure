@@ -5,7 +5,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Pure.Editors.UserInterface</RootNamespace>
-        <LangVersion>13</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

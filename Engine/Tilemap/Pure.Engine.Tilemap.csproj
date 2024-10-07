@@ -11,11 +11,6 @@
         <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
         <RepositoryType>game-engine</RepositoryType>
         <RootNamespace>Pure.Engine.Tilemap</RootNamespace>
-        <LangVersion>13</LangVersion>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-        <DocumentationFile></DocumentationFile>
     </PropertyGroup>
 
 </Project>

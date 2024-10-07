@@ -7,7 +7,7 @@
 /// <typeparam name="T">The type of the values in the animation.</typeparam>
 public class Animation<T> where T : notnull
 {
-    public List<T> Values { get; } = new();
+    public List<T> Values { get; } = [];
 
     /// <summary>
     /// Gets the current value of the animation.
@@ -141,7 +141,7 @@ public class Animation<T> where T : notnull
         return animation.Values.ToList();
     }
 
-    #region Backend
+#region Backend
     private Action? onEnd, onLoop;
 
     private float rawIndex;
@@ -164,5 +164,5 @@ public class Animation<T> where T : notnull
         Array.Copy(array, copy, array.Length);
         return copy;
     }
-    #endregion
+#endregion
 }

@@ -11,7 +11,6 @@
         <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
         <RepositoryType>game-engine</RepositoryType>
         <RootNamespace>Pure.Engine.Animation</RootNamespace>
-        <LangVersion>13</LangVersion>
     </PropertyGroup>
 
 </Project>

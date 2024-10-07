@@ -11,13 +11,6 @@
         <RepositoryUrl>https://github.com/georgi-kanchev/Pure</RepositoryUrl>
         <RepositoryType>game-engine</RepositoryType>
         <RootNamespace>Pure.Engine.Utilities</RootNamespace>
-        <LangVersion>13</LangVersion>
     </PropertyGroup>
-
-    <ItemGroup>
-        <Reference Include="SFML.Window">
-            <HintPath>..\..\..\..\.nuget\packages\sfml.window\2.5.1\lib\netstandard2.0\SFML.Window.dll</HintPath>
-        </Reference>
-    </ItemGroup>
 
 </Project>
