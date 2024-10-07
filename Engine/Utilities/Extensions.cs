@@ -1341,6 +1341,11 @@ public static class Extensions
         return HasChance((float)percent, seed);
     }
 
+    public static bool IsDefault<T>(this T? value)
+    {
+        return EqualityComparer<T>.Default.Equals(value, default);
+    }
+
     public static int ToSeed(this int number, params int[] parameters)
     {
         var seed = 2654435769L;

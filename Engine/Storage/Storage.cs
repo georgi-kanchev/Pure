@@ -45,9 +45,9 @@ public class Storage
     {
         get
         {
-            var result = new string[data.Count];
+            var result = new string[keyType.Count];
             var i = 0;
-            foreach (var kvp in data)
+            foreach (var kvp in keyType)
             {
                 result[i] = ObjectFromText<string>(kvp.Key.key) ?? string.Empty;
                 i++;
@@ -58,7 +58,7 @@ public class Storage
     }
     public int Count
     {
-        get => data.Count;
+        get => keyType.Count;
     }
 
     public Storage()
@@ -85,11 +85,11 @@ public class Storage
 
     public string ToText()
     {
-        if (string.IsNullOrEmpty(Dividers.common) || data.Count == 0)
+        if (string.IsNullOrEmpty(Dividers.common) || keyType.Count == 0)
             return string.Empty;
 
         var result = new StringBuilder();
-        foreach (var kvp in data)
+        foreach (var kvp in keyType)
         {
             result.Append(kvp.Key.key);
             result.Append(Dividers.common);
@@ -133,16 +133,16 @@ public class Storage
     }
 
     /// <summary>
-    /// Sets the specified object instance with the given key and type identifier.
+    /// Sets the specified object data with the given key and type identifier.
     /// </summary>
     /// <param name="key">The key used to store the object.</param>
-    /// <param name="instance">The object instance to be stored.</param>
-    /// <param name="typeId">The type identifier of the object instance.</param>
-    public void Set(string key, object? instance, int typeId = default)
+    /// <param name="data">The object data to be stored.</param>
+    /// <param name="typeId">The type identifier of the object data.</param>
+    public void Set(string key, object? data, int typeId = default)
     {
-        var value = AddPlaceholders(TextFromObject(instance, typeId));
+        var value = AddPlaceholders(TextFromObject(data, typeId));
         var k = (AddPlaceholders($"{sepStr}{key}{sepStr}"), typeId);
-        data[k] = value;
+        keyType[k] = value;
     }
     /// <summary>
     /// Removes the object with the specified key from storage.
@@ -151,18 +151,18 @@ public class Storage
     public void Remove(string key)
     {
         var keyToRemove = default((string, int));
-        foreach (var kvp in data)
+        foreach (var kvp in keyType)
             if (TextToObject<string>(kvp.Key.key, 0) == key)
             {
                 keyToRemove = kvp.Key;
                 break;
             }
 
-        data.Remove(keyToRemove);
+        keyType.Remove(keyToRemove);
     }
     public bool IsContaining(string key)
     {
-        foreach (var kvp in data)
+        foreach (var kvp in keyType)
             if (TextToObject<string>(kvp.Key.key, 0) == key)
                 return true;
 
@@ -170,53 +170,53 @@ public class Storage
     }
 
     /// <summary>
-    /// Gets the type ID of the object instance with the specified key.
+    /// Gets the type ID of the object data with the specified key.
     /// </summary>
-    /// <param name="key">The key of the object instance.</param>
-    /// <returns>The type ID of the object instance.</returns>
+    /// <param name="key">The key of the object data.</param>
+    /// <returns>The type ID of the object data.</returns>
     public int GetTypeId(string key)
     {
-        foreach (var kvp in data)
+        foreach (var kvp in keyType)
             if (TextToObject<string>(kvp.Key.key, 0) == key)
                 return kvp.Key.typeId;
 
         return default;
     }
     /// <summary>
-    /// Gets the object instance with the specified key as text.
+    /// Gets the object data with the specified key as text.
     /// </summary>
-    /// <param name="key">The key of the object instance.</param>
-    /// <returns>The object instance as text.</returns>
+    /// <param name="key">The key of the object data.</param>
+    /// <returns>The object data as text.</returns>
     public string GetText(string key)
     {
-        foreach (var kvp in data)
+        foreach (var kvp in keyType)
             if (TextToObject<string>(kvp.Key.key, 0) == key)
                 return FilterPlaceholders(TextFromObject(kvp.Value, kvp.Key.typeId));
 
         return string.Empty;
     }
     /// <summary>
-    /// Gets the object instance with the specified key as an object of type <typeparamref name="T"/>.
+    /// Gets the object data with the specified key as an object of type <typeparamref name="T"/>.
     /// </summary>
-    /// <typeparam name="T">The type of the object instance.</typeparam>
-    /// <param name="key">The key of the object instance.</param>
-    /// <returns>The object instance as an object of type <typeparamref name="T"/>.</returns>
+    /// <typeparam name="T">The type of the object data.</typeparam>
+    /// <param name="key">The key of the object data.</param>
+    /// <returns>The object data as an object of type <typeparamref name="T"/>.</returns>
     public T? GetObject<T>(string key)
     {
-        foreach (var kvp in data)
+        foreach (var kvp in keyType)
             if (TextToObject<string>(kvp.Key.key, 0) == key)
                 return TextToObject<T>(kvp.Value, kvp.Key.typeId);
 
         return default;
     }
 
-    public string ObjectToText(object? instance, int typeId = default)
+    public string ObjectToText(object? data, int typeId = default)
     {
         // no need deal with placeholders since we would never use them & the result
         // goes straight back to the user, unlike in the storage's case where it's kept
         //
         // see brother method for more clarification
-        return TextFromObject(instance, typeId);
+        return TextFromObject(data, typeId);
     }
     public T? ObjectFromText<T>(string? dataAsText, int typeId = default)
     {
@@ -266,11 +266,11 @@ public class Storage
 #region Backend
     private readonly Dictionary<int, Func<string, object>> onObjectFromText = new();
     private readonly Dictionary<int, Func<object, string>> onObjectToText = new();
-    private readonly Dictionary<(string key, int typeId), string> data = new();
+    private readonly Dictionary<(string key, int typeId), string> keyType = new();
     private const string STR_PLACEHOLDER = "—";
     private string sep1D = string.Empty, sep2D = string.Empty, sepTuple = string.Empty,
         sepDict = string.Empty, sep = string.Empty, sepStr = string.Empty;
-    private readonly List<string> strings = new();
+    private readonly List<string> strings = [];
 
     private void LoadFromBytes(byte[] bytes)
     {
@@ -295,7 +295,8 @@ public class Storage
         try
         {
             var str = AddPlaceholders(text);
-            var split = str.Split(Dividers.common);
+            var split = str.Replace(Environment.NewLine, " ")
+                .Split(Dividers.common, StringSplitOptions.RemoveEmptyEntries);
             var index = 0;
             var key = string.Empty;
             var typeId = 0;
@@ -315,7 +316,7 @@ public class Storage
                     continue;
                 }
 
-                data[(key, typeId)] = s.Trim();
+                keyType[(key, typeId)] = s.Trim();
                 index = 0;
             }
         }
@@ -342,7 +343,12 @@ public class Storage
         return Regex.Replace(dataAsText, "`([^`]+)`", match =>
         {
             var replacedValue = STR_PLACEHOLDER + strings.Count;
-            strings.Add(match.Groups[1].Value);
+            var value = match.Groups[1].Value;
+
+            if (strings.Contains(value))
+                return STR_PLACEHOLDER + strings.IndexOf(value);
+
+            strings.Add(value);
             return replacedValue;
         });
     }
