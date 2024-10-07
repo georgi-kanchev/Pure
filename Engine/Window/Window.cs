@@ -101,8 +101,8 @@ public static class Window
             monitor = (uint)Math.Min(value, Engine.Window.Monitor.Monitors.Length - 1);
             RecreateRenderTextures();
             TryCreate();
-            Center();
             Scale(0.5f);
+            Center();
         }
     }
     public static float PixelScale
