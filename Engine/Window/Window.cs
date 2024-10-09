@@ -330,13 +330,17 @@ public static class Window
     {
         close += method;
     }
+    public static void OnRecreate(Action method)
+    {
+        recreate += method;
+    }
 
 #region Backend
     internal static RenderWindow? window;
     private static RenderTexture? allLayers;
     internal static (int w, int h) rendTexViewSz;
 
-    private static Action? close;
+    private static Action? close, recreate;
     private static Shader? retroShader;
     private static readonly Random retroRand = new();
     internal static readonly Clock time = new();
@@ -365,6 +369,7 @@ public static class Window
     [MemberNotNull(nameof(window))]
     private static void Recreate()
     {
+        var wasRecreating = isRecreating;
         isRecreating = false;
 
         var prevSize = new Vector2u(960, 540);
@@ -410,7 +415,8 @@ public static class Window
         window.Clear();
         window.Display();
 
-        SetIconFromTile(new(), (394, 16711935)); // green joystick
+        if (wasRecreating == false)
+            SetIconFromTile(new(), (394, 16711935)); // green joystick
 
         // set values to the new window
         Title = title;
@@ -421,8 +427,14 @@ public static class Window
         Mouse.IsCursorVisible = Mouse.IsCursorVisible;
         Mouse.TryUpdateSystemCursor();
 
-        Scale(0.5f);
-        Center();
+        if (Mode == Mode.Windowed)
+            Scale(0.5f);
+
+        if (Mode != Mode.Fullscreen)
+            Center();
+
+        if (wasRecreating)
+            recreate?.Invoke();
     }
     [MemberNotNull(nameof(allLayers))]
     private static void RecreateRenderTextures()

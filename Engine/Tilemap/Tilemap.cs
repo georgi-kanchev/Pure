@@ -541,11 +541,11 @@ public class Tilemap
     /// Configures the tile identifiers for a set of symbols sequentially left to right.
     /// </summary>
     /// <param name="symbols">The string of symbols to configure.</param>
-    /// <param name="leftmostTileId">The leftmost tile identifier for the symbols.</param>
-    public void ConfigureText(string symbols, int leftmostTileId)
+    /// <param name="firstTileId">The top-leftmost tile identifier for the symbols.</param>
+    public void ConfigureText(string symbols, int firstTileId)
     {
         for (var i = 0; i < symbols.Length; i++)
-            symbolMap[symbols[i]] = leftmostTileId + i;
+            symbolMap[symbols[i]] = firstTileId + i;
     }
 
     /// <summary>

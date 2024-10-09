@@ -4,7 +4,7 @@ namespace Pure.Engine.Tilemap;
 // essentially - the tilemap pack should act as a single tilemap with multiple layers
 public class TilemapPack
 {
-    public List<Tilemap> Tilemaps { get; } = new();
+    public List<Tilemap> Tilemaps { get; } = [];
 
     public (int width, int height) Size { get; }
     public Area View
@@ -101,10 +101,10 @@ public class TilemapPack
         foreach (var map in Tilemaps)
             map.ConfigureText(lowercase, uppercase, numbers);
     }
-    public void ConfigureText(string symbols, int leftmostTileId)
+    public void ConfigureText(string symbols, int fistTileId)
     {
-        for (var i = 0; i < symbols.Length; i++)
-            Tilemaps[i].ConfigureText(symbols, leftmostTileId);
+        foreach (var map in Tilemaps)
+            map.ConfigureText(symbols, fistTileId);
     }
 
     public bool IsOverlapping((int x, int y) cell)
@@ -162,7 +162,7 @@ public class TilemapPack
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private Area view;
-    #endregion
+#endregion
 }
