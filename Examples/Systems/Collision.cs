@@ -89,7 +89,7 @@ public static class Collision
             for (var j = 0; j < tilemap.Size.width; j++)
             {
                 var color = (Color)tilemap.TileAt((j, i)).Tint;
-                background.SetTile((j, i), new(Tile.SHADE_OPAQUE, color.ToDark()));
+                background.SetTile((j, i), new(Tile.FULL, color.ToDark()));
             }
     }
     private static void SetTrees(this Tilemap tilemap, params (int x, int y)[] positions)

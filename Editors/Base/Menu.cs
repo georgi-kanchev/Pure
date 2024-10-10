@@ -1,7 +1,5 @@
 namespace Pure.Editors.Base;
 
-using Tools.Tilemapper;
-
 public class Menu : List
 {
     public bool IsHidingOnClick { get; set; } = true;

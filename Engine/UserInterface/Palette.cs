@@ -98,9 +98,9 @@ public class Palette : Block
     }
 
 #region Backend
-    private readonly List<Button> colorButtons = new();
+    private readonly List<Button> colorButtons = [];
     private readonly uint[] palette =
-    {
+    [
         0x_7F_7F_7F_FF, // Gray
         0x_FF_00_00_FF, // Red
         0x_FF_7F_00_FF, // Orange
@@ -114,7 +114,7 @@ public class Palette : Block
         0x_7F_00_FF_FF, // Blue Magenta
         0x_FF_00_FF_FF, // Magenta
         0x_FF_00_7F_FF // Red Magenta
-    };
+    ];
     private bool isPicking;
     private uint selectedColor = uint.MaxValue;
 
@@ -243,7 +243,7 @@ public class Palette : Block
     private static float[] Distribute(int amount, (float a, float b) range)
     {
         if (amount <= 0)
-            return Array.Empty<float>();
+            return [];
 
         var result = new float[amount];
         var size = range.b - range.a;

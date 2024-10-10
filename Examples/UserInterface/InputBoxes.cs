@@ -90,6 +90,6 @@ public static class InputBoxes
             maps.SetInputBox(equation);
         });
 
-        return new Block[] { multiLine, password, chat, scroll, equation };
+        return [multiLine, password, chat, scroll, equation];
     }
 }

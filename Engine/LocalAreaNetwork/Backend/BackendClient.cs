@@ -32,7 +32,7 @@ internal class BackendClient : TcpClient
         // their new nick & id at a later point
 
         // sending my nickname
-        var msg = new Message(0, 0, Tag.NICKNAME_ASK, 0, parent.Nickname, Array.Empty<byte>());
+        var msg = new Message(0, 0, Tag.NICKNAME_ASK, 0, parent.Nickname, []);
         parent.backendClient.SendAsync(msg.Total);
     }
     protected override void OnDisconnected()

@@ -1,4 +1,3 @@
-using Pure.Tools.Tilemap;
 using static Pure.Engine.Tilemap.Tile;
 using static Pure.Engine.Utilities.Color;
 
@@ -50,7 +49,7 @@ internal class TerrainPanel : Panel
         var autoButtons = AddAutoTiles(tilePalette);
         var terrainBlocks = AddTerrainBlocks(tilePalette);
 
-        editor.Ui.Blocks.AddRange(new Block[] { this, toggle });
+        editor.Ui.Blocks.AddRange([this, toggle]);
         editor.Ui.Blocks.AddRange(autoButtons);
         editor.Ui.Blocks.AddRange(terrainBlocks);
     }
@@ -205,7 +204,7 @@ internal class TerrainPanel : Panel
 
         var result = new List<Block>();
         result.AddRange(matchIds);
-        result.AddRange(new Block[] { add, apply, remove, pages });
+        result.AddRange([add, apply, remove, pages]);
         return result.ToArray();
     }
     [MemberNotNull(nameof(tiles), nameof(noiseType), nameof(scale), nameof(seed))]
@@ -387,10 +386,7 @@ internal class TerrainPanel : Panel
             editor.MapsUi.SetButton(autoGenerate, MIDDLE, true);
         });
 
-        result.AddRange(new Block[]
-        {
-            add, edit, remove, scale, seed, tiles, autoGenerate, generate, noiseType
-        });
+        result.AddRange([add, edit, remove, scale, seed, tiles, autoGenerate, generate, noiseType]);
         return result.ToArray();
     }
 

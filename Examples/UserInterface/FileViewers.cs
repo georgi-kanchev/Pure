@@ -36,7 +36,7 @@ public static class FileViewers
         folderViewer.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(folderViewer, item));
         folderViewer.HardDrives.OnItemDisplay(item => maps.SetFileViewerItem(folderViewer, item));
 
-        return new Block[] { fileViewer, folderViewer };
+        return [fileViewer, folderViewer];
     }
 
     private static void DisplayExtra(TilemapPack maps, FileViewer fileViewer)

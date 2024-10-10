@@ -183,7 +183,7 @@ public static class Extensions
     }
     public static T? ChooseOneFrom<T>(this T choice, float seed = float.NaN, params T[]? choices)
     {
-        var list = choices == null ? new() : choices.ToList();
+        var list = choices == null ? [] : choices.ToList();
         list.Add(choice);
         return ChooseOne(list, seed);
     }
@@ -954,7 +954,7 @@ public static class Extensions
     /// including the specified number.</returns>
     public static float AverageFrom(this float number, params float[]? numbers)
     {
-        var list = numbers == null ? new() : numbers.ToList();
+        var list = numbers == null ? [] : numbers.ToList();
         list.Add(number);
         return Average(list);
     }
@@ -1138,7 +1138,7 @@ public static class Extensions
     public static float[] Distribute(this int amount, (float a, float b) range)
     {
         if (amount <= 0)
-            return Array.Empty<float>();
+            return [];
 
         var result = new float[amount];
         var size = range.b - range.a;

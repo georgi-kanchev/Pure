@@ -58,7 +58,7 @@ internal class Buffer
     /// </summary>
     public Buffer()
     {
-        Data = Array.Empty<byte>();
+        Data = [];
         size = 0;
         offset = 0;
     }
@@ -81,13 +81,13 @@ internal class Buffer
         offset = 0;
     }
 
-    #region Memory buffer methods
+#region Memory buffer methods
     /// <summary>
     /// Get a span of bytes from the current buffer
     /// </summary>
     public Span<byte> AsSpan()
     {
-        return new Span<byte>(Data, (int)offset, (int)size);
+        return new(Data, (int)offset, (int)size);
     }
 
     /// <summary>
@@ -172,9 +172,9 @@ internal class Buffer
     {
         offset -= off;
     }
-    #endregion
+#endregion
 
-    #region Buffer I/O methods
+#region Buffer I/O methods
     /// <summary>
     /// Append the single byte
     /// </summary>
@@ -224,7 +224,7 @@ internal class Buffer
     public long Append(ReadOnlySpan<byte> buffer)
     {
         Reserve(size + buffer.Length);
-        buffer.CopyTo(new Span<byte>(Data, (int)size, buffer.Length));
+        buffer.CopyTo(new(Data, (int)size, buffer.Length));
         size += buffer.Length;
         return buffer.Length;
     }
@@ -262,9 +262,9 @@ internal class Buffer
     {
         var length = Encoding.UTF8.GetMaxByteCount(text.Length);
         Reserve(size + length);
-        long result = Encoding.UTF8.GetBytes(text, new Span<byte>(Data, (int)size, length));
+        long result = Encoding.UTF8.GetBytes(text, new(Data, (int)size, length));
         size += result;
         return result;
     }
-    #endregion
+#endregion
 }

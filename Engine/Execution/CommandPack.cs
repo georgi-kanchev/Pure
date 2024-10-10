@@ -23,7 +23,7 @@ public class CommandPack
     public string[] Execute(string command)
     {
         if (IsDisabled)
-            return Array.Empty<string>();
+            return [];
 
         var strings = AddPlaceholders(ref command);
         var results = new List<string>();
@@ -71,7 +71,7 @@ public class CommandPack
     private const string STR_PLACEHOLDER = "—";
     private static int parameterIndex;
     private static readonly Dictionary<string, Func<string?>> commands = new();
-    private static readonly List<string> parameters = new();
+    private static readonly List<string> parameters = [];
 
     private object? TextToObject<T>(string dataAsText)
     {

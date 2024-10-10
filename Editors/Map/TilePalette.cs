@@ -200,7 +200,7 @@ internal class TilePalette
     }
 
 #region Backend
-    private readonly List<int> rectangleTools = new() { 3, 5, 6, 9, 10, 11, 12, 13, 14 };
+    private readonly List<int> rectangleTools = [3, 5, 6, 9, 10, 11, 12, 13, 14];
     private Inspector? inspector;
     private TerrainPanel? terrainPanel;
     private (int x, int y) prevMousePos;

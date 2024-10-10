@@ -634,11 +634,11 @@ public class Layer
     internal readonly Shader? shader;
     private readonly VertexArray verts, shaderParams;
     internal static readonly Dictionary<string, Texture> tilesets = new();
-    private static readonly List<(float, float)> cursorOffsets = new()
-    {
+    private static readonly List<(float, float)> cursorOffsets =
+    [
         (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
-    };
+    ];
 
     internal int lightCount, obstacleCount;
     internal Vector2u tilesetPixelSize;

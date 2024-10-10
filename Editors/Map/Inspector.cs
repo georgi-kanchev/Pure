@@ -64,8 +64,8 @@ internal class Inspector : Panel
         AddTools(tilePalette);
         AddPaletteColor();
 
-        editor.Ui.Blocks.AddRange(new Block[]
-            { this, tools, paletteColor, layersVisibility, layers, paletteScrollV, paletteScrollH });
+        editor.Ui.Blocks.AddRange(
+            [this, tools, paletteColor, layersVisibility, layers, paletteScrollV, paletteScrollH]);
         editor.Ui.Blocks.AddRange(paletteScroll);
         editor.Ui.Blocks.AddRange(layerButtons);
         editor.Ui.Blocks.AddRange(orientButtons);
@@ -150,7 +150,7 @@ internal class Inspector : Panel
         down.OnUpdate(() => ShowIfMoreThan1LayerSelected(down));
         down.OnDisplay(() => editor.MapsUi.SetButtonIcon(down, new(ARROW, Gray, 1), 1));
 
-        return new Block[] { create, remove, flush, rename, up, down };
+        return [create, remove, flush, rename, up, down];
 
         void LayerCreate()
         {
@@ -282,7 +282,8 @@ internal class Inspector : Panel
             editor.MapsUi.Tilemaps[MIDDLE].SetArea(area, null, new Tile(SHADE_5, Gray));
             editor.MapsUi.Tilemaps[FRONT].SetArea(area, null, tile);
         });
-        paletteColor.OnSampleDisplay((btn, color) => editor.MapsUi.Tilemaps[MIDDLE].SetTile(btn.Position, new(SHADE_OPAQUE, color)));
+        paletteColor.OnSampleDisplay((btn, color) =>
+            editor.MapsUi.Tilemaps[MIDDLE].SetTile(btn.Position, new(FULL, color)));
     }
     [MemberNotNull(nameof(paletteScrollV)), MemberNotNull(nameof(paletteScrollH))]
     private Button[] AddPaletteScrolls()
@@ -293,7 +294,7 @@ internal class Inspector : Panel
         paletteScrollV.OnDisplay(() => editor.MapsUi.SetScroll(paletteScrollV));
         var paletteScroll = new Button((paletteScrollH.X, paletteScrollV.Y + 1)) { Size = (13, 13) };
         paletteScroll.OnInteraction(Interaction.Scroll, () => paletteScrollV.Slider.Move(Mouse.ScrollDelta));
-        return new[] { paletteScroll };
+        return [paletteScroll];
     }
     [MemberNotNull(nameof(mirror), nameof(flip))]
     private Block[] AddOrientations()
@@ -340,7 +341,7 @@ internal class Inspector : Panel
             editor.MapsUi.SetButtonIcon(turns, new(ICON_ROTATE, color), FRONT);
         });
 
-        return new Block[] { mirror, flip, turns };
+        return [mirror, flip, turns];
     }
 #endregion
 }

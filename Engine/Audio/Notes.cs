@@ -60,7 +60,7 @@ public class Notes : Audio
     public byte[] ToBytes()
     {
         if (buffer == null)
-            return Array.Empty<byte>();
+            return [];
 
         var result = new List<byte>();
 

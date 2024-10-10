@@ -105,14 +105,14 @@ public class PathMap
     public (float x, float y)[] FindPath((float x, float y) start, (float x, float y) goal, int slopeFactor = 1)
     {
         if (Size.width < 1 || Size.height < 1)
-            return Array.Empty<(float x, float y)>();
+            return [];
 
         return pathfind.FindPath(start, goal, false, out _, slopeFactor, uint.MaxValue);
     }
     public (float x, float y, uint color)[] FindPath((float x, float y) start, (float x, float y) goal, uint color, int slopeFactor = 1)
     {
         if (Size.width < 1 || Size.height < 1)
-            return Array.Empty<(float x, float y, uint color)>();
+            return [];
 
         pathfind.FindPath(start, goal, true, out var withColors, slopeFactor, color);
         return withColors;

@@ -133,7 +133,7 @@ public class Pages : Block
 #region Backend
     private (int, int) prevSize;
     private int count, current = 1, scrollIndex = 1;
-    private readonly List<Button> visiblePages = new();
+    private readonly List<Button> visiblePages = [];
 
     private int VisibleWidth
     {
@@ -309,7 +309,7 @@ public class Pages : Block
     private static float[] Distribute(int amount, (float a, float b) range)
     {
         if (amount <= 0)
-            return Array.Empty<float>();
+            return [];
 
         var result = new float[amount];
         var size = range.b - range.a;

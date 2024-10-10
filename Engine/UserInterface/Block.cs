@@ -285,6 +285,7 @@ public abstract class Block
     {
         LimitSizeMin((1, 1));
 
+        justInteracted.Clear();
         var (ix, iy) = Input.Position;
 
         mask = wasMaskSet ? mask : Input.Mask;
@@ -428,6 +429,11 @@ public abstract class Block
         return (x + w <= ex || x >= ex + ew || y + h <= ey || y >= ey + eh) == false;
     }
 
+    public bool IsJustInteracted(Interaction interaction)
+    {
+        return justInteracted.Contains(interaction);
+    }
+
     public void AlignEdges(Side edge, Side targetEdge, (int x, int y, int width, int height)? rectangle = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
         var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
@@ -522,10 +528,11 @@ public abstract class Block
     /// <param name="interaction">The interaction type.</param>
     public void Interact(Interaction interaction)
     {
-        if (interactions.TryGetValue(interaction, out var interaction1) == false)
+        if (interactions.TryGetValue(interaction, out var act) == false)
             return;
 
-        interaction1.Invoke();
+        act.Invoke();
+        justInteracted.Add(interaction);
     }
 
     /// <summary>
@@ -704,7 +711,7 @@ public abstract class Block
         return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
     }
 
-    #region Backend
+#region Backend
     internal (int, int) position,
         size,
         listSizeTrimOffset,
@@ -715,6 +722,7 @@ public abstract class Block
     private int byteOffset;
     private bool wasHovered, isReadyForDoubleClick;
 
+    private readonly List<Interaction> justInteracted = [];
     internal Action? display, update;
     private readonly Dictionary<Interaction, Action> interactions = new();
     internal Action<(int deltaX, int deltaY)>? drag;
@@ -792,7 +800,9 @@ public abstract class Block
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -801,7 +811,9 @@ public abstract class Block
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -817,5 +829,5 @@ public abstract class Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-    #endregion
+#endregion
 }

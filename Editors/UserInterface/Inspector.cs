@@ -63,26 +63,25 @@ internal class Inspector : Panel
         for (var i = 0; i < items.Size.height; i++)
             itemSelections.Add(new((0, 0)) { Text = "ItemSelect" });
 
-        checkboxes.AddRange(new[]
-        {
+        checkboxes.AddRange([
             disabled, hidden, selected, movable, resizable, restricted, vertical, multiSelect,
             expanded, editable, fileSelect
-        });
+        ]);
 
         blocks = new()
         {
-            { typeof(Block), new() { disabled, hidden, text } },
-            { typeof(Button), new() { selected } },
-            { typeof(InputBox), new() { editable, placeholder } },
-            { typeof(Pages), new() { count, current, pageWidth, pageGap } },
-            { typeof(Panel), new() { movable, resizable, restricted } },
-            { typeof(Palette), new() { brightnessMax, brightness, opacity } },
-            { typeof(Slider), new() { vertical, progress } },
-            { typeof(Scroll), new() { vertical, progress, step } },
-            { typeof(Layout), new() { restore, index, rate, cutTop, cutLeft, cutRight, cutBottom } },
-            { typeof(FileViewer), new() { fileSelect } },
-            { typeof(Stepper), new() { min, max, value, stepperStep } },
-            { typeof(List), new() { type, expanded, scroll, items, multiSelect, width, height, gap } }
+            { typeof(Block), [disabled, hidden, text] },
+            { typeof(Button), [selected] },
+            { typeof(InputBox), [editable, placeholder] },
+            { typeof(Pages), [count, current, pageWidth, pageGap] },
+            { typeof(Panel), [movable, resizable, restricted] },
+            { typeof(Palette), [brightnessMax, brightness, opacity] },
+            { typeof(Slider), [vertical, progress] },
+            { typeof(Scroll), [vertical, progress, step] },
+            { typeof(Layout), [restore, index, rate, cutTop, cutLeft, cutRight, cutBottom] },
+            { typeof(FileViewer), [fileSelect] },
+            { typeof(Stepper), [min, max, value, stepperStep] },
+            { typeof(List), [type, expanded, scroll, items, multiSelect, width, height, gap] }
         };
 
         OnDisplay(() =>
@@ -205,7 +204,7 @@ internal class Inspector : Panel
         }
     }
 
-    private readonly List<EditButton> checkboxes = new(), itemSelections = new();
+    private readonly List<EditButton> checkboxes = [], itemSelections = [];
     private readonly EditButton
         toTop = new((0, 0)) { Text = "To Top" },
         alignX = new((0, 0)) { Text = "Align X" },
@@ -232,7 +231,7 @@ internal class Inspector : Panel
 
         SetBackground(editor.MapsUi.Tilemaps[(int)Editor.LayerMapsUi.Back], this, color);
 
-        front.SetBox(Area, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Yellow);
+        front.SetBox(Area, Tile.EMPTY, new(CORNER, Color.Yellow), new(STRAIGHT, Color.Yellow));
         front.SetText(textPos, Text, Color.Yellow);
 
         UpdateButton(toTop, (topX, topY));
@@ -290,7 +289,7 @@ internal class Inspector : Panel
 
     private void UpdateSelected()
     {
-        if (prevSelected == null)
+        if (prevSelected == null || selected == null)
             return;
 
         var panel = panels.Blocks[ui.Blocks.IndexOf(selected)];
@@ -585,7 +584,7 @@ internal class Inspector : Panel
 
         e.Update();
 
-        back.SetArea((x, y, w, h), null, new Tile(Tile.SHADE_OPAQUE, color.ToDark()));
+        back.SetArea((x, y, w, h), null, new Tile(Tile.FULL, color.ToDark()));
         SetClear(Editor.LayerMapsUi.Middle, e);
 
         (x, y) = e.Position;
@@ -709,8 +708,8 @@ internal class Inspector : Panel
     }
     private static void SetBackground(Tilemap map, Block block, Color color)
     {
-        var tile = new Tile(Tile.SHADE_OPAQUE, color);
-        map.SetBox(block.Area, tile, Tile.BOX_CORNER_ROUND, Tile.SHADE_OPAQUE, color);
+        var tile = new Tile(Tile.FULL, color);
+        map.SetBox(block.Area, tile, new(Tile.BOX_CORNER_ROUND, color), new(Tile.FULL, color));
     }
     private static void SetClear(Editor.LayerMapsUi layer, Block block)
     {

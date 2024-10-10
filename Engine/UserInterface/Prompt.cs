@@ -38,7 +38,7 @@ public class Prompt : Block
 
             buttons.Add(btn);
         }
-        
+
         if (block != null)
             block.IsFocused = true;
     }
@@ -66,7 +66,7 @@ public class Prompt : Block
     }
 
 #region Backend
-    private readonly List<Button> buttons = new();
+    private readonly List<Button> buttons = [];
     private Action<Button>? itemDisplay;
     private Block? currentBlock;
     private readonly Panel panel = new((0, 0))
@@ -147,7 +147,7 @@ public class Prompt : Block
     private static float[] Distribute(int amount, (float a, float b) range)
     {
         if (amount <= 0)
-            return Array.Empty<float>();
+            return [];
 
         var result = new float[amount];
         var size = range.b - range.a;

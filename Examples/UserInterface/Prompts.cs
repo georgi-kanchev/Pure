@@ -46,6 +46,6 @@ public static class Prompts
             prompt.Open(btnCount: 1);
         });
 
-        return new Block[] { info, prompt };
+        return [info, prompt];
     }
 }

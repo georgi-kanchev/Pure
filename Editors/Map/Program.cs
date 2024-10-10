@@ -4,10 +4,9 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
-global using static Pure.Tools.Tilemapper.MapperUI;
 global using System.Text;
+global using Pure.Tools.Tilemap;
 using System.IO.Compression;
-using Pure.Tools.Tilemap;
 
 namespace Pure.Editors.Map;
 
@@ -147,7 +146,7 @@ public static class Program
         catch (Exception)
         {
             editor.PromptMessage("Saving failed!");
-            return Array.Empty<byte>();
+            return [];
         }
     }
 

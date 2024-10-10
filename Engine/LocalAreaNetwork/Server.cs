@@ -79,7 +79,7 @@ public class Server : Communication
     /// <param name="tag">The tag of the message.</param>
     public void SendToAll(string message, byte tag = 0)
     {
-        var msg = new Message(0, 0, Tag.SERVER_TO_ALL, tag, message, Array.Empty<byte>());
+        var msg = new Message(0, 0, Tag.SERVER_TO_ALL, tag, message, []);
         backendServer?.Multicast(msg.Total);
     }
     public void SendToAll(byte[] data, byte tag = 0)
@@ -97,7 +97,7 @@ public class Server : Communication
     public void SendToClient(string toNickname, string message, byte tag = 0)
     {
         var msg = new Message(0, GetId(toNickname), Tag.SERVER_TO_CLIENT, tag, message,
-            Array.Empty<byte>());
+            []);
         backendServer?.Multicast(msg.Total);
     }
     public void SendToClient(string toNickname, byte[] data, byte tag = 0)
@@ -189,7 +189,7 @@ public class Server : Communication
             // send them a free ID; this would also notify everyone else
             // about them joining and their new ID
             var freeId = GetFreeId();
-            var newId = new Message(0, 0, Tag.ID, 0, freeId.ToString(), Array.Empty<byte>());
+            var newId = new Message(0, 0, Tag.ID, 0, freeId.ToString(), []);
             backendServer.Multicast(newId.Total);
 
             // send them a free, maybe modified, version of the nickname they asked for
@@ -199,7 +199,7 @@ public class Server : Communication
             // Ids and nicknames are assigned only upon connection and also
             // the back to back messages are received in order thanks to TCP
             var freeNick = GetFreeNickname(message.Value);
-            var newNick = new Message(0, freeId, Tag.NICKNAME, 0, freeNick, Array.Empty<byte>());
+            var newNick = new Message(0, freeId, Tag.NICKNAME, 0, freeNick, []);
             backendServer.Multicast(newNick.Total);
 
             // now i can update the local storage of clients with the new info
@@ -212,7 +212,7 @@ public class Server : Communication
             foreach (var kvp in clients)
             {
                 var clientMsg = new Message(0, kvp.Value.Item1, Tag.NICKNAME, 0, kvp.Value.Item2,
-                    Array.Empty<byte>());
+                    []);
                 backendServer.Multicast(clientMsg.Total);
             }
         }

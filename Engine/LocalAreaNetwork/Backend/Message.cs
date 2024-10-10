@@ -28,7 +28,7 @@ internal class Message
 
         var bytes = new List<byte>();
         var message = Encoding.UTF8.GetBytes(value);
-        bytes.AddRange(new[] { sysTag, userTag, fromId, toId });
+        bytes.AddRange([sysTag, userTag, fromId, toId]);
         bytes.AddRange(BitConverter.GetBytes(message.Length));
         bytes.AddRange(message);
         bytes.AddRange(BitConverter.GetBytes(raw.Length));
@@ -96,7 +96,9 @@ internal class Message
         using var compressedStream = new MemoryStream();
         using (var compressorStream =
                new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
+        {
             uncompressedStream.CopyTo(compressorStream);
+        }
 
         var compressedBytes = compressedStream.ToArray();
 

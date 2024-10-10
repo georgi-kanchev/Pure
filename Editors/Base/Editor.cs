@@ -3,13 +3,11 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
-global using Pure.Tools.TiledLoader;
-global using static Pure.Tools.Tilemapper.MapperUI;
+global using Pure.Tools.Tilemap;
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
 using System.IO.Compression;
 using System.Text;
-using Pure.Tools.Tilemap;
 
 namespace Pure.Editors.Base;
 
@@ -81,7 +79,7 @@ public class Editor
 
         var (width, height) = Monitor.Current.AspectRatio;
         ChangeMapSize((50, 50));
-        MapsEditorVisible = new() { true, true, true };
+        MapsEditorVisible = [true, true, true];
         MapsEditor.View = new(MapsEditor.View.Position, (50, 50));
         MapsUi = new((int)LayerMapsUi.Count, (width * 5, height * 5));
 
@@ -449,7 +447,7 @@ public class Editor
         });
         btnViewSize.OnDisplay(() => MapsUi.SetButton(btnViewSize));
 
-        Ui.Blocks.AddRange(new[] { btnMapSize, btnViewSize });
+        Ui.Blocks.AddRange([btnMapSize, btnViewSize]);
     }
     private void ResizePressMap(int i)
     {
@@ -543,11 +541,9 @@ public class Editor
         MapPanel.Size = (22, 3);
         MapPanel.Update();
 
-        MapsUi.Tilemaps[(int)LayerMapsUi.Back].SetBox(MapPanel.Area,
-            new(Tile.SHADE_OPAQUE, Color.Gray.ToDark()),
-            Tile.BOX_CORNER_ROUND,
-            Tile.SHADE_OPAQUE,
-            Color.Gray.ToDark());
+        var gray = Color.Gray.ToDark();
+        MapsUi.Tilemaps[(int)LayerMapsUi.Back].SetBox(
+            MapPanel.Area, new(Tile.FULL, gray), new(Tile.BOX_CORNER_ROUND, gray), new(Tile.FULL, gray));
 
         MapsUi.Tilemaps[FRONT].SetText((0, 0), $"FPS:{fps}");
         MapsUi.Tilemaps[FRONT].SetText((11, bottomY - 2), $"{mw} x {mh}");

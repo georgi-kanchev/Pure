@@ -62,7 +62,7 @@ public static class FlappyBird
             Time.Update();
             birdAnimation.Update(Time.Delta);
 
-            background.Fill(null, new Tile(Tile.SHADE_OPAQUE, Color.Blue.ToDark()));
+            background.Fill(null, new Tile(Tile.FULL, Color.Blue.ToDark()));
             foreground.Flush();
 
             UpdateBird();
@@ -74,15 +74,14 @@ public static class FlappyBird
 
         void InitializePipes()
         {
-            pipes = new()
-            {
-                // pairs of (x, y, holeSize) - some initial offscreen, later they will be reused
+            pipes =
+            [
                 (width + 00, (-15, -3).Random(), (3, 10).Random()),
                 (width + 10, (-15, -3).Random(), (3, 10).Random()),
                 (width + 20, (-15, -3).Random(), (3, 10).Random()),
                 (width + 30, (-15, -3).Random(), (3, 10).Random()),
                 (width + 40, (-15, -3).Random(), (3, 10).Random())
-            };
+            ];
         }
         void UpdatePipes()
         {
@@ -105,16 +104,16 @@ public static class FlappyBird
 
                 var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
                 background.SetArea(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), null,
-                    new Tile(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
+                    new Tile(Tile.FULL, Color.Green.ToDark(0.8f)));
                 background.SetArea(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT), null,
-                    new Tile(Tile.SHADE_OPAQUE, Color.Green.ToDark(0.8f)));
-                foreground.SetBox(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), Tile.SHADE_TRANSPARENT,
-                    Tile.BOX_DEFAULT_CORNER,
-                    Tile.BOX_DEFAULT_STRAIGHT, Color.Green);
+                    new Tile(Tile.FULL, Color.Green.ToDark(0.8f)));
+                foreground.SetBox(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), Tile.EMPTY,
+                    new(Tile.BOX_DEFAULT_CORNER, Color.Green),
+                    new(Tile.BOX_DEFAULT_STRAIGHT, Color.Green));
                 foreground.SetBox(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT),
-                    Tile.SHADE_TRANSPARENT,
-                    Tile.BOX_DEFAULT_CORNER,
-                    Tile.BOX_DEFAULT_STRAIGHT, Color.Green);
+                    Tile.EMPTY,
+                    new(Tile.BOX_DEFAULT_CORNER, Color.Green),
+                    new(Tile.BOX_DEFAULT_STRAIGHT, Color.Green));
             }
         }
         void UpdateBird()

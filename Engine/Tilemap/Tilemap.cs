@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 /// </summary>
 public class Tilemap
 {
-    public List<(int[] matchIds, Tile replacedCenter)> AutoTiles { get; } = new();
+    public List<(int[] matchIds, Tile replacedCenter)> AutoTiles { get; } = [];
     public (int x, int y, int z) SeedOffset { get; set; }
 
     /// <summary>
@@ -409,17 +409,15 @@ public class Tilemap
         }
     }
     /// <summary>
-    /// Sets the tiles in a rectangular area of the tilemap to create a box with corners, borders
+    /// Sets the tiles in a rectangular area of the tilemap to create a box with corners, edges
     /// and filling.
     /// </summary>
     /// <param name="area">The area of the rectangular box.</param>
-    /// <param name="tileFill">The tile to use for the filling of the box.</param>
-    /// <param name="borderTileId">The identifier of the tile to use for the 
-    /// straight edges of the box.</param>
-    /// <param name="cornerTileId">The identifier of the tile to use for the corners of the box.</param>
-    /// <param name="borderTint">The color to tint the border tiles.</param>
+    /// <param name="fill">The tile to use for the filling of the box.</param>
+    /// <param name="edge">The tile to use for the straight edges of the box.</param>
+    /// <param name="corner">The tile to use for the corners of the box.</param>
     /// <param name="mask">An optional mask that skips any tile outside of it.</param>
-    public void SetBox(Area area, Tile tileFill, int cornerTileId, int borderTileId, uint borderTint = uint.MaxValue, Area? mask = null)
+    public void SetBox(Area area, Tile fill, Tile corner, Tile edge, Area? mask = null)
     {
         var (x, y) = (area.X, area.Y);
         var (w, h) = (area.Width, area.Height);
@@ -429,27 +427,27 @@ public class Tilemap
 
         if (w == 1 || h == 1)
         {
-            SetArea(area, mask, tileFill);
+            SetArea(area, mask, fill);
             return;
         }
 
-        SetTile((x, y), new(cornerTileId, borderTint), mask);
-        SetArea((x + 1, y, w - 2, 1), mask, new Tile(borderTileId, borderTint));
-        SetTile((x + w - 1, y), new(cornerTileId, borderTint, 1), mask);
+        SetTile((x, y), new(corner.Id, corner.Tint), mask);
+        SetArea((x + 1, y, w - 2, 1), mask, new Tile(edge.Id, edge.Tint));
+        SetTile((x + w - 1, y), new(corner.Id, corner.Tint, 1), mask);
 
         if (h != 2)
         {
-            SetArea((x, y + 1, 1, h - 2), mask, new Tile(borderTileId, borderTint, 3));
+            SetArea((x, y + 1, 1, h - 2), mask, new Tile(edge.Id, edge.Tint, 3));
 
-            if (tileFill.Id != Tile.SHADE_TRANSPARENT)
-                SetArea((x + 1, y + 1, w - 2, h - 2), mask, tileFill);
+            if (fill.Id != Tile.EMPTY)
+                SetArea((x + 1, y + 1, w - 2, h - 2), mask, fill);
 
-            SetArea((x + w - 1, y + 1, 1, h - 2), mask, new Tile(borderTileId, borderTint, 1));
+            SetArea((x + w - 1, y + 1, 1, h - 2), mask, new Tile(edge.Id, edge.Tint, 1));
         }
 
-        SetTile((x, y + h - 1), new(cornerTileId, borderTint, 3), mask);
-        SetTile((x + w - 1, y + h - 1), new(cornerTileId, borderTint, 2), mask);
-        SetArea((x + 1, y + h - 1, w - 2, 1), mask, new Tile(borderTileId, borderTint, 2));
+        SetTile((x, y + h - 1), new(corner.Id, corner.Tint, 3), mask);
+        SetTile((x + w - 1, y + h - 1), new(corner.Id, corner.Tint, 2), mask);
+        SetArea((x + 1, y + h - 1, w - 2, 1), mask, new Tile(edge.Id, edge.Tint, 2));
     }
     /// <summary>
     /// Sets the tiles in a rectangular area of the tilemap to create a vertical or horizontal bar.
@@ -587,7 +585,7 @@ public class Tilemap
     public int[] TileIdsFrom(string? text)
     {
         if (string.IsNullOrEmpty(text))
-            return Array.Empty<int>();
+            return [];
 
         var result = new int[text.Length];
         for (var i = 0; i < text.Length; i++)

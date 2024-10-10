@@ -42,6 +42,6 @@ public static class ButtonsAndCheckboxes
                 Color.Gray.ToDark(0.7f));
         });
 
-        return new Block[] { buttonSelect, button, checkbox, buttonDisabled };
+        return [buttonSelect, button, checkbox, buttonDisabled];
     }
 }

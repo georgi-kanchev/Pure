@@ -40,6 +40,6 @@ public static class Panels
             maps.SetButton(button, 2);
         });
 
-        return new Block[] { panelText, panelButton, button };
+        return [panelText, panelButton, button];
     }
 }

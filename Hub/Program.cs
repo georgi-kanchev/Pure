@@ -4,7 +4,7 @@ using Pure.Engine.Window;
 using Pure.Examples.Systems;
 using Pure.Examples.Games;
 using Pure.Examples.UserInterface;
-using Pure.Tools.Tilemapper;
+using Pure.Tools.Tilemap;
 
 namespace Pure.Hub;
 
@@ -53,7 +53,7 @@ public static class Program
             Pathfinding.Run, Audio.Run, TerrainGeneration.Run);
         OnDisplay(systems);
 
-        ui.Blocks.AddRange(new Block[] { editors, apps, uis, systems });
+        ui.Blocks.AddRange([editors, apps, uis, systems]);
         Window.Title = "Pure - Hub";
         Examples.UserInterface.Program.Run(maps, ui);
 
@@ -87,8 +87,3 @@ public static class Program
         }
     }
 }
-
-
-
-
-

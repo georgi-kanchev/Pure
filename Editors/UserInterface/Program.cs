@@ -3,7 +3,7 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
 global using static Pure.Editors.UserInterface.Program;
-global using static Pure.Tools.Tilemapper.MapperUI;
+global using static Pure.Tools.Tilemap.MapperUI;
 global using Pure.Editors.Base;
 
 namespace Pure.Editors.UserInterface;
@@ -96,7 +96,7 @@ public static class Program
             {
                 block = bytes != null ? new(bytes) : new Button(position);
                 block.OnDisplay(() =>
-                    editor.MapsEditor.SetButton((Button)block, isDisplayingSelection: true));
+                    editor.MapsEditor.SetButton((Button)block, showSelected: true));
                 break;
             }
             case nameof(InputBox):
@@ -132,7 +132,7 @@ public static class Program
                 block.OnDisplay(() => editor.MapsEditor.SetSlider(palette.Brightness));
 
                 palette.OnSampleDisplay((btn, c) =>
-                    editor.MapsEditor.Tilemaps[BACK].SetTile(btn.Position, new(Tile.SHADE_OPAQUE, (Color)c)));
+                    editor.MapsEditor.Tilemaps[BACK].SetTile(btn.Position, new(Tile.FULL, (Color)c)));
                 break;
             }
             case nameof(Slider):
@@ -257,7 +257,7 @@ public static class Program
             return;
 
         var back = editor.MapsEditor.Tilemaps[(int)Editor.LayerMapsEditor.Back];
-        back.SetBox(panel.Area, Tile.SHADE_TRANSPARENT, CORNER, STRAIGHT, Color.Cyan);
+        back.SetBox(panel.Area, Tile.EMPTY, new(CORNER, Color.Cyan), new(STRAIGHT, Color.Cyan));
         back.SetArea((textPos.Item1, textPos.y, panel.Text.Length, 1));
         back.SetText(textPos, panel.Text, Color.Cyan);
 

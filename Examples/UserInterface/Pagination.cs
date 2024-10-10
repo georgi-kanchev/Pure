@@ -35,8 +35,8 @@ public static class Pagination
         buttonsBig.AlignInside((0.5f, 0.9f));
         buttonsBig.OnDisplay(() => maps.SetPages(buttonsBig));
         buttonsBig.OnItemDisplay(item =>
-            maps.SetButton(item, isDisplayingSelection: true, zOrder: 1));
+            maps.SetButton(item, showSelected: true, zOrder: 1));
 
-        return new Block[] { icons, pages, buttons, buttonsBig };
+        return [icons, pages, buttons, buttonsBig];
     }
 }

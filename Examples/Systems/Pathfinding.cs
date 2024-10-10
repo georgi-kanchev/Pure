@@ -16,14 +16,14 @@ public static class Pathfinding
         var layer = new Layer(tilemap.Size);
         var pathMap = new PathMap(tilemap.Size);
 
-        tilemap.SetEllipse((21, 8), (10, 7), true, null, Tile.SHADE_OPAQUE);
-        tilemap.SetEllipse((5, 9), (4, 7), true, null, Tile.SHADE_OPAQUE);
-        tilemap.SetEllipse((32, 20), (9, 3), true, null, Tile.SHADE_OPAQUE);
+        tilemap.SetEllipse((21, 8), (10, 7), true, null, Tile.FULL);
+        tilemap.SetEllipse((5, 9), (4, 7), true, null, Tile.FULL);
+        tilemap.SetEllipse((32, 20), (9, 3), true, null, Tile.FULL);
         tilemap.SetLine((0, 0), (48, 27), null, Tile.SHADE_1);
         tilemap.SetLine((0, 1), (48, 27), null, Tile.SHADE_1);
         tilemap.SetLine((1, 0), (48, 27), null, Tile.SHADE_1);
 
-        pathMap.SetObstacle(float.PositiveInfinity, Tile.SHADE_OPAQUE, tilemap);
+        pathMap.SetObstacle(float.PositiveInfinity, Tile.FULL, tilemap);
         pathMap.SetObstacle(10, Tile.SHADE_1, tilemap);
 
         while (Window.KeepOpen())

@@ -1,17 +1,15 @@
 ﻿using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
+using Pure.Engine.Utilities;
+using Pure.Tools.Tilemap;
+using Pure.Editors.Base;
+using Pure.Engine.Tilemap;
+using Pure.Engine.UserInterface;
+using Pure.Engine.Window;
+using _Storage = Pure.Engine.Storage.Storage;
 
 namespace Pure.Editors.Storage;
-
-using Engine.Utilities;
-using Engine.Storage;
-using Tools.Tilemapper;
-using Base;
-using Engine.Tilemap;
-using Engine.UserInterface;
-using Engine.Window;
-using System.Diagnostics.CodeAnalysis;
 
 public static class Program
 {
@@ -37,32 +35,17 @@ public static class Program
     }
 
 #region Backend
-    private enum DataType
-    {
-        Value,
-        Tuple,
-        List,
-        Dictionary,
-        TupleAdd
-    }
+    private enum DataType { Value, Tuple, List, Dictionary, TupleAdd }
 
-    private const string
-        VALUE_FLAG = "Flag",
-        VALUE_TEXT = "Text",
-        VALUE_NUMBER = "Number",
+    private const string VALUE_FLAG = "Flag", VALUE_TEXT = "Text", VALUE_NUMBER = "Number",
         VALUE_SYMBOL = "Symbol";
 
     private static readonly Editor editor;
     private static readonly Menu values, main;
     private static DataType creating;
     private static int currValueSelection;
-    private static readonly BlockPack data = new(),
-        panels = new(),
-        moves = new(),
-        removeKeys = new(),
-        removes = new(),
-        adds = new(),
-        dictKeys = new();
+    private static readonly BlockPack data = new(), panels = new(), moves = new(), removeKeys = new(),
+        removes = new(), adds = new(), dictKeys = new();
     private static (int x, int y) rightClickPos;
     private static readonly InputBox promptText, promptNumber;
     private static readonly Stepper promptSymbol;
@@ -599,7 +582,7 @@ public static class Program
         try
         {
             var result = new List<byte>();
-            var storage = new Storage();
+            var storage = new _Storage();
             for (var i = 0; i < data.Blocks.Count; i++)
             {
                 var list = (List)data.Blocks[i];
@@ -639,7 +622,7 @@ public static class Program
         catch (Exception)
         {
             editor.PromptMessage("Saving failed!");
-            return Array.Empty<byte>();
+            return [];
         }
     }
     private static void Load(byte[] bytes)
@@ -648,7 +631,7 @@ public static class Program
         {
             ResetAll();
 
-            var storage = new Storage(bytes);
+            var storage = new _Storage(bytes);
             var decompressed = Decompress(bytes);
             var measure = Decompress(storage.ToBytes()).Length;
             var predict = decompressed.Length == measure;
@@ -761,7 +744,7 @@ public static class Program
         return texts.ToArray().EnsureUnique(text);
     }
 
-    private static object? ObjectFromText(Storage storage, string type, string text, out Type casted)
+    private static object? ObjectFromText(_Storage storage, string type, string text, out Type casted)
     {
         if (type == VALUE_FLAG)
         {
@@ -782,7 +765,7 @@ public static class Program
         casted = typeof(string);
         return storage.ObjectFromText<string>(text);
     }
-    private static object? CreateTuple(Storage storage, string[] strTypes, List list)
+    private static object? CreateTuple(_Storage storage, string[] strTypes, List list)
     {
         // lord, have mercy...
 
@@ -835,7 +818,7 @@ public static class Program
             return ObjectFromText(storage, strTypes[i], list.Items[i].Text, out type);
         }
     }
-    private static Array CreateArray(Storage storage, string type, List list)
+    private static Array CreateArray(_Storage storage, string type, List list)
     {
         var instance = Array.CreateInstance(GetType(type), list.Items.Count);
         for (var i = 0; i < list.Items.Count; i++)
@@ -843,7 +826,7 @@ public static class Program
 
         return instance;
     }
-    private static object? CreateDictionary(Storage storage, string type, List keys, List list)
+    private static object? CreateDictionary(_Storage storage, string type, List keys, List list)
     {
         var resultType = typeof(Dictionary<,>).MakeGenericType(typeof(string), GetType(type));
         var instance = Activator.CreateInstance(resultType);
@@ -851,13 +834,13 @@ public static class Program
         for (var i = 0; i < list.Items.Count; i++)
         {
             var value = ObjectFromText(storage, type, list.Items[i].Text, out _);
-            resultType.GetMethod("Add")?.Invoke(instance, new[] { keys.Items[i].Text, value });
+            resultType.GetMethod("Add")?.Invoke(instance, [keys.Items[i].Text, value]);
         }
 
         return instance;
     }
 
-    private static void LoadData(Storage storage, DataType type, int index, bool predict)
+    private static void LoadData(_Storage storage, DataType type, int index, bool predict)
     {
         var list = (List)data.Blocks[index];
         var keys = (List)dictKeys.Blocks[index];
@@ -935,11 +918,7 @@ public static class Program
             LoadValue(list.Items[i], types[i], list, v);
         }
     }
-    private static void LoadValue(
-        Button btn,
-        string type,
-        List list,
-        string value)
+    private static void LoadValue(Button btn, string type, List list, string value)
     {
         btn.Text = value;
 
@@ -1023,7 +1002,7 @@ public static class Program
         return result;
     }
 
-    private static DataType PredictDataType(Storage storage, string value, out string separator)
+    private static DataType PredictDataType(_Storage storage, string value, out string separator)
     {
         if (value.Contains(storage.Dividers.tuple))
         {
@@ -1044,7 +1023,7 @@ public static class Program
         separator = string.Empty;
         return DataType.Value;
     }
-    private static string[] PredictValueTypes(Storage storage, string[] strValues)
+    private static string[] PredictValueTypes(_Storage storage, string[] strValues)
     {
         var result = new string[strValues.Length];
 
@@ -1070,7 +1049,7 @@ public static class Program
         return result;
     }
 
-    private static string FilterPlaceholders(Storage storage, string dataAsText)
+    private static string FilterPlaceholders(_Storage storage, string dataAsText)
     {
         return Regex.Replace(dataAsText, STR_PLACEHOLDER + "(\\d+)", match =>
         {

@@ -57,7 +57,7 @@ public static class Tetris
         }
         void Collide()
         {
-            var ys = piece?.GetBoxYs() ?? new();
+            var ys = piece?.GetBoxYs() ?? [];
             ys.Sort();
 
             foreach (var y in ys)
@@ -114,12 +114,12 @@ public static class Tetris
             };
             var positions = new[]
             {
-                new Point[] { (x - 1, y + 0), (x + 0, y + 0), (x + 1, y + 0), (x + 2, y + 0) }, // I
-                new Point[] { (x - 1, y + 0), (x + 0, y + 0), (x - 1, y + 1), (x + 0, y + 1) }, // O
-                new Point[] { (x - 1, y + 0), (x + 0, y + 0), (x + 1, y + 0), (x + 0, y + 1) }, // T
-                new Point[] { (x + 0, y - 1), (x + 0, y + 0), (x + 0, y + 1), (x - 1, y + 1) }, // J
-                new Point[] { (x + 0, y - 1), (x + 0, y + 0), (x + 0, y + 1), (x + 1, y + 1) }, // L
-                new Point[] { (x - 1, y + 0), (x + 0, y + 0), (x + 0, y - 1), (x + 1, y - 1) }, // S
+                [(x - 1, y + 0), (x + 0, y + 0), (x + 1, y + 0), (x + 2, y + 0)], // I
+                [(x - 1, y + 0), (x + 0, y + 0), (x - 1, y + 1), (x + 0, y + 1)], // O
+                [(x - 1, y + 0), (x + 0, y + 0), (x + 1, y + 0), (x + 0, y + 1)], // T
+                [(x + 0, y - 1), (x + 0, y + 0), (x + 0, y + 1), (x - 1, y + 1)], // J
+                [(x + 0, y - 1), (x + 0, y + 0), (x + 0, y + 1), (x + 1, y + 1)], // L
+                [(x - 1, y + 0), (x + 0, y + 0), (x + 0, y - 1), (x + 1, y - 1)], // S
                 new Point[] { (x - 1, y + 0), (x + 0, y + 0), (x + 0, y + 1), (x + 1, y + 1) } // Z
             };
             var randomType = (0, positions.Length - 1).Random();

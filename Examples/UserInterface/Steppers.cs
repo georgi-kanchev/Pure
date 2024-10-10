@@ -26,6 +26,6 @@ public static class Steppers
             maps.SetStepper(stepperDecimal);
         });
 
-        return new Block[] { stepper, stepperDecimal };
+        return [stepper, stepperDecimal];
     }
 }

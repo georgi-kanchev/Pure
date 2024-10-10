@@ -50,6 +50,6 @@ public static class Lists
         });
         listDropdown.OnItemDisplay(item => maps.SetListItem(listDropdown, item));
 
-        return new Block[] { listVertical, listHorizontal, listDropdown };
+        return [listVertical, listHorizontal, listDropdown];
     }
 }

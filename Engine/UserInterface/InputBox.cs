@@ -429,7 +429,7 @@ public class InputBox : Block
     }
 
 #region Backend
-    private readonly List<string> lines = new() { string.Empty };
+    private readonly List<string> lines = [string.Empty];
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
 
     private static readonly Dictionary<SymbolGroup, string> symbolSets = new()

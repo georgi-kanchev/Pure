@@ -83,7 +83,7 @@ public class Client : Communication
     /// <param name="tag">The tag of the message.</param>
     public void SendToServer(string message, byte tag = default)
     {
-        var msg = new Message(Id, 0, Tag.CLIENT_TO_SERVER, tag, message, Array.Empty<byte>());
+        var msg = new Message(Id, 0, Tag.CLIENT_TO_SERVER, tag, message, []);
         backendClient?.SendAsync(msg.Total);
     }
     public void SendToServer(byte[] data, byte tag = default)
@@ -98,7 +98,7 @@ public class Client : Communication
     /// <param name="tag">The tag of the message.</param>
     public void SendToAll(string message, byte tag = default)
     {
-        var msg = new Message(Id, 0, Tag.CLIENT_TO_ALL, tag, message, Array.Empty<byte>());
+        var msg = new Message(Id, 0, Tag.CLIENT_TO_ALL, tag, message, []);
         backendClient?.SendAsync(msg.Total);
     }
     public void SendToAll(byte[] data, byte tag = default)
@@ -117,7 +117,7 @@ public class Client : Communication
     {
         // self message is possible / goes through server
         var msg = new Message(Id, GetId(toNickname), Tag.CLIENT_TO_CLIENT, tag, message,
-            Array.Empty<byte>());
+            []);
         backendClient?.SendAsync(msg.Total);
     }
     public void SendToClient(string toNickname, byte[] data, byte tag = default)

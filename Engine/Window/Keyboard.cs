@@ -157,7 +157,7 @@ public static class Keyboard
     private static Action<Key>? onPressAny, onReleaseAny, onHoldAny;
     private static readonly Dictionary<Key, Action>
         onPress = new(), onRelease = new(), onHold = new();
-    private static readonly List<Key> pressed = new(), prevPressed = new();
+    private static readonly List<Key> pressed = [], prevPressed = [];
     private static readonly Dictionary<Key, (string, string)> symbols;
     private static readonly string[] shiftNumbers;
 
@@ -178,10 +178,10 @@ public static class Keyboard
             { Key.Tab, ("\t", string.Empty) }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
             { Key.Asterisk, ("*", "*") }, { Key.Divide, ("/", "/") }
         };
-        shiftNumbers = new[]
-        {
+        shiftNumbers =
+        [
             ")", "!", "@", "#", "$", "%", "^", "&", "*", "("
-        };
+        ];
     }
 
     internal static void Update()

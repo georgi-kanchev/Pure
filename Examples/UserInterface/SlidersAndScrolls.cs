@@ -21,6 +21,6 @@ public static class SlidersAndScrolls
         scrollH.OnDisplay(() => maps.SetScroll(scrollH));
         scrollV.OnDisplay(() => maps.SetScroll(scrollV));
 
-        return new Block[] { sliderH, sliderV, scrollH, scrollV };
+        return [sliderH, sliderV, scrollH, scrollV];
     }
 }

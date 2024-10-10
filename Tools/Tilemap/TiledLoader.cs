@@ -1,8 +1,8 @@
-﻿namespace Pure.Tools.TiledLoader;
-
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Xml;
-using Engine.Tilemap;
+using Pure.Engine.Tilemap;
+
+namespace Pure.Tools.Tilemap;
 
 public static class TiledLoader
 {
@@ -23,7 +23,7 @@ public static class TiledLoader
 
         return (names.ToArray(), result);
     }
-    public static Tilemap Load(string tmxPath, string layerName)
+    public static Pure.Engine.Tilemap.Tilemap Load(string tmxPath, string layerName)
     {
         var layers = LoadLayers(tmxPath);
         var (layer, data) = GetLayer(layers, tmxPath, layerName);
@@ -32,7 +32,7 @@ public static class TiledLoader
     }
 
 #region Backend
-    private static (int, int) IndexToCoords(Tilemap tilemap, int index)
+    private static (int, int) IndexToCoords(Pure.Engine.Tilemap.Tilemap tilemap, int index)
     {
         var (w, h) = tilemap.Size;
         index = index < 0 ? 0 : index;
@@ -85,7 +85,7 @@ public static class TiledLoader
 
         return (layer, data);
     }
-    private static Tilemap ParseData(XmlElement layer, XmlNode data)
+    private static Pure.Engine.Tilemap.Tilemap ParseData(XmlElement layer, XmlNode data)
     {
         var dataStr = data.InnerText.Trim();
         var attributes = data.Attributes;
@@ -94,7 +94,7 @@ public static class TiledLoader
         _ = int.TryParse(layer.Attributes["width"]?.InnerText, out var mapWidth);
         _ = int.TryParse(layer.Attributes["height"]?.InnerText, out var mapHeight);
 
-        var result = new Tilemap((mapWidth, mapHeight));
+        var result = new Pure.Engine.Tilemap.Tilemap((mapWidth, mapHeight));
 
         if (encoding == "csv")
             LoadFromCsv(result, dataStr);
@@ -116,7 +116,7 @@ public static class TiledLoader
         return result;
     }
 
-    private static void LoadFromCsv(Tilemap tilemap, string dataStr)
+    private static void LoadFromCsv(Pure.Engine.Tilemap.Tilemap tilemap, string dataStr)
     {
         var values = dataStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
         for (var i = 0; i < values.Length; i++)
@@ -125,12 +125,12 @@ public static class TiledLoader
             SetTile(tilemap, i, value);
         }
     }
-    private static void LoadFromBase64Uncompressed(Tilemap tilemap, string dataStr)
+    private static void LoadFromBase64Uncompressed(Pure.Engine.Tilemap.Tilemap tilemap, string dataStr)
     {
         var bytes = Convert.FromBase64String(dataStr);
         LoadFromByteArray(tilemap, bytes);
     }
-    private static void LoadFromBase64<T>(Tilemap tilemap, string dataStr)
+    private static void LoadFromBase64<T>(Pure.Engine.Tilemap.Tilemap tilemap, string dataStr)
         where T : Stream
     {
         var buffer = Convert.FromBase64String(dataStr);
@@ -147,7 +147,7 @@ public static class TiledLoader
         var bytes = mso.ToArray();
         LoadFromByteArray(tilemap, bytes);
     }
-    private static void LoadFromByteArray(Tilemap tilemap, byte[] bytes)
+    private static void LoadFromByteArray(Pure.Engine.Tilemap.Tilemap tilemap, byte[] bytes)
     {
         var size = bytes.Length / sizeof(uint);
         for (var i = 0; i < size; i++)
@@ -165,7 +165,7 @@ public static class TiledLoader
             dest.Write(bytes, 0, i);
     }
 
-    private static void SetTile(Tilemap tilemap, int index, uint value)
+    private static void SetTile(Pure.Engine.Tilemap.Tilemap tilemap, int index, uint value)
     {
         value--;
 

@@ -138,15 +138,15 @@ internal class Astar
 
         if (closed.Exists(x => x.position == end.position) == false)
         {
-            withColors = Array.Empty<(float x, float y, uint color)>();
-            return Array.Empty<(float x, float y)>();
+            withColors = [];
+            return [];
         }
 
         var index = closed.IndexOf(current);
         if (index == -1)
         {
-            withColors = Array.Empty<(float x, float y, uint color)>();
-            return Array.Empty<(float x, float y)>();
+            withColors = [];
+            return [];
         }
 
         var temp = closed[index];
@@ -173,7 +173,7 @@ internal class Astar
 
         withColors = includeColors ?
             resultWithColors.ToArray() :
-            Array.Empty<(float x, float y, uint color)>();
+            [];
         return result.ToArray();
     }
 

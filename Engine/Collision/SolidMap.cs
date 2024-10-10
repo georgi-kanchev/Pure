@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 public class SolidMap
 {
-    public List<(int x, int y)> IgnoredCells { get; } = new();
+    public List<(int x, int y)> IgnoredCells { get; } = [];
 
     public (int x, int y) Offset { get; set; }
 
@@ -122,7 +122,7 @@ public class SolidMap
     }
     public Solid[] ToArray()
     {
-        return arrayCache?.ToArray() ?? Array.Empty<Solid>();
+        return arrayCache?.ToArray() ?? [];
     }
 
     public void AddSolids(int tileId, params Solid[]? solids)
@@ -131,7 +131,7 @@ public class SolidMap
             return;
 
         if (cellRects.ContainsKey(tileId) == false)
-            cellRects[tileId] = new();
+            cellRects[tileId] = [];
 
         cellRects[tileId].AddRange(solids);
     }
@@ -147,7 +147,7 @@ public class SolidMap
     public Solid[] SolidsAt((int x, int y) cell)
     {
         if (tileIndices.ContainsKey(cell) == false || IgnoredCells.Contains(cell))
-            return Array.Empty<Solid>();
+            return [];
 
         var id = tileIndices[cell];
         var rects = cellRects[id];
@@ -161,7 +161,7 @@ public class SolidMap
     public Solid[] SolidsIn(int tileId)
     {
         return cellRects.ContainsKey(tileId) == false ?
-            Array.Empty<Solid>() :
+            [] :
             cellRects[tileId].ToArray();
     }
 
@@ -226,7 +226,7 @@ public class SolidMap
     public (int x, int y)[] IgnoredCellsIn(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
-            return Array.Empty<(int x, int y)>();
+            return [];
 
         var result = new List<(int x, int y)>();
         foreach (var region in cellRegions)

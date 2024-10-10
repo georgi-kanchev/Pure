@@ -106,7 +106,7 @@ public static class Asteroids
                     foreach (var asteroid in shapes)
                         if (asteroid.Type == Type.Asteroid && shape.IsOverlapping(asteroid))
                         {
-                            shapesToDestroy.AddRange(new[] { shape, asteroid });
+                            shapesToDestroy.AddRange([shape, asteroid]);
                             score++;
                         }
 
@@ -136,12 +136,12 @@ public static class Asteroids
 
 #region Backend
     private static readonly string[] asteroidShapes =
-    {
+    [
         "Y2NABg32ELxgPwOD0kEGhhsHGBj2HPhfVVUFYzMwTADiNQ4QMQgbqGcfA8MXqBiEzcCwA4gn2EPEIGwGBgV7kB6IGIQNxEC7FA6CxAA=",
         "Y2dABg32EGxxgIFhAxAbODAwBBz4X1VVxcCgAWYzMCxxALEhYhA2UD0Q34CKQdgMDAv2g/RDxCBsBgYJoP4DUDEIm4FB6iDIZogYhA1UC5RbA7YXAA==",
         "Y2NABg32ECxwgIFhChB3APGD/f+rqqpgbIhciwNEDMJmYJgDxEegYhA2UA6IE6B6IWwgBtIbDiD0guwAia0BiwEA",
         "Y2VABg32EHxhP5A+wMAwB4gV9v+vqqpiYJgBZDMAxTmAtIYjRIwBzAZiBwYGCweIGITNwHAEiD2gYiB2gAPE3IoDIDEA"
-    };
+    ];
     private static Layer layer = new();
 
     private enum Type

@@ -28,7 +28,7 @@ internal class Session : TcpSession
         parent.parent.onClientDisconnect?.Invoke(clientNickname);
 
         // notify everybody that someone disconnected
-        var msg = new Message(0, 0, Tag.DISCONNECT, 0, clientId, Array.Empty<byte>());
+        var msg = new Message(0, 0, Tag.DISCONNECT, 0, clientId, []);
         parent.Multicast(msg.Total);
     }
     protected override void OnReceived(byte[] buffer, long offset, long size)

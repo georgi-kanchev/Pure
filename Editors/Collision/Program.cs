@@ -1,7 +1,7 @@
 ﻿namespace Pure.Editors.Collision;
 
 using Base;
-using Tools.Tilemapper;
+using Tools.Tilemap;
 using Engine.Collision;
 using Engine.Utilities;
 using Engine.Tilemap;
@@ -88,7 +88,7 @@ public static class Program
     private static Menu menu;
     private static bool isDragging;
     private static Solid solid;
-    private static string[] layers = { "Layer1" };
+    private static string[] layers = ["Layer1"];
     private static int currentLayer;
     private static Tile currentTile;
     private static (int x, int y) prevViewPos;
@@ -132,7 +132,7 @@ public static class Program
         editor = new("Pure - Collision Editor");
         var (mw, mh) = editor.MapsEditor.Size;
         editor.MapsEditor.Tilemaps.Clear();
-        editor.MapsEditor.Tilemaps.AddRange(new[] { new Tilemap((mw, mh)), new Tilemap((mw, mh)) });
+        editor.MapsEditor.Tilemaps.AddRange([new((mw, mh)), new((mw, mh))]);
         editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
         CreateMenu();
 
@@ -146,12 +146,11 @@ public static class Program
             ItemSize = (10, 1),
             IsSingleSelecting = true
         };
-        tools.Items.AddRange(new[]
-        {
-            new Button { Text = "Line Pack" },
-            new Button { Text = "Solid Map" },
-            new Button { Text = "Solid Pack" }
-        });
+        tools.Items.AddRange([
+            new() { Text = "Line Pack" },
+            new() { Text = "Solid Map" },
+            new() { Text = "Solid Pack" }
+        ]);
         tools.AlignInside((1f, 0f));
         tools.OnDisplay(() => editor.MapsUi.SetList(tools, FRONT));
         tools.OnUpdate(() => tools.IsHidden = editor.Prompt.IsHidden == false);
@@ -170,7 +169,7 @@ public static class Program
             editor.MapsUi.Tilemaps[FRONT].SetTile(btn.Position, new(Tile.FULL, color)));
         palette.AlignInside((0.8f, 0f));
 
-        editor.Ui.Blocks.AddRange(new Block[] { tools, palette });
+        editor.Ui.Blocks.AddRange([tools, palette]);
 
         // override the default prompt buttons
         editor.OnPromptItemDisplay = item =>
@@ -467,7 +466,7 @@ public static class Program
         catch (Exception)
         {
             editor.PromptMessage("Saving failed!");
-            return Array.Empty<byte>();
+            return [];
         }
     }
     private static void UpdateMap()
