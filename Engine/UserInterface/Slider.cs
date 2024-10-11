@@ -29,7 +29,13 @@ public class Slider : Block
     public float Progress
     {
         get => progress;
-        set => progress = Math.Clamp(value, 0, 1);
+        set
+        {
+            if (Math.Abs(progress - value) > 0.001f)
+                Interact(Interaction.Select);
+
+            progress = Math.Clamp(value, 0, 1);
+        }
     }
 
     public Slider((int x, int y) position = default, bool vertical = false) : base(position)
@@ -79,12 +85,12 @@ public class Slider : Block
     /// Tries to move the handle of the slider to the specified position. Picks the closest
     /// position on the slider if not successful.
     /// </summary>
-    /// <param name="position">The position to try move the handle to.</param>
-    public void MoveTo((int x, int y) position)
+    /// <param name="point">The position to try move the handle to.</param>
+    public void MoveTo((int x, int y) point)
     {
         var sz = IsVertical ? Size.height : Size.width;
         var (x, y) = Position;
-        var (px, py) = position;
+        var (px, py) = point;
         index = IsVertical ? py - y : px - x;
         index = Math.Clamp(Math.Max(index, 0), 0, Math.Max(sz - 1, 0));
         Progress = Map(index, 0, sz - 1, 0, 1);

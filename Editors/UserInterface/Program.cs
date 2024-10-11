@@ -64,7 +64,7 @@ public static class Program
         inspector.AlignInside((1f, 0.5f));
 
         promptSlider = new() { Size = (15, 1) };
-        promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, "", BACK));
+        promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, BACK));
 
         fileName = new() { Size = (20, 1) };
         fileName.OnDisplay(() => maps.SetInputBox(fileName, BACK));

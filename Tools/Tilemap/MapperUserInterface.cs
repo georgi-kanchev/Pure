@@ -17,6 +17,8 @@ public static class MapperUserInterface
     public static (Tile edge, Tile fill, uint textTint) ThemeButtonBar { get; set; }
     public static (Tile background, Tile cursor, uint textTint, uint selectionTint) ThemeInputBox { get; set; }
     public static (Tile yes, Tile no) ThemeCheckbox { get; set; }
+    public static (Tile edge, Tile fill, Tile handle) ThemeSlider { get; set; }
+    public static Tile ThemeScrollArrow { get; set; }
 
     public static void SetCheckbox(this Maps maps, Button checkbox, int zOrder = 1)
     {
@@ -27,7 +29,7 @@ public static class MapperUserInterface
         var tile = checkbox.IsSelected ? yes : no;
         var textPos = (checkbox.X + 2, checkbox.Y);
 
-        tile.Tint = GetInteractionColor(checkbox, tile.Tint);
+        tile.Tint = checkbox.GetInteractionColor(tile.Tint);
 
         Clear(maps, checkbox, zOrder);
         maps.Tilemaps[zOrder].SetTile(checkbox.Position, tile, checkbox.Mask);
@@ -46,14 +48,14 @@ public static class MapperUserInterface
         var textPos = (button.X + offsetW, button.Y + h / 2);
         var isBar = button.Height == 1;
 
-        bCorner.Tint = GetInteractionColor(button, bCorner.Tint);
-        bEdge.Tint = GetInteractionColor(button, bEdge.Tint);
-        bFill.Tint = GetInteractionColor(button, bFill.Tint);
-        bTextTint = GetInteractionColor(button, bTextTint);
+        bCorner.Tint = button.GetInteractionColor(bCorner.Tint);
+        bEdge.Tint = button.GetInteractionColor(bEdge.Tint);
+        bFill.Tint = button.GetInteractionColor(bFill.Tint);
+        bTextTint = button.GetInteractionColor(bTextTint);
 
-        rEdge.Tint = GetInteractionColor(button, rEdge.Tint);
-        rFill.Tint = GetInteractionColor(button, rFill.Tint);
-        rTextTint = GetInteractionColor(button, rTextTint);
+        rEdge.Tint = button.GetInteractionColor(rEdge.Tint);
+        rFill.Tint = button.GetInteractionColor(rFill.Tint);
+        rTextTint = button.GetInteractionColor(rTextTint);
 
         Clear(maps, button, zOrder);
 
@@ -104,7 +106,7 @@ public static class MapperUserInterface
         var cursorPos = box.PositionFromIndices(box.CursorIndices);
         var placeholderTint = new Color(textTint).ToDark(0.4f);
 
-        background.Tint = GetInteractionColor(box, background.Tint, 0.05f);
+        background.Tint = box.GetInteractionColor(background.Tint, 0.05f);
 
         Clear(maps, inputBox, zOrder);
         maps.Tilemaps[zOrder].SetArea(box.Area, box.Mask, background);
@@ -247,47 +249,40 @@ public static class MapperUserInterface
         SetFileViewerItem(maps, fileViewer, fileViewer.User, zOrder + 1);
         SetFileViewerItem(maps, fileViewer, fileViewer.Back, zOrder + 1);
     }
-    public static void SetSlider(this Maps maps, Slider slider, string? text = "", int zOrder = 0)
+    public static void SetSlider(this Maps maps, Slider slider, int zOrder = 0)
     {
-        var s = slider;
-        var result = $"{text}{s.Progress * 100f:F0}%";
-        var isHandle = s.Handle.IsPressedAndHeld;
-        var color = GetInteractionColor(isHandle ? s.Handle : s, Gray.ToBright());
+        if (maps.Tilemaps.Count <= zOrder + 2)
+            return;
 
-        Clear(maps, s, zOrder);
-        SetBackground(maps.Tilemaps[zOrder], s);
-        // maps.Tilemaps[zOrder + 1].SetBar(s.Handle.Position,
-        //     BAR_DEFAULT_EDGE,
-        //     BAR_DEFAULT_STRAIGHT,
-        //     color,
-        //     s.IsVertical ? s.Width : s.Height,
-        //     s.IsVertical == false,
-        //     s.Mask);
-        // maps.Tilemaps[zOrder + 2].SetText(
-        //     (s.X + s.Width / 2 - result.Length / 2, s.Y + s.Height / 2),
-        //     result,
-        //     mask: s.Mask);
+        var (edge, fill, handle) = ThemeSlider;
+        var size = slider.IsVertical ? slider.Height : slider.Width;
+
+        edge.Tint = slider.GetInteractionColor(edge.Tint, 0.3f);
+        fill.Tint = slider.GetInteractionColor(fill.Tint, 0.3f);
+        handle.Tint = slider.Handle.GetInteractionColor(handle.Tint, 0.3f);
+
+        Clear(maps, slider, zOrder);
+        maps.Tilemaps[zOrder].SetBar(slider.Position, edge, fill, size, slider.IsVertical, slider.Mask);
+        maps.Tilemaps[zOrder + 1].SetTile(slider.Handle.Position, handle, slider.Mask);
     }
     public static void SetScroll(this Maps maps, Scroll scroll, int zOrder = 0)
     {
-        var s = scroll;
-        var scrollUpAngle = (sbyte)(s.IsVertical ? 1 : 0);
-        var scrollDownAngle = (sbyte)(s.IsVertical ? 3 : 2);
-        var scrollColor = Gray.ToBright();
-        var isHandle = s.Slider.Handle.IsPressedAndHeld;
+        if (maps.Tilemaps.Count <= zOrder + 1)
+            return;
 
-        Clear(maps, s, zOrder);
-        SetBackground(maps.Tilemaps[zOrder], s, 0.4f);
-        maps.Tilemaps[zOrder + 1].SetTile(s.Slider.Handle.Position,
-            new(SHAPE_CIRCLE,
-                GetInteractionColor(isHandle ? s.Slider.Handle : s.Slider, scrollColor)),
-            s.Mask);
-        maps.Tilemaps[zOrder + 1].SetTile(s.Increase.Position,
-            new(ARROW, GetInteractionColor(s.Increase, scrollColor), scrollUpAngle),
-            s.Mask);
-        maps.Tilemaps[zOrder + 1].SetTile(s.Decrease.Position,
-            new(ARROW, GetInteractionColor(s.Decrease, scrollColor), scrollDownAngle),
-            s.Mask);
+        var arrow = ThemeScrollArrow;
+        var scrollUpAngle = (sbyte)(scroll.IsVertical ? 1 : 0);
+        var scrollDownAngle = (sbyte)(scroll.IsVertical ? 3 : 2);
+        var up = scroll.Increase.Position;
+        var down = scroll.Decrease.Position;
+
+        var upTint = scroll.Increase.GetInteractionColor(arrow.Tint, 0.3f);
+        var downTint = scroll.Decrease.GetInteractionColor(arrow.Tint, 0.3f);
+
+        Clear(maps, scroll, zOrder);
+        maps.SetSlider(scroll.Slider, zOrder);
+        maps.Tilemaps[zOrder + 1].SetTile(up, new(arrow.Id, upTint, scrollUpAngle), scroll.Mask);
+        maps.Tilemaps[zOrder + 1].SetTile(down, new(arrow.Id, downTint, scrollDownAngle), scroll.Mask);
     }
     public static void SetStepper(this Maps maps, Stepper stepper, int zOrder = 0)
     {
@@ -530,10 +525,13 @@ public static class MapperUserInterface
     static MapperUserInterface()
     {
         seed = (-1_000_000, 1_000_000).Random();
+
         ThemeButtonBox = (new(BOX_CORNER_ROUND, Gray), new(FULL, Gray), new(FULL, Gray), Gray.ToBright());
         ThemeButtonBar = (new(BAR_BIG_EDGE, Gray), new(FULL, Gray), Gray.ToBright());
         ThemeInputBox = (new(FULL, Gray.ToDark(0.4f)), new(SHAPE_LINE, White, 2), Gray.ToBright(), Blue);
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
+        ThemeSlider = (new(BAR_BIG_EDGE, Gray), new(BAR_BIG_STRAIGHT, Gray), new(SHAPE_CIRCLE_BIG, Gray.ToBright()));
+        ThemeScrollArrow = new(ARROW_TAILLESS, Gray);
     }
 
     private static void SetBackground(Pure.Engine.Tilemap.Tilemap map, Block block, float shade = 0.5f)

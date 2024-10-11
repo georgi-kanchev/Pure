@@ -162,8 +162,8 @@ public static class Program
         palette.OnDisplay(() =>
         {
             editor.MapsUi.SetPalette(palette, MIDDLE);
-            editor.MapsUi.SetSlider(palette.Opacity, "", MIDDLE);
-            editor.MapsUi.SetSlider(palette.Brightness, "", MIDDLE);
+            editor.MapsUi.SetSlider(palette.Opacity, MIDDLE);
+            editor.MapsUi.SetSlider(palette.Brightness, MIDDLE);
         });
         palette.OnSampleDisplay((btn, color) =>
             editor.MapsUi.Tilemaps[FRONT].SetTile(btn.Position, new(Tile.FULL, color)));

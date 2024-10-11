@@ -9,6 +9,13 @@ public static class ImmediateGraphicalUserInterface
 {
     public static Tile Cursor { get; set; } = new(546, 3789677055);
 
+    public static void ShowText((int x, int y) cell, string text, int zOrder = 0, uint tint = 4294967295U, char tintBrush = '#', Area? mask = null)
+    {
+        if (maps.Tilemaps.Count <= zOrder)
+            return;
+
+        maps.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush, mask);
+    }
     public static bool ShowButton((int x, int y) position, string text, Interaction trueWhen = Interaction.Trigger)
     {
         var block = TryCache<Button>(text, (position.x, position.y, text.Length + 2, 1));
@@ -34,6 +41,22 @@ public static class ImmediateGraphicalUserInterface
             return block.IsJustInteracted(Interaction.Select) ? block.Value : "";
 
         return block.Value;
+    }
+    public static float ShowSlider((int x, int y) position, int size, bool vertical = false)
+    {
+        var (w, h) = (vertical ? 1 : size, vertical ? size : 1);
+        var block = TryCache<Slider>("", (position.x, position.y, w, h));
+        block.Update();
+        maps.SetSlider(block);
+        return block.IsJustInteracted(Interaction.Select) ? block.Progress : float.NaN;
+    }
+    public static float ShowScroll((int x, int y) position, int size, bool vertical = false)
+    {
+        var (w, h) = (vertical ? 1 : size, vertical ? size : 1);
+        var block = TryCache<Scroll>("", (position.x, position.y, w, h));
+        block.Update();
+        maps.SetScroll(block);
+        return block.IsJustInteracted(Interaction.Select) ? block.Slider.Progress : float.NaN;
     }
 
     public static void DrawImGui(this Layer layer)
@@ -71,18 +94,21 @@ public static class ImmediateGraphicalUserInterface
     }
 
 #region Backend
-    private static readonly Dictionary<Area, (int framesLeft, Block block)> imGuiCache = [];
     private static TilemapPack maps = new(0, (0, 0));
+    private static readonly Dictionary<Area, (int framesLeft, Block block)> imGuiCache = [];
 
     private static T TryCache<T>(string text, Area area) where T : Block
     {
-        var key = (text, area);
         if (imGuiCache.ContainsKey(area) == false)
         {
             if (typeof(T) == typeof(Button))
                 imGuiCache[area] = (2, new Button { Text = text });
             else if (typeof(T) == typeof(InputBox))
                 imGuiCache[area] = (2, new InputBox());
+            else if (typeof(T) == typeof(Slider))
+                imGuiCache[area] = (2, new Slider(vertical: area.Width == 1));
+            else if (typeof(T) == typeof(Scroll))
+                imGuiCache[area] = (2, new Scroll(vertical: area.Width == 1));
         }
 
         var cache = imGuiCache[area];

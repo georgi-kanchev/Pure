@@ -96,6 +96,7 @@ public class Scroll : Block
             { Size = (1, 1), wasMaskSet = true, hasParent = true };
 
         Slider.OnInteraction(Interaction.Scroll, ApplyScroll);
+        Slider.OnInteraction(Interaction.Select, () => Interact(Interaction.Select));
 
         Increase.OnInteraction(Interaction.Scroll, ApplyScroll);
         Increase.OnInteraction(Interaction.Trigger, () => Slider.Progress += Step);
