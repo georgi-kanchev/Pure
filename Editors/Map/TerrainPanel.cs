@@ -20,7 +20,7 @@ internal class TerrainPanel : Panel
         AlignInside((0f, 0.35f));
 
         var toggle = new Button((X, h - 5)) { Text = "Terrain Panel", Size = (13, 1) };
-        toggle.OnDisplay(() => editor.MapsUi.SetButton(toggle, 0, true));
+        toggle.OnDisplay(() => editor.MapsUi.SetButton(toggle, 0));
 
         OnDisplay(() =>
         {
@@ -269,13 +269,13 @@ internal class TerrainPanel : Panel
             TryAutoGenerate();
         });
 
-        scale.OnSubmit(() =>
+        scale.OnInteraction(Interaction.Trigger, () =>
         {
             var success = float.TryParse(scale.Text, out var value);
             generator.Scale = success ? value : 10;
             TryAutoGenerate();
         });
-        seed.OnSubmit(() =>
+        seed.OnInteraction(Interaction.Trigger, () =>
         {
             var success = int.TryParse(seed.Text, out var value);
             generator.Seed = success ? value : 0;
@@ -383,7 +383,7 @@ internal class TerrainPanel : Panel
             editor.MapsUi.SetList(noiseType);
 
             editor.MapsUi.SetButton(generate, MIDDLE);
-            editor.MapsUi.SetButton(autoGenerate, MIDDLE, true);
+            editor.MapsUi.SetButton(autoGenerate, MIDDLE);
         });
 
         result.AddRange([add, edit, remove, scale, seed, tiles, autoGenerate, generate, noiseType]);

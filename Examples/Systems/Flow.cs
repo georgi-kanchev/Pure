@@ -1,10 +1,9 @@
 using Pure.Engine.Execution;
 using Path = Pure.Engine.Execution.StateMachine.Path;
+using Pure.Engine.Utilities;
+using Pure.Engine.Window;
 
 namespace Pure.Examples.Systems;
-
-using Engine.Utilities;
-using Engine.Window;
 
 public static class Flow
 {

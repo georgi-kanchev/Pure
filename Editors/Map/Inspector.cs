@@ -109,7 +109,7 @@ internal class Inspector : Panel
         {
             Value = string.Empty, Placeholder = "Rename…", Size = (14, 1)
         };
-        rename.OnSubmit(() =>
+        rename.OnInteraction(Interaction.Trigger, () =>
         {
             if (string.IsNullOrEmpty(rename.Value))
                 return;

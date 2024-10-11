@@ -1,8 +1,8 @@
-namespace Pure.Examples.Systems;
+using Pure.Engine.Audio;
+using Pure.Engine.Utilities;
+using Pure.Engine.Window;
 
-using Engine.Audio;
-using Engine.Utilities;
-using Engine.Window;
+namespace Pure.Examples.Systems;
 
 public static class Audio
 {

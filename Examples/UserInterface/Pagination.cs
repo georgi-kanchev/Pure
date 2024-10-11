@@ -34,8 +34,7 @@ public static class Pagination
         buttonsBig.ItemWidth = $"{buttonsBig.Count}".Length + 2;
         buttonsBig.AlignInside((0.5f, 0.9f));
         buttonsBig.OnDisplay(() => maps.SetPages(buttonsBig));
-        buttonsBig.OnItemDisplay(item =>
-            maps.SetButton(item, showSelected: true, zOrder: 1));
+        buttonsBig.OnItemDisplay(item => maps.SetButton(item, 1));
 
         return [icons, pages, buttons, buttonsBig];
     }

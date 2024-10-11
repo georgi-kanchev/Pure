@@ -18,7 +18,7 @@ public static class InputBoxes
         var scroll = new Scroll { IsHidden = true, IsDisabled = true };
         chat.AlignInside((0.1f, 0.95f));
         var (x, y, w, h) = (chat.Position.x, chat.Position.y - 10, chat.Size.width, 10);
-        chat.OnSubmit(() =>
+        chat.OnInteraction(Interaction.Trigger, () =>
         {
             var clock = $"{Color.Gray.ToBrush()}[{Time.Clock.ToClock()}]";
             messages += $"{clock}{line}{Color.White.ToBrush()}{chat.Value}" +
@@ -46,8 +46,7 @@ public static class InputBoxes
         {
             Size = (12, 12),
             Value = string.Empty,
-            Placeholder = "Type some text on multiple lines…",
-            IsMultiLine = true
+            Placeholder = "Type some text on multiple lines…"
         };
         multiLine.AlignInside((0.1f, 0.1f));
         multiLine.OnDisplay(() => maps.SetInputBox(multiLine));
@@ -63,7 +62,7 @@ public static class InputBoxes
             SymbolMask = "#"
         };
         password.AlignInside((0.95f, 0.1f));
-        password.OnSubmit(() => pass = password.Value);
+        password.OnInteraction(Interaction.Trigger, () => pass = password.Value);
         password.OnDisplay(() =>
         {
             var pos = password.Position;
@@ -82,7 +81,7 @@ public static class InputBoxes
             SymbolGroup = SymbolGroup.Math | SymbolGroup.Decimals
         };
         equation.AlignInside((0.95f, 0.9f));
-        equation.OnSubmit(() => mathResult = $"{equation.Value.Calculate()}");
+        equation.OnInteraction(Interaction.Trigger, () => mathResult = $"{equation.Value.Calculate()}");
         equation.OnDisplay(() =>
         {
             var pos = equation.Position;

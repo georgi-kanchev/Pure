@@ -1,10 +1,10 @@
 using Pure.Engine.Utilities;
+using Pure.Engine.Collision;
+using Pure.Engine.Tilemap;
+using Pure.Engine.Window;
+using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
-
-using Engine.Collision;
-using Engine.Tilemap;
-using Engine.Window;
 
 public static class LineOfSightAndLights
 {

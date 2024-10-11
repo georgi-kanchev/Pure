@@ -1,6 +1,6 @@
-namespace Pure.Examples.Systems;
+using Pure.Engine.Execution;
 
-using Engine.Execution;
+namespace Pure.Examples.Systems;
 
 public static class Commands
 {

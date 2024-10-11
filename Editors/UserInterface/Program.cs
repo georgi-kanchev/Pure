@@ -3,7 +3,7 @@ global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Window;
 global using static Pure.Editors.UserInterface.Program;
-global using static Pure.Tools.Tilemap.MapperUI;
+global using static Pure.Tools.Tilemap.MapperUserInterface;
 global using Pure.Editors.Base;
 
 namespace Pure.Editors.UserInterface;
@@ -95,8 +95,7 @@ public static class Program
             case nameof(Button):
             {
                 block = bytes != null ? new(bytes) : new Button(position);
-                block.OnDisplay(() =>
-                    editor.MapsEditor.SetButton((Button)block, showSelected: true));
+                block.OnDisplay(() => editor.MapsEditor.SetButton((Button)block));
                 break;
             }
             case nameof(InputBox):

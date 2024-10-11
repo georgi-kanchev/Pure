@@ -1,9 +1,10 @@
-namespace Pure.Examples.Systems;
+using Pure.Engine.Pathfinding;
+using Pure.Engine.Window;
+using Pure.Engine.Tilemap;
+using Pure.Engine.Utilities;
+using Monitor = Pure.Engine.Window.Monitor;
 
-using Engine.Pathfinding;
-using Engine.Window;
-using Engine.Tilemap;
-using Engine.Utilities;
+namespace Pure.Examples.Systems;
 
 public static class Pathfinding
 {

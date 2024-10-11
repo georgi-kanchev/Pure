@@ -79,7 +79,6 @@ public class InputBox : Block
         }
     }
     public bool IsReadOnly { get; set; }
-    public bool IsMultiLine { get; set; }
     public SymbolGroup SymbolGroup
     {
         get => symbolGroup;
@@ -251,7 +250,6 @@ public class InputBox : Block
         Init();
         var b = Decompress(bytes);
         IsReadOnly = GrabBool(b);
-        IsMultiLine = GrabBool(b);
         Placeholder = GrabString(b);
         Value = GrabString(b);
         SymbolGroup = (SymbolGroup)GrabByte(b);
@@ -269,7 +267,6 @@ public class InputBox : Block
     {
         var result = Decompress(base.ToBytes()).ToList();
         PutBool(result, IsReadOnly);
-        PutBool(result, IsMultiLine);
         PutString(result, Placeholder);
         PutString(result, Value);
         PutByte(result, (byte)SymbolGroup);
@@ -409,10 +406,6 @@ public class InputBox : Block
     {
         type += method;
     }
-    public void OnSubmit(Action method)
-    {
-        submit += method;
-    }
 
     public InputBox Duplicate()
     {
@@ -455,7 +448,6 @@ public class InputBox : Block
     private string value = string.Empty;
 
     private Action<string>? type;
-    private Action? submit;
     private SymbolGroup symbolGroup;
     private string? symbolMask;
 
@@ -486,8 +478,9 @@ public class InputBox : Block
 
     protected override void OnInput()
     {
-        if (IsReadOnly == false && IsFocused && IsMultiLine == false && JustPressed(Key.Enter))
-            submit?.Invoke();
+        var isMultiLine = Height > 1;
+        if (IsReadOnly == false && IsFocused && isMultiLine == false && JustPressed(Key.Enter))
+            Interact(Interaction.Select);
 
         var isBellowElement = IsFocused == false || Input.FocusedPrevious != this;
         if (isBellowElement || TrySelectAll() || JustPressed(Key.Tab))
@@ -501,7 +494,7 @@ public class InputBox : Block
         var shouldDelete = isAllowedType ||
                            Allowed(Key.Backspace, isHolding) ||
                            Allowed(Key.Delete, isHolding) ||
-                           (Allowed(Key.Enter, isHolding) && IsMultiLine);
+                           (Allowed(Key.Enter, isHolding) && isMultiLine);
 
         var justDeletedSelected = false;
         if (TryCopyPasteCut(ref justDeletedSelected, ref shouldDelete, out var isPasting))
@@ -687,7 +680,7 @@ public class InputBox : Block
         var skipWord = clicks == 2 && SymbolMask != null; // there are only whole lines
         clicks += skipWord ? 1 : 0;
 
-        var skipLine = clicks == 3 && (IsMultiLine == false || isWholeLineSelected);
+        var skipLine = clicks == 3 && (Height == 1 || isWholeLineSelected);
         clicks += skipLine ? 1 : 0;
 
         if (clicks == 1) // cursor to mouse
@@ -819,7 +812,7 @@ public class InputBox : Block
 
         var (w, _) = Size;
 
-        if (Allowed(Key.Enter, isHolding) && IsMultiLine)
+        if (Allowed(Key.Enter, isHolding) && Height > 1)
         {
             // insert line above?
             if (cx == 0)

@@ -528,11 +528,10 @@ public abstract class Block
     /// <param name="interaction">The interaction type.</param>
     public void Interact(Interaction interaction)
     {
-        if (interactions.TryGetValue(interaction, out var act) == false)
-            return;
-
-        act.Invoke();
         justInteracted.Add(interaction);
+
+        if (interactions.TryGetValue(interaction, out var act))
+            act.Invoke();
     }
 
     /// <summary>

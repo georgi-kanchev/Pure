@@ -4,48 +4,67 @@ using Pure.Engine.UserInterface;
 using Pure.Engine.Utilities;
 using static Pure.Engine.Tilemap.Tile;
 using static Pure.Engine.Utilities.Color;
+using Maps = Pure.Engine.Tilemap.TilemapPack;
+using static Pure.Engine.Window.Keyboard;
 
 namespace Pure.Tools.Tilemap;
 
-public static class MapperUI
+public static class MapperUserInterface
 {
     public static bool IsInteractable { get; set; } = true;
 
-    public static Tile ButtonCorner { get; set; } = BOX_CORNER_ROUND;
-    public static Tile ButtonEdge { get; set; } = FULL;
-    public static Tile ButtonFill { get; set; } = FULL;
+    public static (Tile corner, Tile edge, Tile fill, uint textTint) ThemeButtonBox { get; set; }
+    public static (Tile edge, Tile fill, uint textTint) ThemeButtonBar { get; set; }
+    public static (Tile background, Tile cursor, uint textTint, uint selectionTint) ThemeInputBox { get; set; }
+    public static (Tile yes, Tile no) ThemeCheckbox { get; set; }
 
-    public static void SetCheckbox(this TilemapPack maps, Button checkbox, int zOrder = 0)
+    public static void SetCheckbox(this Maps maps, Button checkbox, int zOrder = 1)
     {
-        var color = checkbox.IsSelected ? Green : Red;
-        var tileId = checkbox.IsSelected ? ICON_TICK : UPPERCASE_X;
-        var tile = new Tile(tileId, GetInteractionColor(checkbox, color));
+        if (maps.Tilemaps.Count <= zOrder)
+            return;
+
+        var (yes, no) = ThemeCheckbox;
+        var tile = checkbox.IsSelected ? yes : no;
+        var textPos = (checkbox.X + 2, checkbox.Y);
+
+        tile.Tint = GetInteractionColor(checkbox, tile.Tint);
 
         Clear(maps, checkbox, zOrder);
         maps.Tilemaps[zOrder].SetTile(checkbox.Position, tile, checkbox.Mask);
-        maps.Tilemaps[zOrder].SetText(
-            (checkbox.Position.x + 2, checkbox.Position.y),
-            checkbox.Text,
-            GetInteractionColor(checkbox, color),
-            mask: checkbox.Mask);
+        maps.Tilemaps[zOrder].SetText(textPos, checkbox.Text, tile.Tint, mask: checkbox.Mask);
     }
-    public static void SetButton(this TilemapPack maps, Button button, int zOrder = 0, bool showSelected = false)
+    public static void SetButton(this Maps maps, Button button, int zOrder = 1)
     {
-        var b = button;
-        var (w, h) = b.Size;
-        var offsetW = w / 2 - Math.Min(b.Text.Length, h == 1 ? w : w - 2) / 2;
-        var c = b.IsSelected && showSelected ? Green : Yellow;
-        var color = GetInteractionColor(b, c.ToDark());
-        var colorBack = Gray.ToDark(0.6f);
+        if (maps.Tilemaps.Count <= zOrder + 1)
+            return;
+
+        var (w, h) = button.Size;
+        var offsetW = w / 2 - Math.Min(button.Text.Length, h == 1 ? w : w - 2) / 2;
+        var (bCorner, bEdge, bFill, bTextTint) = ThemeButtonBox;
+        var (rEdge, rFill, rTextTint) = ThemeButtonBar;
+        var text = button.Text.Shorten(h == 1 ? w : w - 2);
+        var textPos = (button.X + offsetW, button.Y + h / 2);
+        var isBar = button.Height == 1;
+
+        bCorner.Tint = GetInteractionColor(button, bCorner.Tint);
+        bEdge.Tint = GetInteractionColor(button, bEdge.Tint);
+        bFill.Tint = GetInteractionColor(button, bFill.Tint);
+        bTextTint = GetInteractionColor(button, bTextTint);
+
+        rEdge.Tint = GetInteractionColor(button, rEdge.Tint);
+        rFill.Tint = GetInteractionColor(button, rFill.Tint);
+        rTextTint = GetInteractionColor(button, rTextTint);
 
         Clear(maps, button, zOrder);
-        maps.Tilemaps[zOrder].SetBox(b.Area, ButtonFill, ButtonCorner, ButtonEdge, b.Mask);
-        // maps.Tilemaps[zOrder + 1].SetBox(
-        //     b.Area, EMPTY, new(BOX_DEFAULT_CORNER, color), new(BOX_DEFAULT_STRAIGHT, color), b.Mask);
-        maps.Tilemaps[zOrder + 1].SetText(
-            (b.Position.x + offsetW, b.Position.y + h / 2), b.Text.Shorten(h == 1 ? w : w - 2), color, mask: b.Mask);
+
+        if (isBar)
+            maps.Tilemaps[zOrder].SetBar(button.Position, rEdge, rFill, button.Width, mask: button.Mask);
+        else
+            maps.Tilemaps[zOrder].SetBox(button.Area, bFill, bCorner, bEdge, button.Mask);
+
+        maps.Tilemaps[zOrder + 1].SetText(textPos, text, isBar ? rTextTint : bTextTint, mask: button.Mask);
     }
-    public static void SetButtonSelect(this TilemapPack maps, Button button, int zOrder = 0)
+    public static void SetButtonSelect(this Maps maps, Button button, int zOrder = 0)
     {
         var b = button;
         var (w, h) = b.Size;
@@ -53,41 +72,47 @@ public static class MapperUI
         var selectColor = b.IsSelected ? Green : Gray;
 
         Clear(maps, button, zOrder);
-        maps.Tilemaps[zOrder].SetBar(b.Position, BAR_BIG_EDGE, FULL,
-            GetInteractionColor(b, Brown.ToDark(0.3f)), w, mask: b.Mask);
-        maps.Tilemaps[zOrder + 1].SetText(
-            (b.Position.x + offsetW, b.Position.y + h / 2),
-            b.Text.Shorten(w - 2),
-            GetInteractionColor(b, selectColor),
-            mask: b.Mask);
+        // maps.Tilemaps[zOrder].SetBar(b.Position, BAR_BIG_EDGE, FULL,
+        //     GetInteractionColor(b, Brown.ToDark(0.3f)), w, mask: b.Mask);
+        // maps.Tilemaps[zOrder + 1].SetText(
+        //     (b.Position.x + offsetW, b.Position.y + h / 2),
+        //     b.Text.Shorten(w - 2),
+        //     GetInteractionColor(b, selectColor),
+        //     mask: b.Mask);
     }
-    public static void SetButtonIcon(this TilemapPack maps, Button button, Tile icon, int zOrder = 0)
+    public static void SetButtonIcon(this Maps maps, Button button, Tile icon, int zOrder = 0)
     {
         var b = button;
         icon.Tint = GetInteractionColor(b, icon.Tint);
         Clear(maps, button, zOrder);
         maps.Tilemaps[zOrder].SetTile(b.Position, icon, b.Mask);
     }
-    public static void SetInputBox(this TilemapPack maps, InputBox inputBox, int zOrder = 0)
+    public static void SetInputBox(this Maps maps, InputBox inputBox, int zOrder = 0)
     {
+        if (maps.Tilemaps.Count <= zOrder + 2)
+            return;
+
         var box = inputBox;
-        var bgColor = Gray.ToDark(0.4f);
-        var selectColor = box.IsFocused ? Blue : Blue.ToBright();
+        var (background, cursor, textTint, selectionTint) = ThemeInputBox;
+        var selectColor = box.IsFocused ? new(selectionTint) : new Color(selectionTint).ToBright();
         var selection = box.Selection.Constrain(box.Size, false);
         var text = box.Text.Constrain(box.Size, false);
         var placeholder = box.Placeholder.Constrain(box.Size);
-        var cursor = new Tile(SHAPE_LINE, White, 2);
         var scrollY = box.ScrollIndices.y;
-        var textAboveOrBelow = new Tile(FULL, Gray.ToDark(0.3f), 3);
+        var textAboveOrBelow = new Tile(background.Id, new Color(background.Tint).ToDark(0.3f));
         var (w, h) = box.Size;
+        var cursorPos = box.PositionFromIndices(box.CursorIndices);
+        var placeholderTint = new Color(textTint).ToDark(0.4f);
+
+        background.Tint = GetInteractionColor(box, background.Tint, 0.05f);
 
         Clear(maps, inputBox, zOrder);
-        maps.Tilemaps[zOrder].SetArea(box.Area, box.Mask, new Tile(FULL, bgColor));
+        maps.Tilemaps[zOrder].SetArea(box.Area, box.Mask, background);
         maps.Tilemaps[zOrder].SetText(box.Position, selection, selectColor, mask: box.Mask);
-        maps.Tilemaps[zOrder + 1].SetText(box.Position, text, mask: box.Mask);
+        maps.Tilemaps[zOrder + 1].SetText(box.Position, text, textTint, mask: box.Mask);
 
         if (string.IsNullOrEmpty(box.Value))
-            maps.Tilemaps[zOrder + 1].SetText(box.Position, placeholder, Gray, mask: box.Mask);
+            maps.Tilemaps[zOrder + 1].SetText(box.Position, placeholder, placeholderTint, mask: box.Mask);
 
         if (scrollY > 0)
             maps.Tilemaps[zOrder + 0].SetArea((box.X, box.Y, w, 1), null, textAboveOrBelow);
@@ -96,9 +121,9 @@ public static class MapperUI
             maps.Tilemaps[zOrder + 0].SetArea((box.X, box.Y + h - 1, w, 1), null, textAboveOrBelow);
 
         if (box.IsCursorVisible)
-            maps.Tilemaps[zOrder + 2].SetTile(box.PositionFromIndices(box.CursorIndices), cursor, box.Mask);
+            maps.Tilemaps[zOrder + 2].SetTile(cursorPos, cursor, box.Mask);
     }
-    public static void SetFileViewerItem(this TilemapPack maps, FileViewer fileViewer, Button item, int zOrder = 1)
+    public static void SetFileViewerItem(this Maps maps, FileViewer fileViewer, Button item, int zOrder = 1)
     {
         var color = item.IsSelected ? Green : Gray.ToBright();
         var (x, y) = item.Position;
@@ -211,7 +236,7 @@ public static class MapperUI
             GetInteractionColor(item, color),
             mask: item.Mask);
     }
-    public static void SetFileViewer(this TilemapPack maps, FileViewer fileViewer, int zOrder = 0)
+    public static void SetFileViewer(this Maps maps, FileViewer fileViewer, int zOrder = 0)
     {
         Clear(maps, fileViewer, zOrder);
         SetBackground(maps.Tilemaps[zOrder], fileViewer);
@@ -222,7 +247,7 @@ public static class MapperUI
         SetFileViewerItem(maps, fileViewer, fileViewer.User, zOrder + 1);
         SetFileViewerItem(maps, fileViewer, fileViewer.Back, zOrder + 1);
     }
-    public static void SetSlider(this TilemapPack maps, Slider slider, string? text = "", int zOrder = 0)
+    public static void SetSlider(this Maps maps, Slider slider, string? text = "", int zOrder = 0)
     {
         var s = slider;
         var result = $"{text}{s.Progress * 100f:F0}%";
@@ -231,19 +256,19 @@ public static class MapperUI
 
         Clear(maps, s, zOrder);
         SetBackground(maps.Tilemaps[zOrder], s);
-        maps.Tilemaps[zOrder + 1].SetBar(s.Handle.Position,
-            BAR_DEFAULT_EDGE,
-            BAR_DEFAULT_STRAIGHT,
-            color,
-            s.IsVertical ? s.Width : s.Height,
-            s.IsVertical == false,
-            s.Mask);
-        maps.Tilemaps[zOrder + 2].SetText(
-            (s.X + s.Width / 2 - result.Length / 2, s.Y + s.Height / 2),
-            result,
-            mask: s.Mask);
+        // maps.Tilemaps[zOrder + 1].SetBar(s.Handle.Position,
+        //     BAR_DEFAULT_EDGE,
+        //     BAR_DEFAULT_STRAIGHT,
+        //     color,
+        //     s.IsVertical ? s.Width : s.Height,
+        //     s.IsVertical == false,
+        //     s.Mask);
+        // maps.Tilemaps[zOrder + 2].SetText(
+        //     (s.X + s.Width / 2 - result.Length / 2, s.Y + s.Height / 2),
+        //     result,
+        //     mask: s.Mask);
     }
-    public static void SetScroll(this TilemapPack maps, Scroll scroll, int zOrder = 0)
+    public static void SetScroll(this Maps maps, Scroll scroll, int zOrder = 0)
     {
         var s = scroll;
         var scrollUpAngle = (sbyte)(s.IsVertical ? 1 : 0);
@@ -264,7 +289,7 @@ public static class MapperUI
             new(ARROW, GetInteractionColor(s.Decrease, scrollColor), scrollDownAngle),
             s.Mask);
     }
-    public static void SetStepper(this TilemapPack maps, Stepper stepper, int zOrder = 0)
+    public static void SetStepper(this Maps maps, Stepper stepper, int zOrder = 0)
     {
         var s = stepper;
         var (x, y) = s.Position;
@@ -308,7 +333,7 @@ public static class MapperUI
             new(MATH_MUCH_GREATER, GetInteractionColor(s.Maximum, color)),
             s.Mask);
     }
-    public static void SetPrompt(this TilemapPack maps, Prompt prompt, int zOrder = 0)
+    public static void SetPrompt(this Maps maps, Prompt prompt, int zOrder = 0)
     {
         if (prompt.IsHidden == false)
         {
@@ -325,7 +350,7 @@ public static class MapperUI
             prompt.Text.Constrain((prompt.Size.width, lines), alignment: Alignment.Center),
             mask: prompt.Mask);
     }
-    public static void SetPromptItem(this TilemapPack maps, Prompt prompt, Button item, int zOrder = 2, params Tile[]? tiles)
+    public static void SetPromptItem(this Maps maps, Prompt prompt, Button item, int zOrder = 2, params Tile[]? tiles)
     {
         var index = prompt.IndexOf(item);
         var tile = new Tile(
@@ -341,7 +366,7 @@ public static class MapperUI
 
         maps.Tilemaps[zOrder].SetTile(item.Position, tile, item.Mask);
     }
-    public static void SetPanel(this TilemapPack maps, Panel panel, int zOrder = 0)
+    public static void SetPanel(this Maps maps, Panel panel, int zOrder = 0)
     {
         var p = panel;
         var (x, y) = p.Position;
@@ -357,7 +382,7 @@ public static class MapperUI
             p.Text.Shorten(Math.Min(w, p.Text.Length)),
             mask: p.Mask);
     }
-    public static void SetPalette(this TilemapPack maps, Palette palette, int zOrder = 0)
+    public static void SetPalette(this Maps maps, Palette palette, int zOrder = 0)
     {
         var p = palette;
         var color = new Color(p.SelectedColor) { A = 255 };
@@ -391,7 +416,7 @@ public static class MapperUI
             maps.Tilemaps[zOrder].SetTile((p.Brightness.X + offX, p.Brightness.Y + offY), new(FULL, col), p.Mask);
         }
     }
-    public static void SetPages(this TilemapPack maps, Pages pages, int zOrder = 0)
+    public static void SetPages(this Maps maps, Pages pages, int zOrder = 0)
     {
         var p = pages;
 
@@ -409,14 +434,14 @@ public static class MapperUI
             if (button.IsHidden)
                 return;
 
-            maps.Tilemaps[zOrder].SetBar(button.Position, BAR_BIG_EDGE, FULL, color.ToDark(0.75f),
-                button.Size.height, true, p.Mask);
-            maps.Tilemaps[zOrder + 1].SetTile(
-                (button.Position.x, button.Position.y + button.Size.height / 2),
-                new(tileId, color), p.Mask);
+            // maps.Tilemaps[zOrder].SetBar(button.Position, BAR_BIG_EDGE, FULL, color.ToDark(0.75f),
+            //     button.Size.height, true, p.Mask);
+            // maps.Tilemaps[zOrder + 1].SetTile(
+            //     (button.Position.x, button.Position.y + button.Size.height / 2),
+            //     new(tileId, color), p.Mask);
         }
     }
-    public static void SetPagesItem(this TilemapPack maps, Pages pages, Button item, int zOrder = 1)
+    public static void SetPagesItem(this Maps maps, Pages pages, Button item, int zOrder = 1)
     {
         var color = GetInteractionColor(item, item.IsSelected ? Green : Gray.ToBright(0.2f));
         var text = item.Text.ToNumber().PadZeros(-pages.ItemWidth);
@@ -427,14 +452,14 @@ public static class MapperUI
             color,
             mask: item.Mask);
     }
-    public static void SetPagesIcon(this TilemapPack maps, Button item, int tileId, int zOrder = 1)
+    public static void SetPagesIcon(this Maps maps, Button item, int tileId, int zOrder = 1)
     {
         var color = GetInteractionColor(item, item.IsSelected ? Green : Gray.ToBright(0.2f));
         SetBackground(maps.Tilemaps[zOrder], item, 0.33f);
         maps.Tilemaps[zOrder + 1].SetTile(item.Position, new(tileId + int.Parse(item.Text), color),
             item.Mask);
     }
-    public static void SetList(this TilemapPack maps, List list, int zOrder = 0)
+    public static void SetList(this Maps maps, List list, int zOrder = 0)
     {
         Clear(maps, list, zOrder);
         maps.Tilemaps[zOrder].SetArea(
@@ -451,7 +476,7 @@ public static class MapperUI
                 new(MATH_GREATER, GetInteractionColor(list, Gray.ToBright()), 1),
                 list.Mask);
     }
-    public static void SetListItem(this TilemapPack maps, List list, Button item, int zOrder = 1, bool showSelected = true)
+    public static void SetListItem(this Maps maps, List list, Button item, int zOrder = 1, bool showSelected = true)
     {
         var color = item.IsSelected && showSelected ? Green : Gray.ToBright(0.3f);
         var (x, y) = item.Position;
@@ -470,7 +495,7 @@ public static class MapperUI
             GetInteractionColor(item, color),
             mask: item.Mask);
     }
-    public static void SetLayoutSegment(this TilemapPack maps, (int x, int y, int width, int height) segment, int index, bool showIndex, int zOrder = 0)
+    public static void SetLayoutSegment(this Maps maps, (int x, int y, int width, int height) segment, int index, bool showIndex, int zOrder = 0)
     {
         var color = new Color(
             (byte)(20, 200).Random(seed / (index + 1f)),
@@ -486,15 +511,15 @@ public static class MapperUI
                     alignment: Alignment.Center), mask: segment);
     }
 
-    public static Color GetInteractionColor(this Block block, Color baseColor)
+    public static Color GetInteractionColor(this Block block, Color baseColor, float amount = 0.5f)
     {
         var hotkeyIsPressed = block is Button btn &&
-                              ((Keyboard.Key)btn.Hotkey.id).IsPressed() &&
-                              Keyboard.KeysPressed.Length == 1;
+                              ((Key)btn.Hotkey.id).IsPressed() &&
+                              KeysPressed.Length == 1;
 
         if (block.IsDisabled || IsInteractable == false) return baseColor;
-        if (block.IsPressedAndHeld || hotkeyIsPressed) return baseColor.ToDark();
-        else if (block.IsHovered) return baseColor.ToBright();
+        if (block.IsPressedAndHeld || hotkeyIsPressed) return baseColor.ToDark(amount);
+        else if (block.IsHovered) return baseColor.ToBright(amount);
 
         return baseColor;
     }
@@ -502,9 +527,13 @@ public static class MapperUI
 #region Backend
     private static readonly int seed;
 
-    static MapperUI()
+    static MapperUserInterface()
     {
         seed = (-1_000_000, 1_000_000).Random();
+        ThemeButtonBox = (new(BOX_CORNER_ROUND, Gray), new(FULL, Gray), new(FULL, Gray), Gray.ToBright());
+        ThemeButtonBar = (new(BAR_BIG_EDGE, Gray), new(FULL, Gray), Gray.ToBright());
+        ThemeInputBox = (new(FULL, Gray.ToDark(0.4f)), new(SHAPE_LINE, White, 2), Gray.ToBright(), Blue);
+        ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
     }
 
     private static void SetBackground(Pure.Engine.Tilemap.Tilemap map, Block block, float shade = 0.5f)
@@ -515,7 +544,7 @@ public static class MapperUI
 
         map.SetBox(e.Area, tile, new(BOX_CORNER_ROUND, color), new(FULL, color), block.Mask);
     }
-    private static void Clear(TilemapPack maps, Block block, int zOrder)
+    private static void Clear(Maps maps, Block block, int zOrder)
     {
         var (x, y) = block.Position;
         var (w, h) = block.Size;

@@ -454,14 +454,12 @@ public class Tilemap
     /// </summary>
     /// <param name="cell">The cell of the top-left corner of the rectangular area 
     /// to create the bar.</param>
-    /// <param name="tileIdEdge">The identifier of the tile to use for the edges of the bar.</param>
-    /// <param name="tileId">The identifier of the tile to use for the 
-    /// straight part of the bar.</param>
-    /// <param name="tint">The color to tint the bar tiles.</param>
+    /// <param name="edge">The tile to use for the edges of the bar.</param>
+    /// <param name="fill">The tile to use for the straight part of the bar.</param>
     /// <param name="size">The length of the bar in tiles.</param>
     /// <param name="vertical">Whether the bar should be vertical or horizontal.</param>
     /// <param name="mask">An optional mask that skips any tile outside of it.</param>
-    public void SetBar((int x, int y) cell, int tileIdEdge, int tileId, uint tint = uint.MaxValue, int size = 5, bool vertical = false, Area? mask = null)
+    public void SetBar((int x, int y) cell, Tile edge, Tile fill, int size = 5, bool vertical = false, Area? mask = null)
     {
         var (x, y) = cell;
         var off = size == 1 ? 0 : 1;
@@ -470,24 +468,24 @@ public class Tilemap
         {
             if (size > 1)
             {
-                SetTile(cell, new(tileIdEdge, tint, 1), mask);
-                SetTile((x, y + size - 1), new(tileIdEdge, tint, 3), mask);
+                SetTile(cell, new(edge.Id, edge.Tint, 1), mask);
+                SetTile((x, y + size - 1), new(edge.Id, edge.Tint, 3), mask);
             }
 
             if (size != 2)
-                SetArea((x, y + off, 1, size - 2), mask, new Tile(tileId, tint, 1));
+                SetArea((x, y + off, 1, size - 2), mask, new Tile(fill.Id, fill.Tint, 1));
 
             return;
         }
 
         if (size > 1)
         {
-            SetTile(cell, new(tileIdEdge, tint), mask);
-            SetTile((x + size - 1, y), new(tileIdEdge, tint, 2), mask);
+            SetTile(cell, new(edge.Id, edge.Tint), mask);
+            SetTile((x + size - 1, y), new(edge.Id, edge.Tint, 2), mask);
         }
 
         if (size != 2)
-            SetArea((x + off, y, size - 2, 1), mask, new Tile(tileId, tint));
+            SetArea((x + off, y, size - 2, 1), mask, new Tile(fill.Id, fill.Tint));
     }
 
     public void SetAutoTiles(Area area, Area? mask = null)

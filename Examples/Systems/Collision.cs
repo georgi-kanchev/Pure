@@ -1,10 +1,11 @@
-namespace Pure.Examples.Systems;
+using Pure.Engine.Collision;
+using Pure.Engine.Tilemap;
+using Pure.Engine.Utilities;
+using Pure.Engine.Window;
+using static Pure.Engine.Utilities.Color;
+using Monitor = Pure.Engine.Window.Monitor;
 
-using Engine.Collision;
-using Engine.Tilemap;
-using Engine.Utilities;
-using Engine.Window;
-using static Engine.Utilities.Color;
+namespace Pure.Examples.Systems;
 
 public static class Collision
 {
