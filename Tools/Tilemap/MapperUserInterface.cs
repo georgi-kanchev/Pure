@@ -19,6 +19,7 @@ public static class MapperUserInterface
     public static (Tile yes, Tile no) ThemeCheckbox { get; set; }
     public static (Tile edge, Tile fill, Tile handle) ThemeSlider { get; set; }
     public static Tile ThemeScrollArrow { get; set; }
+    public static (Tile corner, Tile fill, Tile arrow, Tile min, Tile mid, Tile max, uint textTint, uint valueTint) ThemeStepper { get; set; }
 
     public static void SetCheckbox(this Maps maps, Button checkbox, int zOrder = 1)
     {
@@ -117,10 +118,10 @@ public static class MapperUserInterface
             maps.Tilemaps[zOrder + 1].SetText(box.Position, placeholder, placeholderTint, mask: box.Mask);
 
         if (scrollY > 0)
-            maps.Tilemaps[zOrder + 0].SetArea((box.X, box.Y, w, 1), null, textAboveOrBelow);
+            maps.Tilemaps[zOrder + 0].SetArea((box.X, box.Y, w, 1), box.Mask, textAboveOrBelow);
 
         if (scrollY < box.LineCount - box.Height)
-            maps.Tilemaps[zOrder + 0].SetArea((box.X, box.Y + h - 1, w, 1), null, textAboveOrBelow);
+            maps.Tilemaps[zOrder + 0].SetArea((box.X, box.Y + h - 1, w, 1), box.Mask, textAboveOrBelow);
 
         if (box.IsCursorVisible)
             maps.Tilemaps[zOrder + 2].SetTile(cursorPos, cursor, box.Mask);
@@ -286,47 +287,37 @@ public static class MapperUserInterface
     }
     public static void SetStepper(this Maps maps, Stepper stepper, int zOrder = 0)
     {
-        var s = stepper;
-        var (x, y) = s.Position;
-        var (w, h) = s.Size;
-        var text = MathF.Round(s.Step, 2).Precision() == 0 ? $"{s.Value}" : $"{s.Value:F2}";
-        var color = Gray;
-        var maxTextSize = Math.Min(w - 3, s.Text.Length);
+        if (maps.Tilemaps.Count <= zOrder + 1)
+            return;
 
-        Clear(maps, s, zOrder);
-        SetBackground(maps.Tilemaps[zOrder], stepper);
+        var (corner, fill, arrow, min, mid, max, textTint, valueTint) = ThemeStepper;
+        var (x, y) = stepper.Position;
+        var stepPrecision = MathF.Round(stepper.Step, 2).Precision();
+        var value = stepPrecision == 0 ? $"{stepper.Value}" : $"{stepper.Value:F2}";
+        var maxTextSize = Math.Min(stepper.Width - 1, stepper.Text.Length);
+        var upPos = stepper.Increase.Position;
+        var downPos = stepper.Decrease.Position;
+        var upTint = stepper.Increase.GetInteractionColor(arrow.Tint, 0.4f);
+        var downTint = stepper.Decrease.GetInteractionColor(arrow.Tint, 0.4f);
+        var text = stepper.Text.Shorten(maxTextSize);
+        var mask = stepper.Mask;
 
-        maps.Tilemaps[zOrder + 1].SetTile(
-            s.Decrease.Position,
-            new(ARROW_TAILLESS_ROUND, GetInteractionColor(s.Decrease, color), 1),
-            s.Mask);
-        maps.Tilemaps[zOrder + 1].SetTile(
-            s.Increase.Position,
-            new(ARROW_TAILLESS_ROUND, GetInteractionColor(s.Increase, color), 3),
-            s.Mask);
-        maps.Tilemaps[zOrder + 1].SetText(
-            (x + (int)MathF.Ceiling(w / 2f - maxTextSize / 2f), y),
-            s.Text.Shorten(maxTextSize),
-            Gray,
-            mask: s.Mask);
-        maps.Tilemaps[zOrder + 1].SetText(
-            (x + 2, y + 1),
-            text.Constrain((Math.Max(w - 5, text.Length), Math.Max(h - 2, 1)),
-                alignment: Alignment.Left),
-            mask: s.Mask);
+        value = value.Shorten(stepper.Width - 4);
+        fill.Tint = stepper.GetInteractionColor(fill.Tint, 0.05f);
+        corner.Tint = stepper.GetInteractionColor(corner.Tint, 0.05f);
+        min.Tint = stepper.Minimum.GetInteractionColor(min.Tint, 0.3f);
+        mid.Tint = stepper.Middle.GetInteractionColor(mid.Tint, 0.3f);
+        max.Tint = stepper.Maximum.GetInteractionColor(max.Tint, 0.3f);
 
-        maps.Tilemaps[zOrder + 1].SetTile(
-            s.Minimum.Position,
-            new(MATH_MUCH_LESS, GetInteractionColor(s.Minimum, color)),
-            s.Mask);
-        maps.Tilemaps[zOrder + 1].SetTile(
-            s.Middle.Position,
-            new(PUNCTUATION_PIPE, GetInteractionColor(s.Middle, color)),
-            s.Mask);
-        maps.Tilemaps[zOrder + 1].SetTile(
-            s.Maximum.Position,
-            new(MATH_MUCH_GREATER, GetInteractionColor(s.Maximum, color)),
-            s.Mask);
+        Clear(maps, stepper, zOrder);
+        maps.Tilemaps[zOrder].SetBox(stepper.Area, fill, corner, fill, mask);
+        maps.Tilemaps[zOrder + 1].SetTile(upPos, new(arrow.Id, upTint, 3), mask);
+        maps.Tilemaps[zOrder + 1].SetTile(downPos, new(arrow.Id, downTint, 1), mask);
+        maps.Tilemaps[zOrder + 1].SetText((x + 1, y), text, textTint, mask: mask);
+        maps.Tilemaps[zOrder + 1].SetText((x + 1, y + 1), value, valueTint, mask: mask);
+        maps.Tilemaps[zOrder + 1].SetTile(stepper.Minimum.Position, min, mask);
+        maps.Tilemaps[zOrder + 1].SetTile(stepper.Middle.Position, mid, mask);
+        maps.Tilemaps[zOrder + 1].SetTile(stepper.Maximum.Position, max, mask);
     }
     public static void SetPrompt(this Maps maps, Prompt prompt, int zOrder = 0)
     {
@@ -526,12 +517,20 @@ public static class MapperUserInterface
     {
         seed = (-1_000_000, 1_000_000).Random();
 
+        var arrow = new Tile(ARROW_TAILLESS_ROUND, Gray);
+
         ThemeButtonBox = (new(BOX_CORNER_ROUND, Gray), new(FULL, Gray), new(FULL, Gray), Gray.ToBright());
         ThemeButtonBar = (new(BAR_BIG_EDGE, Gray), new(FULL, Gray), Gray.ToBright());
         ThemeInputBox = (new(FULL, Gray.ToDark(0.4f)), new(SHAPE_LINE, White, 2), Gray.ToBright(), Blue);
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
         ThemeSlider = (new(BAR_BIG_EDGE, Gray), new(BAR_BIG_STRAIGHT, Gray), new(SHAPE_CIRCLE_BIG, Gray.ToBright()));
-        ThemeScrollArrow = new(ARROW_TAILLESS, Gray);
+        ThemeScrollArrow = arrow;
+
+        var dg = Gray.ToDark();
+        var min = new Tile(MATH_MUCH_LESS, Gray);
+        var mid = new Tile(PUNCTUATION_PIPE, Gray);
+        var max = new Tile(MATH_MUCH_GREATER, Gray);
+        ThemeStepper = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), arrow, min, mid, max, Gray, White);
     }
 
     private static void SetBackground(Pure.Engine.Tilemap.Tilemap map, Block block, float shade = 0.5f)

@@ -20,7 +20,7 @@
         <ProjectReference Include="..\..\Engine\UserInterface\Pure.Engine.UserInterface.csproj"/>
         <ProjectReference Include="..\..\Engine\Utilities\Pure.Engine.Utilities.csproj"/>
         <ProjectReference Include="..\..\Engine\Window\Pure.Engine.Window.csproj"/>
-        <ProjectReference Include="..\..\Tools\ImmediateGraphicalUserInterface\Pure.Tools.ImmediateGraphicalUserInterface.csproj"/>
+        <ProjectReference Include="..\..\Tools\UserInterface\UserInterface.csproj"/>
         <ProjectReference Include="..\..\Tools\Tilemap\Pure.Tools.Tilemap.csproj"/>
     </ItemGroup>
 

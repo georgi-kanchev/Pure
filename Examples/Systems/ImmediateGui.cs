@@ -2,7 +2,6 @@ using Pure.Engine.Utilities;
 using Pure.Engine.Window;
 using Pure.Tools.ImmediateGraphicalUserInterface;
 using Monitor = Pure.Engine.Window.Monitor;
-using ImGui = Pure.Tools.ImmediateGraphicalUserInterface.ImmediateGraphicalUserInterface;
 
 namespace Pure.Examples.Systems;
 
@@ -54,6 +53,10 @@ public static class ImmediateGui
             var scrollHer = ImGui.ShowScroll((0, 12), 11);
             if (float.IsNaN(scrollHer) == false)
                 log = $"horizontal scroll: {scrollHer:F1}";
+
+            var stepper = ImGui.ShowStepper((0, 14), "Stepper", 1f, 999f, -999f);
+            if (float.IsNaN(stepper) == false)
+                log = $"stepper: {stepper:F1}";
 
             ImGui.ShowText((0, 0), log.Constrain(layer.Size, false, Alignment.Bottom));
             layer.DrawImGui();

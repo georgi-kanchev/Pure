@@ -5,7 +5,7 @@ using Pure.Tools.Tilemap;
 
 namespace Pure.Tools.ImmediateGraphicalUserInterface;
 
-public static class ImmediateGraphicalUserInterface
+public static class ImGui
 {
     public static Tile Cursor { get; set; } = new(546, 3789677055);
 
@@ -58,6 +58,16 @@ public static class ImmediateGraphicalUserInterface
         maps.SetScroll(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Slider.Progress : float.NaN;
     }
+    public static float ShowStepper((int x, int y) position, string text, float step = 1f, float min = float.MinValue, float max = float.MaxValue)
+    {
+        var (w, h) = (text.Length + 1, 2);
+        var block = TryCache<Stepper>(text, (position.x, position.y, w, h));
+        block.Step = step;
+        block.Range = (min, max);
+        block.Update();
+        maps.SetStepper(block);
+        return block.IsJustInteracted(Interaction.Select) ? block.Value : float.NaN;
+    }
 
     public static void DrawImGui(this Layer layer)
     {
@@ -109,6 +119,8 @@ public static class ImmediateGraphicalUserInterface
                 imGuiCache[area] = (2, new Slider(vertical: area.Width == 1));
             else if (typeof(T) == typeof(Scroll))
                 imGuiCache[area] = (2, new Scroll(vertical: area.Width == 1));
+            else if (typeof(T) == typeof(Stepper))
+                imGuiCache[area] = (2, new Stepper { Text = text });
         }
 
         var cache = imGuiCache[area];

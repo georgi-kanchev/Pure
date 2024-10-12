@@ -18,7 +18,12 @@ public class Stepper : Block
         {
             value = Math.Clamp(value, Range.minimum, Range.maximum);
             value = MathF.Round(value, Math.Min(Precision(Step), 6));
+
+            var changed = Math.Abs(this.value - value) > 0.001f;
             this.value = value;
+
+            if (changed)
+                Interact(Interaction.Select);
         }
     }
     public (float minimum, float maximum) Range
