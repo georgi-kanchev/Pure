@@ -3,7 +3,6 @@
 namespace Pure.Engine.UserInterface;
 
 public enum Span { Vertical, Horizontal, Dropdown }
-
 public enum Sort { Alphabetically, Numerically, ByLength }
 
 /// <summary>
@@ -114,10 +113,10 @@ public class List : Block
         var items = CreateAmount(GrabInt(b));
         Items.AddRange(items);
 
-        for (var i = 0; i < Items.Count; i++)
+        foreach (var item in Items)
         {
-            Select(Items[i], GrabBool(b));
-            Items[i].text = GrabString(b);
+            Select(item, GrabBool(b));
+            item.text = GrabString(b);
         }
 
         Scroll.Slider.progress = scrollProgress;
@@ -135,21 +134,21 @@ public class List : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutByte(result, (byte)Span);
-        PutBool(result, IsSingleSelecting);
-        PutBool(result, IsReadOnly);
-        PutInt(result, ItemGap);
-        PutInt(result, ItemSize.width);
-        PutInt(result, ItemSize.height);
-        PutFloat(result, Scroll.Slider.Progress);
-        PutFloat(result, Scroll.Slider.index);
-        PutInt(result, Items.Count);
+        Put(result, (byte)Span);
+        Put(result, IsSingleSelecting);
+        Put(result, IsReadOnly);
+        Put(result, ItemGap);
+        Put(result, ItemSize.width);
+        Put(result, ItemSize.height);
+        Put(result, Scroll.Slider.Progress);
+        Put(result, (float)Scroll.Slider.index);
+        Put(result, Items.Count);
 
-        for (var i = 0; i < Items.Count; i++)
+        foreach (var item in Items)
         {
-            PutBool(result, Items[i].IsSelected);
-            PutBool(result, Items[i].IsDisabled);
-            PutString(result, Items[i].Text);
+            Put(result, item.IsSelected);
+            Put(result, item.IsDisabled);
+            Put(result, item.Text);
         }
 
         return Compress(result.ToArray());
@@ -254,7 +253,7 @@ public class List : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private int originalHeight;
     private bool isSingleSelecting, isCollapsed, veryFirstUpdate = true;
     private readonly bool isInitialized;
@@ -509,5 +508,5 @@ public class List : Block
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-#endregion
+    #endregion
 }

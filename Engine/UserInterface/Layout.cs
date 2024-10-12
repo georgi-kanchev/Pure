@@ -55,14 +55,14 @@ public class Layout : Block
     public override byte[] ToBytes()
     {
         var bytes = Decompress(base.ToBytes()).ToList();
-        PutByte(bytes, (byte)segments.Count);
+        Put(bytes, (byte)segments.Count);
 
         foreach (var seg in segments)
         {
             var parentIndex = seg.parent == null ? -1 : segments.IndexOf(seg.parent);
-            PutFloat(bytes, seg.rate);
-            PutByte(bytes, (byte)seg.side);
-            PutInt(bytes, parentIndex);
+            Put(bytes, seg.rate);
+            Put(bytes, (byte)seg.side);
+            Put(bytes, parentIndex);
         }
 
         return Compress(bytes.ToArray());
@@ -106,7 +106,7 @@ public class Layout : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private class Segment
     {
         public readonly float rate;
@@ -209,5 +209,5 @@ public class Layout : Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-#endregion
+    #endregion
 }

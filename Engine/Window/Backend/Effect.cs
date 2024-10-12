@@ -11,6 +11,9 @@ internal class Effect
 
             try
             {
+                if (Shader.IsAvailable == false)
+                    return shader;
+
                 shader = Shader.FromString(Vertex, null, Fragment);
             }
             catch (Exception)
@@ -45,7 +48,7 @@ void main(void)
 }";
     }
 
-#region Backend
+    #region Backend
     private Shader? shader;
-#endregion
+    #endregion
 }

@@ -90,10 +90,10 @@ public class Pages : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutByte(result, (byte)ItemWidth);
-        PutByte(result, (byte)ItemGap);
-        PutInt(result, Count);
-        PutInt(result, Current);
+        Put(result, (byte)ItemWidth);
+        Put(result, (byte)ItemGap);
+        Put(result, Count);
+        Put(result, Current);
         return Compress(result.ToArray());
     }
 
@@ -130,7 +130,7 @@ public class Pages : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private (int, int) prevSize;
     private int count, current = 1, scrollIndex = 1;
     private readonly List<Button> visiblePages = [];
@@ -320,5 +320,5 @@ public class Pages : Block
 
         return result;
     }
-#endregion
+    #endregion
 }

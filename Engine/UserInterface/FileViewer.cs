@@ -2,6 +2,7 @@ namespace Pure.Engine.UserInterface;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+
 using static Environment;
 
 public class FileViewer : Block
@@ -101,8 +102,8 @@ public class FileViewer : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutBool(result, IsSelectingFolders);
-        PutString(result, FileFilter ?? string.Empty);
+        Put(result, IsSelectingFolders);
+        Put(result, FileFilter ?? string.Empty);
         return Compress(result.ToArray());
     }
 
@@ -143,7 +144,7 @@ public class FileViewer : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private string dir = "default";
     private FileSystemWatcher watcher;
     private static string DefaultPath
@@ -362,5 +363,5 @@ public class FileViewer : Block
 
         return result;
     }
-#endregion
+    #endregion
 }

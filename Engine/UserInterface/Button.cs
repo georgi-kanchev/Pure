@@ -49,9 +49,9 @@ public class Button : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutBool(result, IsSelected);
-        PutInt(result, Hotkey.id);
-        PutBool(result, Hotkey.holdable);
+        Put(result, IsSelected);
+        Put(result, Hotkey.id);
+        Put(result, Hotkey.holdable);
         return Compress(result.ToArray());
     }
 
@@ -69,7 +69,7 @@ public class Button : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     internal bool isSelected;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
 
@@ -115,5 +115,5 @@ public class Button : Block
         if (Input.IsKeyPressed((Key)Hotkey.id) && isJustHeld)
             Interact(Interaction.Trigger);
     }
-#endregion
+    #endregion
 }

@@ -266,11 +266,11 @@ public class InputBox : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutBool(result, IsReadOnly);
-        PutString(result, Placeholder);
-        PutString(result, Value);
-        PutByte(result, (byte)SymbolGroup);
-        PutInt(result, MaximumSymbolCount);
+        Put(result, IsReadOnly);
+        Put(result, Placeholder);
+        Put(result, Value);
+        Put(result, (byte)SymbolGroup);
+        Put(result, MaximumSymbolCount);
         return Compress(result.ToArray());
     }
 
@@ -327,7 +327,7 @@ public class InputBox : Block
 
         cy += delta.y;
 
-        // trying to keep the cx the when moving up & down
+        // trying to keep the cx when moving up & down
         if (delta.x == 0 && delta.y != 0)
             cx = cxDesired;
 
@@ -421,7 +421,7 @@ public class InputBox : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private readonly List<string> lines = [string.Empty];
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
 
@@ -1126,5 +1126,5 @@ public class InputBox : Block
 
         return result.ToString();
     }
-#endregion
+    #endregion
 }

@@ -249,23 +249,23 @@ public abstract class Block
     {
         var result = new List<byte>();
 
-        PutString(result, typeName);
-        PutInt(result, Position.x);
-        PutInt(result, Position.y);
-        PutInt(result, SizeMinimum.width);
-        PutInt(result, SizeMinimum.height);
-        PutInt(result, SizeMaximum.width);
-        PutInt(result, SizeMaximum.height);
-        PutInt(result, Size.width);
-        PutInt(result, Size.height);
-        PutInt(result, Mask.x);
-        PutInt(result, Mask.y);
-        PutInt(result, Mask.width);
-        PutInt(result, Mask.height);
-        PutString(result, Text);
-        PutBool(result, IsHidden);
-        PutBool(result, IsDisabled);
-        PutBool(result, hasParent);
+        Put(result, typeName);
+        Put(result, Position.x);
+        Put(result, Position.y);
+        Put(result, SizeMinimum.width);
+        Put(result, SizeMinimum.height);
+        Put(result, SizeMaximum.width);
+        Put(result, SizeMaximum.height);
+        Put(result, Size.width);
+        Put(result, Size.height);
+        Put(result, Mask.x);
+        Put(result, Mask.y);
+        Put(result, Mask.width);
+        Put(result, Mask.height);
+        Put(result, Text);
+        Put(result, IsHidden);
+        Put(result, IsDisabled);
+        Put(result, hasParent);
 
         return Compress(result.ToArray());
     }
@@ -414,19 +414,13 @@ public abstract class Block
                point.y >= Position.y &&
                point.y < Position.y + Size.height;
     }
-    /// <summary>
-    /// Checks if the block is overlapping with another block.
-    /// </summary>
-    /// <param name="block">The block to check for overlap.</param>
-    /// <returns>True if the block is overlapping with the specified block, false otherwise.</returns>
-    public bool IsOverlapping(Block block)
+    public bool IsOverlapping((int x, int y, int width, int height) area)
     {
         var (x, y) = Position;
         var (w, h) = Size;
-        var (ex, ey) = block.Position;
-        var (ew, eh) = block.Size;
+        var (rx, ry, rw, rh) = area;
 
-        return (x + w <= ex || x >= ex + ew || y + h <= ey || y >= ey + eh) == false;
+        return (x + w <= rx || x >= rx + rw || y + h <= ry || y >= ry + rh) == false;
     }
 
     public bool IsJustInteracted(Interaction interaction)
@@ -441,7 +435,6 @@ public abstract class Block
         var rh = rectangle?.height ?? Input.TilemapSize.height;
         var (x, y) = Position;
         var (w, h) = Size;
-        var (rxw, ryh) = (rx + rw, ry + rh);
         var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
         var (cx, cy) = (x + w / 2, y + h / 2);
         var ex = exceedEdge;
@@ -451,29 +444,29 @@ public abstract class Block
         offset -= 1;
 
         if (notNan && edge is Side.Top or Side.Bottom && targetEdge is Side.Top or Side.Bottom)
-            x = (int)MathF.Round(Map(a, (0, 1), ex ? (rx - w - offset, rxw + offset) : (rx, rxw - w)));
+            x = (int)MathF.Round(Map(a, (0, 1), ex ? (rx - w - offset, rx + rw + offset) : (rx, rx + rw - w)));
         else if (notNan && edge is Side.Left or Side.Right && targetEdge is Side.Left or Side.Right)
-            y = (int)MathF.Round(Map(a, (0, 1), ex ? (ry - h - offset, ryh + offset) : (ry, ryh - h)));
+            y = (int)MathF.Round(Map(a, (0, 1), ex ? (ry - h - offset, ry + rh + offset) : (ry, ry + rh - h)));
 
         if (edge == Side.Left && targetEdge is Side.Left or Side.Right)
-            x = targetEdge == Side.Left ? rx : rxw + offset;
+            x = targetEdge == Side.Left ? rx : rx + rw + offset;
         else if (edge == Side.Left)
-            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx, rxw + offset)));
+            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx, rx + rw + offset)));
 
         if (edge == Side.Right && targetEdge is Side.Left or Side.Right)
-            x = targetEdge == Side.Left ? rxw : rxw - w;
+            x = targetEdge == Side.Left ? rx - w - offset : rx + rw + offset;
         else if (edge == Side.Right)
-            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx - w - offset, rxw - w)));
+            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx - w - offset, rx + rw - w)));
 
         if (edge == Side.Top && targetEdge is Side.Left or Side.Right)
-            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry, ryh + offset)));
+            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry, ry + rh + offset)));
         else if (edge == Side.Top)
-            y = targetEdge == Side.Top ? ry : ryh + offset;
+            y = targetEdge == Side.Top ? ry : ry + rh + offset;
 
         if (edge == Side.Bottom && targetEdge is Side.Left or Side.Right)
-            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry - h - offset, ryh - h)));
+            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry - h - offset, ry + rh - h)));
         else if (edge == Side.Bottom)
-            y = targetEdge == Side.Top ? ryh : ryh - h;
+            y = targetEdge == Side.Top ? ry - h - offset : ry + rh - h + offset;
 
         Position = (x, y);
     }
@@ -582,7 +575,7 @@ public abstract class Block
     /// </summary>
     /// <param name="intoBytes">The byte list to add the boolean value to.</param>
     /// <param name="value">The boolean value to add to the byte list.</param>
-    protected static void PutBool(List<byte> intoBytes, bool value)
+    protected static void Put(List<byte> intoBytes, bool value)
     {
         intoBytes.AddRange(BitConverter.GetBytes(value));
     }
@@ -591,7 +584,7 @@ public abstract class Block
     /// </summary>
     /// <param name="intoBytes">The byte list to add the byte value to.</param>
     /// <param name="value">The byte value to add to the byte list.</param>
-    protected static void PutByte(List<byte> intoBytes, byte value)
+    protected static void Put(List<byte> intoBytes, byte value)
     {
         intoBytes.Add(value);
     }
@@ -600,7 +593,7 @@ public abstract class Block
     /// </summary>
     /// <param name="intoBytes">The byte list to add the integer value to.</param>
     /// <param name="value">The integer value to add to the byte list.</param>
-    protected static void PutInt(List<byte> intoBytes, int value)
+    protected static void Put(List<byte> intoBytes, int value)
     {
         intoBytes.AddRange(BitConverter.GetBytes(value));
     }
@@ -609,7 +602,7 @@ public abstract class Block
     /// </summary>
     /// <param name="intoBytes">The byte list to add the unsigned integer value to.</param>
     /// <param name="value">The unsigned integer value to add to the byte list.</param>
-    protected static void PutUInt(List<byte> intoBytes, uint value)
+    protected static void Put(List<byte> intoBytes, uint value)
     {
         intoBytes.AddRange(BitConverter.GetBytes(value));
     }
@@ -618,7 +611,7 @@ public abstract class Block
     /// </summary>
     /// <param name="intoBytes">The byte list to add the float value to.</param>
     /// <param name="value">The float value to add to the byte list.</param>
-    protected static void PutFloat(List<byte> intoBytes, float value)
+    protected static void Put(List<byte> intoBytes, float value)
     {
         intoBytes.AddRange(BitConverter.GetBytes(value));
     }
@@ -627,10 +620,10 @@ public abstract class Block
     /// </summary>
     /// <param name="intoBytes">The byte list to add the string value to.</param>
     /// <param name="value">The string value to add to the byte list.</param>
-    protected static void PutString(List<byte> intoBytes, string value)
+    protected static void Put(List<byte> intoBytes, string value)
     {
         var bytes = Encoding.UTF8.GetBytes(value);
-        PutInt(intoBytes, bytes.Length);
+        Put(intoBytes, bytes.Length);
         intoBytes.AddRange(bytes);
     }
 
@@ -710,7 +703,7 @@ public abstract class Block
         return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
     }
 
-#region Backend
+    #region Backend
     internal (int, int) position,
         size,
         listSizeTrimOffset,
@@ -799,9 +792,7 @@ public abstract class Block
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -810,9 +801,7 @@ public abstract class Block
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -828,5 +817,5 @@ public abstract class Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-#endregion
+    #endregion
 }

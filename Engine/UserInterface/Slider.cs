@@ -64,9 +64,9 @@ public class Slider : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutBool(result, IsVertical);
-        PutFloat(result, Progress);
-        PutInt(result, index);
+        Put(result, IsVertical);
+        Put(result, Progress);
+        Put(result, index);
         return Compress(result.ToArray());
     }
 
@@ -116,7 +116,7 @@ public class Slider : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     internal float progress;
     internal int index;
     internal bool isVertical;
@@ -177,5 +177,5 @@ public class Slider : Block
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-#endregion
+    #endregion
 }

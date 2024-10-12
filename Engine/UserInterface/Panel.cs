@@ -47,9 +47,9 @@ public class Panel : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutBool(result, IsResizable);
-        PutBool(result, IsMovable);
-        PutBool(result, IsRestricted);
+        Put(result, IsResizable);
+        Put(result, IsMovable);
+        Put(result, IsRestricted);
         return Compress(result.ToArray());
     }
 
@@ -72,7 +72,7 @@ public class Panel : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private bool isMoving, isResizingL, isResizingR, isResizingU, isResizingD;
     private (int x, int y) startBotR;
 
@@ -270,5 +270,5 @@ public class Panel : Block
         var u = rangeB >= number;
         return l && u;
     }
-#endregion
+    #endregion
 }

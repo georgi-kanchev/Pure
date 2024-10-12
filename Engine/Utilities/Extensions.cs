@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
+
 using static Alignment;
 
 /// <summary>
@@ -632,9 +633,7 @@ public static class Extensions
             using var compressedStream = new MemoryStream();
             using (var compressorStream =
                    new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
-            {
                 uncompressedStream.CopyTo(compressorStream);
-            }
 
             compressedBytes = compressedStream.ToArray();
         }
@@ -730,7 +729,7 @@ public static class Extensions
         symbolProgress = Math.Clamp(symbolProgress, 0, 1);
         return text.Remove((int)(text.Length * symbolProgress));
     }
-    public static string PadLeftAndRight(string text, int length)
+    public static string PadLeftAndRight(this string text, int length)
     {
         var spaces = length - text.Length;
         var padLeft = spaces / 2 + text.Length;
@@ -743,8 +742,8 @@ public static class Extensions
 
         var result = text;
 
-        var colorTags = GetColorTags(result);
-        result = RemoveColorTags(result);
+        var colorTags = GetColorTags(result, tintBrush);
+        result = RemoveColorTags(result, tintBrush);
         result = result.Remove((int)(result.Length * Math.Clamp(symbolProgress, 0, 1)));
         result = ApplyColorTags(result, colorTags);
 
@@ -766,7 +765,7 @@ public static class Extensions
         if (start != 0) // there is scrolling which might have cropped the last tag, so find it
             for (var i = start; i >= 0; i--)
             {
-                var colors = GetColorTags(lineList[i]);
+                var colors = GetColorTags(lineList[i], tintBrush);
                 if (colors.Count > 0)
                     lastHiddenTag = colors[^1].tag;
             }
@@ -782,8 +781,8 @@ public static class Extensions
 
         string TryAlignHorizontally(string line)
         {
-            var tags = GetColorTags(line);
-            line = RemoveColorTags(line);
+            var tags = GetColorTags(line, tintBrush);
+            line = RemoveColorTags(line, tintBrush);
             if (alignment is TopRight or Right or BottomRight)
                 line = line.PadLeft(size.width);
             else if (alignment is Top or Center or Bottom)
@@ -809,8 +808,8 @@ public static class Extensions
             for (var i = 0; i < lineList.Count; i++)
             {
                 var line = lineList[i];
-                var colors = GetColorTags(line);
-                line = RemoveColorTags(line);
+                var colors = GetColorTags(line, tintBrush);
+                line = RemoveColorTags(line, tintBrush);
 
                 if (line.Length <= size.width) // line is valid length
                     continue;
@@ -856,65 +855,8 @@ public static class Extensions
                 return default;
             }
         }
-
-        List<(int index, string tag)> GetColorTags(string input)
-        {
-            input = input.Replace(" ", string.Empty);
-            input = input.Replace(Environment.NewLine, string.Empty);
-            var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
-            var output = new List<(int index, string tag)>();
-
-            var offset = 0;
-            foreach (Match match in matches)
-            {
-                output.Add((match.Index - offset, $"{tintBrush}{match.Groups[1].Value}{tintBrush}"));
-                offset += match.Length;
-            }
-
-            return output;
-        }
-
-        string RemoveColorTags(string input)
-        {
-            var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
-            var offset = 0;
-            var builder = new StringBuilder(input);
-            foreach (Match match in matches)
-            {
-                builder.Remove(match.Index - offset, match.Length);
-                offset += match.Length;
-            }
-
-            return builder.ToString();
-        }
-
-        string ApplyColorTags(string input, List<(int index, string tag)> storedTags)
-        {
-            var realIndex = 0;
-            var builder = new StringBuilder(input);
-            for (var i = 0; i < builder.Length; i++)
-            {
-                if (char.IsWhiteSpace(builder[i]))
-                    continue;
-
-                // multiple tags on the same index?
-                while (storedTags.Count > 0 && storedTags[0].index == realIndex)
-                {
-                    builder.Insert(i, storedTags[0].tag);
-                    i += storedTags[0].tag.Length;
-                    storedTags.RemoveAt(0);
-                }
-
-                if (storedTags.Count == 0)
-                    return builder.ToString();
-
-                realIndex++;
-            }
-
-            return builder.ToString();
-        }
     }
-    public static string Shorten(this string text, int maxLength, string indicator = "…")
+    public static string Shorten(this string text, int maxLength, string indicator = "…", char tintBrush = '#')
     {
         if (maxLength == 0)
             return string.Empty;
@@ -1376,7 +1318,7 @@ public static class Extensions
         return (index % size.width, index / size.width);
     }
 
-#region Backend
+    #region Backend
     private class Gate
     {
         public int entries;
@@ -1392,5 +1334,62 @@ public static class Extensions
         holdFrequency.Start();
         holdDelay.Start();
     }
-#endregion
+
+    private static List<(int index, string tag)> GetColorTags(string input, char tintBrush)
+    {
+        input = input.Replace(" ", string.Empty);
+        input = input.Replace(Environment.NewLine, string.Empty);
+        var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
+        var output = new List<(int index, string tag)>();
+
+        var offset = 0;
+        foreach (Match match in matches)
+        {
+            output.Add((match.Index - offset, $"{tintBrush}{match.Groups[1].Value}{tintBrush}"));
+            offset += match.Length;
+        }
+
+        return output;
+    }
+
+    private static string RemoveColorTags(string input, char tintBrush)
+    {
+        var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
+        var offset = 0;
+        var builder = new StringBuilder(input);
+        foreach (Match match in matches)
+        {
+            builder.Remove(match.Index - offset, match.Length);
+            offset += match.Length;
+        }
+
+        return builder.ToString();
+    }
+
+    private static string ApplyColorTags(string input, List<(int index, string tag)> storedTags)
+    {
+        var realIndex = 0;
+        var builder = new StringBuilder(input);
+        for (var i = 0; i < builder.Length; i++)
+        {
+            if (char.IsWhiteSpace(builder[i]))
+                continue;
+
+            // multiple tags on the same index?
+            while (storedTags.Count > 0 && storedTags[0].index == realIndex)
+            {
+                builder.Insert(i, storedTags[0].tag);
+                i += storedTags[0].tag.Length;
+                storedTags.RemoveAt(0);
+            }
+
+            if (storedTags.Count == 0)
+                return builder.ToString();
+
+            realIndex++;
+        }
+
+        return builder.ToString();
+    }
+    #endregion
 }

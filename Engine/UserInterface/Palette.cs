@@ -52,11 +52,11 @@ public class Palette : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutUInt(result, SelectedColor);
-        PutFloat(result, Opacity.Progress);
-        PutInt(result, Opacity.index);
-        PutFloat(result, Brightness.Progress);
-        PutInt(result, Brightness.index);
+        Put(result, SelectedColor);
+        Put(result, Opacity.Progress);
+        Put(result, Opacity.index);
+        Put(result, Brightness.Progress);
+        Put(result, Brightness.index);
         return Compress(result.ToArray());
     }
 
@@ -97,7 +97,7 @@ public class Palette : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private readonly List<Button> colorButtons = [];
     private readonly uint[] palette =
     [
@@ -254,5 +254,5 @@ public class Palette : Block
 
         return result;
     }
-#endregion
+    #endregion
 }

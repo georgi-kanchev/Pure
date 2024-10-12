@@ -2,9 +2,12 @@
 using Pure.Engine.Tilemap;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utilities;
+
 using static Pure.Engine.Tilemap.Tile;
 using static Pure.Engine.Utilities.Color;
+
 using Maps = Pure.Engine.Tilemap.TilemapPack;
+
 using static Pure.Engine.Window.Keyboard;
 
 namespace Pure.Tools.Tilemap;
@@ -20,7 +23,20 @@ public static class MapperUserInterface
     public static (Tile edge, Tile fill, Tile handle) ThemeSlider { get; set; }
     public static Tile ThemeScrollArrow { get; set; }
     public static (Tile corner, Tile fill, Tile arrow, Tile min, Tile mid, Tile max, uint textTint, uint valueTint) ThemeStepper { get; set; }
+    public static (Tile corner, Tile edge, Tile fill, uint textTint) ThemeTooltip { get; set; }
 
+    public static void SetTooltip(this Maps maps, Tooltip tooltip, int zOrder = 1)
+    {
+        if (maps.Tilemaps.Count <= zOrder + 1)
+            return;
+
+        var (corner, edge, fill, textTint) = ThemeTooltip;
+        var (x, y) = tooltip.Position;
+
+        Clear(maps, tooltip, zOrder);
+        maps.Tilemaps[zOrder].SetBox(tooltip.Area, fill, corner, edge, tooltip.Mask);
+        maps.Tilemaps[zOrder + 1].SetText((x + 1, y), tooltip.Text, textTint, mask: tooltip.Mask);
+    }
     public static void SetCheckbox(this Maps maps, Button checkbox, int zOrder = 1)
     {
         if (maps.Tilemaps.Count <= zOrder)
@@ -505,12 +521,12 @@ public static class MapperUserInterface
 
         if (block.IsDisabled || IsInteractable == false) return baseColor;
         if (block.IsPressedAndHeld || hotkeyIsPressed) return baseColor.ToDark(amount);
-        else if (block.IsHovered) return baseColor.ToBright(amount);
+        if (block.IsHovered) return baseColor.ToBright(amount);
 
         return baseColor;
     }
 
-#region Backend
+    #region Backend
     private static readonly int seed;
 
     static MapperUserInterface()
@@ -518,15 +534,15 @@ public static class MapperUserInterface
         seed = (-1_000_000, 1_000_000).Random();
 
         var arrow = new Tile(ARROW_TAILLESS_ROUND, Gray);
-
+        var dg = Gray.ToDark();
         ThemeButtonBox = (new(BOX_CORNER_ROUND, Gray), new(FULL, Gray), new(FULL, Gray), Gray.ToBright());
         ThemeButtonBar = (new(BAR_BIG_EDGE, Gray), new(FULL, Gray), Gray.ToBright());
         ThemeInputBox = (new(FULL, Gray.ToDark(0.4f)), new(SHAPE_LINE, White, 2), Gray.ToBright(), Blue);
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
         ThemeSlider = (new(BAR_BIG_EDGE, Gray), new(BAR_BIG_STRAIGHT, Gray), new(SHAPE_CIRCLE_BIG, Gray.ToBright()));
+        ThemeTooltip = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), textTint: White);
         ThemeScrollArrow = arrow;
 
-        var dg = Gray.ToDark();
         var min = new Tile(MATH_MUCH_LESS, Gray);
         var mid = new Tile(PUNCTUATION_PIPE, Gray);
         var max = new Tile(MATH_MUCH_GREATER, Gray);
@@ -550,5 +566,5 @@ public static class MapperUserInterface
             if (i < maps.Tilemaps.Count)
                 maps.Tilemaps[i].SetArea((x, y, w, h), block.Mask, EMPTY);
     }
-#endregion
+    #endregion
 }

@@ -59,10 +59,10 @@ public class Scroll : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutBool(result, IsVertical);
-        PutFloat(result, Step);
-        PutFloat(result, Slider.Progress);
-        PutInt(result, Slider.index);
+        Put(result, IsVertical);
+        Put(result, Step);
+        Put(result, Slider.Progress);
+        Put(result, Slider.index);
         return Compress(result.ToArray());
     }
 
@@ -80,7 +80,7 @@ public class Scroll : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     internal bool isVertical;
     internal float step = 0.1f;
 
@@ -161,5 +161,5 @@ public class Scroll : Block
         Increase.Update();
         Decrease.Update();
     }
-#endregion
+    #endregion
 }

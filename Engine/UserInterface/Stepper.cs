@@ -70,10 +70,10 @@ public class Stepper : Block
     public override byte[] ToBytes()
     {
         var result = Decompress(base.ToBytes()).ToList();
-        PutFloat(result, Range.minimum);
-        PutFloat(result, Range.maximum);
-        PutFloat(result, Step);
-        PutFloat(result, Value);
+        Put(result, Range.minimum);
+        Put(result, Range.maximum);
+        Put(result, Step);
+        Put(result, Value);
         return Compress(result.ToArray());
     }
 
@@ -91,7 +91,7 @@ public class Stepper : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private float value;
     private (float min, float max) range = (float.NegativeInfinity, float.PositiveInfinity);
 
@@ -192,5 +192,5 @@ public class Stepper : Block
         var split = number.ToString(CultureInfo.CurrentCulture).Split(cultDecPoint);
         return split.Length > 1 ? split[1].Length : 0;
     }
-#endregion
+    #endregion
 }

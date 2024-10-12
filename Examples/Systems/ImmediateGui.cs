@@ -1,6 +1,8 @@
+using Pure.Engine.UserInterface;
 using Pure.Engine.Utilities;
 using Pure.Engine.Window;
 using Pure.Tools.ImmediateGraphicalUserInterface;
+
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -16,6 +18,10 @@ public static class ImmediateGui
 
         var percent = "0%";
         var log = "";
+        const int TARGET_TOOLTIP_WIDTH = 16;
+
+        ImGui.Tooltip = (Side.Left, 0.5f);
+
         while (Window.KeepOpen())
         {
             var checkbox = ImGui.ShowCheckbox((0, 5), "Checkbox");
@@ -46,7 +52,12 @@ public static class ImmediateGui
             if (float.IsNaN(sliderVer) == false)
                 log = $"vertical slider: {sliderVer:F1}";
 
-            var scrollVer = ImGui.ShowScroll((16, 1), 9, true);
+            var scrollVer = ImGui.ShowScroll((20, 1), 9, true,
+                "This is an".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "example tooltip!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "Oh my!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "Keeps going!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "A very long one!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH));
             if (float.IsNaN(scrollVer) == false)
                 log = $"vertical scroll: {scrollVer:F1}";
 
@@ -54,7 +65,12 @@ public static class ImmediateGui
             if (float.IsNaN(scrollHer) == false)
                 log = $"horizontal scroll: {scrollHer:F1}";
 
-            var stepper = ImGui.ShowStepper((0, 14), "Stepper", 1f, 999f, -999f);
+            var stepper = ImGui.ShowStepper((15, 14), "Stepper", 1f, 999f, -999f,
+                "This is an".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "example tooltip!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "Oh my!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "Keeps going!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "A very long one!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH));
             if (float.IsNaN(stepper) == false)
                 log = $"stepper: {stepper:F1}";
 
