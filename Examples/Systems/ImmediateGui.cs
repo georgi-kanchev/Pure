@@ -2,7 +2,6 @@ using Pure.Engine.UserInterface;
 using Pure.Engine.Utilities;
 using Pure.Engine.Window;
 using Pure.Tools.ImmediateGraphicalUserInterface;
-
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -34,7 +33,7 @@ public static class ImmediateGui
                 log = "button: clicked";
 
             var input = ImGui.ShowInputBox((0, 10, 10, 1), "Inputbox");
-            if (input != "")
+            if (input != null)
                 log = $"inputbox: {input}";
 
             if (ImGui.ShowButton((0, 2), "Button2"))
@@ -53,10 +52,14 @@ public static class ImmediateGui
                 log = $"vertical slider: {sliderVer:F1}";
 
             var scrollVer = ImGui.ShowScroll((20, 1), 9, true,
-                "This is an".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
-                "example tooltip!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
-                "Oh my!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
-                "Keeps going!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "This is an".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) +
+                "\n" +
+                "example tooltip!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) +
+                "\n" +
+                "Oh my!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) +
+                "\n" +
+                "Keeps going!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) +
+                "\n" +
                 "A very long one!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH));
             if (float.IsNaN(scrollVer) == false)
                 log = $"vertical scroll: {scrollVer:F1}";
@@ -65,14 +68,32 @@ public static class ImmediateGui
             if (float.IsNaN(scrollHer) == false)
                 log = $"horizontal scroll: {scrollHer:F1}";
 
+            var pages = ImGui.ShowPages((25, 14));
+            if (float.IsNaN(pages) == false)
+                log = $"pages: {pages:F1}";
+
             var stepper = ImGui.ShowStepper((15, 14), "Stepper", 1f, 999f, -999f,
-                "This is an".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
-                "example tooltip!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
-                "Oh my!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
-                "Keeps going!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) + "\n" +
+                "This is an".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) +
+                "\n" +
+                "example tooltip!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) +
+                "\n" +
+                "Oh my!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) +
+                "\n" +
+                "Keeps going!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH) +
+                "\n" +
                 "A very long one!".PadLeftAndRight(TARGET_TOOLTIP_WIDTH));
             if (float.IsNaN(stepper) == false)
                 log = $"stepper: {stepper:F1}";
+
+            var animals = new[] { "Dog", "Cat", "Rabbit", "Fox", "Bear" };
+            var dropdown = ImGui.ShowList((0, 18, 6, 5), animals, true);
+            if (dropdown != null)
+                log = $"dropdown list: {dropdown.ToString(", ")}";
+
+            var items = new[] { "Stick", "Rock", "Leaf", "Bush", "Flower" };
+            var list = ImGui.ShowList((10, 18, 6, 5), items);
+            if (list != null)
+                log = $"regular list: {list.ToString(", ")}";
 
             ImGui.ShowText((0, 0), log.Constrain(layer.Size, false, Alignment.Bottom));
             layer.DrawImGui();

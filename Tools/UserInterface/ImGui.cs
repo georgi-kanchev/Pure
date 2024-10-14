@@ -31,14 +31,14 @@ public static class ImGui
         maps.SetCheckbox(block);
         return block.IsSelected;
     }
-    public static string ShowInputBox(Area area, string placeholder = "Type…", string tooltip = "")
+    public static string? ShowInputBox(Area area, string placeholder = "Type…", string tooltip = "")
     {
         var block = TryCache<InputBox>("", area, tooltip);
         block.Placeholder = placeholder;
         maps.SetInputBox(block);
 
         if (block.Height == 1)
-            return block.IsJustInteracted(Interaction.Select) ? block.Value : "";
+            return block.IsJustInteracted(Interaction.Select) ? block.Value : null;
 
         return block.Value;
     }
@@ -64,6 +64,43 @@ public static class ImGui
         block.Range = (min, max);
         maps.SetStepper(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Value : float.NaN;
+    }
+    public static float ShowPages((int x, int y) position, int size = 12, int totalCount = 10, int itemWidth = 2, string tooltip = "")
+    {
+        var (w, h) = (size, 1);
+        var block = TryCache<Pages>("", (position.x, position.y, w, h), tooltip);
+        block.Count = totalCount;
+        block.ItemWidth = itemWidth;
+        return block.IsJustInteracted(Interaction.Select) ? block.Current : float.NaN;
+    }
+    public static string[]? ShowList(Area area, string[]? items, bool dropdown = false, bool multiselect = true, string tooltip = "")
+    {
+        if (items == null || items.Length == 0)
+            return null;
+
+        var block = TryCache<List>("", area, tooltip, dropdown ? Span.Dropdown : Span.Vertical);
+        var selected = new List<string>();
+
+        if (items.Length != block.Items.Count)
+        {
+            block.Items.Clear();
+            for (var i = 0; i < items.Length; i++)
+                block.Items.Add(new());
+        }
+
+        block.Edit(items);
+
+        block.IsSingleSelecting = multiselect == false;
+        block.ItemSize = (area.Width, 1);
+        block.ItemGap = 0;
+
+        if (block.IsJustInteracted(Interaction.Select) == false)
+            return null;
+
+        foreach (var item in block.SelectedItems)
+            selected.Add(item.Text);
+
+        return selected.ToArray();
     }
 
     public static void DrawImGui(this Layer layer)
@@ -100,11 +137,11 @@ public static class ImGui
         maps.Flush();
     }
 
-    #region Backend
+#region Backend
     private static TilemapPack maps = new(0, (0, 0));
     private static readonly Dictionary<Area, (int framesLeft, Block block)> imGuiCache = [];
 
-    private static T TryCache<T>(string text, Area area, string tooltip) where T : Block
+    private static T TryCache<T>(string text, Area area, string tooltip, Span span = Span.Vertical) where T : Block
     {
         if (imGuiCache.ContainsKey(area) == false)
         {
@@ -120,6 +157,20 @@ public static class ImGui
                 imGuiCache[area] = (2, new Stepper { Text = text });
             else if (typeof(T) == typeof(Tooltip))
                 imGuiCache[area] = (2, new Tooltip { Text = text });
+            else if (typeof(T) == typeof(Pages))
+            {
+                var pages = new Pages();
+                imGuiCache[area] = (2, pages);
+                pages.OnDisplay(() => maps.SetPages(pages));
+                pages.OnItemDisplay(page => maps.SetPagesItem(pages, page));
+            }
+            else if (typeof(T) == typeof(List))
+            {
+                var list = new List(span: span);
+                imGuiCache[area] = (2, list);
+                list.OnDisplay(() => maps.SetList(list));
+                list.OnItemDisplay(item => maps.SetListItem(list, item));
+            }
         }
 
         var cache = imGuiCache[area];
@@ -140,5 +191,5 @@ public static class ImGui
         block.Show(aroundArea);
         maps.SetTooltip(block);
     }
-    #endregion
+#endregion
 }

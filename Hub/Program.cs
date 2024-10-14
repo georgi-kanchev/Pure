@@ -18,7 +18,7 @@ public static class Program
         var uis = new List(itemCount: 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
         var systems = new List(itemCount: 7) { Size = (22, 7), ItemSize = (22, 1), Text = "Example Systems:" };
 
-        editors.Edit("Collision", "Map", "Storage", "User Interface");
+        editors.Edit(["Collision", "Map", "Storage", "User Interface"]);
         editors.AlignInside((0.75f, 0.25f));
         OnTrigger(editors, Editors.Collision.Program.Run, Editors.Map.Program.Run,
             Editors.Storage.Program.Run, Editors.UserInterface.Program.Run);
@@ -28,14 +28,16 @@ public static class Program
                 "(click on a Hub Project to start it)".Constrain(maps.Size, alignment: Alignment.Top));
         });
 
-        apps.Edit("Asteroids", "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris");
+        apps.Edit(["Asteroids", "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris"]);
         apps.AlignInside((0.18f, 0.25f));
         OnTrigger(apps, Asteroids.Run, Chat.Run, EightBallPool.Run, FlappyBird.Run, Minesweeper.Run,
             Pong.Run, Tetris.Run);
         OnDisplay(apps);
 
-        uis.Edit("Buttons & Checkboxes", "Sliders & Scrolls", "Input Boxes", "Steppers", "Panels",
-            "Pagination", "Lists", "Prompts", "Layouts", "File Viewers", "Palettes");
+        uis.Edit([
+            "Buttons & Checkboxes", "Sliders & Scrolls", "Input Boxes", "Steppers", "Panels",
+            "Pagination", "Lists", "Prompts", "Layouts", "File Viewers", "Palettes"
+        ]);
         uis.AlignInside((0.95f, 0.8f));
         OnTrigger(uis,
             () => RunUI(ButtonsAndCheckboxes.Create(maps)), () => RunUI(SlidersAndScrolls.Create(maps)),
@@ -46,8 +48,10 @@ public static class Program
             () => RunUI(Palettes.Create(maps)));
         OnDisplay(uis);
 
-        systems.Edit("Default Graphics", "Collision", "Line of Sight & Lights", "Pathfinding", "Audio",
-            "Terrain Generation", "Immediate GUI");
+        systems.Edit([
+            "Default Graphics", "Collision", "Line of Sight & Lights", "Pathfinding", "Audio",
+            "Terrain Generation", "Immediate GUI"
+        ]);
         systems.AlignInside((0.05f, 0.77f));
         OnTrigger(systems, DefaultGraphics.Run, Collision.Run, LineOfSightAndLights.Run,
             Pathfinding.Run, Audio.Run, TerrainGeneration.Run, ImmediateGui.Run);

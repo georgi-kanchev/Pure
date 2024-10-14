@@ -259,8 +259,10 @@ internal class TerrainPanel : Panel
         }
 
         noiseType.OnItemDisplay(item => editor.MapsUi.SetListItem(noiseType, item));
-        noiseType.Edit(nameof(Noise.OpenSimplex2), nameof(Noise.OpenSimplex2S), nameof(Noise.Cellular),
-            nameof(Noise.Perlin), nameof(Noise.ValueCubic), nameof(Noise.Value));
+        noiseType.Edit([
+            nameof(Noise.OpenSimplex2), nameof(Noise.OpenSimplex2S), nameof(Noise.Cellular),
+            nameof(Noise.Perlin), nameof(Noise.ValueCubic), nameof(Noise.Value)
+        ]);
         noiseType.Select(noiseType.Items[4]);
 
         noiseType.OnItemInteraction(Interaction.Select, btn =>

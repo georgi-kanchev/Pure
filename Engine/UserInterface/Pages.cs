@@ -14,10 +14,12 @@ public class Pages : Block
         get => count;
         set
         {
-            if (count == value)
+            var prev = count;
+            count = Math.Max(value, 1);
+
+            if (prev == count)
                 return; // no actual change, skip calculations
 
-            count = Math.Max(value, 1);
             Current = current; // reclamp and update pages
             RecreatePages();
             UpdatePages();
@@ -32,7 +34,7 @@ public class Pages : Block
             current = Math.Clamp(value, 1, Count);
 
             if (prev == current)
-                return;
+                return; // no actual change, skip calculations
 
             UpdatePages();
             Interact(Interaction.Select);
@@ -44,7 +46,12 @@ public class Pages : Block
         get => itemWidth;
         set
         {
+            var prev = itemWidth;
             itemWidth = Math.Max(value, 1);
+
+            if (prev == itemWidth)
+                return; // no actual change, skip calculations
+
             RecreatePages();
             UpdatePages();
         }
@@ -54,7 +61,12 @@ public class Pages : Block
         get => itemGap;
         set
         {
+            var prev = itemGap;
             itemGap = Math.Max(value, 0);
+
+            if (prev == itemGap)
+                return; // no actual change, skip calculations
+
             RecreatePages();
             UpdatePages();
         }
@@ -130,7 +142,7 @@ public class Pages : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private (int, int) prevSize;
     private int count, current = 1, scrollIndex = 1;
     private readonly List<Button> visiblePages = [];
@@ -168,8 +180,8 @@ public class Pages : Block
 
     private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
     private Action<Button>? itemDisplays;
-    private int itemWidth;
-    private int itemGap;
+    private int itemWidth = 1;
+    private int itemGap = 1;
 
     [MemberNotNull(nameof(First), nameof(Previous), nameof(Next), nameof(Last))]
     private void Init()
@@ -262,10 +274,8 @@ public class Pages : Block
 
             page.position = pos;
             page.mask = mask;
+            page.isSelected = scrollIndex + i == Current;
             page.Update();
-
-            if (i == Current - 1)
-                page.isSelected = true;
         }
     }
     internal override void ApplyScroll()
@@ -299,11 +309,7 @@ public class Pages : Block
         scrollIndex = Math.Clamp(current - pageCount / 2, 1, Math.Max(Count - pageCount + 1, 1));
 
         for (var i = 0; i < visiblePages.Count; i++)
-        {
-            var pageNumber = i + scrollIndex;
-            visiblePages[i].Text = $"{pageNumber}";
-            visiblePages[i].isSelected = pageNumber == current;
-        }
+            visiblePages[i].Text = $"{i + scrollIndex}";
     }
 
     private static float[] Distribute(int amount, (float a, float b) range)
@@ -320,5 +326,5 @@ public class Pages : Block
 
         return result;
     }
-    #endregion
+#endregion
 }

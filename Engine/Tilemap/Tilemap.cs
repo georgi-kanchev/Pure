@@ -766,10 +766,12 @@ public class Tilemap
     private bool IndicesAreValid((int x, int y) indices, Area? mask)
     {
         var (x, y) = indices;
+        var (w, h) = Size;
         mask ??= new(0, 0, Size.width, Size.height);
         var (mx, my, mw, mh, _) = mask.Value.ToBundle();
+        var isInMask = x >= mx && y >= my && x < mx + mw && y < my + mh;
 
-        return x >= mx && y >= my && x < mx + mw && y < my + mh;
+        return isInMask && x >= 0 && y >= 0 && x < w && y < h;
     }
     private static T[,] Duplicate<T>(T[,] array)
     {

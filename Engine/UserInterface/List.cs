@@ -3,6 +3,7 @@
 namespace Pure.Engine.UserInterface;
 
 public enum Span { Vertical, Horizontal, Dropdown }
+
 public enum Sort { Alphabetically, Numerically, ByLength }
 
 /// <summary>
@@ -10,7 +11,7 @@ public enum Sort { Alphabetically, Numerically, ByLength }
 /// </summary>
 public class List : Block
 {
-    public List<Button> Items { get; } = new();
+    public List<Button> Items { get; } = [];
     public Scroll Scroll { get; private set; }
 
     /// <summary>
@@ -50,7 +51,7 @@ public class List : Block
                IsCollapsed == false;
     }
 
-    public List<Button> SelectedItems { get; } = new();
+    public List<Button> SelectedItems { get; } = [];
 
     /// <summary>
     /// Gets or sets a value indicating whether the list spans horizontally, vertically or is a dropdown.
@@ -154,7 +155,7 @@ public class List : Block
         return Compress(result.ToArray());
     }
 
-    public void Edit(params string[]? items)
+    public void Edit(string[]? items)
     {
         if (items == null || items.Length == 0)
             return;
@@ -166,6 +167,8 @@ public class List : Block
 
             Items[i].text = items[i];
         }
+
+        UpdateSelectedItems();
     }
     public void Sort(Sort sort = UserInterface.Sort.Alphabetically)
     {
@@ -217,7 +220,13 @@ public class List : Block
             foreach (var btn in Items)
                 btn.isSelected = false;
 
+        var prev = item.isSelected;
         item.isSelected = selected;
+
+        if (prev != item.isSelected)
+            Interact(Interaction.Select);
+
+        UpdateSelectedItems();
     }
 
     protected override void OnInput()
@@ -253,7 +262,7 @@ public class List : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private int originalHeight;
     private bool isSingleSelecting, isCollapsed, veryFirstUpdate = true;
     private readonly bool isInitialized;
@@ -318,15 +327,9 @@ public class List : Block
             IsCollapsed = true;
         }
 
-        SelectedItems.Clear();
         foreach (var btn in Items)
-        {
             if (btn.hasParent == false)
                 InitItem(btn);
-
-            if (btn.isSelected)
-                SelectedItems.Add(btn);
-        }
 
         if (Input.IsButtonJustPressed() && IsHovered == false)
             IsCollapsed = true;
@@ -353,8 +356,20 @@ public class List : Block
         Scroll.step = 1f / totalSize;
         Scroll.isVertical = Span != Span.Horizontal;
 
-        if (Span == Span.Dropdown)
-            Height = IsCollapsed ? 1 : originalHeight;
+        if (Span != Span.Dropdown)
+            return;
+
+        Height = IsCollapsed ? 1 : originalHeight;
+
+        if (SelectedItems.Count == 0)
+            Select(Items[0]);
+    }
+    private void UpdateSelectedItems()
+    {
+        SelectedItems.Clear();
+        foreach (var btn in Items)
+            if (btn.isSelected)
+                SelectedItems.Add(btn);
     }
     internal override void ApplyScroll()
     {
@@ -459,6 +474,11 @@ public class List : Block
     {
         if (IsSingleSelecting)
             Select(item);
+        else
+        {
+            Interact(Interaction.Select);
+            UpdateSelectedItems();
+        }
 
         if (Span != Span.Dropdown)
             return;
@@ -508,5 +528,5 @@ public class List : Block
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }
