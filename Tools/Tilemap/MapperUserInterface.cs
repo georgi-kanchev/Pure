@@ -22,6 +22,8 @@ public static class MapperUserInterface
     public static (Tile corner, Tile fill, Tile arrow, Tile min, Tile mid, Tile max, uint textTint, uint valueTint) ThemeStepper { get; set; }
     public static (Tile corner, Tile edge, Tile fill, uint textTint) ThemeTooltip { get; set; }
     public static (Tile first, Tile previous, Tile next, Tile last) ThemePages { get; set; }
+    public static (Tile corner, Tile edge, Tile fill, Tile dim, uint textTint) ThemePrompt { get; set; }
+    public static Tile[]? ThemePromptItems { get; set; }
 
     public static void SetTooltip(this Maps maps, Tooltip tooltip, int zOrder = 1)
     {
@@ -63,14 +65,14 @@ public static class MapperUserInterface
         var textPos = (button.X + offsetW, button.Y + h / 2);
         var isBar = button.Height == 1;
 
-        bCorner.Tint = button.GetInteractionColor(bCorner.Tint);
-        bEdge.Tint = button.GetInteractionColor(bEdge.Tint);
-        bFill.Tint = button.GetInteractionColor(bFill.Tint);
-        bTextTint = button.GetInteractionColor(bTextTint);
+        bCorner.Tint = button.GetInteractionColor(bCorner.Tint, 0.3f);
+        bEdge.Tint = button.GetInteractionColor(bEdge.Tint, 0.3f);
+        bFill.Tint = button.GetInteractionColor(bFill.Tint, 0.3f);
+        bTextTint = button.GetInteractionColor(bTextTint, 0.3f);
 
-        rEdge.Tint = button.GetInteractionColor(rEdge.Tint);
-        rFill.Tint = button.GetInteractionColor(rFill.Tint);
-        rTextTint = button.GetInteractionColor(rTextTint);
+        rEdge.Tint = button.GetInteractionColor(rEdge.Tint, 0.3f);
+        rFill.Tint = button.GetInteractionColor(rFill.Tint, 0.3f);
+        rTextTint = button.GetInteractionColor(rTextTint, 0.3f);
 
         Clear(maps, button, zOrder);
 
@@ -81,28 +83,14 @@ public static class MapperUserInterface
 
         maps.Tilemaps[zOrder + 1].SetText(textPos, text, isBar ? rTextTint : bTextTint, mask: button.Mask);
     }
-    public static void SetButtonSelect(this Maps maps, Button button, int zOrder = 0)
-    {
-        var b = button;
-        var (w, h) = b.Size;
-        var offsetW = w / 2 - Math.Min(b.Text.Length, w - 2) / 2;
-        var selectColor = b.IsSelected ? Green : Gray;
-
-        Clear(maps, button, zOrder);
-        // maps.Tilemaps[zOrder].SetBar(b.Position, BAR_BIG_EDGE, FULL,
-        //     GetInteractionColor(b, Brown.ToDark(0.3f)), w, mask: b.Mask);
-        // maps.Tilemaps[zOrder + 1].SetText(
-        //     (b.Position.x + offsetW, b.Position.y + h / 2),
-        //     b.Text.Shorten(w - 2),
-        //     GetInteractionColor(b, selectColor),
-        //     mask: b.Mask);
-    }
     public static void SetButtonIcon(this Maps maps, Button button, Tile icon, int zOrder = 0)
     {
-        var b = button;
-        icon.Tint = GetInteractionColor(b, icon.Tint);
+        if (maps.Tilemaps.Count <= zOrder)
+            return;
+
+        icon.Tint = button.GetInteractionColor(icon.Tint);
         Clear(maps, button, zOrder);
-        maps.Tilemaps[zOrder].SetTile(b.Position, icon, b.Mask);
+        maps.Tilemaps[zOrder].SetTile(button.Position, icon, button.Mask);
     }
     public static void SetInputBox(this Maps maps, InputBox inputBox, int zOrder = 0)
     {
@@ -335,36 +323,32 @@ public static class MapperUserInterface
     }
     public static void SetPrompt(this Maps maps, Prompt prompt, int zOrder = 0)
     {
-        if (prompt.IsHidden == false)
-        {
-            var tile = new Tile(FULL, new Color(0, 0, 0, 127));
-            var gray = Gray.ToDark(0.6f);
-            maps.Tilemaps[zOrder].SetArea((0, 0, maps.Size.width, maps.Size.height), prompt.Mask, tile);
-            maps.Tilemaps[zOrder + 1].SetBox(prompt.Area,
-                new(FULL, Gray.ToDark(0.6f)), new(BOX_CORNER_ROUND, gray), new(FULL, gray), prompt.Mask);
-        }
+        if (maps.Tilemaps.Count <= zOrder + 2)
+            return;
 
-        var lines = prompt.Text.Split(Environment.NewLine).Length;
-        maps.Tilemaps[zOrder + 2].SetText(
-            prompt.Position,
-            prompt.Text.Constrain((prompt.Size.width, lines), alignment: Alignment.Center),
-            mask: prompt.Mask);
+        var (corner, edge, fill, dim, textTint) = ThemePrompt;
+        var newLines = prompt.Text.Count("\n") + 1;
+        var text = prompt.Text.Constrain((prompt.Width, newLines), alignment: Alignment.Center);
+
+        Clear(maps, prompt, zOrder);
+        maps.Tilemaps[zOrder].SetArea((0, 0, maps.Size.width, maps.Size.height), prompt.Mask, dim);
+        maps.Tilemaps[zOrder + 1].SetBox(prompt.Area, fill, corner, edge, prompt.Mask);
+        maps.Tilemaps[zOrder + 2].SetText(prompt.Position, text, textTint, mask: prompt.Mask);
     }
-    public static void SetPromptItem(this Maps maps, Prompt prompt, Button item, int zOrder = 2, params Tile[]? tiles)
+    public static void SetPromptItem(this Maps maps, Prompt prompt, Button item, int zOrder = 2)
     {
+        var theme = ThemePromptItems;
+
+        if (maps.Tilemaps.Count <= zOrder || theme == null || theme.Length == 0)
+            return;
+
         var index = prompt.IndexOf(item);
-        var tile = new Tile(
-            index == 0 ? ICON_TICK : ICON_CANCEL,
-            GetInteractionColor(item, index == 0 ? Green : Red));
 
-        if (tiles is { Length: > 0 } && index < tiles.Length)
-        {
-            var curTile = tiles[index];
-            curTile.Tint = GetInteractionColor(item, curTile.Tint);
-            tile = curTile;
-        }
+        var tile = new Tile(PUNCTUATION_QUESTION_MARK, Gray);
+        if (index < theme.Length)
+            tile = theme[index];
 
-        maps.Tilemaps[zOrder].SetTile(item.Position, tile, item.Mask);
+        maps.SetButtonIcon(item, tile, zOrder);
     }
     public static void SetPanel(this Maps maps, Panel panel, int zOrder = 0)
     {
@@ -446,19 +430,9 @@ public static class MapperUserInterface
 
         var color = GetInteractionColor(item, item.IsSelected ? Green : Gray.ToBright(0.2f));
         var text = item.Text.ToNumber().PadZeros(-pages.ItemWidth);
+        text = text.Constrain(item.Size, alignment: Alignment.Center);
 
-        // SetBackground(maps.Tilemaps[zOrder], item, 0.33f);
-        maps.Tilemaps[zOrder].SetText(item.Position,
-            text.Constrain(item.Size, alignment: Alignment.Center),
-            color,
-            mask: item.Mask);
-    }
-    public static void SetPagesIcon(this Maps maps, Button item, int tileId, int zOrder = 0)
-    {
-        var color = GetInteractionColor(item, item.IsSelected ? Green : Gray.ToBright(0.2f));
-        // SetBackground(maps.Tilemaps[zOrder], item, 0.33f);
-        maps.Tilemaps[zOrder + 1].SetTile(item.Position, new(tileId + int.Parse(item.Text), color),
-            item.Mask);
+        maps.Tilemaps[zOrder].SetText(item.Position, text, color, mask: item.Mask);
     }
     public static void SetList(this Maps maps, List list, int zOrder = 0)
     {
@@ -482,7 +456,7 @@ public static class MapperUserInterface
     }
     public static void SetListItem(this Maps maps, List list, Button item, int zOrder = 1, bool showSelected = true)
     {
-        if (maps.Tilemaps.Count <= zOrder + 1)
+        if (maps.Tilemaps.Count <= zOrder)
             return;
 
         var color = item.IsSelected && showSelected ? Green : Gray.ToBright(0.3f);
@@ -492,15 +466,11 @@ public static class MapperUserInterface
             list.Span == Span.Horizontal &&
             item.Size.width < list.ItemSize.width &&
             item.Position == list.Position;
+        var text = item.Text.Shorten(item.Size.width * (isLeftCrop ? -1 : 1));
 
-        color = item.IsDisabled ? Gray : color;
+        color = item.GetInteractionColor(item.IsDisabled ? Gray : color);
 
-        // SetBackground(maps.Tilemaps[zOrder], item, 0.25f);
-        maps.Tilemaps[zOrder + 1].SetText(
-            (x, y + h / 2),
-            item.Text.Shorten(item.Size.width * (isLeftCrop ? -1 : 1)),
-            GetInteractionColor(item, color),
-            mask: item.Mask);
+        maps.Tilemaps[zOrder].SetText((x, y + h / 2), text, color, mask: item.Mask);
     }
     public static void SetLayoutSegment(this Maps maps, (int x, int y, int width, int height) segment, int index, bool showIndex, int zOrder = 0)
     {
@@ -540,8 +510,10 @@ public static class MapperUserInterface
 
         var g = Gray;
         var dg = g.ToDark();
+        var dim = Black.ToTransparent();
         var arrow = new Tile(ARROW_TAILLESS_ROUND, g);
 
+        ThemeScrollArrow = arrow;
         ThemeButtonBox = (new(BOX_CORNER_ROUND, g), new(FULL, g), new(FULL, g), g.ToBright());
         ThemeButtonBar = (new(BAR_BIG_EDGE, g), new(FULL, g), g.ToBright());
         ThemeInputBox = (new(FULL, g.ToDark(0.4f)), new(SHAPE_LINE, White, 2), g.ToBright(), Blue);
@@ -549,7 +521,8 @@ public static class MapperUserInterface
         ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(SHAPE_CIRCLE_BIG, g.ToBright()));
         ThemeTooltip = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), textTint: White);
         ThemePages = (new(MATH_MUCH_LESS, g), new(MATH_LESS, g), new(MATH_GREATER, g), new(MATH_MUCH_GREATER, g));
-        ThemeScrollArrow = arrow;
+        ThemePrompt = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), new(FULL, dim), White);
+        ThemePromptItems = [new(ICON_YES, Green), new(ICON_NO, Red)];
 
         var min = new Tile(MATH_MUCH_LESS, g);
         var mid = new Tile(PUNCTUATION_PIPE, g);

@@ -6,17 +6,10 @@ public static class ButtonsAndCheckboxes
     {
         Window.Title = "Pure - Buttons & Checkboxes Example";
 
-        var buttonSelect = new Button { Text = "Button Select" };
-        buttonSelect.Size = (buttonSelect.Text.Length + 4, 1);
-        buttonSelect.AlignInside((0.5f, 0.2f));
-        buttonSelect.OnDisplay(() => maps.SetButtonSelect(buttonSelect));
-
-        // ==============
-
         var counter = 0;
         var button = new Button { Text = "Cool Button" };
         button.Size = (button.Text.Length + 2, 3);
-        button.AlignInside((0.5f, 0.4f));
+        button.AlignInside((0.5f, 0.2f));
         button.OnInteraction(Interaction.Trigger, () => counter++);
         button.OnDisplay(() =>
         {
@@ -28,7 +21,7 @@ public static class ButtonsAndCheckboxes
 
         var checkbox = new Button { Text = "Checkbox" };
         checkbox.Size = (checkbox.Text.Length + 2, 1);
-        checkbox.AlignInside((0.5f, 0.6f));
+        checkbox.AlignInside((0.5f, 0.5f));
         checkbox.OnDisplay(() => maps.SetCheckbox(checkbox));
 
         // ==============
@@ -42,6 +35,6 @@ public static class ButtonsAndCheckboxes
                 Color.Gray.ToDark(0.7f));
         });
 
-        return [buttonSelect, button, checkbox, buttonDisabled];
+        return [button, checkbox, buttonDisabled];
     }
 }

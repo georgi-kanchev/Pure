@@ -172,20 +172,18 @@ public static class Program
         editor.Ui.Blocks.AddRange([tools, palette]);
 
         // override the default prompt buttons
+
         editor.OnPromptItemDisplay = item =>
         {
-            var tiles = new Tile[]
-            {
-                new(Tile.ICON_TICK, Color.Green),
-                new(Tile.ARROW, Color.Gray, 3),
-                new(Tile.ARROW, Color.Gray, 1)
-            };
+            MapperUserInterface.ThemePromptItems = CanDrawLayer ?
+                [
+                    new(Tile.ICON_TICK, Color.Green),
+                    new(Tile.ARROW, Color.Gray, 3),
+                    new(Tile.ARROW, Color.Gray, 1)
+                ] :
+                [];
 
-            editor.MapsUi.SetPromptItem(
-                editor.Prompt,
-                item,
-                PROMPT_MIDDLE,
-                CanDrawLayer ? tiles : null);
+            editor.MapsUi.SetPromptItem(editor.Prompt, item, PROMPT_MIDDLE);
         };
 
         promptPanel = new()

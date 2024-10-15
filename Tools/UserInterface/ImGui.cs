@@ -1,6 +1,5 @@
 ﻿using Pure.Engine.Tilemap;
 using Pure.Engine.UserInterface;
-using Pure.Engine.Utilities;
 using Pure.Engine.Window;
 using Pure.Tools.Tilemap;
 
@@ -10,30 +9,30 @@ public static class ImGui
 {
     public static Tile Cursor { get; set; } = new(546, 3789677055);
 
-    public static (Side side, float alignment) Tooltip { get; set; } = (Side.Top, 0.5f);
+    public static (string? text, Side side, float alignment) Tooltip { get; set; } = ("", Side.Top, 0.5f);
 
-    public static void ShowText((int x, int y) cell, string text, int zOrder = 0, uint tint = 4294967295U, char tintBrush = '#', Area? mask = null)
+    public static void Text((int x, int y) cell, string text, int zOrder = 0, uint tint = 4294967295U, char tintBrush = '#', Area? mask = null)
     {
         if (maps.Tilemaps.Count <= zOrder)
             return;
 
-        maps.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush, mask);
+        maps.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush);
     }
-    public static bool ShowButton((int x, int y) position, string text, Interaction trueWhen = Interaction.Trigger, string tooltip = "")
+    public static bool Button((int x, int y) position, string text, Interaction trueWhen = Interaction.Trigger)
     {
-        var block = TryCache<Button>(text, (position.x, position.y, text.Length + 2, 1), tooltip);
+        var block = TryCache<Button>(text, (position.x, position.y, text.Length + 2, 1));
         maps.SetButton(block);
         return block.IsJustInteracted(trueWhen);
     }
-    public static bool ShowCheckbox((int x, int y) position, string text, string tooltip = "")
+    public static bool Checkbox((int x, int y) position, string text)
     {
-        var block = TryCache<Button>(text, (position.x, position.y, text.Length + 2, 1), tooltip);
+        var block = TryCache<Button>(text, (position.x, position.y, text.Length + 2, 1));
         maps.SetCheckbox(block);
         return block.IsSelected;
     }
-    public static string? ShowInputBox(Area area, string placeholder = "Type…", string tooltip = "")
+    public static string? InputBox(Area area, string placeholder = "Type…")
     {
-        var block = TryCache<InputBox>("", area, tooltip);
+        var block = TryCache<InputBox>("", area);
         block.Placeholder = placeholder;
         maps.SetInputBox(block);
 
@@ -42,43 +41,43 @@ public static class ImGui
 
         return block.Value;
     }
-    public static float ShowSlider((int x, int y) position, int size, bool vertical = false, string tooltip = "")
+    public static float Slider((int x, int y) position, int size, bool vertical = false)
     {
         var (w, h) = (vertical ? 1 : size, vertical ? size : 1);
-        var block = TryCache<Slider>("", (position.x, position.y, w, h), tooltip);
+        var block = TryCache<Slider>("", (position.x, position.y, w, h));
         maps.SetSlider(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Progress : float.NaN;
     }
-    public static float ShowScroll((int x, int y) position, int size, bool vertical = false, string tooltip = "")
+    public static float Scroll((int x, int y) position, int size, bool vertical = false)
     {
         var (w, h) = (vertical ? 1 : size, vertical ? size : 1);
-        var block = TryCache<Scroll>("", (position.x, position.y, w, h), tooltip);
+        var block = TryCache<Scroll>("", (position.x, position.y, w, h));
         maps.SetScroll(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Slider.Progress : float.NaN;
     }
-    public static float ShowStepper((int x, int y) position, string text, float step = 1f, float min = float.MinValue, float max = float.MaxValue, string tooltip = "")
+    public static float Stepper((int x, int y) position, string text, float step = 1f, float min = float.MinValue, float max = float.MaxValue)
     {
         var (w, h) = (text.Length + 1, 2);
-        var block = TryCache<Stepper>(text, (position.x, position.y, w, h), tooltip);
+        var block = TryCache<Stepper>(text, (position.x, position.y, w, h));
         block.Step = step;
         block.Range = (min, max);
         maps.SetStepper(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Value : float.NaN;
     }
-    public static float ShowPages((int x, int y) position, int size = 12, int totalCount = 10, int itemWidth = 2, string tooltip = "")
+    public static float Pages((int x, int y) position, int size = 12, int totalCount = 10, int itemWidth = 2)
     {
         var (w, h) = (size, 1);
-        var block = TryCache<Pages>("", (position.x, position.y, w, h), tooltip);
+        var block = TryCache<Pages>("", (position.x, position.y, w, h));
         block.Count = totalCount;
         block.ItemWidth = itemWidth;
         return block.IsJustInteracted(Interaction.Select) ? block.Current : float.NaN;
     }
-    public static string[]? ShowList(Area area, string[]? items, bool dropdown = false, bool multiselect = true, string tooltip = "")
+    public static string[]? List(Area area, string[]? items, bool dropdown = false, bool multiselect = true)
     {
         if (items == null || items.Length == 0)
             return null;
 
-        var block = TryCache<List>("", area, tooltip, dropdown ? Span.Dropdown : Span.Vertical);
+        var block = TryCache<List>("", area, dropdown ? Span.Dropdown : Span.Vertical);
         var selected = new List<string>();
 
         if (items.Length != block.Items.Count)
@@ -101,6 +100,50 @@ public static class ImGui
             selected.Add(item.Text);
 
         return selected.ToArray();
+    }
+
+    public static string? PromptInput(string text, int width = 20, SymbolGroup symbolGroup = SymbolGroup.All)
+    {
+        if (showPrompt == false)
+            return null;
+
+        var prompt = TryCache<Prompt>(text, (-1, 0, 1, 1));
+        var input = TryCache<InputBox>("", (-2, 0, width, 1), skipUpdate: true);
+        input.SymbolGroup = symbolGroup;
+        maps.SetInputBox(input, 3);
+
+        if (prompt.IsHidden)
+            prompt.Open(input, onButtonTrigger: index =>
+            {
+                if (index == 0)
+                    input.Interact(Interaction.Select);
+
+                showPrompt = false;
+            });
+
+        return input.IsJustInteracted(Interaction.Select) ? input.Value : null;
+    }
+    public static float PromptChoice(string text, int choiceAmount = 2)
+    {
+        if (showPrompt == false)
+            return float.NaN;
+
+        var prompt = TryCache<Prompt>(text, (-3, 0, 1, 1));
+
+        if (prompt.IsHidden)
+            prompt.Open(null, true, choiceAmount, -1, -2, index => lastChoice = index);
+
+        if (float.IsNaN(lastChoice))
+            return float.NaN;
+
+        var result = lastChoice;
+        lastChoice = float.NaN;
+        showPrompt = false;
+        return result;
+    }
+    public static void Prompt()
+    {
+        showPrompt = true;
     }
 
     public static void DrawImGui(this Layer layer)
@@ -138,33 +181,45 @@ public static class ImGui
     }
 
 #region Backend
+    private static bool showPrompt;
+    private static float lastChoice = float.NaN;
     private static TilemapPack maps = new(0, (0, 0));
     private static readonly Dictionary<Area, (int framesLeft, Block block)> imGuiCache = [];
 
-    private static T TryCache<T>(string text, Area area, string tooltip, Span span = Span.Vertical) where T : Block
+    private static T TryCache<T>(string text, Area area, Span span = Span.Vertical, bool skipUpdate = false) where T : Block
     {
+        var type = typeof(T);
+
         if (imGuiCache.ContainsKey(area) == false)
         {
-            if (typeof(T) == typeof(Button))
+            if (type == typeof(Button))
                 imGuiCache[area] = (2, new Button { Text = text });
-            else if (typeof(T) == typeof(InputBox))
+            else if (type == typeof(InputBox))
                 imGuiCache[area] = (2, new InputBox());
-            else if (typeof(T) == typeof(Slider))
+            else if (type == typeof(Slider))
                 imGuiCache[area] = (2, new Slider(vertical: area.Width == 1));
-            else if (typeof(T) == typeof(Scroll))
+            else if (type == typeof(Scroll))
                 imGuiCache[area] = (2, new Scroll(vertical: area.Width == 1));
-            else if (typeof(T) == typeof(Stepper))
+            else if (type == typeof(Stepper))
                 imGuiCache[area] = (2, new Stepper { Text = text });
-            else if (typeof(T) == typeof(Tooltip))
+            else if (type == typeof(Tooltip))
                 imGuiCache[area] = (2, new Tooltip { Text = text });
-            else if (typeof(T) == typeof(Pages))
+            else if (type == typeof(Prompt))
+            {
+                var prompt = new Prompt { Text = text, Size = maps.Size };
+                prompt.AlignInside((0.5f, 0.5f));
+                prompt.OnDisplay(() => maps.SetPrompt(prompt, 3));
+                prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, 5));
+                imGuiCache[area] = (2, prompt);
+            }
+            else if (type == typeof(Pages))
             {
                 var pages = new Pages();
                 imGuiCache[area] = (2, pages);
                 pages.OnDisplay(() => maps.SetPages(pages));
                 pages.OnItemDisplay(page => maps.SetPagesItem(pages, page));
             }
-            else if (typeof(T) == typeof(List))
+            else if (type == typeof(List))
             {
                 var list = new List(span: span);
                 imGuiCache[area] = (2, list);
@@ -176,20 +231,27 @@ public static class ImGui
         var cache = imGuiCache[area];
         imGuiCache[area] = (2, cache.block); // reset frame timer
         cache.block.Area = area;
-        cache.block.Update();
 
-        if (string.IsNullOrWhiteSpace(tooltip) == false && cache.block.IsHovered)
-            ShowTooltip(area, tooltip);
+        if (skipUpdate)
+            cache.block.AlignInside((0.5f, 0.5f));
+        else
+            cache.block.Update();
+
+        if (cache.block is Prompt || type == typeof(Prompt))
+            return (T)cache.block;
+
+        if (cache.block.IsHovered == false ||
+            type == typeof(Tooltip) ||
+            string.IsNullOrWhiteSpace(Tooltip.text))
+            return (T)cache.block;
+
+        var tooltip = TryCache<Tooltip>(Tooltip.text ?? "", (0, 0, 1, 1));
+        tooltip.Side = Tooltip.side;
+        tooltip.Alignment = Tooltip.alignment;
+        tooltip.Show(cache.block.Area);
+        maps.SetTooltip(tooltip);
 
         return (T)cache.block;
-    }
-    private static void ShowTooltip((int x, int y, int width, int height) aroundArea, string text)
-    {
-        var block = TryCache<Tooltip>(text, (0, 0, 1, 1), "");
-        block.Side = Tooltip.side;
-        block.Alignment = Tooltip.alignment;
-        block.Show(aroundArea);
-        maps.SetTooltip(block);
     }
 #endregion
 }

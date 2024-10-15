@@ -9,7 +9,7 @@ public static class Pagination
         var icons = new Pages { Size = (9, 1), ItemGap = 0 };
         icons.AlignInside((0.05f, 0.5f));
         icons.OnDisplay(() => maps.SetPages(icons));
-        icons.OnItemDisplay(item => maps.SetPagesIcon(item, Tile.ICON_HOME));
+        icons.OnItemDisplay(item => maps.SetButtonIcon(item, Tile.ICON_HOME));
 
         //================
 
@@ -23,10 +23,10 @@ public static class Pagination
 
         var buttons = new Pages { Size = (21, 1), Count = 150 };
         buttons.Current = buttons.Count / 2;
-        buttons.ItemWidth = $"{buttons.Count}".Length + 2;
+        buttons.ItemWidth = $"{buttons.Count}".Length;
         buttons.AlignInside((0.5f, 0.1f));
         buttons.OnDisplay(() => maps.SetPages(buttons));
-        buttons.OnItemDisplay(item => maps.SetButtonSelect(item, 1));
+        buttons.OnItemDisplay(item => maps.SetPagesItem(buttons, item, 1));
 
         //================
 

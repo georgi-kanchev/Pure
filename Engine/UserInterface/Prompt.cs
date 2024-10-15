@@ -2,6 +2,8 @@ namespace Pure.Engine.UserInterface;
 
 public class Prompt : Block
 {
+    public int LastChoiceIndex { get; private set; }
+
     public Prompt()
     {
         Init();
@@ -26,10 +28,13 @@ public class Prompt : Block
             var index = i;
             btn.OnInteraction(Interaction.Trigger, () =>
             {
+                LastChoiceIndex = index;
+
                 if (autoClose)
                     Close();
 
                 onButtonTrigger?.Invoke(index);
+                Interact(Interaction.Select);
             });
             if (i == btnYes)
                 btn.Hotkey = ((int)Key.Enter, false);
@@ -109,9 +114,9 @@ public class Prompt : Block
             return;
 
         var sz = Input.TilemapSize;
-        var lines = Text.Split(Environment.NewLine).Length;
+        var lines = Text.Replace("\r", "").Split("\n");
         var (w, h) = (sz.width / 2, 0);
-        var (x, y) = (sz.width / 4, sz.height / 2 + lines / 2);
+        var (x, y) = (sz.width / 4, sz.height / 2 + lines.Length / 2);
 
         panel.IsDisabled = IsHidden;
         panel.position = IsHidden ? (int.MaxValue, int.MaxValue) : (0, 0);
@@ -131,9 +136,19 @@ public class Prompt : Block
                 y = currentBlock.Position.y;
             }
         }
+        else
+        {
+            var longestLine = 0;
+            foreach (var line in lines)
+                if (line.Length > longestLine)
+                    longestLine = line.Length;
 
-        position = IsHidden ? (int.MaxValue, int.MaxValue) : (x, y - lines);
-        size = (w, lines + h + 1);
+            w = longestLine;
+            x = sz.width / 2 - w / 2;
+        }
+
+        position = IsHidden ? (int.MaxValue, int.MaxValue) : (x, y - lines.Length);
+        size = (w, lines.Length + h + 1);
 
         var btnXs = Distribute(buttons.Count, (x, x + w));
         for (var i = 0; i < buttons.Count; i++)
