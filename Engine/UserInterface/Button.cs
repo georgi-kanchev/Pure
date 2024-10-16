@@ -15,8 +15,13 @@ public class Button : Block
         get => isSelected;
         set
         {
+            var prev = isSelected;
+
             if (hasParent == false)
                 isSelected = value;
+
+            if (prev != isSelected)
+                Interact(Interaction.Select);
         }
     }
     public (int id, bool holdable) Hotkey { get; set; }
@@ -69,7 +74,7 @@ public class Button : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     internal bool isSelected;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
 
@@ -80,10 +85,11 @@ public class Button : Block
 
         OnInteraction(Interaction.Trigger, () =>
         {
+            var prev = isSelected;
             // not using property since the user click can access it despite of parent
             isSelected = isSelected == false;
 
-            if (IsSelected)
+            if (prev != isSelected)
                 Interact(Interaction.Select);
         });
     }
@@ -115,5 +121,5 @@ public class Button : Block
         if (Input.IsKeyPressed((Key)Hotkey.id) && isJustHeld)
             Interact(Interaction.Trigger);
     }
-    #endregion
+#endregion
 }

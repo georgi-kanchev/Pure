@@ -24,10 +24,14 @@ public static class MapperUserInterface
     public static (Tile first, Tile previous, Tile next, Tile last) ThemePages { get; set; }
     public static (Tile corner, Tile edge, Tile fill, Tile dim, uint textTint) ThemePrompt { get; set; }
     public static Tile[]? ThemePromptItems { get; set; }
+    public static (Tile full, Tile pick, Tile halfShade, Tile handle) ThemePalette { get; set; }
+    public static (Tile corner, Tile edge, Tile fill, uint textTint) ThemePanel { get; set; }
+    public static (Tile background, Tile arrow, uint tint, uint select, uint disable) ThemeList { get; set; }
+    public static (Tile img, Tile audio, Tile font, Tile txt, Tile zip, Tile vid, Tile cfg, Tile exe) ThemeFileViewer { get; set; }
 
     public static void SetTooltip(this Maps maps, Tooltip tooltip, int zOrder = 1)
     {
-        if (maps.Tilemaps.Count <= zOrder + 1)
+        if (maps.Tilemaps.Count <= zOrder + 1 || tooltip.IsHidden)
             return;
 
         var (corner, edge, fill, textTint) = ThemeTooltip;
@@ -39,7 +43,7 @@ public static class MapperUserInterface
     }
     public static void SetCheckbox(this Maps maps, Button checkbox, int zOrder = 1)
     {
-        if (maps.Tilemaps.Count <= zOrder)
+        if (maps.Tilemaps.Count <= zOrder || checkbox.IsHidden)
             return;
 
         var (yes, no) = ThemeCheckbox;
@@ -54,7 +58,7 @@ public static class MapperUserInterface
     }
     public static void SetButton(this Maps maps, Button button, int zOrder = 1)
     {
-        if (maps.Tilemaps.Count <= zOrder + 1)
+        if (maps.Tilemaps.Count <= zOrder + 1 || button.IsHidden)
             return;
 
         var (w, h) = button.Size;
@@ -85,7 +89,7 @@ public static class MapperUserInterface
     }
     public static void SetButtonIcon(this Maps maps, Button button, Tile icon, int zOrder = 0)
     {
-        if (maps.Tilemaps.Count <= zOrder)
+        if (maps.Tilemaps.Count <= zOrder || button.IsHidden)
             return;
 
         icon.Tint = button.GetInteractionColor(icon.Tint);
@@ -94,7 +98,7 @@ public static class MapperUserInterface
     }
     public static void SetInputBox(this Maps maps, InputBox inputBox, int zOrder = 0)
     {
-        if (maps.Tilemaps.Count <= zOrder + 2)
+        if (maps.Tilemaps.Count <= zOrder + 2 || inputBox.IsHidden)
             return;
 
         var box = inputBox;
@@ -130,131 +134,90 @@ public static class MapperUserInterface
     }
     public static void SetFileViewerItem(this Maps maps, FileViewer fileViewer, Button item, int zOrder = 1)
     {
-        var color = item.IsSelected ? Green : Gray.ToBright();
-        var (x, y) = item.Position;
+        if (maps.Tilemaps.Count <= zOrder || item.IsHidden)
+            return;
+
+        var (img, audio, font, txt, zip, vid, cfg, exe) = ThemeFileViewer;
+        var (bg, arrow, tint, select, disable) = ThemeList;
         var isFolder = fileViewer.IsFolder(item);
         var isHardDrive = fileViewer.HardDrives.Items.Contains(item);
-        var icon = new Tile(ICON_FOLDER, GetInteractionColor(item, Yellow));
+        var isFileOrFolder = fileViewer.FilesAndFolders.Items.Contains(item);
+        var color = item.IsSelected && isFileOrFolder ? select : tint;
+        var icon = new Tile(ICON_FOLDER, Yellow.ToDark(0.3f));
         var isRight = isHardDrive || item == fileViewer.Back || item == fileViewer.User;
+        var text = item.Text.Shorten(isRight ? -fileViewer.Size.width + 1 : item.Size.width - 1);
+        var extensionIcons = new Dictionary<string[], Tile>
+        {
+            { ["png", "jpg", "jpeg", "bmp", "svg", "gif", "psd", "tif", "tiff", "webp", "pdf", "ico"], img },
+            { ["wav", "ogg", "flac", "mp3", "aiff", "aac", "mid", "cda", "mpa", "wma"], audio },
+            { ["ttf", "otf"], font },
+            { ["txt", "xml", "json", "log", "csv"], txt },
+            { ["zip", "rar", "7z", "arj", "deb", "pkg", "tar.gz", "z"], zip },
+            { ["mp4", "avi", "flv", "mkv"], vid },
+            { ["dll", "cfg", "ini"], cfg },
+            { ["exe", "bin", "bat", "jar", "msi"], exe }
+        };
+
+        color = item.GetInteractionColor(color);
 
         if (isHardDrive)
         {
-            color = Gray.ToBright(0.2f);
-            icon = new(ICON_HOME, GetInteractionColor(item, color));
+            icon.Id = ICON_HOME;
+            icon.Tint = Blue.ToBright();
         }
         else if (item == fileViewer.Back)
         {
-            color = Gray.ToBright(0.2f);
-            icon = new(ICON_BACK, GetInteractionColor(item, color));
+            icon.Id = ICON_BACK;
+            icon.Tint = Blue.ToBright();
         }
         else if (item == fileViewer.User)
         {
-            color = Gray.ToBright(0.2f);
-            icon = new(ICON_PERSON, GetInteractionColor(item, color));
+            icon.Id = ICON_PERSON;
+            icon.Tint = Blue.ToBright();
         }
         else if (isFolder == false)
         {
-            var id = ICON_FILE;
-            var file = item.Text;
-            var iconColor = Gray.ToBright();
+            icon.Id = ICON_FILE;
+            icon.Tint = Gray;
 
-            if (Ext(".png") ||
-                Ext(".jpg") ||
-                Ext(".bmp") ||
-                Ext(".jpeg") ||
-                Ext(".svg") ||
-                Ext(".gif") ||
-                Ext(".psd") ||
-                Ext(".tif") ||
-                Ext(".tiff") ||
-                Ext(".webp") ||
-                Ext(".pdf") ||
-                Ext(".ico"))
-            {
-                id = ICON_PICTURE;
-                iconColor = Cyan;
-            }
-            else if (Ext(".wav") ||
-                     Ext(".ogg") ||
-                     Ext(".flac") ||
-                     Ext(".mp3") ||
-                     Ext(".aiff") ||
-                     Ext(".aac") ||
-                     Ext(".mid") ||
-                     Ext(".cda") ||
-                     Ext(".mpa") ||
-                     Ext(".wma"))
-            {
-                id = AUDIO_NOTES_BEAMED_EIGHT;
-                iconColor = Purple.ToBright(0.35f);
-            }
-            else if (Ext(".ttf") || Ext(".otf"))
-            {
-                id = UPPERCASE_F;
-                iconColor = Gray.ToDark();
-            }
-            else if (Ext(".txt") || Ext(".xml") || Ext(".json") || Ext(".log") || Ext(".csv"))
-            {
-                id = ALIGN_HORIZONTAL_LEFT;
-                iconColor = Azure;
-            }
-            else if (Ext(".zip") ||
-                     Ext(".rar") ||
-                     Ext(".7z") ||
-                     Ext(".arj") ||
-                     Ext(".deb") ||
-                     Ext(".pkg") ||
-                     Ext(".tar.gz") ||
-                     Ext(".z"))
-            {
-                id = ICON_STACK_2;
-                iconColor = Brown;
-            }
-            else if (Ext(".mp4") || Ext(".avi") || Ext(".flv") || Ext(".mkv"))
-            {
-                id = ICON_CAMERA_MOVIE;
-                iconColor = Red;
-            }
-            else if (Ext(".dll") || Ext(".cfg") || Ext(".ini"))
-            {
-                id = ICON_SETTINGS;
-                iconColor = Yellow.ToDark();
-            }
-            else if (Ext(".exe") || Ext(".bin") || Ext(".bat") || Ext(".jar") || Ext(".msi"))
-            {
-                id = FLOW_PLAY;
-                iconColor = Orange;
-            }
-
-            icon = new(id, GetInteractionColor(item, iconColor));
-
-            bool Ext(string ext)
-            {
-                return Path.GetExtension(file).ToLower() == ext;
-            }
+            foreach (var (ext, tile) in extensionIcons)
+                if (Ext(ext))
+                {
+                    icon = tile;
+                    break;
+                }
         }
 
-        maps.Tilemaps[zOrder].SetTile((x, y), icon, item.Mask);
-        maps.Tilemaps[zOrder].SetText(
-            (x + 1, y),
-            item.Text.Shorten(isRight ? -fileViewer.Size.width + 1 : item.Size.width - 1),
-            GetInteractionColor(item, color),
-            mask: item.Mask);
+        icon.Tint = item.GetInteractionColor(icon.Tint);
+
+        maps.Tilemaps[zOrder].SetTile(item.Position, icon, item.Mask);
+        maps.Tilemaps[zOrder].SetText((item.X + 1, item.Y), text, color, mask: item.Mask);
+
+        bool Ext(params string[] ext)
+        {
+            foreach (var ex in ext)
+                if (Path.GetExtension(item.Text).ToLower() == $".{ex}")
+                    return true;
+
+            return false;
+        }
     }
     public static void SetFileViewer(this Maps maps, FileViewer fileViewer, int zOrder = 0)
     {
-        Clear(maps, fileViewer, zOrder);
-        // SetBackground(maps.Tilemaps[zOrder], fileViewer);
+        if (maps.Tilemaps.Count <= zOrder + 1 || fileViewer.IsHidden)
+            return;
 
-        if (fileViewer.FilesAndFolders.Scroll.IsHidden == false)
-            SetScroll(maps, fileViewer.FilesAndFolders.Scroll, zOrder);
+        var bg = ThemeList.background;
+        bg.Tint = new Color(bg.Tint).ToDark(0.2f);
 
-        SetFileViewerItem(maps, fileViewer, fileViewer.User, zOrder + 1);
-        SetFileViewerItem(maps, fileViewer, fileViewer.Back, zOrder + 1);
+        maps.Tilemaps[zOrder].SetArea(fileViewer.Area, fileViewer.Mask, bg);
+        maps.SetList(fileViewer.FilesAndFolders, zOrder);
+        maps.SetFileViewerItem(fileViewer, fileViewer.User, zOrder + 1);
+        maps.SetFileViewerItem(fileViewer, fileViewer.Back, zOrder + 1);
     }
     public static void SetSlider(this Maps maps, Slider slider, int zOrder = 0)
     {
-        if (maps.Tilemaps.Count <= zOrder + 2)
+        if (maps.Tilemaps.Count <= zOrder + 1 || slider.IsHidden)
             return;
 
         var (edge, fill, handle) = ThemeSlider;
@@ -270,7 +233,7 @@ public static class MapperUserInterface
     }
     public static void SetScroll(this Maps maps, Scroll scroll, int zOrder = 0)
     {
-        if (maps.Tilemaps.Count <= zOrder + 1)
+        if (maps.Tilemaps.Count <= zOrder + 1 || scroll.IsHidden)
             return;
 
         var arrow = ThemeScrollArrow;
@@ -289,7 +252,7 @@ public static class MapperUserInterface
     }
     public static void SetStepper(this Maps maps, Stepper stepper, int zOrder = 0)
     {
-        if (maps.Tilemaps.Count <= zOrder + 1)
+        if (maps.Tilemaps.Count <= zOrder + 1 || stepper.IsHidden)
             return;
 
         var (corner, fill, arrow, min, mid, max, textTint, valueTint) = ThemeStepper;
@@ -323,7 +286,7 @@ public static class MapperUserInterface
     }
     public static void SetPrompt(this Maps maps, Prompt prompt, int zOrder = 0)
     {
-        if (maps.Tilemaps.Count <= zOrder + 2)
+        if (maps.Tilemaps.Count <= zOrder + 2 || prompt.IsHidden)
             return;
 
         var (corner, edge, fill, dim, textTint) = ThemePrompt;
@@ -339,7 +302,7 @@ public static class MapperUserInterface
     {
         var theme = ThemePromptItems;
 
-        if (maps.Tilemaps.Count <= zOrder || theme == null || theme.Length == 0)
+        if (maps.Tilemaps.Count <= zOrder || theme == null || theme.Length == 0 || item.IsHidden)
             return;
 
         var index = prompt.IndexOf(item);
@@ -352,53 +315,54 @@ public static class MapperUserInterface
     }
     public static void SetPanel(this Maps maps, Panel panel, int zOrder = 0)
     {
-        var p = panel;
-        var (x, y) = p.Position;
-        var (w, _) = p.Size;
+        if (maps.Tilemaps.Count <= zOrder + 1 || panel.IsHidden)
+            return;
 
-        Clear(maps, p, zOrder);
-        // SetBackground(maps.Tilemaps[zOrder], p, 0.6f);
+        var (corner, edge, fill, textTint) = ThemePanel;
+        var textPos = (panel.X + panel.Width / 2 - panel.Text.Length / 2, panel.Y);
+        var text = panel.Text.Shorten(Math.Min(panel.Width, panel.Text.Length));
 
-        maps.Tilemaps[zOrder + 1].SetBox(
-            p.Area, EMPTY, new(BOX_GRID_CORNER, Blue), new(BOX_GRID_STRAIGHT, Blue), p.Mask);
-        maps.Tilemaps[zOrder + 1].SetText(
-            (x + w / 2 - p.Text.Length / 2, y),
-            p.Text.Shorten(Math.Min(w, p.Text.Length)),
-            mask: p.Mask);
+        Clear(maps, panel, zOrder);
+        maps.Tilemaps[zOrder].SetBox(panel.Area, fill, corner, edge, panel.Mask);
+        maps.Tilemaps[zOrder + 1].SetText(textPos, text, textTint, mask: panel.Mask);
     }
     public static void SetPalette(this Maps maps, Palette palette, int zOrder = 0)
     {
-        var p = palette;
-        var color = new Color(p.SelectedColor) { A = 255 };
+        if (maps.Tilemaps.Count <= zOrder + 2)
+            return;
 
-        Clear(maps, p, zOrder);
-        maps.Tilemaps[zOrder].SetArea(
-            p.Area,
-            tiles: new Tile(SHADE_5, Gray.ToDark()),
-            mask: p.Mask);
+        var (full, pick, halfShade, handle) = ThemePalette;
+        var resultTile = new Tile(full, palette.SelectedColor);
+        var resultColor = new Color(palette.SelectedColor);
 
-        maps.Tilemaps[zOrder].SetTile(p.Pick.Position, EMPTY);
-        if (p.Pick.IsHidden == false)
-            maps.Tilemaps[zOrder + 1].SetTile(p.Pick.Position,
-                new(ICON_PICK, GetInteractionColor(p.Pick, Gray)), p.Mask);
+        if (resultColor.R == resultColor.G && resultColor.G == resultColor.B)
+            resultColor = Yellow;
 
-        var opVert = p.Opacity.IsVertical;
-        var opMax = opVert ? p.Opacity.Height : p.Opacity.Width;
-        for (var i = 0; i < opMax; i++)
+        handle.Tint = resultColor.ToOpposite();
+
+        pick.Tint = palette.Pick.GetInteractionColor(pick.Tint);
+
+        Clear(maps, palette, zOrder);
+        maps.Tilemaps[zOrder].SetArea(palette.Opacity.Area, palette.Mask, halfShade);
+        maps.Tilemaps[zOrder + 1].SetArea(palette.Opacity.Area, palette.Mask, resultTile);
+        maps.Tilemaps[zOrder + 2].SetTile(palette.Opacity.Handle.Position, handle, palette.Mask);
+        maps.Tilemaps[zOrder + 2].SetTile(palette.Brightness.Handle.Position, handle, palette.Mask);
+
+        for (var i = 0; i < palette.Width; i++)
         {
-            var curTile = new Tile(i.Map((0, opMax), (0, 11)), color);
-            var (offX, offY) = opVert ? (0, i) : (i, 0);
-            maps.Tilemaps[zOrder].SetTile((p.Opacity.X + offX, p.Opacity.Y + offY), curTile, p.Mask);
+            var tile = new Tile(full, palette.GetSample(i));
+            maps.Tilemaps[zOrder + 1].SetTile((palette.X + i, palette.Y + 1), tile, palette.Mask);
         }
 
-        var brVert = p.Brightness.IsVertical;
-        var brMax = brVert ? p.Brightness.Height : p.Brightness.Width;
-        for (var i = 0; i < brMax; i++)
+        for (var i = 0; i < palette.Brightness.Width; i++)
         {
-            var col = new Color((byte)i.Map((0, brMax - 1), (0, 255)));
-            var (offX, offY) = brVert ? (0, i) : (i, 0);
-            maps.Tilemaps[zOrder].SetTile((p.Brightness.X + offX, p.Brightness.Y + offY), new(FULL, col), p.Mask);
+            var col = new Color((byte)i.Map((0, palette.Brightness.Width - 1), (0, 255)));
+            var cell = (palette.Brightness.X + i, palette.Brightness.Y);
+            maps.Tilemaps[zOrder].SetTile(cell, new(FULL, col), palette.Mask);
         }
+
+        if (palette.Pick.IsHidden == false)
+            maps.Tilemaps[zOrder + 1].SetTile(palette.Pick.Position, pick, palette.Mask);
     }
     public static void SetPages(this Maps maps, Pages pages, int zOrder = 0)
     {
@@ -436,41 +400,39 @@ public static class MapperUserInterface
     }
     public static void SetList(this Maps maps, List list, int zOrder = 0)
     {
-        if (maps.Tilemaps.Count <= zOrder + 2)
+        if (maps.Tilemaps.Count <= zOrder + 2 || list.IsHidden)
             return;
 
+        var (bg, arrow, tint, select, disable) = ThemeList;
+        var arrowPos = (list.X + list.Width - 1, list.Y);
+
+        arrow.Tint = list.GetInteractionColor(arrow.Tint);
+
         Clear(maps, list, zOrder);
-        maps.Tilemaps[zOrder].SetArea(
-            list.Area,
-            tiles: new Tile(FULL, Gray.ToDark()),
-            mask: list.Mask);
+        maps.Tilemaps[zOrder].SetArea(list.Area, list.Mask, bg);
 
         if (list.IsScrollAvailable)
             SetScroll(maps, list.Scroll, zOrder + 1);
 
         if (list.IsCollapsed)
-            maps.Tilemaps[zOrder + 2].SetTile(
-                (list.Position.x + list.Size.width - 1, list.Position.y),
-                new(MATH_GREATER, GetInteractionColor(list, Gray.ToBright()), 1),
-                list.Mask);
+            maps.Tilemaps[zOrder + 2].SetTile(arrowPos, arrow, list.Mask);
     }
     public static void SetListItem(this Maps maps, List list, Button item, int zOrder = 1, bool showSelected = true)
     {
-        if (maps.Tilemaps.Count <= zOrder)
+        if (maps.Tilemaps.Count <= zOrder || item.IsHidden)
             return;
 
-        var color = item.IsSelected && showSelected ? Green : Gray.ToBright(0.3f);
-        var (x, y) = item.Position;
-        var (_, h) = item.Size;
-        var isLeftCrop =
-            list.Span == Span.Horizontal &&
-            item.Size.width < list.ItemSize.width &&
-            item.Position == list.Position;
+        var (bg, arrow, tint, select, disable) = ThemeList;
+        var color = item.IsSelected && showSelected ? select : tint;
+        var isLeftCrop = list.Span == Span.Horizontal &&
+                         item.Width < list.ItemSize.width &&
+                         item.Position == list.Position;
         var text = item.Text.Shorten(item.Size.width * (isLeftCrop ? -1 : 1));
+        var pos = (item.X, item.Y + item.Height / 2);
 
-        color = item.GetInteractionColor(item.IsDisabled ? Gray : color);
+        color = item.GetInteractionColor(item.IsDisabled ? disable : color);
 
-        maps.Tilemaps[zOrder].SetText((x, y + h / 2), text, color, mask: item.Mask);
+        maps.Tilemaps[zOrder].SetText(pos, text, color, mask: item.Mask);
     }
     public static void SetLayoutSegment(this Maps maps, (int x, int y, int width, int height) segment, int index, bool showIndex, int zOrder = 0)
     {
@@ -523,11 +485,24 @@ public static class MapperUserInterface
         ThemePages = (new(MATH_MUCH_LESS, g), new(MATH_LESS, g), new(MATH_GREATER, g), new(MATH_MUCH_GREATER, g));
         ThemePrompt = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), new(FULL, dim), White);
         ThemePromptItems = [new(ICON_YES, Green), new(ICON_NO, Red)];
+        ThemePalette = (FULL, new(ICON_PICK, g), new(SHADE_5, g.ToDark()), new(SHAPE_CIRCLE_SMALL, g));
+        ThemePanel = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), White);
+        ThemeList = (new(FULL, dg), new(MATH_GREATER, g, 1), g.ToBright(0.3f), Green, dg);
 
         var min = new Tile(MATH_MUCH_LESS, g);
         var mid = new Tile(PUNCTUATION_PIPE, g);
         var max = new Tile(MATH_MUCH_GREATER, g);
         ThemeStepper = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), arrow, min, mid, max, g, White);
+
+        var img = new Tile(ICON_PICTURE, Cyan);
+        var audio = new Tile(AUDIO_NOTES_BEAMED_EIGHT, Purple.ToBright(0.35f));
+        var font = new Tile(UPPERCASE_F, Violet);
+        var txt = new Tile(ALIGN_HORIZONTAL_LEFT, Azure);
+        var zip = new Tile(ICON_STACK_2, Brown);
+        var vid = new Tile(ICON_CAMERA_MOVIE, Red);
+        var cfg = new Tile(ICON_SETTINGS, Yellow.ToDark());
+        var exe = new Tile(FLOW_PLAY, Orange);
+        ThemeFileViewer = (img, audio, font, txt, zip, vid, cfg, exe);
     }
 
     private static void Clear(Maps maps, Block block, int zOrder)

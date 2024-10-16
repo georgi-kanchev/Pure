@@ -10,8 +10,6 @@ public static class Palettes
         palette.AlignInside((0.5f, 0.5f));
         palette.OnPick(position => maps.Tilemaps[1].TileAt(((int)position.x, (int)position.y)).Tint);
         palette.OnDisplay(() => maps.SetPalette(palette));
-        palette.OnSampleDisplay((sample, color) =>
-            maps.Tilemaps[1].SetTile(sample.Position, new(Tile.FULL, color)));
 
         //===============
 

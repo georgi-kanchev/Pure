@@ -282,8 +282,6 @@ internal class Inspector : Panel
             editor.MapsUi.Tilemaps[MIDDLE].SetArea(area, null, new Tile(SHADE_5, Gray));
             editor.MapsUi.Tilemaps[FRONT].SetArea(area, null, tile);
         });
-        paletteColor.OnSampleDisplay((btn, color) =>
-            editor.MapsUi.Tilemaps[MIDDLE].SetTile(btn.Position, new(FULL, color)));
     }
     [MemberNotNull(nameof(paletteScrollV)), MemberNotNull(nameof(paletteScrollH))]
     private Button[] AddPaletteScrolls()

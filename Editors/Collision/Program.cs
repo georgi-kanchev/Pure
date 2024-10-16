@@ -165,8 +165,6 @@ public static class Program
             editor.MapsUi.SetSlider(palette.Opacity, MIDDLE);
             editor.MapsUi.SetSlider(palette.Brightness, MIDDLE);
         });
-        palette.OnSampleDisplay((btn, color) =>
-            editor.MapsUi.Tilemaps[FRONT].SetTile(btn.Position, new(Tile.FULL, color)));
         palette.AlignInside((0.8f, 0f));
 
         editor.Ui.Blocks.AddRange([tools, palette]);

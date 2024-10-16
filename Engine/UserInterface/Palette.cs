@@ -6,6 +6,7 @@ public class Palette : Block
 {
     public Slider Opacity { get; private set; }
     public Slider Brightness { get; private set; }
+    public Slider Samples { get; private set; }
     public Button Pick { get; private set; }
 
     public uint SelectedColor
@@ -60,10 +61,16 @@ public class Palette : Block
         return Compress(result.ToArray());
     }
 
-    public void OnSampleDisplay(Action<Button, uint> method)
+    public uint GetSample(int index)
     {
-        displaySample += method;
+        index = index < 0 ? 0 : index;
+        index = index >= palette.Length ? palette.Length - 1 : index;
+
+        // var color = ToOpacity(palette[index], Opacity.Progress);
+        var color = ToBrightness(palette[index], Brightness.Progress);
+        return color;
     }
+
     public void OnPick(Func<(float x, float y), uint> method)
     {
         pick = method;
@@ -97,8 +104,7 @@ public class Palette : Block
         return new(bytes);
     }
 
-    #region Backend
-    private readonly List<Button> colorButtons = [];
+#region Backend
     private readonly uint[] palette =
     [
         0x_7F_7F_7F_FF, // Gray
@@ -118,47 +124,39 @@ public class Palette : Block
     private bool isPicking;
     private uint selectedColor = uint.MaxValue;
 
-    internal Action<Button, uint>? displaySample;
     internal Func<(float x, float y), uint>? pick;
 
-    [MemberNotNull(nameof(Opacity), nameof(Brightness), nameof(Pick))]
+    [MemberNotNull(nameof(Opacity), nameof(Brightness), nameof(Pick), nameof(Samples))]
     private void Init(float brightnessProgress, float opacityProgress)
     {
         OnUpdate(OnUpdate);
-        var (x, y) = Position;
-        var (w, h) = Size;
 
-        Opacity = new((x, y)) { Progress = opacityProgress, hasParent = true, wasMaskSet = true };
-        Brightness = new((x, y + 2))
+        Opacity = new(Position) { Progress = opacityProgress, hasParent = true, wasMaskSet = true };
+        Brightness = new((X, Y + 2))
         {
-            Progress = brightnessProgress, size = (w - 1, 1), hasParent = true, wasMaskSet = true
+            Progress = brightnessProgress, size = (Width - 1, 1), hasParent = true, wasMaskSet = true
         };
-        Pick = new((x + w - 1, y + h - 1)) { hasParent = true, wasMaskSet = true };
+        Pick = new((X + Width - 1, Y + Height - 1)) { hasParent = true, wasMaskSet = true };
 
         Pick.OnInteraction(Interaction.Trigger, () => isPicking = true);
 
-        for (var i = 0; i < palette.Length; i++)
+        Samples = new((X, Y + 1)) { hasParent = true, wasMaskSet = true };
+        Samples.Handle.OnInteraction(Interaction.Trigger, () =>
         {
-            var btn = new Button((x + i, y + 1)) { size = (1, 1), hasParent = true, wasMaskSet = true };
-            var index = i;
-            btn.OnUpdate(() =>
-            {
-                if (btn.IsHovered && btn.IsPressed())
-                    SelectedColor = GetColor(index);
-            });
-            colorButtons.Add(btn);
-        }
+            SelectedColor = GetSample((int)(Samples.Progress * Width));
+        });
+        Samples.OnInteraction(Interaction.Select, () =>
+        {
+            SelectedColor = GetSample((int)(Samples.Progress * Width));
+        });
     }
 
     internal void OnUpdate()
     {
         sizeMinimum = (13, 3);
-        LimitSizeMin((13, 3));
-    }
-    internal override void OnChildrenDisplay()
-    {
-        for (var i = 0; i < colorButtons.Count; i++)
-            displaySample?.Invoke(colorButtons[i], GetColor(i));
+        sizeMaximum = sizeMinimum;
+        LimitSizeMin(sizeMinimum);
+        LimitSizeMax(sizeMinimum);
     }
     internal override void OnChildrenUpdate()
     {
@@ -166,29 +164,24 @@ public class Palette : Block
         var (w, h) = Size;
 
         Opacity.position = (x, y);
-        Opacity.size = (w, h - 2);
+        Opacity.size = (w - (Pick.IsHidden ? 0 : 1), h - 2);
         Opacity.mask = mask;
         Opacity.Update();
 
-        Pick.position = (x + w - 1, y + h - 1);
+        Pick.position = (x + w - 1, y);
         Pick.size = (1, 1);
         Pick.mask = Pick.IsHidden ? Input.Mask : mask;
         Pick.Update();
 
         Brightness.position = (x, y + h - 1);
-        Brightness.size = (w - (Pick.IsHidden ? 0 : 1), 1);
+        Brightness.size = (w, 1);
         Brightness.mask = mask;
         Brightness.Update();
 
-        var xs = Distribute(colorButtons.Count, (x, x + w));
-        for (var i = 0; i < colorButtons.Count; i++)
-        {
-            var btn = colorButtons[i];
-            btn.position = ((int)xs[i], y + h - 2);
-            btn.size = (1, 1);
-            btn.mask = mask;
-            btn.Update();
-        }
+        Samples.position = (x, y + 1);
+        Samples.size = (w, 1);
+        Samples.mask = mask;
+        Samples.Update();
     }
 
     private static uint ToOpacity(uint color, float unit)
@@ -228,12 +221,6 @@ public class Palette : Block
     {
         return (uint)((r << 24) + (g << 16) + (b << 8) + a);
     }
-    private uint GetColor(int index)
-    {
-        var color = ToOpacity(palette[index], Opacity.Progress);
-        color = ToBrightness(color, Brightness.Progress);
-        return color;
-    }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)
     {
@@ -254,5 +241,5 @@ public class Palette : Block
 
         return result;
     }
-    #endregion
+#endregion
 }

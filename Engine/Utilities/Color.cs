@@ -210,6 +210,10 @@ public struct Color
     {
         return new(R, G, B, (byte)Map(unit, 0, 1, A, 255));
     }
+    public Color ToOpposite()
+    {
+        return new((byte)(255 - R), (byte)(255 - G), (byte)(255 - B));
+    }
 
     /// <returns>
     /// A bundle tuple containing the red, green, blue, and alpha components of the color.</returns>

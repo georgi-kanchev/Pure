@@ -2,7 +2,6 @@ namespace Pure.Engine.UserInterface;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-
 using static Environment;
 
 public class FileViewer : Block
@@ -60,10 +59,10 @@ public class FileViewer : Block
         get
         {
             var result = new List<string>();
+            var selectedItems = FilesAndFolders.SelectedItems;
 
-            for (var i = 0; i < FilesAndFolders.Items.Count; i++)
-                if (FilesAndFolders.Items[i].IsSelected)
-                    result.Add(Path.Join(CurrentDirectory, FilesAndFolders.Items[i].Text));
+            foreach (var item in selectedItems)
+                result.Add(Path.Join(CurrentDirectory, item.Text));
 
             return result.ToArray();
         }
@@ -73,6 +72,9 @@ public class FileViewer : Block
         get => fileFilter;
         set
         {
+            if (fileFilter == value)
+                return;
+
             fileFilter = value;
             Refresh();
         }
@@ -144,7 +146,7 @@ public class FileViewer : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private string dir = "default";
     private FileSystemWatcher watcher;
     private static string DefaultPath
@@ -183,6 +185,7 @@ public class FileViewer : Block
             hasParent = true,
             wasMaskSet = true
         };
+        FilesAndFolders.OnInteraction(Interaction.Select, () => Interact(Interaction.Select));
 
         Back = new(position) { hasParent = true, wasMaskSet = true, isTextReadonly = true };
         Back.OnInteraction(Interaction.Scroll, ApplyScroll);
@@ -243,16 +246,18 @@ public class FileViewer : Block
 
         Back.text = path;
 
-        if (IsSelectingFolders)
-            return;
+        if (IsSelectingFolders == false)
+        {
+            var filters = FileFilter?.Split(Path.DirectorySeparatorChar);
+            foreach (var file in files)
+                if (IsShowingFile(filters, file))
+                    CreateItem(file);
 
-        var filters = FileFilter?.Split(Path.DirectorySeparatorChar);
-        foreach (var file in files)
-            if (IsShowingFile(filters, file))
-                CreateItem(file);
+            CountFiles = files.Length;
+            FilesAndFolders.Scroll.Slider.Progress = 0;
+        }
 
-        CountFiles = files.Length;
-        FilesAndFolders.Scroll.Slider.Progress = 0;
+        Interact(Interaction.Select);
     }
     private void CreateItem(string path)
     {
@@ -272,6 +277,8 @@ public class FileViewer : Block
         {
             if (IsSelectingFolders == false && IsFolder(item))
                 FilesAndFolders.Select(item, false);
+
+            Interact(Interaction.Select);
         });
     }
 
@@ -289,8 +296,11 @@ public class FileViewer : Block
 
         var selected = FilesAndFolders.SelectedItems;
         var index = FilesAndFolders.Items.IndexOf(selected[0]);
-        if (IsSelectingFolders ^ (index < CountFolders))
-            FilesAndFolders.Deselect();
+        if ((IsSelectingFolders ^ (index < CountFolders)) == false)
+            return;
+
+        FilesAndFolders.Deselect();
+        Interact(Interaction.Select);
     }
     internal override void OnChildrenUpdate()
     {
@@ -363,5 +373,5 @@ public class FileViewer : Block
 
         return result;
     }
-    #endregion
+#endregion
 }

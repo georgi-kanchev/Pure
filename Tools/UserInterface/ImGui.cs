@@ -18,17 +18,17 @@ public static class ImGui
 
         maps.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush);
     }
-    public static bool Button((int x, int y) position, string text, Interaction trueWhen = Interaction.Trigger)
+    public static bool Button((int x, int y) cell, string text, Interaction trueWhen = Interaction.Trigger)
     {
-        var block = TryCache<Button>(text, (position.x, position.y, text.Length + 2, 1));
+        var block = TryCache<Button>(text, (cell.x, cell.y, text.Length + 2, 1));
         maps.SetButton(block);
         return block.IsJustInteracted(trueWhen);
     }
-    public static bool Checkbox((int x, int y) position, string text)
+    public static bool? Checkbox((int x, int y) cell, string text)
     {
-        var block = TryCache<Button>(text, (position.x, position.y, text.Length + 2, 1));
+        var block = TryCache<Button>(text, (cell.x, cell.y, text.Length + 2, 1));
         maps.SetCheckbox(block);
-        return block.IsSelected;
+        return block.IsJustInteracted(Interaction.Select) ? block.IsSelected : null;
     }
     public static string? InputBox(Area area, string placeholder = "Type…")
     {
@@ -41,33 +41,33 @@ public static class ImGui
 
         return block.Value;
     }
-    public static float Slider((int x, int y) position, int size, bool vertical = false)
+    public static float Slider((int x, int y) cell, int size, bool vertical = false)
     {
         var (w, h) = (vertical ? 1 : size, vertical ? size : 1);
-        var block = TryCache<Slider>("", (position.x, position.y, w, h));
+        var block = TryCache<Slider>("", (cell.x, cell.y, w, h));
         maps.SetSlider(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Progress : float.NaN;
     }
-    public static float Scroll((int x, int y) position, int size, bool vertical = false)
+    public static float Scroll((int x, int y) cell, int size, bool vertical = false)
     {
         var (w, h) = (vertical ? 1 : size, vertical ? size : 1);
-        var block = TryCache<Scroll>("", (position.x, position.y, w, h));
+        var block = TryCache<Scroll>("", (cell.x, cell.y, w, h));
         maps.SetScroll(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Slider.Progress : float.NaN;
     }
-    public static float Stepper((int x, int y) position, string text, float step = 1f, float min = float.MinValue, float max = float.MaxValue)
+    public static float Stepper((int x, int y) cell, string text, float step = 1f, float min = float.MinValue, float max = float.MaxValue)
     {
         var (w, h) = (text.Length + 1, 2);
-        var block = TryCache<Stepper>(text, (position.x, position.y, w, h));
+        var block = TryCache<Stepper>(text, (cell.x, cell.y, w, h));
         block.Step = step;
         block.Range = (min, max);
         maps.SetStepper(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Value : float.NaN;
     }
-    public static float Pages((int x, int y) position, int size = 12, int totalCount = 10, int itemWidth = 2)
+    public static float Pages((int x, int y) cell, int size = 12, int totalCount = 10, int itemWidth = 2)
     {
         var (w, h) = (size, 1);
-        var block = TryCache<Pages>("", (position.x, position.y, w, h));
+        var block = TryCache<Pages>("", (cell.x, cell.y, w, h));
         block.Count = totalCount;
         block.ItemWidth = itemWidth;
         return block.IsJustInteracted(Interaction.Select) ? block.Current : float.NaN;
@@ -100,6 +100,27 @@ public static class ImGui
             selected.Add(item.Text);
 
         return selected.ToArray();
+    }
+    public static uint? Palette((int x, int y) cell)
+    {
+        var block = TryCache<Palette>("", (cell.x, cell.y, 1, 1));
+        block.Pick.IsHidden = true;
+        block.Pick.IsDisabled = true;
+        return block.IsJustInteracted(Interaction.Select) ? block.SelectedColor : null;
+    }
+    public static string[]? FileViewer((int x, int y, int width, int height) area, string? fileFilter = null, bool multiSelect = false)
+    {
+        var block = TryCache<FileViewer>("", area);
+        block.FileFilter = fileFilter;
+        block.FilesAndFolders.IsSingleSelecting = multiSelect == false;
+        return block.IsJustInteracted(Interaction.Select) ? block.SelectedPaths : null;
+    }
+    public static string[]? FolderViewer((int x, int y, int width, int height) area, bool multiSelect = false)
+    {
+        var block = TryCache<FileViewer>("", area);
+        block.IsSelectingFolders = true;
+        block.FilesAndFolders.IsSingleSelecting = multiSelect == false;
+        return block.IsJustInteracted(Interaction.Select) ? block.SelectedPaths : null;
     }
 
     public static string? PromptInput(string text, int width = 20, SymbolGroup symbolGroup = SymbolGroup.All)
@@ -204,6 +225,20 @@ public static class ImGui
                 imGuiCache[area] = (2, new Stepper { Text = text });
             else if (type == typeof(Tooltip))
                 imGuiCache[area] = (2, new Tooltip { Text = text });
+            else if (type == typeof(FileViewer))
+            {
+                var fileViewer = new FileViewer();
+                imGuiCache[area] = (2, fileViewer);
+                fileViewer.OnDisplay(() => maps.SetFileViewer(fileViewer));
+                fileViewer.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(fileViewer, item));
+                fileViewer.HardDrives.OnItemDisplay(item => maps.SetFileViewerItem(fileViewer, item));
+            }
+            else if (type == typeof(Palette))
+            {
+                var palette = new Palette();
+                imGuiCache[area] = (2, palette);
+                palette.OnDisplay(() => maps.SetPalette(palette));
+            }
             else if (type == typeof(Prompt))
             {
                 var prompt = new Prompt { Text = text, Size = maps.Size };

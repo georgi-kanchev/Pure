@@ -20,7 +20,8 @@ public class Slider : Block
         get => isVertical;
         set
         {
-            if (hasParent == false) isVertical = value;
+            if (hasParent == false)
+                isVertical = value;
         }
     }
     /// <summary>
@@ -31,10 +32,11 @@ public class Slider : Block
         get => progress;
         set
         {
-            if (Math.Abs(progress - value) > 0.001f)
-                Interact(Interaction.Select);
-
+            var prev = progress;
             progress = Math.Clamp(value, 0, 1);
+
+            if (Math.Abs(progress - prev) > 0.001f)
+                Interact(Interaction.Select);
         }
     }
 
@@ -116,7 +118,7 @@ public class Slider : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     internal float progress;
     internal int index;
     internal bool isVertical;
@@ -177,5 +179,5 @@ public class Slider : Block
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }

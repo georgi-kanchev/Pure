@@ -122,7 +122,6 @@ public static class Program
             }
             case nameof(Palette):
             {
-                const int BACK = (int)Editor.LayerMapsEditor.Back;
                 block = bytes != null ? new(bytes) : new Palette(position);
                 var palette = (Palette)block;
                 panel.SizeMinimum = (15, 5);
@@ -130,8 +129,6 @@ public static class Program
                 block.OnDisplay(() => editor.MapsEditor.SetPalette(palette));
                 block.OnDisplay(() => editor.MapsEditor.SetSlider(palette.Brightness));
 
-                palette.OnSampleDisplay((btn, c) =>
-                    editor.MapsEditor.Tilemaps[BACK].SetTile(btn.Position, new(Tile.FULL, (Color)c)));
                 break;
             }
             case nameof(Slider):
