@@ -1,8 +1,8 @@
-namespace Pure.Engine.Window;
-
 using SFML.Graphics.Glsl;
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
+
+namespace Pure.Engine.Window;
 
 [Flags]
 public enum Edge

@@ -18,9 +18,9 @@ public static class ImGui
 
         maps.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush);
     }
-    public static bool Button((int x, int y) cell, string text, Interaction trueWhen = Interaction.Trigger)
+    public static bool Button((int x, int y, int width, int height) area, string text, Interaction trueWhen = Interaction.Trigger)
     {
-        var block = TryCache<Button>(text, (cell.x, cell.y, text.Length + 2, 1));
+        var block = TryCache<Button>(text, area);
         maps.SetButton(block);
         return block.IsJustInteracted(trueWhen);
     }
@@ -199,6 +199,15 @@ public static class ImGui
         layer.DrawCursor(Cursor.Id, Cursor.Tint);
         layer.Draw();
         maps.Flush();
+    }
+
+    public static void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A, int numbers = Tile.NUMBER_0)
+    {
+        maps.ConfigureText(lowercase, uppercase, numbers);
+    }
+    public static void ConfigureText(string symbols, int firstTileId)
+    {
+        maps.ConfigureText(symbols, firstTileId);
     }
 
 #region Backend

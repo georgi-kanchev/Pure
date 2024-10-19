@@ -55,7 +55,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Editors.Storage", "Edi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Engine.Execution", "Engine\Execution\Pure.Engine.Execution.csproj", "{7015866F-5374-4B0A-8B73-F48CE149F070}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserInterface", "Tools\UserInterface\UserInterface.csproj", "{8C676633-E7C7-4E1E-90E8-A7F8462ADF0B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Tools.UserInterface", "Tools\UserInterface\Pure.Tools.UserInterface.csproj", "{8C676633-E7C7-4E1E-90E8-A7F8462ADF0B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

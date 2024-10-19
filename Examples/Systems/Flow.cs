@@ -31,7 +31,7 @@ public static class Flow
         void TurnStart()
         {
             stateMachine.Get(Path.Running)?.Disable();
-            stateMachine.Run(Attack);
+            stateMachine.GoTo(Attack);
         }
 
         void ControlPlayer()
@@ -48,7 +48,7 @@ public static class Flow
 
         void Attack()
         {
-            stateMachine.Run(Win);
+            stateMachine.GoTo(Win);
         }
 
         void Miss()

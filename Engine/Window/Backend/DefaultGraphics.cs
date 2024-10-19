@@ -27,7 +27,7 @@ internal static class DefaultGraphics
             Convert.ToByte(w[0..BYTE_BITS_COUNT], BINARY),
             Convert.ToByte(w[BYTE_BITS_COUNT..^0], BINARY),
             Convert.ToByte(h[0..BYTE_BITS_COUNT], BINARY),
-            Convert.ToByte(h[BYTE_BITS_COUNT..^0], BINARY),
+            Convert.ToByte(h[BYTE_BITS_COUNT..^0], BINARY)
         };
 
         for (var i = 0; i < rawBits.Length; i++)
@@ -111,8 +111,8 @@ internal static class DefaultGraphics
     public static Texture CreateTexture()
     {
         var bytes = Decompress(Convert.FromBase64String(DEFAULT_GRAPHICS_BASE64));
-        var width = (ushort)(bytes[0] << 8 | bytes[1]);
-        var height = (ushort)(bytes[2] << 8 | bytes[3]);
+        var width = (ushort)((bytes[0] << 8) | bytes[1]);
+        var height = (ushort)((bytes[2] << 8) | bytes[3]);
         var total = width * height;
         var decodedBits = new List<bool>();
         var img = new Image(width, height);
@@ -185,7 +185,9 @@ internal static class DefaultGraphics
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -194,7 +196,9 @@ internal static class DefaultGraphics
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }

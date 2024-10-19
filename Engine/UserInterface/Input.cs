@@ -1,6 +1,6 @@
-namespace Pure.Engine.UserInterface;
-
 using System.Diagnostics;
+
+namespace Pure.Engine.UserInterface;
 
 /// <summary>
 /// The various user interface actions that can be triggered by user input.
@@ -23,12 +23,7 @@ public enum MouseCursor
     Move, Crosshair, Help, Disable
 }
 
-public enum MouseButton
-{
-    Left,
-    Right,
-    Middle
-}
+public enum MouseButton { Left, Right, Middle }
 
 /// <summary>
 /// Represents the keyboard keys used for input by the user interface.
@@ -71,6 +66,7 @@ public static class Input
     /// </summary>
     public static (float x, float y) PositionPrevious { get; set; }
     public static string? Clipboard { get; set; }
+    public static bool IsTyping { get; internal set; }
 
     public static void Update(int[]? buttonsPressed = default, int scrollDelta = default, int[]? keysPressed = default, string? keysTyped = default, string? clipboard = default)
     {

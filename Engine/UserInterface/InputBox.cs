@@ -1,9 +1,8 @@
 ﻿using System.Text.RegularExpressions;
-
-namespace Pure.Engine.UserInterface;
-
 using System.Diagnostics;
 using System.Text;
+
+namespace Pure.Engine.UserInterface;
 
 [Flags]
 public enum SymbolGroup
@@ -421,7 +420,7 @@ public class InputBox : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private readonly List<string> lines = [string.Empty];
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
 
@@ -473,6 +472,11 @@ public class InputBox : Block
             clicks = 0;
             clickDelay.Restart();
             TrySelect();
+            Input.IsTyping = true;
+        });
+        OnInteraction(Interaction.Unfocus, () =>
+        {
+            Input.IsTyping = false;
         });
     }
 
@@ -1126,5 +1130,5 @@ public class InputBox : Block
 
         return result.ToString();
     }
-    #endregion
+#endregion
 }

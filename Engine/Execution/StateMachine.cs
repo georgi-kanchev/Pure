@@ -102,7 +102,7 @@ public class StateMachine
         foreach (var state in states)
             match.children.Add(new(state) { parent = match, root = match.root });
     }
-    public void Run(Action? state)
+    public void GoTo(Action? state)
     {
         if (state == null)
         {
@@ -148,7 +148,7 @@ public class StateMachine
     private State Reset()
     {
         var state = roots.First().Value;
-        Run(state.method);
+        GoTo(state.method);
         return state;
     }
 #endregion

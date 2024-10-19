@@ -454,7 +454,8 @@ public static class MapperUserInterface
     {
         var hotkeyIsPressed = block is Button btn &&
                               ((Key)btn.Hotkey.id).IsPressed() &&
-                              KeysPressed.Length == 1;
+                              KeysPressed.Length == 1 &&
+                              Input.IsTyping == false;
 
         if (block.IsDisabled || IsInteractable == false) return baseColor;
         if (block.IsPressedAndHeld || hotkeyIsPressed) return baseColor.ToDark(amount);

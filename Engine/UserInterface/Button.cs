@@ -98,8 +98,10 @@ public class Button : Block
         if (IsHovered)
             Input.CursorResult = MouseCursor.Hand;
 
-        if (Hotkey.id == -1 || Input.PressedKeys?.Length != 1)
-            return; // disallow multiple key presses when triggering hotkey, should be only hotkey
+        if (Hotkey.id == -1 ||
+            Input.PressedKeys?.Length != 1 ||
+            Input.IsTyping)
+            return; // ensure single hotkey press & not typing
 
         if (Input.IsKeyJustPressed((Key)Hotkey.id))
         {

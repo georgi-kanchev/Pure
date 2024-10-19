@@ -1,3 +1,4 @@
+using Pure.Engine.Execution;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utilities;
 using Pure.Engine.Window;
@@ -15,7 +16,6 @@ public static class ImmediateGui
         var (w, h) = Monitor.Current.AspectRatio;
         var layer = new Layer((w * 3, h * 3));
 
-        var textPrompt = false;
         var percent = "0%";
         var log = "";
         var tooltip = ("This is an\n" +
@@ -24,13 +24,16 @@ public static class ImmediateGui
                        "Oh my!\n" +
                        "It keeps going!").Constrain((16, 5), false, Alignment.Center);
 
+        var promptStates = new StateMachine();
+        promptStates.Add(null, PromptChoice, PromptInput, PromptInfo);
+
         while (Window.KeepOpen())
         {
             var checkbox = ImGui.Checkbox((0, 5), "Checkbox");
             if (checkbox != null)
                 log = $"checkbox:\n{checkbox}";
 
-            if (ImGui.Button((0, 2), "Button"))
+            if (ImGui.Button((0, 1, 8, 3), "Button"))
                 log = "button:\nclicked";
 
             var input = ImGui.InputBox((0, 10, 10, 1), "Inputbox");
@@ -87,41 +90,53 @@ public static class ImmediateGui
             if (list != null)
                 log = $"regular list:\n{list.ToString(", ")}";
 
-            // = = = = = = = = = = = =
             // promts should be last
-            // = = = = = = = = = = = =
 
             if (Keyboard.Key.ControlLeft.IsJustPressed())
             {
                 ImGui.Prompt();
-                textPrompt = true;
+                promptStates.GoTo(PromptChoice);
             }
             else if (Keyboard.Key.ShiftLeft.IsJustPressed())
             {
                 ImGui.Prompt();
-                textPrompt = false;
+                promptStates.GoTo(PromptInput);
+            }
+            else if (Keyboard.Key.AltLeft.IsJustPressed())
+            {
+                ImGui.Prompt();
+                promptStates.GoTo(PromptInfo);
             }
 
-            if (textPrompt)
-            {
-                var choice = ImGui.PromptChoice("Are you ready to pick a\n" +
-                                                "choice from all the choices?", 3);
-                if (float.IsNaN(choice) == false)
-                    log = $"prompt choice:\n{(int)choice}";
-            }
-            else
-            {
-                ImGui.Tooltip = (tooltip, Side.Bottom, 0.5f);
-                var prompt = ImGui.PromptInput("Type in stuff:");
-                if (prompt != null)
-                    log = $"prompt input:\n{prompt}";
-                ImGui.Tooltip = default;
-            }
+            promptStates.Update();
 
             ImGui.Text((20, 0), "Left Control = Info Popup\n" +
                                 "Left Shift = Input Popup");
             ImGui.Text((0, 0), log.Constrain(layer.Size, false, Alignment.Bottom));
             layer.DrawImGui();
+        }
+
+        void PromptInfo()
+        {
+            var choice = ImGui.PromptChoice("This is some useful info!\n" +
+                                            " And some more useful info. ", 1);
+            if (float.IsNaN(choice) == false)
+                log = $"prompt info:\nclosed";
+        }
+        void PromptChoice()
+        {
+            var choice = ImGui.PromptChoice("Are you ready to pick a\n" +
+                                            "choice from all the choices?", 3);
+            if (float.IsNaN(choice) == false)
+                log = $"prompt choice:\n{(int)choice}";
+        }
+        void PromptInput()
+        {
+            ImGui.Tooltip = (tooltip, Side.Bottom, 0.5f);
+            var prompt = ImGui.PromptInput("Type in stuff:");
+            if (prompt != null)
+                log = $"prompt input:\n{prompt}";
+            ImGui.Tooltip = default;
         }
     }
 }
