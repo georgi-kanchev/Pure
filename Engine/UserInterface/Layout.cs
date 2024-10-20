@@ -1,10 +1,5 @@
 namespace Pure.Engine.UserInterface;
 
-public enum Side
-{
-    Left, Right, Top, Bottom
-}
-
 public class Layout : Block
 {
     public int Count
@@ -12,7 +7,10 @@ public class Layout : Block
         get => segments.Count;
     }
 
-    public Layout((int x, int y) position = default) : base(position)
+    public Layout() : this((0, 0))
+    {
+    }
+    public Layout((int x, int y) position) : base(position)
     {
         Init();
         Size = (12, 12);
@@ -106,25 +104,18 @@ public class Layout : Block
         return new(bytes);
     }
 
-    #region Backend
-    private class Segment
+#region Backend
+    private class Segment(float rate, Side side, Segment? parent)
     {
-        public readonly float rate;
-        public readonly Side side;
-        public Segment? parent;
+        public readonly float rate = Math.Clamp(rate, 0, 1);
+        public readonly Side side = side;
+        public Segment? parent = parent;
 
         public (int x, int y) position;
         public (int w, int h) size;
-
-        public Segment(float rate, Side side, Segment? parent)
-        {
-            this.rate = Math.Clamp(rate, 0, 1);
-            this.side = side;
-            this.parent = parent;
-        }
     }
 
-    private readonly List<Segment> segments = new();
+    private readonly List<Segment> segments = [];
 
     internal Action<(int x, int y, int width, int height), int>? displaySegment;
 
@@ -209,5 +200,5 @@ public class Layout : Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-    #endregion
+#endregion
 }

@@ -148,14 +148,14 @@ public static class Program
             Text = $"{creating}".EnsureUnique(allKeys),
             Position = rightClickPos
         };
-        var list = new List(itemCount: itemCount)
+        var list = new List((0, 0), itemCount)
         {
             Text = selectedTypes.ToString(",")
         };
-        var remove = new List(itemCount: itemCount) { ItemSize = (1, 1) };
-        var move = new List(itemCount: itemCount) { ItemSize = (1, 1) };
+        var remove = new List((0, 0), itemCount) { ItemSize = (1, 1) };
+        var move = new List((0, 0), itemCount) { ItemSize = (1, 1) };
         var maps = editor.MapsEditor;
-        var keys = new List(itemCount: 1)
+        var keys = new List((0, 0), 1)
         {
             IsHidden = true,
             IsDisabled = true,

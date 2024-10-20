@@ -73,13 +73,16 @@ public class List : Block
         set => itemGap = Math.Max(value, 0);
     }
 
+    public List() : this((0, 0))
+    {
+    }
     /// <summary>
     /// Initializes a new list instance with the specified position, size and number of items.
     /// </summary>
     /// <param name="position">The position of the top-left corner of the list.</param>
     /// <param name="itemCount">The initial number of buttons in the list.</param>
     /// <param name="span">The type of the list.</param>
-    public List((int x, int y) position = default, int itemCount = 10, Span span = Span.Vertical) : base(position)
+    public List((int x, int y) position, int itemCount = 10, Span span = Span.Vertical) : base(position)
     {
         Init();
         Size = (6, 8);

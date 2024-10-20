@@ -43,7 +43,10 @@ public class Stepper : Block
     }
     public float Step { get; set; } = 1f;
 
-    public Stepper((int x, int y) position = default, float value = 0) : base(position)
+    public Stepper() : this((0, 0))
+    {
+    }
+    public Stepper((int x, int y) position, float value = 0) : base(position)
     {
         Size = (10, 2);
         Value = value;
@@ -91,7 +94,7 @@ public class Stepper : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private float value;
     private (float min, float max) range = (float.NegativeInfinity, float.PositiveInfinity);
 
@@ -192,5 +195,5 @@ public class Stepper : Block
         var split = number.ToString(CultureInfo.CurrentCulture).Split(cultDecPoint);
         return split.Length > 1 ? split[1].Length : 0;
     }
-    #endregion
+#endregion
 }

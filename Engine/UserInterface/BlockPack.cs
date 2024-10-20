@@ -4,7 +4,7 @@ using System.Text;
 
 public class BlockPack
 {
-    public List<Block> Blocks { get; } = new();
+    public List<Block> Blocks { get; } = [];
 
     public BlockPack()
     {
@@ -27,7 +27,8 @@ public class BlockPack
             offset -= typeStrBytesLength + 4;
             var bBlock = GetBytes(b, byteCount, ref offset);
 
-            if (typeStr == nameof(Button)) Blocks.Add(new Button(bBlock));
+            if (typeStr == nameof(Block)) Blocks.Add(new(bBlock));
+            else if (typeStr == nameof(Button)) Blocks.Add(new Button(bBlock));
             else if (typeStr == nameof(FileViewer)) Blocks.Add(new FileViewer(bBlock));
             else if (typeStr == nameof(InputBox)) Blocks.Add(new InputBox(bBlock));
             else if (typeStr == nameof(Layout)) Blocks.Add(new Layout(bBlock));
@@ -38,6 +39,7 @@ public class BlockPack
             else if (typeStr == nameof(Scroll)) Blocks.Add(new Scroll(bBlock));
             else if (typeStr == nameof(Slider)) Blocks.Add(new Slider(bBlock));
             else if (typeStr == nameof(Stepper)) Blocks.Add(new Stepper(bBlock));
+            else if (typeStr == nameof(Tooltip)) Blocks.Add(new Tooltip(bBlock));
         }
 
         return;

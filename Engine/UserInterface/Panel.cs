@@ -19,11 +19,14 @@ public class Panel : Block
     /// </summary>
     public bool IsRestricted { get; set; } = true;
 
+    public Panel() : this((0, 0))
+    {
+    }
     /// <summary>
     /// Initializes a new panel instance with the specified position.
     /// </summary>
     /// <param name="position">The position of the panel.</param>
-    public Panel((int x, int y) position = default) : base(position)
+    public Panel((int x, int y) position) : base(position)
     {
         Size = (12, 8);
         Init();
@@ -72,7 +75,7 @@ public class Panel : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     private bool isMoving, isResizingL, isResizingR, isResizingU, isResizingD;
     private (int x, int y) startBotR;
 
@@ -270,5 +273,5 @@ public class Panel : Block
         var u = rangeB >= number;
         return l && u;
     }
-    #endregion
+#endregion
 }

@@ -229,9 +229,9 @@ public static class ImGui
             else if (type == typeof(InputBox))
                 imGuiCache[area] = (2, new InputBox());
             else if (type == typeof(Slider))
-                imGuiCache[area] = (2, new Slider(vertical: area.Width == 1));
+                imGuiCache[area] = (2, new Slider((0, 0), area.Width == 1));
             else if (type == typeof(Scroll))
-                imGuiCache[area] = (2, new Scroll(vertical: area.Width == 1));
+                imGuiCache[area] = (2, new Scroll((0, 0), area.Width == 1));
             else if (type == typeof(Stepper))
                 imGuiCache[area] = (2, new Stepper { Text = text });
             else if (type == typeof(Tooltip))
@@ -267,7 +267,7 @@ public static class ImGui
             }
             else if (type == typeof(List))
             {
-                var list = new List(span: span);
+                var list = new List((0, 0), span: span);
                 imGuiCache[area] = (2, list);
                 list.OnDisplay(() => maps.SetList(list));
                 list.OnItemDisplay(item => maps.SetListItem(list, item));

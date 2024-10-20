@@ -23,7 +23,7 @@ public static class Lists
 
         //==============
 
-        var listHorizontal = new List(span: Span.Horizontal)
+        var listHorizontal = new List((0, 0), span: Span.Horizontal)
         {
             ItemSize = (6, 3),
             ItemGap = 1,
@@ -40,7 +40,7 @@ public static class Lists
 
         //==============
 
-        var listDropdown = new List(span: Span.Dropdown) { Size = (7, 10) };
+        var listDropdown = new List((0, 0), span: Span.Dropdown) { Size = (7, 10) };
         listDropdown.AlignInside((0.5f, 0.5f));
         listDropdown.OnDisplay(() =>
         {

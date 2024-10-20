@@ -22,7 +22,10 @@ public class Palette : Block
         }
     }
 
-    public Palette((int x, int y) position = default) : base(position)
+    public Palette() : this((0, 0))
+    {
+    }
+    public Palette((int x, int y) position) : base(position)
     {
         Size = (13, 3);
 

@@ -72,7 +72,10 @@ public class Pages : Block
         }
     }
 
-    public Pages((int x, int y) position = default, int count = 10) : base(position)
+    public Pages() : this((0, 0))
+    {
+    }
+    public Pages((int x, int y) position, int count = 10) : base(position)
     {
         ItemWidth = 1;
         ItemGap = 1;

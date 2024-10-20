@@ -83,7 +83,7 @@ internal class TerrainPanel : Panel
         var add = new Button { Size = (1, 1) };
         var remove = new Button { Size = (1, 1) };
         var apply = new Button { Size = (13, 3), Text = "Apply Rules" };
-        var pages = new Pages(count: 1) { Size = (6, 1), ItemWidth = 2 };
+        var pages = new Pages((0, 0), 1) { Size = (6, 1), ItemWidth = 2 };
         var autoTiles = GetAutoTiles();
 
         for (var i = 0; i < 9; i++)
@@ -222,7 +222,7 @@ internal class TerrainPanel : Panel
         };
         generate = new() { Text = "Generate!", Size = (13, 3) };
         autoGenerate = new() { IsSelected = true, Text = "Auto Generate", Size = (13, 1) };
-        tiles = new(itemCount: 0) { IsSingleSelecting = true, Size = (9, 4), ItemSize = (9, 1) };
+        tiles = new((0, 0), 0) { IsSingleSelecting = true, Size = (9, 4), ItemSize = (9, 1) };
         var add = new Button { Size = (1, 1) };
         var edit = new Button { Size = (1, 1) };
         var remove = new Button { Size = (1, 1) };

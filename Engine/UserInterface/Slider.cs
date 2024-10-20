@@ -40,7 +40,10 @@ public class Slider : Block
         }
     }
 
-    public Slider((int x, int y) position = default, bool vertical = false) : base(position)
+    public Slider() : this((0, 0))
+    {
+    }
+    public Slider((int x, int y) position, bool vertical = false) : base(position)
     {
         IsVertical = vertical;
         Size = vertical ? (1, 10) : (10, 1);

@@ -229,11 +229,14 @@ public class InputBox : Block
         }
     }
 
+    public InputBox() : this((0, 0))
+    {
+    }
     /// <summary>
     /// Initializes a new input box instance with a specific position and default size of (12, 1).
     /// </summary>
     /// <param name="position">The position of the input box.</param>
-    public InputBox((int x, int y) position = default) : base(position)
+    public InputBox((int x, int y) position) : base(position)
     {
         Init();
         Placeholder = "Type…";

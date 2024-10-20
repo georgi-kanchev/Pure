@@ -80,7 +80,10 @@ public class FileViewer : Block
         }
     }
 
-    public FileViewer((int x, int y) position = default) : base(position)
+    public FileViewer() : this((0, 0))
+    {
+    }
+    public FileViewer((int x, int y) position) : base(position)
     {
         Size = (16, 16);
         Init();

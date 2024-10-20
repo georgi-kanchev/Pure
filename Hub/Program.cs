@@ -13,10 +13,10 @@ public static class Program
     public static void Main()
     {
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
-        var editors = new List(itemCount: 4) { Size = (14, 4), ItemSize = (14, 1), Text = "Editors:" };
-        var apps = new List(itemCount: 8) { Size = (15, 8), ItemSize = (15, 1), Text = "Example Games:" };
-        var uis = new List(itemCount: 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
-        var systems = new List(itemCount: 7) { Size = (22, 7), ItemSize = (22, 1), Text = "Example Systems:" };
+        var editors = new List((0, 0), 4) { Size = (14, 4), ItemSize = (14, 1), Text = "Editors:" };
+        var apps = new List((0, 0), 8) { Size = (15, 8), ItemSize = (15, 1), Text = "Example Games:" };
+        var uis = new List((0, 0), 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
+        var systems = new List((0, 0), 7) { Size = (22, 7), ItemSize = (22, 1), Text = "Example Systems:" };
 
         editors.Edit(["Collision", "Map", "Storage", "User Interface"]);
         editors.AlignInside((0.75f, 0.25f));

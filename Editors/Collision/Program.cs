@@ -140,7 +140,7 @@ public static class Program
         const int FRONT = (int)Editor.LayerMapsUi.Front;
         const int PROMPT_MIDDLE = (int)Editor.LayerMapsUi.PromptMiddle;
         const int PROMPT_BACK = (int)Editor.LayerMapsUi.PromptBack;
-        tools = new(itemCount: 0)
+        tools = new((0, 0), 0)
         {
             Size = (10, 3),
             ItemSize = (10, 1),

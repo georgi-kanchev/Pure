@@ -31,7 +31,10 @@ public class Scroll : Block
         }
     }
 
-    public Scroll((int x, int y) position = default, bool vertical = true) : base(position)
+    public Scroll() : this((0, 0))
+    {
+    }
+    public Scroll((int x, int y) position, bool vertical = true) : base(position)
     {
         IsVertical = vertical;
         Size = IsVertical ? (1, 10) : (10, 1);
@@ -80,7 +83,7 @@ public class Scroll : Block
         return new(bytes);
     }
 
-    #region Backend
+#region Backend
     internal bool isVertical;
     internal float step = 0.1f;
 
@@ -161,5 +164,5 @@ public class Scroll : Block
         Increase.Update();
         Decrease.Update();
     }
-    #endregion
+#endregion
 }

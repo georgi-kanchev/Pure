@@ -119,6 +119,10 @@ public class StateMachine
         if (current != null)
             current.IsRunning = true;
     }
+    public void GoTo(params Path[] path)
+    {
+        GoTo(Get(path)?.method);
+    }
     public void Update()
     {
         if (roots.Count == 0)

@@ -28,18 +28,18 @@ public class State
         isDisabled = false;
     }
 
-    public static implicit operator State(Action value)
+    public static implicit operator State(Action method)
     {
-        return new(value);
+        return new(method);
     }
-    public static implicit operator Action(State color)
+    public static implicit operator Action(State state)
     {
-        return color.method;
+        return state.method;
     }
 
 #region Backend
     internal readonly Action method;
-    internal readonly List<State> children = new();
+    internal readonly List<State> children = [];
     private bool isDisabled;
     internal State? parent, root;
 
@@ -53,6 +53,8 @@ public class State
             Name = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value;
         else
             Name = method.Method.Name;
+
+        Name = $"{method.Method.DeclaringType?.Name}.{Name}";
     }
 
     public override string ToString()

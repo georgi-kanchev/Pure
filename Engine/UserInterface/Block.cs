@@ -1,14 +1,15 @@
-﻿using System.IO.Compression;
+﻿namespace Pure.Engine.UserInterface;
 
-namespace Pure.Engine.UserInterface;
-
+using System.IO.Compression;
 using System.Text;
+
+public enum Side { Left, Right, Top, Bottom }
 
 /// <summary>
 /// Represents a user interface block that the user can interact with and receive some
 /// results back.
 /// </summary>
-public abstract class Block
+public class Block
 {
     public (int x, int y, int width, int height) Area
     {
@@ -184,16 +185,15 @@ public abstract class Block
     /// <summary>
     /// Initializes a new user interface block instance class.
     /// </summary>
-    protected Block() : this((0, 0))
+    public Block() : this((0, 0))
     {
-        Init();
     }
     /// <summary>
     /// Initializes a new user interface block instance class with the specified 
     /// position.
     /// </summary>
     /// <param name="position">The position of the user interface block.</param>
-    protected Block((int x, int y) position = default)
+    public Block((int x, int y) position)
     {
         Size = (1, 1);
         Position = position;
@@ -206,7 +206,7 @@ public abstract class Block
     /// bytes.
     /// </summary>
     /// <param name="bytes">The bytes of the user interface block.</param>
-    protected Block(byte[] bytes)
+    public Block(byte[] bytes)
     {
         Init(); // should be before
 
@@ -229,7 +229,7 @@ public abstract class Block
     /// Initializes a new user interface block instance class with the specified
     /// </summary>
     /// <param name="base64">The base64 of the user interface block.</param>
-    protected Block(string base64) : this(Convert.FromBase64String(base64))
+    public Block(string base64) : this(Convert.FromBase64String(base64))
     {
     }
 
@@ -428,11 +428,11 @@ public abstract class Block
         return justInteracted.Contains(interaction);
     }
 
-    public void AlignEdges(Side edge, Side targetEdge, (int x, int y, int width, int height)? rectangle = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    public void AlignEdges(Side edge, Side targetEdge, (int x, int y, int width, int height)? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
-        var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
-        var rw = rectangle?.width ?? Input.TilemapSize.width;
-        var rh = rectangle?.height ?? Input.TilemapSize.height;
+        var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
+        var rw = targetArea?.width ?? Input.TilemapSize.width;
+        var rh = targetArea?.height ?? Input.TilemapSize.height;
         var (x, y) = Position;
         var (w, h) = Size;
         var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
@@ -470,32 +470,32 @@ public abstract class Block
 
         Position = (x, y);
     }
-    public void AlignInside((float horizontal, float vertical) alignment, (int x, int y, int width, int height)? rectangle = null)
+    public void AlignInside((float x, float y) alignment, (int x, int y, int width, int height)? targetArea = null)
     {
-        var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
-        var rw = rectangle?.width ?? Input.TilemapSize.width;
-        var rh = rectangle?.height ?? Input.TilemapSize.height;
+        var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
+        var rw = targetArea?.width ?? Input.TilemapSize.width;
+        var rh = targetArea?.height ?? Input.TilemapSize.height;
         var (x, y) = Position;
         var (w, h) = Size;
 
-        var newX = Map(alignment.horizontal, (0, 1), (rx, rw - w));
-        var newY = Map(alignment.vertical, (0, 1), (ry, rh - h));
+        var newX = Map(alignment.x, (0, 1), (rx, rw - w));
+        var newY = Map(alignment.y, (0, 1), (ry, rh - h));
         Position = (
-            float.IsNaN(alignment.horizontal) ? x : (int)newX,
-            float.IsNaN(alignment.vertical) ? y : (int)newY);
+            float.IsNaN(alignment.x) ? x : (int)newX,
+            float.IsNaN(alignment.y) ? y : (int)newY);
     }
-    public void AlignOutside(Side targetEdge, (int x, int y, int width, int height)? rectangle = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    public void AlignOutside(Side targetEdge, (int x, int y, int width, int height)? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
         var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
-        AlignEdges(opposites[(int)targetEdge], targetEdge, rectangle, alignment, offset + 1,
+        AlignEdges(opposites[(int)targetEdge], targetEdge, targetArea, alignment, offset + 1,
             exceedEdge);
     }
-    public void Fit((int x, int y, int width, int height)? rectangle = null)
+    public void Fit((int x, int y, int width, int height)? targetArea = null)
     {
         var (w, h) = Size;
-        var (rx, ry) = (rectangle?.x ?? 0, rectangle?.y ?? 0);
-        var rw = rectangle?.width ?? Input.TilemapSize.width;
-        var rh = rectangle?.height ?? Input.TilemapSize.height;
+        var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
+        var rw = targetArea?.width ?? Input.TilemapSize.width;
+        var rh = targetArea?.height ?? Input.TilemapSize.height;
         var newX = rw - w < rx ? rx : Math.Clamp(Position.x, rx, rw - w);
         var newY = rh - h < ry ? ry : Math.Clamp(Position.y, ry, rh - h);
         var hasOverflown = false;
@@ -703,7 +703,7 @@ public abstract class Block
         return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
     }
 
-    #region Backend
+#region Backend
     internal (int, int) position,
         size,
         listSizeTrimOffset,
@@ -792,7 +792,9 @@ public abstract class Block
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        {
             stream.Write(data, 0, data.Length);
+        }
 
         return output.ToArray();
     }
@@ -801,7 +803,9 @@ public abstract class Block
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
+        {
             stream.CopyTo(output);
+        }
 
         return output.ToArray();
     }
@@ -817,5 +821,5 @@ public abstract class Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-    #endregion
+#endregion
 }

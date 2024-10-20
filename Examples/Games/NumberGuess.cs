@@ -24,9 +24,18 @@ public static class NumberGuess
             if (input is { Length: 4 })
             {
                 log = tries == 0 ? "" : log;
-
                 tries++;
-                var result = input == randomNumber ? $"✓✓✓✓ ({tries} tries)" : GetBullsAndCows(input);
+
+                var bulls = 0;
+                var cows = 0;
+                for (var i = 0; i < randomNumber.Length; i++)
+                    if (input[i] == randomNumber[i])
+                        bulls++;
+                    else if (randomNumber.Contains(input[i]))
+                        cows++;
+                var bullsAndCows = $"{new('●', bulls)}{new('○', cows)}";
+
+                var result = input == randomNumber ? $"✓✓✓✓ ({tries} tries)" : bullsAndCows;
                 log = $"{log}\n{input} {result}";
 
                 if (input == randomNumber)
@@ -41,18 +50,6 @@ public static class NumberGuess
             layer.DrawImGui();
         }
 
-        string GetBullsAndCows(string input)
-        {
-            var bulls = 0;
-            var cows = 0;
-            for (var i = 0; i < randomNumber.Length; i++)
-                if (input[i] == randomNumber[i])
-                    bulls++;
-                else if (randomNumber.Contains(input[i]))
-                    cows++;
-
-            return $"{new('●', bulls)}{new('○', cows)}";
-        }
         string GenerateRandomNumber()
         {
             var numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
@@ -69,3 +66,8 @@ public static class NumberGuess
         }
     }
 }
+
+
+
+
+
