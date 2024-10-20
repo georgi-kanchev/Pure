@@ -30,10 +30,12 @@ public static class ImGui
         maps.SetCheckbox(block);
         return block.IsJustInteracted(Interaction.Select) ? block.IsSelected : null;
     }
-    public static string? InputBox(Area area, string placeholder = "Type…")
+    public static string? InputBox(Area area, string placeholder = "Type…", SymbolGroup symbolGroup = SymbolGroup.All, int symbolLimit = int.MaxValue)
     {
         var block = TryCache<InputBox>("", area);
         block.Placeholder = placeholder;
+        block.SymbolGroup = symbolGroup;
+        block.SymbolLimit = symbolLimit;
         maps.SetInputBox(block);
 
         if (block.Height == 1)

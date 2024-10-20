@@ -214,11 +214,11 @@ internal class TerrainPanel : Panel
         noiseType = new((0, 0), 6, Span.Dropdown) { Size = (13, 6), ItemSize = (13, 1) };
         scale = new()
         {
-            Value = "10", MaximumSymbolCount = 5, Size = (6, 1), SymbolGroup = SymbolGroup.Decimals
+            Value = "10", SymbolLimit = 5, Size = (6, 1), SymbolGroup = SymbolGroup.Decimals
         };
         seed = new()
         {
-            Value = "0", MaximumSymbolCount = 5, Size = (6, 1), SymbolGroup = SymbolGroup.Decimals
+            Value = "0", SymbolLimit = 5, Size = (6, 1), SymbolGroup = SymbolGroup.Decimals
         };
         generate = new() { Text = "Generate!", Size = (13, 3) };
         autoGenerate = new() { IsSelected = true, Text = "Auto Generate", Size = (13, 1) };

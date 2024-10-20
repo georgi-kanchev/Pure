@@ -52,7 +52,7 @@ public class InputBox : Block
         get => value;
         set
         {
-            value = value[..Math.Min(value.Length, MaximumSymbolCount)];
+            value = value[..Math.Min(value.Length, SymbolLimit)];
             this.value = value;
             var split = value.Split(Environment.NewLine);
 
@@ -89,7 +89,7 @@ public class InputBox : Block
             symbolGroup = value;
         }
     }
-    public int MaximumSymbolCount { get; set; }
+    public int SymbolLimit { get; set; }
 
     public string Selection
     {
@@ -240,7 +240,7 @@ public class InputBox : Block
         Size = (12, 1);
         lines[0] = Text;
         Value = Text;
-        MaximumSymbolCount = int.MaxValue;
+        SymbolLimit = int.MaxValue;
 
         SymbolGroup = SymbolGroup.All;
     }
@@ -252,7 +252,7 @@ public class InputBox : Block
         Placeholder = GrabString(b);
         Value = GrabString(b);
         SymbolGroup = (SymbolGroup)GrabByte(b);
-        MaximumSymbolCount = GrabInt(b);
+        SymbolLimit = GrabInt(b);
     }
     public InputBox(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -269,7 +269,7 @@ public class InputBox : Block
         Put(result, Placeholder);
         Put(result, Value);
         Put(result, (byte)SymbolGroup);
-        Put(result, MaximumSymbolCount);
+        Put(result, SymbolLimit);
         return Compress(result.ToArray());
     }
 

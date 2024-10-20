@@ -14,7 +14,7 @@ public static class Program
     {
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
         var editors = new List(itemCount: 4) { Size = (14, 4), ItemSize = (14, 1), Text = "Editors:" };
-        var apps = new List(itemCount: 7) { Size = (15, 7), ItemSize = (15, 1), Text = "Example Games:" };
+        var apps = new List(itemCount: 8) { Size = (15, 8), ItemSize = (15, 1), Text = "Example Games:" };
         var uis = new List(itemCount: 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
         var systems = new List(itemCount: 7) { Size = (22, 7), ItemSize = (22, 1), Text = "Example Systems:" };
 
@@ -28,10 +28,13 @@ public static class Program
                 "(click on a Hub Project to start it)".Constrain(maps.Size, alignment: Alignment.Top));
         });
 
-        apps.Edit(["Asteroids", "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris"]);
+        apps.Edit([
+            "Asteroids", "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris",
+            "Number Guess"
+        ]);
         apps.AlignInside((0.18f, 0.25f));
         OnTrigger(apps, Asteroids.Run, Chat.Run, EightBallPool.Run, FlappyBird.Run, Minesweeper.Run,
-            Pong.Run, Tetris.Run);
+            Pong.Run, Tetris.Run, NumberGuess.Run);
         OnDisplay(apps);
 
         uis.Edit([
