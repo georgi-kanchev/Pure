@@ -299,20 +299,19 @@ public static class Window
         var texture = Layer.tilesets[layer.AtlasPath];
         var (bx, by) = IndexToCoords(tileBack.id, layer);
         var (fx, fy) = IndexToCoords(tile.id, layer);
-        var (tw, th) = layer.AtlasTileSize;
-        var (gw, gh) = layer.AtlasTileGap;
-        tw += gw;
-        th += gh;
+        var tsz = layer.AtlasTileSize;
+        tsz += layer.AtlasTileGap;
+        tsz += layer.AtlasTileGap;
         var vertices = new Vertex[]
         {
-            new(new(0, 0), new(tileBack.tint), new(tw * bx, th * by)),
-            new(new(SIZE, 0), new(tileBack.tint), new(tw * (bx + 1), th * by)),
-            new(new(SIZE, SIZE), new(tileBack.tint), new(tw * (bx + 1), th * (by + 1))),
-            new(new(0, SIZE), new(tileBack.tint), new(tw * bx, th * (by + 1))),
-            new(new(0, 0), new(tile.tint), new(tw * fx, th * fy)),
-            new(new(SIZE, 0), new(tile.tint), new(tw * (fx + 1), th * fy)),
-            new(new(SIZE, SIZE), new(tile.tint), new(tw * (fx + 1), th * (fy + 1))),
-            new(new(0, SIZE), new(tile.tint), new(tw * fx, th * (fy + 1)))
+            new(new(0, 0), new(tileBack.tint), new(tsz * bx, tsz * by)),
+            new(new(SIZE, 0), new(tileBack.tint), new(tsz * (bx + 1), tsz * by)),
+            new(new(SIZE, SIZE), new(tileBack.tint), new(tsz * (bx + 1), tsz * (by + 1))),
+            new(new(0, SIZE), new(tileBack.tint), new(tsz * bx, tsz * (by + 1))),
+            new(new(0, 0), new(tile.tint), new(tsz * fx, tsz * fy)),
+            new(new(SIZE, 0), new(tile.tint), new(tsz * (fx + 1), tsz * fy)),
+            new(new(SIZE, SIZE), new(tile.tint), new(tsz * (fx + 1), tsz * (fy + 1))),
+            new(new(0, SIZE), new(tile.tint), new(tsz * fx, tsz * (fy + 1)))
         };
         rend.Draw(vertices, PrimitiveType.Quads, new(texture));
         rend.Display();

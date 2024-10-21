@@ -26,7 +26,7 @@ public static class MapperUserInterface
     public static Tile[]? ThemePromptItems { get; set; }
     public static (Tile full, Tile pick, Tile halfShade, Tile handle) ThemePalette { get; set; }
     public static (Tile corner, Tile edge, Tile fill, uint textTint) ThemePanel { get; set; }
-    public static (Tile background, Tile arrow, uint tint, uint select, uint disable) ThemeList { get; set; }
+    public static (Tile background, Tile arrow, uint tint, uint tintSelect, uint tintDisable) ThemeList { get; set; }
     public static (Tile img, Tile audio, Tile font, Tile txt, Tile zip, Tile vid, Tile cfg, Tile exe) ThemeFileViewer { get; set; }
 
     public static void SetTooltip(this Maps maps, Tooltip tooltip, int zOrder = 1)
@@ -488,7 +488,7 @@ public static class MapperUserInterface
         ThemePromptItems = [new(ICON_YES, Green), new(ICON_NO, Red)];
         ThemePalette = (FULL, new(ICON_PICK, g), new(SHADE_5, g.ToDark()), new(SHAPE_CIRCLE_SMALL, g));
         ThemePanel = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), White);
-        ThemeList = (new(FULL, dg), new(MATH_GREATER, g, 1), g.ToBright(0.3f), Green, dg);
+        ThemeList = (new(FULL, dg), new(MATH_GREATER, g, 1), g.ToBright(0.3f), Green, g.ToDark(0.3f));
 
         var min = new Tile(MATH_MUCH_LESS, g);
         var mid = new Tile(PUNCTUATION_PIPE, g);

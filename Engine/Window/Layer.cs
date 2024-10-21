@@ -56,24 +56,13 @@ public class Layer
         get
         {
             var (w, h) = ((int)tilesetPixelSize.X, (int)tilesetPixelSize.Y);
-            var (tw, th) = ((int)AtlasTileSize.width, (int)AtlasTileSize.height);
-            var (gw, gh) = ((int)AtlasTileGap.width, (int)AtlasTileGap.height);
-            var (rw, rh) = (w / (tw + gw), h / (th + gh));
+            var tsz = (int)AtlasTileSize;
+            var (rw, rh) = (w / (tsz + AtlasTileGap), h / (tsz + AtlasTileGap));
             return ((byte)rw, (byte)rh);
         }
     }
-    public (byte width, byte height) AtlasTileSize
-    {
-        get => atlasTileSize;
-        set => atlasTileSize =
-            ((byte)Math.Clamp((int)value.width, 0, 512), (byte)Math.Clamp((int)value.height, 0, 512));
-    }
-    public (byte width, byte height) AtlasTileGap
-    {
-        get => atlasTileGap;
-        set => atlasTileGap =
-            ((byte)Math.Clamp((int)value.width, 0, 512), (byte)Math.Clamp((int)value.height, 0, 512));
-    }
+    public byte AtlasTileSize { get; set; }
+    public byte AtlasTileGap { get; set; }
     public int AtlasTileIdFull { get; set; }
 
     public (int width, int height) Size
@@ -128,8 +117,8 @@ public class Layer
         var bAtlasPath = GetInt();
         AtlasPath = Encoding.UTF8.GetString(GetBytesFrom(b, bAtlasPath, ref offset));
         atlasPath = AtlasPath;
-        AtlasTileGap = (GetByte(), GetByte());
-        AtlasTileSize = (GetByte(), GetByte());
+        AtlasTileGap = GetByte();
+        AtlasTileSize = GetByte();
 
         AtlasTileIdFull = GetInt();
         Size = (GetInt(), GetInt());
@@ -171,7 +160,7 @@ public class Layer
     {
         Init();
         Zoom = 1f;
-        AtlasTileGap = (0, 0);
+        AtlasTileGap = 0;
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
         AtlasTileIdFull = 10;
@@ -186,10 +175,8 @@ public class Layer
         var bAtlasPath = Encoding.UTF8.GetBytes(AtlasPath);
         bytes.AddRange(BitConverter.GetBytes(bAtlasPath.Length));
         bytes.AddRange(bAtlasPath);
-        bytes.Add(AtlasTileGap.width);
-        bytes.Add(AtlasTileGap.height);
-        bytes.Add(AtlasTileSize.width);
-        bytes.Add(AtlasTileSize.height);
+        bytes.Add(AtlasTileGap);
+        bytes.Add(AtlasTileSize);
 
         bytes.AddRange(BitConverter.GetBytes(AtlasTileIdFull));
         bytes.AddRange(BitConverter.GetBytes(Size.width));
@@ -209,7 +196,7 @@ public class Layer
         Offset = (0f, 0f);
         var (mw, mh) = Monitor.Current.Size;
         var (ww, wh) = Window.Size;
-        var (w, h) = (Size.width * AtlasTileSize.width, Size.height * AtlasTileSize.height);
+        var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
         var (rw, rh) = ((float)mw / ww, (float)mh / wh);
         Zoom = Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
     }
@@ -248,7 +235,7 @@ public class Layer
         for (var i = 0; i < points?.Length; i++)
         {
             var p = points[i];
-            QueueRectangle((p.x, p.y), (1f / AtlasTileSize.width, 1f / AtlasTileSize.height), p.color);
+            QueueRectangle((p.x, p.y), (1f / AtlasTileSize, 1f / AtlasTileSize), p.color);
         }
     }
     public void DrawRectangles(params (float x, float y, float width, float height, uint color)[]? rectangles)
@@ -295,7 +282,7 @@ public class Layer
         var tiles = new int[Math.Abs(w), Math.Abs(h)];
         var (tileX, tileY) = IndexToCoords(id);
         var (x, y) = position;
-        var (tw, th) = AtlasTileSize;
+        var tsz = AtlasTileSize;
 
         for (var i = 0; i < Math.Abs(h); i++)
             for (var j = 0; j < Math.Abs(w); j++)
@@ -317,13 +304,13 @@ public class Layer
             for (var j = 0; j < w; j++)
             {
                 var (texTl, texTr, texBr, texBl) = GetTexCoords(tiles[j, i], (1, 1));
-                var (tx, ty) = (Math.Floor((x + j) * tw), Math.Floor((y + i) * th));
+                var (tx, ty) = (Math.Floor((x + j) * tsz), Math.Floor((y + i) * tsz));
                 var c = new Color(tint);
                 var tl = new Vector2f((int)tx, (int)ty);
-                var br = new Vector2f((int)(tx + tw), (int)(ty + th));
+                var br = new Vector2f((int)(tx + tsz), (int)(ty + tsz));
 
                 if (angle is 1 or 3)
-                    br = new((int)(tx + th), (int)(ty + tw));
+                    br = new((int)(tx + tsz), (int)(ty + tsz));
 
                 var tr = new Vector2f((int)br.X, (int)tl.Y);
                 var bl = new Vector2f((int)tl.X, (int)br.Y);
@@ -354,7 +341,7 @@ public class Layer
     public void DrawTilemap((int id, uint tint, int turns, bool mirror, bool flip)[,] tilemap)
     {
         var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
-        var (tw, th) = AtlasTileSize;
+        var tsz = AtlasTileSize;
 
         for (var y = 0; y < cellCountH; y++)
             for (var x = 0; x < cellCountW; x++)
@@ -365,10 +352,10 @@ public class Layer
                     continue;
 
                 var color = new Color(tint);
-                var tl = new Vector2f(x * tw, y * th);
-                var tr = new Vector2f((x + 1) * tw, y * th);
-                var br = new Vector2f((x + 1) * tw, (y + 1) * th);
-                var bl = new Vector2f(x * tw, (y + 1) * th);
+                var tl = new Vector2f(x * tsz, y * tsz);
+                var tr = new Vector2f((x + 1) * tsz, y * tsz);
+                var br = new Vector2f((x + 1) * tsz, (y + 1) * tsz);
+                var bl = new Vector2f(x * tsz, (y + 1) * tsz);
                 var (texTl, texTr, texBr, texBl) = GetTexCoords(id, (1, 1));
                 var rotated = GetRotatedPoints((sbyte)-angle, tl, tr, br, bl);
                 var (flipX, flipY) = (isFlippedHorizontally, isFlippedVertically);
@@ -552,9 +539,8 @@ public class Layer
         var (px, py) = (pixel.x * 1f, pixel.y * 1f);
         var (vw, vh) = Window.rendTexViewSz;
         var (cw, ch) = Size;
-        var (tw, th) = AtlasTileSize;
         var (ox, oy) = Offset;
-        var (mw, mh) = (cw * tw, ch * th);
+        var (mw, mh) = (cw * AtlasTileSize, ch * AtlasTileSize);
         var (ww, wh, ow, oh) = Window.GetRenderOffset();
 
         px -= ow;
@@ -644,12 +630,7 @@ public class Layer
     internal Vector2u tilesetPixelSize;
     internal (int w, int h) TilemapPixelSize
     {
-        get
-        {
-            var (mw, mh) = Size;
-            var (tw, th) = AtlasTileSize;
-            return (mw * tw, mh * th);
-        }
+        get => (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
     }
 
     static Layer()
@@ -662,7 +643,6 @@ public class Layer
     }
 
     private string atlasPath;
-    private (byte width, byte height) atlasTileGap, atlasTileSize;
     private (int width, int height) size;
     private float zoom;
     private LightFlags lightFlags;
@@ -671,7 +651,7 @@ public class Layer
     private void Init()
     {
         AtlasTileIdFull = 10;
-        AtlasTileSize = (8, 8);
+        AtlasTileSize = 8;
         tilesetPixelSize = new(208, 208);
     }
 
@@ -680,11 +660,10 @@ public class Layer
         if (IsOverlapping(a) == false && IsOverlapping(b) == false) // fully outside?
             return;
 
-        var (tw, th) = AtlasTileSize;
-        a.x *= tw;
-        a.y *= th;
-        b.x *= tw;
-        b.y *= th;
+        a.x *= AtlasTileSize;
+        a.y *= AtlasTileSize;
+        b.x *= AtlasTileSize;
+        b.y *= AtlasTileSize;
 
         const float THICKNESS = 0.5f;
         var color = new Color(tint);
@@ -713,7 +692,6 @@ public class Layer
     }
     private void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
     {
-        var (tw, th) = AtlasTileSize;
         var (w, h) = size;
 
         if (IsOverlapping(position) == false &&
@@ -722,11 +700,11 @@ public class Layer
             IsOverlapping((position.x, position.y + h)) == false)
             return;
 
-        var (x, y) = (position.x * tw, position.y * th);
+        var (x, y) = (position.x * AtlasTileSize, position.y * AtlasTileSize);
         var color = new Color(tint);
         var (texTl, texTr, texBr, texBl) = GetTexCoords(AtlasTileIdFull, (1, 1));
         var tl = new Vector2f((int)x, (int)y);
-        var br = new Vector2f((int)(x + tw * w), (int)(y + th * h));
+        var br = new Vector2f((int)(x + AtlasTileSize * w), (int)(y + AtlasTileSize * h));
         var tr = new Vector2f((int)br.X, (int)tl.Y);
         var bl = new Vector2f((int)tl.X, (int)br.Y);
 
@@ -758,7 +736,7 @@ public class Layer
                 rh = isBottom ? j - ty : rh;
 
                 var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
-                var (vx, vy) = (tx * AtlasTileSize.width, ty * AtlasTileSize.height);
+                var (vx, vy) = (tx * AtlasTileSize, ty * AtlasTileSize);
                 var full = GetTexCoords(AtlasTileIdFull, (1, 1));
                 var (px, py) = tilePixel;
 
@@ -780,8 +758,7 @@ public class Layer
             data = null;
             result = null;
 
-            var (tw, th) = AtlasTileSize;
-            var (rw, rh) = ((uint)Size.width * tw, (uint)Size.height * th);
+            var (rw, rh) = ((uint)Size.width * AtlasTileSize, (uint)Size.height * AtlasTileSize);
             queue = new(rw, rh);
             data = new(rw, rh);
             result = new(rw, rh);
@@ -797,7 +774,7 @@ public class Layer
 
         lightCount = 0;
         obstacleCount = 0;
-        shader?.SetUniform("tileSize", new Vec2(AtlasTileSize.width, AtlasTileSize.height));
+        shader?.SetUniform("tileSize", new Vec2(AtlasTileSize, AtlasTileSize));
         shader?.SetUniform("tileCount", new Vec2(Size.width, Size.height));
         shader?.SetUniform("time", Window.time.ElapsedTime.AsSeconds());
         shader?.SetUniform("data", data?.Texture);
@@ -825,13 +802,12 @@ public class Layer
     private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int tileId, (int w, int h) size)
     {
         var (w, h) = size;
-        var (tw, th) = AtlasTileSize;
-        var (gw, gh) = AtlasTileGap;
+        var tsz = AtlasTileSize;
         var (tx, ty) = IndexToCoords(tileId);
-        var tl = new Vector2f(tx * (tw + gw), ty * (th + gh));
-        var tr = tl + new Vector2f(tw * w, 0);
-        var br = tl + new Vector2f(tw * w, th * h);
-        var bl = tl + new Vector2f(0, th * h);
+        var tl = new Vector2f(tx * (tsz + AtlasTileGap), ty * (tsz + AtlasTileGap));
+        var tr = tl + new Vector2f(tsz * w, 0);
+        var br = tl + new Vector2f(tsz * w, tsz * h);
+        var bl = tl + new Vector2f(0, tsz * h);
         return (tl, tr, br, bl);
     }
     private (int x, int y) IndexToCoords(int index)

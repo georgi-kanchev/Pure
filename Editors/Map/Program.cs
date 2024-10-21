@@ -71,10 +71,10 @@ public static class Program
             var index = menu.Items.IndexOf(btn);
 
             if (index == 1) // load tileset
-                editor.PromptTileset(
-                    (layer, map) =>
+                editor.PromptTileset((layer, map) =>
                     {
-                        layer.Offset = (755, 340);
+                        var zoomFactor = 3.8f / layer.Zoom;
+                        layer.Offset = (198f * zoomFactor, 88f * zoomFactor);
                         tilePalette.layer = layer;
                         tilePalette.map = map;
                     },

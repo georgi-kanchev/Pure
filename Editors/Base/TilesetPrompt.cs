@@ -13,14 +13,6 @@ internal class TilesetPrompt
         stepper = new() { Range = (0, int.MaxValue), Size = (22, 2) };
         stepper.OnDisplay(() => maps.SetStepper(stepper, BACK));
 
-        pair = new()
-        {
-            Size = (20, 1),
-            SymbolGroup = SymbolGroup.Decimals | SymbolGroup.Space,
-            Value = string.Empty
-        };
-        pair.OnDisplay(() => maps.SetInputBox(pair, BACK));
-
         fileViewer = new()
         {
             FilesAndFolders = { IsSingleSelecting = true },
@@ -56,7 +48,6 @@ internal class TilesetPrompt
     private readonly Layer layer = new((1, 1));
     private Tilemap? map;
     private readonly Editor editor;
-    private readonly InputBox pair;
     private readonly FileViewer fileViewer;
     private readonly Stepper stepper;
 
@@ -87,9 +78,9 @@ internal class TilesetPrompt
     }
     private void PromptTileSize()
     {
-        editor.Prompt.Text = $"Enter Tile Size{Environment.NewLine}" +
-                             $"example: '16 16'";
-        editor.Prompt.Open(pair, onButtonTrigger: i =>
+        editor.Prompt.Text = "";
+        stepper.Text = "Provide Tile Size";
+        editor.Prompt.Open(stepper, onButtonTrigger: i =>
         {
             if (i == 0)
                 PromptTileSizeAccept();
@@ -97,14 +88,7 @@ internal class TilesetPrompt
     }
     private void PromptTileSizeAccept()
     {
-        var split = pair.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-        if (split.Length != 2)
-        {
-            editor.PromptMessage("Only 2 values allowed!");
-            return;
-        }
-
-        var result = ((byte)split[0].ToNumber(), (byte)split[1].ToNumber());
+        var result = (byte)stepper.Value;
         editor.LayerGrid.AtlasTileSize = result;
         editor.LayerMap.AtlasTileSize = result;
         layer.AtlasTileSize = result;
@@ -112,9 +96,9 @@ internal class TilesetPrompt
     }
     private void PromptTileGap()
     {
-        editor.Prompt.Text = $"Enter Tile Gap{Environment.NewLine}" +
-                             $"example: '1 1'";
-        editor.Prompt.Open(pair, onButtonTrigger: i =>
+        editor.Prompt.Text = "";
+        stepper.Text = "Provide Tile Gap";
+        editor.Prompt.Open(stepper, onButtonTrigger: i =>
         {
             if (i == 0)
                 PromptTileGapAccept();
@@ -122,14 +106,7 @@ internal class TilesetPrompt
     }
     private void PromptTileGapAccept()
     {
-        var split = pair.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-        if (split.Length != 2)
-        {
-            editor.PromptMessage("Only 2 values allowed!");
-            return;
-        }
-
-        var result = ((byte)split[0].ToNumber(), (byte)split[1].ToNumber());
+        var result = (byte)stepper.Value;
         editor.LayerGrid.AtlasTileGap = result;
         editor.LayerMap.AtlasTileGap = result;
         layer.AtlasTileGap = result;
@@ -138,7 +115,8 @@ internal class TilesetPrompt
     }
     private void PromptTileFull()
     {
-        editor.Prompt.Text = "Provide Full Tile Id";
+        editor.Prompt.Text = "";
+        stepper.Text = "Provide Full Tile Id";
         editor.Prompt.Open(stepper, onButtonTrigger: i =>
         {
             if (i == 0)
@@ -153,10 +131,11 @@ internal class TilesetPrompt
         editor.LayerMap.AtlasTileIdFull = result;
         layer.AtlasTileIdFull = result;
 
-        var (tw, th) = layer.AtlasTileSize;
-        var ratio = MathF.Max(tw / 8f, th / 8f);
-        var zoom = 3.8f / ratio;
-        layer.Zoom = zoom;
+        var pixels = 10 * layer.AtlasTileSize;
+        var scaleFactor = (float)pixels / 80; // 10x10 map size * 8x8 tile size
+        var newZoomLevel = 3.8f / scaleFactor;
+
+        layer.Zoom = newZoomLevel;
         map = new(layer.AtlasTileCount) { View = (0, 0, 10, 10) };
 
         editor.SetGrid();

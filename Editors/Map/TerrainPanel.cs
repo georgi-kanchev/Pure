@@ -271,13 +271,13 @@ internal class TerrainPanel : Panel
             TryAutoGenerate();
         });
 
-        scale.OnInteraction(Interaction.Trigger, () =>
+        scale.OnInteraction(Interaction.Select, () =>
         {
-            var success = float.TryParse(scale.Text, out var value);
+            var success = float.TryParse(scale.Value, out var value);
             generator.Scale = success ? value : 10;
             TryAutoGenerate();
         });
-        seed.OnInteraction(Interaction.Trigger, () =>
+        seed.OnInteraction(Interaction.Select, () =>
         {
             var success = int.TryParse(seed.Text, out var value);
             generator.Seed = success ? value : 0;

@@ -46,7 +46,7 @@ public static class Program
 
             var pos = CanDrawLayer ? MousePosPrompt : MousePos;
             var l = CanDrawLayer ? layer : editor.LayerMap;
-            var (sx, sy) = (1f / l.AtlasTileSize.width, 1f / l.AtlasTileSize.height);
+            var (sx, sy) = (1f / l.AtlasTileSize, 1f / l.AtlasTileSize);
             solid.Size = Snap((pos.x - solid.Position.x, pos.y - solid.Position.y));
             solid.Position = Snap(solid.Position);
 
@@ -231,8 +231,8 @@ public static class Program
             layer.AtlasPath = editor.LayerMap.AtlasPath;
             layer.AtlasTileSize = editor.LayerMap.AtlasTileSize;
             layer.AtlasTileIdFull = editor.LayerMap.AtlasTileIdFull;
-            var (tw, th) = layer.AtlasTileSize;
-            var ratio = MathF.Max(tw / 8f, th / 8f);
+            var tsz = layer.AtlasTileSize;
+            var ratio = MathF.Max(tsz / 8f, tsz / 8f);
             var zoom = 28f / ratio;
             layer.Zoom = zoom;
 
@@ -481,7 +481,7 @@ public static class Program
     private static (float x, float y) Snap((float x, float y) pair)
     {
         var l = CanDrawLayer ? layer : editor.LayerMap;
-        var (sx, sy) = (1f / l.AtlasTileSize.width, 1f / l.AtlasTileSize.height);
+        var (sx, sy) = (1f / l.AtlasTileSize, 1f / l.AtlasTileSize);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }
 #endregion

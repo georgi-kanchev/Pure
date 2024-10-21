@@ -52,6 +52,7 @@ public class InputBox : Block
         get => value;
         set
         {
+            var prev = this.value;
             value = value[..Math.Min(value.Length, SymbolLimit)];
             this.value = value;
             var split = value.Split(Environment.NewLine);
@@ -66,6 +67,9 @@ public class InputBox : Block
             // reclamp
             SelectionIndices = (sx, sy);
             CursorIndices = (cx, cy);
+
+            if (prev != this.value)
+                Interact(Interaction.Select);
         }
     }
     public string? SymbolMask
@@ -486,8 +490,10 @@ public class InputBox : Block
     protected override void OnInput()
     {
         var isMultiLine = Height > 1;
-        if (IsReadOnly == false && IsFocused && isMultiLine == false && JustPressed(Key.Enter))
-            Interact(Interaction.Select);
+
+        // older method for submitting text, now it happens when Value changes
+        // if (IsReadOnly == false && IsFocused && isMultiLine == false && JustPressed(Key.Enter))
+        //     Interact(Interaction.Select);
 
         var isBellowElement = IsFocused == false || Input.FocusedPrevious != this;
         if (isBellowElement || TrySelectAll() || JustPressed(Key.Tab))
