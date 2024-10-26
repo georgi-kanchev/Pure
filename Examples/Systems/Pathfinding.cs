@@ -2,6 +2,7 @@ using Pure.Engine.Pathfinding;
 using Pure.Engine.Window;
 using Pure.Engine.Tilemap;
 using Pure.Engine.Utilities;
+
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -30,8 +31,8 @@ public static class Pathfinding
         while (Window.KeepOpen())
         {
             var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
-            var lines = pathMap.FindPath((25.5f, 0.5f), (mx, my), Color.Red);
-            var points = pathMap.FindPath((25.5f, 0.5f), (mx, my), Color.Green);
+            var lines = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Red);
+            var points = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Green);
 
             layer.DrawTilemap(tilemap);
             layer.DrawLines(lines);

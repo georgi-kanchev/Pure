@@ -6,9 +6,8 @@ public static class InputBoxes
     {
         Window.Title = "Pure - Input Boxes Example";
 
-        var line = Environment.NewLine;
-        var messages = $"{Color.Azure.ToBrush()}Welcome to the chat! :){line}" +
-                       $"Type a message & press <Enter> to send it.{line}{line}";
+        var messages = $"{Color.Azure.ToBrush()}Welcome to the chat! :)\n" +
+                       $"Type a message & press <Enter> to send it.\n";
         var chat = new InputBox
         {
             Size = (20, 1),
@@ -21,9 +20,8 @@ public static class InputBoxes
         chat.OnInteraction(Interaction.Select, () =>
         {
             var clock = $"{Color.Gray.ToBrush()}[{Time.Clock.ToClock()}]";
-            messages += $"{clock}{line}{Color.White.ToBrush()}{chat.Value}" +
-                        $"{line}{line}";
-            var lines = messages.Split(line).Length;
+            messages += $"{clock}\n{Color.White.ToBrush()}{chat.Value}\n";
+            var lines = messages.Replace("\r", "").Split("\n").Length;
             chat.Value = string.Empty;
             scroll.Slider.Progress = 1f;
             scroll.IsHidden = lines < h;

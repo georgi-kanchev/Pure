@@ -1,7 +1,9 @@
 namespace Pure.Editors.Map;
 
 using static Keyboard.Key;
+
 using static Tile;
+
 using static Color;
 
 internal class Inspector : Panel
@@ -78,11 +80,12 @@ internal class Inspector : Panel
         return index == -1 ? null : editor.MapsEditor.Tilemaps[index];
     }
 
-#region Backend
+    #region Backend
     private const int MIDDLE = (int)Editor.LayerMapsUi.Middle, FRONT = (int)Editor.LayerMapsUi.Front;
     private readonly Editor editor;
 
-    [MemberNotNull(nameof(layers)), MemberNotNull(nameof(layersVisibility))]
+    [MemberNotNull(nameof(layers))]
+    [MemberNotNull(nameof(layersVisibility))]
     private Block[] AddLayers()
     {
         var (x, y) = (X + 1, Y + 1);
@@ -256,9 +259,9 @@ internal class Inspector : Panel
                 "Hollow ellipse of random tiles", "Replace all tiles of a kind with random tiles",
                 "Fill with random tiles", "Rotate rectangle of tiles", "Mirror rectangle of tiles vertically",
                 "Flip rectangle of tiles horizontally", "Color rectangle of tiles", "Pick a tile",
-                $"Select tiles:{Environment.NewLine}" +
-                $"Ctrl = drag{Environment.NewLine}" +
-                $"Ctrl+C/V/X = copy/paste/cut{Environment.NewLine}" +
+                $"Select tiles:\n" +
+                $"Ctrl = drag\n" +
+                $"Ctrl+C/V/X = copy/paste/cut\n" +
                 "Delete = clear"
             };
             editor.Log(logs[tools.IndexOf(item)]);
@@ -283,7 +286,8 @@ internal class Inspector : Panel
             editor.MapsUi.Tilemaps[FRONT].SetArea(area, null, tile);
         });
     }
-    [MemberNotNull(nameof(paletteScrollV)), MemberNotNull(nameof(paletteScrollH))]
+    [MemberNotNull(nameof(paletteScrollV))]
+    [MemberNotNull(nameof(paletteScrollH))]
     private Button[] AddPaletteScrolls()
     {
         paletteScrollV = new((X + 14, Y + 29)) { Size = (1, 14) };
@@ -341,5 +345,5 @@ internal class Inspector : Panel
 
         return [mirror, flip, turns];
     }
-#endregion
+    #endregion
 }

@@ -109,7 +109,7 @@ internal class Inspector : Panel
         });
     }
 
-#region Backend
+    #region Backend
     private class EditButton : Button
     {
         public EditButton((int x, int y) position) : base(position)
@@ -384,11 +384,11 @@ internal class Inspector : Panel
             l.IsSingleSelecting = multi.IsSelected == false;
 
             var prev = new List<bool>();
-            for (var j = 0; j < l.Items.Count; j++)
-                prev.Add(l.Items[j].IsSelected);
+            foreach (var item in l.Items)
+                prev.Add(item.IsSelected);
 
             l.Items.Clear();
-            var split = items.Value.Split(Environment.NewLine);
+            var split = items.Value.Replace("\r", "").Split("\n");
             foreach (var t in split)
                 l.Items.Add(new() { Text = t });
 
@@ -540,7 +540,7 @@ internal class Inspector : Panel
 
             var value = string.Empty;
             for (var j = 0; j < l.Items.Count; j++)
-                value += $"{(j > 0 ? Environment.NewLine : string.Empty)}{l.Items[j].Text}";
+                value += $"{(j > 0 ? "\n" : "")}{l.Items[j].Text}";
 
             items.Value = value;
             items.SelectionIndices = (0, 0);
@@ -659,7 +659,7 @@ internal class Inspector : Panel
             btn.Position = (inputBoxEditor.Position.x - 1, inputBoxEditor.Position.y + i);
             btn.IsSelected = item.IsSelected;
 
-            // double clicking a button will enter a different folder so this
+            // double-clicking a button will enter a different folder so this
             // loop is iterating over an old data/length - so abandon
             var prevSize = list.Items.Count;
             btn.Update();
@@ -715,5 +715,5 @@ internal class Inspector : Panel
     {
         editor.MapsUi.Tilemaps[(int)layer].SetArea(block.Area, null, 0);
     }
-#endregion
+    #endregion
 }

@@ -3,7 +3,6 @@
 namespace Pure.Engine.UserInterface;
 
 public enum Span { Vertical, Horizontal, Dropdown }
-
 public enum Sort { Alphabetically, Numerically, ByLength }
 
 /// <summary>
@@ -265,7 +264,7 @@ public class List : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private int originalHeight;
     private bool isSingleSelecting, isCollapsed, veryFirstUpdate = true;
     private readonly bool isInitialized;
@@ -308,7 +307,8 @@ public class List : Block
         item.OnInteraction(Interaction.Scroll, ApplyScroll);
 
         foreach (var kvp in itemInteractions)
-            item.OnInteraction(kvp.Key, () => kvp.Value.Invoke(item));
+            if (kvp.Key != Interaction.Trigger)
+                item.OnInteraction(kvp.Key, () => kvp.Value.Invoke(item));
     }
 
     private static Button[] CreateAmount(int count)
@@ -405,7 +405,8 @@ public class List : Block
                 Scroll.Update();
             return;
         }
-        else if (Span == Span.Horizontal)
+
+        if (Span == Span.Horizontal)
         {
             Scroll.position = (x, y + h - 1);
             Scroll.size = (w, 1);
@@ -531,5 +532,5 @@ public class List : Block
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-#endregion
+    #endregion
 }

@@ -3,6 +3,7 @@ using Pure.Engine.UserInterface;
 using Pure.Engine.Utilities;
 using Pure.Engine.Window;
 using Pure.Tools.ImmediateGraphicalUserInterface;
+
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -90,7 +91,7 @@ public static class ImmediateGui
             if (list != null)
                 log = $"regular list:\n{list.ToString(", ")}";
 
-            // promts should be last
+            // prompts should be last
 
             if (Keyboard.Key.ControlLeft.IsJustPressed())
             {
@@ -112,7 +113,7 @@ public static class ImmediateGui
 
             ImGui.Text((20, 0), "Left Control = Info Popup\n" +
                                 "Left Shift = Input Popup");
-            ImGui.Text((0, 0), log.Constrain(layer.Size, false, Alignment.Bottom));
+            ImGui.Text((0, -1), log.Constrain(layer.Size, false, Alignment.Bottom));
             layer.DrawImGui();
         }
 
@@ -123,6 +124,7 @@ public static class ImmediateGui
             if (float.IsNaN(choice) == false)
                 log = $"prompt info:\nclosed";
         }
+
         void PromptChoice()
         {
             var choice = ImGui.PromptChoice("Are you ready to pick a\n" +
@@ -130,6 +132,7 @@ public static class ImmediateGui
             if (float.IsNaN(choice) == false)
                 log = $"prompt choice:\n{(int)choice}";
         }
+
         void PromptInput()
         {
             ImGui.Tooltip = (tooltip, Side.Bottom, 0.5f);

@@ -83,6 +83,7 @@ public static class FlappyBird
                 (width + 40, (-15, -3).Random(), (3, 10).Random())
             ];
         }
+
         void UpdatePipes()
         {
             for (var i = 0; i < pipes?.Count; i++)
@@ -116,6 +117,7 @@ public static class FlappyBird
                     new(Tile.BOX_DEFAULT_STRAIGHT, Color.Green));
             }
         }
+
         void UpdateBird()
         {
             if (isGameOver)
@@ -132,11 +134,13 @@ public static class FlappyBird
             birdY = 0;
             birdVelocity = 0;
         }
+
         bool IsGameOver()
         {
             var birdRect = new Solid(BIRD_X, birdY, 1, 1, Color.Red);
             return birdY + 1 >= height || collisionMap.IsOverlapping(birdRect);
         }
+
         void Draw()
         {
             var (birdTile, birdAngle) = birdAnimation.CurrentValue;
@@ -144,7 +148,7 @@ public static class FlappyBird
             var scoreText = $"Score: {score}";
             foreground.SetText((width / 2 - scoreText.Length / 2, 1), scoreText);
 
-            var text = $"Game Over!{Environment.NewLine}{Environment.NewLine}<Space> to play again"
+            var text = $"Game Over!\n\n<Space> to play again"
                 .Constrain((width, height), alignment: Alignment.Center);
             if (isGameOver)
                 foreground.SetText((0, 0), text);

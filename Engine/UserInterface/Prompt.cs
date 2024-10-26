@@ -70,7 +70,7 @@ public class Prompt : Block
         itemDisplay += method;
     }
 
-#region Backend
+    #region Backend
     private readonly List<Button> buttons = [];
     private Action<Button>? itemDisplay;
     private Block? currentBlock;
@@ -93,7 +93,7 @@ public class Prompt : Block
         if (currentBlock == null)
             return;
 
-        var lines = Text.Split(Environment.NewLine).Length;
+        var lines = Text.Replace("\r", "").Split("\n").Length;
 
         currentBlock.AlignInside((0.5f, 0.5f));
         var (x, y) = currentBlock.Position;
@@ -173,5 +173,5 @@ public class Prompt : Block
 
         return result;
     }
-#endregion
+    #endregion
 }

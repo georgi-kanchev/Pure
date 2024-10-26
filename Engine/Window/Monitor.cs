@@ -24,7 +24,7 @@ public class Monitor
         return Name;
     }
 
-#region Backend
+    #region Backend
     internal (int x, int y) position;
     private static readonly Monitor[] monitors;
 
@@ -68,7 +68,7 @@ public class Monitor
             process.WaitForExit();
 
             var monitors = new List<Monitor>();
-            var data = result.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+            var data = result.Replace("\r", "").Split("\n", StringSplitOptions.RemoveEmptyEntries);
             var currentMonitor = default(Monitor);
             foreach (var line in data)
                 if (line.StartsWith('\t') == false &&
@@ -122,5 +122,5 @@ public class Monitor
             b = a1 % b;
         }
     }
-#endregion
+    #endregion
 }

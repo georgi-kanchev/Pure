@@ -36,7 +36,7 @@ public class Storage
         set
         {
             sep1D = string.IsNullOrEmpty(value.oneD) ? "|" : value.oneD;
-            sep2D = string.IsNullOrEmpty(value.twoD) ? $"|{Environment.NewLine}" : value.twoD;
+            sep2D = string.IsNullOrEmpty(value.twoD) ? $"|\n" : value.twoD;
             sepDict = string.IsNullOrEmpty(value.dictionary) ? "/" : value.dictionary;
         }
     }
@@ -96,10 +96,10 @@ public class Storage
             result.Append(kvp.Key.typeId);
             result.Append(Dividers.common);
             result.Append(kvp.Value);
-            result.Append(Dividers.common + Environment.NewLine);
+            result.Append(Dividers.common + "\n");
         }
 
-        var length = Dividers.common.Length + Environment.NewLine.Length;
+        var length = Dividers.common.Length + "\n".Length;
         result.Remove(result.Length - length, length);
 
         var placeholders = FilterPlaceholders(result.ToString());
@@ -263,7 +263,7 @@ public class Storage
         return storage.ToBytes();
     }
 
-#region Backend
+    #region Backend
     private readonly Dictionary<int, Func<string, object>> onObjectFromText = new();
     private readonly Dictionary<int, Func<object, string>> onObjectToText = new();
     private readonly Dictionary<(string key, int typeId), string> keyType = new();
@@ -295,8 +295,7 @@ public class Storage
         try
         {
             var str = AddPlaceholders(text);
-            var split = str.Replace(Environment.NewLine, " ")
-                .Split(Dividers.common, StringSplitOptions.RemoveEmptyEntries);
+            var split = str.Replace("\n", " ").Split(Dividers.common, StringSplitOptions.RemoveEmptyEntries);
             var index = 0;
             var key = string.Empty;
             var typeId = 0;
@@ -786,9 +785,7 @@ public class Storage
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -797,9 +794,7 @@ public class Storage
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -809,5 +804,5 @@ public class Storage
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

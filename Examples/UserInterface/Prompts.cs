@@ -10,7 +10,7 @@ public static class Prompts
         const Key HOTKEY_MSG = Key.ControlLeft;
 
         var info = new Button { Position = (int.MaxValue, 0) };
-        var text = $"Press <{HOTKEY_LOG}> to type and log{Environment.NewLine}" +
+        var text = $"Press <{HOTKEY_LOG}> to type and log\n" +
                    $"Press <{HOTKEY_MSG}> to show a message";
         info.OnDisplay(() => maps.Tilemaps[0].SetText((0, 0), text));
 
@@ -42,7 +42,7 @@ public static class Prompts
         {
             input.IsHidden = true;
 
-            prompt.Text = $"This should be some{Environment.NewLine}important message!";
+            prompt.Text = $"This should be some\nimportant message!";
             prompt.Open(btnCount: 1);
         });
 

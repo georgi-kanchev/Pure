@@ -2,6 +2,7 @@ using Pure.Engine.UserInterface;
 using Pure.Engine.Utilities;
 using Pure.Engine.Window;
 using Pure.Tools.ImmediateGraphicalUserInterface;
+
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -66,8 +67,3 @@ public static class NumberGuess
         }
     }
 }
-
-
-
-
-

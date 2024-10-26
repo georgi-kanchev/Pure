@@ -1,12 +1,15 @@
 ﻿namespace Pure.Editors.Collision;
 
 using Base;
+
 using Tools.Tilemap;
+
 using Engine.Collision;
 using Engine.Utilities;
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
+
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -73,7 +76,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private static (float x, float y) clickPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
@@ -156,7 +159,7 @@ public static class Program
         tools.OnUpdate(() => tools.IsHidden = editor.Prompt.IsHidden == false);
         tools.OnItemDisplay(item => editor.MapsUi.SetListItem(tools, item, FRONT));
         tools.OnItemInteraction(Interaction.Trigger, btn => menu.Items[5].Text = $"{btn.Text}… ");
-        tools.Items[0].Interact(Interaction.Trigger);
+        tools.Select(tools.Items[0]);
 
         palette = new() { Pick = { IsHidden = true } };
         palette.OnDisplay(() =>
@@ -484,5 +487,5 @@ public static class Program
         var (sx, sy) = (1f / l.AtlasTileSize, 1f / l.AtlasTileSize);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }
-#endregion
+    #endregion
 }

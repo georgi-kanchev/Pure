@@ -6,11 +6,10 @@ public static class Panels
     {
         Window.Title = "Pure - Panels Example";
 
-        var nl = Environment.NewLine;
-        var text = $"- Useful for containing other elements{nl}{nl}" +
-                   $"- Title{nl}{nl}" +
-                   $"- Can be optionally moved and/or resized{nl}{nl}" +
-                   $"- Cannot be resized or moved outside the window{nl}{nl}" +
+        var text = $"- Useful for containing other elements\n\n" +
+                   $"- Title\n\n" +
+                   $"- Can be optionally moved and/or resized\n\n" +
+                   $"- Cannot be resized or moved outside the window\n\n" +
                    $"- Minimum sizes";
         var panelText = new Panel { Text = "Cool Title", Size = (19, 19), SizeMinimum = (4, 2) };
         panelText.AlignInside((0.1f, 0.5f));

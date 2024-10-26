@@ -153,7 +153,7 @@ public static class Keyboard
         onHoldAny += method;
     }
 
-#region Backend
+    #region Backend
     private static Action<Key>? onPressAny, onReleaseAny, onHoldAny;
     private static readonly Dictionary<Key, Action>
         onPress = new(), onRelease = new(), onHold = new();
@@ -174,14 +174,11 @@ public static class Keyboard
             { Key.Semicolon, (";", ":") }, { Key.Comma, (",", "<") }, { Key.Dot, (".", ">") },
             { Key.Quote, ("'", "\"") }, { Key.Slash, ("/", "?") }, { Key.Backslash, ("\\", "|") },
             { Key.Tilde, ("`", "~") }, { Key.Equal, ("=", "+") }, { Key.Hyphen, ("-", "_") },
-            { Key.Space, (" ", " ") }, { Key.Enter, (Environment.NewLine, Environment.NewLine) },
+            { Key.Space, (" ", " ") }, { Key.Enter, ("\n", "\n") },
             { Key.Tab, ("\t", string.Empty) }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
             { Key.Asterisk, ("*", "*") }, { Key.Divide, ("/", "/") }
         };
-        shiftNumbers =
-        [
-            ")", "!", "@", "#", "$", "%", "^", "&", "*", "("
-        ];
+        shiftNumbers = [")", "!", "@", "#", "$", "%", "^", "&", "*", "("];
     }
 
     internal static void Update()
@@ -276,5 +273,5 @@ public static class Keyboard
         if (e.Unicode[0] is >= 'A' and <= 'Z')
             KeyTyped = KeyTyped.ToUpper();
     }
-#endregion
+    #endregion
 }

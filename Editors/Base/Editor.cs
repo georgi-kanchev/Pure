@@ -1,11 +1,14 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
+
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
+
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
+
 using System.IO.Compression;
 using System.Text;
 
@@ -228,7 +231,7 @@ public class Editor
     }
     public void Log(string text)
     {
-        var infoTextSplit = infoText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var infoTextSplit = infoText.Replace("\r", "").Split("\n", StringSplitOptions.RemoveEmptyEntries);
         if (infoTextSplit.Length > 0 && infoTextSplit[^1].Contains(text))
         {
             var lastLine = infoTextSplit[^1];
@@ -242,7 +245,7 @@ public class Editor
                 text += " (2)";
         }
 
-        infoText += text + Environment.NewLine;
+        infoText += text + "\n";
         infoTextTimer = 2f;
     }
 
@@ -319,7 +322,7 @@ public class Editor
     }
     public void PromptConfirm(Action? onConfirm)
     {
-        PromptYesNo($"Any unsaved changes will be lost.{Environment.NewLine}Confirm?", onConfirm);
+        PromptYesNo($"Any unsaved changes will be lost.\nConfirm?", onConfirm);
     }
     public void PromptBase64(Action? onAccept)
     {
@@ -411,7 +414,7 @@ public class Editor
         });
     }
 
-#region Backend
+    #region Backend
     private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
     private const int GRID_GAP = 10;
     private readonly InputBox promptSize;
@@ -432,7 +435,7 @@ public class Editor
         btnMapSize.AlignInside((0f, 0.96f));
         btnMapSize.OnInteraction(Interaction.Trigger, () =>
         {
-            Prompt.Text = $"Enter Map Size,{Environment.NewLine}" +
+            Prompt.Text = $"Enter Map Size,\n" +
                           $"example: '100 100'.";
             Prompt.Open(promptSize, onButtonTrigger: ResizePressMap);
         });
@@ -441,7 +444,7 @@ public class Editor
         btnViewSize.AlignInside((0f, 1f));
         btnViewSize.OnInteraction(Interaction.Trigger, () =>
         {
-            Prompt.Text = $"Enter View Size,{Environment.NewLine}" +
+            Prompt.Text = $"Enter View Size,\n" +
                           $"example: '100 100'.";
             Prompt.Open(promptSize, onButtonTrigger: ResizePressView);
         });
@@ -626,9 +629,7 @@ public class Editor
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -654,5 +655,5 @@ public class Editor
         gen = new(hijackedBytes[byteOffset..]);
         return maps;
     }
-#endregion
+    #endregion
 }

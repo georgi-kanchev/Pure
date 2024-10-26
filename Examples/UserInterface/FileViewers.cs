@@ -46,7 +46,7 @@ public static class FileViewers
         var paths = string.Empty;
 
         foreach (var path in selected)
-            paths += $"{Environment.NewLine}{Environment.NewLine}{path}";
+            paths += $"\n\n{path}";
 
         var (x, y, w, h) = (e.Position.x, e.Position.y + e.Size.height - 1, e.Size.width, 20);
         maps.Tilemaps[0].SetText((x, y - 1), fileViewer.Text);

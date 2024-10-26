@@ -67,7 +67,7 @@ internal class TerrainPanel : Panel
         TryAutoGenerate();
     }
 
-#region Backend
+    #region Backend
     private const int MIDDLE = (int)Editor.LayerMapsUi.Middle, FRONT = (int)Editor.LayerMapsUi.Front;
     private int lastLayer = -1;
     private readonly Editor editor;
@@ -132,10 +132,7 @@ internal class TerrainPanel : Panel
             var layer = GetLayer();
             editor.MapsEditor.Tilemaps[layer].SetAutoTiles(editor.MapsEditor.Tilemaps[layer]);
         });
-        remove.OnInteraction(Interaction.Trigger, () =>
-        {
-            editor.PromptYesNo("Remove this autotile rule?", () => autoTiles.RemoveAt(pages.Current - 1));
-        });
+        remove.OnInteraction(Interaction.Trigger, () => { editor.PromptYesNo("Remove this autotile rule?", () => autoTiles.RemoveAt(pages.Current - 1)); });
         pages.OnItemDisplay(page => editor.MapsUi.SetPagesItem(pages, page));
 
         OnDisplay(() =>
@@ -176,13 +173,13 @@ internal class TerrainPanel : Panel
             var empty = pickedTile == default;
             var pickText = empty ?
                 "use pick tool" :
-                $"Id: {pickedTile.Id}{Environment.NewLine}" +
-                $"Turns: {pickedTile.Turns}{Environment.NewLine}" +
-                $"Flip: {(pickedTile.IsFlipped ? "yes" : "no")}{Environment.NewLine}" +
+                $"Id: {pickedTile.Id}\n" +
+                $"Turns: {pickedTile.Turns}\n" +
+                $"Flip: {(pickedTile.IsFlipped ? "yes" : "no")}\n" +
                 $"Mirror: {(pickedTile.IsMirrored ? "yes" : "no")}";
 
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 6),
-                $"To change the{Environment.NewLine}center to:", White);
+                $"To change the\ncenter to:", White);
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 8), pickText, Gray);
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 1), "Match Ids:", White);
 
@@ -373,8 +370,8 @@ internal class TerrainPanel : Panel
             editor.MapsUi.SetList(tiles);
 
             if (tiles.SelectedItems.Count > 0)
-                editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 28), $"use{Environment.NewLine}" +
-                                                                       $"pick{Environment.NewLine}" +
+                editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 28), $"use\n" +
+                                                                       $"pick\n" +
                                                                        $"tool", Gray);
 
             editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), MIDDLE);
@@ -384,8 +381,8 @@ internal class TerrainPanel : Panel
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 18), "Noise Type", White);
             editor.MapsUi.SetList(noiseType);
 
-            editor.MapsUi.SetButton(generate, MIDDLE);
-            editor.MapsUi.SetButton(autoGenerate, MIDDLE);
+            editor.MapsUi.SetButton(generate);
+            editor.MapsUi.SetButton(autoGenerate);
         });
 
         result.AddRange([add, edit, remove, scale, seed, tiles, autoGenerate, generate, noiseType]);
@@ -421,5 +418,5 @@ internal class TerrainPanel : Panel
 
         return freeDepth;
     }
-#endregion
+    #endregion
 }

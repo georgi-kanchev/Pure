@@ -747,7 +747,7 @@ public static class Extensions
         result = result.Remove((int)(result.Length * Math.Clamp(symbolProgress, 0, 1)));
         result = ApplyColorTags(result, colorTags);
 
-        var lineList = result.TrimEnd().Split(Environment.NewLine).ToList();
+        var lineList = result.TrimEnd().Replace("\r", "").Split("\n").ToList();
 
         TryWordWrap();
         TryAlignVertically();
@@ -773,7 +773,7 @@ public static class Extensions
         result = string.Empty;
         for (var i = start; i < end; i++)
         {
-            var nl = i == start ? lastHiddenTag : Environment.NewLine;
+            var nl = i == start ? lastHiddenTag : "\n";
             result += nl + TryAlignHorizontally(lineList[i]);
         }
 
@@ -1337,8 +1337,7 @@ public static class Extensions
 
     private static List<(int index, string tag)> GetColorTags(string input, char tintBrush)
     {
-        input = input.Replace(" ", string.Empty);
-        input = input.Replace(Environment.NewLine, string.Empty);
+        input = input.Replace(" ", "").Replace("\r", "").Replace("\n", "n");
         var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
         var output = new List<(int index, string tag)>();
 

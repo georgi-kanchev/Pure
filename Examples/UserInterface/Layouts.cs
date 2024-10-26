@@ -11,7 +11,6 @@ public static class Layouts
 
         //============
 
-        var nl = Environment.NewLine;
         var layoutElements = new Block[] { new Button(), new Button(), new Slider(), new InputBox() };
         var layoutFull = new Layout { Size = (20, 20) };
         layoutFull.Cut(0, Side.Right, 0.4f);
@@ -30,7 +29,7 @@ public static class Layouts
             if (index == 0)
             {
                 maps.SetLayoutSegment(segment, index, false);
-                var text = $"- Useful for containing structured elements{nl}{nl}" +
+                var text = $"- Useful for containing structured elements\n\n" +
                            $"- Can be dynamically resized without losing its ratios";
                 text = text.Constrain((segment.width, segment.height));
                 maps.Tilemaps[1].SetText((segment.x, segment.y), text);

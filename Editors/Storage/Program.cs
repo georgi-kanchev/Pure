@@ -1,12 +1,14 @@
 ﻿using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
+
 using Pure.Engine.Utilities;
 using Pure.Tools.Tilemap;
 using Pure.Editors.Base;
 using Pure.Engine.Tilemap;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
+
 using _Storage = Pure.Engine.Storage.Storage;
 
 namespace Pure.Editors.Storage;
@@ -34,7 +36,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private enum DataType { Value, Tuple, List, Dictionary, TupleAdd }
 
     private const string VALUE_FLAG = "Flag", VALUE_TEXT = "Text", VALUE_NUMBER = "Number",
@@ -228,8 +230,8 @@ public static class Program
 
                 if (editor.PromptInput.Value != unique)
                     editor.PromptMessage(
-                        $"The provided key '{editor.PromptInput.Value}' already " +
-                        $"exists.{Environment.NewLine}It was changed to '{unique}'.");
+                        $"The provided key '{editor.PromptInput.Value}' already exists.\n" +
+                        $"It was changed to '{unique}'.");
 
                 panel.Text = unique;
             });
@@ -453,7 +455,7 @@ public static class Program
 
                 if (promptText.Value != unique)
                     editor.PromptMessage(
-                        $"The provided key '{promptText.Value}' already exists.{Environment.NewLine}" +
+                        $"The provided key '{promptText.Value}' already exists.\n" +
                         $"It was changed to '{unique}'.");
 
                 item.Text = unique;
@@ -675,18 +677,17 @@ public static class Program
             }
 
             if (predict)
-                editor.PromptMessage($"Loading storages that were saved by the{Environment.NewLine}" +
-                                     $"engine rather than the editor is not{Environment.NewLine}" +
-                                     $"recommended. This is because the types{Environment.NewLine}" +
-                                     $"and values might get predicted{Environment.NewLine}" +
-                                     $"incorrectly. Keep in mind that the{Environment.NewLine}" +
-                                     $"editor supports fewer types than the{Environment.NewLine}" +
-                                     $"engine. These types are:{Environment.NewLine}" +
-                                     $"{Environment.NewLine}" +
-                                     $"A. Primitives and Strings     {Environment.NewLine}" +
-                                     $"B. Tuples of A                {Environment.NewLine}" +
-                                     $"C. Arrays of A                {Environment.NewLine}" +
-                                     $"D. Lists of A                 {Environment.NewLine}" +
+                editor.PromptMessage($"Loading storages that were saved by the\n" +
+                                     $"engine rather than the editor is not\n" +
+                                     $"recommended. This is because the types\n" +
+                                     $"and values might get predicted\n" +
+                                     $"incorrectly. Keep in mind that the\n" +
+                                     $"editor supports fewer types than the\n" +
+                                     $"engine. These types are:\n\n" +
+                                     $"A. Primitives and Strings     \n" +
+                                     $"B. Tuples of A                \n" +
+                                     $"C. Arrays of A                \n" +
+                                     $"D. Lists of A                 \n" +
                                      $"E. Dictionaries of <String, A>");
 
             int GrabInt()
@@ -737,9 +738,9 @@ public static class Program
     private static string GetUniqueText(List list, string text, Button? ignoreItem = null)
     {
         var texts = new List<string>();
-        for (var i = 0; i < list.Items.Count; i++)
-            if (ignoreItem != list.Items[i])
-                texts.Add(list.Items[i].Text);
+        foreach (var item in list.Items)
+            if (ignoreItem != item)
+                texts.Add(item.Text);
 
         return texts.ToArray().EnsureUnique(text);
     }
@@ -964,9 +965,7 @@ public static class Program
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -975,9 +974,7 @@ public static class Program
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -1068,5 +1065,5 @@ public static class Program
             return replacedValue;
         });
     }
-#endregion
+    #endregion
 }

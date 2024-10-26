@@ -1,11 +1,13 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
+
 global using Pure.Editors.Base;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
-global using System.Text;
 global using Pure.Tools.Tilemap;
+
+global using System.Text;
 using System.IO.Compression;
 
 namespace Pure.Editors.Map;
@@ -23,7 +25,7 @@ public static class Program
         editor.Run();
     }
 
-#region Backend
+    #region Backend
     private static readonly Editor editor;
     private static readonly Inspector inspector;
     private static readonly TerrainPanel terrainPanel;
@@ -170,9 +172,7 @@ public static class Program
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -181,11 +181,9 @@ public static class Program
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
-#endregion
+    #endregion
 }

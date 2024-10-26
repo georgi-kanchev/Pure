@@ -55,7 +55,7 @@ public class InputBox : Block
             var prev = this.value;
             value = value[..Math.Min(value.Length, SymbolLimit)];
             this.value = value;
-            var split = value.Split(Environment.NewLine);
+            var split = value.Replace("\r", "").Split("\n");
 
             lines.Clear();
             foreach (var line in split)
@@ -128,7 +128,7 @@ public class InputBox : Block
                     sb.Append(isSelected ? SELECTION : SPACE);
                 }
 
-                sb.Append(Environment.NewLine);
+                sb.Append("\n");
             }
 
             return sb.ToString();
@@ -427,7 +427,7 @@ public class InputBox : Block
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     private readonly List<string> lines = [string.Empty];
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
 
@@ -481,10 +481,7 @@ public class InputBox : Block
             TrySelect();
             Input.IsTyping = true;
         });
-        OnInteraction(Interaction.Unfocus, () =>
-        {
-            Input.IsTyping = false;
-        });
+        OnInteraction(Interaction.Unfocus, () => { Input.IsTyping = false; });
     }
 
     protected override void OnInput()
@@ -552,10 +549,10 @@ public class InputBox : Block
         var maxY = Math.Min(scrY + Height, lines.Count);
         for (var i = scrY; i < maxY; i++)
         {
-            var newLine = i == scrY ? string.Empty : Environment.NewLine;
+            var newLine = i == scrY ? "" : "\n";
             var line = lines[i];
             var secondIndex = Math.Min(line.Length, scrX + maxW + 1);
-            var result = scrX >= secondIndex ? string.Empty : line[scrX..secondIndex];
+            var result = scrX >= secondIndex ? "" : line[scrX..secondIndex];
 
             if (SymbolMask != null)
                 result = Regex.Replace(result, ".", SymbolMask);
@@ -587,7 +584,7 @@ public class InputBox : Block
     {
         var str = new StringBuilder();
         for (var i = 0; i < lines.Count; i++)
-            str.Append((i > 0 ? Environment.NewLine : string.Empty) + lines[i]);
+            str.Append((i > 0 ? "\n" : "") + lines[i]);
 
         var result = str.ToString();
         Value = result;
@@ -776,7 +773,7 @@ public class InputBox : Block
         if (isPasting)
         {
             var paste = Input.Clipboard ?? string.Empty;
-            var pastedLines = paste.Split(Environment.NewLine);
+            var pastedLines = paste.Replace("\r", "").Split("\n");
             var carry = string.Empty;
 
             for (var i = 0; i < pastedLines.Length; i++)
@@ -800,7 +797,7 @@ public class InputBox : Block
                     lines[cy + i] += RemoveForbiddenSymbols(carry);
             }
 
-            var copied = paste.Replace(Environment.NewLine, string.Empty);
+            var copied = paste.Replace("\r", "").Replace("\n", "");
             CursorMove((copied.Length, 0));
             UpdateTextAndValue();
             return;
@@ -1139,5 +1136,5 @@ public class InputBox : Block
 
         return result.ToString();
     }
-#endregion
+    #endregion
 }
