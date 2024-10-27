@@ -179,7 +179,8 @@ public static class ImGui
         Input.TilemapSize = layer.Size;
         Input.PositionPrevious = Input.Position;
         Input.Position = layer.PixelToPosition(Mouse.CursorPosition);
-        Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta, Keyboard.KeyIdsPressed, Keyboard.KeyTyped);
+        Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta,
+            Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
 
         var toRemove = new List<Area>();
         foreach (var kvp in imGuiCache)

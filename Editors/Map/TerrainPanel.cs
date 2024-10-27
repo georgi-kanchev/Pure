@@ -218,7 +218,7 @@ internal class TerrainPanel : Panel
             Value = "0", SymbolLimit = 5, Size = (6, 1), SymbolGroup = SymbolGroup.Decimals
         };
         generate = new() { Text = "Generate!", Size = (13, 3) };
-        autoGenerate = new() { IsSelected = true, Text = "Auto Generate", Size = (13, 1) };
+        autoGenerate = new() { Text = "Auto Generate", Size = (13, 1) };
         tiles = new((0, 0), 0) { IsSingleSelecting = true, Size = (9, 4), ItemSize = (9, 1) };
         var add = new Button { Size = (1, 1) };
         var edit = new Button { Size = (1, 1) };

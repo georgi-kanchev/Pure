@@ -1,6 +1,7 @@
 ﻿global using SFML.Graphics;
 global using SFML.System;
 global using SFML.Window;
+
 global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using System.IO.Compression;
@@ -137,8 +138,12 @@ public static class Window
     }
     public static string? Clipboard
     {
-        get => SFML.Window.Clipboard.Contents;
-        set => SFML.Window.Clipboard.Contents = value;
+        get => clipboardCache;
+        set
+        {
+            clipboardCache = value;
+            SFML.Window.Clipboard.Contents = value;
+        }
     }
 
     public static void FromBytes(byte[] bytes)
@@ -334,7 +339,7 @@ public static class Window
         recreate += method;
     }
 
-#region Backend
+    #region Backend
     internal static RenderWindow? window;
     private static RenderTexture? allLayers;
     internal static (int w, int h) rendTexViewSz;
@@ -350,6 +355,7 @@ public static class Window
 
     private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating;
     private static string title = "Game";
+    private static string? clipboardCache;
     private static uint backgroundColor, monitor, maximumFrameRate;
     private static Mode mode;
     private static float pixelScale = 5f;
@@ -404,6 +410,7 @@ public static class Window
         window.MouseMoved += Mouse.OnMove;
         window.MouseEntered += Mouse.OnEnter;
         window.MouseLeft += Mouse.OnLeft;
+        window.GainedFocus += (_, _) => Clipboard = SFML.Window.Clipboard.Contents;
         window.LostFocus += (_, _) =>
         {
             Mouse.CancelInput();
@@ -421,6 +428,8 @@ public static class Window
         Title = title;
         IsVerticallySynced = isVerticallySynced;
         MaximumFrameRate = maximumFrameRate;
+        Clipboard = SFML.Window.Clipboard.Contents;
+
         Mouse.CursorCurrent = Mouse.CursorCurrent;
         Mouse.IsCursorBounded = Mouse.IsCursorBounded;
         Mouse.IsCursorVisible = Mouse.IsCursorVisible;
@@ -526,9 +535,7 @@ public static class Window
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -537,9 +544,7 @@ public static class Window
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -549,5 +554,5 @@ public static class Window
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

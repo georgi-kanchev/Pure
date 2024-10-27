@@ -130,10 +130,7 @@ public static class Program
         try
         {
             var layers = inspector.layers;
-            var bytes = new List<byte>();
-
-            var maps = Decompress(editor.MapsEditor.ToBytes());
-            bytes.AddRange(maps);
+            var bytes = Decompress(editor.MapsEditor.ToBytes()).ToList();
 
             // hijack the end of the file to save some extra info
             // should be ignored by the engine but not by the editor

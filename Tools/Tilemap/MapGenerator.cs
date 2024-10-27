@@ -1,4 +1,5 @@
 using System.IO.Compression;
+
 using Pure.Engine.Tilemap;
 using Pure.Engine.Utilities;
 
@@ -12,7 +13,7 @@ public class MapGenerator
     public (int x, int y) Offset { get; set; }
     public int TargetTileId { get; set; }
 
-    public Dictionary<byte, Tile> Elevations { get; } = new();
+    public SortedDictionary<byte, Tile> Elevations { get; } = new();
 
     public MapGenerator()
     {
@@ -40,10 +41,12 @@ public class MapGenerator
         {
             return GetBytesFrom(b, 1, ref offset)[0];
         }
+
         int GetInt()
         {
             return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
         }
+
         float GetFloat()
         {
             return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
@@ -123,14 +126,12 @@ public class MapGenerator
         return new(bytes);
     }
 
-#region Backend
+    #region Backend
     internal static byte[] Compress(byte[] data)
     {
         var output = new MemoryStream();
         using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
             stream.Write(data, 0, data.Length);
-        }
 
         return output.ToArray();
     }
@@ -139,9 +140,7 @@ public class MapGenerator
         var input = new MemoryStream(data);
         var output = new MemoryStream();
         using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
             stream.CopyTo(output);
-        }
 
         return output.ToArray();
     }
@@ -151,5 +150,5 @@ public class MapGenerator
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }
