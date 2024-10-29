@@ -1,12 +1,10 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
-
 global using Pure.Editors.Base;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
-
 global using System.Text;
 using System.IO.Compression;
 
@@ -25,7 +23,7 @@ public static class Program
         editor.Run();
     }
 
-    #region Backend
+#region Backend
     private static readonly Editor editor;
     private static readonly Inspector inspector;
     private static readonly TerrainPanel terrainPanel;
@@ -165,22 +163,23 @@ public static class Program
         intoBytes.AddRange(bytes);
     }
 
-    private static byte[] Compress(byte[] data)
+    internal static byte[] Compress(byte[] data)
     {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-            stream.Write(data, 0, data.Length);
+        using var compressedStream = new MemoryStream();
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
+        {
+            gzipStream.Write(data, 0, data.Length);
+        }
 
-        return output.ToArray();
+        return compressedStream.ToArray();
     }
-    private static byte[] Decompress(byte[] data)
+    internal static byte[] Decompress(byte[] compressedData)
     {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-            stream.CopyTo(output);
-
-        return output.ToArray();
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
     }
-    #endregion
+#endregion
 }

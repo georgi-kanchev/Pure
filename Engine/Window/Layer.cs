@@ -1,6 +1,5 @@
 using SFML.Graphics.Glsl;
 using System.Numerics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Pure.Engine.Window;
 
@@ -111,19 +110,19 @@ public class Layer
     }
     public Layer(byte[] bytes)
     {
-        var b = Decompress(bytes);
+        var b = Window.Decompress(bytes);
         var offset = 0;
 
         var bAtlasPath = GetInt();
-        AtlasPath = Encoding.UTF8.GetString(GetBytesFrom(b, bAtlasPath, ref offset));
+        AtlasPath = Encoding.UTF8.GetString(Window.GetBytesFrom(b, bAtlasPath, ref offset));
         atlasPath = AtlasPath;
-        AtlasTileGap = GetByte();
-        AtlasTileSize = GetByte();
+        AtlasTileGap = Window.GetBytesFrom(b, 1, ref offset)[0];
+        AtlasTileSize = Window.GetBytesFrom(b, 1, ref offset)[0];
 
         AtlasTileIdFull = GetInt();
         Size = (GetInt(), GetInt());
 
-        BackgroundColor = GetUInt();
+        BackgroundColor = BitConverter.ToUInt32(Window.GetBytesFrom(b, 4, ref offset));
 
         Zoom = GetFloat();
         Offset = (GetFloat(), GetFloat());
@@ -134,22 +133,12 @@ public class Layer
 
         float GetFloat()
         {
-            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
+            return BitConverter.ToSingle(Window.GetBytesFrom(b, 4, ref offset));
         }
 
         int GetInt()
         {
-            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
-        }
-
-        uint GetUInt()
-        {
-            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        }
-
-        byte GetByte()
-        {
-            return GetBytesFrom(b, 1, ref offset)[0];
+            return BitConverter.ToInt32(Window.GetBytesFrom(b, 4, ref offset));
         }
     }
     public Layer(string base64) : this(Convert.FromBase64String(base64))
@@ -177,18 +166,15 @@ public class Layer
         bytes.AddRange(bAtlasPath);
         bytes.Add(AtlasTileGap);
         bytes.Add(AtlasTileSize);
-
         bytes.AddRange(BitConverter.GetBytes(AtlasTileIdFull));
         bytes.AddRange(BitConverter.GetBytes(Size.width));
         bytes.AddRange(BitConverter.GetBytes(Size.height));
-
         bytes.AddRange(BitConverter.GetBytes(BackgroundColor));
-
         bytes.AddRange(BitConverter.GetBytes(Zoom));
         bytes.AddRange(BitConverter.GetBytes(Offset.x));
         bytes.AddRange(BitConverter.GetBytes(Offset.y));
 
-        return Compress(bytes.ToArray());
+        return Window.Compress(bytes.ToArray());
     }
 
     public void FitWindow()
@@ -635,11 +621,10 @@ public class Layer
 
     static Layer()
     {
-        //var str = DefaultGraphics.PngToBase64String("/home/gojur/code/Pure/Examples/bin/Debug/net6.0/graphics.png");
-        //var str = DefaultGraphics.PngToBase64String("graphics.png");
+        // var str = DefaultGraphics.PngToBase64String("graphics.png");
 
         tilesets["default"] = DefaultGraphics.CreateTexture();
-        //SaveDefaultGraphics("graphics.png");
+        // DefaultGraphicsToFile("graphics.png");
     }
 
     private string atlasPath;
@@ -869,34 +854,6 @@ public class Layer
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-    }
-
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
     }
 #endregion
 }

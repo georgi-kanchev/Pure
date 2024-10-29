@@ -1,6 +1,6 @@
-﻿namespace Pure.Engine.Collision;
+﻿using System.IO.Compression;
 
-using System.IO.Compression;
+namespace Pure.Engine.Collision;
 
 public abstract class Pack<T>
 {
@@ -48,33 +48,9 @@ public abstract class Pack<T>
             data.RemoveAt(i);
     }
 
-    #region Backend
+#region Backend
     protected readonly List<T> data = new();
 
     protected abstract T LocalToGlobal(T local);
-
-    protected static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-            stream.Write(data, 0, data.Length);
-
-        return output.ToArray();
-    }
-    protected static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-            stream.CopyTo(output);
-
-        return output.ToArray();
-    }
-    protected static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
-    }
-    #endregion
+#endregion
 }

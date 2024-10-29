@@ -1,7 +1,6 @@
 ﻿namespace Pure.Engine.Collision;
 
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 public class LinePack : Pack<Line>
 {
@@ -30,28 +29,28 @@ public class LinePack : Pack<Line>
     }
     public LinePack(byte[] bytes)
     {
-        var b = Decompress(bytes);
+        var b = SolidMap.Decompress(bytes);
         var offset = 0;
 
-        var count = BitConverter.ToInt32(Get<int>());
+        var count = BitConverter.ToInt32(Get());
 
-        Position = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
-        Scale = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
+        Position = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
+        Scale = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
 
         for (var i = 0; i < count; i++)
         {
-            var ax = BitConverter.ToSingle(Get<float>());
-            var ay = BitConverter.ToSingle(Get<float>());
-            var bx = BitConverter.ToSingle(Get<float>());
-            var by = BitConverter.ToSingle(Get<float>());
-            var color = BitConverter.ToUInt32(Get<uint>());
+            var ax = BitConverter.ToSingle(Get());
+            var ay = BitConverter.ToSingle(Get());
+            var bx = BitConverter.ToSingle(Get());
+            var by = BitConverter.ToSingle(Get());
+            var color = BitConverter.ToUInt32(Get());
 
             Add((ax, ay, bx, by, color));
         }
 
-        byte[] Get<T>()
+        byte[] Get()
         {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+            return SolidMap.GetBytesFrom(b, 4, ref offset);
         }
     }
     public LinePack(string base64) : this(Convert.FromBase64String(base64))
@@ -76,7 +75,7 @@ public class LinePack : Pack<Line>
             result.AddRange(BitConverter.GetBytes(r.Color));
         }
 
-        return Compress(result.ToArray());
+        return SolidMap.Compress(result.ToArray());
     }
     public (float ax, float ay, float bx, float by, uint color)[] ToBundle()
     {

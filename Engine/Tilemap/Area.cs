@@ -1,7 +1,5 @@
 ﻿namespace Pure.Engine.Tilemap;
 
-using System.IO.Compression;
-
 public struct Area
 {
     public int X { get; set; }
@@ -42,23 +40,12 @@ public struct Area
     }
     public Area(byte[] bytes)
     {
-        var b = Decompress(bytes);
         var offset = 0;
-
-        X = GetInt();
-        Y = GetInt();
-        Width = GetInt();
-        Height = GetInt();
-        Color = GetUInt();
-
-        int GetInt()
-        {
-            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
-        }
-        uint GetUInt()
-        {
-            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        }
+        X = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
+        Y = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
+        Width = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
+        Height = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
+        Color = BitConverter.ToUInt32(GetBytesFrom(bytes, 4, ref offset));
     }
     public Area(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -76,7 +63,7 @@ public struct Area
         result.AddRange(BitConverter.GetBytes(Size.width));
         result.AddRange(BitConverter.GetBytes(Size.height));
         result.AddRange(BitConverter.GetBytes(Color));
-        return Compress(result.ToArray());
+        return result.ToArray();
     }
     public (int x, int y, int width, int height, uint color) ToBundle()
     {
@@ -129,27 +116,6 @@ public struct Area
     }
 
 #region Backend
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
-    }
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {
         var result = fromBytes[offset..(offset + amount)];

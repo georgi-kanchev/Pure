@@ -1,206 +1,26 @@
 ﻿namespace Pure.Engine.Window;
 
-using System.IO.Compression;
-
 internal static class DefaultGraphics
 {
     public static string PngToBase64String(string pngPath)
     {
         var img = new Image(pngPath);
-        var rawBits = string.Empty;
-        for (uint y = 0; y < img.Size.Y; y++)
-            for (uint x = 0; x < img.Size.X; x++)
-            {
-                var value = img.GetPixel(x, y).A > byte.MaxValue / 2 ? "1" : "0";
-                rawBits += value;
-            }
-
-        var isPacked = false;
-        var prevBit = rawBits.Length > 1 ? rawBits[0] : default;
-        var sameBitSequence = 0;
-        var readIndexCounter = 0;
-
-        var w = Convert.ToString(img.Size.X, BINARY).PadLeft(BYTE_BITS_COUNT * 2, '0');
-        var h = Convert.ToString(img.Size.Y, BINARY).PadLeft(BYTE_BITS_COUNT * 2, '0');
-        var bytes = new List<byte>
-        {
-            Convert.ToByte(w[0..BYTE_BITS_COUNT], BINARY),
-            Convert.ToByte(w[BYTE_BITS_COUNT..^0], BINARY),
-            Convert.ToByte(h[0..BYTE_BITS_COUNT], BINARY),
-            Convert.ToByte(h[BYTE_BITS_COUNT..^0], BINARY)
-        };
-
-        for (var i = 0; i < rawBits.Length; i++)
-        {
-            var bit = rawBits[i];
-            var hasProcessed = false;
-
-            if (bit == prevBit)
-                sameBitSequence++;
-            // if start of new sequence while packed
-            else if (isPacked)
-                ProcessPackedSequence();
-
-            // if end of repeated sequence (max 63 bits)
-            if (hasProcessed == false && sameBitSequence == PACKED_REPEAT_COUNT)
-                ProcessPackedSequence();
-
-            // if end of image on repeated sequence
-            if (isPacked && hasProcessed == false && i == rawBits.Length - 1)
-            {
-                readIndexCounter++;
-                ProcessPackedSequence();
-                break;
-            }
-
-            isPacked = sameBitSequence >= RAW_BITS_COUNT;
-
-            // if end of raw sequence (max 7 bits)
-            if (hasProcessed == false &&
-                isPacked == false &&
-                readIndexCounter == RAW_BITS_COUNT &&
-                sameBitSequence < RAW_BITS_COUNT)
-                ProcessRawSequence();
-
-            isPacked = sameBitSequence >= RAW_BITS_COUNT;
-            prevBit = bit;
-            readIndexCounter++;
-            continue;
-
-            void ProcessPackedSequence()
-            {
-                var length = Convert.ToByte(readIndexCounter);
-                var byteStr = Convert.ToString(length, BINARY);
-                byteStr = byteStr.PadLeft(PACKED_REPEAT_BITS_COUNT, '0');
-                var finalByteStr = $"1{prevBit}{byteStr}".PadLeft(BYTE_BITS_COUNT, '0');
-                var newByte = Convert.ToByte(finalByteStr, BINARY);
-
-                hasProcessed = true;
-                AddByte(newByte);
-            }
-            void ProcessRawSequence()
-            {
-                var raw = rawBits[(i - RAW_BITS_COUNT)..i];
-                var finalByteStr = $"0{raw}";
-                var newByte = Convert.ToByte(finalByteStr, BINARY);
-
-                AddByte(newByte);
-            }
-        }
-
-        // if end of image on raw sequence
-        if (isPacked)
-            return Convert.ToBase64String(Compress(bytes.ToArray()));
-
-        var raw = rawBits[^readIndexCounter..];
-        raw = raw.PadLeft(RAW_BITS_COUNT, '0');
-        var finalByteStr = $"0{raw}";
-        var newByte = Convert.ToByte(finalByteStr, BINARY);
-
-        AddByte(newByte);
-
-        return Convert.ToBase64String(Compress(bytes.ToArray()));
-
-        void AddByte(byte b)
-        {
-            bytes.Add(b);
-            sameBitSequence = 0;
-            readIndexCounter = 0;
-        }
+        var bytes = Window.Compress(img.Pixels);
+        var base64 = Convert.ToBase64String(bytes);
+        img.Dispose();
+        return base64;
     }
     public static Texture CreateTexture()
     {
-        var bytes = Decompress(Convert.FromBase64String(DEFAULT_GRAPHICS_BASE64));
-        var width = (ushort)((bytes[0] << 8) | bytes[1]);
-        var height = (ushort)((bytes[2] << 8) | bytes[3]);
-        var total = width * height;
-        var decodedBits = new List<bool>();
-        var img = new Image(width, height);
-
-        for (var i = 4; i < bytes.Length; i++)
-        {
-            var curByte = bytes[i];
-            var bits = Convert.ToString(curByte, BINARY);
-            bits = bits.PadLeft(BYTE_BITS_COUNT, '0');
-            var isPacked = bits[0] == '1';
-            var isLast = i == bytes.Length - 1;
-
-            if (isPacked)
-            {
-                var color = bits[1];
-                var repCountBinary = bits[2..];
-                var repeatCount = Convert.ToByte(repCountBinary, BINARY);
-
-                for (var j = 0; j < repeatCount; j++)
-                    decodedBits.Add(color == '1');
-            }
-            else
-            {
-                if (isLast)
-                {
-                    var lastLength = total - decodedBits.Count;
-                    var lastRawBits = bits[^lastLength..];
-                    foreach (var bit in lastRawBits)
-                        decodedBits.Add(bit == '1');
-
-                    break;
-                }
-
-                var rawBits = bits[1..];
-                foreach (var bit in rawBits)
-                    decodedBits.Add(bit == '1');
-            }
-        }
-
-        for (uint i = 0; i < decodedBits.Count; i++)
-        {
-            var bit = decodedBits[(int)i];
-            var color = bit ? Color.White : Color.Transparent;
-            var x = i % width;
-            var y = i / width;
-
-            img.SetPixel(x, y, color);
-        }
-
+        var base64 = Convert.FromBase64String(DEFAULT_GRAPHICS_BASE64);
+        var bytes = Window.Decompress(base64);
+        var img = new Image(208, 208, bytes);
         var result = new Texture(img) { Repeated = true };
         img.Dispose();
         return result;
     }
 
 #region Backend
-    // image format
-    // each byte (8 bits) goes as
-    // packed bit (1) | color bit | up to 64 repeats (6 bits)
-    // not packed bit (0) | 7 literal sequence of raw bits
-
-    private const string DEFAULT_GRAPHICS_BASE64 =
-        "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";
-    private const int BINARY = 2;
-    private const int RAW_BITS_COUNT = 7;
-    private const int BYTE_BITS_COUNT = 8;
-    private const int PACKED_REPEAT_BITS_COUNT = 6;
-    private const int PACKED_REPEAT_COUNT = 63;
-
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
-    }
+    private const string DEFAULT_GRAPHICS_BASE64 = "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";
 #endregion
 }

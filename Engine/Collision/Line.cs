@@ -1,8 +1,6 @@
-﻿namespace Pure.Engine.Collision;
+﻿using System.Numerics;
 
-using System.IO.Compression;
-using System.Runtime.InteropServices;
-using System.Numerics;
+namespace Pure.Engine.Collision;
 
 /// <summary>
 /// Represents a line segment in 2D space defined by two points. Useful for
@@ -58,16 +56,14 @@ public struct Line
     }
     public Line(byte[] bytes)
     {
-        var b = Decompress(bytes);
         var offset = 0;
+        A = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
+        B = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
+        Color = BitConverter.ToUInt32(Get());
 
-        A = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
-        B = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
-        Color = BitConverter.ToUInt32(Get<uint>());
-
-        byte[] Get<T>()
+        byte[] Get()
         {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+            return SolidMap.GetBytesFrom(bytes, 4, ref offset);
         }
     }
     public Line(string base64) : this(Convert.FromBase64String(base64))
@@ -86,7 +82,7 @@ public struct Line
         result.AddRange(BitConverter.GetBytes(B.x));
         result.AddRange(BitConverter.GetBytes(B.y));
         result.AddRange(BitConverter.GetBytes(Color));
-        return Compress(result.ToArray());
+        return result.ToArray();
     }
     /// <returns>
     ///     A bundle tuple containing the two points and the color of the line.
@@ -432,31 +428,6 @@ public struct Line
         var intersectionX = ax1 + s * dx1;
         var intersectionY = ay1 + s * dy1;
         return (intersectionX, intersectionY, color);
-    }
-
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using var stream = new DeflateStream(input, CompressionMode.Decompress);
-        stream.CopyTo(output);
-        return output.ToArray();
-    }
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
     }
 #endregion
 }

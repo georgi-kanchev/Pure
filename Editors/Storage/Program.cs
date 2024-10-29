@@ -1,14 +1,12 @@
 ﻿using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using Pure.Engine.Utilities;
 using Pure.Tools.Tilemap;
 using Pure.Editors.Base;
 using Pure.Engine.Tilemap;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
-
 using _Storage = Pure.Engine.Storage.Storage;
 
 namespace Pure.Editors.Storage;
@@ -36,7 +34,7 @@ public static class Program
         editor.Run();
     }
 
-    #region Backend
+#region Backend
     private enum DataType { Value, Tuple, List, Dictionary, TupleAdd }
 
     private const string VALUE_FLAG = "Flag", VALUE_TEXT = "Text", VALUE_NUMBER = "Number",
@@ -961,22 +959,23 @@ public static class Program
         return Encoding.UTF8.GetString(bText);
     }
 
-    private static byte[] Compress(byte[] data)
+    internal static byte[] Compress(byte[] data)
     {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-            stream.Write(data, 0, data.Length);
+        using var compressedStream = new MemoryStream();
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
+        {
+            gzipStream.Write(data, 0, data.Length);
+        }
 
-        return output.ToArray();
+        return compressedStream.ToArray();
     }
-    private static byte[] Decompress(byte[] data)
+    internal static byte[] Decompress(byte[] compressedData)
     {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-            stream.CopyTo(output);
-
-        return output.ToArray();
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
     }
 
     private static int DataTypeToInt(string dataType)
@@ -1065,5 +1064,5 @@ public static class Program
             return replacedValue;
         });
     }
-    #endregion
+#endregion
 }

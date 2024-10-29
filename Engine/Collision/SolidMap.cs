@@ -1,7 +1,6 @@
-﻿namespace Pure.Engine.Collision;
+﻿using System.IO.Compression;
 
-using System.IO.Compression;
-using System.Runtime.InteropServices;
+namespace Pure.Engine.Collision;
 
 public class SolidMap
 {
@@ -26,42 +25,42 @@ public class SolidMap
         var b = Decompress(bytes);
         var offset = 0;
 
-        Offset = (BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>()));
+        Offset = (BitConverter.ToInt32(Get()), BitConverter.ToInt32(Get()));
 
-        var ignoredCount = BitConverter.ToInt32(Get<int>());
+        var ignoredCount = BitConverter.ToInt32(Get());
         for (var i = 0; i < ignoredCount; i++)
-            IgnoredCells.Add((BitConverter.ToInt32(Get<int>()), BitConverter.ToInt32(Get<int>())));
+            IgnoredCells.Add((BitConverter.ToInt32(Get()), BitConverter.ToInt32(Get())));
 
-        var cellRectCount = BitConverter.ToInt32(Get<int>());
+        var cellRectCount = BitConverter.ToInt32(Get());
         for (var i = 0; i < cellRectCount; i++)
         {
-            var tileId = BitConverter.ToInt32(Get<int>());
-            var rectAmount = BitConverter.ToInt32(Get<int>());
+            var tileId = BitConverter.ToInt32(Get());
+            var rectAmount = BitConverter.ToInt32(Get());
 
             for (var j = 0; j < rectAmount; j++)
             {
-                var x = BitConverter.ToSingle(Get<float>());
-                var y = BitConverter.ToSingle(Get<float>());
-                var w = BitConverter.ToSingle(Get<float>());
-                var h = BitConverter.ToSingle(Get<float>());
-                var color = BitConverter.ToUInt32(Get<uint>());
+                var x = BitConverter.ToSingle(Get());
+                var y = BitConverter.ToSingle(Get());
+                var w = BitConverter.ToSingle(Get());
+                var h = BitConverter.ToSingle(Get());
+                var color = BitConverter.ToUInt32(Get());
 
                 AddSolids(tileId, new Solid(x, y, w, h, color));
             }
         }
 
-        var tileIndicesCount = BitConverter.ToInt32(Get<int>());
+        var tileIndicesCount = BitConverter.ToInt32(Get());
         for (var i = 0; i < tileIndicesCount; i++)
         {
-            var x = BitConverter.ToInt32(Get<int>());
-            var y = BitConverter.ToInt32(Get<int>());
-            var tile = BitConverter.ToInt32(Get<int>());
+            var x = BitConverter.ToInt32(Get());
+            var y = BitConverter.ToInt32(Get());
+            var tile = BitConverter.ToInt32(Get());
             tileIndices[(x, y)] = tile;
         }
 
-        byte[] Get<T>()
+        byte[] Get()
         {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
+            return GetBytesFrom(b, 4, ref offset);
         }
     }
     public SolidMap(string base64) : this(Convert.FromBase64String(base64))
@@ -485,37 +484,25 @@ public class SolidMap
         var resultH = Math.Max((int)MathF.Ceiling(h * 2f), 1);
         return (resultW, resultH);
     }
-    private static float AngleDifference(float angle1, float angle2)
+    internal static byte[] Compress(byte[] data)
     {
-        return Math.Abs((angle2 - angle1 + 540) % 360 - 180);
-    }
-    private static float AngleWrap(float angle)
-    {
-        return (angle % 360 + 360) % 360;
-    }
-
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        using var compressedStream = new MemoryStream();
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
         {
-            stream.Write(data, 0, data.Length);
+            gzipStream.Write(data, 0, data.Length);
         }
 
-        return output.ToArray();
+        return compressedStream.ToArray();
     }
-    private static byte[] Decompress(byte[] data)
+    internal static byte[] Decompress(byte[] compressedData)
     {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
     }
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    internal static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {
         var result = fromBytes[offset..(offset + amount)];
         offset += amount;

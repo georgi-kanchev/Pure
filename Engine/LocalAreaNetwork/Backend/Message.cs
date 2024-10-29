@@ -1,9 +1,7 @@
-using System.Runtime.InteropServices;
-
-namespace Pure.Engine.LocalAreaNetwork;
-
 using System.IO.Compression;
 using System.Text;
+
+namespace Pure.Engine.LocalAreaNetwork;
 
 internal class Message
 {
@@ -52,7 +50,7 @@ internal class Message
         var offset = 0;
         // take a chunk of the bytes just for this message
         // since maybe there are multiple messages back to back
-        var byteAmount = BitConverter.ToInt32(Get<int>());
+        var byteAmount = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
         var myBytes = GetBytesFrom(bytes, byteAmount, ref offset);
 
         // send the remaining bytes back
@@ -61,13 +59,13 @@ internal class Message
         // and keep parsing the message...
         var offsetDecoded = 0;
         var decoded = Decompress(myBytes);
-        var sysTag = GetByte();
-        var userTag = GetByte();
-        var fromId = GetByte();
-        var toId = GetByte();
-        var strByteLength = BitConverter.ToInt32(Get<int>());
+        var sysTag = GetBytesFrom(decoded, 1, ref offsetDecoded)[0];
+        var userTag = GetBytesFrom(decoded, 1, ref offsetDecoded)[0];
+        var fromId = GetBytesFrom(decoded, 1, ref offsetDecoded)[0];
+        var toId = GetBytesFrom(decoded, 1, ref offsetDecoded)[0];
+        var strByteLength = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
         var value = Encoding.UTF8.GetString(GetBytesFrom(decoded, strByteLength, ref offsetDecoded));
-        var rawByteLength = BitConverter.ToInt32(Get<int>());
+        var rawByteLength = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
         var raw = GetBytesFrom(decoded, rawByteLength, ref offsetDecoded);
 
         // then store
@@ -78,43 +76,26 @@ internal class Message
         Value = value;
         Data = raw;
         Total = bytes[..(4 + byteAmount)];
-
-        byte GetByte()
-        {
-            return GetBytesFrom(decoded, 1, ref offsetDecoded)[0];
-        }
-        byte[] Get<T>()
-        {
-            return GetBytesFrom(bytes, Marshal.SizeOf(typeof(T)), ref offset);
-        }
     }
 
 #region Backend
-    private static byte[] Compress(byte[] bytes)
+    internal static byte[] Compress(byte[] data)
     {
-        using var uncompressedStream = new MemoryStream(bytes);
         using var compressedStream = new MemoryStream();
-        using (var compressorStream =
-               new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
         {
-            uncompressedStream.CopyTo(compressorStream);
+            gzipStream.Write(data, 0, data.Length);
         }
 
-        var compressedBytes = compressedStream.ToArray();
-
-        return compressedBytes;
+        return compressedStream.ToArray();
     }
-    private static byte[] Decompress(byte[] compressedStringBytes)
+    internal static byte[] Decompress(byte[] compressedData)
     {
-        var compressedStream = new MemoryStream(compressedStringBytes);
-
-        using var decompressorStream = new DeflateStream(compressedStream, CompressionMode.Decompress);
-        using var decompressedStream = new MemoryStream();
-        decompressorStream.CopyTo(decompressedStream);
-
-        var decompressedBytes = decompressedStream.ToArray();
-
-        return decompressedBytes;
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
     }
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {

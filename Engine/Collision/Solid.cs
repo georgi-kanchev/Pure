@@ -1,7 +1,5 @@
 ﻿namespace Pure.Engine.Collision;
 
-using System.IO.Compression;
-
 /// <summary>
 /// Represents a solid in 2D space defined by its position and size.
 /// </summary>
@@ -49,23 +47,12 @@ public struct Solid : IEquatable<Solid>
     }
     public Solid(byte[] bytes)
     {
-        var b = Decompress(bytes);
         var offset = 0;
-
-        X = GetFloat();
-        Y = GetFloat();
-        Width = GetFloat();
-        Height = GetFloat();
-        Color = GetUInt();
-
-        float GetFloat()
-        {
-            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
-        }
-        uint GetUInt()
-        {
-            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        }
+        X = BitConverter.ToSingle(SolidMap.GetBytesFrom(bytes, 4, ref offset));
+        Y = BitConverter.ToSingle(SolidMap.GetBytesFrom(bytes, 4, ref offset));
+        Width = BitConverter.ToSingle(SolidMap.GetBytesFrom(bytes, 4, ref offset));
+        Height = BitConverter.ToSingle(SolidMap.GetBytesFrom(bytes, 4, ref offset));
+        Color = BitConverter.ToUInt32(SolidMap.GetBytesFrom(bytes, 4, ref offset));
     }
     public Solid(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -83,7 +70,7 @@ public struct Solid : IEquatable<Solid>
         result.AddRange(BitConverter.GetBytes(Size.width));
         result.AddRange(BitConverter.GetBytes(Size.height));
         result.AddRange(BitConverter.GetBytes(Color));
-        return Compress(result.ToArray());
+        return result.ToArray();
     }
     /// <returns>
     /// A bundle tuple containing the position, size and the color of the solid.</returns>
@@ -268,34 +255,4 @@ public struct Solid : IEquatable<Solid>
     {
         return new(bytes);
     }
-
-#region Backend
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
-    }
-#endregion
 }

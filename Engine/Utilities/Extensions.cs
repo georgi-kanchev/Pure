@@ -1,13 +1,12 @@
-﻿namespace Pure.Engine.Utilities;
+﻿using System.IO.Compression;
+
+namespace Pure.Engine.Utilities;
 
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.IO.Compression;
-using System.Runtime.InteropServices;
 using System.Text;
-
 using static Alignment;
 
 /// <summary>
@@ -626,19 +625,7 @@ public static class Extensions
     /// <returns>The compressed input string as a Base64-encoded string.</returns>
     public static string Compress(this string text)
     {
-        byte[] compressedBytes;
-
-        using (var uncompressedStream = new MemoryStream(Encoding.UTF8.GetBytes(text)))
-        {
-            using var compressedStream = new MemoryStream();
-            using (var compressorStream =
-                   new DeflateStream(compressedStream, CompressionLevel.Fastest, true))
-                uncompressedStream.CopyTo(compressorStream);
-
-            compressedBytes = compressedStream.ToArray();
-        }
-
-        return Convert.ToBase64String(compressedBytes);
+        return Convert.ToBase64String(Compress(Encoding.UTF8.GetBytes(text)));
     }
     /// <summary>
     /// Decompresses a Base64-encoded string that was compressed using Deflate compression algorithm and returns the original uncompressed string.
@@ -647,19 +634,25 @@ public static class Extensions
     /// <returns>The original uncompressed string.</returns>
     public static string Decompress(this string compressedText)
     {
-        byte[] decompressedBytes;
-
-        var compressedStream = new MemoryStream(Convert.FromBase64String(compressedText));
-
-        using (var decompressorStream = new DeflateStream(compressedStream, CompressionMode.Decompress))
+        return Encoding.UTF8.GetString(Decompress(Convert.FromBase64String(compressedText)));
+    }
+    public static byte[] Compress(this byte[] data)
+    {
+        using var compressedStream = new MemoryStream();
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
         {
-            using var decompressedStream = new MemoryStream();
-            decompressorStream.CopyTo(decompressedStream);
-
-            decompressedBytes = decompressedStream.ToArray();
+            gzipStream.Write(data, 0, data.Length);
         }
 
-        return Encoding.UTF8.GetString(decompressedBytes);
+        return compressedStream.ToArray();
+    }
+    public static byte[] Decompress(this byte[] compressedData)
+    {
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
     }
     /// <summary>
     /// Attempts to convert a string to a single-precision floating point number.
@@ -1318,7 +1311,7 @@ public static class Extensions
         return (index % size.width, index / size.width);
     }
 
-    #region Backend
+#region Backend
     private class Gate
     {
         public int entries;
@@ -1390,5 +1383,5 @@ public static class Extensions
 
         return builder.ToString();
     }
-    #endregion
+#endregion
 }

@@ -1,8 +1,5 @@
 ﻿namespace Pure.Engine.Utilities;
 
-using System.IO.Compression;
-using System.Runtime.InteropServices;
-
 public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value }
 
 public struct Point : IEquatable<Point>
@@ -61,16 +58,11 @@ public struct Point : IEquatable<Point>
     }
     public Point(byte[] bytes)
     {
-        var b = Decompress(bytes);
         var offset = 0;
 
-        val = (BitConverter.ToSingle(Get<float>()), BitConverter.ToSingle(Get<float>()));
-        Color = BitConverter.ToUInt32(Get<uint>());
-
-        byte[] Get<T>()
-        {
-            return GetBytesFrom(b, Marshal.SizeOf(typeof(T)), ref offset);
-        }
+        val = (BitConverter.ToSingle(GetBytesFrom(bytes, 4, ref offset)),
+            BitConverter.ToSingle(GetBytesFrom(bytes, 4, ref offset)));
+        Color = BitConverter.ToUInt32(GetBytesFrom(bytes, 4, ref offset));
     }
     public Point(string base64) : this(Convert.FromBase64String(base64))
     {
@@ -88,7 +80,7 @@ public struct Point : IEquatable<Point>
         result.AddRange(BitConverter.GetBytes(Y));
         result.AddRange(BitConverter.GetBytes(Color));
 
-        return Compress(result.ToArray());
+        return result.ToArray();
     }
     public (float x, float y, uint color) ToBundle()
     {
@@ -304,27 +296,6 @@ public struct Point : IEquatable<Point>
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
 
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
-    }
     private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {
         var result = fromBytes[offset..(offset + amount)];

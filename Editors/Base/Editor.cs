@@ -1,14 +1,11 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
-
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
-
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
-
 using System.IO.Compression;
 using System.Text;
 
@@ -414,7 +411,7 @@ public class Editor
         });
     }
 
-    #region Backend
+#region Backend
     private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
     private const int GRID_GAP = 10;
     private readonly InputBox promptSize;
@@ -622,15 +619,13 @@ public class Editor
         byteOffset += amount;
         return result;
     }
-
-    private static byte[] Decompress(byte[] data)
+    internal static byte[] Decompress(byte[] compressedData)
     {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-            stream.CopyTo(output);
-
-        return output.ToArray();
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
     }
 
     private TilemapPack LoadMap(byte[] bytes, ref string[] result, ref MapGenerator? gen)
@@ -654,5 +649,5 @@ public class Editor
         gen = new(hijackedBytes[byteOffset..]);
         return maps;
     }
-    #endregion
+#endregion
 }

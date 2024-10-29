@@ -1,7 +1,7 @@
-﻿namespace Pure.Engine.Tilemap;
-
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Text.RegularExpressions;
+
+namespace Pure.Engine.Tilemap;
 
 /// <summary>
 /// Represents a tilemap consisting of a grid of tiles.
@@ -839,27 +839,6 @@ public class Tilemap
         return colors;
     }
 
-    internal static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-        {
-            stream.Write(data, 0, data.Length);
-        }
-
-        return output.ToArray();
-    }
-    internal static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
-    }
     internal static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {
         var result = fromBytes[offset..(offset + amount)];
@@ -891,6 +870,25 @@ public class Tilemap
             seed ^= seed >> 16;
             return (int)seed;
         }
+    }
+
+    internal static byte[] Compress(byte[] data)
+    {
+        using var compressedStream = new MemoryStream();
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
+        {
+            gzipStream.Write(data, 0, data.Length);
+        }
+
+        return compressedStream.ToArray();
+    }
+    internal static byte[] Decompress(byte[] compressedData)
+    {
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
     }
 #endregion
 }

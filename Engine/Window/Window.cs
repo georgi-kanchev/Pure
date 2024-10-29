@@ -1,7 +1,6 @@
 ﻿global using SFML.Graphics;
 global using SFML.System;
 global using SFML.Window;
-
 global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using System.IO.Compression;
@@ -339,7 +338,7 @@ public static class Window
         recreate += method;
     }
 
-    #region Backend
+#region Backend
     internal static RenderWindow? window;
     private static RenderTexture? allLayers;
     internal static (int w, int h) rendTexViewSz;
@@ -530,29 +529,30 @@ public static class Window
 
         return (ww, wh, (window.Size.X - ww) / 2f, (window.Size.Y - wh) / 2f);
     }
-
-    private static byte[] Compress(byte[] data)
-    {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
-            stream.Write(data, 0, data.Length);
-
-        return output.ToArray();
-    }
-    private static byte[] Decompress(byte[] data)
-    {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-            stream.CopyTo(output);
-
-        return output.ToArray();
-    }
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
+    internal static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
     {
         var result = fromBytes[offset..(offset + amount)];
         offset += amount;
         return result;
     }
-    #endregion
+
+    internal static byte[] Compress(byte[] data)
+    {
+        using var compressedStream = new MemoryStream();
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
+        {
+            gzipStream.Write(data, 0, data.Length);
+        }
+
+        return compressedStream.ToArray();
+    }
+    internal static byte[] Decompress(byte[] compressedData)
+    {
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
+    }
+#endregion
 }

@@ -1,7 +1,7 @@
-﻿namespace Pure.Engine.UserInterface;
-
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Text;
+
+namespace Pure.Engine.UserInterface;
 
 public enum Side { Left, Right, Top, Bottom }
 
@@ -704,11 +704,8 @@ public class Block
     }
 
 #region Backend
-    internal (int, int) position,
-        size,
-        listSizeTrimOffset,
-        sizeMinimum = (1, 1),
-        sizeMaximum = (int.MaxValue, int.MaxValue);
+    internal (int, int) position, size, listSizeTrimOffset,
+        sizeMinimum = (1, 1), sizeMaximum = (int.MaxValue, int.MaxValue);
     internal bool hasParent, isTextReadonly, wasMaskSet;
     internal readonly string typeName;
     private int byteOffset;
@@ -790,24 +787,21 @@ public class Block
 
     internal static byte[] Compress(byte[] data)
     {
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(output, CompressionLevel.Optimal))
+        using var compressedStream = new MemoryStream();
+        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
         {
-            stream.Write(data, 0, data.Length);
+            gzipStream.Write(data, 0, data.Length);
         }
 
-        return output.ToArray();
+        return compressedStream.ToArray();
     }
-    internal static byte[] Decompress(byte[] data)
+    internal static byte[] Decompress(byte[] compressedData)
     {
-        var input = new MemoryStream(data);
-        var output = new MemoryStream();
-        using (var stream = new DeflateStream(input, CompressionMode.Decompress))
-        {
-            stream.CopyTo(output);
-        }
-
-        return output.ToArray();
+        using var compressedStream = new MemoryStream(compressedData);
+        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+        using var resultStream = new MemoryStream();
+        gzipStream.CopyTo(resultStream);
+        return resultStream.ToArray();
     }
     private byte[] GetBytes(byte[] fromBytes, int amount)
     {
