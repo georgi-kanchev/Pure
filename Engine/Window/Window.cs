@@ -3,9 +3,7 @@ global using SFML.System;
 global using SFML.Window;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
-global using System.IO.Compression;
 global using System.Text;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace Pure.Engine.Window;
 
@@ -541,12 +539,7 @@ public static class Window
     {
         public byte value;
         public int freq;
-        public Node? left;
-        public Node? right;
-        public bool IsLeaf
-        {
-            get => left == null && right == null;
-        }
+        public Node? left, right;
     }
 
     private static Dictionary<byte, string> GetTable(Node root)
@@ -557,7 +550,7 @@ public static class Window
 
         void BuildCode(Node node, string code, Dictionary<byte, string> table)
         {
-            if (node.IsLeaf)
+            if (node.left == null && node.right == null)
                 table[node.value] = code;
 
             if (node.left != null) BuildCode(node.left, code + "0", table);
@@ -640,7 +633,7 @@ public static class Window
             foreach (var bit in bits)
             {
                 node = bit == '0' ? node.left : node.right;
-                if (node!.IsLeaf == false)
+                if ((node!.left == null && node.right == null) == false)
                     continue;
 
                 decompressed.Add(node.value);
