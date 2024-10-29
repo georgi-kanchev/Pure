@@ -621,7 +621,7 @@ public class Layer
 
     static Layer()
     {
-        var str = DefaultGraphics.PngToBase64String("graphics.png");
+        // var str = DefaultGraphics.PngToBase64String("graphics.png");
         tilesets["default"] = DefaultGraphics.CreateTexture();
         // DefaultGraphicsToFile("graphics.png");
     }
