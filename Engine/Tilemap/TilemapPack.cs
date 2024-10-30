@@ -34,7 +34,6 @@ public class TilemapPack
     }
     public TilemapPack(byte[] bytes)
     {
-        var b = Tilemap.Decompress(bytes);
         var offset = 0;
         var count = GetInt();
         Size = (GetInt(), GetInt());
@@ -42,23 +41,16 @@ public class TilemapPack
 
         for (var i = 0; i < count; i++)
         {
-            var bTilemap = Tilemap.GetBytesFrom(b, GetInt(), ref offset);
+            var bTilemap = Tilemap.GetBytesFrom(bytes, GetInt(), ref offset);
             Tilemaps.Add(new(bTilemap));
         }
 
         int GetInt()
         {
-            return BitConverter.ToInt32(Tilemap.GetBytesFrom(b, 4, ref offset));
+            return BitConverter.ToInt32(Tilemap.GetBytesFrom(bytes, 4, ref offset));
         }
     }
-    public TilemapPack(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
 
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -77,7 +69,7 @@ public class TilemapPack
             result.AddRange(bytes);
         }
 
-        return Tilemap.Compress(result.ToArray());
+        return result.ToArray();
     }
 
     public void Flush()
@@ -144,22 +136,9 @@ public class TilemapPack
         return result;
     }
 
-    public TilemapPack Duplicate()
-    {
-        return new(ToBytes());
-    }
-
     public static implicit operator Tilemap[](TilemapPack tilemapPack)
     {
         return tilemapPack.Tilemaps.ToArray();
-    }
-    public static implicit operator byte[](TilemapPack tilemapPack)
-    {
-        return tilemapPack.ToBytes();
-    }
-    public static implicit operator TilemapPack(byte[] bytes)
-    {
-        return new(bytes);
     }
 
 #region Backend

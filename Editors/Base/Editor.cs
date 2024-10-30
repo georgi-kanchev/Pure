@@ -461,7 +461,7 @@ public class Editor
         ChangeMapSize((w, h));
 
         var (vw, vh) = MapsEditor.View.Size;
-        var packCopy = MapsEditor.Duplicate();
+        var packCopy = new TilemapPack(MapsEditor.ToBytes());
         for (var j = 0; j < packCopy.Tilemaps.Count; j++)
             MapsEditor.Tilemaps[j].SetGroup((0, 0), packCopy.Tilemaps[j]);
         MapsEditor.View = new(MapsEditor.View.Position, (vw, vh));

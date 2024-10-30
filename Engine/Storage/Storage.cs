@@ -698,6 +698,7 @@ public class Storage
 
         return (T)Convert.ChangeType(wrappedValue, typeof(T));
     }
+
     private static bool IsArrayOfPrimitives(Array array)
     {
         if (array == null)
@@ -710,7 +711,6 @@ public class Storage
 
         return elementType.IsPrimitive || elementType == typeof(string) || IsPrimitiveTuple(elementType);
     }
-
     private static bool IsGenericList(Type type)
     {
         return type.IsGenericType &&
@@ -759,7 +759,9 @@ public class Storage
                t == typeof(ulong) ||
                t == typeof(float) ||
                t == typeof(double) ||
-               t == typeof(decimal);
+               t == typeof(decimal) ||
+               t == typeof(nint) ||
+               t == typeof(nuint);
     }
 
     private static List<object?> GetTupleItems(object tuple)

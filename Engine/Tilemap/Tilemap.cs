@@ -60,7 +60,6 @@ public class Tilemap
     }
     public Tilemap(byte[] bytes)
     {
-        var b = Decompress(bytes);
         var offset = 0;
         var (w, h) = (GetInt(), GetInt());
 
@@ -73,23 +72,16 @@ public class Tilemap
         for (var i = 0; i < h; i++)
             for (var j = 0; j < w; j++)
             {
-                var bTile = GetBytesFrom(b, 7, ref offset);
+                var bTile = GetBytesFrom(bytes, 7, ref offset);
                 SetTile((j, i), new(bTile));
             }
 
         int GetInt()
         {
-            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
+            return BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
         }
     }
-    public Tilemap(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
 
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
     public byte[] ToBytes()
     {
         var result = new List<byte>();
@@ -105,7 +97,7 @@ public class Tilemap
             for (var j = 0; j < w; j++)
                 result.AddRange(TileAt((j, i)).ToBytes());
 
-        return Compress(result.ToArray());
+        return result.ToArray();
     }
     /// <returns>
     /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
@@ -649,11 +641,6 @@ public class Tilemap
         return result;
     }
 
-    public Tilemap Duplicate()
-    {
-        return new(ToBytes());
-    }
-
     /// <summary>
     /// Implicitly converts a 2D array of tiles to a tilemap object.
     /// </summary>
@@ -688,14 +675,6 @@ public class Tilemap
     public static implicit operator int[,](Tilemap tilemap)
     {
         return tilemap.ids;
-    }
-    public static implicit operator byte[](Tilemap tilemap)
-    {
-        return tilemap.ToBytes();
-    }
-    public static implicit operator Tilemap(byte[] bytes)
-    {
-        return new(bytes);
     }
 
 #region Backend
@@ -870,125 +849,6 @@ public class Tilemap
             seed ^= seed >> 16;
             return (int)seed;
         }
-    }
-
-    private class Node
-    {
-        public byte value;
-        public int freq;
-        public Node? left;
-        public Node? right;
-        public bool IsLeaf
-        {
-            get => left == null && right == null;
-        }
-    }
-
-    private static Dictionary<byte, string> GetTable(Node root)
-    {
-        var codeTable = new Dictionary<byte, string>();
-        BuildCode(root, "", codeTable);
-        return codeTable;
-
-        void BuildCode(Node node, string code, Dictionary<byte, string> table)
-        {
-            if (node.IsLeaf)
-                table[node.value] = code;
-
-            if (node.left != null) BuildCode(node.left, code + "0", table);
-            if (node.right != null) BuildCode(node.right, code + "1", table);
-        }
-    }
-    private static Node GetTree(Dictionary<byte, int> frequencies)
-    {
-        var nodes = new List<Node>(frequencies.Select(f => new Node { value = f.Key, freq = f.Value }));
-        while (nodes.Count > 1)
-        {
-            nodes = nodes.OrderBy(n => n.freq).ToList();
-            var left = nodes[0];
-            var right = nodes[1];
-            var parent = new Node { left = left, right = right, freq = left.freq + right.freq };
-            nodes.RemoveRange(0, 2);
-            nodes.Add(parent);
-        }
-
-        return nodes[0];
-    }
-    internal static byte[] Compress(byte[] data)
-    {
-        var compressed = new List<byte>();
-        for (var i = 0; i < data.Length; i++)
-        {
-            var count = (byte)1;
-            while (i + 1 < data.Length && data[i] == data[i + 1] && count < 255)
-            {
-                count++;
-                i++;
-            }
-
-            compressed.Add(count);
-            compressed.Add(data[i]);
-        }
-
-        var frequencies = compressed.GroupBy(b => b).ToDictionary(g => g.Key, g => g.Count());
-        var root = GetTree(frequencies);
-        var codeTable = GetTable(root);
-        var header = new List<byte> { (byte)frequencies.Count };
-        foreach (var kvp in frequencies)
-        {
-            header.Add(kvp.Key);
-            header.AddRange(BitConverter.GetBytes(kvp.Value));
-        }
-
-        var bitString = string.Join("", compressed.Select(b => codeTable[b]));
-        var byteList = new List<byte>(header);
-
-        for (var i = 0; i < bitString.Length; i += 8)
-        {
-            var byteStr = bitString.Substring(i, Math.Min(8, bitString.Length - i));
-            byteList.Add(Convert.ToByte(byteStr, 2));
-        }
-
-        return byteList.ToArray();
-    }
-    internal static byte[] Decompress(byte[] compressedData)
-    {
-        var index = 0;
-        var tableSize = (int)compressedData[index++];
-
-        var frequencies = new Dictionary<byte, int>();
-        for (var i = 0; i < tableSize; i++)
-        {
-            var key = compressedData[index++];
-            var frequency = BitConverter.ToInt32(compressedData, index);
-            index += 4;
-            frequencies[key] = frequency;
-        }
-
-        var root = GetTree(frequencies);
-        var decompressed = new List<byte>();
-
-        var node = root;
-        for (var i = index; i < compressedData.Length; i++)
-        {
-            var bits = Convert.ToString(compressedData[i], 2).PadLeft(8, '0');
-            foreach (var bit in bits)
-            {
-                node = bit == '0' ? node.left : node.right;
-                if (node!.IsLeaf == false)
-                    continue;
-
-                decompressed.Add(node.value);
-                node = root;
-            }
-        }
-
-        var result = new List<byte>();
-        for (var i = 0; i < decompressed.Count; i += 2)
-            for (var j = 0; j < decompressed[i]; j++)
-                result.Add(decompressed[i + 1]);
-
-        return result.ToArray();
     }
 #endregion
 }

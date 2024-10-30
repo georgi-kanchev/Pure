@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using System.Reflection;
 
 namespace Pure.Engine.Utilities;
 
@@ -618,42 +619,7 @@ public static class Extensions
             sb.Append(text);
         return sb.ToString();
     }
-    /// <summary>
-    /// Compresses a string using Deflate compression algorithm and returns the compressed string as a Base64-encoded string.
-    /// </summary>
-    /// <param name="text">The input string to compress.</param>
-    /// <returns>The compressed input string as a Base64-encoded string.</returns>
-    public static string Compress(this string text)
-    {
-        return Convert.ToBase64String(Compress(Encoding.UTF8.GetBytes(text)));
-    }
-    /// <summary>
-    /// Decompresses a Base64-encoded string that was compressed using Deflate compression algorithm and returns the original uncompressed string.
-    /// </summary>
-    /// <param name="compressedText">The Base64-encoded compressed string to decompress.</param>
-    /// <returns>The original uncompressed string.</returns>
-    public static string Decompress(this string compressedText)
-    {
-        return Encoding.UTF8.GetString(Decompress(Convert.FromBase64String(compressedText)));
-    }
-    public static byte[] Compress(this byte[] data)
-    {
-        using var compressedStream = new MemoryStream();
-        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
-        {
-            gzipStream.Write(data, 0, data.Length);
-        }
 
-        return compressedStream.ToArray();
-    }
-    public static byte[] Decompress(this byte[] compressedData)
-    {
-        using var compressedStream = new MemoryStream(compressedData);
-        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
-        using var resultStream = new MemoryStream();
-        gzipStream.CopyTo(resultStream);
-        return resultStream.ToArray();
-    }
     /// <summary>
     /// Attempts to convert a string to a single-precision floating point number.
     /// </summary>
@@ -1311,11 +1277,163 @@ public static class Extensions
         return (index % size.width, index / size.width);
     }
 
+    public static bool IsBase64(this string value)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length % 4 != 0)
+            return false;
+
+        return new Regex(@"^[a-zA-Z0-9\+/]*={0,2}$", RegexOptions.None).IsMatch(value);
+    }
+    public static string Compress(this string value)
+    {
+        return Convert.ToBase64String(Compress(Encoding.UTF8.GetBytes(value)));
+    }
+    public static string Decompress(this string compressedText)
+    {
+        return Encoding.UTF8.GetString(Decompress(Convert.FromBase64String(compressedText)));
+    }
+    public static byte[] Compress(this byte[] data)
+    {
+        var compressed = new List<byte>();
+        for (var i = 0; i < data.Length; i++)
+        {
+            var count = (byte)1;
+            while (i + 1 < data.Length && data[i] == data[i + 1] && count < 255)
+            {
+                count++;
+                i++;
+            }
+
+            compressed.Add(count);
+            compressed.Add(data[i]);
+        }
+
+        var frequencies = compressed.GroupBy(b => b).ToDictionary(g => g.Key, g => g.Count());
+        var root = GetTree(frequencies);
+        var codeTable = GetTable(root);
+        var header = new List<byte> { (byte)frequencies.Count };
+        foreach (var kvp in frequencies)
+        {
+            header.Add(kvp.Key);
+            header.AddRange(BitConverter.GetBytes(kvp.Value));
+        }
+
+        var bitString = string.Join("", compressed.Select(b => codeTable[b]));
+        var byteList = new List<byte>(header);
+
+        for (var i = 0; i < bitString.Length; i += 8)
+        {
+            var byteStr = bitString.Substring(i, Math.Min(8, bitString.Length - i));
+            byteList.Add(Convert.ToByte(byteStr, 2));
+        }
+
+        return byteList.ToArray();
+    }
+    public static byte[] Decompress(this byte[] compressedData)
+    {
+        var index = 0;
+        var tableSize = (int)compressedData[index++];
+
+        var frequencies = new Dictionary<byte, int>();
+        for (var i = 0; i < tableSize; i++)
+        {
+            var key = compressedData[index++];
+            var frequency = BitConverter.ToInt32(compressedData, index);
+            index += 4;
+            frequencies[key] = frequency;
+        }
+
+        var root = GetTree(frequencies);
+        var decompressed = new List<byte>();
+
+        var node = root;
+        for (var i = index; i < compressedData.Length; i++)
+        {
+            var bits = Convert.ToString(compressedData[i], 2).PadLeft(8, '0');
+            foreach (var bit in bits)
+            {
+                node = bit == '0' ? node.left : node.right;
+                if (node!.IsLeaf == false)
+                    continue;
+
+                decompressed.Add(node.value);
+                node = root;
+            }
+        }
+
+        var result = new List<byte>();
+        for (var i = 0; i < decompressed.Count; i += 2)
+            for (var j = 0; j < decompressed[i]; j++)
+                result.Add(decompressed[i + 1]);
+
+        return result.ToArray();
+    }
+    public static string ToBase64String(this byte[] data)
+    {
+        return Convert.ToBase64String(data);
+    }
+    public static byte[] ToBase64Bytes(this string base64)
+    {
+        return Convert.FromBase64String(base64);
+    }
+    public static byte[] ToBytes(this string value)
+    {
+        return Encoding.UTF8.GetBytes(value);
+    }
+    public static string ToText(this byte[] data)
+    {
+        return Encoding.UTF8.GetString(data);
+    }
+    public static byte[] ToBytes<T>(this T value)
+    {
+        if (value is bool valueBool) return BitConverter.GetBytes(valueBool);
+        else if (value is byte valueByte) return [valueByte];
+        else if (value is sbyte valueSbyte) return [Convert.ToByte(valueSbyte)];
+        else if (value is char valueChar) return BitConverter.GetBytes(valueChar);
+        else if (value is decimal valueDec)
+        {
+            var bits = decimal.GetBits(valueDec);
+            var bytes = new byte[16];
+            for (var i = 0; i < bits.Length; i++)
+                Array.Copy(BitConverter.GetBytes(bits[i]), 0, bytes, i * 4, 4);
+
+            return bytes;
+        }
+        else if (value is double valueDb) return BitConverter.GetBytes(valueDb);
+        else if (value is float valueFl) return BitConverter.GetBytes(valueFl);
+        else if (value is int valueInt) return BitConverter.GetBytes(valueInt);
+        else if (value is uint valueUint) return BitConverter.GetBytes(valueUint);
+        else if (value is nint valueNint) return BitConverter.GetBytes(valueNint);
+        else if (value is nuint valueNuint) return BitConverter.GetBytes(valueNuint);
+        else if (value is long valueLong) return BitConverter.GetBytes(valueLong);
+        else if (value is ulong valueUlong) return BitConverter.GetBytes(valueUlong);
+        else if (value is short valueShort) return BitConverter.GetBytes(valueShort);
+        else if (value is ushort valueUshort) return BitConverter.GetBytes(valueUshort);
+        else if (value is string valueStr)
+            return IsBase64(valueStr) ?
+                Convert.FromBase64String(valueStr) :
+                Encoding.UTF8.GetBytes(valueStr);
+
+        return [];
+    }
+
 #region Backend
     private class Gate
     {
         public int entries;
         public bool value;
+    }
+
+    private class Node
+    {
+        public byte value;
+        public int freq;
+        public Node? left;
+        public Node? right;
+        public bool IsLeaf
+        {
+            get => left == null && right == null;
+        }
     }
 
     private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
@@ -1343,7 +1461,6 @@ public static class Extensions
 
         return output;
     }
-
     private static string RemoveColorTags(string input, char tintBrush)
     {
         var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
@@ -1357,7 +1474,6 @@ public static class Extensions
 
         return builder.ToString();
     }
-
     private static string ApplyColorTags(string input, List<(int index, string tag)> storedTags)
     {
         var realIndex = 0;
@@ -1382,6 +1498,120 @@ public static class Extensions
         }
 
         return builder.ToString();
+    }
+
+    private static Dictionary<byte, string> GetTable(Node root)
+    {
+        var codeTable = new Dictionary<byte, string>();
+        BuildCode(root, "", codeTable);
+        return codeTable;
+
+        void BuildCode(Node node, string code, Dictionary<byte, string> table)
+        {
+            if (node.IsLeaf)
+                table[node.value] = code;
+
+            if (node.left != null) BuildCode(node.left, code + "0", table);
+            if (node.right != null) BuildCode(node.right, code + "1", table);
+        }
+    }
+    private static Node GetTree(Dictionary<byte, int> frequencies)
+    {
+        var nodes = new List<Node>(frequencies.Select(f => new Node { value = f.Key, freq = f.Value }));
+        while (nodes.Count > 1)
+        {
+            nodes = nodes.OrderBy(n => n.freq).ToList();
+            var left = nodes[0];
+            var right = nodes[1];
+            var parent = new Node { left = left, right = right, freq = left.freq + right.freq };
+            nodes.RemoveRange(0, 2);
+            nodes.Add(parent);
+        }
+
+        return nodes[0];
+    }
+    private static bool IsArrayOfPrimitives(Array array)
+    {
+        if (array == null)
+            throw new ArgumentNullException(nameof(array));
+
+        var elementType = array.GetType().GetElementType();
+
+        if (elementType == null)
+            throw new ArgumentException("Array must have an element type.");
+
+        return elementType.IsPrimitive || elementType == typeof(string) || IsPrimitiveTuple(elementType);
+    }
+    private static bool IsGenericList(Type type)
+    {
+        return type.IsGenericType &&
+               type.GetGenericTypeDefinition() == typeof(List<>) &&
+               (type.GenericTypeArguments[0].IsPrimitive ||
+                IsPrimitiveTuple(type.GenericTypeArguments[0]));
+    }
+    private static bool IsPrimitiveTuple(Type type)
+    {
+        var name = type.Name;
+        var isTuple = name.StartsWith(nameof(ValueTuple)) || name.StartsWith(nameof(Tuple));
+        return isTuple && IsPrimitiveGenTypes(type);
+    }
+    private static bool IsPrimitiveGenTypes(Type type)
+    {
+        var gen = type.GenericTypeArguments;
+
+        if (gen.Length == 0)
+            return false;
+
+        foreach (var t in gen)
+            if (t.IsPrimitive == false && t != typeof(string))
+                return false;
+
+        return true;
+    }
+    private static bool IsPrimitiveOrTupleDictionary(Type type)
+    {
+        var isDict = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+        var types = type.GenericTypeArguments;
+        foreach (var t in types)
+            if (IsPrimitiveTuple(t) == false && t.IsPrimitive == false && t != typeof(string))
+                return false;
+
+        return isDict;
+    }
+    private static bool IsNumber(Type t)
+    {
+        return t == typeof(sbyte) ||
+               t == typeof(byte) ||
+               t == typeof(short) ||
+               t == typeof(ushort) ||
+               t == typeof(int) ||
+               t == typeof(uint) ||
+               t == typeof(long) ||
+               t == typeof(ulong) ||
+               t == typeof(float) ||
+               t == typeof(double) ||
+               t == typeof(decimal) ||
+               t == typeof(nint) ||
+               t == typeof(nuint);
+    }
+
+    private static List<object?> GetTupleItems(object tuple)
+    {
+        return GetTupleFields(tuple.GetType()).Select(f => f.GetValue(tuple)).ToList();
+    }
+    private static List<FieldInfo> GetTupleFields(Type tupleType)
+    {
+        var items = new List<FieldInfo>();
+
+        FieldInfo? field;
+        var nth = 1;
+        while ((field = tupleType.GetRuntimeField($"Item{nth}")) != null)
+        {
+            nth++;
+            items.Add(field);
+        }
+
+        return items;
     }
 #endregion
 }

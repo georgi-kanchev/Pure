@@ -12,7 +12,7 @@ public static class EightBallPool
         Window.Title = "Pure - Pool Example";
 
         var tableCollisions = new LinePack(LINE_COLLISIONS);
-        var maps = new TilemapPack(TILEMAPS);
+        var maps = new TilemapPack(TILEMAPS.ToBase64Bytes());
         var layer = new Layer((48, 27));
         var balls = new List<Ball>();
         var timeAtPress = 0f;
