@@ -1368,24 +1368,11 @@ public static class Extensions
 
         return result.ToArray();
     }
-    public static string ToBase64String(this byte[] data)
+    public static byte[] ToBytes(this object value)
     {
-        return Convert.ToBase64String(data);
-    }
-    public static byte[] ToBase64Bytes(this string base64)
-    {
-        return Convert.FromBase64String(base64);
-    }
-    public static byte[] ToBytes(this string value)
-    {
-        return Encoding.UTF8.GetBytes(value);
-    }
-    public static string ToText(this byte[] data)
-    {
-        return Encoding.UTF8.GetString(data);
-    }
-    public static byte[] ToBytes<T>(this T value)
-    {
+        if (value is byte[] arrayByte)
+            return arrayByte;
+
         if (value is bool valueBool) return BitConverter.GetBytes(valueBool);
         else if (value is byte valueByte) return [valueByte];
         else if (value is sbyte valueSbyte) return [Convert.ToByte(valueSbyte)];
@@ -1438,7 +1425,7 @@ public static class Extensions
 
     private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
     private static readonly Dictionary<string, Gate> gates = new();
-    private static readonly Dictionary<int, Random> randomCache = new();
+    // private static readonly Dictionary<int, Random> randomCache = new();
 
     static Extensions()
     {
