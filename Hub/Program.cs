@@ -12,6 +12,8 @@ public static class Program
 {
     public static void Main()
     {
+        UtilityExtensions.Run();
+
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
         var editors = new List((0, 0), 4) { Size = (14, 4), ItemSize = (14, 1), Text = "Editors:" };
         var apps = new List((0, 0), 8) { Size = (15, 8), ItemSize = (15, 1), Text = "Example Games:" };

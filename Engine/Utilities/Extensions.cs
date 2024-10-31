@@ -1277,13 +1277,6 @@ public static class Extensions
         return (index % size.width, index / size.width);
     }
 
-    public static bool IsBase64(this string value)
-    {
-        if (string.IsNullOrEmpty(value) || value.Length % 4 != 0)
-            return false;
-
-        return new Regex(@"^[a-zA-Z0-9\+/]*={0,2}$", RegexOptions.None).IsMatch(value);
-    }
     public static string Compress(this string value)
     {
         return Convert.ToBase64String(Compress(Encoding.UTF8.GetBytes(value)));
@@ -1368,10 +1361,24 @@ public static class Extensions
 
         return result.ToArray();
     }
+    public static bool IsBase64(this string value)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length % 4 != 0)
+            return false;
+
+        return new Regex(@"^[a-zA-Z0-9\+/]*={0,2}$", RegexOptions.None).IsMatch(value);
+    }
     public static byte[] ToBytes(this object value)
     {
         if (value is byte[] arrayByte)
             return arrayByte;
+
+        var t = value.GetType();
+        Console.WriteLine($"Primitive: {IsPrimitive(t)}");
+        Console.WriteLine($"Tuple Primitive: {IsTuplePrimitive(t)}");
+        Console.WriteLine($"Array Primitive: {IsArrayPrimitive(t)}");
+        Console.WriteLine($"List Primitive: {IsListPrimitive(t)}");
+        Console.WriteLine($"Dictionary Primitive: {IsDictionaryPrimitive(t)}");
 
         if (value is bool valueBool) return BitConverter.GetBytes(valueBool);
         else if (value is byte valueByte) return [valueByte];
@@ -1402,6 +1409,10 @@ public static class Extensions
                 Encoding.UTF8.GetBytes(valueStr);
 
         return [];
+    }
+    public static string ToBase64(this byte[] data)
+    {
+        return Convert.ToBase64String(data);
     }
 
 #region Backend
@@ -1517,69 +1528,49 @@ public static class Extensions
 
         return nodes[0];
     }
-    private static bool IsArrayOfPrimitives(Array array)
+
+    private static bool IsPrimitive(Type? type)
     {
-        if (array == null)
-            throw new ArgumentNullException(nameof(array));
-
-        var elementType = array.GetType().GetElementType();
-
-        if (elementType == null)
-            throw new ArgumentException("Array must have an element type.");
-
-        return elementType.IsPrimitive || elementType == typeof(string) || IsPrimitiveTuple(elementType);
+        return type is { IsPrimitive: true } || type == typeof(string);
     }
-    private static bool IsGenericList(Type type)
+    private static bool IsTuplePrimitive(Type? type)
     {
-        return type.IsGenericType &&
-               type.GetGenericTypeDefinition() == typeof(List<>) &&
-               (type.GenericTypeArguments[0].IsPrimitive ||
-                IsPrimitiveTuple(type.GenericTypeArguments[0]));
-    }
-    private static bool IsPrimitiveTuple(Type type)
-    {
-        var name = type.Name;
-        var isTuple = name.StartsWith(nameof(ValueTuple)) || name.StartsWith(nameof(Tuple));
-        return isTuple && IsPrimitiveGenTypes(type);
-    }
-    private static bool IsPrimitiveGenTypes(Type type)
-    {
-        var gen = type.GenericTypeArguments;
-
-        if (gen.Length == 0)
+        if (type == null)
             return false;
 
-        foreach (var t in gen)
-            if (t.IsPrimitive == false && t != typeof(string))
+        var types = type.GenericTypeArguments;
+
+        if (types.Length == 0)
+            return false;
+
+        foreach (var t in types)
+            if (IsPrimitive(t) == false)
                 return false;
 
-        return true;
+        return type.Name.StartsWith(nameof(ValueTuple)) || type.Name.StartsWith(nameof(Tuple));
     }
-    private static bool IsPrimitiveOrTupleDictionary(Type type)
+    private static bool IsArrayPrimitive(Type? type)
+    {
+        var elementType = type?.GetElementType();
+        return type is { IsArray: true } && (IsPrimitive(elementType) || IsTuplePrimitive(elementType));
+    }
+    private static bool IsListPrimitive(Type? type)
+    {
+        return type is { IsGenericType: true } &&
+               type.GetGenericTypeDefinition() == typeof(List<>) &&
+               (IsPrimitive(type.GenericTypeArguments[0]) ||
+                IsTuplePrimitive(type.GenericTypeArguments[0]));
+    }
+    private static bool IsDictionaryPrimitive(Type type)
     {
         var isDict = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
         var types = type.GenericTypeArguments;
+
         foreach (var t in types)
-            if (IsPrimitiveTuple(t) == false && t.IsPrimitive == false && t != typeof(string))
+            if (IsPrimitive(t) == false && IsTuplePrimitive(t) == false)
                 return false;
 
         return isDict;
-    }
-    private static bool IsNumber(Type t)
-    {
-        return t == typeof(sbyte) ||
-               t == typeof(byte) ||
-               t == typeof(short) ||
-               t == typeof(ushort) ||
-               t == typeof(int) ||
-               t == typeof(uint) ||
-               t == typeof(long) ||
-               t == typeof(ulong) ||
-               t == typeof(float) ||
-               t == typeof(double) ||
-               t == typeof(decimal) ||
-               t == typeof(nint) ||
-               t == typeof(nuint);
     }
 
     private static List<object?> GetTupleItems(object tuple)
