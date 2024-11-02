@@ -12,7 +12,7 @@ public static class Program
 {
     public static void Main()
     {
-        UtilityExtensions.Run();
+        Storages.Run();
 
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
         var editors = new List((0, 0), 4) { Size = (14, 4), ItemSize = (14, 1), Text = "Editors:" };

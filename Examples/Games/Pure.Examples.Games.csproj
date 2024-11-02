@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\Editors\Storage\Pure.Editors.Storage.csproj"/>
         <ProjectReference Include="..\..\Engine\Animation\Pure.Engine.Animation.csproj"/>
         <ProjectReference Include="..\..\Engine\Collision\Pure.Engine.Collision.csproj"/>
         <ProjectReference Include="..\..\Engine\Execution\Pure.Engine.Execution.csproj"/>
