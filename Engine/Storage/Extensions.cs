@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml.Xsl;
 
 namespace Pure.Engine.Storage;
 
@@ -91,24 +92,41 @@ public static class Extensions
 
         return result.ToArray();
     }
-    public static bool IsBase64(this string value)
-    {
-        if (string.IsNullOrEmpty(value) || value.Length % 4 != 0)
-            return false;
 
-        return new Regex(@"^[a-zA-Z0-9\+/]*={0,2}$", RegexOptions.None).IsMatch(value);
-    }
     public static byte[] ToBytes(this object? value)
     {
+        // first 4 bytes indicates how many bytes the data is (max 2.15 GB)
+        // then the amount of bytes of actual data
+
         if (value == null)
-            return [255, 255, 255];
+            return [0, 0, 0, 0]; // size of 0 bytes indicates null
 
         var type = value.GetType();
 
-        if (value is bool valueBool) return BitConverter.GetBytes(valueBool);
-        else if (value is byte valueByte) return [valueByte];
-        else if (value is sbyte valueSbyte) return [Convert.ToByte(valueSbyte)];
-        else if (value is char valueChar) return BitConverter.GetBytes(valueChar);
+        if (value is bool valueBool)
+            return [1, 0, 0, 0, (byte)(valueBool ? 1 : 0)];
+        else if (value is byte valueByte)
+            return [1, 0, 0, 0, valueByte];
+        else if (value is sbyte valueSbyte)
+            return [1, 0, 0, 0, Convert.ToByte(valueSbyte)];
+        else if (value is char valueChar)
+            return new byte[] { 2, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueChar)).ToArray();
+        else if (value is short valueShort)
+            return new byte[] { 2, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueShort)).ToArray();
+        else if (value is ushort valueUshort)
+            return new byte[] { 2, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueUshort)).ToArray();
+        else if (value is int valueInt)
+            return new byte[] { 4, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueInt)).ToArray();
+        else if (value is uint valueUint)
+            return new byte[] { 4, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueUint)).ToArray();
+        else if (value is float valueFl)
+            return new byte[] { 4, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueFl)).ToArray();
+        else if (value is long valueLong)
+            return new byte[] { 8, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueLong)).ToArray();
+        else if (value is ulong valueUlong)
+            return new byte[] { 8, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueUlong)).ToArray();
+        else if (value is double valueDb)
+            return new byte[] { 8, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueDb)).ToArray();
         else if (value is decimal valueDec)
         {
             var bits = decimal.GetBits(valueDec);
@@ -116,27 +134,12 @@ public static class Extensions
             for (var i = 0; i < bits.Length; i++)
                 Array.Copy(BitConverter.GetBytes(bits[i]), 0, bytes, i * 4, 4);
 
-            return bytes;
+            return new byte[] { 16, 0, 0, 0 }.Concat(bytes).ToArray();
         }
-        else if (value is double valueDb) return BitConverter.GetBytes(valueDb);
-        else if (value is float valueFl) return BitConverter.GetBytes(valueFl);
-        else if (value is int valueInt) return BitConverter.GetBytes(valueInt);
-        else if (value is uint valueUint) return BitConverter.GetBytes(valueUint);
-        else if (value is nint valueNint) return BitConverter.GetBytes(valueNint);
-        else if (value is nuint valueNuint) return BitConverter.GetBytes(valueNuint);
-        else if (value is long valueLong) return BitConverter.GetBytes(valueLong);
-        else if (value is ulong valueUlong) return BitConverter.GetBytes(valueUlong);
-        else if (value is short valueShort) return BitConverter.GetBytes(valueShort);
-        else if (value is ushort valueUshort) return BitConverter.GetBytes(valueUshort);
         else if (value is string valueStr)
         {
-            var data = IsBase64(valueStr) ?
-                Convert.FromBase64String(valueStr) :
-                Encoding.UTF8.GetBytes(valueStr);
-
-            var l = data.Length; // 24-bit uint (a maximum of 16.78 MB string)
-            var size = new[] { (byte)(l & 255), (byte)((l >> 8) & 255), (byte)((l >> 16) & 255) };
-            return size.Concat(data).ToArray();
+            var data = Encoding.UTF8.GetBytes(valueStr);
+            return BitConverter.GetBytes(data.Length).Concat(data).ToArray();
         }
         else if (IsTuple(type))
         {
@@ -145,18 +148,16 @@ public static class Extensions
             foreach (var item in tuple)
                 result.AddRange(ToBytes(item));
 
-            var size = BitConverter.GetBytes(result.Count);
-            return size.Concat(result).ToArray();
+            return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
-        else if (IsArray(type))
+        else if (type.IsArray)
         {
             var result = new List<byte>();
             var array = ToJaggedArray((Array)value);
             for (var i = 0; i < array.Length; i++)
                 result.AddRange(ToBytes(array.GetValue(i)));
 
-            var size = BitConverter.GetBytes(result.Count);
-            return size.Concat(result).ToArray();
+            return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
         else if (IsList(type))
         {
@@ -165,19 +166,17 @@ public static class Extensions
             foreach (var item in list)
                 result.AddRange(ToBytes(item));
 
-            var size = BitConverter.GetBytes(result.Count);
-            return size.Concat(result).ToArray();
+            return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
         else if (IsDictionary(type))
         {
             var result = new List<byte>();
             var dict = (IDictionary)value;
-            var isValueString = type.GetGenericArguments()[1] == typeof(string);
             foreach (var obj in dict)
             {
                 var kvp = (DictionaryEntry)obj;
-                result.AddRange(ToBytes(kvp.Key)); // key can't be null
-                result.AddRange(ToBytes(isValueString && kvp.Value == null ? "" : kvp.Value));
+                result.AddRange(ToBytes(kvp.Key));
+                result.AddRange(ToBytes(kvp.Value));
             }
 
             var size = BitConverter.GetBytes(result.Count);
@@ -191,12 +190,14 @@ public static class Extensions
             var props = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance)
                 .Concat(type.GetProperties(BindingFlags.Public | BindingFlags.Instance)).ToArray();
 
-            var i = (uint)0;
+            var i = (uint)1;
             foreach (var field in fields)
             {
                 var doNotSave = field.IsDefined(typeof(DoNotSave), false);
                 var order = field.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? i;
 
+                // some fields are auto generated by a property, so extract the attributes
+                // from said property (searching by name) and use them for the field
                 if (field.Name.Contains(">k__BackingField"))
                 {
                     var name = field.Name.Replace("<", "").Replace(">k__BackingField", "");
@@ -220,19 +221,45 @@ public static class Extensions
             foreach (var kvp in sorted)
                 result.AddRange(kvp.Value);
 
-            var size = BitConverter.GetBytes(result.Count);
-            return size.Concat(result).ToArray();
+            return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
 
         return [];
     }
-    public static T? ToObject<T>(this byte[] bytes)
+    public static T? ToObject<T>(this byte[]? data)
     {
-        return default;
+        if (data == null || data.Length == 0)
+            return default;
+
+        return (T?)ToObject(data, typeof(T), out _);
     }
-    public static string ToBase64(this byte[] data)
+
+    public static string? ToBase64(this string? value)
     {
-        return Convert.ToBase64String(data);
+        return string.IsNullOrEmpty(value) ? null : ToBase64(Encoding.UTF8.GetBytes(value));
+    }
+    public static string? ToBase64(this byte[]? data)
+    {
+        return data == null || data.Length == 0 ? null : Convert.ToBase64String(data);
+    }
+    public static string? ToText(this string? base64)
+    {
+        if (string.IsNullOrEmpty(base64))
+            return null;
+
+        try
+        {
+            var data = Convert.FromBase64String(base64);
+            return Encoding.UTF8.GetString(data);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+    public static string? ToText(this byte[]? dataBase64)
+    {
+        return dataBase64 == null || dataBase64.Length == 0 ? null : Encoding.UTF8.GetString(dataBase64);
     }
 
 #region Backend
@@ -246,6 +273,108 @@ public static class Extensions
         {
             get => left == null && right == null;
         }
+    }
+
+    private static object? ToObject(this byte[]? data, Type? expectedType, out byte[]? remaining)
+    {
+        remaining = null;
+        if (data == null || data.Length < 4)
+            return default;
+
+        var size = BitConverter.ToInt32(data, 0);
+
+        if (size == 0 || expectedType == null)
+            return default;
+
+        var bytes = data.AsSpan()[4..(4 + size)].ToArray();
+        remaining = data.AsSpan()[(4 + bytes.Length)..].ToArray();
+
+        if ((expectedType == typeof(bool) || expectedType == typeof(bool?)) && size == 1)
+            return BitConverter.ToBoolean(bytes);
+        else if ((expectedType == typeof(byte) || expectedType == typeof(byte?)) && size == 1)
+            return bytes[0];
+        else if ((expectedType == typeof(sbyte) || expectedType == typeof(sbyte?)) && size == 1)
+            return bytes[0];
+        else if ((expectedType == typeof(char) || expectedType == typeof(char?)) && size == 2)
+            return BitConverter.ToChar(bytes);
+        else if ((expectedType == typeof(short) || expectedType == typeof(short?)) && size == 2)
+            return BitConverter.ToInt16(bytes);
+        else if ((expectedType == typeof(ushort) || expectedType == typeof(ushort?)) && size == 2)
+            return BitConverter.ToUInt16(bytes);
+        else if ((expectedType == typeof(int) || expectedType == typeof(int?)) && size == 4)
+            return BitConverter.ToInt32(bytes);
+        else if ((expectedType == typeof(uint) || expectedType == typeof(uint?)) && size == 4)
+            return BitConverter.ToUInt32(bytes);
+        else if ((expectedType == typeof(float) || expectedType == typeof(float?)) && size == 4)
+            return BitConverter.ToSingle(bytes);
+        else if ((expectedType == typeof(long) || expectedType == typeof(long?)) && size == 8)
+            return BitConverter.ToInt64(bytes);
+        else if ((expectedType == typeof(ulong) || expectedType == typeof(ulong?)) && size == 8)
+            return BitConverter.ToUInt64(bytes);
+        else if ((expectedType == typeof(double) || expectedType == typeof(double?)) && size == 8)
+            return BitConverter.ToDouble(bytes);
+        else if ((expectedType == typeof(decimal) || expectedType == typeof(decimal?)) && size == 16)
+        {
+            var lo = BitConverter.ToInt32(bytes, 0);
+            var mid = BitConverter.ToInt32(bytes, 4);
+            var hi = BitConverter.ToInt32(bytes, 8);
+            var flags = BitConverter.ToInt32(bytes, 12);
+            return new decimal(lo, mid, hi, (flags & 0x80000000) != 0, (byte)((flags >> 16) & 255));
+        }
+        else if (expectedType == typeof(string))
+            return Encoding.UTF8.GetString(bytes);
+        else if (IsTuple(expectedType))
+        {
+            var fields = GetTupleFields(expectedType);
+            var instance = Activator.CreateInstance(expectedType);
+            foreach (var field in fields)
+            {
+                var obj = ToObject(bytes, field.FieldType, out var left);
+                bytes = left;
+                field.SetValue(instance, obj);
+            }
+
+            return instance;
+        }
+        else if (expectedType.IsArray)
+        {
+            var itemType = expectedType.GetElementType();
+            var ranks = expectedType.GetArrayRank();
+            if (itemType == null || ranks > 3)
+                return default;
+
+            if (ranks == 1)
+            {
+                var result1D = new List<object?>();
+
+                while (bytes is { Length: > 0 })
+                {
+                    var obj = ToObject(bytes, itemType, out var left);
+                    bytes = left;
+                    result1D.Add(obj);
+                }
+
+                var instance = Array.CreateInstance(itemType, result1D.Count);
+                for (var i = 0; i < result1D.Count; i++)
+                    instance.SetValue(result1D[i], i);
+
+                return instance;
+            }
+
+            var result = new List<object?>();
+            var arrayType = Array.CreateInstance(itemType, new int[ranks - 1]);
+
+            while (bytes is { Length: > 0 })
+            {
+                var obj = ToObject(bytes, arrayType.GetType(), out var left);
+                bytes = left;
+                result.Add(obj);
+            }
+
+            return ConvertToMultiDimensionalArray(result);
+        }
+
+        return default;
     }
 
     private static Dictionary<byte, string> GetTable(Node root)
@@ -289,10 +418,6 @@ public static class Extensions
             return false;
 
         return type.Name.StartsWith(nameof(ValueTuple)) || type.Name.StartsWith(nameof(Tuple));
-    }
-    private static bool IsArray(Type? type)
-    {
-        return type is { IsArray: true };
     }
     private static bool IsList(Type? type)
     {
@@ -355,6 +480,54 @@ public static class Extensions
                 }
 
                 return jaggedArray;
+            }
+        }
+    }
+
+    public static Array ConvertToMultiDimensionalArray(IList jaggedList)
+    {
+        var dimensions = GetDimensions(jaggedList);
+        var elementType = jaggedList.Cast<object>().SelectMany(GetInnermostElements).First().GetType();
+        var multiDimArray = Array.CreateInstance(elementType, dimensions.ToArray());
+
+        Populate(multiDimArray, jaggedList, []);
+
+        return multiDimArray;
+
+        List<int> GetDimensions(IList list)
+        {
+            var dims = new List<int>();
+            while (list is { } currentList)
+            {
+                dims.Add(currentList.Count);
+                list = currentList.Cast<object>().FirstOrDefault(item => item is IList) as IList;
+                if (list == null)
+                    break;
+            }
+
+            return dims;
+        }
+        IEnumerable<object> GetInnermostElements(object item)
+        {
+            if (item is IList list)
+                foreach (var subItem in list)
+                {
+                    foreach (var innermost in GetInnermostElements(subItem))
+                        yield return innermost;
+                }
+            else
+                yield return item;
+        }
+        void Populate(Array multiDimArray2, IList sourceList, int[] indices)
+        {
+            for (var i = 0; i < sourceList.Count; i++)
+            {
+                var currentIndices = indices.Append(i).ToArray();
+
+                if (sourceList[i] is IList nestedList)
+                    Populate(multiDimArray2, nestedList, currentIndices);
+                else
+                    multiDimArray2.SetValue(sourceList[i], currentIndices);
             }
         }
     }
