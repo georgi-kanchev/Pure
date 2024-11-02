@@ -4,16 +4,6 @@ using Engine.Storage;
 
 public static class Storages
 {
-    public class Test
-    {
-        private bool D { get; set; }
-        public float a = 32.78f;
-        public int b = 12;
-        public string C { get; set; } = "test";
-
-        public Test test;
-    }
-
     public static void Run()
     {
         // var storage = new Storage();
