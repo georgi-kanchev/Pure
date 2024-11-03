@@ -359,7 +359,7 @@ public static class Window
     private static float pixelScale = 5f;
 
     [MemberNotNull(nameof(window))]
-    private static void TryCreate()
+    internal static void TryCreate()
     {
         if (window != null)
             return;

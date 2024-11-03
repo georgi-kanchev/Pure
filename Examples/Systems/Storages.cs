@@ -1,3 +1,6 @@
+using Pure.Engine.Tilemap;
+using Pure.Engine.Window;
+
 namespace Pure.Examples.Systems;
 
 using Engine.Storage;
@@ -7,9 +10,11 @@ public static class Storages
     public class Test
     {
         [SaveAtOrder(5)]
-        public string c = "test";
-        public uint a = 3;
-        public int? b = null;
+        public string c;
+        public uint a;
+        public int? b = 3;
+
+        public char D { get; set; }
     }
 
     public static void Run()
@@ -28,16 +33,19 @@ public static class Storages
         //     "Y2RgYFBgBBIJIMIaRNQwgQguEFO/CCRTklpckqBgoJCQkZqTk6+jUJ5flJOSoMAFljACy5RkZBbXlGQkliTUgEVr0sB6IEqMQUqMTaE8ExDP1DohIxMkn5KZDDE7MUHfyFQ/AQiNLRmgQACImaFsFiAOSa0oYYCKCUDFQI7lhMrpwBSwo2lmA2K/0tykVJB/GLiQtIN8yQ2XhRvAh6QEZAgvQgmEAgA=\n";
         // var load = new Storage(b64, true);
 
-        var data = new int[3, 2, 2];
-        data[0, 0, 0] = 12;
-        data[0, 1, 0] = 6;
+        // var tilemap = bytes.ToObject<Tilemap>();
+        var tilemap = new Tilemap((48, 27));
+        var layer = new Layer(tilemap.Size);
 
-        data[1, 0, 0] = 5;
-        data[1, 1, 0] = 46;
+        tilemap.SetEllipse((48 / 2, 27 / 2), (10, 10), true, null, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        var bTilemap = Extensions.ToBytes(tilemap);
+        var newTilemap = bTilemap.ToObject<Tilemap>();
 
-        data[2, 0, 0] = 38;
-        data[2, 1, 0] = 24;
-
-        var test = data.ToBytes().ToObject<int[,,]>();
+        while (Window.KeepOpen())
+        {
+            layer.DrawTilemap(newTilemap);
+            layer.DrawCursor();
+            layer.Draw();
+        }
     }
 }

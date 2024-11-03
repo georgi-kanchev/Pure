@@ -179,6 +179,8 @@ public class Layer
 
     public void FitWindow()
     {
+        Window.TryCreate();
+
         Offset = (0f, 0f);
         var (mw, mh) = Monitor.Current.Size;
         var (ww, wh) = Window.Size;
@@ -324,8 +326,11 @@ public class Layer
                 verts.Append(new(bl, c, texBl));
             }
     }
-    public void DrawTilemap((int id, uint tint, int turns, bool mirror, bool flip)[,] tilemap)
+    public void DrawTilemap((int id, uint tint, int turns, bool mirror, bool flip)[,]? tilemap)
     {
+        if (tilemap == null || tilemap.Length == 0)
+            return;
+
         var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
         var tsz = AtlasTileSize;
 

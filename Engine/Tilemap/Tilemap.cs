@@ -646,35 +646,35 @@ public class Tilemap
     /// </summary>
     /// <param name="data">The 2D array of tiles to convert.</param>
     /// <returns>A new tilemap object containing the given tiles.</returns>
-    public static implicit operator Tilemap(Tile[,] data)
+    public static implicit operator Tilemap?(Tile[,]? data)
     {
-        return new(data);
+        return data == null ? null : new(data);
     }
     /// <summary>
     /// Implicitly converts a tilemap object to a 2D array of tiles.
     /// </summary>
     /// <param name="tilemap">The tilemap object to convert.</param>
     /// <returns>A new 2D array of tiles containing the tiles from the tilemap object.</returns>
-    public static implicit operator Tile[,](Tilemap tilemap)
+    public static implicit operator Tile[,]?(Tilemap? tilemap)
     {
-        return Duplicate(tilemap.data);
+        return tilemap == null ? null : Duplicate(tilemap.data);
     }
     /// <summary>
     /// Implicitly converts a tilemap object to a 2D array of tile bundles.
     /// </summary>
     /// <param name="tilemap">The tilemap object to convert.</param>
     /// <returns>A new 2D array of tile bundles containing the tiles from the tilemap object.</returns>
-    public static implicit operator (int id, uint tint, int turns, bool mirror, bool flip)[,](Tilemap tilemap)
+    public static implicit operator (int id, uint tint, int turns, bool mirror, bool flip)[,]?(Tilemap? tilemap)
     {
-        return tilemap.ToBundle();
+        return tilemap?.ToBundle();
     }
-    public static implicit operator Area(Tilemap tilemap)
+    public static implicit operator Area?(Tilemap? tilemap)
     {
-        return (0, 0, tilemap.Size.width, tilemap.Size.height);
+        return tilemap == null ? null : (0, 0, tilemap.Size.width, tilemap.Size.height);
     }
-    public static implicit operator int[,](Tilemap tilemap)
+    public static implicit operator int[,]?(Tilemap? tilemap)
     {
-        return tilemap.ids;
+        return tilemap?.ids;
     }
 
 #region Backend
