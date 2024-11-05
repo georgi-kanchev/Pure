@@ -668,7 +668,7 @@ public class Tilemap
     {
         return tilemap?.ToBundle();
     }
-    public static implicit operator Area?(Tilemap? tilemap)
+    public static implicit operator Area(Tilemap? tilemap)
     {
         return tilemap == null ? null : (0, 0, tilemap.Size.width, tilemap.Size.height);
     }
@@ -677,7 +677,7 @@ public class Tilemap
         return tilemap?.ids;
     }
 
-#region Backend
+    #region Backend
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
@@ -850,5 +850,5 @@ public class Tilemap
             return (int)seed;
         }
     }
-#endregion
+    #endregion
 }

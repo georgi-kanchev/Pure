@@ -5,7 +5,7 @@ using Pure.Tools.ImmediateGraphicalUserInterface;
 
 using Monitor = Pure.Engine.Window.Monitor;
 
-namespace Pure.Examples.Systems;
+namespace Pure.Examples.Games;
 
 public static class NumberGuess
 {

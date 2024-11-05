@@ -12,11 +12,9 @@ public static class Program
 {
     public static void Main()
     {
-        Storages.Run();
-
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
         var editors = new List((0, 0), 4) { Size = (14, 4), ItemSize = (14, 1), Text = "Editors:" };
-        var apps = new List((0, 0), 8) { Size = (15, 8), ItemSize = (15, 1), Text = "Example Games:" };
+        var apps = new List((0, 0), 9) { Size = (15, 9), ItemSize = (15, 1), Text = "Example Games:" };
         var uis = new List((0, 0), 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
         var systems = new List((0, 0), 7) { Size = (22, 7), ItemSize = (22, 1), Text = "Example Systems:" };
 
@@ -32,11 +30,11 @@ public static class Program
 
         apps.Edit([
             "Asteroids", "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris",
-            "Number Guess"
+            "Number Guess", "Equation Guess"
         ]);
         apps.AlignInside((0.18f, 0.25f));
         OnTrigger(apps, Asteroids.Run, Chat.Run, EightBallPool.Run, FlappyBird.Run, Minesweeper.Run,
-            Pong.Run, Tetris.Run, NumberGuess.Run);
+            Pong.Run, Tetris.Run, NumberGuess.Run, EquationGuess.Run);
         OnDisplay(apps);
 
         uis.Edit([
@@ -72,6 +70,7 @@ public static class Program
             newUI.Blocks.AddRange(blocks);
             Examples.UserInterface.Program.Run(maps, newUI);
         }
+
         void OnTrigger(List list, params Action[] actions)
         {
             for (var i = 0; i < actions.Length; i++)
@@ -84,6 +83,7 @@ public static class Program
                 });
             }
         }
+
         void OnDisplay(List list, Action? extraCode = null)
         {
             list.OnDisplay(() =>
