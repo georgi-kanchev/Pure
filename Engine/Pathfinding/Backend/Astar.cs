@@ -26,12 +26,16 @@ namespace Pure.Engine.Pathfinding;
 
 using System.Numerics;
 
-internal class Node
+internal class Node((int x, int y) pos, int penalty)
 {
+    public (int x, int y) position = pos;
+    public float penalty = penalty;
+
+    [PathMap.DoNotSave]
     public Node? parent;
-    public (int x, int y) position;
-    public float distanceToTarget, cost;
-    public float penalty;
+    [PathMap.DoNotSave]
+    public float distanceToTarget = -1, cost = 1;
+    [PathMap.DoNotSave]
     public float F
     {
         get => MathF.Abs(distanceToTarget + 1) < 0.1f || MathF.Abs(cost + 1) < 0.1f ?
@@ -39,14 +43,6 @@ internal class Node
             distanceToTarget + cost;
     }
 
-    public Node((int x, int y) pos, int penalty)
-    {
-        parent = null;
-        position = pos;
-        distanceToTarget = -1;
-        cost = 1;
-        this.penalty = penalty;
-    }
     public override string ToString()
     {
         return $"{position} | {nameof(penalty)}: {penalty}";
@@ -80,13 +76,7 @@ internal class Astar
     {
         return IsInside(pos) && grid.TryGetValue(pos, out var value) ? value : null;
     }
-    public (float x, float y)[] FindPath(
-        (float x, float y) a,
-        (float x, float y) b,
-        bool includeColors,
-        out (float x, float y, uint color)[] withColors,
-        int maxZigzag,
-        uint color)
+    public (float x, float y)[] FindPath((float x, float y) a, (float x, float y) b, bool includeColors, out (float x, float y, uint color)[] withColors, int maxZigzag, uint color)
     {
         a = ((int)a.x, (int)a.y);
         b = ((int)b.x, (int)b.y);
@@ -217,10 +207,7 @@ internal class Astar
         }
     }
 
-    private static void SmoothZigzag(
-        List<(float x, float y)> points,
-        List<(float x, float y, uint color)> withColor,
-        int maxZigzag)
+    private static void SmoothZigzag(List<(float x, float y)> points, List<(float x, float y, uint color)> withColor, int maxZigzag)
     {
         if (points.Count < 2)
             return;
@@ -238,9 +225,7 @@ internal class Astar
             i--;
         }
     }
-    private static void RemoveRedundantPoints(
-        List<(float x, float y)> points,
-        List<(float x, float y, uint color)> withColor)
+    private static void RemoveRedundantPoints(List<(float x, float y)> points, List<(float x, float y, uint color)> withColor)
     {
         if (points.Count < 3)
             return;

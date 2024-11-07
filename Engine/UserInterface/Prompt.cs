@@ -2,11 +2,15 @@ namespace Pure.Engine.UserInterface;
 
 public class Prompt : Block
 {
+    [DoNotSave]
+    public Action<Button>? OnItemDisplay { get; set; }
+
     public int LastChoiceIndex { get; private set; }
 
     public Prompt()
     {
-        Init();
+        hasParent = true;
+        IsHidden = true;
     }
 
     public void Open(Block? block = null, bool autoClose = true, int btnCount = 2, int btnYes = default, int btnNo = 1, Action<int>? onButtonTrigger = null)
@@ -65,15 +69,12 @@ public class Prompt : Block
         return button == null ? -1 : buttons.IndexOf(button);
     }
 
-    public void OnItemDisplay(Action<Button> method)
-    {
-        itemDisplay += method;
-    }
-
-    #region Backend
+#region Backend
+    [DoNotSave]
     private readonly List<Button> buttons = [];
-    private Action<Button>? itemDisplay;
+    [DoNotSave]
     private Block? currentBlock;
+    [DoNotSave]
     private readonly Panel panel = new((0, 0))
     {
         IsResizable = false,
@@ -83,11 +84,6 @@ public class Prompt : Block
         hasParent = true
     };
 
-    private void Init()
-    {
-        hasParent = true;
-        IsHidden = true;
-    }
     private void UpdateBlockPosition()
     {
         if (currentBlock == null)
@@ -106,7 +102,7 @@ public class Prompt : Block
             return;
 
         foreach (var btn in buttons)
-            itemDisplay?.Invoke(btn);
+            OnItemDisplay?.Invoke(btn);
     }
     internal override void OnChildrenUpdate()
     {
@@ -173,5 +169,5 @@ public class Prompt : Block
 
         return result;
     }
-    #endregion
+#endregion
 }

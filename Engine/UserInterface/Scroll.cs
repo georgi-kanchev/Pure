@@ -1,16 +1,17 @@
 namespace Pure.Engine.UserInterface;
 
-using System.Diagnostics.CodeAnalysis;
-
 public class Scroll : Block
 {
     /// <summary>
     /// Gets the slider part of the scroll.
     /// </summary>
-    public Slider Slider { get; private set; }
+    [DoNotSave]
+    public Slider Slider { get; }
 
-    public Button Increase { get; private set; }
-    public Button Decrease { get; private set; }
+    [DoNotSave]
+    public Button Increase { get; }
+    [DoNotSave]
+    public Button Decrease { get; }
 
     public bool IsVertical
     {
@@ -38,59 +39,7 @@ public class Scroll : Block
     {
         IsVertical = vertical;
         Size = IsVertical ? (1, 10) : (10, 1);
-        Init();
-    }
-    public Scroll(byte[] bytes) : base(bytes)
-    {
-        var b = Decompress(bytes);
-        IsVertical = GrabBool(b);
-        Step = GrabFloat(b);
-        Size = IsVertical ? (1, Size.height) : (Size.width, 1);
-
-        Init();
-        Slider.progress = GrabFloat(b);
-        Slider.index = GrabInt(b);
-    }
-    public Scroll(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, IsVertical);
-        Put(result, Step);
-        Put(result, Slider.Progress);
-        Put(result, Slider.index);
-        return Compress(result.ToArray());
-    }
-
-    public Scroll Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Scroll scroll)
-    {
-        return scroll.ToBytes();
-    }
-    public static implicit operator Scroll(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
-#region Backend
-    internal bool isVertical;
-    internal float step = 0.1f;
-
-    [MemberNotNull(nameof(Slider), nameof(Increase), nameof(Decrease))]
-    private void Init()
-    {
-        OnUpdate(OnUpdate);
+        OnUpdate += OnRefresh;
 
         Slider = new((int.MaxValue, int.MaxValue)) { wasMaskSet = true, hasParent = true };
         Increase = new((int.MaxValue, int.MaxValue))
@@ -117,13 +66,18 @@ public class Scroll : Block
                 Decrease.Interact(Interaction.Trigger);
         });
     }
+
+#region Backend
+    internal bool isVertical;
+    internal float step = 0.1f;
+
     internal override void ApplyScroll()
     {
         if (Slider.IsHovered == false)
             Slider.ApplyScroll();
     }
 
-    internal void OnUpdate()
+    internal void OnRefresh()
     {
         LimitSizeMin(IsVertical ? (1, 2) : (2, 1));
 

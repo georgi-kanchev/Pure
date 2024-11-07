@@ -1,6 +1,4 @@
-﻿using System.IO.Compression;
-
-namespace Pure.Engine.Collision;
+﻿namespace Pure.Engine.Collision;
 
 public class SolidMap
 {
@@ -17,100 +15,6 @@ public class SolidMap
         get => arrayCache?.Length ?? 0;
     }
 
-    public SolidMap()
-    {
-    }
-    public SolidMap(byte[] bytes)
-    {
-        var b = Decompress(bytes);
-        var offset = 0;
-
-        Offset = (BitConverter.ToInt32(Get()), BitConverter.ToInt32(Get()));
-
-        var ignoredCount = BitConverter.ToInt32(Get());
-        for (var i = 0; i < ignoredCount; i++)
-            IgnoredCells.Add((BitConverter.ToInt32(Get()), BitConverter.ToInt32(Get())));
-
-        var cellRectCount = BitConverter.ToInt32(Get());
-        for (var i = 0; i < cellRectCount; i++)
-        {
-            var tileId = BitConverter.ToInt32(Get());
-            var rectAmount = BitConverter.ToInt32(Get());
-
-            for (var j = 0; j < rectAmount; j++)
-            {
-                var x = BitConverter.ToSingle(Get());
-                var y = BitConverter.ToSingle(Get());
-                var w = BitConverter.ToSingle(Get());
-                var h = BitConverter.ToSingle(Get());
-                var color = BitConverter.ToUInt32(Get());
-
-                AddSolids(tileId, new Solid(x, y, w, h, color));
-            }
-        }
-
-        var tileIndicesCount = BitConverter.ToInt32(Get());
-        for (var i = 0; i < tileIndicesCount; i++)
-        {
-            var x = BitConverter.ToInt32(Get());
-            var y = BitConverter.ToInt32(Get());
-            var tile = BitConverter.ToInt32(Get());
-            tileIndices[(x, y)] = tile;
-        }
-
-        byte[] Get()
-        {
-            return GetBytesFrom(b, 4, ref offset);
-        }
-    }
-    public SolidMap(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-
-        result.AddRange(BitConverter.GetBytes(Offset.x));
-        result.AddRange(BitConverter.GetBytes(Offset.y));
-
-        result.AddRange(BitConverter.GetBytes(IgnoredCells.Count));
-        foreach (var cell in IgnoredCells)
-        {
-            result.AddRange(BitConverter.GetBytes(cell.x));
-            result.AddRange(BitConverter.GetBytes(cell.y));
-        }
-
-        result.AddRange(BitConverter.GetBytes(cellRects.Count));
-        foreach (var kvp in cellRects)
-        {
-            result.AddRange(BitConverter.GetBytes(kvp.Key));
-            result.AddRange(BitConverter.GetBytes(kvp.Value.Count));
-
-            foreach (var r in kvp.Value)
-            {
-                result.AddRange(BitConverter.GetBytes(r.Position.x));
-                result.AddRange(BitConverter.GetBytes(r.Position.y));
-                result.AddRange(BitConverter.GetBytes(r.Size.width));
-                result.AddRange(BitConverter.GetBytes(r.Size.height));
-                result.AddRange(BitConverter.GetBytes(r.Color));
-            }
-        }
-
-        result.AddRange(BitConverter.GetBytes(tileIndices.Count));
-        foreach (var kvp in tileIndices)
-        {
-            result.AddRange(BitConverter.GetBytes(kvp.Key.x));
-            result.AddRange(BitConverter.GetBytes(kvp.Key.y));
-            result.AddRange(BitConverter.GetBytes(kvp.Value));
-        }
-
-        return Compress(result.ToArray());
-    }
     public (float x, float y, float width, float height, uint color)[] ToBundle()
     {
         var solids = ToArray();
@@ -384,11 +288,6 @@ public class SolidMap
         return IsOverlapping((point.x, point.y));
     }
 
-    public SolidMap Duplicate()
-    {
-        return new(ToBytes());
-    }
-
     public static implicit operator Solid[](SolidMap solidMap)
     {
         return solidMap.ToArray();
@@ -396,14 +295,6 @@ public class SolidMap
     public static implicit operator (float x, float y, float width, float height, uint color)[](SolidMap solidMap)
     {
         return solidMap.ToBundle();
-    }
-    public static implicit operator byte[](SolidMap solidMap)
-    {
-        return solidMap.ToBytes();
-    }
-    public static implicit operator SolidMap(byte[] bytes)
-    {
-        return new(bytes);
     }
 
 #region Backend
@@ -483,30 +374,6 @@ public class SolidMap
         var resultW = Math.Max((int)MathF.Ceiling(w * 2f), 1);
         var resultH = Math.Max((int)MathF.Ceiling(h * 2f), 1);
         return (resultW, resultH);
-    }
-    internal static byte[] Compress(byte[] data)
-    {
-        using var compressedStream = new MemoryStream();
-        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
-        {
-            gzipStream.Write(data, 0, data.Length);
-        }
-
-        return compressedStream.ToArray();
-    }
-    internal static byte[] Decompress(byte[] compressedData)
-    {
-        using var compressedStream = new MemoryStream(compressedData);
-        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
-        using var resultStream = new MemoryStream();
-        gzipStream.CopyTo(resultStream);
-        return resultStream.ToArray();
-    }
-    internal static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
     }
 #endregion
 }

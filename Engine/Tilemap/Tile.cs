@@ -1,65 +1,17 @@
 ﻿namespace Pure.Engine.Tilemap;
 
-public struct Tile
+public struct Tile(int id, uint tint = uint.MaxValue, int turns = default, bool mirror = false, bool flip = false)
 {
-    public int Id { get; set; }
-    public uint Tint { get; set; }
-    public int Turns { get; set; }
-    public bool IsMirrored { get; set; }
-    public bool IsFlipped { get; set; }
+    public int Id { get; set; } = id;
+    public uint Tint { get; set; } = tint;
+    public int Turns { get; set; } = turns;
+    public bool IsMirrored { get; set; } = mirror;
+    public bool IsFlipped { get; set; } = flip;
 
-    public Tile(int id, uint tint = uint.MaxValue, int turns = default, bool mirror = false, bool flip = false)
-    {
-        Id = id;
-        Tint = tint;
-        Turns = turns;
-        IsMirrored = mirror;
-        IsFlipped = flip;
-    }
-    public Tile((int id, uint tint, int turns, bool mirror, bool flip) bundle)
-    {
-        Id = bundle.id;
-        Tint = bundle.tint;
-        Turns = bundle.turns;
-        IsMirrored = bundle.mirror;
-        IsFlipped = bundle.flip;
-    }
-    public Tile(byte[] bytes)
-    {
-        var b = bytes;
-        var offset = 0;
-
-        Id = BitConverter.ToInt16(Tilemap.GetBytesFrom(b, 2, ref offset));
-        Tint = BitConverter.ToUInt32(Tilemap.GetBytesFrom(b, 4, ref offset));
-
-        var packedByte = Tilemap.GetBytesFrom(b, 1, ref offset)[0];
-        Turns = packedByte & 0b11; // bit 0 & 1 for turns (values 0-3)
-        IsMirrored = (packedByte & (1 << 2)) != 0; // bit 2 for mirror
-        IsFlipped = (packedByte & (1 << 3)) != 0; // bit 3 for flip
-    }
-    public Tile(string base64) : this(Convert.FromBase64String(base64))
+    public Tile((int id, uint tint, int turns, bool mirror, bool flip) bundle) : this(bundle.id, bundle.tint, bundle.turns, bundle.mirror, bundle.flip)
     {
     }
 
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-
-        result.AddRange(BitConverter.GetBytes((short)Id));
-        result.AddRange(BitConverter.GetBytes(Tint));
-
-        var packedByte = (byte)0;
-        packedByte |= (byte)(Turns & 0b11); // bit 0 & 1 for turns (values 0-3)
-        packedByte |= (byte)((IsMirrored ? 1 : 0) << 2); // bit 2 for mirror
-        packedByte |= (byte)((IsFlipped ? 1 : 0) << 3); // bit 3 for flip
-        result.Add(packedByte);
-
-        return result.ToArray();
-    }
     public (int id, uint tint, int turns, bool mirror, bool flip) ToBundle()
     {
         return (Id, Tint, Turns, IsMirrored, IsFlipped);
@@ -99,14 +51,6 @@ public struct Tile
     public static implicit operator (int id, uint tint, int turns, bool mirror, bool flip)(Tile tile)
     {
         return tile.ToBundle();
-    }
-    public static implicit operator byte[](Tile tile)
-    {
-        return tile.ToBytes();
-    }
-    public static implicit operator Tile(byte[] bytes)
-    {
-        return new(bytes);
     }
 
     public static bool operator ==(Tile a, Tile b)

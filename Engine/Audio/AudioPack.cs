@@ -2,7 +2,7 @@ namespace Pure.Engine.Audio;
 
 public class AudioPack
 {
-    public List<Audio> Tracks { get; } = new();
+    public List<Audio> Tracks { get; } = [];
 
     public float TrackDelay { get; set; }
     public bool IsLooping { get; set; }
@@ -145,7 +145,7 @@ public class AudioPack
             onAudioEndIndex[index] += method;
     }
 
-    #region Backend
+#region Backend
     private Action? onLoop, onEnd;
     private Action<(int index, string? tag)>? onAudioEndAny;
     private readonly Dictionary<string, Action<(int index, string? tag)>> onAudioEndTag = new();
@@ -193,5 +193,5 @@ public class AudioPack
             (collection[j], collection[i]) = (collection[i], collection[j]);
         }
     }
-    #endregion
+#endregion
 }

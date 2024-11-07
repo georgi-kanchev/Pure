@@ -42,6 +42,9 @@ public enum SymbolGroup
 /// </summary>
 public class InputBox : Block
 {
+    [DoNotSave]
+    public Action<string>? OnType { get; set; }
+
     /// <summary>
     /// The text that should be displayed in the input box when it is empty.
     /// Defaults to "Type…".
@@ -242,7 +245,23 @@ public class InputBox : Block
     /// <param name="position">The position of the input box.</param>
     public InputBox((int x, int y) position) : base(position)
     {
-        Init();
+        isTextReadonly = true;
+
+        OnUpdate += OnRefresh;
+        OnInteraction(Interaction.Press, () =>
+        {
+            cursorBlink.Restart();
+            TryCycleSelected();
+        });
+        OnInteraction(Interaction.Focus, () =>
+        {
+            clicks = 0;
+            clickDelay.Restart();
+            TrySelect();
+            Input.IsTyping = true;
+        });
+        OnInteraction(Interaction.Unfocus, () => { Input.IsTyping = false; });
+
         Placeholder = "Type…";
         Size = (12, 1);
         lines[0] = Text;
@@ -250,34 +269,6 @@ public class InputBox : Block
         SymbolLimit = int.MaxValue;
 
         SymbolGroup = SymbolGroup.All;
-    }
-    public InputBox(byte[] bytes) : base(bytes)
-    {
-        Init();
-        var b = Decompress(bytes);
-        IsReadOnly = GrabBool(b);
-        Placeholder = GrabString(b);
-        Value = GrabString(b);
-        SymbolGroup = (SymbolGroup)GrabByte(b);
-        SymbolLimit = GrabInt(b);
-    }
-    public InputBox(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, IsReadOnly);
-        Put(result, Placeholder);
-        Put(result, Value);
-        Put(result, (byte)SymbolGroup);
-        Put(result, SymbolLimit);
-        return Compress(result.ToArray());
     }
 
     public (int symbol, int line) PositionToIndices((int x, int y) position)
@@ -408,26 +399,7 @@ public class InputBox : Block
         return result;
     }
 
-    public void OnType(Action<string> method)
-    {
-        type += method;
-    }
-
-    public InputBox Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](InputBox inputBox)
-    {
-        return inputBox.ToBytes();
-    }
-    public static implicit operator InputBox(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
-    #region Backend
+#region Backend
     private readonly List<string> lines = [string.Empty];
     private readonly Dictionary<string, bool> allowedSymbolsCache = new();
 
@@ -444,16 +416,13 @@ public class InputBox : Block
 
     private const char SELECTION = '█', SPACE = ' ';
     private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
-    private static readonly Stopwatch holdDelay = new(),
-        hold = new(),
-        clickDelay = new(),
+    private static readonly Stopwatch holdDelay = new(), hold = new(), clickDelay = new(),
         cursorBlink = new(),
         scrollHold = new();
     private int cx, cy, sx, sy, clicks, scrX, scrY, cxDesired;
     private (int, int) lastClickIndices = (-1, -1), prevSize;
     private string value = string.Empty;
 
-    private Action<string>? type;
     private SymbolGroup symbolGroup;
     private string? symbolMask;
 
@@ -462,26 +431,6 @@ public class InputBox : Block
         holdDelay.Start();
         hold.Start();
         scrollHold.Start();
-    }
-
-    private void Init()
-    {
-        isTextReadonly = true;
-
-        OnUpdate(OnUpdate);
-        OnInteraction(Interaction.Press, () =>
-        {
-            cursorBlink.Restart();
-            TryCycleSelected();
-        });
-        OnInteraction(Interaction.Focus, () =>
-        {
-            clicks = 0;
-            clickDelay.Restart();
-            TrySelect();
-            Input.IsTyping = true;
-        });
-        OnInteraction(Interaction.Unfocus, () => { Input.IsTyping = false; });
     }
 
     protected override void OnInput()
@@ -516,7 +465,7 @@ public class InputBox : Block
         TryBackspaceDeleteEnter(isHolding, justDeletedSelected);
         TryMoveCursor(isHolding);
     }
-    internal void OnUpdate()
+    internal void OnRefresh()
     {
         // reclamp despite scrolling or not cuz maybe the text changed
         CursorIndices = (cx, cy);
@@ -813,7 +762,7 @@ public class InputBox : Block
         CursorMove((1, 0));
         SelectionIndices = CursorIndices;
 
-        type?.Invoke(str);
+        OnType?.Invoke(str);
     }
     private void TryBackspaceDeleteEnter(bool isHolding, bool justDeletedSelection)
     {
@@ -983,10 +932,7 @@ public class InputBox : Block
         if (IsHovered && IsReadOnly && Value.Length == 0)
             Input.CursorResult = MouseCursor.Arrow;
     }
-    private bool TryCopyPasteCut(
-        ref bool justDeletedSelection,
-        ref bool shouldDelete,
-        out bool isPasting)
+    private bool TryCopyPasteCut(ref bool justDeletedSelection, ref bool shouldDelete, out bool isPasting)
     {
         var ctrl = Pressed(Key.ControlLeft) || Pressed(Key.ControlRight);
         var hasSelection = CursorIndices != SelectionIndices;
@@ -1136,5 +1082,5 @@ public class InputBox : Block
 
         return result.ToString();
     }
-    #endregion
+#endregion
 }

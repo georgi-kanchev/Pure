@@ -58,47 +58,7 @@ public class Tilemap
                 ids[j, i] = tileData[j, i].Id;
             }
     }
-    public Tilemap(byte[] bytes)
-    {
-        var offset = 0;
-        var (w, h) = (GetInt(), GetInt());
 
-        data = new Tile[w, h];
-        bundleCache = new (int, uint, int, bool, bool)[w, h];
-        ids = new int[w, h];
-        Size = (w, h);
-        View = (GetInt(), GetInt(), GetInt(), GetInt());
-
-        for (var i = 0; i < h; i++)
-            for (var j = 0; j < w; j++)
-            {
-                var bTile = GetBytesFrom(bytes, 7, ref offset);
-                SetTile((j, i), new(bTile));
-            }
-
-        int GetInt()
-        {
-            return BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-        }
-    }
-
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        var (w, h) = Size;
-        result.AddRange(BitConverter.GetBytes(w));
-        result.AddRange(BitConverter.GetBytes(h));
-        result.AddRange(BitConverter.GetBytes(View.X));
-        result.AddRange(BitConverter.GetBytes(View.Y));
-        result.AddRange(BitConverter.GetBytes(View.Width));
-        result.AddRange(BitConverter.GetBytes(View.Height));
-
-        for (var i = 0; i < h; i++)
-            for (var j = 0; j < w; j++)
-                result.AddRange(TileAt((j, i)).ToBytes());
-
-        return result.ToArray();
-    }
     /// <returns>
     /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
     public (int id, uint tint, int turns, bool mirror, bool flip)[,] ToBundle()
@@ -621,7 +581,7 @@ public class Tilemap
         return result;
     }
 
-    public Tilemap ViewUpdate()
+    public Tilemap UpdateView()
     {
         var (vx, vy, vw, vh, _) = View.ToBundle();
         var result = new Tilemap((View.Width, View.Height));
@@ -668,7 +628,11 @@ public class Tilemap
     {
         return tilemap?.ToBundle();
     }
-    public static implicit operator Area(Tilemap? tilemap)
+    public static implicit operator Area(Tilemap tilemap)
+    {
+        return (0, 0, tilemap.Size.width, tilemap.Size.height);
+    }
+    public static implicit operator Area?(Tilemap? tilemap)
     {
         return tilemap == null ? null : (0, 0, tilemap.Size.width, tilemap.Size.height);
     }
@@ -677,7 +641,7 @@ public class Tilemap
         return tilemap?.ids;
     }
 
-    #region Backend
+#region Backend
     private int textIdNumbers = Tile.NUMBER_0,
         textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
@@ -818,13 +782,6 @@ public class Tilemap
         return colors;
     }
 
-    internal static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
-    }
-
     private int ToSeed((int a, int b) parameters)
     {
         var (a, b) = parameters;
@@ -850,5 +807,5 @@ public class Tilemap
             return (int)seed;
         }
     }
-    #endregion
+#endregion
 }

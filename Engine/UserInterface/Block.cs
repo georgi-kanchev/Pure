@@ -11,6 +11,13 @@ public enum Side { Left, Right, Top, Bottom }
 /// </summary>
 public class Block
 {
+    [DoNotSave]
+    public Action? OnDisplay { get; set; }
+    [DoNotSave]
+    public Action? OnUpdate { get; set; }
+    [DoNotSave]
+    public Action<(int deltaX, int deltaY)>? OnDrag { get; set; }
+
     public (int x, int y, int width, int height) Area
     {
         get => (X, Y, Width, Height);
@@ -197,78 +204,9 @@ public class Block
     {
         Size = (1, 1);
         Position = position;
-
-        typeName = GetType().Name;
-        Init();
-    }
-    /// <summary>
-    /// Initializes a new user interface block instance class with the specified
-    /// bytes.
-    /// </summary>
-    /// <param name="bytes">The bytes of the user interface block.</param>
-    public Block(byte[] bytes)
-    {
-        Init(); // should be before
-
-        var b = Decompress(bytes);
-        typeName = GrabString(b);
-        Position = (GrabInt(b), GrabInt(b));
-        SizeMinimum = (GrabInt(b), GrabInt(b));
-        SizeMaximum = (GrabInt(b), GrabInt(b));
-        Size = (GrabInt(b), GrabInt(b));
-
-        // should set field to not flag wasMaskSet
-        mask = (GrabInt(b), GrabInt(b), GrabInt(b), GrabInt(b));
-
-        Text = GrabString(b);
-        IsHidden = GrabBool(b);
-        IsDisabled = GrabBool(b);
-        hasParent = GrabBool(b);
-    }
-    /// <summary>
-    /// Initializes a new user interface block instance class with the specified
-    /// </summary>
-    /// <param name="base64">The base64 of the user interface block.</param>
-    public Block(string base64) : this(Convert.FromBase64String(base64))
-    {
+        Text = GetType().Name;
     }
 
-    /// <summary>
-    /// Converts the user interface block to a base64 string.
-    /// </summary>
-    /// <returns>The base64 string representation of the user interface block.</returns>
-    public virtual string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    /// <summary>
-    /// Converts the user interface block to a byte array.
-    /// </summary>
-    /// <returns> A byte array representation of the user interface block.</returns>
-    public virtual byte[] ToBytes()
-    {
-        var result = new List<byte>();
-
-        Put(result, typeName);
-        Put(result, Position.x);
-        Put(result, Position.y);
-        Put(result, SizeMinimum.width);
-        Put(result, SizeMinimum.height);
-        Put(result, SizeMaximum.width);
-        Put(result, SizeMaximum.height);
-        Put(result, Size.width);
-        Put(result, Size.height);
-        Put(result, Mask.x);
-        Put(result, Mask.y);
-        Put(result, Mask.width);
-        Put(result, Mask.height);
-        Put(result, Text);
-        Put(result, IsHidden);
-        Put(result, IsDisabled);
-        Put(result, hasParent);
-
-        return Compress(result.ToArray());
-    }
     /// <summary>
     /// Overrides the ToString method to provide a custom string representation of the object.
     /// </summary>
@@ -299,7 +237,7 @@ public class Block
             if (IsHovered && IsHidden == false)
                 Input.CursorResult = MouseCursor.Disable;
 
-            update?.Invoke();
+            OnUpdate?.Invoke();
             TryDisplaySelfAndProcessChildren();
             return;
         }
@@ -354,10 +292,10 @@ public class Block
         if ((px != ppx || py != ppy) && IsPressedAndHeld && IsFocused && Input.FocusedPrevious == this)
         {
             var delta = (px - ppx, py - ppy);
-            drag?.Invoke(delta);
+            OnDrag?.Invoke(delta);
         }
 
-        update?.Invoke();
+        OnUpdate?.Invoke();
 
         if (isInputInsideMask)
             OnInput();
@@ -377,7 +315,7 @@ public class Block
             if (IsHidden)
                 return;
 
-            display?.Invoke();
+            OnDisplay?.Invoke();
 
             OnChildrenUpdate();
             // parents call OnDisplay on children and themselves to ensure order if needed
@@ -537,31 +475,6 @@ public class Block
         if (interactions.TryAdd(interaction, method) == false)
             interactions[interaction] += method;
     }
-    /// <summary>
-    /// Adds a method to be called when the display needs to be updated.
-    /// </summary>
-    /// <param name="method">The method to be called.</param>
-    public void OnDisplay(Action method)
-    {
-        display += method;
-    }
-    /// <summary>
-    /// Adds a method to be called when an update is needed.
-    /// </summary>
-    /// <param name="method">The method to be called.</param>
-    public void OnUpdate(Action method)
-    {
-        update += method;
-    }
-
-    /// <summary>
-    /// Adds a method to be called when a drag occurs.
-    /// </summary>
-    /// <param name="method">The method to be called, with the delta coordinates of the drag.</param>
-    public void OnDrag(Action<(int deltaX, int deltaY)> method)
-    {
-        drag += method;
-    }
 
     /// <summary>
     /// Called when input is received.
@@ -570,129 +483,6 @@ public class Block
     {
     }
 
-    /// <summary>
-    /// Adds a boolean value to the given byte list.
-    /// </summary>
-    /// <param name="intoBytes">The byte list to add the boolean value to.</param>
-    /// <param name="value">The boolean value to add to the byte list.</param>
-    protected static void Put(List<byte> intoBytes, bool value)
-    {
-        intoBytes.AddRange(BitConverter.GetBytes(value));
-    }
-    /// <summary>
-    /// Adds a byte value to the given byte list.
-    /// </summary>
-    /// <param name="intoBytes">The byte list to add the byte value to.</param>
-    /// <param name="value">The byte value to add to the byte list.</param>
-    protected static void Put(List<byte> intoBytes, byte value)
-    {
-        intoBytes.Add(value);
-    }
-    /// <summary>
-    /// Adds an integer value to the given byte list.
-    /// </summary>
-    /// <param name="intoBytes">The byte list to add the integer value to.</param>
-    /// <param name="value">The integer value to add to the byte list.</param>
-    protected static void Put(List<byte> intoBytes, int value)
-    {
-        intoBytes.AddRange(BitConverter.GetBytes(value));
-    }
-    /// <summary>
-    /// Adds an unsigned integer value to the given byte list.
-    /// </summary>
-    /// <param name="intoBytes">The byte list to add the unsigned integer value to.</param>
-    /// <param name="value">The unsigned integer value to add to the byte list.</param>
-    protected static void Put(List<byte> intoBytes, uint value)
-    {
-        intoBytes.AddRange(BitConverter.GetBytes(value));
-    }
-    /// <summary>
-    /// Adds a float value to the given byte list.
-    /// </summary>
-    /// <param name="intoBytes">The byte list to add the float value to.</param>
-    /// <param name="value">The float value to add to the byte list.</param>
-    protected static void Put(List<byte> intoBytes, float value)
-    {
-        intoBytes.AddRange(BitConverter.GetBytes(value));
-    }
-    /// <summary>
-    /// Adds a string value to the given byte list.
-    /// </summary>
-    /// <param name="intoBytes">The byte list to add the string value to.</param>
-    /// <param name="value">The string value to add to the byte list.</param>
-    protected static void Put(List<byte> intoBytes, string value)
-    {
-        var bytes = Encoding.UTF8.GetBytes(value);
-        Put(intoBytes, bytes.Length);
-        intoBytes.AddRange(bytes);
-    }
-
-    /// <summary>
-    /// Retrieves a boolean value from the given byte array.
-    /// </summary>
-    /// <param name="fromBytes">The byte array to retrieve the boolean value from.</param>
-    /// <returns>The retrieved boolean value.</returns>
-    protected bool GrabBool(byte[] fromBytes)
-    {
-        return BitConverter.ToBoolean(GetBytes(fromBytes, 1));
-    }
-    /// <summary>
-    /// Retrieves a byte value from the given byte array.
-    /// </summary>
-    /// <param name="fromBytes">The byte array to retrieve the byte value from.</param>
-    /// <returns>The retrieved byte value.</returns>
-    protected byte GrabByte(byte[] fromBytes)
-    {
-        return GetBytes(fromBytes, 1)[0];
-    }
-    /// <summary>
-    /// Retrieves an integer value from the given byte array.
-    /// </summary>
-    /// <param name="fromBytes">The byte array to retrieve the integer value from.</param>
-    /// <returns>The retrieved integer value.</returns>
-    protected int GrabInt(byte[] fromBytes)
-    {
-        return BitConverter.ToInt32(GetBytes(fromBytes, 4));
-    }
-    /// <summary>
-    /// Retrieves an unsigned integer value from the given byte array.
-    /// </summary>
-    /// <param name="fromBytes">The byte array to retrieve the unsigned integer value from.</param>
-    /// <returns>The retrieved unsigned integer value.</returns>
-    protected uint GrabUInt(byte[] fromBytes)
-    {
-        return BitConverter.ToUInt32(GetBytes(fromBytes, 4));
-    }
-    /// <summary>
-    /// Retrieves a float value from the given byte array.
-    /// </summary>
-    /// <param name="fromBytes">The byte array to retrieve the float value from.</param>
-    /// <returns>The retrieved float value.</returns>
-    protected float GrabFloat(byte[] fromBytes)
-    {
-        return BitConverter.ToSingle(GetBytes(fromBytes, 4));
-    }
-    /// <summary>
-    /// Retrieves a string value from the given byte array.
-    /// </summary>
-    /// <param name="fromBytes">The byte array to retrieve the string value from.</param>
-    /// <returns>The retrieved string value.</returns>
-    protected string GrabString(byte[] fromBytes)
-    {
-        var textBytesLength = GrabInt(fromBytes);
-        var bText = GetBytes(fromBytes, textBytesLength);
-        return Encoding.UTF8.GetString(bText);
-    }
-
-    /// <summary>
-    /// Converts the block to a byte array.
-    /// </summary>
-    /// <param name="block">The block to convert.</param>
-    /// <returns>The byte array representation of the block.</returns>
-    public static implicit operator byte[](Block block)
-    {
-        return block.ToBytes();
-    }
     /// <summary>
     /// Converts the block to a tuple of integers representing the position and size.
     /// </summary>
@@ -704,25 +494,21 @@ public class Block
     }
 
 #region Backend
-    internal (int, int) position, size, listSizeTrimOffset,
-        sizeMinimum = (1, 1), sizeMaximum = (int.MaxValue, int.MaxValue);
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+    internal class DoNotSave : Attribute;
+
+    internal (int, int) position, size, listSizeTrimOffset, sizeMinimum = (1, 1),
+        sizeMaximum = (int.MaxValue, int.MaxValue);
     internal bool hasParent, isTextReadonly, wasMaskSet;
-    internal readonly string typeName;
-    private int byteOffset;
     private bool wasHovered, isReadyForDoubleClick;
 
     private readonly List<Interaction> justInteracted = [];
-    internal Action? display, update;
+    [DoNotSave]
     private readonly Dictionary<Interaction, Action> interactions = new();
-    internal Action<(int deltaX, int deltaY)>? drag;
 
     internal string text = string.Empty;
     internal (int x, int y, int width, int height) mask;
 
-    private void Init()
-    {
-        Text = GetType().Name;
-    }
     internal void LimitSizeMin((int width, int height) minimumSize)
     {
         if (Size.width < minimumSize.width)
@@ -785,30 +571,6 @@ public class Block
             IsPressedAndHeld = false;
     }
 
-    internal static byte[] Compress(byte[] data)
-    {
-        using var compressedStream = new MemoryStream();
-        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
-        {
-            gzipStream.Write(data, 0, data.Length);
-        }
-
-        return compressedStream.ToArray();
-    }
-    internal static byte[] Decompress(byte[] compressedData)
-    {
-        using var compressedStream = new MemoryStream(compressedData);
-        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
-        using var resultStream = new MemoryStream();
-        gzipStream.CopyTo(resultStream);
-        return resultStream.ToArray();
-    }
-    private byte[] GetBytes(byte[] fromBytes, int amount)
-    {
-        var result = fromBytes[byteOffset..(byteOffset + amount)];
-        byteOffset += amount;
-        return result;
-    }
     private static float Map(float number, (float a, float b) range, (float a, float b) targetRange)
     {
         var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) +

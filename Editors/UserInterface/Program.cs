@@ -5,6 +5,7 @@ global using Pure.Engine.Window;
 global using static Pure.Editors.UserInterface.Program;
 global using static Pure.Tools.Tilemap.MapperUserInterface;
 global using Pure.Editors.Base;
+using Pure.Engine.Storage;
 
 namespace Pure.Editors.UserInterface;
 
@@ -64,10 +65,10 @@ public static class Program
         inspector.AlignInside((1f, 0.5f));
 
         promptSlider = new() { Size = (15, 1) };
-        promptSlider.OnDisplay(() => maps.SetSlider(promptSlider, BACK));
+        promptSlider.OnDisplay += () => maps.SetSlider(promptSlider, BACK);
 
         fileName = new() { Size = (20, 1) };
-        fileName.OnDisplay(() => maps.SetInputBox(fileName, BACK));
+        fileName.OnDisplay += () => maps.SetInputBox(fileName, BACK);
 
         // submenus need higher update priority to not close upon parent menu opening them
         menus[MenuType.AddList] = new MenuAddList();
@@ -94,91 +95,100 @@ public static class Program
         {
             case nameof(Button):
             {
-                block = bytes != null ? new(bytes) : new Button(position);
-                block.OnDisplay(() => editor.MapsEditor.SetButton((Button)block));
+                block = bytes != null ? bytes.ToObject<Button>() : new(position);
+                if (block != null)
+                    block.OnDisplay += () => editor.MapsEditor.SetButton((Button)block);
                 break;
             }
             case nameof(InputBox):
             {
-                block = bytes != null ? new(bytes) : new InputBox(position);
-                block.OnDisplay(() => editor.MapsEditor.SetInputBox((InputBox)block));
+                block = bytes != null ? bytes.ToObject<InputBox>() : new(position);
+                if (block != null)
+                    block.OnDisplay += () => editor.MapsEditor.SetInputBox((InputBox)block);
                 break;
             }
             case nameof(Pages):
             {
-                block = bytes != null ? new(bytes) : new Pages(position);
-                var pages = (Pages)block;
+                block = bytes != null ? bytes.ToObject<Pages>() : new(position);
+                if (block is not Pages pages)
+                    return;
                 panel.SizeMinimum = (8, 3);
-                block.OnDisplay(() => editor.MapsEditor.SetPages(pages));
-                pages.OnItemDisplay(item => editor.MapsEditor.SetPagesItem(pages, item));
+                block.OnDisplay += () => editor.MapsEditor.SetPages(pages);
+                pages.OnItemDisplay += item => editor.MapsEditor.SetPagesItem(pages, item);
                 break;
             }
             case nameof(Panel):
             {
-                block = bytes != null ? new(bytes) : new Panel(position);
+                block = bytes != null ? bytes.ToObject<Panel>() : new(position);
                 panel.SizeMinimum = (5, 5);
-                block.OnDisplay(() => editor.MapsEditor.SetPanel((Panel)block));
+                if (block != null)
+                    block.OnDisplay += () => editor.MapsEditor.SetPanel((Panel)block);
                 break;
             }
             case nameof(Palette):
             {
-                block = bytes != null ? new(bytes) : new Palette(position);
-                var palette = (Palette)block;
+                block = bytes != null ? bytes.ToObject<Palette>() : new(position);
+                if (block is not Palette palette)
+                    return;
                 panel.SizeMinimum = (15, 5);
 
-                block.OnDisplay(() => editor.MapsEditor.SetPalette(palette));
-                block.OnDisplay(() => editor.MapsEditor.SetSlider(palette.Brightness));
+                block.OnDisplay += () => editor.MapsEditor.SetPalette(palette);
+                block.OnDisplay += () => editor.MapsEditor.SetSlider(palette.Brightness);
 
                 break;
             }
             case nameof(Slider):
             {
-                block = bytes != null ? new(bytes) : new Slider(position);
+                block = bytes != null ? bytes.ToObject<Slider>() : new(position);
                 panel.SizeMinimum = (4, 3);
-                block.OnDisplay(() => editor.MapsEditor.SetSlider((Slider)block));
+                if (block != null)
+                    block.OnDisplay += () => editor.MapsEditor.SetSlider((Slider)block);
                 break;
             }
             case nameof(Scroll):
             {
-                block = bytes != null ? new(bytes) : new Scroll(position);
+                block = bytes != null ? bytes.ToObject<Scroll>() : new(position);
                 panel.SizeMinimum = (3, 4);
-                block.OnDisplay(() => editor.MapsEditor.SetScroll((Scroll)block));
+                if (block != null)
+                    block.OnDisplay += () => editor.MapsEditor.SetScroll((Scroll)block);
                 break;
             }
             case nameof(Stepper):
             {
-                block = bytes != null ? new(bytes) : new Stepper(position);
+                block = bytes != null ? bytes.ToObject<Stepper>() : new(position);
                 panel.SizeMinimum = (6, 4);
-                block.OnDisplay(() => editor.MapsEditor.SetStepper((Stepper)block));
+                if (block != null)
+                    block.OnDisplay += () => editor.MapsEditor.SetStepper((Stepper)block);
                 break;
             }
             case nameof(Layout):
             {
-                block = bytes != null ? new(bytes) : new Layout(position);
-                var layout = (Layout)block;
-                layout.OnDisplaySegment((s, i) => editor.MapsEditor.SetLayoutSegment(s, i, true));
+                block = bytes != null ? bytes.ToObject<Layout>() : new(position);
+                if (block is Layout layout)
+                    layout.OnDisplaySegment += (s, i) => editor.MapsEditor.SetLayoutSegment(s, i, true);
                 break;
             }
             case nameof(List):
             {
-                block = bytes != null ? new(bytes) : new List(position, 10, type);
-                var list = (List)block;
+                block = bytes != null ? bytes.ToObject<List>() : new(position, 10, type);
+                if (block is not List list)
+                    return;
                 panel.SizeMinimum = (4, 4);
-                list.OnDisplay(() => editor.MapsEditor.SetList(list));
-                list.OnItemDisplay(item => editor.MapsEditor.SetListItem(list, item));
+                list.OnDisplay += () => editor.MapsEditor.SetList(list);
+                list.OnItemDisplay += item => editor.MapsEditor.SetListItem(list, item);
                 break;
             }
             case nameof(FileViewer):
             {
-                block = bytes != null ? new(bytes) : new FileViewer(position);
-                var fileViewer = (FileViewer)block;
-
+                block = bytes != null ? bytes.ToObject<FileViewer>() : new(position);
+                if (block is not FileViewer fileViewer)
+                    return;
                 panel.SizeMinimum = (5, 5);
-                block.OnDisplay(() => editor.MapsEditor.SetFileViewer(fileViewer));
-                fileViewer.FilesAndFolders.OnItemDisplay(item =>
-                    editor.MapsEditor.SetFileViewerItem(fileViewer, item));
-                fileViewer.HardDrives.OnItemDisplay(item =>
-                    editor.MapsEditor.SetFileViewerItem(fileViewer, item));
+                block.OnDisplay += () => editor.MapsEditor.SetFileViewer(fileViewer);
+                fileViewer.FilesAndFolders.OnItemDisplay += item =>
+                    editor.MapsEditor.SetFileViewerItem(fileViewer, item);
+                fileViewer.HardDrives.OnItemDisplay += item =>
+                    editor.MapsEditor.SetFileViewerItem(fileViewer, item);
                 break;
             }
         }
@@ -187,9 +197,9 @@ public static class Program
             return;
 
         panel.OnInteraction(Interaction.Press, () => OnPanelPress(panel));
-        panel.OnDisplay(() => OnPanelDisplay(panel));
-        panel.OnResize(_ => OnPanelResize(panel));
-        panel.OnDrag(_ => OnDragPanel(panel));
+        panel.OnDisplay += () => OnPanelDisplay(panel);
+        panel.OnResize += _ => OnPanelResize(panel);
+        panel.OnDrag += _ => OnDragPanel(panel);
 
         panel.Size = (block.Size.width + 2, block.Size.height + 2);
         panel.Text = block.Text;

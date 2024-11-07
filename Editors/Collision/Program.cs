@@ -1,15 +1,14 @@
-﻿namespace Pure.Editors.Collision;
+﻿using Pure.Engine.Storage;
+
+namespace Pure.Editors.Collision;
 
 using Base;
-
 using Tools.Tilemap;
-
 using Engine.Collision;
 using Engine.Utilities;
 using Engine.Tilemap;
 using Engine.UserInterface;
 using Engine.Window;
-
 using System.Diagnostics.CodeAnalysis;
 
 public static class Program
@@ -76,7 +75,7 @@ public static class Program
         editor.Run();
     }
 
-    #region Backend
+#region Backend
     private static (float x, float y) clickPos;
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
@@ -155,19 +154,19 @@ public static class Program
             new() { Text = "Solid Pack" }
         ]);
         tools.AlignInside((1f, 0f));
-        tools.OnDisplay(() => editor.MapsUi.SetList(tools, FRONT));
-        tools.OnUpdate(() => tools.IsHidden = editor.Prompt.IsHidden == false);
-        tools.OnItemDisplay(item => editor.MapsUi.SetListItem(tools, item, FRONT));
+        tools.OnDisplay += () => editor.MapsUi.SetList(tools, FRONT);
+        tools.OnUpdate += () => tools.IsHidden = editor.Prompt.IsHidden == false;
+        tools.OnItemDisplay += item => editor.MapsUi.SetListItem(tools, item, FRONT);
         tools.OnItemInteraction(Interaction.Trigger, btn => menu.Items[5].Text = $"{btn.Text}… ");
         tools.Select(tools.Items[0]);
 
         palette = new() { Pick = { IsHidden = true } };
-        palette.OnDisplay(() =>
+        palette.OnDisplay += () =>
         {
             editor.MapsUi.SetPalette(palette, MIDDLE);
             editor.MapsUi.SetSlider(palette.Opacity, MIDDLE);
             editor.MapsUi.SetSlider(palette.Brightness, MIDDLE);
-        });
+        };
         palette.AlignInside((0.8f, 0f));
 
         editor.Ui.Blocks.AddRange([tools, palette]);
@@ -193,7 +192,7 @@ public static class Program
             IsResizable = false,
             IsMovable = false
         };
-        promptPanel.OnDisplay(() => editor.MapsUi.SetPanel(promptPanel, PROMPT_BACK));
+        promptPanel.OnDisplay += () => editor.MapsUi.SetPanel(promptPanel, PROMPT_BACK);
 
         layer.Size = map.Size;
         layer.Offset = (0f, 0f);
@@ -408,11 +407,11 @@ public static class Program
             else if (index == 10) // paste
                 editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
         });
-        menu.OnUpdate(() =>
+        menu.OnUpdate += () =>
         {
             menu.IsHidden = editor.Prompt.IsHidden == false;
             menu.AlignInside((1f, 1f));
-        });
+        };
     }
     private static void Load(byte[] bytes)
     {
@@ -421,11 +420,11 @@ public static class Program
             var selection = tools.Items.IndexOf(tools.SelectedItems[0]);
 
             if (selection == 0)
-                solidPack = new(bytes);
+                solidPack = bytes.ToObject<SolidPack>()!;
             else if (selection == 1)
-                solidMap = new(bytes);
+                solidMap = bytes.ToObject<SolidMap>()!;
             else if (selection == 2)
-                linePack = new(bytes);
+                linePack = bytes.ToObject<LinePack>()!;
         }
         catch (Exception)
         {
@@ -487,5 +486,5 @@ public static class Program
         var (sx, sy) = (1f / l.AtlasTileSize, 1f / l.AtlasTileSize);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }
-    #endregion
+#endregion
 }

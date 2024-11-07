@@ -2,14 +2,8 @@ namespace Pure.Engine.LocalAreaNetwork;
 
 using System.Net.Sockets;
 
-internal class BackendClient : TcpClient
+internal class BackendClient(Client parent, string address, int port) : TcpClient(address, port)
 {
-    public BackendClient(Client parent, string address, int port)
-        : base(address, port)
-    {
-        this.parent = parent;
-    }
-
     public void DisconnectAndStop()
     {
         shouldDisconnect = true;
@@ -93,7 +87,6 @@ internal class BackendClient : TcpClient
     }
 
 #region Backend
-    private readonly Client parent;
     private bool shouldDisconnect;
 #endregion
 }

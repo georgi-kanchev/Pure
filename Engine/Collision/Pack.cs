@@ -1,6 +1,4 @@
-﻿using System.IO.Compression;
-
-namespace Pure.Engine.Collision;
+﻿namespace Pure.Engine.Collision;
 
 public abstract class Pack<T>
 {
@@ -22,11 +20,6 @@ public abstract class Pack<T>
         Add(data);
     }
 
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public abstract byte[] ToBytes();
     public T[] ToArray()
     {
         return data.ToArray();
@@ -49,7 +42,7 @@ public abstract class Pack<T>
     }
 
 #region Backend
-    protected readonly List<T> data = new();
+    protected readonly List<T> data = [];
 
     protected abstract T LocalToGlobal(T local);
 #endregion

@@ -127,7 +127,7 @@ internal class TilePalette
         prevMousePos = mousePos;
         mousePos = ((int)mx + w, (int)my + h);
 
-        var view = map.ViewUpdate();
+        var view = map.UpdateView();
         layer.DrawTilemap(view);
 
         if (layer.IsHovered)
@@ -162,7 +162,7 @@ internal class TilePalette
         preview.View = new((-mx, -my), tilemap?.Size ?? (1, 1));
 
         if (tool is 1) // group of tiles
-            editor.LayerMap.DrawTilemap(preview.ViewUpdate());
+            editor.LayerMap.DrawTilemap(preview.UpdateView());
         else if (tool is 2 or 7 or 8) // single random tile of tiles/replace/fill
             editor.LayerMap.DrawTiles((mx, my), randomTile);
         else if (rectangleTools.Contains(tool)) // rectangle/ellipse of random tiles

@@ -5,12 +5,26 @@ using SFML.System;
 
 public class Audio
 {
+    public static (float x, float y) ListenerPosition
+    {
+        get => (Listener.Position.X, Listener.Position.Y);
+        set => Listener.Position = new(value.x, value.y, 0f);
+    }
     public static float GlobalVolume
     {
         get => Listener.GlobalVolume / 100f;
         set => Listener.GlobalVolume = value * 100f;
     }
 
+    public string? FilePath
+    {
+        get => filePath;
+        set
+        {
+            Dispose();
+            filePath = value;
+        }
+    }
     public (float x, float y) Position
     {
         get => Get().pos;
@@ -20,6 +34,7 @@ public class Audio
             Set();
         }
     }
+
     public float Volume
     {
         get => Get().vol;
@@ -72,6 +87,7 @@ public class Audio
     {
         get => Get().dur / Get().pch;
     }
+
     public bool IsLooping
     {
         get => Get().loop;
@@ -102,46 +118,61 @@ public class Audio
     {
         get => Get().st == SoundStatus.Stopped;
     }
-
-    public Audio(string path, bool stream)
+    public bool IsStreamed
     {
-        if (stream)
-            music = new(path);
-        else
-            sound = new(new SoundBuffer(path));
+        get => isStreamed;
+        set
+        {
+            Dispose();
+            isStreamed = value;
+        }
+    }
 
-        Volume = 0.5f;
-        Pitch = 1;
+    public Audio(string filePath, bool stream)
+    {
+        FilePath = filePath;
+        IsStreamed = stream;
     }
 
     public void Play()
     {
+        TryLoad();
         music?.Play();
         sound?.Play();
     }
     public void Pause()
     {
+        TryLoad();
         music?.Pause();
         sound?.Pause();
     }
     public void Stop()
     {
+        TryLoad();
         music?.Stop();
         sound?.Stop();
     }
 
-    #region Backend
+#region Backend
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+    internal class DoNotSave : Attribute;
+
     private class Settings
     {
         public SoundStatus st;
         public bool loop, gl;
         public (float x, float y) pos;
-        public float vol, pch, att, minDist, dur, pr;
+        public float vol = 0.5f, pch = 1f, att, minDist, dur, pr;
     }
 
-    private readonly Music? music;
-    private Sound? sound;
+    [DoNotSave]
+    private Music? music;
+    [DoNotSave]
+    internal Sound? sound;
+
     private Settings settings = new();
+    private string? filePath;
+    private bool isStreamed;
 
     static Audio()
     {
@@ -151,11 +182,22 @@ public class Audio
     {
     }
 
-    internal void Initialize(Sound snd)
+    private void Dispose()
     {
-        sound = snd;
-        Volume = 0.5f;
-        Pitch = 1f;
+        sound?.Dispose();
+        music?.Dispose();
+        sound = null;
+        music = null;
+    }
+    private void TryLoad()
+    {
+        if (music != null || sound != null)
+            return;
+
+        if (IsStreamed)
+            music = new(FilePath);
+        else
+            sound = new(new SoundBuffer(FilePath));
     }
 
     private void Set()
@@ -215,5 +257,5 @@ public class Audio
         settings = result;
         return result;
     }
-    #endregion
+#endregion
 }

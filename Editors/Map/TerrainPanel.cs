@@ -20,9 +20,9 @@ internal class TerrainPanel : Panel
         AlignInside((0f, 0.35f));
 
         var toggle = new Button((X, h - 5)) { Text = "Terrain Panel", Size = (13, 1) };
-        toggle.OnDisplay(() => editor.MapsUi.SetButton(toggle, 0));
+        toggle.OnDisplay += () => editor.MapsUi.SetButton(toggle, 0);
 
-        OnDisplay(() =>
+        OnDisplay += () =>
         {
             X = toggle.IsSelected && GetLayer() >= 0 ? 0 : -100;
 
@@ -44,7 +44,7 @@ internal class TerrainPanel : Panel
                     editor.MapsUi.Tilemaps[MIDDLE].SetTile((X + Width - 1, Y + curY), tileRight);
                 }
             }
-        });
+        };
 
         var autoButtons = AddAutoTiles(tilePalette);
         var terrainBlocks = AddTerrainBlocks(tilePalette);
@@ -67,7 +67,7 @@ internal class TerrainPanel : Panel
         TryAutoGenerate();
     }
 
-    #region Backend
+#region Backend
     private const int MIDDLE = (int)Editor.LayerMapsUi.Middle, FRONT = (int)Editor.LayerMapsUi.Front;
     private int lastLayer = -1;
     private readonly Editor editor;
@@ -133,9 +133,9 @@ internal class TerrainPanel : Panel
             editor.MapsEditor.Tilemaps[layer].SetAutoTiles(editor.MapsEditor.Tilemaps[layer]);
         });
         remove.OnInteraction(Interaction.Trigger, () => { editor.PromptYesNo("Remove this autotile rule?", () => autoTiles.RemoveAt(pages.Current - 1)); });
-        pages.OnItemDisplay(page => editor.MapsUi.SetPagesItem(pages, page));
+        pages.OnItemDisplay += page => editor.MapsUi.SetPagesItem(pages, page);
 
-        OnDisplay(() =>
+        OnDisplay += () =>
         {
             var layer = GetLayer();
 
@@ -197,7 +197,7 @@ internal class TerrainPanel : Panel
 
             foreach (var btn in matchIds)
                 editor.MapsUi.SetButton(btn, FRONT);
-        });
+        };
 
         var result = new List<Block>();
         result.AddRange(matchIds);
@@ -236,14 +236,14 @@ internal class TerrainPanel : Panel
 
             btn.OnInteraction(Interaction.Trigger, Trigger);
             btn.OnInteraction(Interaction.PressAndHold, Trigger);
-            btn.OnDisplay(() =>
+            btn.OnDisplay += () =>
             {
                 btn.Position = (X + 2 + x, Y + 25 + y);
                 var color = btn.GetInteractionColor(Gray);
                 var arrow = new Tile(ARROW_TAILLESS_ROUND, color, (sbyte)index);
                 var center = new Tile(SHAPE_CIRCLE, color);
                 editor.MapsUi.Tilemaps[FRONT].SetTile(btn.Position, index == 4 ? center : arrow);
-            });
+            };
 
             result.Add(btn);
 
@@ -255,7 +255,7 @@ internal class TerrainPanel : Panel
             }
         }
 
-        noiseType.OnItemDisplay(item => editor.MapsUi.SetListItem(noiseType, item));
+        noiseType.OnItemDisplay += item => editor.MapsUi.SetListItem(noiseType, item);
         noiseType.Edit([
             nameof(Noise.OpenSimplex2), nameof(Noise.OpenSimplex2S), nameof(Noise.Cellular),
             nameof(Noise.Perlin), nameof(Noise.ValueCubic), nameof(Noise.Value)
@@ -290,7 +290,7 @@ internal class TerrainPanel : Panel
             map.Flush();
             generator.Apply(map);
         });
-        tiles.OnItemDisplay(btn => editor.MapsUi.SetListItem(tiles, btn));
+        tiles.OnItemDisplay += btn => editor.MapsUi.SetListItem(tiles, btn);
 
         add.OnInteraction(Interaction.Trigger, () =>
         {
@@ -334,7 +334,7 @@ internal class TerrainPanel : Panel
             });
         });
 
-        OnDisplay(() =>
+        OnDisplay += () =>
         {
             noiseType.Position = (X + 1, Y + 19);
             scale.Position = (X + 8, Y + 21);
@@ -383,7 +383,7 @@ internal class TerrainPanel : Panel
 
             editor.MapsUi.SetButton(generate);
             editor.MapsUi.SetButton(autoGenerate);
-        });
+        };
 
         result.AddRange([add, edit, remove, scale, seed, tiles, autoGenerate, generate, noiseType]);
         return result.ToArray();
@@ -418,5 +418,5 @@ internal class TerrainPanel : Panel
 
         return freeDepth;
     }
-    #endregion
+#endregion
 }

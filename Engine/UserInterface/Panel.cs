@@ -5,6 +5,9 @@
 /// </summary>
 public class Panel : Block
 {
+    [DoNotSave]
+    public Action<(int deltaWidth, int deltaHeight)>? OnResize { get; set; }
+
     /// <summary>
     /// Gets or sets a value indicating whether this panel can be resized by the user.
     /// </summary>
@@ -15,7 +18,7 @@ public class Panel : Block
     public bool IsMovable { get; set; } = true;
     /// <summary>
     /// Gets or sets a value indicating whether this panel can be moved or resized by the user 
-    /// outside of the tilemap.
+    /// outside the tilemap.
     /// </summary>
     public bool IsRestricted { get; set; } = true;
 
@@ -29,63 +32,14 @@ public class Panel : Block
     public Panel((int x, int y) position) : base(position)
     {
         Size = (12, 8);
-        Init();
-    }
-    public Panel(byte[] bytes) : base(bytes)
-    {
-        var b = Decompress(bytes);
-        IsResizable = GrabBool(b);
-        IsMovable = GrabBool(b);
-        IsRestricted = GrabBool(b);
-        Init();
-    }
-    public Panel(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, IsResizable);
-        Put(result, IsMovable);
-        Put(result, IsRestricted);
-        return Compress(result.ToArray());
-    }
-
-    public void OnResize(Action<(int deltaWidth, int deltaHeight)> method)
-    {
-        resize += method;
-    }
-
-    public Panel Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Panel panel)
-    {
-        return panel.ToBytes();
-    }
-    public static implicit operator Panel(byte[] bytes)
-    {
-        return new(bytes);
+        OnUpdate += OnRefresh;
     }
 
 #region Backend
     private bool isMoving, isResizingL, isResizingR, isResizingU, isResizingD;
     private (int x, int y) startBotR;
 
-    internal Action<(int deltaWidth, int deltaHeight)>? resize;
-
-    private void Init()
-    {
-        OnUpdate(OnUpdate);
-    }
-    private void OnUpdate()
+    private void OnRefresh()
     {
         LimitSizeMin(IsResizable ? (2, 2) : (1, 1));
     }
@@ -261,7 +215,7 @@ public class Panel : Block
             return;
 
         var delta = (Size.width - prevSz.width, Size.height - prevSz.height);
-        resize?.Invoke(delta);
+        OnResize?.Invoke(delta);
     }
 
     private static bool IsBetween(float number, float rangeA, float rangeB)

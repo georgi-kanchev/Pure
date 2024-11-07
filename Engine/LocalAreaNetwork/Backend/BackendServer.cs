@@ -3,14 +3,8 @@ namespace Pure.Engine.LocalAreaNetwork;
 using System.Net;
 using System.Net.Sockets;
 
-internal class BackendServer : TcpServer
+internal class BackendServer(Server parent, IPAddress address, int port) : TcpServer(address, port)
 {
-    public BackendServer(Server parent, IPAddress address, int port)
-        : base(address, port)
-    {
-        this.parent = parent;
-    }
-
     protected override TcpSession CreateSession()
     {
         return new Session(this);
@@ -20,7 +14,7 @@ internal class BackendServer : TcpServer
         parent.onError?.Invoke(error.ToString());
     }
 
-    #region Backend
-    internal readonly Server parent;
-    #endregion
+#region Backend
+    internal readonly Server parent = parent;
+#endregion
 }

@@ -8,55 +8,7 @@ public class SolidPack : Pack<Solid>
     public SolidPack(params Solid[] solids) : base(solids)
     {
     }
-    public SolidPack(byte[] bytes)
-    {
-        var b = SolidMap.Decompress(bytes);
-        var offset = 0;
-        var count = BitConverter.ToInt32(Get());
 
-        Position = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
-        Scale = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
-
-        for (var i = 0; i < count; i++)
-        {
-            var x = BitConverter.ToSingle(Get());
-            var y = BitConverter.ToSingle(Get());
-            var w = BitConverter.ToSingle(Get());
-            var h = BitConverter.ToSingle(Get());
-            var color = BitConverter.ToUInt32(Get());
-
-            Add(new Solid(x, y, w, h, color));
-        }
-
-        byte[] Get()
-        {
-            return SolidMap.GetBytesFrom(b, 4, ref offset);
-        }
-    }
-    public SolidPack(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(data.Count));
-        result.AddRange(BitConverter.GetBytes(Position.x));
-        result.AddRange(BitConverter.GetBytes(Position.y));
-        result.AddRange(BitConverter.GetBytes(Scale.width));
-        result.AddRange(BitConverter.GetBytes(Scale.height));
-
-        foreach (var r in data)
-        {
-            result.AddRange(BitConverter.GetBytes(r.Position.x));
-            result.AddRange(BitConverter.GetBytes(r.Position.y));
-            result.AddRange(BitConverter.GetBytes(r.Size.width));
-            result.AddRange(BitConverter.GetBytes(r.Size.height));
-            result.AddRange(BitConverter.GetBytes(r.Color));
-        }
-
-        return SolidMap.Compress(result.ToArray());
-    }
     public (float x, float y, float width, float height, uint color)[] ToBundle()
     {
         var result = new (float x, float y, float width, float height, uint color)[data.Count];
@@ -194,11 +146,6 @@ public class SolidPack : Pack<Solid>
         return IsOverlapping((point.x, point.y));
     }
 
-    public SolidPack Duplicate()
-    {
-        return new(ToBytes());
-    }
-
     public static implicit operator SolidPack(Solid[] solids)
     {
         return new(solids);
@@ -217,14 +164,6 @@ public class SolidPack : Pack<Solid>
         for (var i = 0; i < result.Length; i++)
             result[i] = solids[i];
         return result;
-    }
-    public static implicit operator byte[](SolidPack solidPack)
-    {
-        return solidPack.ToBytes();
-    }
-    public static implicit operator SolidPack(byte[] bytes)
-    {
-        return new(bytes);
     }
 
 #region Backend

@@ -35,54 +35,9 @@ public class Button : Block
     /// <param name="position">The position of the button.</param>
     public Button((int x, int y) position) : base(position)
     {
-        Init();
         Size = (10, 1);
         Hotkey = (-1, false);
-    }
-    public Button(byte[] bytes) : base(bytes)
-    {
-        Init();
-        var b = Decompress(bytes);
-        IsSelected = GrabBool(b);
-        Hotkey = (GrabInt(b), GrabBool(b));
-    }
-    public Button(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
 
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, IsSelected);
-        Put(result, Hotkey.id);
-        Put(result, Hotkey.holdable);
-        return Compress(result.ToArray());
-    }
-
-    public Button Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Button button)
-    {
-        return button.ToBytes();
-    }
-    public static implicit operator Button(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
-#region Backend
-    internal bool isSelected;
-    private static readonly Stopwatch hold = new(), holdTrigger = new();
-
-    private void Init()
-    {
         hold.Start();
         holdTrigger.Start();
 
@@ -96,6 +51,11 @@ public class Button : Block
                 Interact(Interaction.Select);
         });
     }
+
+#region Backend
+    internal bool isSelected;
+    private static readonly Stopwatch hold = new(), holdTrigger = new();
+
     protected override void OnInput()
     {
         if (IsHovered)

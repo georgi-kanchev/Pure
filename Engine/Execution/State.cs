@@ -2,6 +2,7 @@ namespace Pure.Engine.Execution;
 
 using System.Text.RegularExpressions;
 
+[Script.DoNotSave]
 public class State
 {
     public string Name { get; }

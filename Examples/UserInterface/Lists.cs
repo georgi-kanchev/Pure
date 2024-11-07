@@ -13,13 +13,13 @@ public static class Lists
             IsSingleSelecting = true
         };
         listVertical.AlignInside((0.05f, 0.5f));
-        listVertical.OnDisplay(() =>
+        listVertical.OnDisplay += () =>
         {
             var (x, y) = listVertical.Position;
             maps.Tilemaps[0].SetText((x, y - 1), "Single select");
             maps.SetList(listVertical);
-        });
-        listVertical.OnItemDisplay(item => maps.SetListItem(listVertical, item));
+        };
+        listVertical.OnItemDisplay += item => maps.SetListItem(listVertical, item);
 
         //==============
 
@@ -30,25 +30,25 @@ public static class Lists
             Size = (11, 4)
         };
         listHorizontal.AlignInside((0.95f, 0.5f));
-        listHorizontal.OnDisplay(() =>
+        listHorizontal.OnDisplay += () =>
         {
             var (x, y) = listHorizontal.Position;
             maps.Tilemaps[0].SetText((x, y - 1), "Multi select");
             maps.SetList(listHorizontal);
-        });
-        listHorizontal.OnItemDisplay(item => maps.SetListItem(listHorizontal, item));
+        };
+        listHorizontal.OnItemDisplay += item => maps.SetListItem(listHorizontal, item);
 
         //==============
 
         var listDropdown = new List((0, 0), span: Span.Dropdown) { Size = (7, 10) };
         listDropdown.AlignInside((0.5f, 0.5f));
-        listDropdown.OnDisplay(() =>
+        listDropdown.OnDisplay += () =>
         {
             var (x, y) = listDropdown.Position;
             maps.Tilemaps[0].SetText((x, y - 1), "Dropdown");
             maps.SetList(listDropdown);
-        });
-        listDropdown.OnItemDisplay(item => maps.SetListItem(listDropdown, item));
+        };
+        listDropdown.OnItemDisplay += item => maps.SetListItem(listDropdown, item);
 
         return [listVertical, listHorizontal, listDropdown];
     }

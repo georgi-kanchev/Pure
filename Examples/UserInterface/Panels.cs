@@ -13,7 +13,7 @@ public static class Panels
                    $"- Minimum sizes";
         var panelText = new Panel { Text = "Cool Title", Size = (19, 19), SizeMinimum = (4, 2) };
         panelText.AlignInside((0.1f, 0.5f));
-        panelText.OnDisplay(() =>
+        panelText.OnDisplay += () =>
         {
             var (x, y) = panelText.Position;
             var (w, h) = panelText.Size;
@@ -21,14 +21,14 @@ public static class Panels
             maps.SetPanel(panelText);
             text = text.Constrain((w - 2, h - 2));
             maps.Tilemaps[1].SetText((x + 1, y + 1), text, Color.Green);
-        });
+        };
 
         //============
 
         var button = new Button { Text = "CLICK ME!" };
         var panelButton = new Panel { Size = (15, 9), SizeMinimum = (5, 5) };
         panelButton.AlignInside((0.95f, 0.5f));
-        panelButton.OnDisplay(() =>
+        panelButton.OnDisplay += () =>
         {
             var (x, y) = panelButton.Position;
             var (w, h) = panelButton.Size;
@@ -37,7 +37,7 @@ public static class Panels
             button.Position = (x + 1, y + 1);
             button.Size = (w - 2, h - 2);
             maps.SetButton(button, 2);
-        });
+        };
 
         return [panelText, panelButton, button];
     }

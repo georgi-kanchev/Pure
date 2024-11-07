@@ -28,14 +28,14 @@ public static class InputBoxes
             scroll.IsDisabled = scroll.IsHidden;
             scroll.Step = 1f / lines;
         });
-        chat.OnDisplay(() =>
+        chat.OnDisplay += () =>
         {
             var text = messages.Constrain((w, h), alignment: Alignment.BottomRight,
                 scrollProgress: scroll.Slider.Progress);
             maps.Tilemaps[0].SetText((x, y), text);
             maps.SetInputBox(chat);
-        });
-        scroll.OnDisplay(() => maps.SetScroll(scroll));
+        };
+        scroll.OnDisplay += () => maps.SetScroll(scroll);
         scroll.AlignEdges(Side.Left, Side.Right, chat, 1f, 2);
 
         // ==========================
@@ -47,7 +47,7 @@ public static class InputBoxes
             Placeholder = "Type some text on multiple lines…"
         };
         multiLine.AlignInside((0.1f, 0.1f));
-        multiLine.OnDisplay(() => maps.SetInputBox(multiLine));
+        multiLine.OnDisplay += () => maps.SetInputBox(multiLine);
 
         // ==========================
 
@@ -61,12 +61,12 @@ public static class InputBoxes
         };
         password.AlignInside((0.95f, 0.1f));
         password.OnInteraction(Interaction.Select, () => pass = password.Value);
-        password.OnDisplay(() =>
+        password.OnDisplay += () =>
         {
             var pos = password.Position;
             maps.Tilemaps[0].SetText((pos.x, pos.y - 1), pass);
             maps.SetInputBox(password);
-        });
+        };
 
         // ==========================
 
@@ -80,12 +80,12 @@ public static class InputBoxes
         };
         equation.AlignInside((0.95f, 0.9f));
         equation.OnInteraction(Interaction.Select, () => mathResult = $"{equation.Value.Calculate()}");
-        equation.OnDisplay(() =>
+        equation.OnDisplay += () =>
         {
             var pos = equation.Position;
             maps.Tilemaps[0].SetText((pos.x, pos.y - 1), mathResult);
             maps.SetInputBox(equation);
-        });
+        };
 
         return [multiLine, password, chat, scroll, equation];
     }

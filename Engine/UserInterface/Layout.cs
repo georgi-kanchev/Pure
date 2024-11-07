@@ -2,6 +2,9 @@ namespace Pure.Engine.UserInterface;
 
 public class Layout : Block
 {
+    [DoNotSave]
+    public Action<(int x, int y, int width, int height), int>? OnDisplaySegment { get; set; }
+
     public int Count
     {
         get => segments.Count;
@@ -12,72 +15,19 @@ public class Layout : Block
     }
     public Layout((int x, int y) position) : base(position)
     {
-        Init();
+        OnUpdate += OnRefresh;
         Size = (12, 12);
         Restore();
-    }
-    public Layout(byte[] bytes) : base(bytes)
-    {
-        Init();
-        var b = Decompress(bytes);
-        var count = GrabByte(b);
-
-        // all segments need to be added before parent linking
-        var parentIndexes = new List<int>();
-
-        for (var i = 0; i < count; i++)
-        {
-            var rate = GrabFloat(b);
-            var cutSide = (Side)GrabByte(b);
-            var parentIndex = GrabInt(b);
-
-            parentIndexes.Add(parentIndex);
-            var seg = new Segment(rate, cutSide, null);
-            segments.Add(seg);
-        }
-
-        for (var i = 0; i < segments.Count; i++)
-        {
-            var parentIndex = parentIndexes[i];
-            segments[i].parent = parentIndex == -1 ? null : segments[parentIndex];
-        }
-    }
-    public Layout(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var bytes = Decompress(base.ToBytes()).ToList();
-        Put(bytes, (byte)segments.Count);
-
-        foreach (var seg in segments)
-        {
-            var parentIndex = seg.parent == null ? -1 : segments.IndexOf(seg.parent);
-            Put(bytes, seg.rate);
-            Put(bytes, (byte)seg.side);
-            Put(bytes, parentIndex);
-        }
-
-        return Compress(bytes.ToArray());
     }
 
     public void Cut(int index, Side side, float rate)
     {
-        if (index < 0 || index >= segments.Count)
-            return;
-
-        var seg = new Segment(rate, side, segments[index]);
-        segments.Add(seg);
+        if (index >= 0 && index < segments.Count)
+            segments.Add(new(rate, side, segments[index]));
     }
     public void Cut(int index, Side side, int size)
     {
-        var rate = (float)size / (side is Side.Top or Side.Bottom ? Height : Width);
-        Cut(index, side, rate);
+        Cut(index, side, (float)size / (side is Side.Top or Side.Bottom ? Height : Width));
     }
     public void Restore()
     {
@@ -85,45 +35,21 @@ public class Layout : Block
         segments.Add(new(0, Side.Top, null));
     }
 
-    public void OnDisplaySegment(Action<(int x, int y, int width, int height), int> method)
-    {
-        displaySegment += method;
-    }
-
-    public Layout Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Layout layout)
-    {
-        return layout.ToBytes();
-    }
-    public static implicit operator Layout(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
 #region Backend
     private class Segment(float rate, Side side, Segment? parent)
     {
         public readonly float rate = Math.Clamp(rate, 0, 1);
         public readonly Side side = side;
-        public Segment? parent = parent;
+        public readonly Segment? parent = parent;
 
         public (int x, int y) position;
         public (int w, int h) size;
     }
 
+    [DoNotSave]
     private readonly List<Segment> segments = [];
 
-    internal Action<(int x, int y, int width, int height), int>? displaySegment;
-
-    private void Init()
-    {
-        OnUpdate(OnUpdate);
-    }
-    internal void OnUpdate()
+    internal void OnRefresh()
     {
         // updates should be first since it's a hierarchy
         // and then callbacks (after everything is done)
@@ -136,15 +62,16 @@ public class Layout : Block
             {
                 seg.position = Position;
                 seg.size = Size;
+                continue;
             }
-            else
-                UpdateSegment(seg);
+
+            UpdateSegment(seg);
         }
 
         for (var i = 0; i < segments.Count; i++)
         {
             var seg = segments[i];
-            displaySegment?.Invoke((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
+            OnDisplaySegment?.Invoke((seg.position.x, seg.position.y, seg.size.w, seg.size.h), i);
         }
     }
     private void UpdateSegment(Segment seg)

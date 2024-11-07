@@ -4,6 +4,8 @@ global using SFML.Window;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using System.Text;
+global using SFML.Graphics.Glsl;
+global using System.Numerics;
 
 namespace Pure.Engine.Window;
 
@@ -183,14 +185,6 @@ public static class Window
             return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
         }
     }
-    public static void FromBase64(string base64)
-    {
-        FromBytes(Convert.FromBase64String(base64));
-    }
-    public static string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
     public static byte[] ToBytes()
     {
         TryCreate();
@@ -338,6 +332,9 @@ public static class Window
     }
 
 #region Backend
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+    internal class DoNotSave : Attribute;
+
     internal static RenderWindow? window;
     private static RenderTexture? allLayers;
     internal static (int w, int h) rendTexViewSz;

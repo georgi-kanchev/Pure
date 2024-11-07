@@ -1,11 +1,9 @@
 namespace Pure.Engine.Execution;
 
+[Script.DoNotSave]
 public class StateMachine
 {
-    public enum Path
-    {
-        Running, RunningPrevious, Root, Parent, Child, First, Last, Next, Previous
-    }
+    public enum Path { Running, RunningPrevious, Root, Parent, Child, First, Last, Next, Previous }
 
     public State? this[Action? method]
     {

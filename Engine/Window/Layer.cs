@@ -1,6 +1,3 @@
-using SFML.Graphics.Glsl;
-using System.Numerics;
-
 namespace Pure.Engine.Window;
 
 [Flags]
@@ -95,9 +92,6 @@ public class Layer
     public Layer((int width, int height) size = default, bool fitWindow = true)
     {
         Init();
-        verts = new(PrimitiveType.Quads);
-        shader = new EffectLayer().Shader;
-        shaderParams = new(PrimitiveType.Points);
 
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
@@ -262,6 +256,9 @@ public class Layer
     }
     public void DrawTiles((float x, float y) position, (int id, uint tint, int turns, bool mirror, bool flip) tile, (int width, int height) groupSize = default, bool sameTile = default)
     {
+        if (verts == null)
+            return;
+
         var (id, tint, angle, flipH, flipV) = tile;
         var (w, h) = groupSize;
         w = w == 0 ? 1 : w;
@@ -328,7 +325,7 @@ public class Layer
     }
     public void DrawTilemap((int id, uint tint, int turns, bool mirror, bool flip)[,]? tilemap)
     {
-        if (tilemap == null || tilemap.Length == 0)
+        if (tilemap == null || tilemap.Length == 0 || verts == null)
             return;
 
         var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
@@ -607,15 +604,12 @@ public class Layer
     //
     // blka: light block area =   [x, y, w, h]
 
+    [Window.DoNotSave]
     internal RenderTexture? queue, result, data;
-    internal readonly Shader? shader;
-    private readonly VertexArray verts, shaderParams;
-    internal static readonly Dictionary<string, Texture> tilesets = new();
-    private static readonly List<(float, float)> cursorOffsets =
-    [
-        (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
-        (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
-    ];
+    [Window.DoNotSave]
+    internal Shader? shader;
+    [Window.DoNotSave]
+    private VertexArray? verts, shaderParams;
 
     internal int lightCount, obstacleCount;
     internal Vector2u tilesetPixelSize;
@@ -624,17 +618,24 @@ public class Layer
         get => (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
     }
 
+    private string atlasPath;
+    private (int width, int height) size;
+    private float zoom;
+    private LightFlags lightFlags;
+
+    internal static readonly Dictionary<string, Texture> tilesets = new();
+    private static readonly List<(float, float)> cursorOffsets =
+    [
+        (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
+        (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
+    ];
+
     static Layer()
     {
         // var str = DefaultGraphics.PngToBase64String("graphics.png");
         tilesets["default"] = DefaultGraphics.CreateTexture();
         // DefaultGraphicsToFile("graphics.png");
     }
-
-    private string atlasPath;
-    private (int width, int height) size;
-    private float zoom;
-    private LightFlags lightFlags;
 
     [MemberNotNull(nameof(AtlasTileIdFull), nameof(AtlasTileSize), nameof(tilesetPixelSize))]
     private void Init()
@@ -646,7 +647,8 @@ public class Layer
 
     private void QueueLine((float x, float y) a, (float x, float y) b, uint tint)
     {
-        if (IsOverlapping(a) == false && IsOverlapping(b) == false) // fully outside?
+        if (verts == null ||
+            (IsOverlapping(a) == false && IsOverlapping(b) == false)) // fully outside?
             return;
 
         a.x *= AtlasTileSize;
@@ -681,6 +683,9 @@ public class Layer
     }
     private void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
     {
+        if (verts == null)
+            return;
+
         var (w, h) = size;
 
         if (IsOverlapping(position) == false &&
@@ -704,6 +709,9 @@ public class Layer
     }
     private void SetShaderData((float x, float y, float width, float height) area, (int x, int y) tilePixel, Color data, bool includeArea)
     {
+        if (shaderParams == null)
+            return;
+
         var (x, y, w, h) = area;
         var (ix, iy) = ((int)x, (int)y);
 
@@ -738,6 +746,10 @@ public class Layer
 
     internal void DrawQueue()
     {
+        shader ??= new EffectLayer().Shader;
+        verts ??= new(PrimitiveType.Quads);
+        shaderParams ??= new(PrimitiveType.Points);
+
         if (queue == null || queue.Size.X != Size.width || queue.Size.Y != Size.height)
         {
             queue?.Dispose();

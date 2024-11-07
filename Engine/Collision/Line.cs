@@ -54,36 +54,7 @@ public struct Line
         B = b;
         Color = color;
     }
-    public Line(byte[] bytes)
-    {
-        var offset = 0;
-        A = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
-        B = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
-        Color = BitConverter.ToUInt32(Get());
 
-        byte[] Get()
-        {
-            return SolidMap.GetBytesFrom(bytes, 4, ref offset);
-        }
-    }
-    public Line(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(A.x));
-        result.AddRange(BitConverter.GetBytes(A.y));
-        result.AddRange(BitConverter.GetBytes(B.x));
-        result.AddRange(BitConverter.GetBytes(B.y));
-        result.AddRange(BitConverter.GetBytes(Color));
-        return result.ToArray();
-    }
     /// <returns>
     ///     A bundle tuple containing the two points and the color of the line.
     /// </returns>
@@ -371,14 +342,6 @@ public struct Line
     public static implicit operator (float ax, float ay, float bx, float by, uint color)(Line line)
     {
         return (line.A.x, line.A.y, line.B.x, line.B.y, line.Color);
-    }
-    public static implicit operator byte[](Line line)
-    {
-        return line.ToBytes();
-    }
-    public static implicit operator Line(byte[] bytes)
-    {
-        return new(bytes);
     }
 
 #region Backend

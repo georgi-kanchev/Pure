@@ -18,23 +18,23 @@ public static class FileViewers
             Text = "Select Files:",
             Size = (22, 10)
         };
-        fileViewer.OnDisplay(() =>
+        fileViewer.OnDisplay += () =>
         {
             DisplayExtra(maps, fileViewer);
             maps.SetFileViewer(fileViewer);
-        });
-        fileViewer.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(fileViewer, item));
-        fileViewer.HardDrives.OnItemDisplay(item => maps.SetFileViewerItem(fileViewer, item));
+        };
+        fileViewer.FilesAndFolders.OnItemDisplay += item => maps.SetFileViewerItem(fileViewer, item);
+        fileViewer.HardDrives.OnItemDisplay += item => maps.SetFileViewerItem(fileViewer, item);
 
         //================
 
-        folderViewer.OnDisplay(() =>
+        folderViewer.OnDisplay += () =>
         {
             DisplayExtra(maps, folderViewer);
             maps.SetFileViewer(folderViewer);
-        });
-        folderViewer.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(folderViewer, item));
-        folderViewer.HardDrives.OnItemDisplay(item => maps.SetFileViewerItem(folderViewer, item));
+        };
+        folderViewer.FilesAndFolders.OnItemDisplay += item => maps.SetFileViewerItem(folderViewer, item);
+        folderViewer.HardDrives.OnItemDisplay += item => maps.SetFileViewerItem(folderViewer, item);
 
         return [fileViewer, folderViewer];
     }

@@ -2,14 +2,8 @@ namespace Pure.Engine.LocalAreaNetwork;
 
 using System.Net.Sockets;
 
-internal class Session : TcpSession
+internal class Session(BackendServer parent) : TcpSession(parent)
 {
-    public Session(BackendServer parent)
-        : base(parent)
-    {
-        this.parent = parent;
-    }
-
     protected override void OnConnected()
     {
         // client connecting isn't enough info to proceed;
@@ -55,6 +49,5 @@ internal class Session : TcpSession
     }
 
 #region Backend
-    private readonly BackendServer parent;
 #endregion
 }

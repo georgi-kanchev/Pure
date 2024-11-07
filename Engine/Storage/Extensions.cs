@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
@@ -143,6 +144,8 @@ public static class Extensions
             var data = Encoding.UTF8.GetBytes(valueStr);
             return BitConverter.GetBytes(data.Length).Concat(data).ToArray();
         }
+        else if (type.IsEnum)
+            return ToBytes(Convert.ChangeType(value, Enum.GetUnderlyingType(type)));
         else if (IsTuple(type))
         {
             var result = new List<byte>();
@@ -187,6 +190,9 @@ public static class Extensions
         else if (IsStruct(type) || type.IsClass)
         {
             var sorted = GetFieldsInOrder(type);
+
+            if (sorted.Count == 0)
+                return BitConverter.GetBytes(int.MaxValue);
 
             var result = new List<byte>();
             foreach (var (_, fields) in sorted)
@@ -252,13 +258,81 @@ public static class Extensions
         return dataBase64 == null || dataBase64.Length == 0 ? null : Encoding.UTF8.GetString(dataBase64);
     }
 
+    public static string[,] ToTabSeparatedValues2D(this string tsvText)
+    {
+        var rows = tsvText.Replace("\r", "").Split("\n", StringSplitOptions.RemoveEmptyEntries);
+        var numRows = rows.Length;
+        var numCols = rows[0].Split('\t').Length;
+        var result = new string[numRows, numCols];
+
+        for (var i = 0; i < numRows; i++)
+        {
+            var columns = rows[i].Split('\t');
+            for (var j = 0; j < numCols; j++)
+                result[i, j] = columns[j];
+        }
+
+        return result;
+    }
+    public static string ToTabSeparatedValues(this string[,] array)
+    {
+        var numRows = array.GetLength(0);
+        var numCols = array.GetLength(1);
+        var sb = new StringBuilder();
+
+        for (var i = 0; i < numRows; i++)
+        {
+            for (var j = 0; j < numCols; j++)
+            {
+                sb.Append(array[i, j]);
+
+                if (j < numCols - 1)
+                    sb.Append('\t');
+            }
+
+            if (i < numRows - 1)
+                sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    public static T? ToPrimitive<T>(this string primitiveAsText) where T : struct, IComparable, IConvertible
+    {
+        var type = typeof(T);
+
+        if (type.IsPrimitive == false)
+            return null;
+
+        if (type == typeof(bool) && bool.TryParse(primitiveAsText, out var b))
+            return (T)(object)b;
+
+        decimal.TryParse(primitiveAsText, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
+
+        if (type == typeof(sbyte)) return (T)(object)Wrap(number, sbyte.MinValue, sbyte.MaxValue);
+        if (type == typeof(byte)) return (T)(object)Wrap(number, byte.MinValue, byte.MaxValue);
+        if (type == typeof(short)) return (T)(object)Wrap(number, short.MinValue, short.MaxValue);
+        if (type == typeof(ushort)) return (T)(object)Wrap(number, ushort.MinValue, ushort.MaxValue);
+        if (type == typeof(int)) return (T)(object)Wrap(number, int.MinValue, int.MaxValue);
+        if (type == typeof(uint)) return (T)(object)Wrap(number, uint.MinValue, uint.MaxValue);
+        if (type == typeof(long)) return (T)(object)Wrap(number, long.MinValue, long.MaxValue);
+        if (type == typeof(ulong)) return (T)(object)Wrap(number, ulong.MinValue, ulong.MaxValue);
+        if (type == typeof(float)) return (T)(object)Wrap(number, float.MinValue, float.MaxValue);
+        if (type == typeof(double)) return (T)(object)Wrap(number, double.MinValue, double.MaxValue);
+        if (type == typeof(decimal)) return (T)(object)number;
+
+        if (type == typeof(char) && char.TryParse(primitiveAsText, out var c))
+            return (T)(object)c;
+
+        return null;
+    }
+
 #region Backend
     private class Node
     {
         public byte value;
         public int freq;
-        public Node? left;
-        public Node? right;
+        public Node? left, right;
         public bool IsLeaf
         {
             get => left == null && right == null;
@@ -316,6 +390,12 @@ public static class Extensions
         }
         else if (expectedType == typeof(string))
             return Encoding.UTF8.GetString(bytes);
+        else if (expectedType.IsEnum)
+        {
+            var enumType = Enum.GetUnderlyingType(expectedType);
+            var obj = ToObject(data, enumType, out _);
+            return obj == null ? null : Enum.ToObject(expectedType, obj);
+        }
         else if (IsTuple(expectedType))
         {
             var fields = GetTupleFields(expectedType);
@@ -609,6 +689,11 @@ public static class Extensions
 
     private static SortedDictionary<uint, List<FieldInfo>> GetFieldsInOrder(Type type)
     {
+        var classAttributes = type.GetCustomAttributes();
+        foreach (var att in classAttributes)
+            if (att.GetType().Name == "DoNotSave")
+                return [];
+
         var result = new SortedDictionary<uint, List<FieldInfo>>();
         var props = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance)
             .Concat(type.GetProperties(BindingFlags.Public | BindingFlags.Instance)).ToArray();
@@ -619,6 +704,17 @@ public static class Extensions
         foreach (var field in fields)
         {
             var doNotSave = field.IsDefined(typeof(DoNotSave), false);
+            var attributes = field.GetCustomAttributes();
+
+            foreach (var attribute in attributes)
+            {
+                if (attribute.GetType().Name != "DoNotSave")
+                    continue;
+
+                doNotSave = true;
+                break;
+            }
+
             var order = field.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? i;
 
             // some fields are auto generated by a property, so extract the attributes
@@ -643,6 +739,22 @@ public static class Extensions
         }
 
         return result;
+    }
+    private static T Wrap<T>(decimal value, T minValue, T maxValue) where T : struct, IComparable, IConvertible
+    {
+        if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
+            throw default!;
+
+        var range = Convert.ToDouble(maxValue) - Convert.ToDouble(minValue);
+        var wrappedValue = Convert.ToDouble(value);
+
+        while (wrappedValue < Convert.ToDouble(minValue))
+            wrappedValue += range;
+
+        while (wrappedValue > Convert.ToDouble(maxValue))
+            wrappedValue -= range;
+
+        return (T)Convert.ChangeType(wrappedValue, typeof(T));
     }
 #endregion
 }

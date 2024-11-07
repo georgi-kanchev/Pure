@@ -1,13 +1,18 @@
 namespace Pure.Engine.UserInterface;
 
-using System.Diagnostics.CodeAnalysis;
-
 public class Palette : Block
 {
-    public Slider Opacity { get; private set; }
-    public Slider Brightness { get; private set; }
-    public Slider Samples { get; private set; }
-    public Button Pick { get; private set; }
+    [DoNotSave]
+    public Func<(float x, float y), uint>? OnPick { get; set; }
+
+    [DoNotSave]
+    public Slider Opacity { get; }
+    [DoNotSave]
+    public Slider Brightness { get; }
+    [DoNotSave]
+    public Slider Samples { get; }
+    [DoNotSave]
+    public Button Pick { get; }
 
     public uint SelectedColor
     {
@@ -29,39 +34,26 @@ public class Palette : Block
     {
         Size = (13, 3);
 
-        Init(0.5f, 1f);
-    }
-    public Palette(byte[] bytes) : base(bytes)
-    {
-        var b = Decompress(bytes);
-        SelectedColor = GrabUInt(b);
-        var opProgress = GrabFloat(b);
-        var opIndex = GrabInt(b);
-        var brProgress = GrabFloat(b);
-        var brIndex = GrabInt(b);
-        Init(brProgress, opProgress);
-        Opacity.progress = opProgress;
-        Opacity.index = opIndex;
-        Brightness.progress = brProgress;
-        Brightness.index = brIndex;
-    }
-    public Palette(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
+        OnUpdate += OnRefresh;
 
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, SelectedColor);
-        Put(result, Opacity.Progress);
-        Put(result, Opacity.index);
-        Put(result, Brightness.Progress);
-        Put(result, Brightness.index);
-        return Compress(result.ToArray());
+        Opacity = new(Position) { Progress = 1f, hasParent = true, wasMaskSet = true };
+        Brightness = new((X, Y + 2))
+        {
+            Progress = 0.5f, size = (Width - 1, 1), hasParent = true, wasMaskSet = true
+        };
+        Pick = new((X + Width - 1, Y + Height - 1)) { hasParent = true, wasMaskSet = true };
+
+        Pick.OnInteraction(Interaction.Trigger, () => isPicking = true);
+
+        Samples = new((X, Y + 1)) { hasParent = true, wasMaskSet = true };
+        Samples.Handle.OnInteraction(Interaction.Trigger, () =>
+        {
+            SelectedColor = GetSample((int)(Samples.Progress * Width));
+        });
+        Samples.OnInteraction(Interaction.Select, () =>
+        {
+            SelectedColor = GetSample((int)(Samples.Progress * Width));
+        });
     }
 
     public uint GetSample(int index)
@@ -74,41 +66,8 @@ public class Palette : Block
         return color;
     }
 
-    public void OnPick(Func<(float x, float y), uint> method)
-    {
-        pick = method;
-    }
-
-    protected override void OnInput()
-    {
-        if (isPicking)
-            Input.CursorResult = MouseCursor.Crosshair;
-
-        if (Input.IsButtonJustPressed() && isPicking && IsHovered == false)
-        {
-            isPicking = false;
-            SelectedColor = pick?.Invoke(Input.Position) ?? default;
-        }
-
-        SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
-    }
-
-    public Palette Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Palette palette)
-    {
-        return palette.ToBytes();
-    }
-    public static implicit operator Palette(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
 #region Backend
-    private readonly uint[] palette =
+    private static readonly uint[] palette =
     [
         0x_7F_7F_7F_FF, // Gray
         0x_FF_00_00_FF, // Red
@@ -127,39 +86,25 @@ public class Palette : Block
     private bool isPicking;
     private uint selectedColor = uint.MaxValue;
 
-    internal Func<(float x, float y), uint>? pick;
-
-    [MemberNotNull(nameof(Opacity), nameof(Brightness), nameof(Pick), nameof(Samples))]
-    private void Init(float brightnessProgress, float opacityProgress)
-    {
-        OnUpdate(OnUpdate);
-
-        Opacity = new(Position) { Progress = opacityProgress, hasParent = true, wasMaskSet = true };
-        Brightness = new((X, Y + 2))
-        {
-            Progress = brightnessProgress, size = (Width - 1, 1), hasParent = true, wasMaskSet = true
-        };
-        Pick = new((X + Width - 1, Y + Height - 1)) { hasParent = true, wasMaskSet = true };
-
-        Pick.OnInteraction(Interaction.Trigger, () => isPicking = true);
-
-        Samples = new((X, Y + 1)) { hasParent = true, wasMaskSet = true };
-        Samples.Handle.OnInteraction(Interaction.Trigger, () =>
-        {
-            SelectedColor = GetSample((int)(Samples.Progress * Width));
-        });
-        Samples.OnInteraction(Interaction.Select, () =>
-        {
-            SelectedColor = GetSample((int)(Samples.Progress * Width));
-        });
-    }
-
-    internal void OnUpdate()
+    internal void OnRefresh()
     {
         sizeMinimum = (13, 3);
         sizeMaximum = sizeMinimum;
         LimitSizeMin(sizeMinimum);
         LimitSizeMax(sizeMinimum);
+    }
+    protected override void OnInput()
+    {
+        if (isPicking)
+            Input.CursorResult = MouseCursor.Crosshair;
+
+        if (Input.IsButtonJustPressed() && isPicking && IsHovered == false)
+        {
+            isPicking = false;
+            SelectedColor = OnPick?.Invoke(Input.Position) ?? default;
+        }
+
+        SelectedColor = ToOpacity(SelectedColor, Opacity.Progress);
     }
     internal override void OnChildrenUpdate()
     {
@@ -229,20 +174,6 @@ public class Palette : Block
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-    }
-    private static float[] Distribute(int amount, (float a, float b) range)
-    {
-        if (amount <= 0)
-            return [];
-
-        var result = new float[amount];
-        var size = range.b - range.a;
-        var spacing = size / (amount + 1);
-
-        for (var i = 1; i <= amount; i++)
-            result[i - 1] = range.a + i * spacing;
-
-        return result;
     }
 #endregion
 }

@@ -2,7 +2,6 @@ using Pure.Engine.UserInterface;
 using Pure.Engine.Utilities;
 using Pure.Engine.Window;
 using Pure.Tools.ImmediateGraphicalUserInterface;
-
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Games;
@@ -21,7 +20,7 @@ public static class NumberGuess
 
         while (Window.KeepOpen())
         {
-            var input = ImGui.InputBox((20, 20, 5, 1), symbolGroup: SymbolGroup.Integers, symbolLimit: 4);
+            var input = GUI.InputBox((20, 20, 5, 1), symbolGroup: SymbolGroup.Integers, symbolLimit: 4);
             if (input is { Length: 4 })
             {
                 log = tries == 0 ? "" : log;
@@ -46,7 +45,7 @@ public static class NumberGuess
                 }
             }
 
-            ImGui.Text((20, 19 - log.Count("\n")), log);
+            GUI.Text((20, 19 - log.Count("\n")), log);
 
             layer.DrawImGui();
         }

@@ -1,7 +1,5 @@
 ﻿namespace Pure.Engine.UserInterface;
 
-using System.Diagnostics;
-
 public class Tooltip : Block
 {
     public Side Side { get; set; } = Side.Top;
@@ -11,28 +9,6 @@ public class Tooltip : Block
     {
         Size = (10, 1);
     }
-    public Tooltip(byte[] bytes) : base(bytes)
-    {
-        var b = Decompress(bytes);
-        Side = (Side)GrabByte(b);
-        Alignment = GrabFloat(b);
-    }
-    public Tooltip(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, (byte)Side);
-        Put(result, Alignment);
-        return Compress(result.ToArray());
-    }
-
     public void Show((int x, int y, int width, int height) aroundArea)
     {
         var lines = Text.Replace("\r", "").Split("\n");
@@ -52,22 +28,4 @@ public class Tooltip : Block
         AlignOutside(opposites[(int)Side], aroundArea, Alignment, 1);
         Fit();
     }
-
-    public Tooltip Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Tooltip tooltip)
-    {
-        return tooltip.ToBytes();
-    }
-    public static implicit operator Tooltip(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
-    #region Backend
-    private readonly Stopwatch hold = new();
-    #endregion
 }

@@ -11,7 +11,7 @@ internal class TilesetPrompt
         var maps = editor.MapsUi;
 
         stepper = new() { Range = (0, int.MaxValue), Size = (22, 2) };
-        stepper.OnDisplay(() => maps.SetStepper(stepper, BACK));
+        stepper.OnDisplay += () => maps.SetStepper(stepper, BACK);
 
         fileViewer = new()
         {
@@ -19,11 +19,11 @@ internal class TilesetPrompt
             Size = (21, 16),
             FileFilter = ".png"
         };
-        fileViewer.OnDisplay(() => maps.SetFileViewer(fileViewer, BACK));
-        fileViewer.FilesAndFolders.OnItemDisplay(btn =>
-            maps.SetFileViewerItem(fileViewer, btn, MIDDLE));
-        fileViewer.HardDrives.OnItemDisplay(btn =>
-            maps.SetFileViewerItem(fileViewer, btn, MIDDLE));
+        fileViewer.OnDisplay += () => maps.SetFileViewer(fileViewer, BACK);
+        fileViewer.FilesAndFolders.OnItemDisplay += btn =>
+            maps.SetFileViewerItem(fileViewer, btn, MIDDLE);
+        fileViewer.HardDrives.OnItemDisplay += btn =>
+            maps.SetFileViewerItem(fileViewer, btn, MIDDLE);
         fileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, btn =>
         {
             if (fileViewer.IsFolder(btn) == false)

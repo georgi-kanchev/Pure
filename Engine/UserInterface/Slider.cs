@@ -1,7 +1,5 @@
 ﻿namespace Pure.Engine.UserInterface;
 
-using System.Diagnostics.CodeAnalysis;
-
 /// <summary>
 /// Represents a user interface slider.
 /// </summary>
@@ -10,7 +8,8 @@ public class Slider : Block
     /// <summary>
     /// Gets the handle button of the slider.
     /// </summary>
-    public Button Handle { get; private set; }
+    [DoNotSave]
+    public Button Handle { get; }
 
     /// <summary>
     /// Gets or sets a value indicating whether this slider is vertical or horizontal.
@@ -47,32 +46,25 @@ public class Slider : Block
     {
         IsVertical = vertical;
         Size = vertical ? (1, 10) : (10, 1);
-        Init();
-    }
-    public Slider(byte[] bytes) : base(bytes)
-    {
-        var b = Decompress(bytes);
-        IsVertical = GrabBool(b);
+        OnInteraction(Interaction.Trigger, () =>
+        {
+            var (x, y) = Input.Position;
+            MoveTo(((int)x, (int)y));
+        });
+        OnDrag += _ =>
+        {
+            var (x, y) = Input.Position;
+            MoveTo(((int)x, (int)y));
+        };
 
-        Init();
-        Progress = GrabFloat(b);
-        index = GrabInt(b);
-    }
-    public Slider(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, IsVertical);
-        Put(result, Progress);
-        Put(result, index);
-        return Compress(result.ToArray());
+        Handle = new((int.MaxValue, int.MaxValue))
+            { Size = (1, 1), wasMaskSet = true, hasParent = true };
+        Handle.OnDrag += _ =>
+        {
+            var (x, y) = Input.Position;
+            MoveTo(((int)x, (int)y));
+        };
+        Handle.OnInteraction(Interaction.Scroll, ApplyScroll);
     }
 
     /// <summary>
@@ -101,54 +93,10 @@ public class Slider : Block
         Progress = Map(index, 0, sz - 1, 0, 1);
     }
 
-    protected override void OnInput()
-    {
-        if (IsHovered)
-            Input.CursorResult = MouseCursor.Hand;
-    }
-
-    public Slider Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Slider slider)
-    {
-        return slider.ToBytes();
-    }
-    public static implicit operator Slider(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
 #region Backend
     internal float progress;
     internal int index;
     internal bool isVertical;
-
-    [MemberNotNull(nameof(Handle))]
-    private void Init()
-    {
-        OnInteraction(Interaction.Trigger, () =>
-        {
-            var (x, y) = Input.Position;
-            MoveTo(((int)x, (int)y));
-        });
-        OnDrag(_ =>
-        {
-            var (x, y) = Input.Position;
-            MoveTo(((int)x, (int)y));
-        });
-
-        Handle = new((int.MaxValue, int.MaxValue))
-            { Size = (1, 1), wasMaskSet = true, hasParent = true };
-        Handle.OnDrag(_ =>
-        {
-            var (x, y) = Input.Position;
-            MoveTo(((int)x, (int)y));
-        });
-        Handle.OnInteraction(Interaction.Scroll, ApplyScroll);
-    }
 
     internal override void ApplyScroll()
     {
@@ -175,6 +123,12 @@ public class Slider : Block
 
         Handle.mask = mask;
         Handle.Update();
+    }
+
+    protected override void OnInput()
+    {
+        if (IsHovered)
+            Input.CursorResult = MouseCursor.Hand;
     }
 
     private static float Map(float number, float a1, float a2, float b1, float b2)

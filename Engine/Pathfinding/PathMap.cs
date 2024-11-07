@@ -1,6 +1,4 @@
-﻿using System.IO.Compression;
-
-namespace Pure.Engine.Pathfinding;
+﻿namespace Pure.Engine.Pathfinding;
 
 public class PathMap
 {
@@ -13,55 +11,6 @@ public class PathMap
     {
         pathfind.Size = size;
         Init();
-    }
-    public PathMap(byte[] bytes)
-    {
-        var b = Decompress(bytes);
-        var offset = 0;
-
-        pathfind.Size = (BitConverter.ToInt32(Get()), BitConverter.ToInt32(Get()));
-        var nodeCount = BitConverter.ToInt32(Get());
-        for (var i = 0; i < nodeCount; i++)
-        {
-            var pos = (BitConverter.ToInt32(Get()), BitConverter.ToInt32(Get()));
-            var penalty = BitConverter.ToSingle(Get());
-            SetObstacle(penalty, pos);
-        }
-
-        Init();
-
-        byte[] Get()
-        {
-            return GetBytesFrom(b, 4, ref offset);
-        }
-    }
-    public PathMap(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        var (w, h) = Size;
-
-        result.AddRange(BitConverter.GetBytes(w));
-        result.AddRange(BitConverter.GetBytes(h));
-        result.AddRange(BitConverter.GetBytes(pathfind.NodeCount));
-
-        var nodes = pathfind.grid;
-        foreach (var kvp in nodes)
-        {
-            var node = kvp.Value;
-            result.AddRange(BitConverter.GetBytes(node.position.x));
-            result.AddRange(BitConverter.GetBytes(node.position.y));
-            result.AddRange(BitConverter.GetBytes(node.penalty));
-        }
-
-        return Compress(result.ToArray());
     }
 
     public void SetObstacle(float penalty, params (int x, int y)[]? cells)
@@ -117,62 +66,15 @@ public class PathMap
         return withColors;
     }
 
-    public PathMap Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](PathMap pathMap)
-    {
-        return pathMap.ToBytes();
-    }
-    public static implicit operator PathMap(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
 #region Backend
-    // save format
-    // [amount of bytes]		- data
-    // --------------------------------
-    // [4]						- width
-    // [4]						- height
-    // [4]						- non-default cells count
-    // [width * height * 4]		- xs
-    // [width * height * 4]		- ys
-    // [width * height * 4]		- weights
-    // [remaining]				- is walkable bools (1 bit per bool)
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+    internal class DoNotSave : Attribute;
 
     private readonly Astar pathfind = new();
 
     private void Init()
     {
         SetObstacle(0, 0, new int[Size.width, Size.height]);
-    }
-
-    internal static byte[] Compress(byte[] data)
-    {
-        using var compressedStream = new MemoryStream();
-        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
-        {
-            gzipStream.Write(data, 0, data.Length);
-        }
-
-        return compressedStream.ToArray();
-    }
-    internal static byte[] Decompress(byte[] compressedData)
-    {
-        using var compressedStream = new MemoryStream(compressedData);
-        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
-        using var resultStream = new MemoryStream();
-        gzipStream.CopyTo(resultStream);
-        return resultStream.ToArray();
-    }
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
     }
 #endregion
 }

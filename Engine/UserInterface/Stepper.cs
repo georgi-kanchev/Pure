@@ -1,15 +1,19 @@
 namespace Pure.Engine.UserInterface;
 
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 public class Stepper : Block
 {
-    public Button Increase { get; private set; }
-    public Button Decrease { get; private set; }
-    public Button Minimum { get; private set; }
-    public Button Middle { get; private set; }
-    public Button Maximum { get; private set; }
+    [DoNotSave]
+    public Button Increase { get; }
+    [DoNotSave]
+    public Button Decrease { get; }
+    [DoNotSave]
+    public Button Minimum { get; }
+    [DoNotSave]
+    public Button Middle { get; }
+    [DoNotSave]
+    public Button Maximum { get; }
 
     public float Value
     {
@@ -51,57 +55,7 @@ public class Stepper : Block
         Size = (10, 2);
         Value = value;
 
-        Init();
-    }
-    public Stepper(byte[] bytes) : base(bytes)
-    {
-        var b = Decompress(bytes);
-        Range = (GrabFloat(b), GrabFloat(b));
-        Step = GrabFloat(b);
-        Value = GrabFloat(b);
-
-        Init();
-    }
-    public Stepper(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, Range.minimum);
-        Put(result, Range.maximum);
-        Put(result, Step);
-        Put(result, Value);
-        return Compress(result.ToArray());
-    }
-
-    public Stepper Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Stepper stepper)
-    {
-        return stepper.ToBytes();
-    }
-    public static implicit operator Stepper(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
-#region Backend
-    private float value;
-    private (float min, float max) range = (float.NegativeInfinity, float.PositiveInfinity);
-
-    [MemberNotNull(nameof(Increase), nameof(Decrease), nameof(Minimum), nameof(Middle), nameof(Maximum))]
-    private void Init()
-    {
-        OnUpdate(OnUpdate);
+        OnUpdate += OnRefresh;
 
         Increase = new((int.MaxValue, int.MaxValue))
             { size = (1, 1), wasMaskSet = true, hasParent = true };
@@ -143,11 +97,15 @@ public class Stepper : Block
         Maximum.OnInteraction(Interaction.Trigger, () => Value = Range.maximum);
     }
 
+#region Backend
+    private float value;
+    private (float min, float max) range = (float.NegativeInfinity, float.PositiveInfinity);
+
     internal override void ApplyScroll()
     {
         Value += Input.ScrollDelta * Step;
     }
-    internal void OnUpdate()
+    internal void OnRefresh()
     {
         LimitSizeMin((4, 2));
     }

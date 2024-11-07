@@ -1,8 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Pure.Engine.UserInterface;
+﻿namespace Pure.Engine.UserInterface;
 
 public enum Span { Vertical, Horizontal, Dropdown }
+
 public enum Sort { Alphabetically, Numerically, ByLength }
 
 /// <summary>
@@ -10,8 +9,12 @@ public enum Sort { Alphabetically, Numerically, ByLength }
 /// </summary>
 public class List : Block
 {
+    [DoNotSave]
+    public Action<Button>? OnItemDisplay { get; set; }
+
     public List<Button> Items { get; } = [];
-    public Scroll Scroll { get; private set; }
+    [DoNotSave]
+    public Scroll Scroll { get; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the list allows single selection or not.
@@ -50,6 +53,7 @@ public class List : Block
                IsCollapsed == false;
     }
 
+    [DoNotSave]
     public List<Button> SelectedItems { get; } = [];
 
     /// <summary>
@@ -83,7 +87,13 @@ public class List : Block
     /// <param name="span">The type of the list.</param>
     public List((int x, int y) position, int itemCount = 10, Span span = Span.Vertical) : base(position)
     {
-        Init();
+        Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
+        OnUpdate += OnRefresh;
+        OnInteraction(Interaction.Trigger, () =>
+        {
+            if (IsCollapsed && IsFocused)
+                IsCollapsed = false;
+        });
         Size = (6, 8);
         ItemGap = span == Span.Horizontal ? 1 : 0;
         Span = span;
@@ -100,61 +110,6 @@ public class List : Block
 
         if (Items.Count > 0)
             Select(Items[0]);
-    }
-    public List(byte[] bytes) : base(bytes)
-    {
-        Init();
-        var b = Decompress(bytes);
-        Span = (Span)GrabByte(b);
-        IsSingleSelecting = GrabBool(b);
-        IsReadOnly = GrabBool(b);
-        ItemGap = GrabInt(b);
-        ItemSize = (GrabInt(b), GrabInt(b));
-        var scrollProgress = GrabFloat(b);
-        var scrollIndex = GrabInt(b);
-
-        var items = CreateAmount(GrabInt(b));
-        Items.AddRange(items);
-
-        foreach (var item in Items)
-        {
-            Select(item, GrabBool(b));
-            item.text = GrabString(b);
-        }
-
-        Scroll.Slider.progress = scrollProgress;
-        Scroll.Slider.index = scrollIndex;
-        isInitialized = true;
-    }
-    public List(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, (byte)Span);
-        Put(result, IsSingleSelecting);
-        Put(result, IsReadOnly);
-        Put(result, ItemGap);
-        Put(result, ItemSize.width);
-        Put(result, ItemSize.height);
-        Put(result, Scroll.Slider.Progress);
-        Put(result, (float)Scroll.Slider.index);
-        Put(result, Items.Count);
-
-        foreach (var item in Items)
-        {
-            Put(result, item.IsSelected);
-            Put(result, item.IsDisabled);
-            Put(result, item.Text);
-        }
-
-        return Compress(result.ToArray());
     }
 
     public void Edit(string[]? items)
@@ -237,10 +192,6 @@ public class List : Block
             Input.CursorResult = MouseCursor.Hand;
     }
 
-    public void OnItemDisplay(Action<Button> method)
-    {
-        itemDisplays += method;
-    }
     public void OnItemInteraction(Interaction interaction, Action<Button> method)
     {
         if (itemInteractions.TryAdd(interaction, method) == false)
@@ -250,21 +201,7 @@ public class List : Block
             item.OnInteraction(interaction, () => method.Invoke(item));
     }
 
-    public List Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](List list)
-    {
-        return list.ToBytes();
-    }
-    public static implicit operator List(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
-    #region Backend
+#region Backend
     private int originalHeight;
     private bool isSingleSelecting, isCollapsed, veryFirstUpdate = true;
     private readonly bool isInitialized;
@@ -272,8 +209,8 @@ public class List : Block
     internal (int width, int height) itemSize = (5, 1);
     internal bool isReadOnly;
 
+    [DoNotSave]
     private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
-    private Action<Button>? itemDisplays;
 
     private (bool horizontal, bool vertical) HasScroll
     {
@@ -287,17 +224,6 @@ public class List : Block
         }
     }
 
-    [MemberNotNull(nameof(Scroll))]
-    private void Init()
-    {
-        Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
-        OnUpdate(OnUpdate);
-        OnInteraction(Interaction.Trigger, () =>
-        {
-            if (IsCollapsed && IsFocused)
-                IsCollapsed = false;
-        });
-    }
     private void InitItem(Button item)
     {
         item.size = (Span == Span.Horizontal ? text.Length : Size.width, 1);
@@ -320,7 +246,7 @@ public class List : Block
         return result;
     }
 
-    internal void OnUpdate()
+    internal void OnRefresh()
     {
         // this is to give time to dropdown to accept size when not collapsed
         if (veryFirstUpdate)
@@ -465,13 +391,13 @@ public class List : Block
             if (selectedItem.IsHidden)
                 return;
 
-            itemDisplays?.Invoke(selectedItem);
+            OnItemDisplay?.Invoke(selectedItem);
             return;
         }
 
         foreach (var item in Items)
             if (IsOverlapping(item) && item.IsHidden == false)
-                itemDisplays?.Invoke(item);
+                OnItemDisplay?.Invoke(item);
     }
 
     private void OnInternalItemTrigger(Button item)
@@ -532,5 +458,5 @@ public class List : Block
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }

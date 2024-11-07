@@ -12,17 +12,17 @@ public class Menu : List
         for (var i = 0; i < options.Length; i++)
             Items[i].Text = options[i];
 
-        OnDisplay(() => editor.MapsUi.SetList(this, 1));
-        OnItemDisplay(item =>
+        OnDisplay += () => editor.MapsUi.SetList(this, 1);
+        OnItemDisplay += item =>
         {
-            item.IsDisabled = item.Text.EndsWith(" ");
+            item.IsDisabled = item.Text.EndsWith(' ');
             editor.MapsUi.SetListItem(this, item, 3, false);
-        });
-        OnUpdate(() =>
+        };
+        OnUpdate += () =>
         {
             IsDisabled = IsHidden;
             Fit();
-        });
+        };
 
         Mouse.OnWheelScroll(() =>
         {

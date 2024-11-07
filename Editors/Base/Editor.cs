@@ -6,8 +6,8 @@ global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
-using System.IO.Compression;
 using System.Text;
+using Pure.Engine.Storage;
 
 namespace Pure.Editors.Base;
 
@@ -87,16 +87,16 @@ public class Editor
 
         Ui = new();
         Prompt = new();
-        Prompt.OnDisplay(() => MapsUi.SetPrompt(Prompt, (int)LayerMapsUi.PromptFade));
+        Prompt.OnDisplay += () => MapsUi.SetPrompt(Prompt, (int)LayerMapsUi.PromptFade);
         OnPromptItemDisplay = item => MapsUi.SetPromptItem(Prompt, item, (int)LayerMapsUi.PromptMiddle);
-        Prompt.OnItemDisplay(item => OnPromptItemDisplay?.Invoke(item));
+        Prompt.OnItemDisplay += item => OnPromptItemDisplay?.Invoke(item);
         promptSize = new()
         {
             Value = string.Empty,
             Size = (25, 1),
             SymbolGroup = SymbolGroup.Decimals | SymbolGroup.Space
         };
-        promptSize.OnDisplay(() => MapsUi.SetInputBox(promptSize, (int)LayerMapsUi.PromptBack));
+        promptSize.OnDisplay += () => MapsUi.SetInputBox(promptSize, (int)LayerMapsUi.PromptBack);
 
         LayerGrid = new(MapGrid.Size);
         LayerMap = new(MapsEditor.Size);
@@ -115,11 +115,11 @@ public class Editor
             FilesAndFolders = { IsSingleSelecting = true },
             Size = (21, 16)
         };
-        PromptFileViewer.OnDisplay(() => MapsUi.SetFileViewer(PromptFileViewer, BACK));
-        PromptFileViewer.FilesAndFolders.OnItemDisplay(btn =>
-            MapsUi.SetFileViewerItem(PromptFileViewer, btn, MIDDLE));
-        PromptFileViewer.HardDrives.OnItemDisplay(btn =>
-            MapsUi.SetFileViewerItem(PromptFileViewer, btn, MIDDLE));
+        PromptFileViewer.OnDisplay += () => MapsUi.SetFileViewer(PromptFileViewer, BACK);
+        PromptFileViewer.FilesAndFolders.OnItemDisplay += btn =>
+            MapsUi.SetFileViewerItem(PromptFileViewer, btn, MIDDLE);
+        PromptFileViewer.HardDrives.OnItemDisplay += btn =>
+            MapsUi.SetFileViewerItem(PromptFileViewer, btn, MIDDLE);
         PromptFileViewer.FilesAndFolders.OnItemInteraction(Interaction.DoubleTrigger, item =>
         {
             if (PromptFileViewer.IsFolder(item) == false)
@@ -127,7 +127,7 @@ public class Editor
         });
 
         PromptInput = new() { Size = (30, 1), Value = string.Empty };
-        PromptInput.OnDisplay(() => MapsUi.SetInputBox(PromptInput, BACK));
+        PromptInput.OnDisplay += () => MapsUi.SetInputBox(PromptInput, BACK);
 
         tilesetPrompt = new(this);
     }
@@ -160,7 +160,7 @@ public class Editor
             //========
 
             MapGrid.View = MapsEditor.View;
-            var gridView = MapGrid.ViewUpdate();
+            var gridView = MapGrid.UpdateView();
             LayerGrid.Offset = ViewPosition;
             LayerGrid.Zoom = ViewZoom;
             LayerGrid.DrawTilemap(gridView.ToBundle());
@@ -436,7 +436,7 @@ public class Editor
                           $"example: '100 100'.";
             Prompt.Open(promptSize, onButtonTrigger: ResizePressMap);
         });
-        btnMapSize.OnDisplay(() => MapsUi.SetButton(btnMapSize));
+        btnMapSize.OnDisplay += () => MapsUi.SetButton(btnMapSize);
 
         btnViewSize.AlignInside((0f, 1f));
         btnViewSize.OnInteraction(Interaction.Trigger, () =>
@@ -445,7 +445,7 @@ public class Editor
                           $"example: '100 100'.";
             Prompt.Open(promptSize, onButtonTrigger: ResizePressView);
         });
-        btnViewSize.OnDisplay(() => MapsUi.SetButton(btnViewSize));
+        btnViewSize.OnDisplay += () => MapsUi.SetButton(btnViewSize);
 
         Ui.Blocks.AddRange([btnMapSize, btnViewSize]);
     }
@@ -461,9 +461,12 @@ public class Editor
         ChangeMapSize((w, h));
 
         var (vw, vh) = MapsEditor.View.Size;
-        var packCopy = new TilemapPack(MapsEditor.ToBytes());
+        var packCopy = MapsEditor.ToBytes().ToObject<TilemapPack>();
+        if (packCopy == null)
+            return;
+
         for (var j = 0; j < packCopy.Tilemaps.Count; j++)
-            MapsEditor.Tilemaps[j].SetGroup((0, 0), packCopy.Tilemaps[j]);
+            MapsEditor.Tilemaps[j].SetGroup((0, 0), packCopy.Tilemaps[j]!);
         MapsEditor.View = new(MapsEditor.View.Position, (vw, vh));
 
         SetGrid();
@@ -494,13 +497,13 @@ public class Editor
 
         btn.OnInteraction(Interaction.Trigger, Trigger);
         btn.OnInteraction(Interaction.PressAndHold, Trigger);
-        btn.OnDisplay(() =>
+        btn.OnDisplay += () =>
         {
             var color = btn.GetInteractionColor(Color.Gray.ToBright());
             var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (sbyte)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
             MapsUi.Tilemaps[(int)LayerMapsUi.Front].SetTile(btn.Position, rotations == 4 ? center : arrow);
-        });
+        };
 
         Ui.Blocks.Add(btn);
 
@@ -619,35 +622,28 @@ public class Editor
         byteOffset += amount;
         return result;
     }
-    internal static byte[] Decompress(byte[] compressedData)
-    {
-        using var compressedStream = new MemoryStream(compressedData);
-        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
-        using var resultStream = new MemoryStream();
-        gzipStream.CopyTo(resultStream);
-        return resultStream.ToArray();
-    }
 
     private TilemapPack LoadMap(byte[] bytes, ref string[] result, ref MapGenerator? gen)
     {
-        var maps = new TilemapPack(bytes);
-        var decompressed = Decompress(bytes);
-        var measure = Decompress(maps.ToBytes()).Length;
-
-        if (decompressed.Length == measure)
-            return maps;
-
-        // has hijacked data, means it was editor exported
-        var hijackedBytes = decompressed[measure..];
-        var byteOffset = 0;
-        var layerCount = GrabInt(hijackedBytes, ref byteOffset);
-
-        result = new string[layerCount];
-        for (var i = 0; i < layerCount; i++)
-            result[i] = GrabString(hijackedBytes, ref byteOffset);
-
-        gen = new(hijackedBytes[byteOffset..]);
-        return maps;
+        // var maps = bytes.ToObject<TilemapPack>();
+        // var decompressed = Decompress(bytes);
+        // var measure = Decompress(maps.ToBytes()).Length;
+        //
+        // if (decompressed.Length == measure)
+        //     return maps;
+        //
+        // // has hijacked data, means it was editor exported
+        // var hijackedBytes = decompressed[measure..];
+        // var byteOffset = 0;
+        // var layerCount = GrabInt(hijackedBytes, ref byteOffset);
+        //
+        // result = new string[layerCount];
+        // for (var i = 0; i < layerCount; i++)
+        //     result[i] = GrabString(hijackedBytes, ref byteOffset);
+        //
+        // gen = new(hijackedBytes[byteOffset..]);
+        // return maps;
+        return new();
     }
 #endregion
 }

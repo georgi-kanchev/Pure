@@ -5,6 +5,11 @@
 /// </summary>
 public class ParticlePack
 {
+    [DoNotSave]
+    public Action<Particle>? OnSpawn { get; set; }
+    [DoNotSave]
+    public Action<Particle>? OnUpdate { get; set; }
+
     /// <summary>
     /// Gets or sets a value indicating whether the particle pack has paused the updates
     /// of the particles.
@@ -39,7 +44,7 @@ public class ParticlePack
         {
             var p = new Particle(default, default);
             particles.Add(p);
-            onSpawn?.Invoke(p);
+            OnSpawn?.Invoke(p);
         }
     }
     /// <summary>
@@ -54,12 +59,14 @@ public class ParticlePack
         var toRemove = new List<Particle>();
         foreach (var p in particles)
         {
-            var rad = MathF.PI / 180 * p.Movement.angle;
+            var ang = p.Movement.angle * deltaTime;
+            var speed = p.Movement.speed * deltaTime;
+            var rad = MathF.PI / 180 * ang;
             var (dirX, dirY) = (MathF.Cos(rad), MathF.Sin(rad));
             var (x, y) = p.Position;
 
             p.Age -= deltaTime;
-            p.Position = (x + dirX * p.Movement.speed, y + dirY * p.Movement.speed);
+            p.Position = (x + dirX * speed, y + dirY * speed);
 
             if (p.Age <= 0)
             {
@@ -67,20 +74,11 @@ public class ParticlePack
                 continue;
             }
 
-            onUpdate?.Invoke(p);
+            OnUpdate?.Invoke(p);
         }
 
         foreach (var p in toRemove)
             particles.Remove(p);
-    }
-
-    public void OnSpawn(Action<Particle> method)
-    {
-        onSpawn += method;
-    }
-    public void OnUpdate(Action<Particle> method)
-    {
-        onUpdate += method;
     }
 
     /// <summary>
@@ -108,7 +106,9 @@ public class ParticlePack
     }
 
 #region Backend
-    private Action<Particle>? onSpawn, onUpdate;
-    private readonly List<Particle> particles = new();
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+    internal class DoNotSave : Attribute;
+
+    private readonly List<Particle> particles = [];
 #endregion
 }

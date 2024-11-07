@@ -17,14 +17,14 @@ public static class Layouts
         layoutFull.Cut(0, Side.Bottom, 0.3f);
         layoutFull.Cut(2, Side.Top, 0.5f);
         layoutFull.Cut(1, Side.Top, 0.4f);
-        layoutFull.OnDisplay(() =>
+        layoutFull.OnDisplay += () =>
         {
             layoutFull.Size = (
                 25 + (int)(Math.Sin(Time.Clock / 2) * 10),
                 20 + (int)(Math.Cos(Time.Clock / 2) * 3));
             layoutFull.AlignInside((0.9f, 0.5f));
-        });
-        layoutFull.OnDisplaySegment((segment, index) =>
+        };
+        layoutFull.OnDisplaySegment += (segment, index) =>
         {
             if (index == 0)
             {
@@ -46,7 +46,7 @@ public static class Layouts
                 maps.SetSlider(slider);
             else if (e is InputBox inputBox)
                 maps.SetInputBox(inputBox);
-        });
+        };
 
         //============
 
@@ -56,8 +56,7 @@ public static class Layouts
         layoutEmpty.Cut(0, Side.Bottom, 0.6f);
         layoutEmpty.Cut(1, Side.Top, 0.25f);
         layoutEmpty.Cut(1, Side.Bottom, 0.4f);
-        layoutEmpty.OnDisplaySegment((segment, index) =>
-            maps.SetLayoutSegment(segment, index, true));
+        layoutEmpty.OnDisplaySegment += (segment, index) => maps.SetLayoutSegment(segment, index, true);
 
         var elements = new List<Block>
         {

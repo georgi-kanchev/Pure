@@ -1,13 +1,18 @@
 namespace Pure.Engine.UserInterface;
 
-using System.Diagnostics.CodeAnalysis;
-
 public class Pages : Block
 {
-    public Button First { get; private set; }
-    public Button Previous { get; private set; }
-    public Button Next { get; private set; }
-    public Button Last { get; private set; }
+    [DoNotSave]
+    public Action<Button>? OnItemDisplay { get; set; }
+
+    [DoNotSave]
+    public Button First { get; }
+    [DoNotSave]
+    public Button Previous { get; }
+    [DoNotSave]
+    public Button Next { get; }
+    [DoNotSave]
+    public Button Last { get; }
 
     public int Count
     {
@@ -82,34 +87,25 @@ public class Pages : Block
         Size = (12, 1);
         Count = count;
 
-        Init();
-    }
-    public Pages(byte[] bytes) : base(bytes)
-    {
-        var b = Decompress(bytes);
-        ItemWidth = GrabByte(b);
-        ItemGap = GrabByte(b);
-        Count = GrabInt(b);
-        Current = GrabInt(b);
+        OnUpdate += OnRefresh;
 
-        Init();
-    }
-    public Pages(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
+        First = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
+        Previous = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
+        Next = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
+        Last = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
 
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, (byte)ItemWidth);
-        Put(result, (byte)ItemGap);
-        Put(result, Count);
-        Put(result, Current);
-        return Compress(result.ToArray());
+        First.OnInteraction(Interaction.Trigger, () => Current = 0);
+        Previous.OnInteraction(Interaction.Trigger, () => Current--);
+        Next.OnInteraction(Interaction.Trigger, () => Current++);
+        Last.OnInteraction(Interaction.Trigger, () => Current = Count);
+
+        Previous.OnInteraction(Interaction.PressAndHold, () => Previous.Interact(Interaction.Trigger));
+        Next.OnInteraction(Interaction.PressAndHold, () => Next.Interact(Interaction.Trigger));
+
+        First.OnInteraction(Interaction.Scroll, ApplyScroll);
+        Previous.OnInteraction(Interaction.Scroll, ApplyScroll);
+        Next.OnInteraction(Interaction.Scroll, ApplyScroll);
+        Last.OnInteraction(Interaction.Scroll, ApplyScroll);
     }
 
     public int IndexOf(Button button)
@@ -118,10 +114,6 @@ public class Pages : Block
         return index == -1 ? -1 : index + scrollIndex - 1;
     }
 
-    public void OnItemDisplay(Action<Button> method)
-    {
-        itemDisplays += method;
-    }
     public void OnItemInteraction(Interaction interaction, Action<Button> method)
     {
         if (itemInteractions.TryAdd(interaction, method) == false)
@@ -131,23 +123,10 @@ public class Pages : Block
             item.OnInteraction(interaction, () => method.Invoke(item));
     }
 
-    public Pages Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](Pages pages)
-    {
-        return pages.ToBytes();
-    }
-    public static implicit operator Pages(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
 #region Backend
     private (int, int) prevSize;
     private int count, current = 1, scrollIndex = 1;
+    [DoNotSave]
     private readonly List<Button> visiblePages = [];
 
     private int VisibleWidth
@@ -181,36 +160,12 @@ public class Pages : Block
         get => Count * (ItemWidth + ItemGap) > Size.width;
     }
 
+    [DoNotSave]
     private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
-    private Action<Button>? itemDisplays;
     private int itemWidth = 1;
     private int itemGap = 1;
 
-    [MemberNotNull(nameof(First), nameof(Previous), nameof(Next), nameof(Last))]
-    private void Init()
-    {
-        OnUpdate(OnUpdate);
-
-        First = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
-        Previous = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
-        Next = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
-        Last = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
-
-        First.OnInteraction(Interaction.Trigger, () => Current = 0);
-        Previous.OnInteraction(Interaction.Trigger, () => Current--);
-        Next.OnInteraction(Interaction.Trigger, () => Current++);
-        Last.OnInteraction(Interaction.Trigger, () => Current = Count);
-
-        Previous.OnInteraction(Interaction.PressAndHold, () => Previous.Interact(Interaction.Trigger));
-        Next.OnInteraction(Interaction.PressAndHold, () => Next.Interact(Interaction.Trigger));
-
-        First.OnInteraction(Interaction.Scroll, ApplyScroll);
-        Previous.OnInteraction(Interaction.Scroll, ApplyScroll);
-        Next.OnInteraction(Interaction.Scroll, ApplyScroll);
-        Last.OnInteraction(Interaction.Scroll, ApplyScroll);
-    }
-
-    internal void OnUpdate()
+    internal void OnRefresh()
     {
         // for in between pages, overwrite mouse cursor (don't give it to the block bellow)
         if (IsDisabled == false && IsHovered)
@@ -230,7 +185,7 @@ public class Pages : Block
     internal override void OnChildrenDisplay()
     {
         foreach (var page in visiblePages)
-            itemDisplays?.Invoke(page);
+            OnItemDisplay?.Invoke(page);
     }
     internal override void OnChildrenUpdate()
     {

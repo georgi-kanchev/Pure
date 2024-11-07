@@ -6,7 +6,7 @@ public class SaveAtOrder(uint order) : Attribute
     public uint Value { get; } = order;
 }
 
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
 public class DoNotSave : Attribute
 {
 }

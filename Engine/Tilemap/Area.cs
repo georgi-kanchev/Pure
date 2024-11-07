@@ -1,11 +1,11 @@
 ﻿namespace Pure.Engine.Tilemap;
 
-public struct Area
+public struct Area(int x, int y, int width, int height, uint color = uint.MaxValue)
 {
-    public int X { get; set; }
-    public int Y { get; set; }
-    public int Width { get; set; }
-    public int Height { get; set; }
+    public int X { get; set; } = x;
+    public int Y { get; set; } = y;
+    public int Width { get; set; } = width;
+    public int Height { get; set; } = height;
 
     public (int x, int y) Position
     {
@@ -25,46 +25,12 @@ public struct Area
             Height = value.height;
         }
     }
-    public uint Color { get; set; }
+    public uint Color { get; set; } = color;
 
-    public Area(int x, int y, int width, int height, uint color = uint.MaxValue)
-    {
-        X = x;
-        Y = y;
-        Width = width;
-        Height = height;
-        Color = color;
-    }
     public Area((int x, int y) position, (int width, int height) size, uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
     {
     }
-    public Area(byte[] bytes)
-    {
-        var offset = 0;
-        X = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-        Y = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-        Width = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-        Height = BitConverter.ToInt32(GetBytesFrom(bytes, 4, ref offset));
-        Color = BitConverter.ToUInt32(GetBytesFrom(bytes, 4, ref offset));
-    }
-    public Area(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
 
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(Position.x));
-        result.AddRange(BitConverter.GetBytes(Position.y));
-        result.AddRange(BitConverter.GetBytes(Size.width));
-        result.AddRange(BitConverter.GetBytes(Size.height));
-        result.AddRange(BitConverter.GetBytes(Color));
-        return result.ToArray();
-    }
     public (int x, int y, int width, int height, uint color) ToBundle()
     {
         return (X, Y, Width, Height, Color);
@@ -106,21 +72,4 @@ public struct Area
     {
         return (area.Position.x, area.Position.y, area.Size.width, area.Size.height);
     }
-    public static implicit operator byte[](Area area)
-    {
-        return area.ToBytes();
-    }
-    public static implicit operator Area(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
-#region Backend
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
-    }
-#endregion
 }

@@ -1,3 +1,5 @@
+using Pure.Engine.Storage;
+
 namespace Pure.Editors.UserInterface;
 
 internal class MenuMain : Menu
@@ -57,7 +59,10 @@ internal class MenuMain : Menu
     }
     private static void Load(byte[] bytes)
     {
-        var loadedUi = new BlockPack(bytes);
+        var loadedUi = bytes.ToObject<BlockPack>();
+
+        if (loadedUi == null)
+            return;
 
         selected = null;
         ui.Blocks.Clear();

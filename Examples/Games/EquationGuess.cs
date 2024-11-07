@@ -15,11 +15,11 @@ public static class EquationGuess
 
         while (Window.KeepOpen())
         {
-            var input = ImGui.InputBox((10, 10, 10, 1), symbolGroup: SymbolGroup.Integers | SymbolGroup.Math, symbolLimit: 8);
+            var input = GUI.InputBox((10, 10, 10, 1), symbolGroup: SymbolGroup.Integers | SymbolGroup.Math, symbolLimit: 8);
             if (input != null)
                 equation = input;
 
-            if (ImGui.Button((21, 10, 10, 3), "Submit"))
+            if (GUI.Button((21, 10, 10, 3), "Submit"))
                 Console.WriteLine(equation.Calculate());
 
             page.DrawImGui();

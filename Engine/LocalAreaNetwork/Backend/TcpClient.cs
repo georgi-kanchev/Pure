@@ -37,8 +37,7 @@ internal class TcpClient : IDisposable
     /// </summary>
     /// <param name="address">IP address</param>
     /// <param name="port">Port number</param>
-    public TcpClient(IPAddress address, int port)
-        : this(new IPEndPoint(address, port))
+    public TcpClient(IPAddress address, int port) : this(new IPEndPoint(address, port))
     {
     }
     /// <summary>
@@ -46,25 +45,21 @@ internal class TcpClient : IDisposable
     /// </summary>
     /// <param name="address">IP address</param>
     /// <param name="port">Port number</param>
-    protected TcpClient(string address, int port)
-        : this(new IPEndPoint(IPAddress.Parse(address), port))
+    protected TcpClient(string address, int port) : this(new IPEndPoint(IPAddress.Parse(address), port))
     {
     }
     /// <summary>
     /// Initialize TCP client with a given DNS endpoint
     /// </summary>
     /// <param name="endpoint">DNS endpoint</param>
-    public TcpClient(DnsEndPoint endpoint)
-        : this(endpoint, endpoint.Host, endpoint.Port)
+    public TcpClient(DnsEndPoint endpoint) : this(endpoint, endpoint.Host, endpoint.Port)
     {
     }
     /// <summary>
     /// Initialize TCP client with a given IP endpoint
     /// </summary>
     /// <param name="endpoint">IP endpoint</param>
-    public TcpClient(IPEndPoint endpoint)
-        : this(endpoint, endpoint.Address.ToString(),
-            endpoint.Port)
+    public TcpClient(IPEndPoint endpoint) : this(endpoint, endpoint.Address.ToString(), endpoint.Port)
     {
     }
     /// <summary>
@@ -180,7 +175,7 @@ internal class TcpClient : IDisposable
     /// </summary>
     private int OptionSendBufferSize { get; set; } = 8192;
 
-    #region Connect/Disconnect client
+#region Connect/Disconnect client
     private SocketAsyncEventArgs connectEventArg;
 
     /// <summary>
@@ -201,7 +196,7 @@ internal class TcpClient : IDisposable
     /// <returns>Socket object</returns>
     protected virtual Socket CreateSocket()
     {
-        return new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        return new(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
     /// <summary>
@@ -218,17 +213,17 @@ internal class TcpClient : IDisposable
             return false;
 
         // Setup buffers
-        receiveBuffer = new Buffer();
-        sendBufferMain = new Buffer();
-        sendBufferFlush = new Buffer();
+        receiveBuffer = new();
+        sendBufferMain = new();
+        sendBufferFlush = new();
 
         // Setup event args
-        connectEventArg = new SocketAsyncEventArgs();
+        connectEventArg = new();
         connectEventArg.RemoteEndPoint = Endpoint;
         connectEventArg.Completed += OnAsyncCompleted;
-        receiveEventArg = new SocketAsyncEventArgs();
+        receiveEventArg = new();
         receiveEventArg.Completed += OnAsyncCompleted;
-        sendEventArg = new SocketAsyncEventArgs();
+        sendEventArg = new();
         sendEventArg.Completed += OnAsyncCompleted;
 
         // Create a new client socket
@@ -283,22 +278,16 @@ internal class TcpClient : IDisposable
         if (OptionKeepAlive)
             Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
         if (OptionTcpKeepAliveTime >= 0)
-        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime,
                 OptionTcpKeepAliveTime);
-        }
 
         if (OptionTcpKeepAliveInterval >= 0)
-        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval,
                 OptionTcpKeepAliveInterval);
-        }
 
         if (OptionTcpKeepAliveRetryCount >= 0)
-        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount,
                 OptionTcpKeepAliveRetryCount);
-        }
 
         // Apply the option: no delay
         if (OptionNoDelay)
@@ -416,17 +405,17 @@ internal class TcpClient : IDisposable
             return false;
 
         // Setup buffers
-        receiveBuffer = new Buffer();
-        sendBufferMain = new Buffer();
-        sendBufferFlush = new Buffer();
+        receiveBuffer = new();
+        sendBufferMain = new();
+        sendBufferFlush = new();
 
         // Setup event args
-        connectEventArg = new SocketAsyncEventArgs();
+        connectEventArg = new();
         connectEventArg.RemoteEndPoint = Endpoint;
         connectEventArg.Completed += OnAsyncCompleted;
-        receiveEventArg = new SocketAsyncEventArgs();
+        receiveEventArg = new();
         receiveEventArg.Completed += OnAsyncCompleted;
-        sendEventArg = new SocketAsyncEventArgs();
+        sendEventArg = new();
         sendEventArg.Completed += OnAsyncCompleted;
 
         // Create a new client socket
@@ -475,9 +464,9 @@ internal class TcpClient : IDisposable
 
         return ConnectAsync();
     }
-    #endregion
+#endregion
 
-    #region Send/Recieve data
+#region Send/Recieve data
     // Receive buffer
     private bool receiving;
     private Buffer receiveBuffer;
@@ -828,9 +817,9 @@ internal class TcpClient : IDisposable
             BytesSending = 0;
         }
     }
-    #endregion
+#endregion
 
-    #region IO processing
+#region IO processing
     /// <summary>
     /// This method is called whenever a receive or send operation is completed on a socket
     /// </summary>
@@ -872,22 +861,16 @@ internal class TcpClient : IDisposable
             if (OptionKeepAlive)
                 Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
             if (OptionTcpKeepAliveTime >= 0)
-            {
                 Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime,
                     OptionTcpKeepAliveTime);
-            }
 
             if (OptionTcpKeepAliveInterval >= 0)
-            {
                 Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval,
                     OptionTcpKeepAliveInterval);
-            }
 
             if (OptionTcpKeepAliveRetryCount >= 0)
-            {
                 Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount,
                     OptionTcpKeepAliveRetryCount);
-            }
 
             // Apply the option: no delay
             if (OptionNoDelay)
@@ -1025,9 +1008,9 @@ internal class TcpClient : IDisposable
             return false;
         }
     }
-    #endregion
+#endregion
 
-    #region Session handlers
+#region Session handlers
     /// <summary>
     /// Handle client connecting notification
     /// </summary>
@@ -1096,9 +1079,9 @@ internal class TcpClient : IDisposable
     protected virtual void OnError(SocketError error)
     {
     }
-    #endregion
+#endregion
 
-    #region Error handling
+#region Error handling
     /// <summary>
     /// Send error notification
     /// </summary>
@@ -1115,9 +1098,9 @@ internal class TcpClient : IDisposable
 
         OnError(error);
     }
-    #endregion
+#endregion
 
-    #region IDisposable implementation
+#region IDisposable implementation
     /// <summary>
     /// Disposed flag
     /// </summary>
@@ -1152,10 +1135,8 @@ internal class TcpClient : IDisposable
         if (!IsDisposed)
         {
             if (disposingManagedResources)
-            {
                 // Dispose managed resources here...
                 DisconnectAsync();
-            }
 
             // Dispose unmanaged resources here...
 
@@ -1165,5 +1146,5 @@ internal class TcpClient : IDisposable
             IsDisposed = true;
         }
     }
-    #endregion
+#endregion
 }

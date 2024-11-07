@@ -8,7 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Base\Pure.Editors.Base.csproj" />
+        <ProjectReference Include="..\..\Engine\Storage\Pure.Engine.Storage.csproj"/>
+        <ProjectReference Include="..\Base\Pure.Editors.Base.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -5,6 +5,7 @@ using MoonSharp.Interpreter;
 /// <summary>
 /// Wrapper for executing Lua scripts.
 /// </summary>
+[DoNotSave]
 public class Script
 {
     /// <summary>
@@ -17,12 +18,12 @@ public class Script
         script.DoString(luaCode);
     }
 
-    /// <param name="path">
+    /// <param name="filePath">
     /// The path to the Lua code file.</param>
     /// <returns>A new script instance with the loaded Lua code.</returns>
-    public static Script Load(string path)
+    public static Script Load(string filePath)
     {
-        return new(File.ReadAllText(path));
+        return new(File.ReadAllText(filePath));
     }
 
     /// <summary>
@@ -48,9 +49,11 @@ public class Script
     }
 
 #region Backend
+    internal class DoNotSave : Attribute;
+
     private readonly MoonSharp.Interpreter.Script script = new(CoreModules.None);
 
-    private object? GetPrimitive(DynValue value)
+    private static object? GetPrimitive(DynValue value)
     {
         switch (value.Type)
         {

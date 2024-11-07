@@ -8,13 +8,13 @@ public static class Palettes
 
         var palette = new Palette { Size = (13, 3) };
         palette.AlignInside((0.5f, 0.5f));
-        palette.OnPick(position => maps.Tilemaps[1].TileAt(((int)position.x, (int)position.y)).Tint);
-        palette.OnDisplay(() => maps.SetPalette(palette));
+        palette.OnPick += position => maps.Tilemaps[1].TileAt(((int)position.x, (int)position.y)).Tint;
+        palette.OnDisplay += () => maps.SetPalette(palette);
 
         //===============
 
         var hack = new Button((int.MaxValue, int.MaxValue));
-        hack.OnDisplay(() =>
+        hack.OnDisplay += () =>
         {
             var (x, y) = (palette.Position.x, palette.Position.y - 10);
             var (w, h) = (palette.Size.width, 10);
@@ -30,7 +30,7 @@ public static class Palettes
             var progress = Time.RuntimeClock / 2f;
             text = text.Constrain((w, h), alignment: Alignment.Center, symbolProgress: progress);
             maps.Tilemaps[1].SetText((x, y), text);
-        });
+        };
 
         return [hack, palette];
     }

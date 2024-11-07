@@ -1,7 +1,6 @@
-namespace Pure.Engine.UserInterface;
+using static System.Environment;
 
-using System.Diagnostics.CodeAnalysis;
-using static Environment;
+namespace Pure.Engine.UserInterface;
 
 public class FileViewer : Block
 {
@@ -11,10 +10,14 @@ public class FileViewer : Block
         UserProfile, MyDocuments, MyMusic, MyVideos, MyPictures, Fonts
     }
 
-    public Button User { get; private set; }
-    public Button Back { get; private set; }
-    public List HardDrives { get; private set; }
-    public List FilesAndFolders { get; private set; }
+    [DoNotSave]
+    public Button User { get; }
+    [DoNotSave]
+    public Button Back { get; }
+    [DoNotSave]
+    public List HardDrives { get; }
+    [DoNotSave]
+    public List FilesAndFolders { get; }
 
     public string? CurrentDirectory
     {
@@ -85,84 +88,6 @@ public class FileViewer : Block
     public FileViewer((int x, int y) position) : base(position)
     {
         Size = (16, 16);
-        Init();
-        IsSelectingFolders = isSelectingFolders;
-    }
-    public FileViewer(byte[] bytes) : base(bytes)
-    {
-        Init();
-        var b = Decompress(bytes);
-        IsSelectingFolders = GrabBool(b);
-        FileFilter = GrabString(b);
-    }
-    public FileViewer(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public override byte[] ToBytes()
-    {
-        var result = Decompress(base.ToBytes()).ToList();
-        Put(result, IsSelectingFolders);
-        Put(result, FileFilter ?? string.Empty);
-        return Compress(result.ToArray());
-    }
-
-    public bool IsFolder(Button item)
-    {
-        return FilesAndFolders.Items.IndexOf(item) < CountFolders;
-    }
-    public static string GetPath(Directory directory)
-    {
-        switch (directory)
-        {
-            case Directory.Desktop: return GetFolderPath(SpecialFolder.Desktop);
-            case Directory.Programs: return GetFolderPath(SpecialFolder.Programs);
-            case Directory.LocalApplicationData:
-            default: return GetFolderPath(SpecialFolder.LocalApplicationData);
-            case Directory.Favorites: return GetFolderPath(SpecialFolder.Favorites);
-            case Directory.Recent: return GetFolderPath(SpecialFolder.Recent);
-            case Directory.UserProfile: return GetFolderPath(SpecialFolder.UserProfile);
-            case Directory.MyDocuments: return GetFolderPath(SpecialFolder.MyDocuments);
-            case Directory.MyMusic: return GetFolderPath(SpecialFolder.MyMusic);
-            case Directory.MyVideos: return GetFolderPath(SpecialFolder.MyVideos);
-            case Directory.MyPictures: return GetFolderPath(SpecialFolder.MyPictures);
-            case Directory.Fonts: return GetFolderPath(SpecialFolder.Fonts);
-        }
-    }
-
-    public FileViewer Duplicate()
-    {
-        return new(ToBytes());
-    }
-
-    public static implicit operator byte[](FileViewer button)
-    {
-        return button.ToBytes();
-    }
-    public static implicit operator FileViewer(byte[] bytes)
-    {
-        return new(bytes);
-    }
-
-#region Backend
-    private string dir = "default";
-    private FileSystemWatcher watcher;
-    private static string DefaultPath
-    {
-        get => GetPath(Directory.LocalApplicationData);
-    }
-
-    private bool isSelectingFolders;
-    private string? fileFilter;
-
-    [MemberNotNull(nameof(User), nameof(Back), nameof(HardDrives), nameof(FilesAndFolders),
-        nameof(watcher))]
-    private void Init()
-    {
         watcher = new(DefaultPath)
         {
             EnableRaisingEvents = true,
@@ -206,7 +131,7 @@ public class FileViewer : Block
 
         CurrentDirectory = dir;
 
-        OnUpdate(OnUpdate);
+        OnUpdate += OnRefresh;
 
         for (var i = 0; i < drives.Count; i++)
         {
@@ -215,7 +140,44 @@ public class FileViewer : Block
             drive.OnInteraction(Interaction.Select, () => CurrentDirectory = drive.Text);
             drive.text = drives[i];
         }
+
+        IsSelectingFolders = isSelectingFolders;
     }
+
+    public bool IsFolder(Button item)
+    {
+        return FilesAndFolders.Items.IndexOf(item) < CountFolders;
+    }
+    public static string GetPath(Directory directory)
+    {
+        switch (directory)
+        {
+            case Directory.Desktop: return GetFolderPath(SpecialFolder.Desktop);
+            case Directory.Programs: return GetFolderPath(SpecialFolder.Programs);
+            case Directory.LocalApplicationData:
+            default: return GetFolderPath(SpecialFolder.LocalApplicationData);
+            case Directory.Favorites: return GetFolderPath(SpecialFolder.Favorites);
+            case Directory.Recent: return GetFolderPath(SpecialFolder.Recent);
+            case Directory.UserProfile: return GetFolderPath(SpecialFolder.UserProfile);
+            case Directory.MyDocuments: return GetFolderPath(SpecialFolder.MyDocuments);
+            case Directory.MyMusic: return GetFolderPath(SpecialFolder.MyMusic);
+            case Directory.MyVideos: return GetFolderPath(SpecialFolder.MyVideos);
+            case Directory.MyPictures: return GetFolderPath(SpecialFolder.MyPictures);
+            case Directory.Fonts: return GetFolderPath(SpecialFolder.Fonts);
+        }
+    }
+
+#region Backend
+    private string dir = "default";
+    [DoNotSave]
+    private readonly FileSystemWatcher watcher;
+    private static string DefaultPath
+    {
+        get => GetPath(Directory.LocalApplicationData);
+    }
+
+    private bool isSelectingFolders;
+    private string? fileFilter;
 
     private void Refresh()
     {
@@ -289,7 +251,7 @@ public class FileViewer : Block
         if (FilesAndFolders.IsHovered == false)
             FilesAndFolders.ApplyScroll();
     }
-    internal void OnUpdate()
+    internal void OnRefresh()
     {
         LimitSizeMin((3, 3 + HardDrives.Items.Count));
 

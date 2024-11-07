@@ -12,6 +12,8 @@ public static class Program
 {
     public static void Main()
     {
+        Storages.Run();
+
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
         var editors = new List((0, 0), 4) { Size = (14, 4), ItemSize = (14, 1), Text = "Editors:" };
         var apps = new List((0, 0), 9) { Size = (15, 9), ItemSize = (15, 1), Text = "Example Games:" };
@@ -86,13 +88,13 @@ public static class Program
 
         void OnDisplay(List list, Action? extraCode = null)
         {
-            list.OnDisplay(() =>
+            list.OnDisplay += () =>
             {
                 extraCode?.Invoke();
                 maps.Tilemaps[0].SetText((list.Position.x, list.Position.y - 1), list.Text);
                 maps.SetList(list);
-            });
-            list.OnItemDisplay(item => maps.SetListItem(list, item));
+            };
+            list.OnItemDisplay += item => maps.SetListItem(list, item);
         }
     }
 }

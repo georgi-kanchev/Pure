@@ -1,5 +1,6 @@
 namespace Pure.Engine.LocalAreaNetwork;
 
+[DoNotSave]
 public abstract class Communication
 {
     public void OnError(Action<string> method)
@@ -24,6 +25,9 @@ public abstract class Communication
     }
 
 #region Backend
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+    private class DoNotSave : Attribute;
+
     internal Action<string> onError, onClientConnect, onClientDisconnect;
     internal Action<(string fromNickname, byte tag, string message)> onReceiveMsg;
     internal Action<(string fromNickname, byte tag, byte[] data)> onReceiveData;

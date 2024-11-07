@@ -32,45 +32,6 @@ public class TilemapPack
         Size = size;
         View = (0, 0, size.width, size.height);
     }
-    public TilemapPack(byte[] bytes)
-    {
-        var offset = 0;
-        var count = GetInt();
-        Size = (GetInt(), GetInt());
-        View = (GetInt(), GetInt(), GetInt(), GetInt());
-
-        for (var i = 0; i < count; i++)
-        {
-            var bTilemap = Tilemap.GetBytesFrom(bytes, GetInt(), ref offset);
-            Tilemaps.Add(new(bTilemap));
-        }
-
-        int GetInt()
-        {
-            return BitConverter.ToInt32(Tilemap.GetBytesFrom(bytes, 4, ref offset));
-        }
-    }
-
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(Tilemaps.Count));
-        result.AddRange(BitConverter.GetBytes(Size.width));
-        result.AddRange(BitConverter.GetBytes(Size.height));
-        result.AddRange(BitConverter.GetBytes(View.X));
-        result.AddRange(BitConverter.GetBytes(View.Y));
-        result.AddRange(BitConverter.GetBytes(View.Width));
-        result.AddRange(BitConverter.GetBytes(View.Height));
-
-        foreach (var t in Tilemaps)
-        {
-            var bytes = t.ToBytes();
-            result.AddRange(BitConverter.GetBytes(bytes.Length));
-            result.AddRange(bytes);
-        }
-
-        return result.ToArray();
-    }
 
     public void Flush()
     {
@@ -131,7 +92,7 @@ public class TilemapPack
     {
         var result = new Tilemap[Tilemaps.Count];
         for (var i = 0; i < Tilemaps.Count; i++)
-            result[i] = Tilemaps[i].ViewUpdate();
+            result[i] = Tilemaps[i].UpdateView();
 
         return result;
     }

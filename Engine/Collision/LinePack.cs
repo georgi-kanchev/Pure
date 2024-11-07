@@ -27,56 +27,7 @@ public class LinePack : Pack<Line>
 
         data.AddRange(lines);
     }
-    public LinePack(byte[] bytes)
-    {
-        var b = SolidMap.Decompress(bytes);
-        var offset = 0;
 
-        var count = BitConverter.ToInt32(Get());
-
-        Position = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
-        Scale = (BitConverter.ToSingle(Get()), BitConverter.ToSingle(Get()));
-
-        for (var i = 0; i < count; i++)
-        {
-            var ax = BitConverter.ToSingle(Get());
-            var ay = BitConverter.ToSingle(Get());
-            var bx = BitConverter.ToSingle(Get());
-            var by = BitConverter.ToSingle(Get());
-            var color = BitConverter.ToUInt32(Get());
-
-            Add((ax, ay, bx, by, color));
-        }
-
-        byte[] Get()
-        {
-            return SolidMap.GetBytesFrom(b, 4, ref offset);
-        }
-    }
-    public LinePack(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
-
-    public override byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(data.Count));
-        result.AddRange(BitConverter.GetBytes(Position.x));
-        result.AddRange(BitConverter.GetBytes(Position.y));
-        result.AddRange(BitConverter.GetBytes(Scale.width));
-        result.AddRange(BitConverter.GetBytes(Scale.height));
-
-        foreach (var r in data)
-        {
-            result.AddRange(BitConverter.GetBytes(r.A.x));
-            result.AddRange(BitConverter.GetBytes(r.A.y));
-            result.AddRange(BitConverter.GetBytes(r.B.x));
-            result.AddRange(BitConverter.GetBytes(r.B.y));
-            result.AddRange(BitConverter.GetBytes(r.Color));
-        }
-
-        return SolidMap.Compress(result.ToArray());
-    }
     public (float ax, float ay, float bx, float by, uint color)[] ToBundle()
     {
         var result = new (float ax, float ay, float bx, float by, uint color)[data.Count];
@@ -312,11 +263,6 @@ public class LinePack : Pack<Line>
         }
     }
 
-    public LinePack Duplicate()
-    {
-        return new(ToBytes());
-    }
-
     public static implicit operator LinePack(Line[] lines)
     {
         return new(lines);
@@ -344,14 +290,6 @@ public class LinePack : Pack<Line>
     public static implicit operator LinePack((float x, float y, uint color)[] points)
     {
         return new(points);
-    }
-    public static implicit operator byte[](LinePack linePack)
-    {
-        return linePack.ToBytes();
-    }
-    public static implicit operator LinePack(byte[] bytes)
-    {
-        return new(bytes);
     }
 
 #region Backend

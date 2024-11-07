@@ -3,12 +3,12 @@
 /// <summary>
 /// Represents a solid in 2D space defined by its position and size.
 /// </summary>
-public struct Solid : IEquatable<Solid>
+public struct Solid(float x, float y, float width, float height, uint color = uint.MaxValue) : IEquatable<Solid>
 {
-    public float X { get; set; }
-    public float Y { get; set; }
-    public float Width { get; set; }
-    public float Height { get; set; }
+    public float X { get; set; } = x;
+    public float Y { get; set; } = y;
+    public float Width { get; set; } = width;
+    public float Height { get; set; } = height;
 
     public (float x, float y) Position
     {
@@ -32,46 +32,12 @@ public struct Solid : IEquatable<Solid>
     /// <summary>
     /// Gets or sets the color of the solid.
     /// </summary>
-    public uint Color { get; set; }
+    public uint Color { get; set; } = color;
 
-    public Solid(float x, float y, float width, float height, uint color = uint.MaxValue)
-    {
-        X = x;
-        Y = y;
-        Width = width;
-        Height = height;
-        Color = color;
-    }
     public Solid((float x, float y) position, (float width, float height) size, uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
     {
     }
-    public Solid(byte[] bytes)
-    {
-        var offset = 0;
-        X = BitConverter.ToSingle(SolidMap.GetBytesFrom(bytes, 4, ref offset));
-        Y = BitConverter.ToSingle(SolidMap.GetBytesFrom(bytes, 4, ref offset));
-        Width = BitConverter.ToSingle(SolidMap.GetBytesFrom(bytes, 4, ref offset));
-        Height = BitConverter.ToSingle(SolidMap.GetBytesFrom(bytes, 4, ref offset));
-        Color = BitConverter.ToUInt32(SolidMap.GetBytesFrom(bytes, 4, ref offset));
-    }
-    public Solid(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
 
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-        result.AddRange(BitConverter.GetBytes(Position.x));
-        result.AddRange(BitConverter.GetBytes(Position.y));
-        result.AddRange(BitConverter.GetBytes(Size.width));
-        result.AddRange(BitConverter.GetBytes(Size.height));
-        result.AddRange(BitConverter.GetBytes(Color));
-        return result.ToArray();
-    }
     /// <returns>
     /// A bundle tuple containing the position, size and the color of the solid.</returns>
     public (float x, float y, float width, float height, uint color) ToBundle()
@@ -246,13 +212,5 @@ public struct Solid : IEquatable<Solid>
     public static implicit operator (float x, float y, float width, float height)(Solid solid)
     {
         return (solid.Position.x, solid.Position.y, solid.Size.width, solid.Size.height);
-    }
-    public static implicit operator byte[](Solid solid)
-    {
-        return solid.ToBytes();
-    }
-    public static implicit operator Solid(byte[] bytes)
-    {
-        return new(bytes);
     }
 }

@@ -9,15 +9,12 @@ using System.Text;
 /// </summary>
 internal class Buffer
 {
-    private long size;
-    private long offset;
-
     /// <summary>
     /// Is the buffer empty?
     /// </summary>
     public bool IsEmpty
     {
-        get => Data == null || size == 0;
+        get => Data == null || Size == 0;
     }
     /// <summary>
     /// Bytes memory buffer
@@ -33,17 +30,11 @@ internal class Buffer
     /// <summary>
     /// Bytes memory buffer size
     /// </summary>
-    public long Size
-    {
-        get => size;
-    }
+    public long Size { get; private set; }
     /// <summary>
     /// Bytes memory buffer offset
     /// </summary>
-    public long Offset
-    {
-        get => offset;
-    }
+    public long Offset { get; private set; }
 
     /// <summary>
     /// Buffer indexer operator
@@ -59,8 +50,8 @@ internal class Buffer
     public Buffer()
     {
         Data = [];
-        size = 0;
-        offset = 0;
+        Size = 0;
+        Offset = 0;
     }
     /// <summary>
     /// Initialize a new expandable buffer with the given capacity
@@ -68,8 +59,8 @@ internal class Buffer
     public Buffer(long capacity)
     {
         Data = new byte[capacity];
-        size = 0;
-        offset = 0;
+        Size = 0;
+        Offset = 0;
     }
     /// <summary>
     /// Initialize a new expandable buffer with the given data
@@ -77,8 +68,8 @@ internal class Buffer
     public Buffer(byte[] data)
     {
         Data = data;
-        size = data.Length;
-        offset = 0;
+        Size = data.Length;
+        Offset = 0;
     }
 
 #region Memory buffer methods
@@ -87,7 +78,7 @@ internal class Buffer
     /// </summary>
     public Span<byte> AsSpan()
     {
-        return new(Data, (int)offset, (int)size);
+        return new(Data, (int)Offset, (int)Size);
     }
 
     /// <summary>
@@ -95,14 +86,14 @@ internal class Buffer
     /// </summary>
     public override string ToString()
     {
-        return ExtractString(0, size);
+        return ExtractString(0, Size);
     }
 
     // Clear the current buffer and its offset
     public void Clear()
     {
-        size = 0;
-        offset = 0;
+        Size = 0;
+        Offset = 0;
     }
 
     /// <summary>
@@ -126,15 +117,15 @@ internal class Buffer
         if (off + sz > Size)
             throw new ArgumentException("Invalid offset & size!", nameof(off));
 
-        Array.Copy(Data, off + sz, Data, off, size - sz - off);
-        size -= sz;
-        if (offset >= off + sz)
-            offset -= sz;
-        else if (offset >= off)
+        Array.Copy(Data, off + sz, Data, off, Size - sz - off);
+        Size -= sz;
+        if (Offset >= off + sz)
+            Offset -= sz;
+        else if (Offset >= off)
         {
-            offset -= offset - off;
-            if (offset > Size)
-                offset = Size;
+            Offset -= Offset - off;
+            if (Offset > Size)
+                Offset = Size;
         }
     }
 
@@ -149,7 +140,7 @@ internal class Buffer
             return;
 
         var data = new byte[Math.Max(capacity, 2 * Capacity)];
-        Array.Copy(Data, 0, data, 0, size);
+        Array.Copy(Data, 0, data, 0, Size);
         Data = data;
     }
 
@@ -157,20 +148,20 @@ internal class Buffer
     public void Resize(long sz)
     {
         Reserve(sz);
-        size = sz;
-        if (offset > size)
-            offset = size;
+        Size = sz;
+        if (Offset > Size)
+            Offset = Size;
     }
 
     // Shift the current buffer offset
     public void Shift(long off)
     {
-        offset += off;
+        Offset += off;
     }
     // Unshift the current buffer offset
     public void Unshift(long off)
     {
-        offset -= off;
+        Offset -= off;
     }
 #endregion
 
@@ -182,9 +173,9 @@ internal class Buffer
     /// <returns>Count of append bytes</returns>
     public long Append(byte value)
     {
-        Reserve(size + 1);
-        Data[size] = value;
-        size += 1;
+        Reserve(Size + 1);
+        Data[Size] = value;
+        Size += 1;
         return 1;
     }
 
@@ -195,9 +186,9 @@ internal class Buffer
     /// <returns>Count of append bytes</returns>
     public long Append(byte[] buffer)
     {
-        Reserve(size + buffer.Length);
-        Array.Copy(buffer, 0, Data, size, buffer.Length);
-        size += buffer.Length;
+        Reserve(Size + buffer.Length);
+        Array.Copy(buffer, 0, Data, Size, buffer.Length);
+        Size += buffer.Length;
         return buffer.Length;
     }
 
@@ -210,9 +201,9 @@ internal class Buffer
     /// <returns>Count of append bytes</returns>
     public long Append(byte[] buffer, long off, long sz)
     {
-        Reserve(size + sz);
-        Array.Copy(buffer, off, Data, size, sz);
-        size += sz;
+        Reserve(Size + sz);
+        Array.Copy(buffer, off, Data, Size, sz);
+        Size += sz;
         return sz;
     }
 
@@ -223,9 +214,9 @@ internal class Buffer
     /// <returns>Count of append bytes</returns>
     public long Append(ReadOnlySpan<byte> buffer)
     {
-        Reserve(size + buffer.Length);
-        buffer.CopyTo(new(Data, (int)size, buffer.Length));
-        size += buffer.Length;
+        Reserve(Size + buffer.Length);
+        buffer.CopyTo(new(Data, (int)Size, buffer.Length));
+        Size += buffer.Length;
         return buffer.Length;
     }
 
@@ -247,9 +238,9 @@ internal class Buffer
     public long Append(string text)
     {
         var length = Encoding.UTF8.GetMaxByteCount(text.Length);
-        Reserve(size + length);
-        long result = Encoding.UTF8.GetBytes(text, 0, text.Length, Data, (int)size);
-        size += result;
+        Reserve(Size + length);
+        long result = Encoding.UTF8.GetBytes(text, 0, text.Length, Data, (int)Size);
+        Size += result;
         return result;
     }
 
@@ -261,9 +252,9 @@ internal class Buffer
     public long Append(ReadOnlySpan<char> text)
     {
         var length = Encoding.UTF8.GetMaxByteCount(text.Length);
-        Reserve(size + length);
-        long result = Encoding.UTF8.GetBytes(text, new(Data, (int)size, length));
-        size += result;
+        Reserve(Size + length);
+        long result = Encoding.UTF8.GetBytes(text, new(Data, (int)Size, length));
+        Size += result;
         return result;
     }
 #endregion

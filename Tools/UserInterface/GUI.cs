@@ -5,7 +5,7 @@ using Pure.Tools.Tilemap;
 
 namespace Pure.Tools.ImmediateGraphicalUserInterface;
 
-public static class ImGui
+public static class GUI
 {
     public static Tile Cursor { get; set; } = new(546, 3789677055);
 

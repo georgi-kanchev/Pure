@@ -91,11 +91,11 @@ public static class Program
         SubscribeToClicks();
 
         promptText = new() { Size = (50, 30) };
-        promptText.OnDisplay(() =>
-            editor.MapsUi.SetInputBox(promptText, (int)Editor.LayerMapsUi.PromptBack));
+        promptText.OnDisplay += () =>
+            editor.MapsUi.SetInputBox(promptText, (int)Editor.LayerMapsUi.PromptBack);
         promptNumber = new() { Size = (20, 1), SymbolGroup = SymbolGroup.Decimals | SymbolGroup.Math };
-        promptNumber.OnDisplay(() =>
-            editor.MapsUi.SetInputBox(promptNumber, (int)Editor.LayerMapsUi.PromptBack));
+        promptNumber.OnDisplay += () =>
+            editor.MapsUi.SetInputBox(promptNumber, (int)Editor.LayerMapsUi.PromptBack);
 
         promptSymbol = new()
         {
@@ -105,7 +105,7 @@ public static class Program
             Text = "ASCII Character",
             Value = 'A'
         };
-        promptSymbol.OnDisplay(() =>
+        promptSymbol.OnDisplay += () =>
         {
             const int BACK = (int)Editor.LayerMapsUi.PromptBack;
             editor.MapsUi.SetStepper(promptSymbol, BACK);
@@ -115,7 +115,7 @@ public static class Program
             var value = (int)promptSymbol.Value;
             editor.MapsUi.Tilemaps[BACK + 1].SetArea((x + 2, y + 1, 10, 1), null, Tile.EMPTY); // erase text
             editor.MapsUi.Tilemaps[BACK + 1].SetText((x + 2, y + 1), $"{value} '{Convert.ToChar(value)}'");
-        });
+        };
     }
 
     private static void SubscribeToClicks()
@@ -185,15 +185,15 @@ public static class Program
             keys.Items[0].Text = GetUniqueText(keys, "Key");
         }
 
-        keys.OnItemDisplay(item =>
+        keys.OnItemDisplay += item =>
         {
             maps.Tilemaps[1].SetText(item.Position, item.Text.Shorten(item.Size.width),
                 item.GetInteractionColor(Color.Orange));
-        });
+        };
         keys.OnItemInteraction(Interaction.Trigger, item => OnValueClick(keys, item, true));
 
-        list.OnDisplay(() => maps.SetList(list));
-        list.OnItemDisplay(item =>
+        list.OnDisplay += () => maps.SetList(list);
+        list.OnItemDisplay += item =>
         {
             var color = Color.Gray;
             var types = list.Text.Split(",");
@@ -210,7 +210,7 @@ public static class Program
 
             var interactionColor = item.GetInteractionColor(color);
             maps.Tilemaps[1].SetText(item.Position, item.Text.Shorten(item.Size.width), interactionColor);
-        });
+        };
         list.OnItemInteraction(Interaction.Trigger, item => OnValueClick(list, item));
 
         panel.OnInteraction(Interaction.DoubleTrigger, () =>
@@ -235,16 +235,16 @@ public static class Program
             });
             Input.TilemapSize = maps.Size;
         });
-        panel.OnDisplay(() => OnPanelDisplay(panel));
+        panel.OnDisplay += () => OnPanelDisplay(panel);
 
-        add.OnDisplay(() => maps.SetButtonIcon(add, new(Tile.MATH_PLUS, Color.Green), 1));
+        add.OnDisplay += () => maps.SetButtonIcon(add, new(Tile.MATH_PLUS, Color.Green), 1);
         add.OnInteraction(Interaction.Trigger, () => OnAddClick(add));
-        removeKey.OnDisplay(() => maps.SetButtonIcon(removeKey, new(Tile.ICON_TRASH, Color.Red), 1));
+        removeKey.OnDisplay += () => maps.SetButtonIcon(removeKey, new(Tile.ICON_TRASH, Color.Red), 1);
         removeKey.OnInteraction(Interaction.Trigger, () => OnRemoveKeyClick(removeKey));
 
-        remove.OnItemDisplay(item => maps.SetButtonIcon(item, new(Tile.ICON_X, Color.Red), 1));
+        remove.OnItemDisplay += item => maps.SetButtonIcon(item, new(Tile.ICON_X, Color.Red), 1);
         remove.OnItemInteraction(Interaction.Trigger, item => OnRemoveClick(remove, item));
-        move.OnItemDisplay(item => maps.SetButtonIcon(item, new(Tile.ARROW_TAILLESS, Color.Gray, 3), 1));
+        move.OnItemDisplay += item => maps.SetButtonIcon(item, new(Tile.ARROW_TAILLESS, Color.Gray, 3), 1);
         move.OnItemInteraction(Interaction.Trigger, item => OnMoveClick(move, item));
 
         panels.Blocks.Add(panel);

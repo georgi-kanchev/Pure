@@ -681,11 +681,10 @@ public class Storage
             TextToPrimitive(dataAsText, type);
     }
 
-    private static T Wrap<T>(decimal value, T minValue, T maxValue)
-        where T : struct, IComparable, IConvertible
+    private static T Wrap<T>(decimal value, T minValue, T maxValue) where T : struct, IComparable, IConvertible
     {
         if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
-            throw new ArgumentException("Type must be a primitive numeric type.");
+            throw default!;
 
         var range = Convert.ToDouble(maxValue) - Convert.ToDouble(minValue);
         var wrappedValue = Convert.ToDouble(value);

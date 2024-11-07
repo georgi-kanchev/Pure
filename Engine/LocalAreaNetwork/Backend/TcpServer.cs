@@ -41,8 +41,7 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="address">IP address</param>
     /// <param name="port">Port number</param>
-    protected TcpServer(IPAddress address, int port)
-        : this(new IPEndPoint(address, port))
+    protected TcpServer(IPAddress address, int port) : this(new IPEndPoint(address, port))
     {
     }
     /// <summary>
@@ -50,25 +49,21 @@ internal class TcpServer : IDisposable
     /// </summary>
     /// <param name="address">IP address</param>
     /// <param name="port">Port number</param>
-    public TcpServer(string address, int port)
-        : this(new IPEndPoint(IPAddress.Parse(address), port))
+    public TcpServer(string address, int port) : this(new IPEndPoint(IPAddress.Parse(address), port))
     {
     }
     /// <summary>
     /// Initialize TCP server with a given DNS endpoint
     /// </summary>
     /// <param name="endpoint">DNS endpoint</param>
-    public TcpServer(DnsEndPoint endpoint)
-        : this(endpoint, endpoint.Host, endpoint.Port)
+    public TcpServer(DnsEndPoint endpoint) : this(endpoint, endpoint.Host, endpoint.Port)
     {
     }
     /// <summary>
     /// Initialize TCP server with a given IP endpoint
     /// </summary>
     /// <param name="endpoint">IP endpoint</param>
-    public TcpServer(IPEndPoint endpoint)
-        : this(endpoint, endpoint.Address.ToString(),
-            endpoint.Port)
+    public TcpServer(IPEndPoint endpoint) : this(endpoint, endpoint.Address.ToString(), endpoint.Port)
     {
     }
     /// <summary>
@@ -205,7 +200,7 @@ internal class TcpServer : IDisposable
     /// </summary>
     public int OptionSendBufferSize { get; set; } = 8192;
 
-    #region Start/Stop server
+#region Start/Stop server
     // Server acceptor
     private Socket acceptorSocket;
     private SocketAsyncEventArgs acceptorEventArg;
@@ -233,7 +228,7 @@ internal class TcpServer : IDisposable
     /// <returns>Socket object</returns>
     protected virtual Socket CreateSocket()
     {
-        return new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        return new(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
     /// <summary>
@@ -247,7 +242,7 @@ internal class TcpServer : IDisposable
             return false;
 
         // Setup acceptor event arg
-        acceptorEventArg = new SocketAsyncEventArgs();
+        acceptorEventArg = new();
         acceptorEventArg.Completed += OnAsyncCompleted;
 
         // Create a new acceptor socket
@@ -358,9 +353,9 @@ internal class TcpServer : IDisposable
 
         return Start();
     }
-    #endregion
+#endregion
 
-    #region Accepting clients
+#region Accepting clients
     /// <summary>
     /// Start accept a new client connection
     /// </summary>
@@ -409,20 +404,20 @@ internal class TcpServer : IDisposable
 
         ProcessAccept(e);
     }
-    #endregion
+#endregion
 
-    #region Session factory
+#region Session factory
     /// <summary>
     /// Create TCP session factory method
     /// </summary>
     /// <returns>TCP session</returns>
     protected virtual TcpSession CreateSession()
     {
-        return new TcpSession(this);
+        return new(this);
     }
-    #endregion
+#endregion
 
-    #region Session management
+#region Session management
     // Server sessions
     private readonly ConcurrentDictionary<Guid, TcpSession> sessions = new();
 
@@ -472,9 +467,9 @@ internal class TcpServer : IDisposable
         // Unregister session by Id
         sessions.TryRemove(id, out var _);
     }
-    #endregion
+#endregion
 
-    #region Multicasting
+#region Multicasting
     /// <summary>
     /// Multicast data to all connected sessions
     /// </summary>
@@ -536,9 +531,9 @@ internal class TcpServer : IDisposable
     {
         return Multicast(Encoding.UTF8.GetBytes(text.ToArray()));
     }
-    #endregion
+#endregion
 
-    #region Server handlers
+#region Server handlers
     /// <summary>
     /// Handle server starting notification
     /// </summary>
@@ -617,9 +612,9 @@ internal class TcpServer : IDisposable
     {
         OnDisconnected(session);
     }
-    #endregion
+#endregion
 
-    #region Error handling
+#region Error handling
     /// <summary>
     /// Send error notification
     /// </summary>
@@ -636,9 +631,9 @@ internal class TcpServer : IDisposable
 
         OnError(error);
     }
-    #endregion
+#endregion
 
-    #region IDisposable implementation
+#region IDisposable implementation
     /// <summary>
     /// Disposed flag
     /// </summary>
@@ -673,10 +668,8 @@ internal class TcpServer : IDisposable
         if (!IsDisposed)
         {
             if (disposingManagedResources)
-            {
                 // Dispose managed resources here...
                 Stop();
-            }
 
             // Dispose unmanaged resources here...
 
@@ -686,5 +679,5 @@ internal class TcpServer : IDisposable
             IsDisposed = true;
         }
     }
-    #endregion
+#endregion
 }

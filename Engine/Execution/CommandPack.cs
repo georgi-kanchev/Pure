@@ -3,6 +3,7 @@
 using System.Text.RegularExpressions;
 using System.Globalization;
 
+[Script.DoNotSave]
 public class CommandPack
 {
     public bool IsDisabled { get; set; }
@@ -126,8 +127,7 @@ public class CommandPack
         return resultArray;
     }
 
-    private static T Wrap<T>(decimal value, T minValue, T maxValue)
-        where T : struct, IComparable, IConvertible
+    private static T Wrap<T>(decimal value, T minValue, T maxValue) where T : struct, IComparable, IConvertible
     {
         if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
             throw new ArgumentException("Type must be a primitive numeric type.");

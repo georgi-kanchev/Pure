@@ -84,7 +84,7 @@ internal class Inspector : Panel
             { typeof(List), [type, expanded, scroll, items, multiSelect, width, height, gap] }
         };
 
-        OnDisplay(() =>
+        OnDisplay += () =>
         {
             if (IsHovered)
                 Input.CursorResult = MouseCursor.Arrow;
@@ -106,10 +106,10 @@ internal class Inspector : Panel
             }
 
             prevSelected = Program.selected;
-        });
+        };
     }
 
-    #region Backend
+#region Backend
     private class EditButton : Button
     {
         public EditButton((int x, int y) position) : base(position)
@@ -715,5 +715,5 @@ internal class Inspector : Panel
     {
         editor.MapsUi.Tilemaps[(int)layer].SetArea(block.Area, null, 0);
     }
-    #endregion
+#endregion
 }
