@@ -241,37 +241,37 @@ public static class GUI
             {
                 var fileViewer = new FileViewer();
                 imGuiCache[area] = (2, fileViewer);
-                fileViewer.OnDisplay(() => maps.SetFileViewer(fileViewer));
-                fileViewer.FilesAndFolders.OnItemDisplay(item => maps.SetFileViewerItem(fileViewer, item));
-                fileViewer.HardDrives.OnItemDisplay(item => maps.SetFileViewerItem(fileViewer, item));
+                fileViewer.OnDisplay += () => maps.SetFileViewer(fileViewer);
+                fileViewer.FilesAndFolders.OnItemDisplay += item => maps.SetFileViewerItem(fileViewer, item);
+                fileViewer.HardDrives.OnItemDisplay += item => maps.SetFileViewerItem(fileViewer, item);
             }
             else if (type == typeof(Palette))
             {
                 var palette = new Palette();
                 imGuiCache[area] = (2, palette);
-                palette.OnDisplay(() => maps.SetPalette(palette));
+                palette.OnDisplay += () => maps.SetPalette(palette);
             }
             else if (type == typeof(Prompt))
             {
                 var prompt = new Prompt { Text = text, Size = maps.Size };
                 prompt.AlignInside((0.5f, 0.5f));
-                prompt.OnDisplay(() => maps.SetPrompt(prompt, 3));
-                prompt.OnItemDisplay(item => maps.SetPromptItem(prompt, item, 5));
+                prompt.OnDisplay += () => maps.SetPrompt(prompt, 3);
+                prompt.OnItemDisplay += item => maps.SetPromptItem(prompt, item, 5);
                 imGuiCache[area] = (2, prompt);
             }
             else if (type == typeof(Pages))
             {
                 var pages = new Pages();
                 imGuiCache[area] = (2, pages);
-                pages.OnDisplay(() => maps.SetPages(pages));
-                pages.OnItemDisplay(page => maps.SetPagesItem(pages, page));
+                pages.OnDisplay += () => maps.SetPages(pages);
+                pages.OnItemDisplay += page => maps.SetPagesItem(pages, page);
             }
             else if (type == typeof(List))
             {
                 var list = new List((0, 0), span: span);
                 imGuiCache[area] = (2, list);
-                list.OnDisplay(() => maps.SetList(list));
-                list.OnItemDisplay(item => maps.SetListItem(list, item));
+                list.OnDisplay += () => maps.SetList(list);
+                list.OnItemDisplay += item => maps.SetListItem(list, item);
             }
         }
 
