@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml.Xsl;
 
 namespace Pure.Engine.Storage;
 
@@ -258,43 +257,147 @@ public static class Extensions
         return dataBase64 == null || dataBase64.Length == 0 ? null : Encoding.UTF8.GetString(dataBase64);
     }
 
-    public static string[,] ToTabSeparatedValues2D(this string tsvText)
+    public static string ToTSV(this object? value)
     {
-        var rows = tsvText.Replace("\r", "").Split("\n", StringSplitOptions.RemoveEmptyEntries);
-        var numRows = rows.Length;
-        var numCols = rows[0].Split('\t').Length;
-        var result = new string[numRows, numCols];
+        if (value == null)
+            return "";
 
-        for (var i = 0; i < numRows; i++)
+        var type = value.GetType();
+
+        if (IsList(type))
         {
-            var columns = rows[i].Split('\t');
+            var jaggedArrayType = GetJaggedArrayType(type);
+            return ToTSV(ToObject(value.ToBytes(), jaggedArrayType, out _));
+        }
+        else if (type.IsArray)
+        {
+            if (type.GetArrayRank() == 1)
+            {
+                var jaggedDims = GetJaggedArrayDimensions(type);
+
+                if (jaggedDims > 2)
+                    return $"{value}";
+
+                value = ToArray(value);
+                type = value.GetType();
+            }
+
+            var rank = type.GetArrayRank();
+            var itemType = type.GetElementType();
+            var array = (Array)value;
+
+            if (itemType != null && IsList(itemType) && rank == 1)
+            {
+                var jaggedArrayType = GetJaggedArrayType(itemType);
+                return ToTSV(ToObject(value.ToBytes(), jaggedArrayType.MakeArrayType(), out _));
+            }
+
+            if (rank == 1)
+            {
+                var result = new string[array.Length, 1];
+                for (var i = 0; i < array.Length; i++)
+                    result[i, 0] = $"{array.GetValue(i)}";
+                return TableToTSV(result);
+            }
+            else if (rank == 2)
+            {
+                if (itemType == typeof(string))
+                    return TableToTSV((string[,])value);
+
+                var result = new string[array.GetLength(0), array.GetLength(1)];
+                for (var i = 0; i < array.GetLength(0); i++)
+                    for (var j = 0; j < array.GetLength(1); j++)
+                        result[i, j] = $"{array.GetValue(i, j)}";
+
+                return TableToTSV(result);
+            }
+        }
+        else if (IsTuple(type))
+            return ToTSV(GetTupleItems(value).ToArray());
+        else if (type.IsEnum)
+        {
+            var enumType = Enum.GetUnderlyingType(type);
+            return ToTSV(ToObject(value.ToBytes(), enumType, out _));
+        }
+        else if (IsDictionary(type))
+        {
+            var dict = (IDictionary)value;
+            var result = new string[dict.Count, 2];
+            var i = 0;
+            foreach (var obj in dict)
+            {
+                var kvp = (DictionaryEntry)obj;
+                result[i, 0] = $"{kvp.Key}";
+                result[i, 1] = $"{kvp.Value}";
+                i++;
+            }
+
+            return TableToTSV(result);
+        }
+        else if (IsStruct(type) || type.IsClass)
+        {
+            var sorted = GetFieldsInOrder(type);
+            var result = new string[sorted.Count, 2];
+
+            var i = 0;
+            foreach (var (_, fields) in sorted)
+                foreach (var field in fields)
+                {
+                    var val = field.GetValue(value);
+                    var t = field.FieldType;
+                    var isCollection = IsList(field.FieldType) || field.FieldType.IsArray;
+                    result[i, 0] = $"{field.Name}";
+                    result[i, 1] = $"{val}";
+                    result[i, 1] = t.IsEnum ? ToTSV(val) : result[i, 1];
+                    result[i, 1] = isCollection ? ToTSV(val).Replace('\n', '\t') : result[i, 1];
+
+                    i++;
+                }
+
+            return TableToTSV(result);
+        }
+
+        return $"{value}";
+    }
+    public static string?[,] ToTable(this string tsvText)
+    {
+        var placeholders = new List<string>();
+        var removedDoubleQuotes = tsvText.Replace("\"\"", QUOTE_PLACEHOLDER);
+        var escaped = AddPlaceholders(removedDoubleQuotes, placeholders);
+
+        var rows = escaped.Replace("\r", "").Split("\n").ToList();
+        var numCols = 1;
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            var columns = rows[i].Split('\t').Length;
+            if (numCols < columns)
+                numCols = columns;
+        }
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            if (rows[i].StartsWith(@"\\") == false)
+                continue;
+
+            rows.Remove(rows[i]);
+            i--;
+        }
+
+        var result = new string?[rows.Count, numCols];
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            var cols = rows[i].Split('\t');
             for (var j = 0; j < numCols; j++)
-                result[i, j] = columns[j];
+            {
+                var value = j >= cols.Length ? null : FilterPlaceholders(cols[j], placeholders);
+                value = value != null ? value.Replace(QUOTE_PLACEHOLDER, "\"") : value;
+                result[i, j] = value;
+            }
         }
 
         return result;
-    }
-    public static string ToTabSeparatedValues(this string[,] array)
-    {
-        var numRows = array.GetLength(0);
-        var numCols = array.GetLength(1);
-        var sb = new StringBuilder();
-
-        for (var i = 0; i < numRows; i++)
-        {
-            for (var j = 0; j < numCols; j++)
-            {
-                sb.Append(array[i, j]);
-
-                if (j < numCols - 1)
-                    sb.Append('\t');
-            }
-
-            if (i < numRows - 1)
-                sb.AppendLine();
-        }
-
-        return sb.ToString();
     }
 
     public static T? ToPrimitive<T>(this string primitiveAsText) where T : struct, IComparable, IConvertible
@@ -338,6 +441,8 @@ public static class Extensions
             get => left == null && right == null;
         }
     }
+
+    private const string STRING_PLACEHOLDER = "—", QUOTE_PLACEHOLDER = "❝";
 
     private static object? ToObject(this byte[]? data, Type? expectedType, out byte[]? remaining)
     {
@@ -647,12 +752,12 @@ public static class Extensions
 
         return regularArray;
 
-        void Flatten(object array)
+        void Flatten(object? array)
         {
             if (array is Array arr)
                 foreach (var item in arr)
                     Flatten(item);
-            else
+            else if (array != null)
                 flatList!.Add(array);
         }
     }
@@ -676,6 +781,19 @@ public static class Extensions
                 DetermineDimensions(item, level + 1, dimensions);
         }
     }
+    private static int GetJaggedArrayDimensions(Type jaggedArrayType)
+    {
+        var dimensions = 0;
+        var currentType = jaggedArrayType;
+
+        while (currentType is { IsArray: true })
+        {
+            dimensions++;
+            currentType = currentType.GetElementType();
+        }
+
+        return dimensions;
+    }
     private static Type RegularToJaggedArrayType(Type type)
     {
         var rank = type.GetArrayRank();
@@ -686,7 +804,50 @@ public static class Extensions
 
         return jaggedArrayType;
     }
+    private static string TableToTSV(string[,] array)
+    {
+        var numRows = array.GetLength(0);
+        var numCols = array.GetLength(1);
+        var sb = new StringBuilder();
 
+        for (var i = 0; i < numRows; i++)
+        {
+            for (var j = 0; j < numCols; j++)
+            {
+                var value = $"{array[i, j]}".Replace("\"", "\"\"");
+                if (value.Contains('\t') || value.Contains('\n'))
+                    value = $"\"{value}\"";
+
+                sb.Append(value);
+
+                if (j < numCols - 1)
+                    sb.Append('\t');
+            }
+
+            if (i < numRows - 1)
+                sb.AppendLine();
+        }
+
+        return sb.ToString().Replace("\r", "");
+    }
+
+    private static Type GetJaggedArrayType(Type nestedListType)
+    {
+        var depth = 0;
+        var currentType = nestedListType;
+
+        while (IsList(currentType))
+        {
+            depth++;
+            currentType = currentType.GetGenericArguments()[0];
+        }
+
+        var jaggedArrayType = currentType;
+        for (var i = 0; i < depth; i++)
+            jaggedArrayType = jaggedArrayType.MakeArrayType();
+
+        return jaggedArrayType;
+    }
     private static SortedDictionary<uint, List<FieldInfo>> GetFieldsInOrder(Type type)
     {
         var classAttributes = type.GetCustomAttributes();
@@ -755,6 +916,31 @@ public static class Extensions
             wrappedValue -= range;
 
         return (T)Convert.ChangeType(wrappedValue, typeof(T));
+    }
+
+    private static string FilterPlaceholders(string dataAsText, List<string> strings)
+    {
+        return Regex.Replace(dataAsText, STRING_PLACEHOLDER + "(\\d+)", match =>
+        {
+            var index = int.Parse(match.Groups[1].Value);
+            return index >= 0 && index < strings.Count ?
+                $"{strings[index]}" :
+                match.Value;
+        });
+    }
+    private static string AddPlaceholders(string dataAsText, List<string> strings)
+    {
+        return Regex.Replace(dataAsText, "\"([^\"]+)\"", match =>
+        {
+            var replacedValue = STRING_PLACEHOLDER + strings.Count;
+            var value = match.Groups[1].Value;
+
+            if (strings.Contains(value))
+                return STRING_PLACEHOLDER + strings.IndexOf(value);
+
+            strings.Add(value);
+            return replacedValue;
+        });
     }
 #endregion
 }
