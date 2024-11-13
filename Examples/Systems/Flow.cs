@@ -15,16 +15,16 @@ public static class Flow
         stateMachine.Add(Attack, Miss, Hit, Kill);
         stateMachine.Add(Kill, Win, Lose);
 
-        Delay.Wait(1, () =>
+        var ticker = () =>
         {
             Console.Clear();
             Console.WriteLine(stateMachine.ToTree());
-        }, true);
+        };
+        ticker.CallAfter(1f, true);
 
         while (Window.KeepOpen())
         {
             Time.Update();
-            Delay.Update(Time.Delta);
             stateMachine.Update();
         }
 

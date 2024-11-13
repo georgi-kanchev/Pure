@@ -1,6 +1,5 @@
 namespace Pure.Examples.Games;
 
-using Engine.Execution;
 using Engine.Window;
 using Engine.Utilities;
 using Engine.Tilemap;
@@ -20,18 +19,18 @@ public static class Tetris
         map.SetBox((ax, ay, aw + 1, ah + 1), Tile.EMPTY, Tile.BOX_CORNER_ROUND, Tile.FULL);
         piece = new((map.Size.width / 2, 0));
 
-        Delay.Wait(0.5f, () =>
+        var ticker = () =>
         {
             if (piece.TryMoveAt(Angle.Down) == false)
                 Collide();
-        }, true);
+        };
+        ticker.CallAfter(0.5f, true);
 
         HandleInput();
 
         while (Window.KeepOpen())
         {
             Time.Update();
-            Delay.Update(Time.Delta);
             Draw();
         }
 

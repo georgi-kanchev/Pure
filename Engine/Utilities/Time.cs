@@ -1,6 +1,6 @@
-﻿namespace Pure.Engine.Utilities;
+﻿using System.Diagnostics;
 
-using System.Diagnostics;
+namespace Pure.Engine.Utilities;
 
 /// <summary>
 /// Provides various time-related functionalities, such as time conversion and clock-related calculations.
@@ -37,8 +37,8 @@ public static class Time
     }
 
     /// <summary>
-    /// Gets the real time clock taken from <see cref="DateTime.Now"/> in seconds ranged
-    /// 0 to 86399)<br></br>or in clock hours ranged 12 AM/00:00/24:00 to 11:59:59 AM/23:59:59.
+    /// Gets the real time clock taken from <see cref="DateTime.Now"/> in seconds (ranged
+    /// 0 to 86399 or in clock hours ranged 12 AM/00:00/24:00 to 11:59:59 AM/23:59:59).
     /// </summary>
     public static float Clock { get; private set; }
 
@@ -81,11 +81,13 @@ public static class Time
         Delta = Math.Clamp(delta, 0, MathF.Max(0, DeltaMax));
         dt.Restart();
 
-        Clock = Now;
+        Clock = (float)DateTime.Now.TimeOfDay.TotalSeconds;
         RuntimeClock += Delta;
         UpdatesPerSecond = 1f / Delta;
         UpdatesPerSecondAverage = UpdateCount / RuntimeClock;
         UpdateCount++;
+
+        UpdateTimers();
     }
     /// <summary>
     /// Converts a duration in seconds to a formatted clock string.
@@ -191,12 +193,93 @@ public static class Time
         };
     }
 
+    public static void CallAfter(this Action method, float seconds, bool repeat = false)
+    {
+        timers.Add(new(method, null, seconds, repeat));
+    }
+    public static void CallFor(this Action<float> method, float seconds, bool repeat = false)
+    {
+        timers.Add(new(null, method, seconds, repeat));
+    }
+    /// <summary>
+    /// Cancels a scheduled method call.
+    /// </summary>
+    /// <param name="method">The method to cancel.</param>
+    public static void CancelCall(this Action method)
+    {
+        foreach (var t in timers)
+            if (t.method == method)
+                t.method = null;
+    }
+    public static void CancelCall(this Action<float> method)
+    {
+        foreach (var t in timers)
+            if (t.methodF == method)
+                t.methodF = null;
+    }
+    /// <summary>
+    /// Offsets the scheduled call time of a method.
+    /// </summary>
+    /// <param name="method">The method to offset the call time for.</param>
+    /// <param name="seconds">The number of seconds to offset the call time by.</param>
+    public static void DelayCall(this Action method, float seconds)
+    {
+        foreach (var t in timers)
+            if (t.method == method)
+                t.startTime += seconds;
+    }
+    public static void ExtendCall(this Action<float> method, float seconds)
+    {
+        foreach (var t in timers)
+            if (t.methodF == method)
+                t.startTime += seconds;
+    }
+
 #region Backend
     private static readonly Stopwatch dt = new();
 
-    private static float Now
+    private class Timer(Action? method, Action<float>? methodF, float delay, bool loop)
     {
-        get => (float)DateTime.Now.TimeOfDay.TotalSeconds;
+        public Action? method = method;
+        public Action<float>? methodF = methodF;
+        public float startTime = RuntimeClock;
+
+        public void TryTrigger()
+        {
+            var progress = RuntimeClock.Map((startTime, startTime + delay), (0, 1));
+            if (RuntimeClock < startTime + delay)
+            {
+                methodF?.Invoke(progress);
+                return;
+            }
+
+            methodF?.Invoke(progress);
+            method?.Invoke();
+            startTime = RuntimeClock;
+
+            if (loop)
+                return;
+
+            methodF = null;
+            method = null;
+        }
+    }
+
+    private static readonly List<Timer> timers = [];
+
+    private static void UpdateTimers()
+    {
+        var toBeRemoved = new List<Timer>();
+        foreach (var timer in timers)
+        {
+            timer.TryTrigger();
+
+            if (timer.method == null && timer.methodF == null)
+                toBeRemoved.Add(timer);
+        }
+
+        foreach (var timer in toBeRemoved)
+            timers.Remove(timer);
     }
 #endregion
 }

@@ -84,6 +84,38 @@ public enum Alignment
 /// </summary>
 public static class Extensions
 {
+    public static (float x, float y)[] BezLinear { get; set; } = [(0f, 0f), (1f, 1f)];
+    public static (float x, float y)[] BezQuadIn { get; set; } = [(0f, 0f), (0.42f, 0f), (1f, 1f)];
+    public static (float x, float y)[] BezQuadOut { get; set; } = [(0f, 0f), (0f, 0.58f), (1f, 1f)];
+    public static (float x, float y)[] BezQuadInOut { get; set; } = [(0f, 0f), (0.42f, 0f), (0.58f, 1f), (1f, 1f)];
+    public static (float x, float y)[] BezCubicIn { get; set; } = [(0f, 0f), (0.55f, 0.055f), (1f, 1f)];
+    public static (float x, float y)[] BezCubicOut { get; set; } = [(0f, 0f), (0.215f, 0.61f), (1f, 1f)];
+    public static (float x, float y)[] BezCubicInOut { get; set; } = [(0f, 0f), (0.645f, 0.045f), (0.355f, 1f), (1f, 1f)];
+    public static (float x, float y)[] BezQuartIn { get; set; } = [(0f, 0f), (0.895f, 0.03f), (1f, 1f)];
+    public static (float x, float y)[] BezQuartOut { get; set; } = [(0f, 0f), (0.165f, 0.84f), (1f, 1f)];
+    public static (float x, float y)[] BezQuartInOut { get; set; } = [(0f, 0f), (0.77f, 0f), (0.175f, 1f), (1f, 1f)];
+    public static (float x, float y)[] BezQuintIn { get; set; } = [(0f, 0f), (0.755f, 0.05f), (1f, 1f)];
+    public static (float x, float y)[] BezQuintOut { get; set; } = [(0f, 0f), (0.23f, 1f), (1f, 1f)];
+    public static (float x, float y)[] BezQuintInOut { get; set; } = [(0f, 0f), (0.86f, 0f), (0.14f, 1f), (1f, 1f)];
+    public static (float x, float y)[] BezSineIn { get; set; } = [(0f, 0f), (0.47f, 0f), (1f, 1f)];
+    public static (float x, float y)[] BezSineOut { get; set; } = [(0f, 0f), (0f, 0.53f), (1f, 1f)];
+    public static (float x, float y)[] BezSineInOut { get; set; } = [(0f, 0f), (0.445f, 0.05f), (0.55f, 0.95f), (1f, 1f)];
+    public static (float x, float y)[] BezExpoIn { get; set; } = [(0f, 0f), (0.95f, 0.05f), (1f, 1f)];
+    public static (float x, float y)[] BezExpoOut { get; set; } = [(0f, 0f), (0.05f, 0.95f), (1f, 1f)];
+    public static (float x, float y)[] BezExpoInOut { get; set; } = [(0f, 0f), (0.9f, 0f), (0.1f, 1f), (1f, 1f)];
+    public static (float x, float y)[] BezCircIn { get; set; } = [(0f, 0f), (0.6f, 0.04f), (1f, 1f)];
+    public static (float x, float y)[] BezCircOut { get; set; } = [(0f, 0f), (0.4f, 1f), (1f, 1f)];
+    public static (float x, float y)[] BezCircInOut { get; set; } = [(0f, 0f), (0.785f, 0.135f), (0.215f, 0.865f), (1f, 1f)];
+    public static (float x, float y)[] BezElasticIn { get; set; } = [(0f, 0f), (0.7f, -0.6f), (0.85f, -0.2f), (1f, 1f)];
+    public static (float x, float y)[] BezElasticOut { get; set; } = [(0f, 0f), (0.15f, 1.2f), (0.3f, 1.6f), (1f, 1f)];
+    public static (float x, float y)[] BezElasticInOut { get; set; } = [(0f, 0f), (0.45f, -0.8f), (0.55f, 1.8f), (1f, 1f)];
+    public static (float x, float y)[] BezBackIn { get; set; } = [(0f, 0f), (0.3f, -0.6f), (1f, 1f)];
+    public static (float x, float y)[] BezBackOut { get; set; } = [(0f, 0f), (0.7f, 1.6f), (1f, 1f)];
+    public static (float x, float y)[] BezBackInOut { get; set; } = [(0f, 0f), (0.68f, -0.55f), (0.32f, 1.55f), (1f, 1f)];
+
+    public static (float x, float y)[] EaseIn { get; set; } = [(0f, 0f), (0.3f, 0.1f), (0.6f, 0.4f), (1f, 1f)];
+    public static (float x, float y)[] BounceOut { get; set; } = [(0f, 0f), (0.6f, 1.1f), (0.8f, 0.9f), (1f, 1f)];
+
     /// <summary>
     /// Returns true only the first time a condition is true.
     /// This is reset whenever the condition becomes false.
@@ -145,21 +177,17 @@ public static class Extensions
             holdDelay.Elapsed.TotalSeconds <= delay ||
             holdFrequency.Elapsed.TotalSeconds <= frequency)
             return false;
-
         holdFrequency.Restart();
         return true;
     }
-
     public static T[] Flatten<T>(this T[,] matrix)
     {
         var rows = matrix.GetLength(0);
         var cols = matrix.GetLength(1);
         var result = new T[rows * cols];
-
         for (var i = 0; i < rows; i++)
             for (var j = 0; j < cols; j++)
                 result[i * cols + j] = matrix[i, j];
-
         return result;
     }
     /// <summary>
@@ -196,7 +224,6 @@ public static class Extensions
         var sum = 0f;
         foreach (var n in collection)
             sum += n;
-
         return sum / collection.Count;
     }
     public static float Average(this IList<int> collection)
@@ -204,7 +231,6 @@ public static class Extensions
         var sum = 0f;
         foreach (var n in collection)
             sum += n;
-
         return sum / collection.Count;
     }
     /// <summary>
@@ -243,7 +269,6 @@ public static class Extensions
     {
         if (offset == default)
             return;
-
         if (offset < 0)
         {
             offset = Math.Abs(offset);
@@ -253,7 +278,6 @@ public static class Extensions
                 for (var i = 0; i < collection.Count - 1; i++)
                     temp[i] = collection[i + 1];
                 temp[^1] = collection[0];
-
                 for (var i = 0; i < temp.Length; i++)
                     collection[i] = temp[i];
             }
@@ -267,7 +291,6 @@ public static class Extensions
             for (var i = 1; i < collection.Count; i++)
                 tmp[i] = collection[i - 1];
             tmp[0] = collection[tmp.Length - 1];
-
             for (var i = 0; i < tmp.Length; i++)
                 collection[i] = tmp[i];
         }
@@ -276,24 +299,19 @@ public static class Extensions
     {
         if (affectedIndexes == null || affectedIndexes.Length == 0 || offset == 0)
             return;
-
         if (collection is List<T> list)
         {
             var results = new List<int>();
             var indexList = affectedIndexes.ToList();
             var prevTargetIndex = -1;
             var max = list.Count - 1;
-
             indexList.Sort();
-
             if (offset > 0)
                 indexList.Reverse();
-
             foreach (var currIndex in indexList)
             {
                 if (currIndex < 0 || currIndex >= list.Count)
                     continue;
-
                 var item = list[currIndex];
                 var targetIndex = Math.Clamp(currIndex + offset, 0, max);
 
@@ -309,7 +327,6 @@ public static class Extensions
                                      results.Contains(targetIndex);
                 var i = indexList.IndexOf(currIndex);
                 var result = isOvershooting ? offset < 0 ? i : max - i : targetIndex;
-
                 list.RemoveAt(currIndex);
                 list.Insert(result, item);
                 prevTargetIndex = targetIndex;
@@ -322,7 +339,6 @@ public static class Extensions
         // if not a list then convert it
         var tempList = collection.ToList();
         Shift(tempList, offset, affectedIndexes);
-
         for (var i = 0; i < tempList.Count; i++)
             collection[i] = tempList[i];
     }
@@ -330,11 +346,9 @@ public static class Extensions
     {
         if (affectedItems == null || affectedItems.Length == 0 || offset == 0)
             return;
-
         var affectedIndexes = new int[affectedItems.Length];
         for (var i = 0; i < affectedItems.Length; i++)
             affectedIndexes[i] = collection.IndexOf(affectedItems[i]);
-
         Shift(collection, offset, affectedIndexes);
     }
     /// <summary>
@@ -363,7 +377,6 @@ public static class Extensions
     {
         start = start.Wrap(collection.Count);
         end = end.Wrap(collection.Count);
-
         if (start > end)
             (start, end) = (end, start);
 
@@ -399,21 +412,17 @@ public static class Extensions
         foreach (var t in collection)
             if (set.Add(t) == false)
                 return true;
-
         return false;
     }
-
     public static string ToString<T>(this T[,] matrix, (string horizontal, string vertical) separator)
     {
         var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
         var result = new StringBuilder();
-
         for (var i = 0; i < m; i++)
         {
             for (var j = 0; j < n; j++)
             {
                 result.Append(matrix[i, j]);
-
                 if (j < n - 1)
                     result.Append(separator.horizontal);
             }
@@ -435,16 +444,13 @@ public static class Extensions
         var dir = Math.Abs(direction).Wrap(4);
         if (dir == 0)
             return matrix;
-
         var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
         var rotated = new T[n, m];
-
         if (direction > 0)
         {
             for (var i = 0; i < n; i++)
                 for (var j = 0; j < m; j++)
                     rotated[i, j] = matrix[m - j - 1, i];
-
             direction--;
             return Rotate(rotated, direction);
         }
@@ -452,7 +458,6 @@ public static class Extensions
         for (var i = 0; i < n; i++)
             for (var j = 0; j < m; j++)
                 rotated[i, j] = matrix[j, n - i - 1];
-
         direction++;
         return Rotate(rotated, direction);
     }
@@ -460,20 +465,16 @@ public static class Extensions
     {
         var rows = matrix.GetLength(0);
         var cols = matrix.GetLength(1);
-
         if (mirror)
             for (var i = 0; i < rows; i++)
                 for (var j = 0; j < cols / 2; j++)
                     (matrix[i, cols - j - 1], matrix[i, j]) = (matrix[i, j], matrix[i, cols - j - 1]);
-
         if (flip == false)
             return;
-
         for (var i = 0; i < rows / 2; i++)
             for (var j = 0; j < cols; j++)
                 (matrix[rows - i - 1, j], matrix[i, j]) = (matrix[i, j], matrix[rows - i - 1, j]);
     }
-
     public static bool IsSurroundedBy(this string input, string text)
     {
         var isInvalid = string.IsNullOrEmpty(input) || string.IsNullOrEmpty(text);
@@ -487,11 +488,9 @@ public static class Extensions
         var operators = new Stack<char>();
         var bracketCountOpen = 0;
         var bracketCountClose = 0;
-
         for (var i = 0; i < mathExpression.Length; i++)
         {
             var c = mathExpression[i];
-
             if (char.IsDigit(c) || c == '.')
                 values.Push(GetNumber(ref i));
             else if (c == '(')
@@ -505,7 +504,6 @@ public static class Extensions
                 while (operators.Count > 0 && operators.Peek() != '(')
                     if (Process())
                         return float.NaN;
-
                 if (operators.Count > 0)
                     operators.Pop(); // Pop the '('
             }
@@ -514,7 +512,6 @@ public static class Extensions
                 while (operators.Count > 0 && Priority(operators.Peek()) >= Priority(c))
                     if (Process())
                         return float.NaN;
-
                 operators.Push(c);
             }
 
@@ -524,30 +521,24 @@ public static class Extensions
 
         if (bracketCountOpen != bracketCountClose)
             return float.NaN;
-
         while (operators.Count > 0)
             if (Process())
                 return float.NaN;
-
         return values.Count == 0 ? float.NaN : values.Pop();
-
         bool Process()
         {
             if (values.Count < 2 || operators.Count < 1)
                 return true;
-
             var val2 = values.Pop();
             var val1 = values.Pop();
             var op = operators.Pop();
             values.Push(ApplyOperator(val1, val2, op));
             return false;
         }
-
         bool IsOperator(char c)
         {
             return c is '+' or '-' or '*' or '/' or '^' or '%';
         }
-
         int Priority(char op)
         {
             if (op is '+' or '-') return 1;
@@ -555,7 +546,6 @@ public static class Extensions
             if (op is '^') return 3;
             return 0;
         }
-
         float ApplyOperator(float val1, float val2, char op)
         {
             if (op == '+') return val1 + val2;
@@ -566,7 +556,6 @@ public static class Extensions
             if (op == '^') return MathF.Pow(val1, val2);
             return float.NaN;
         }
-
         float GetNumber(ref int i)
         {
             var num = string.Empty;
@@ -578,7 +567,6 @@ public static class Extensions
             }
 
             i--;
-
             return num.ToNumber();
         }
     }
@@ -617,7 +605,6 @@ public static class Extensions
             sb.Append(text);
         return sb.ToString();
     }
-
     /// <summary>
     /// Attempts to convert a string to a single-precision floating point number.
     /// </summary>
@@ -629,7 +616,6 @@ public static class Extensions
         text = text.Replace(',', '.');
         var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture,
             out var result);
-
         return parsed ? result : float.NaN;
     }
     /// <summary>
@@ -672,13 +658,10 @@ public static class Extensions
     {
         if (values == null || values.Contains(value) == false)
             return value;
-
         var baseName = Regex.Replace(value, @"(\d+)$", string.Empty);
         var number = 1;
-
         while (values.Any(n => Regex.IsMatch(n, $"^{baseName}{number}$")))
             number++;
-
         return $"{baseName}{number}";
     }
     public static string Mask(this string text, float symbolProgress)
@@ -696,28 +679,22 @@ public static class Extensions
     {
         if (string.IsNullOrEmpty(text) || size.width <= 0 || size.height <= 0)
             return string.Empty;
-
         var result = text;
-
         var colorTags = GetColorTags(result, tintBrush);
         result = RemoveColorTags(result, tintBrush);
         result = result.Remove((int)(result.Length * Math.Clamp(symbolProgress, 0, 1)));
         result = ApplyColorTags(result, colorTags);
 
         var lineList = result.TrimEnd().Replace("\r", "").Split("\n").ToList();
-
         TryWordWrap();
         TryAlignVertically();
-
         var start = 0;
         var end = size.height;
         var e = lineList.Count - end;
         var scrollValue = (int)Math.Round(scrollProgress * e);
-
         start = e > 0 ? scrollValue : 0;
         end = Math.Min(end, lineList.Count);
         end += e > 0 ? scrollValue : 0;
-
         var lastHiddenTag = string.Empty;
         if (start != 0) // there is scrolling which might have cropped the last tag, so find it
             for (var i = start; i >= 0; i--)
@@ -735,7 +712,6 @@ public static class Extensions
         }
 
         return result;
-
         string TryAlignHorizontally(string line)
         {
             var tags = GetColorTags(line, tintBrush);
@@ -747,11 +723,9 @@ public static class Extensions
             line = ApplyColorTags(line, tags);
             return line;
         }
-
         void TryAlignVertically()
         {
             var yDiff = size.height - lineList.Count;
-
             if (alignment is Left or Center or Right)
                 for (var i = 0; i < yDiff / 2; i++)
                     lineList.Insert(0, string.Empty);
@@ -759,7 +733,6 @@ public static class Extensions
                 for (var i = 0; i < yDiff; i++)
                     lineList.Insert(0, string.Empty);
         }
-
         void TryWordWrap()
         {
             for (var i = 0; i < lineList.Count; i++)
@@ -767,10 +740,8 @@ public static class Extensions
                 var line = lineList[i];
                 var colors = GetColorTags(line, tintBrush);
                 line = RemoveColorTags(line, tintBrush);
-
                 if (line.Length <= size.width) // line is valid length
                     continue;
-
                 var lastLineIndex = size.width - 1;
                 var newLineIndex = wordWrap ?
                     GetSafeNewLineIndex(line, (uint)lastLineIndex) :
@@ -790,12 +761,10 @@ public static class Extensions
                 lineList[i] = line[..endIndex].TrimStart();
                 lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
                 ApplyNewLineToColors();
-
                 void ApplyNewLineToColors()
                 {
                     var lineLengthNoSpaces = lineList[i].Length - lineList[i].Count(" ");
                     lineList[i] = ApplyColorTags(lineList[i], colors);
-
                     for (var j = 0; j < colors.Count; j++)
                         colors[j] = (colors[j].index - lineLengthNoSpaces, colors[j].tag);
 
@@ -808,7 +777,6 @@ public static class Extensions
                 for (var i = (int)endLineIndex; i >= 0; i--)
                     if (line[i] == ' ' && i <= size.width)
                         return i;
-
                 return default;
             }
         }
@@ -817,24 +785,19 @@ public static class Extensions
     {
         if (maxLength == 0)
             return string.Empty;
-
         var abs = Math.Abs(maxLength);
         var index = abs - indicator.Length;
-
         if (maxLength > 0 && text.Length > maxLength)
             text = text[..Math.Max(index, 0)] + indicator;
         else if (maxLength < 0 && text.Length > abs)
             text = indicator + text[^index..];
-
         return text;
     }
-
     [SuppressMessage("ReSharper", "FormatStringProblem")]
     public static string PadZeros(this float number, int amountOfZeros)
     {
         if (amountOfZeros == 0)
             return $"{number}";
-
         var format = amountOfZeros < 0 ? new('0', Math.Abs(amountOfZeros)) : "F" + amountOfZeros;
         return string.Format("{0:" + format + "}", number);
     }
@@ -867,10 +830,8 @@ public static class Extensions
     {
         if (float.IsNaN(interval) || float.IsInfinity(number) || Math.Abs(interval) < 0.001f)
             return number;
-
         var remainder = number % interval;
         var halfway = interval / 2f;
-
         return remainder < halfway ?
             number - remainder :
             number + (interval - remainder);
@@ -897,14 +858,6 @@ public static class Extensions
     {
         return (number % targetNumber + targetNumber) % targetNumber;
     }
-    /// <summary>
-    /// Animate the specified value using the given animation and curve.
-    /// </summary>
-    /// <param name="unit">The unit value to animate (ranged 0 to 1).</param>
-    /// <param name="animation">The animation to apply.</param>
-    /// <param name="curve">The animation curve to use.</param>
-    /// <param name="repeat">True if the animation should be repeated; false otherwise.</param>
-    /// <returns>The animated value based on the given parameters.</returns>
     public static float Animate(this float unit, Animation animation, AnimationCurve curve, bool repeat = false)
     {
         var x = unit.Limit((0, 1), repeat);
@@ -991,6 +944,55 @@ public static class Extensions
             default: return default;
         }
     }
+    public static (float x, float y) AnimateBezier(this float unit, params (float x, float y)[] curvePoints)
+    {
+        if (curvePoints.Length == 0)
+            return (float.NaN, float.NaN);
+        else if (curvePoints.Length == 1)
+            return curvePoints[0];
+
+        var numPoints = curvePoints.Length;
+        var xPoints = new float[numPoints];
+        var yPoints = new float[numPoints];
+        for (var i = 0; i < numPoints; i++)
+        {
+            xPoints[i] = curvePoints[i].x;
+            yPoints[i] = curvePoints[i].y;
+        }
+
+        for (var k = 1; k < numPoints; k++)
+            for (var i = 0; i < numPoints - k; i++)
+            {
+                xPoints[i] = (1 - unit) * xPoints[i] + unit * xPoints[i + 1];
+                yPoints[i] = (1 - unit) * yPoints[i] + unit * yPoints[i + 1];
+            }
+
+        return (xPoints[0], yPoints[0]);
+    }
+    public static (float x, float y) AnimateSpline(this float unit, params (float x, float y)[] curvePoints)
+    {
+        if (curvePoints.Length < 4)
+            return (float.NaN, float.NaN);
+
+        var numSegments = curvePoints.Length - 3;
+        var segmentFraction = 1f / numSegments;
+        var segmentIndex = Math.Min((int)(unit / segmentFraction), numSegments - 1);
+        var p0 = curvePoints[segmentIndex];
+        var p1 = curvePoints[segmentIndex + 1];
+        var p2 = curvePoints[segmentIndex + 2];
+        var p3 = curvePoints[segmentIndex + 3];
+        var u = (unit - segmentIndex * segmentFraction) / segmentFraction;
+        var u2 = u * u;
+        var u3 = u2 * u;
+        var c0 = -0.5f * u3 + u2 - 0.5f * u;
+        var c1 = 1.5f * u3 - 2.5f * u2 + 1f;
+        var c2 = -1.5f * u3 + 2f * u2 + 0.5f * u;
+        var c3 = 0.5f * u3 - 0.5f * u2;
+        var t0 = c0 * p0.x + c1 * p1.x + c2 * p2.x + c3 * p3.x;
+        var t1 = c0 * p0.y + c1 * p1.y + c2 * p2.y + c3 * p3.y;
+
+        return (t0, t1);
+    }
     /// <summary>
     /// Limits a float number to a specified range.
     /// </summary>
@@ -1003,7 +1005,6 @@ public static class Extensions
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
-
         if (overflow)
         {
             var d = range.b - range.a;
@@ -1038,14 +1039,11 @@ public static class Extensions
     {
         if (amount <= 0)
             return [];
-
         var result = new float[amount];
         var size = range.b - range.a;
         var spacing = size / (amount + 1);
-
         for (var i = 1; i <= amount; i++)
             result[i - 1] = range.a + i * spacing;
-
         return result;
     }
     /// <param name="number">
@@ -1141,7 +1139,6 @@ public static class Extensions
     {
         var goingPos = number < targetNumber;
         var result = Move(number, goingPos ? Sign(speed, false) : Sign(speed, true), deltaTime);
-
         if (goingPos && result > targetNumber)
             return targetNumber;
         else if (goingPos == false && result < targetNumber)
@@ -1159,7 +1156,6 @@ public static class Extensions
     {
         if (Math.Abs(rangeIn.a - rangeIn.b) < 0.001f)
             return (rangeOut.a + rangeOut.b) / 2f;
-
         var target = rangeOut;
         var value = (number - rangeIn.a) / (rangeIn.b - rangeIn.a) * (target.b - target.a) + target.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? rangeOut.a : value;
@@ -1193,7 +1189,6 @@ public static class Extensions
 
         range.a *= precision;
         range.b *= precision;
-
         var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
         var random = new Random(s);
         var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
@@ -1239,21 +1234,17 @@ public static class Extensions
     {
         return HasChance((float)percent, seed);
     }
-
     public static bool IsDefault<T>(this T? value)
     {
         return EqualityComparer<T>.Default.Equals(value, default);
     }
-
     public static int ToSeed(this int number, params int[] parameters)
     {
         var seed = 2654435769L;
         Seed(number);
         foreach (var p in parameters)
             seed = Seed(p);
-
         return (int)seed;
-
         long Seed(int a)
         {
             seed ^= a;
@@ -1263,7 +1254,6 @@ public static class Extensions
             return (int)seed;
         }
     }
-
     public static int ToIndex1D(this (int x, int y) indexes, (int width, int height) size)
     {
         var result = indexes.x * size.width + indexes.y;
@@ -1291,13 +1281,11 @@ public static class Extensions
         holdFrequency.Start();
         holdDelay.Start();
     }
-
     private static List<(int index, string tag)> GetColorTags(string input, char tintBrush)
     {
         input = input.Replace(" ", "").Replace("\r", "").Replace("\n", "n");
         var matches = Regex.Matches(input, $"{tintBrush.ToString()}([0-9a-fA-F]+){tintBrush.ToString()}");
         var output = new List<(int index, string tag)>();
-
         var offset = 0;
         foreach (Match match in matches)
         {
@@ -1339,7 +1327,6 @@ public static class Extensions
 
             if (storedTags.Count == 0)
                 return builder.ToString();
-
             realIndex++;
         }
 
