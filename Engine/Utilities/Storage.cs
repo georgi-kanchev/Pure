@@ -7,7 +7,16 @@ using System.Text.RegularExpressions;
 
 namespace Pure.Engine.Storage;
 
-public static class Extensions
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public class SaveAtOrder(uint order) : Attribute
+{
+    public uint Value { get; } = order;
+}
+
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+public class DoNotSave : Attribute;
+
+public static class Storage
 {
     public static string Compress(this string value)
     {
@@ -264,16 +273,25 @@ public static class Extensions
 
         var type = value.GetType();
 
-        if (IsList(type))
+        if (type.IsPrimitive || type == typeof(string))
+            return $"{value}";
+        else if (IsTuple(type))
+            return ToTSV(GetTupleItems(value).ToArray());
+        else if (type.IsEnum)
         {
-            var jaggedArrayType = GetJaggedArrayType(type);
+            var enumType = Enum.GetUnderlyingType(type);
+            return ToTSV(ToObject(value.ToBytes(), enumType, out _));
+        }
+        else if (IsList(type))
+        {
+            var jaggedArrayType = NestedListToJaggedArrayType(type);
             return ToTSV(ToObject(value.ToBytes(), jaggedArrayType, out _));
         }
         else if (type.IsArray)
         {
             if (type.GetArrayRank() == 1)
             {
-                var jaggedDims = GetJaggedArrayDimensions(type);
+                var jaggedDims = GetJaggedArrayDimensionCount(type);
 
                 if (jaggedDims > 2)
                     return $"{value}";
@@ -288,15 +306,15 @@ public static class Extensions
 
             if (itemType != null && IsList(itemType) && rank == 1)
             {
-                var jaggedArrayType = GetJaggedArrayType(itemType);
+                var jaggedArrayType = NestedListToJaggedArrayType(itemType);
                 return ToTSV(ToObject(value.ToBytes(), jaggedArrayType.MakeArrayType(), out _));
             }
 
             if (rank == 1)
             {
-                var result = new string[array.Length, 1];
+                var result = new string[1, array.Length];
                 for (var i = 0; i < array.Length; i++)
-                    result[i, 0] = $"{array.GetValue(i)}";
+                    result[0, i] = ToTSV(array.GetValue(i));
                 return TableToTSV(result);
             }
             else if (rank == 2)
@@ -307,17 +325,10 @@ public static class Extensions
                 var result = new string[array.GetLength(0), array.GetLength(1)];
                 for (var i = 0; i < array.GetLength(0); i++)
                     for (var j = 0; j < array.GetLength(1); j++)
-                        result[i, j] = $"{array.GetValue(i, j)}";
+                        result[i, j] = ToTSV(array.GetValue(i, j));
 
                 return TableToTSV(result);
             }
-        }
-        else if (IsTuple(type))
-            return ToTSV(GetTupleItems(value).ToArray());
-        else if (type.IsEnum)
-        {
-            var enumType = Enum.GetUnderlyingType(type);
-            return ToTSV(ToObject(value.ToBytes(), enumType, out _));
         }
         else if (IsDictionary(type))
         {
@@ -327,8 +338,8 @@ public static class Extensions
             foreach (var obj in dict)
             {
                 var kvp = (DictionaryEntry)obj;
-                result[i, 0] = $"{kvp.Key}";
-                result[i, 1] = $"{kvp.Value}";
+                result[i, 0] = ToTSV(kvp.Key);
+                result[i, 1] = ToTSV(kvp.Value);
                 i++;
             }
 
@@ -343,14 +354,8 @@ public static class Extensions
             foreach (var (_, fields) in sorted)
                 foreach (var field in fields)
                 {
-                    var val = field.GetValue(value);
-                    var t = field.FieldType;
-                    var isCollection = IsList(field.FieldType) || field.FieldType.IsArray;
-                    result[i, 0] = $"{field.Name}";
-                    result[i, 1] = $"{val}";
-                    result[i, 1] = t.IsEnum ? ToTSV(val) : result[i, 1];
-                    result[i, 1] = isCollection ? ToTSV(val).Replace('\n', '\t') : result[i, 1];
-
+                    result[i, 0] = $"{field.Name.Replace("<", "").Replace(">k__BackingField", "")}";
+                    result[i, 1] = ToTSV(field.GetValue(value));
                     i++;
                 }
 
@@ -399,35 +404,15 @@ public static class Extensions
 
         return result;
     }
+    public static T? ToObject<T>(this string tsvText)
+    {
+        return (T?)ToObject(tsvText, typeof(T));
+    }
 
     public static T? ToPrimitive<T>(this string primitiveAsText) where T : struct, IComparable, IConvertible
     {
-        var type = typeof(T);
-
-        if (type.IsPrimitive == false)
-            return null;
-
-        if (type == typeof(bool) && bool.TryParse(primitiveAsText, out var b))
-            return (T)(object)b;
-
-        decimal.TryParse(primitiveAsText, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
-
-        if (type == typeof(sbyte)) return (T)(object)Wrap(number, sbyte.MinValue, sbyte.MaxValue);
-        if (type == typeof(byte)) return (T)(object)Wrap(number, byte.MinValue, byte.MaxValue);
-        if (type == typeof(short)) return (T)(object)Wrap(number, short.MinValue, short.MaxValue);
-        if (type == typeof(ushort)) return (T)(object)Wrap(number, ushort.MinValue, ushort.MaxValue);
-        if (type == typeof(int)) return (T)(object)Wrap(number, int.MinValue, int.MaxValue);
-        if (type == typeof(uint)) return (T)(object)Wrap(number, uint.MinValue, uint.MaxValue);
-        if (type == typeof(long)) return (T)(object)Wrap(number, long.MinValue, long.MaxValue);
-        if (type == typeof(ulong)) return (T)(object)Wrap(number, ulong.MinValue, ulong.MaxValue);
-        if (type == typeof(float)) return (T)(object)Wrap(number, float.MinValue, float.MaxValue);
-        if (type == typeof(double)) return (T)(object)Wrap(number, double.MinValue, double.MaxValue);
-        if (type == typeof(decimal)) return (T)(object)number;
-
-        if (type == typeof(char) && char.TryParse(primitiveAsText, out var c))
-            return (T)(object)c;
-
-        return null;
+        var value = TextToPrimitive(typeof(T), primitiveAsText);
+        return value == null ? null : (T)value;
     }
 
 #region Backend
@@ -444,7 +429,7 @@ public static class Extensions
 
     private const string STRING_PLACEHOLDER = "—", QUOTE_PLACEHOLDER = "❝";
 
-    private static object? ToObject(this byte[]? data, Type? expectedType, out byte[]? remaining)
+    private static object? ToObject(byte[]? data, Type? expectedType, out byte[]? remaining)
     {
         remaining = null;
         if (data == null || data.Length < 4 || expectedType == null)
@@ -517,7 +502,6 @@ public static class Extensions
         else if (expectedType.IsArray)
         {
             // turn to jagged array, only working with int[][][], not int[,,]
-            // the convertion in case of regular array happens in the public ToObject() method
             // since we may be multiple recursion levels in and not know the "final" type
             var expectingRegularArray = expectedType.GetArrayRank() > 1;
             if (expectingRegularArray)
@@ -544,10 +528,9 @@ public static class Extensions
         else if (IsList(expectedType))
         {
             // keep it straightforward, parse as an array & make it a list
-            // that supports List<List<List<>>>> too
+            // that supports List<List<List<>>> too
             var itemType = expectedType.GetGenericArguments()[0];
-            var arrayType = Array.CreateInstance(itemType, 0).GetType();
-            var result = ToObject(data, arrayType, out _) as Array;
+            var result = ToObject(data, itemType.MakeArrayType(), out _) as Array;
             var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType)) as IList;
 
             if (result == null || list == null)
@@ -579,11 +562,7 @@ public static class Extensions
         else if (IsStruct(expectedType) || expectedType.IsClass)
         {
             var sorted = GetFieldsInOrder(expectedType);
-            // creating an instance without needing a constructor
-#pragma warning disable SYSLIB0050
-            var instance = FormatterServices.GetUninitializedObject(expectedType);
-#pragma warning restore SYSLIB0050
-            // var instance = Activator.CreateInstance(expectedType);
+            var instance = CreateInstance(expectedType);
 
             foreach (var (_, fields) in sorted)
                 foreach (var field in fields)
@@ -591,6 +570,140 @@ public static class Extensions
                     var obj = ToObject(bytes, field.FieldType, out var left);
                     bytes = left;
                     field.SetValue(instance, obj);
+                }
+
+            return instance;
+        }
+
+        return default;
+    }
+    private static object? ToObject(string? tsvText, Type? expectedType)
+    {
+        if (expectedType == null || tsvText == null)
+            return default;
+
+        var nullable = Nullable.GetUnderlyingType(expectedType);
+        if (nullable != null)
+            expectedType = nullable;
+
+        if (expectedType.IsPrimitive || expectedType == typeof(string))
+            return TextToPrimitive(expectedType, tsvText);
+        else if (expectedType.IsEnum)
+        {
+            var value = TextToPrimitive(Enum.GetUnderlyingType(expectedType), tsvText);
+            return value == null ? default : Enum.ToObject(expectedType, value);
+        }
+
+        var table = ToTable(tsvText);
+
+        if (IsTuple(expectedType))
+        {
+            var fields = GetTupleFields(expectedType);
+            var instance = Activator.CreateInstance(expectedType);
+            var i = 0;
+            foreach (var field in fields)
+            {
+                var obj = ToObject(table[0, i], field.FieldType);
+                field.SetValue(instance, obj);
+                i++;
+            }
+
+            return instance;
+        }
+        else if (expectedType.IsArray)
+        {
+            if (table.Length == 1 && table[0, 0] == "")
+                return Array.CreateInstance(expectedType.GetElementType()!, 0);
+
+            var isJagged = GetJaggedArrayDimensionCount(expectedType) > 1;
+            if (isJagged)
+                expectedType = JaggedToRegularArrayType(expectedType);
+
+            var ranks = expectedType.GetArrayRank();
+
+            var itemType = expectedType.GetElementType();
+            if (itemType == null)
+                return default;
+
+            if (ranks == 1)
+            {
+                var result = Array.CreateInstance(itemType, table.Length);
+                for (var i = 0; i < table.Length; i++)
+                    result.SetValue(ToObject(table[0, i], itemType), i);
+
+                return result;
+            }
+            else if (ranks == 2)
+            {
+                var result = Array.CreateInstance(itemType, table.GetLength(0), table.GetLength(1));
+                for (var i = 0; i < table.GetLength(0); i++)
+                    for (var j = 0; j < table.GetLength(1); j++)
+                        result.SetValue(ToObject(table[i, j], itemType), i, j);
+
+                return isJagged ? ToJagged(result) : result;
+            }
+            // no more than 2 dimensions are supported
+
+            return default;
+        }
+        else if (IsList(expectedType))
+        {
+            // keep it straightforward, parse as an array & make it a list
+            // that supports List<List<>> too
+            var jaggedType = NestedListToJaggedArrayType(expectedType);
+            var itemType = GetJaggedArrayElementType(jaggedType);
+            var result = ToObject(tsvText, jaggedType) as Array;
+            var list = Activator.CreateInstance(expectedType) as IList;
+
+            if (result == null || list == null)
+                return list;
+
+            foreach (var item in result)
+            {
+                var elementType = list.GetType().GetGenericArguments()[0];
+                if (item is Array arr && IsList(elementType))
+                {
+                    var dim = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType!)) as IList;
+                    for (var i = 0; i < arr.Length; i++)
+                        dim?.Add(arr.GetValue(i));
+                    list.Add(dim);
+                    continue;
+                }
+
+                if (elementType.IsArray && elementType.GetArrayRank() > 1)
+                    continue;
+                
+                list.Add(item);
+            }
+
+            return list;
+        }
+        else if (IsDictionary(expectedType))
+        {
+            var dict = Activator.CreateInstance(expectedType) as IDictionary;
+            var keyType = expectedType.GetGenericArguments()[0];
+            var valueType = expectedType.GetGenericArguments()[1];
+
+            for (var i = 0; i < table.GetLength(0); i++)
+            {
+                var key = ToObject(table[i, 0], keyType);
+                dict![key!] = ToObject(table[i, 1], valueType);
+            }
+
+            return dict;
+        }
+        else if (IsStruct(expectedType) || expectedType.IsClass)
+        {
+            var sorted = GetFieldsInOrder(expectedType);
+            var instance = CreateInstance(expectedType);
+            var i = 0;
+
+            foreach (var (_, fields) in sorted)
+                foreach (var field in fields)
+                {
+                    var obj = ToObject(table[i, 1], field.FieldType);
+                    field.SetValue(instance, obj);
+                    i++;
                 }
 
             return instance;
@@ -707,11 +820,13 @@ public static class Extensions
             }
             else
             {
-                var jaggedArray = new object[length];
+                var innerType = CreateJaggedArrayType(elementType!, arr.Rank - currentDimension - 1);
+                var jaggedArray = Array.CreateInstance(innerType, length);
+
                 for (var i = 0; i < length; i++)
                 {
                     indices[currentDimension] = i;
-                    jaggedArray[i] = ConvertToJagged(arr, currentDimension + 1, indices);
+                    jaggedArray.SetValue(ConvertToJagged(arr, currentDimension + 1, indices), i);
                 }
 
                 return jaggedArray;
@@ -720,10 +835,7 @@ public static class Extensions
     }
     private static Array ToArray(object jaggedArray)
     {
-        var elementType = jaggedArray.GetType();
-        while (elementType is { IsArray: true })
-            elementType = elementType.GetElementType();
-
+        var elementType = GetJaggedArrayElementType(jaggedArray.GetType());
         var dimensions = GetJaggedArrayDimensions(jaggedArray);
         var flatList = Activator.CreateInstance(typeof(List<>).MakeGenericType(elementType!)) as IList;
         var regularArray = Array.CreateInstance(elementType!, dimensions);
@@ -781,7 +893,7 @@ public static class Extensions
                 DetermineDimensions(item, level + 1, dimensions);
         }
     }
-    private static int GetJaggedArrayDimensions(Type jaggedArrayType)
+    private static int GetJaggedArrayDimensionCount(Type jaggedArrayType)
     {
         var dimensions = 0;
         var currentType = jaggedArrayType;
@@ -804,6 +916,49 @@ public static class Extensions
 
         return jaggedArrayType;
     }
+    private static Type JaggedToRegularArrayType(Type type)
+    {
+        var rank = 0;
+        while (type.IsArray)
+        {
+            type = type.GetElementType()!;
+            rank++;
+        }
+
+        return rank > 0 ? type.MakeArrayType(rank) : type;
+    }
+    private static Type CreateJaggedArrayType(Type baseType, int dimensions)
+    {
+        var arrayType = baseType;
+        for (var i = 0; i < dimensions; i++)
+            arrayType = arrayType.MakeArrayType();
+        return arrayType;
+    }
+    private static Type NestedListToJaggedArrayType(Type nestedListType)
+    {
+        var depth = 0;
+        var currentType = nestedListType;
+
+        while (IsList(currentType))
+        {
+            depth++;
+            currentType = currentType.GetGenericArguments()[0];
+        }
+
+        var jaggedArrayType = currentType;
+        for (var i = 0; i < depth; i++)
+            jaggedArrayType = jaggedArrayType.MakeArrayType();
+
+        return jaggedArrayType;
+    }
+    private static Type? GetJaggedArrayElementType(Type jaggedArrayType)
+    {
+        var elementType = jaggedArrayType.GetElementType();
+        while (elementType is { IsArray: true })
+            elementType = elementType.GetElementType();
+        return elementType;
+    }
+
     private static string TableToTSV(string[,] array)
     {
         var numRows = array.GetLength(0);
@@ -830,24 +985,53 @@ public static class Extensions
 
         return sb.ToString().Replace("\r", "");
     }
-
-    private static Type GetJaggedArrayType(Type nestedListType)
+    private static object? TextToPrimitive(Type type, string? text)
     {
-        var depth = 0;
-        var currentType = nestedListType;
+        if (type == typeof(string))
+            return text;
 
-        while (IsList(currentType))
-        {
-            depth++;
-            currentType = currentType.GetGenericArguments()[0];
-        }
+        if (type.IsPrimitive == false || string.IsNullOrWhiteSpace(text))
+            return null;
 
-        var jaggedArrayType = currentType;
-        for (var i = 0; i < depth; i++)
-            jaggedArrayType = jaggedArrayType.MakeArrayType();
+        if (type == typeof(bool) && bool.TryParse(text, out var b))
+            return b;
 
-        return jaggedArrayType;
+        decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
+
+        if (type == typeof(sbyte)) return Wrap(number, sbyte.MinValue, sbyte.MaxValue);
+        if (type == typeof(byte)) return Wrap(number, byte.MinValue, byte.MaxValue);
+        if (type == typeof(short)) return Wrap(number, short.MinValue, short.MaxValue);
+        if (type == typeof(ushort)) return Wrap(number, ushort.MinValue, ushort.MaxValue);
+        if (type == typeof(int)) return Wrap(number, int.MinValue, int.MaxValue);
+        if (type == typeof(uint)) return Wrap(number, uint.MinValue, uint.MaxValue);
+        if (type == typeof(long)) return Wrap(number, long.MinValue, long.MaxValue);
+        if (type == typeof(ulong)) return Wrap(number, ulong.MinValue, ulong.MaxValue);
+        if (type == typeof(float)) return Wrap(number, float.MinValue, float.MaxValue);
+        if (type == typeof(double)) return Wrap(number, double.MinValue, double.MaxValue);
+        if (type == typeof(decimal)) return number;
+
+        if (type == typeof(char) && char.TryParse(text, out var c))
+            return c;
+
+        return null;
     }
+    private static object CreateInstance(Type type)
+    {
+        // creating an instance without needing a parameterless constructor such as with
+        // var instance = Activator.CreateInstance(expectedType);
+#pragma warning disable SYSLIB0050
+        var instance = FormatterServices.GetUninitializedObject(type);
+#pragma warning restore SYSLIB0050
+        var emptyConstructor = type.GetConstructor(
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            null, Type.EmptyTypes, null);
+
+        // in case there is a parameterless constructor, call it manually
+        emptyConstructor?.Invoke([]);
+
+        return instance;
+    }
+
     private static SortedDictionary<uint, List<FieldInfo>> GetFieldsInOrder(Type type)
     {
         var classAttributes = type.GetCustomAttributes();
