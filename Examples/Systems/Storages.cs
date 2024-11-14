@@ -50,52 +50,5 @@ public static class Storages
 
         var a = array2D.ToTSV();
         var b = a.ToObject<List<int[,]>>();
-
-        var layer = new Layer(tilemap.Size);
-        // var ticker = (float progress) =>
-        // {
-        //     var t = progress.Animate(Animation.Bounce, AnimationCurve.Out);
-        //     layer.DrawTiles((48 / 2f + progress * 10, 27 / 2f + t * 10), new Tile(Tile.FULL));
-        // };
-        // ticker.CallFor(2f, true);
-
-        var points = new List<(float x, float y)>();
-        for (var i = 0; i < 12; i++)
-            points.Add((i * 4, 10));
-
-        while (Window.KeepOpen())
-        {
-            Time.Update();
-
-            var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
-            if (Mouse.Button.Right.IsPressed())
-                for (var i = 0; i < points.Count; i++)
-                    if (new Point(points[i]).Distance((mx, my)) < 0.5f)
-                        points[i] = (mx, my);
-
-            const int POINTS = 500;
-            for (var i = 0f; i < POINTS; i++)
-            {
-                var x = i / POINTS;
-                var t = x.AnimateSpline(Extensions.BounceOut);
-                layer.DrawPoints((t.x * 15f, t.y * 15f, Color.White));
-            }
-
-            // for (var i = 0f; i < POINTS; i++)
-            // {
-            //     var x = i / POINTS;
-            //     var t = x.AnimateSpline(points.ToArray());
-            //     layer.DrawPoints((t.x, t.y, Color.Red));
-            // }
-
-            // for (var i = 0; i < points.Count; i++)
-            // {
-            //     layer.DrawTiles((points[i].x, points[i].y), new Tile(Tile.NUMBER_0 + i));
-            //     layer.DrawPoints((points[i].x, points[i].y, Color.Green));
-            // }
-
-            layer.DrawCursor();
-            layer.Draw();
-        }
     }
 }

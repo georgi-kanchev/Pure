@@ -1,20 +1,17 @@
-﻿using System.Collections;
-using System.Reflection;
-
-namespace Pure.Engine.Utilities;
-
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
-using static Alignment;
+using static Pure.Engine.Utilities.Alignment;
+
+namespace Pure.Engine.Utilities;
 
 /// <summary>
-/// The type of number animations used by <see cref="Extensions.Animate"/>.
+/// The type of number animations used by <see cref="Extensions.AnimateEase"/>.
 /// Also known as 'easing functions'.
 /// </summary>
-public enum Animation
+public enum Ease
 {
     /// <summary>
     /// Represents a linear/lerp animation, characterized by a constant rate of change.
@@ -23,15 +20,15 @@ public enum Animation
     /// <summary>
     /// Corresponds to a sine easing function, creating a gentle bending effect.
     /// </summary>
-    BendWeak,
+    Sine,
     /// <summary>
     /// Indicates a cubic easing function, resulting in a moderate bending motion.
     /// </summary>
-    Bend,
+    Cubic,
     /// <summary>
     /// Represents a quintic easing function, producing a strong bending effect.
     /// </summary>
-    BendStrong,
+    Quint,
     /// <summary>
     /// Refers to a circular easing function, often denoted as Circ, creating a circular motion.
     /// </summary>
@@ -51,9 +48,9 @@ public enum Animation
 }
 
 /// <summary>
-/// The type of number animation direction used by <see cref="Extensions.Animate"/>.
+/// The type of number animation direction used by <see cref="Extensions.AnimateEase"/>.
 /// </summary>
-public enum AnimationCurve
+public enum Curve
 {
     /// <summary>
     /// Eases in for a gradual start.
@@ -84,38 +81,6 @@ public enum Alignment
 /// </summary>
 public static class Extensions
 {
-    public static (float x, float y)[] BezLinear { get; set; } = [(0f, 0f), (1f, 1f)];
-    public static (float x, float y)[] BezQuadIn { get; set; } = [(0f, 0f), (0.42f, 0f), (1f, 1f)];
-    public static (float x, float y)[] BezQuadOut { get; set; } = [(0f, 0f), (0f, 0.58f), (1f, 1f)];
-    public static (float x, float y)[] BezQuadInOut { get; set; } = [(0f, 0f), (0.42f, 0f), (0.58f, 1f), (1f, 1f)];
-    public static (float x, float y)[] BezCubicIn { get; set; } = [(0f, 0f), (0.55f, 0.055f), (1f, 1f)];
-    public static (float x, float y)[] BezCubicOut { get; set; } = [(0f, 0f), (0.215f, 0.61f), (1f, 1f)];
-    public static (float x, float y)[] BezCubicInOut { get; set; } = [(0f, 0f), (0.645f, 0.045f), (0.355f, 1f), (1f, 1f)];
-    public static (float x, float y)[] BezQuartIn { get; set; } = [(0f, 0f), (0.895f, 0.03f), (1f, 1f)];
-    public static (float x, float y)[] BezQuartOut { get; set; } = [(0f, 0f), (0.165f, 0.84f), (1f, 1f)];
-    public static (float x, float y)[] BezQuartInOut { get; set; } = [(0f, 0f), (0.77f, 0f), (0.175f, 1f), (1f, 1f)];
-    public static (float x, float y)[] BezQuintIn { get; set; } = [(0f, 0f), (0.755f, 0.05f), (1f, 1f)];
-    public static (float x, float y)[] BezQuintOut { get; set; } = [(0f, 0f), (0.23f, 1f), (1f, 1f)];
-    public static (float x, float y)[] BezQuintInOut { get; set; } = [(0f, 0f), (0.86f, 0f), (0.14f, 1f), (1f, 1f)];
-    public static (float x, float y)[] BezSineIn { get; set; } = [(0f, 0f), (0.47f, 0f), (1f, 1f)];
-    public static (float x, float y)[] BezSineOut { get; set; } = [(0f, 0f), (0f, 0.53f), (1f, 1f)];
-    public static (float x, float y)[] BezSineInOut { get; set; } = [(0f, 0f), (0.445f, 0.05f), (0.55f, 0.95f), (1f, 1f)];
-    public static (float x, float y)[] BezExpoIn { get; set; } = [(0f, 0f), (0.95f, 0.05f), (1f, 1f)];
-    public static (float x, float y)[] BezExpoOut { get; set; } = [(0f, 0f), (0.05f, 0.95f), (1f, 1f)];
-    public static (float x, float y)[] BezExpoInOut { get; set; } = [(0f, 0f), (0.9f, 0f), (0.1f, 1f), (1f, 1f)];
-    public static (float x, float y)[] BezCircIn { get; set; } = [(0f, 0f), (0.6f, 0.04f), (1f, 1f)];
-    public static (float x, float y)[] BezCircOut { get; set; } = [(0f, 0f), (0.4f, 1f), (1f, 1f)];
-    public static (float x, float y)[] BezCircInOut { get; set; } = [(0f, 0f), (0.785f, 0.135f), (0.215f, 0.865f), (1f, 1f)];
-    public static (float x, float y)[] BezElasticIn { get; set; } = [(0f, 0f), (0.7f, -0.6f), (0.85f, -0.2f), (1f, 1f)];
-    public static (float x, float y)[] BezElasticOut { get; set; } = [(0f, 0f), (0.15f, 1.2f), (0.3f, 1.6f), (1f, 1f)];
-    public static (float x, float y)[] BezElasticInOut { get; set; } = [(0f, 0f), (0.45f, -0.8f), (0.55f, 1.8f), (1f, 1f)];
-    public static (float x, float y)[] BezBackIn { get; set; } = [(0f, 0f), (0.3f, -0.6f), (1f, 1f)];
-    public static (float x, float y)[] BezBackOut { get; set; } = [(0f, 0f), (0.7f, 1.6f), (1f, 1f)];
-    public static (float x, float y)[] BezBackInOut { get; set; } = [(0f, 0f), (0.68f, -0.55f), (0.32f, 1.55f), (1f, 1f)];
-
-    public static (float x, float y)[] EaseIn { get; set; } = [(0f, 0f), (0.3f, 0.1f), (0.6f, 0.4f), (1f, 1f)];
-    public static (float x, float y)[] BounceOut { get; set; } = [(0f, 0f), (0.6f, 1.1f), (0.8f, 0.9f), (1f, 1f)];
-
     /// <summary>
     /// Returns true only the first time a condition is true.
     /// This is reset whenever the condition becomes false.
@@ -135,7 +100,7 @@ public static class Extensions
             return false;
         else if (gates.ContainsKey(uniqueId) == false && condition)
         {
-            gates[uniqueId] = new() { value = true, entries = 1 };
+            gates[uniqueId] = (1, true);
             return true;
         }
         else
@@ -144,12 +109,11 @@ public static class Extensions
                 return false;
             else if (gates[uniqueId].value == false && condition)
             {
-                gates[uniqueId].value = true;
-                gates[uniqueId].entries++;
+                gates[uniqueId] = (gates[uniqueId].entries + 1, true);
                 return true;
             }
             else if (gates[uniqueId].entries < maximum)
-                gates[uniqueId].value = false;
+                gates[uniqueId] = (gates[uniqueId].entries, false);
         }
 
         return false;
@@ -858,80 +822,80 @@ public static class Extensions
     {
         return (number % targetNumber + targetNumber) % targetNumber;
     }
-    public static float Animate(this float unit, Animation animation, AnimationCurve curve, bool repeat = false)
+    public static float AnimateEase(this float unit, Ease ease, Curve curve)
     {
-        var x = unit.Limit((0, 1), repeat);
-        switch (animation)
+        var t = unit;
+        switch (ease)
         {
-            case Animation.Line:
+            case Ease.Line:
             {
-                return curve == AnimationCurve.In ? 1f - unit :
-                    curve == AnimationCurve.Out ? unit :
+                return curve == Curve.In ? 1f - unit :
+                    curve == Curve.Out ? unit :
                     unit < 0.5f ? unit.Map((0, 0.5f), (1f, 0)) : unit.Map((0.5f, 1f), (0, 1f));
             }
-            case Animation.BendWeak:
+            case Ease.Sine:
             {
-                return curve == AnimationCurve.In ? 1 - MathF.Cos(x * MathF.PI / 2) :
-                    curve == AnimationCurve.Out ? 1 - MathF.Sin(x * MathF.PI / 2) :
-                    -(MathF.Cos(MathF.PI * x) - 1) / 2;
+                return curve == Curve.In ? 1 - MathF.Cos(t * MathF.PI / 2) :
+                    curve == Curve.Out ? 1 - MathF.Sin(t * MathF.PI / 2) :
+                    -(MathF.Cos(MathF.PI * t) - 1) / 2;
             }
-            case Animation.Bend:
+            case Ease.Cubic:
             {
-                return curve == AnimationCurve.In ? x * x * x :
-                    curve == AnimationCurve.Out ? 1 - MathF.Pow(1 - x, 3) :
-                    x < 0.5 ? 4 * x * x * x : 1 - MathF.Pow(-2 * x + 2, 3) / 2;
+                return curve == Curve.In ? t * t * t :
+                    curve == Curve.Out ? 1 - MathF.Pow(1 - t, 3) :
+                    t < 0.5 ? 4 * t * t * t : 1 - MathF.Pow(-2 * t + 2, 3) / 2;
             }
-            case Animation.BendStrong:
+            case Ease.Quint:
             {
-                return curve == AnimationCurve.In ? x * x * x * x :
-                    curve == AnimationCurve.Out ? 1 - MathF.Pow(1 - x, 5) :
-                    x < 0.5 ? 16 * x * x * x * x * x : 1 - MathF.Pow(-2 * x + 2, 5) / 2;
+                return curve == Curve.In ? t * t * t * t :
+                    curve == Curve.Out ? 1 - MathF.Pow(1 - t, 5) :
+                    t < 0.5 ? 16 * t * t * t * t * t : 1 - MathF.Pow(-2 * t + 2, 5) / 2;
             }
-            case Animation.Circle:
+            case Ease.Circle:
             {
-                return curve == AnimationCurve.In ? 1 - MathF.Sqrt(1 - MathF.Pow(x, 2)) :
-                    curve == AnimationCurve.Out ? MathF.Sqrt(1 - MathF.Pow(x - 1, 2)) :
-                    x < 0.5 ? (1 - MathF.Sqrt(1 - MathF.Pow(2 * x, 2))) / 2 :
-                    (MathF.Sqrt(1 - MathF.Pow(-2 * x + 2, 2)) + 1) / 2;
+                return curve == Curve.In ? 1 - MathF.Sqrt(1 - MathF.Pow(t, 2)) :
+                    curve == Curve.Out ? MathF.Sqrt(1 - MathF.Pow(t - 1, 2)) :
+                    t < 0.5 ? (1 - MathF.Sqrt(1 - MathF.Pow(2 * t, 2))) / 2 :
+                    (MathF.Sqrt(1 - MathF.Pow(-2 * t + 2, 2)) + 1) / 2;
             }
-            case Animation.Elastic:
+            case Ease.Elastic:
             {
-                return curve == AnimationCurve.In ? x == 0 ? 0 :
-                    Math.Abs((int)(x - 1)) < 0.001f ? 1 :
-                    -MathF.Pow(2, 10 * x - 10) *
-                    MathF.Sin((x * 10 - 10.75f) *
+                return curve == Curve.In ? t == 0 ? 0 :
+                    Math.Abs((int)(t - 1)) < 0.001f ? 1 :
+                    -MathF.Pow(2, 10 * t - 10) *
+                    MathF.Sin((t * 10 - 10.75f) *
                               (2 * MathF.PI / 3))
-                    : curve == AnimationCurve.Out ? x == 0 ? 0 :
-                    Math.Abs((int)(x - 1)) < 0.001f ? 1 :
-                    MathF.Pow(2, -10 * x) *
-                    MathF.Sin((x * 10 - 0.75f) * (2 * MathF.PI) / 3) +
+                    : curve == Curve.Out ? t == 0 ? 0 :
+                    Math.Abs((int)(t - 1)) < 0.001f ? 1 :
+                    MathF.Pow(2, -10 * t) *
+                    MathF.Sin((t * 10 - 0.75f) * (2 * MathF.PI) / 3) +
                     1
-                    : x == 0 ? 0
-                    : Math.Abs((int)(x - 1)) < 0.001f ? 1
-                    : x < 0.5f ? -(MathF.Pow(2, 20 * x - 10) *
-                                   MathF.Sin((20f * x - 11.125f) *
+                    : t == 0 ? 0
+                    : Math.Abs((int)(t - 1)) < 0.001f ? 1
+                    : t < 0.5f ? -(MathF.Pow(2, 20 * t - 10) *
+                                   MathF.Sin((20f * t - 11.125f) *
                                              (2 * MathF.PI) /
                                              4.5f)) /
                                  2
-                    : MathF.Pow(2, -20 * x + 10) *
-                      MathF.Sin((20 * x - 11.125f) * (2 * MathF.PI) / 4.5f) /
+                    : MathF.Pow(2, -20 * t + 10) *
+                      MathF.Sin((20 * t - 11.125f) * (2 * MathF.PI) / 4.5f) /
                       2 +
                       1;
             }
-            case Animation.Swing:
+            case Ease.Swing:
             {
-                return curve == AnimationCurve.In ? 2.70158f * x * x * x - 1.70158f * x * x :
-                    curve == AnimationCurve.Out ? 1 +
-                                                  2.70158f * MathF.Pow(x - 1, 3) +
-                                                  1.70158f * MathF.Pow(x - 1, 2) :
-                    x < 0.5 ? MathF.Pow(2 * x, 2) * ((2.59491f + 1) * 2 * x - 2.59491f) / 2 :
-                    (MathF.Pow(2 * x - 2, 2) * ((2.59491f + 1) * (x * 2 - 2) + 2.59491f) + 2) / 2;
+                return curve == Curve.In ? 2.70158f * t * t * t - 1.70158f * t * t :
+                    curve == Curve.Out ? 1 +
+                                         2.70158f * MathF.Pow(t - 1, 3) +
+                                         1.70158f * MathF.Pow(t - 1, 2) :
+                    t < 0.5 ? MathF.Pow(2 * t, 2) * ((2.59491f + 1) * 2 * t - 2.59491f) / 2 :
+                    (MathF.Pow(2 * t - 2, 2) * ((2.59491f + 1) * (t * 2 - 2) + 2.59491f) + 2) / 2;
             }
-            case Animation.Bounce:
+            case Ease.Bounce:
             {
-                return curve == AnimationCurve.In ? 1 - EaseOutBounce(1 - x) :
-                    curve == AnimationCurve.Out ? EaseOutBounce(x) :
-                    x < 0.5f ? (1 - EaseOutBounce(1 - 2 * x)) / 2 : (1 + EaseOutBounce(2 * x - 1)) / 2;
+                return curve == Curve.In ? 1 - EaseOutBounce(1 - t) :
+                    curve == Curve.Out ? EaseOutBounce(t) :
+                    t < 0.5f ? (1 - EaseOutBounce(1 - 2 * t)) / 2 : (1 + EaseOutBounce(2 * t - 1)) / 2;
 
                 static float EaseOutBounce(float x)
                 {
@@ -1266,14 +1230,8 @@ public static class Extensions
     }
 
 #region Backend
-    private class Gate
-    {
-        public int entries;
-        public bool value;
-    }
-
     private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
-    private static readonly Dictionary<string, Gate> gates = new();
+    private static readonly Dictionary<string, (int entries, bool value)> gates = new();
     // private static readonly Dictionary<int, Random> randomCache = new();
 
     static Extensions()
