@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Pure.Engine.Storage;
+namespace Pure.Engine.Utilities;
 
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 public class SaveAtOrder(uint order) : Attribute
@@ -672,7 +672,7 @@ public static class Storage
 
                 if (elementType.IsArray && elementType.GetArrayRank() > 1)
                     continue;
-                
+
                 list.Add(item);
             }
 
@@ -970,7 +970,7 @@ public static class Storage
             for (var j = 0; j < numCols; j++)
             {
                 var value = $"{array[i, j]}".Replace("\"", "\"\"");
-                if (value.Contains('\t') || value.Contains('\n'))
+                if (value.Contains('\t') || value.Contains('\n') || value.Contains("\"\""))
                     value = $"\"{value}\"";
 
                 sb.Append(value);

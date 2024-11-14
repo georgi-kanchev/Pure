@@ -1,15 +1,13 @@
-﻿using Pure.Engine.Storage;
+﻿using Pure.Editors.Base;
+using Pure.Tools.Tilemap;
+using Pure.Engine.Collision;
+using Pure.Engine.Utilities;
+using Pure.Engine.Tilemap;
+using Pure.Engine.UserInterface;
+using Pure.Engine.Window;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Pure.Editors.Collision;
-
-using Base;
-using Tools.Tilemap;
-using Engine.Collision;
-using Engine.Utilities;
-using Engine.Tilemap;
-using Engine.UserInterface;
-using Engine.Window;
-using System.Diagnostics.CodeAnalysis;
 
 public static class Program
 {

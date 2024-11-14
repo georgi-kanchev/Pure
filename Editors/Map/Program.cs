@@ -6,8 +6,7 @@ global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
 global using System.Text;
-using System.IO.Compression;
-using Pure.Engine.Storage;
+global using System.IO.Compression;
 
 namespace Pure.Editors.Map;
 

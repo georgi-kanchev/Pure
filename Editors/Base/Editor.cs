@@ -6,8 +6,7 @@ global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utilities.Color;
-using System.Text;
-using Pure.Engine.Storage;
+global using System.Text;
 
 namespace Pure.Editors.Base;
 

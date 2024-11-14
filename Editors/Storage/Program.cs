@@ -7,7 +7,6 @@ using Pure.Editors.Base;
 using Pure.Engine.Tilemap;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
-using _Storage = Pure.Engine.Storage.Storage;
 
 namespace Pure.Editors.Storage;
 

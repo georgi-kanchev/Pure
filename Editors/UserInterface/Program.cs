@@ -5,7 +5,6 @@ global using Pure.Engine.Window;
 global using static Pure.Editors.UserInterface.Program;
 global using static Pure.Tools.Tilemap.MapperUserInterface;
 global using Pure.Editors.Base;
-using Pure.Engine.Storage;
 
 namespace Pure.Editors.UserInterface;
 
