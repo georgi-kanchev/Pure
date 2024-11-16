@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Globalization;
+using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
@@ -26,81 +27,43 @@ public static class Storage
     {
         return Encoding.UTF8.GetString(Decompress(Convert.FromBase64String(compressedText)));
     }
-    public static byte[] Compress(this byte[] data)
+    public static byte[] Compress(this byte[]? data)
     {
-        var compressed = new List<byte>();
-        for (var i = 0; i < data.Length; i++)
+        try
         {
-            var count = (byte)1;
-            while (i + 1 < data.Length && data[i] == data[i + 1] && count < 255)
+            if (data == null || data.Length == 0)
+                return [];
+
+            using var memoryStream = new MemoryStream();
+            using (var gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal, true))
             {
-                count++;
-                i++;
+                gzipStream.Write(data, 0, data.Length);
             }
 
-            compressed.Add(count);
-            compressed.Add(data[i]);
+            return memoryStream.ToArray();
         }
-
-        var frequencies = compressed.GroupBy(b => b).ToDictionary(g => g.Key, g => g.Count());
-        var root = GetTree(frequencies);
-        var codeTable = GetTable(root);
-        var header = new List<byte> { (byte)frequencies.Count };
-        foreach (var kvp in frequencies)
+        catch (Exception)
         {
-            header.Add(kvp.Key);
-            header.AddRange(BitConverter.GetBytes(kvp.Value));
+            return data ?? [];
         }
-
-        var bitString = string.Join("", compressed.Select(b => codeTable[b]));
-        var byteList = new List<byte>(header);
-
-        for (var i = 0; i < bitString.Length; i += 8)
-        {
-            var byteStr = bitString.Substring(i, Math.Min(8, bitString.Length - i));
-            byteList.Add(Convert.ToByte(byteStr, 2));
-        }
-
-        return byteList.ToArray();
     }
-    public static byte[] Decompress(this byte[] compressedData)
+    public static byte[] Decompress(this byte[]? compressedData)
     {
-        var index = 0;
-        var tableSize = (int)compressedData[index++];
-
-        var frequencies = new Dictionary<byte, int>();
-        for (var i = 0; i < tableSize; i++)
+        try
         {
-            var key = compressedData[index++];
-            var frequency = BitConverter.ToInt32(compressedData, index);
-            index += 4;
-            frequencies[key] = frequency;
+            if (compressedData == null || compressedData.Length == 0)
+                return [];
+
+            using var compressedStream = new MemoryStream(compressedData);
+            using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+            using var resultStream = new MemoryStream();
+            gzipStream.CopyTo(resultStream);
+            return resultStream.ToArray();
         }
-
-        var root = GetTree(frequencies);
-        var decompressed = new List<byte>();
-
-        var node = root;
-        for (var i = index; i < compressedData.Length; i++)
+        catch (Exception)
         {
-            var bits = Convert.ToString(compressedData[i], 2).PadLeft(8, '0');
-            foreach (var bit in bits)
-            {
-                node = bit == '0' ? node.left : node.right;
-                if (node!.IsLeaf == false)
-                    continue;
-
-                decompressed.Add(node.value);
-                node = root;
-            }
+            return compressedData ?? [];
         }
-
-        var result = new List<byte>();
-        for (var i = 0; i < decompressed.Count; i += 2)
-            for (var j = 0; j < decompressed[i]; j++)
-                result.Add(decompressed[i + 1]);
-
-        return result.ToArray();
     }
 
     public static byte[] ToBytes(this object? value)
@@ -772,7 +735,9 @@ public static class Storage
     }
     private static bool IsDictionary(Type type)
     {
-        return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+        return type.IsGenericType &&
+               (type.GetGenericTypeDefinition() == typeof(Dictionary<,>) ||
+                type.GetGenericTypeDefinition() == typeof(SortedDictionary<,>));
     }
     private static bool IsStruct(Type type)
     {

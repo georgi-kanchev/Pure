@@ -605,44 +605,35 @@ public class Editor
             ViewPosition.y + (my - py) * ((float)ah / wh) / LayerMap.Zoom * 122.5f);
     }
 
-    private static string GrabString(byte[] fromBytes, ref int byteOffset)
+    private TilemapPack LoadMap(byte[] bytes, ref string[] layerNames, ref MapGenerator? gen)
     {
-        var textBytesLength = GrabInt(fromBytes, ref byteOffset);
-        var bText = GetBytes(fromBytes, textBytesLength, ref byteOffset);
-        return Encoding.UTF8.GetString(bText);
-    }
-    private static int GrabInt(byte[] fromBytes, ref int byteOffset)
-    {
-        return BitConverter.ToInt32(GetBytes(fromBytes, 4, ref byteOffset));
-    }
-    private static byte[] GetBytes(byte[] fromBytes, int amount, ref int byteOffset)
-    {
-        var result = fromBytes[byteOffset..(byteOffset + amount)];
-        byteOffset += amount;
-        return result;
-    }
+        try
+        {
+            var (a, b) = (bytes.Length - 4, bytes.Length);
+            var generatorByteLength = BitConverter.ToInt32(bytes.AsSpan()[a..b]);
+            a -= 4;
+            b -= 4;
+            var layersByteLength = BitConverter.ToInt32(bytes.AsSpan()[a..b]);
+            a -= generatorByteLength;
+            b -= 4;
+            var generatorBytes = bytes[a..b];
+            a -= layersByteLength;
+            b -= generatorByteLength;
+            var layerBytes = bytes[a..b];
+            a = 0;
+            b -= layersByteLength;
+            var mapsBytes = bytes[a..b];
 
-    private TilemapPack LoadMap(byte[] bytes, ref string[] result, ref MapGenerator? gen)
-    {
-        // var maps = bytes.ToObject<TilemapPack>();
-        // var decompressed = Decompress(bytes);
-        // var measure = Decompress(maps.ToBytes()).Length;
-        //
-        // if (decompressed.Length == measure)
-        //     return maps;
-        //
-        // // has hijacked data, means it was editor exported
-        // var hijackedBytes = decompressed[measure..];
-        // var byteOffset = 0;
-        // var layerCount = GrabInt(hijackedBytes, ref byteOffset);
-        //
-        // result = new string[layerCount];
-        // for (var i = 0; i < layerCount; i++)
-        //     result[i] = GrabString(hijackedBytes, ref byteOffset);
-        //
-        // gen = new(hijackedBytes[byteOffset..]);
-        // return maps;
-        return new();
+            gen = generatorBytes.ToObject<MapGenerator>();
+            layerNames = layerBytes.ToObject<string[]>()!;
+            var maps = mapsBytes.Decompress().ToObject<TilemapPack>()!;
+            return maps;
+        }
+        catch (Exception)
+        {
+            var maps = bytes.ToObject<TilemapPack>()!;
+            return maps;
+        }
     }
 #endregion
 }

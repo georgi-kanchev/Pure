@@ -642,8 +642,7 @@ public class Tilemap
     }
 
 #region Backend
-    private int textIdNumbers = Tile.NUMBER_0,
-        textIdUppercase = Tile.UPPERCASE_A,
+    private int textIdNumbers = Tile.NUMBER_0, textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
     private readonly Dictionary<char, int> symbolMap = new()
     {

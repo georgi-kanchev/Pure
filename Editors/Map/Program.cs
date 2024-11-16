@@ -6,7 +6,6 @@ global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
 global using System.Text;
-global using System.IO.Compression;
 
 namespace Pure.Editors.Map;
 
@@ -113,7 +112,8 @@ public static class Program
                 editor.MapsEditorVisible.Add(true);
             }
 
-            inspector.layers.Select(inspector.layers.Items[0]);
+            if (inspector.layers.Items.Count > 0)
+                inspector.layers.Select(inspector.layers.Items[0]);
 
             if (gen == null)
                 return;
@@ -127,18 +127,26 @@ public static class Program
     {
         try
         {
-            var layers = inspector.layers;
-            var bytes = Decompress(editor.MapsEditor.ToBytes()).ToList();
-
             // hijack the end of the file to save some extra info
             // should be ignored by the engine but not by the editor
-            PutInt(bytes, layers.Items.Count);
-            for (var i = 0; i < layers.Items.Count; i++)
-                PutString(bytes, layers.Items[i].Text);
 
-            bytes.AddRange(terrainPanel.generator.ToBytes());
+            var bytes = editor.MapsEditor.ToBytes().Compress().ToList();
+            var layers = inspector.layers.Items;
+            var layerNames = new List<string>();
 
-            return Compress(bytes.ToArray());
+            foreach (var layer in layers)
+                layerNames.Add(layer.Text);
+
+            var layersBytes = layerNames.ToArray().ToBytes();
+            bytes.AddRange(layersBytes);
+
+            var generatorBytes = terrainPanel.generator.ToBytes();
+            bytes.AddRange(generatorBytes);
+
+            bytes.AddRange(BitConverter.GetBytes(layersBytes.Length));
+            bytes.AddRange(BitConverter.GetBytes(generatorBytes.Length));
+
+            return bytes.ToArray();
         }
         catch (Exception)
         {
@@ -150,36 +158,6 @@ public static class Program
     private static void UpdateEditor()
     {
         editor.IsDisabledViewInteraction = inspector.IsHovered || terrainPanel.IsHovered;
-    }
-
-    private static void PutInt(List<byte> intoBytes, int value)
-    {
-        intoBytes.AddRange(BitConverter.GetBytes(value));
-    }
-    private static void PutString(List<byte> intoBytes, string value)
-    {
-        var bytes = Encoding.UTF8.GetBytes(value);
-        PutInt(intoBytes, bytes.Length);
-        intoBytes.AddRange(bytes);
-    }
-
-    internal static byte[] Compress(byte[] data)
-    {
-        using var compressedStream = new MemoryStream();
-        using (var gzipStream = new GZipStream(compressedStream, CompressionMode.Compress))
-        {
-            gzipStream.Write(data, 0, data.Length);
-        }
-
-        return compressedStream.ToArray();
-    }
-    internal static byte[] Decompress(byte[] compressedData)
-    {
-        using var compressedStream = new MemoryStream(compressedData);
-        using var gzipStream = new GZipStream(compressedStream, CompressionMode.Decompress);
-        using var resultStream = new MemoryStream();
-        gzipStream.CopyTo(resultStream);
-        return resultStream.ToArray();
     }
 #endregion
 }
