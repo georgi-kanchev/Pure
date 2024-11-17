@@ -379,17 +379,6 @@ public static class Storage
     }
 
 #region Backend
-    private class Node
-    {
-        public byte value;
-        public int freq;
-        public Node? left, right;
-        public bool IsLeaf
-        {
-            get => left == null && right == null;
-        }
-    }
-
     private const string STRING_PLACEHOLDER = "—", QUOTE_PLACEHOLDER = "❝";
 
     private static object? ToObject(byte[]? data, Type? expectedType, out byte[]? remaining)
@@ -673,37 +662,6 @@ public static class Storage
         }
 
         return default;
-    }
-
-    private static Dictionary<byte, string> GetTable(Node root)
-    {
-        var codeTable = new Dictionary<byte, string>();
-        BuildCode(root, "", codeTable);
-        return codeTable;
-
-        void BuildCode(Node node, string code, Dictionary<byte, string> table)
-        {
-            if (node.IsLeaf)
-                table[node.value] = code;
-
-            if (node.left != null) BuildCode(node.left, code + "0", table);
-            if (node.right != null) BuildCode(node.right, code + "1", table);
-        }
-    }
-    private static Node GetTree(Dictionary<byte, int> frequencies)
-    {
-        var nodes = new List<Node>(frequencies.Select(f => new Node { value = f.Key, freq = f.Value }));
-        while (nodes.Count > 1)
-        {
-            nodes = nodes.OrderBy(n => n.freq).ToList();
-            var left = nodes[0];
-            var right = nodes[1];
-            var parent = new Node { left = left, right = right, freq = left.freq + right.freq };
-            nodes.RemoveRange(0, 2);
-            nodes.Add(parent);
-        }
-
-        return nodes[0];
     }
 
     private static bool IsTuple(Type type)

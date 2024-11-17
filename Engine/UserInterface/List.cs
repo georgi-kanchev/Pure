@@ -256,6 +256,8 @@ public class List : Block
             IsCollapsed = true;
         }
 
+        UpdateSelectedItems();
+
         foreach (var btn in Items)
             if (btn.hasParent == false)
                 InitItem(btn);

@@ -5,7 +5,6 @@ global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utilities;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
-global using System.Text;
 
 namespace Pure.Editors.Map;
 
@@ -127,8 +126,9 @@ public static class Program
     {
         try
         {
-            // hijack the end of the file to save some extra info
-            // should be ignored by the engine but not by the editor
+            // hijack the end of the file to save some extra editor info
+            // which should be ignored and discarded by the decompression
+            // in case we have bytes.Decompress().ToObject<TilemapPack>()
 
             var bytes = editor.MapsEditor.ToBytes().Compress().ToList();
             var layers = inspector.layers.Items;
