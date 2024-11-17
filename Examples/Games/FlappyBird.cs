@@ -24,12 +24,11 @@ public static class FlappyBird
 
         var birdY = 5f;
         var birdVelocity = 0f;
-        var birdAnimation = new Animation<(int, sbyte)>(0.8f, false,
-            // pairs of (tile, angle)
-            (Tile.ARROW_DIAGONAL, 0),
-            (Tile.ARROW_DIAGONAL, 0), // first frame twice for a bit more upward time
-            (Tile.ARROW, 0),
-            (Tile.ARROW_DIAGONAL, 1)); // rotated 1 time (90 degrees clockwise)
+        var birdAnimation = new Animation<(ushort, Pose)>(0.8f, false,
+            (Tile.ARROW_DIAGONAL, Pose.Default),
+            (Tile.ARROW_DIAGONAL, Pose.Default), // first frame twice for a bit more upward time
+            (Tile.ARROW, Pose.Default),
+            (Tile.ARROW_DIAGONAL, Pose.Right)); // rotated 1 time (90 degrees clockwise)
 
         var pipes = new List<(float, int, int)>();
         var collisionMap = new SolidMap();
@@ -143,7 +142,7 @@ public static class FlappyBird
 
         void Draw()
         {
-            var (birdTile, birdAngle) = birdAnimation.CurrentValue;
+            var (birdTile, birdPose) = birdAnimation.CurrentValue;
 
             var scoreText = $"Score: {score}";
             foreground.SetText((width / 2 - scoreText.Length / 2, 1), scoreText);
@@ -155,7 +154,7 @@ public static class FlappyBird
 
             layer.DrawTilemap(background.ToBundle());
             layer.DrawTilemap(foreground.ToBundle());
-            var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdAngle);
+            var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdPose);
             layer.DrawTiles((BIRD_X, birdY), tile);
             layer.DrawCursor();
             layer.Draw();

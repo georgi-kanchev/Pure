@@ -30,7 +30,7 @@ internal class TerrainPanel : Panel
 
             var tileLeft = new Tile(BOX_GRID_T_SHAPED, Blue);
             var tileMid = new Tile(BOX_GRID_STRAIGHT, Blue);
-            var tileRight = new Tile(BOX_GRID_T_SHAPED, Blue, 2);
+            var tileRight = new Tile(BOX_GRID_T_SHAPED, Blue, Pose.Down);
 
             SetLine(17);
 
@@ -174,9 +174,7 @@ internal class TerrainPanel : Panel
             var pickText = empty ?
                 "use pick tool" :
                 $"Id: {pickedTile.Id}\n" +
-                $"Turns: {pickedTile.Turns}\n" +
-                $"Flip: {(pickedTile.IsFlipped ? "yes" : "no")}\n" +
-                $"Mirror: {(pickedTile.IsMirrored ? "yes" : "no")}";
+                $"Pose: {pickedTile.Pose}";
 
             editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 6),
                 $"To change the\ncenter to:", White);
@@ -240,7 +238,7 @@ internal class TerrainPanel : Panel
             {
                 btn.Position = (X + 2 + x, Y + 25 + y);
                 var color = btn.GetInteractionColor(Gray);
-                var arrow = new Tile(ARROW_TAILLESS_ROUND, color, (sbyte)index);
+                var arrow = new Tile(ARROW_TAILLESS_ROUND, color, (Pose)(byte)index);
                 var center = new Tile(SHAPE_CIRCLE, color);
                 editor.MapsUi.Tilemaps[FRONT].SetTile(btn.Position, index == 4 ? center : arrow);
             };
@@ -340,8 +338,8 @@ internal class TerrainPanel : Panel
             scale.Position = (X + 8, Y + 21);
             seed.Position = (X + 8, Y + 22);
             tiles.Position = (X + 5, Y + 26);
-            add.Position = (X + 5, Y + 30);
-            edit.Position = (X + 7, Y + 30);
+            add.Position = (X + 9, Y + 30);
+            edit.Position = (X + 11, Y + 30);
             remove.Position = (X + 13, Y + 30);
             autoGenerate.Position = (X + 1, Y + 32);
             generate.Position = (X + 1, Y + 33);
@@ -382,7 +380,7 @@ internal class TerrainPanel : Panel
             editor.MapsUi.SetList(noiseType);
 
             editor.MapsUi.SetButton(generate);
-            editor.MapsUi.SetButton(autoGenerate);
+            editor.MapsUi.SetCheckbox(autoGenerate);
         };
 
         result.AddRange([add, edit, remove, scale, seed, tiles, autoGenerate, generate, noiseType]);

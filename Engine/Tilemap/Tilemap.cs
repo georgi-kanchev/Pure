@@ -1,54 +1,36 @@
-﻿using System.IO.Compression;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace Pure.Engine.Tilemap;
 
-/// <summary>
-/// Represents a tilemap consisting of a grid of tiles.
-/// </summary>
 public class Tilemap
 {
     public List<(int[] matchIds, Tile replacedCenter)> AutoTiles { get; } = [];
     public (int x, int y, int z) SeedOffset { get; set; }
 
-    /// <summary>
-    /// Gets the size of the tilemap in tiles.
-    /// </summary>
     public (int width, int height) Size { get; }
     public Area View { get; set; }
 
-    /// <summary>
-    /// Initializes a new tilemap instance with the specified size.
-    /// </summary>
-    /// <param name="size">The size of the tilemap in tiles.</param>
     public Tilemap((int width, int height) size)
     {
-        var (w, h) = size;
-        w = Math.Max(w, 1);
-        h = Math.Max(h, 1);
+        var (w, h) = (Math.Max(size.width, 1), Math.Max(size.height, 1));
 
         Size = (w, h);
         data = new Tile[w, h];
-        bundleCache = new (int, uint, int, bool, bool)[w, h];
-        ids = new int[w, h];
-        View = (0, 0, size.width, size.height);
+        bundleCache = new (ushort id, uint tint, byte pose)[w, h];
+        ids = new ushort[w, h];
+        View = (0, 0, w, h);
     }
-    /// <summary>
-    /// Initializes a new tilemap instance with the specified tileData.
-    /// </summary>
-    /// <param name="tileData">The tile data to use for the tilemap.</param>
-    /// <exception cref="ArgumentNullException">Thrown if tileData is null.</exception>
-    public Tilemap(Tile[,] tileData)
+    public Tilemap(Tile[,]? tileData)
     {
-        if (tileData == null)
-            throw new ArgumentNullException(nameof(tileData));
+        tileData ??= new Tile[0, 0];
 
         var w = tileData.GetLength(0);
         var h = tileData.GetLength(1);
         Size = (w, h);
         data = Duplicate(tileData);
-        bundleCache = new (int, uint, int, bool, bool)[w, h];
-        ids = new int[w, h];
+        bundleCache = new (ushort id, uint tint, byte pose)[w, h];
+        ids = new ushort[w, h];
         View = (0, 0, w, h);
 
         for (var i = 0; i < h; i++)
@@ -59,16 +41,16 @@ public class Tilemap
             }
     }
 
-    /// <returns>
-    /// A 2D array of the bundle tuples of the tiles in the tilemap.</returns>
-    public (int id, uint tint, int turns, bool mirror, bool flip)[,] ToBundle()
+    public (ushort id, uint tint, byte pose)[,] ToBundle()
     {
+        TryRestoreCache();
         return bundleCache;
     }
 
     public void Flush()
     {
         Array.Clear(data);
+        TryRestoreCache();
         Array.Clear(ids);
         Array.Clear(bundleCache);
     }
@@ -138,18 +120,13 @@ public class Tilemap
         }
     }
 
-    /// <summary>
-    /// Sets the tile at the specified cell to the specified tile.
-    /// </summary>
-    /// <param name="cell">The cell to set the tile at.</param>
-    /// <param name="tile">The tile to set.</param>
-    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetTile((int x, int y) cell, Tile tile, Area? mask = null)
     {
         if (IndicesAreValid(cell, mask) == false)
             return;
 
         data[cell.x, cell.y] = tile;
+        TryRestoreCache();
         ids[cell.x, cell.y] = tile.Id;
         bundleCache[cell.x, cell.y] = tile;
     }
@@ -172,12 +149,6 @@ public class Tilemap
                 i++;
             }
     }
-    /// <summary>
-    /// Sets a group of tiles starting at the specified cell to the specified 2D tile array.
-    /// </summary>
-    /// <param name="cell">The cell to start setting tiles from.</param>
-    /// <param name="tiles">The 2D array of tiles to set.</param>
-    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetGroup((int x, int y) cell, Tile[,] tiles, Area? mask = null)
     {
         if (tiles.Length == 0)
@@ -360,15 +331,6 @@ public class Tilemap
             }
         }
     }
-    /// <summary>
-    /// Sets the tiles in a rectangular area of the tilemap to create a box with corners, edges
-    /// and filling.
-    /// </summary>
-    /// <param name="area">The area of the rectangular box.</param>
-    /// <param name="fill">The tile to use for the filling of the box.</param>
-    /// <param name="edge">The tile to use for the straight edges of the box.</param>
-    /// <param name="corner">The tile to use for the corners of the box.</param>
-    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetBox(Area area, Tile fill, Tile corner, Tile edge, Area? mask = null)
     {
         var (x, y) = (area.X, area.Y);
@@ -385,32 +347,22 @@ public class Tilemap
 
         SetTile((x, y), new(corner.Id, corner.Tint), mask);
         SetArea((x + 1, y, w - 2, 1), mask, new Tile(edge.Id, edge.Tint));
-        SetTile((x + w - 1, y), new(corner.Id, corner.Tint, 1), mask);
+        SetTile((x + w - 1, y), new(corner.Id, corner.Tint, Pose.Right), mask);
 
         if (h != 2)
         {
-            SetArea((x, y + 1, 1, h - 2), mask, new Tile(edge.Id, edge.Tint, 3));
+            SetArea((x, y + 1, 1, h - 2), mask, new Tile(edge.Id, edge.Tint, Pose.Left));
 
             if (fill.Id != Tile.EMPTY)
                 SetArea((x + 1, y + 1, w - 2, h - 2), mask, fill);
 
-            SetArea((x + w - 1, y + 1, 1, h - 2), mask, new Tile(edge.Id, edge.Tint, 1));
+            SetArea((x + w - 1, y + 1, 1, h - 2), mask, new Tile(edge.Id, edge.Tint, Pose.Right));
         }
 
-        SetTile((x, y + h - 1), new(corner.Id, corner.Tint, 3), mask);
-        SetTile((x + w - 1, y + h - 1), new(corner.Id, corner.Tint, 2), mask);
-        SetArea((x + 1, y + h - 1, w - 2, 1), mask, new Tile(edge.Id, edge.Tint, 2));
+        SetTile((x, y + h - 1), new(corner.Id, corner.Tint, Pose.Left), mask);
+        SetTile((x + w - 1, y + h - 1), new(corner.Id, corner.Tint, Pose.Down), mask);
+        SetArea((x + 1, y + h - 1, w - 2, 1), mask, new Tile(edge.Id, edge.Tint, Pose.Down));
     }
-    /// <summary>
-    /// Sets the tiles in a rectangular area of the tilemap to create a vertical or horizontal bar.
-    /// </summary>
-    /// <param name="cell">The cell of the top-left corner of the rectangular area 
-    /// to create the bar.</param>
-    /// <param name="edge">The tile to use for the edges of the bar.</param>
-    /// <param name="fill">The tile to use for the straight part of the bar.</param>
-    /// <param name="size">The length of the bar in tiles.</param>
-    /// <param name="vertical">Whether the bar should be vertical or horizontal.</param>
-    /// <param name="mask">An optional mask that skips any tile outside of it.</param>
     public void SetBar((int x, int y) cell, Tile edge, Tile fill, int size = 5, bool vertical = false, Area? mask = null)
     {
         var (x, y) = cell;
@@ -420,12 +372,12 @@ public class Tilemap
         {
             if (size > 1)
             {
-                SetTile(cell, new(edge.Id, edge.Tint, 1), mask);
-                SetTile((x, y + size - 1), new(edge.Id, edge.Tint, 3), mask);
+                SetTile(cell, new(edge.Id, edge.Tint, Pose.Right), mask);
+                SetTile((x, y + size - 1), new(edge.Id, edge.Tint, Pose.Left), mask);
             }
 
             if (size != 2)
-                SetArea((x, y + off, 1, size - 2), mask, new Tile(fill.Id, fill.Tint, 1));
+                SetArea((x, y + off, 1, size - 2), mask, new Tile(fill.Id, fill.Tint, Pose.Right));
 
             return;
         }
@@ -433,7 +385,7 @@ public class Tilemap
         if (size > 1)
         {
             SetTile(cell, new(edge.Id, edge.Tint), mask);
-            SetTile((x + size - 1, y), new(edge.Id, edge.Tint, 2), mask);
+            SetTile((x + size - 1, y), new(edge.Id, edge.Tint, Pose.Down), mask);
         }
 
         if (size != 2)
@@ -473,34 +425,18 @@ public class Tilemap
             SetTile(kvp.Key, kvp.Value, mask);
     }
 
-    /// <summary>
-    /// Configures the tile identifiers for text characters and numbers assuming they are sequential left to right.
-    /// </summary>
-    /// <param name="lowercase">The tile identifier for the lowercase 'a' character.</param>
-    /// <param name="uppercase">The tile identifier for the uppercase 'A' character.</param>
-    /// <param name="numbers">The tile identifier for the '0' character.</param>
-    public void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A, int numbers = Tile.NUMBER_0)
+    public void ConfigureText(ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
     {
         textIdLowercase = lowercase;
         textIdUppercase = uppercase;
         textIdNumbers = numbers;
     }
-    /// <summary>
-    /// Configures the tile identifiers for a set of symbols sequentially left to right.
-    /// </summary>
-    /// <param name="symbols">The string of symbols to configure.</param>
-    /// <param name="firstTileId">The top-leftmost tile identifier for the symbols.</param>
-    public void ConfigureText(string symbols, int firstTileId)
+    public void ConfigureText(string symbols, ushort firstTileId)
     {
         for (var i = 0; i < symbols.Length; i++)
-            symbolMap[symbols[i]] = firstTileId + i;
+            symbolMap[symbols[i]] = (ushort)(firstTileId + i);
     }
 
-    /// <summary>
-    /// Checks if a cell is inside the tilemap.
-    /// </summary>
-    /// <param name="cell">The cell to check.</param>
-    /// <returns>True if the cell is overlapping with the tilemap, false otherwise.</returns>
     public bool IsOverlapping((int x, int y) cell)
     {
         return cell is { x: >= 0, y: >= 0 } &&
@@ -508,59 +444,35 @@ public class Tilemap
                cell.y <= Size.height - 1;
     }
 
-    /// <summary>
-    /// Converts a symbol to its corresponding tile identifier.
-    /// </summary>
-    /// <param name="symbol">The symbol to convert.</param>
-    /// <returns>The tile identifier corresponding to the given symbol.</returns>
-    public int TileIdFrom(char symbol)
+    public ushort TileIdFrom(char symbol)
     {
-        var id = default(int);
+        var id = default(ushort);
         if (symbol is >= 'A' and <= 'Z')
-            id = symbol - 'A' + textIdUppercase;
+            id = (ushort)(symbol - 'A' + textIdUppercase);
         else if (symbol is >= 'a' and <= 'z')
-            id = symbol - 'a' + textIdLowercase;
+            id = (ushort)(symbol - 'a' + textIdLowercase);
         else if (symbol is >= '0' and <= '9')
-            id = symbol - '0' + textIdNumbers;
+            id = (ushort)(symbol - '0' + textIdNumbers);
         else if (symbolMap.TryGetValue(symbol, out var value))
             id = value;
 
         return id;
     }
-    /// <summary>
-    /// Converts a text to an array of tile identifiers.
-    /// </summary>
-    /// <param name="text">The text to convert.</param>
-    /// <returns>An array of tile identifiers corresponding to the given symbols.</returns>
-    public int[] TileIdsFrom(string? text)
+    public ushort[] TileIdsFrom(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return [];
 
-        var result = new int[text.Length];
+        var result = new ushort[text.Length];
         for (var i = 0; i < text.Length; i++)
             result[i] = TileIdFrom(text[i]);
 
         return result;
     }
-    /// <summary>
-    /// Gets the tile at the specified cell.
-    /// </summary>
-    /// <param name="cell">The cell to get the tile from.</param>
-    /// <returns>The tile at the specified cell, 
-    /// or the default tile value if the cell is out of bounds.</returns>
     public Tile TileAt((int x, int y) cell)
     {
         return IndicesAreValid(cell, null) ? data[cell.x, cell.y] : default;
     }
-    /// <summary>
-    /// Retrieves a rectangular region of tiles from the tilemap.
-    /// </summary>
-    /// <param name="area">A tuple representing the area's cell and size. 
-    /// The x and y values represent the top-left corner of the area, 
-    /// while the width and height represent the size of the area.</param>
-    /// <returns>A 2D array of tiles representing the specified rectangular region in the tilemap. 
-    /// If the area's dimensions are negative, the method will reverse the direction of the iteration.</returns>
     public Tile[,] TilesIn(Area area)
     {
         var (rx, ry) = (area.X, area.Y);
@@ -601,30 +513,15 @@ public class Tilemap
         return result;
     }
 
-    /// <summary>
-    /// Implicitly converts a 2D array of tiles to a tilemap object.
-    /// </summary>
-    /// <param name="data">The 2D array of tiles to convert.</param>
-    /// <returns>A new tilemap object containing the given tiles.</returns>
     public static implicit operator Tilemap?(Tile[,]? data)
     {
         return data == null ? null : new(data);
     }
-    /// <summary>
-    /// Implicitly converts a tilemap object to a 2D array of tiles.
-    /// </summary>
-    /// <param name="tilemap">The tilemap object to convert.</param>
-    /// <returns>A new 2D array of tiles containing the tiles from the tilemap object.</returns>
     public static implicit operator Tile[,]?(Tilemap? tilemap)
     {
         return tilemap == null ? null : Duplicate(tilemap.data);
     }
-    /// <summary>
-    /// Implicitly converts a tilemap object to a 2D array of tile bundles.
-    /// </summary>
-    /// <param name="tilemap">The tilemap object to convert.</param>
-    /// <returns>A new 2D array of tile bundles containing the tiles from the tilemap object.</returns>
-    public static implicit operator (int id, uint tint, int turns, bool mirror, bool flip)[,]?(Tilemap? tilemap)
+    public static implicit operator (ushort id, uint tint, byte pose)[,]?(Tilemap? tilemap)
     {
         return tilemap?.ToBundle();
     }
@@ -636,15 +533,18 @@ public class Tilemap
     {
         return tilemap == null ? null : (0, 0, tilemap.Size.width, tilemap.Size.height);
     }
-    public static implicit operator int[,]?(Tilemap? tilemap)
+    public static implicit operator ushort[,]?(Tilemap? tilemap)
     {
         return tilemap?.ids;
     }
 
 #region Backend
-    private int textIdNumbers = Tile.NUMBER_0, textIdUppercase = Tile.UPPERCASE_A,
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+    internal class DoNotSave : Attribute;
+
+    private ushort textIdNumbers = Tile.NUMBER_0, textIdUppercase = Tile.UPPERCASE_A,
         textIdLowercase = Tile.LOWERCASE_A;
-    private readonly Dictionary<char, int> symbolMap = new()
+    private readonly Dictionary<char, ushort> symbolMap = new()
     {
         { '░', 2 }, { '▒', 5 }, { '▓', 7 }, { '█', 10 },
 
@@ -695,8 +595,10 @@ public class Tilemap
     };
 
     private readonly Tile[,] data;
-    private readonly (int, uint, int, bool, bool)[,] bundleCache;
-    private readonly int[,] ids;
+    [DoNotSave]
+    private (ushort id, uint tint, byte pose)[,]? bundleCache;
+    [DoNotSave]
+    private ushort[,]? ids;
 
     public static (int, int) FromIndex(int index, (int width, int height) size)
     {
@@ -781,6 +683,24 @@ public class Tilemap
         return colors;
     }
 
+    [MemberNotNull(nameof(bundleCache), nameof(ids))]
+    private void TryRestoreCache()
+    {
+        if (ids != null && bundleCache != null)
+            return;
+
+        var w = data.GetLength(0);
+        var h = data.GetLength(1);
+        bundleCache = new (ushort id, uint tint, byte pose)[w, h];
+        ids = new ushort[w, h];
+
+        for (var i = 0; i < h; i++)
+            for (var j = 0; j < w; j++)
+            {
+                bundleCache[j, i] = data[j, i];
+                ids[j, i] = data[j, i].Id;
+            }
+    }
     private int ToSeed((int a, int b) parameters)
     {
         var (a, b) = parameters;

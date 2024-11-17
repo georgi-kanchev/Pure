@@ -604,7 +604,7 @@ internal class Inspector : Panel
                 color.ToBright());
 
         if (e.IsCursorVisible)
-            front.SetTile(e.PositionFromIndices(e.CursorIndices), new(Tile.SHAPE_LINE, Color.White, 2));
+            front.SetTile(e.PositionFromIndices(e.CursorIndices), new(Tile.SHAPE_LINE, Color.White, Pose.Down));
 
         if (isListItems == false || selected is not List list)
             return;
@@ -631,9 +631,9 @@ internal class Inspector : Panel
         SetBackground(front, stepper, color.ToDark());
 
         front.SetTile(e.Increase.Position,
-            new(Tile.ARROW_TAILLESS_ROUND, GetColor(e.Increase, color), 3));
+            new(Tile.ARROW_TAILLESS_ROUND, GetColor(e.Increase, color), Pose.Left));
         front.SetTile(e.Decrease.Position,
-            new(Tile.ARROW_TAILLESS_ROUND, GetColor(e.Decrease, color), 1));
+            new(Tile.ARROW_TAILLESS_ROUND, GetColor(e.Decrease, color), Pose.Right));
         front.SetText((e.Position.x + 2, e.Position.y), e.Text, color);
         front.SetText((e.Position.x + 2, e.Position.y + 1), value);
 

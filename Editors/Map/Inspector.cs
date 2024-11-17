@@ -12,9 +12,7 @@ internal class Inspector : Panel
     public Scroll paletteScrollH;
     public Pages tools;
 
-    public (bool mirror, bool flip) tileOrientation;
-    public int tileTurns;
-    public Button mirror, flip;
+    public List pose;
 
     public Tile pickedTile;
 
@@ -36,7 +34,7 @@ internal class Inspector : Panel
 
             var tileLeft = new Tile(BOX_GRID_T_SHAPED, Blue);
             var tileMid = new Tile(BOX_GRID_STRAIGHT, Blue);
-            var tileRight = new Tile(BOX_GRID_T_SHAPED, Blue, 2);
+            var tileRight = new Tile(BOX_GRID_T_SHAPED, Blue, Pose.Down);
 
             SetLine(14, 18, 23, 28);
 
@@ -60,15 +58,13 @@ internal class Inspector : Panel
 
         var layerButtons = AddLayers();
         var paletteScroll = AddPaletteScrolls();
-        var orientButtons = AddOrientations();
         AddTools(tilePalette);
         AddPaletteColor();
 
-        editor.Ui.Blocks.AddRange(
-            [this, tools, paletteColor, layersVisibility, layers, paletteScrollV, paletteScrollH]);
+        editor.Ui.Blocks.AddRange([this, tools, paletteColor, layersVisibility, layers, paletteScrollV, paletteScrollH]);
         editor.Ui.Blocks.AddRange(paletteScroll);
         editor.Ui.Blocks.AddRange(layerButtons);
-        editor.Ui.Blocks.AddRange(orientButtons);
+        editor.Ui.Blocks.Add(AddPose());
     }
 
     public Tilemap? GetSelectedTilemap()
@@ -143,12 +139,12 @@ internal class Inspector : Panel
         var up = new Button((create.X + 2, create.Y)) { Size = (1, 1) };
         up.OnInteraction(Interaction.Trigger, () => LayersMove(-1));
         up.OnUpdate += () => ShowIfMoreThan1LayerSelected(up);
-        up.OnDisplay += () => editor.MapsUi.SetButtonIcon(up, new(ARROW, Gray, 3), 1);
+        up.OnDisplay += () => editor.MapsUi.SetButtonIcon(up, new(ARROW, Gray, Pose.Left), 1);
 
         var down = new Button((up.X + 1, create.Y)) { Size = (1, 1) };
         down.OnInteraction(Interaction.Trigger, () => LayersMove(1));
         down.OnUpdate += () => ShowIfMoreThan1LayerSelected(down);
-        down.OnDisplay += () => editor.MapsUi.SetButtonIcon(down, new(ARROW, Gray, 1), 1);
+        down.OnDisplay += () => editor.MapsUi.SetButtonIcon(down, new(ARROW, Gray, Pose.Right), 1);
 
         return [create, remove, flush, rename, up, down];
 
@@ -294,52 +290,30 @@ internal class Inspector : Panel
         paletteScroll.OnInteraction(Interaction.Scroll, () => paletteScrollV.Slider.Move(Mouse.ScrollDelta));
         return [paletteScroll];
     }
-    [MemberNotNull(nameof(mirror), nameof(flip))]
-    private Block[] AddOrientations()
+    [MemberNotNull(nameof(pose))]
+    private List AddPose()
     {
-        mirror = new((X + 1, 20)) { Size = (1, 1) };
-        flip = new((X + 1, 21)) { Size = (1, 1) };
-        var turns = new Button((X + 1, 22)) { Size = (1, 1) };
+        pose = new((X + 1, 20), 8, Span.Dropdown) { Size = (14, 8), ItemSize = (14, 1) };
+        pose.Edit([
+            nameof(Pose.Default), nameof(Pose.Right), nameof(Pose.Down), nameof(Pose.Left),
+            nameof(Pose.Mirror), nameof(Pose.MirrorRight), nameof(Pose.MirrorDown), nameof(Pose.MirrorLeft)
+        ]);
 
         OnDisplay += () =>
         {
             var disabled = tools.Current >= 9;
 
             if (disabled == false)
-                editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, 19), "Orientation:");
+                editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, 19), "Pose:");
 
-            mirror.IsHidden = disabled;
-            mirror.IsDisabled = disabled;
-            flip.IsHidden = disabled;
-            flip.IsDisabled = disabled;
-            turns.IsDisabled = disabled;
-            turns.IsHidden = disabled;
+            pose.IsHidden = disabled;
+            pose.IsDisabled = disabled;
         };
 
-        mirror.OnDisplay += () =>
-        {
-            tileOrientation = (mirror.IsSelected, tileOrientation.flip);
-            editor.MapsUi.Tilemaps[FRONT].SetText((mirror.X + 2, mirror.Y), "Mirror");
-            editor.MapsUi.SetButtonIcon(mirror, new(ICON_MIRROR, mirror.IsSelected ? Green : Gray), FRONT);
-        };
+        pose.OnDisplay += () => editor.MapsUi.SetList(pose, MIDDLE);
+        pose.OnItemDisplay += item => editor.MapsUi.SetListItem(pose, item, FRONT);
 
-        flip.OnDisplay += () =>
-        {
-            tileOrientation = (tileOrientation.mirror, flip.IsSelected);
-            editor.MapsUi.Tilemaps[FRONT].SetText((flip.X + 2, flip.Y), "Flip");
-            editor.MapsUi.SetButtonIcon(flip, new(ICON_FLIP, flip.IsSelected ? Green : Gray), FRONT);
-        };
-
-        turns.OnInteraction(Interaction.Trigger, () => tileTurns++);
-        turns.OnDisplay += () =>
-        {
-            var color = tileTurns % 4 == 0 ? Gray : Green;
-            editor.MapsUi.Tilemaps[FRONT].SetText((turns.X + 2, turns.Y), "Angle");
-            editor.MapsUi.Tilemaps[FRONT].SetTile((turns.X + 2, turns.Y), new(UPPERCASE_A, White, tileTurns));
-            editor.MapsUi.SetButtonIcon(turns, new(ICON_ROTATE, color), FRONT);
-        };
-
-        return [mirror, flip, turns];
+        return pose;
     }
 #endregion
 }

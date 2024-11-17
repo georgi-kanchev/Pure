@@ -156,7 +156,7 @@ public class SolidMap
         return result.ToArray();
     }
 
-    public void Update(int[,]? tileIds, bool mergeAdjacentSolids = true)
+    public void Update(ushort[,]? tileIds, bool mergeAdjacentSolids = true)
     {
         if (tileIds == null)
             return;

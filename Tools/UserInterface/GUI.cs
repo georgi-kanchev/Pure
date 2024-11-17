@@ -204,11 +204,11 @@ public static class GUI
         maps.Flush();
     }
 
-    public static void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A, int numbers = Tile.NUMBER_0)
+    public static void ConfigureText(ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
     {
         maps.ConfigureText(lowercase, uppercase, numbers);
     }
-    public static void ConfigureText(string symbols, int firstTileId)
+    public static void ConfigureText(string symbols, ushort firstTileId)
     {
         maps.ConfigureText(symbols, firstTileId);
     }

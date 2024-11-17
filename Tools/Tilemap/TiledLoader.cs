@@ -97,7 +97,7 @@ public static class TiledLoader
         var result = new Pure.Engine.Tilemap.Tilemap((mapWidth, mapHeight));
 
         if (encoding == "csv")
-            LoadFromCsv(result, dataStr);
+            LoadFromCSV(result, dataStr);
         else if (encoding == "base64")
         {
             if (compression == null)
@@ -116,7 +116,7 @@ public static class TiledLoader
         return result;
     }
 
-    private static void LoadFromCsv(Pure.Engine.Tilemap.Tilemap tilemap, string dataStr)
+    private static void LoadFromCSV(Pure.Engine.Tilemap.Tilemap tilemap, string dataStr)
     {
         var values = dataStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
         for (var i = 0; i < values.Length; i++)
@@ -130,8 +130,7 @@ public static class TiledLoader
         var bytes = Convert.FromBase64String(dataStr);
         LoadFromByteArray(tilemap, bytes);
     }
-    private static void LoadFromBase64<T>(Pure.Engine.Tilemap.Tilemap tilemap, string dataStr)
-        where T : Stream
+    private static void LoadFromBase64<T>(Pure.Engine.Tilemap.Tilemap tilemap, string dataStr) where T : Stream
     {
         var buffer = Convert.FromBase64String(dataStr);
         using var msi = new MemoryStream(buffer);
@@ -173,43 +172,27 @@ public static class TiledLoader
             value = 0;
 
         var (x, y) = IndexToCoords(tilemap, index);
-        var bit31 = IsBitSet(value, 31);
-        var bit30 = IsBitSet(value, 30);
-        var bit29 = IsBitSet(value, 29);
-        var m = false;
-        var r = 0;
+        var bits = (IsBitSet(value, 31), IsBitSet(value, 30), IsBitSet(value, 29));
+        var pose = Pose.Default;
 
-        if ((bit31, bit30, bit29) == (true, false, true))
-            r = 1;
-        else if ((bit31, bit30, bit29) == (true, true, false))
-            r = 2;
-        else if ((bit31, bit30, bit29) == (false, true, true))
-            r = 3;
-        else if ((bit31, bit30, bit29) == (true, false, false))
-        {
-            m = true;
-            r = 0;
-        }
-        else if ((bit31, bit30, bit29) == (true, true, true))
-        {
-            m = true;
-            r = 1;
-        }
-        else if ((bit31, bit30, bit29) == (false, true, false))
-        {
-            m = true;
-            r = 2;
-        }
-        else if ((bit31, bit30, bit29) == (false, false, true))
-        {
-            m = true;
-            r = 3;
-        }
+        if (bits == (true, false, true))
+            pose = Pose.Right;
+        else if (bits == (true, true, false))
+            pose = Pose.Down;
+        else if (bits == (false, true, true))
+            pose = Pose.Left;
+        else if (bits == (true, false, false))
+            pose = Pose.Mirror;
+        else if (bits == (true, true, true))
+            pose = Pose.MirrorRight;
+        else if (bits == (false, true, false))
+            pose = Pose.MirrorDown;
+        else if (bits == (false, false, true))
+            pose = Pose.MirrorLeft;
 
         var tile = new Tile
         {
-            IsMirrored = m,
-            Turns = (sbyte)r,
+            Pose = pose,
             Tint = uint.MaxValue
         };
 
@@ -218,7 +201,7 @@ public static class TiledLoader
         value = ClearBit(value, 29);
         value = ClearBit(value, 28);
 
-        tile.Id = (int)value;
+        tile.Id = (ushort)value;
         tilemap.SetTile((x, y), tile);
     }
     private static bool IsBitSet(uint value, int bitPosition)

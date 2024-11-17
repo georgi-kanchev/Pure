@@ -59,7 +59,7 @@ public class Layer
     }
     public byte AtlasTileSize { get; set; }
     public byte AtlasTileGap { get; set; }
-    public int AtlasTileIdFull { get; set; }
+    public ushort AtlasTileIdFull { get; set; }
 
     public (int width, int height) Size
     {
@@ -102,42 +102,6 @@ public class Layer
         if (fitWindow)
             FitWindow();
     }
-    public Layer(byte[] bytes)
-    {
-        var b = Window.Decompress(bytes);
-        var offset = 0;
-
-        var bAtlasPath = GetInt();
-        AtlasPath = Encoding.UTF8.GetString(Window.GetBytesFrom(b, bAtlasPath, ref offset));
-        atlasPath = AtlasPath;
-        AtlasTileGap = Window.GetBytesFrom(b, 1, ref offset)[0];
-        AtlasTileSize = Window.GetBytesFrom(b, 1, ref offset)[0];
-
-        AtlasTileIdFull = GetInt();
-        Size = (GetInt(), GetInt());
-
-        BackgroundColor = BitConverter.ToUInt32(Window.GetBytesFrom(b, 4, ref offset));
-
-        Zoom = GetFloat();
-        Offset = (GetFloat(), GetFloat());
-
-        verts = new(PrimitiveType.Quads);
-        shader = new EffectLayer().Shader;
-        shaderParams = new(PrimitiveType.Points);
-
-        float GetFloat()
-        {
-            return BitConverter.ToSingle(Window.GetBytesFrom(b, 4, ref offset));
-        }
-
-        int GetInt()
-        {
-            return BitConverter.ToInt32(Window.GetBytesFrom(b, 4, ref offset));
-        }
-    }
-    public Layer(string base64) : this(Convert.FromBase64String(base64))
-    {
-    }
 
     public void ToDefault()
     {
@@ -147,28 +111,6 @@ public class Layer
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
         AtlasTileIdFull = 10;
-    }
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var bytes = new List<byte>();
-        var bAtlasPath = Encoding.UTF8.GetBytes(AtlasPath);
-        bytes.AddRange(BitConverter.GetBytes(bAtlasPath.Length));
-        bytes.AddRange(bAtlasPath);
-        bytes.Add(AtlasTileGap);
-        bytes.Add(AtlasTileSize);
-        bytes.AddRange(BitConverter.GetBytes(AtlasTileIdFull));
-        bytes.AddRange(BitConverter.GetBytes(Size.width));
-        bytes.AddRange(BitConverter.GetBytes(Size.height));
-        bytes.AddRange(BitConverter.GetBytes(BackgroundColor));
-        bytes.AddRange(BitConverter.GetBytes(Zoom));
-        bytes.AddRange(BitConverter.GetBytes(Offset.x));
-        bytes.AddRange(BitConverter.GetBytes(Offset.y));
-
-        return Window.Compress(bytes.ToArray());
     }
 
     public void FitWindow()
@@ -183,31 +125,32 @@ public class Layer
         Zoom = Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
     }
 
-    public void DrawCursor(int tileId = 546, uint tint = 3789677055)
+    public void DrawCursor(ushort tileId = 546, uint tint = 3789677055)
     {
         if (Mouse.isOverWindow == false)
             return;
 
         var (offX, offY) = cursorOffsets[(int)Mouse.CursorCurrent];
-        var angle = default(sbyte);
+        var pose = default(byte);
 
         if (Mouse.CursorCurrent == Mouse.Cursor.ResizeVertical)
         {
             tileId--;
-            angle = 1;
+            pose = 1;
         }
         else if (Mouse.CursorCurrent == Mouse.Cursor.ResizeTopLeftBottomRight)
         {
             tileId--;
-            angle = 1;
+            pose = 1;
         }
         else if ((int)Mouse.CursorCurrent >= (int)Mouse.Cursor.ResizeBottomLeftTopRight)
             tileId -= 2;
 
-        (int id, uint tint, sbyte ang, bool h, bool v) tile = default;
-        tile.id = tileId + (int)Mouse.CursorCurrent;
+        (ushort id, uint tint, byte pose) tile = default;
+        var cursor = (ushort)Mouse.CursorCurrent;
+        tile.id = (ushort)(tileId + cursor);
         tile.tint = tint;
-        tile.ang = angle;
+        tile.pose = pose;
 
         var (x, y) = PixelToPosition(Mouse.CursorPosition);
         DrawTiles((x - offX, y - offY), tile);
@@ -254,12 +197,12 @@ public class Layer
             QueueLine((a.x, a.y), (b.x, b.y), a.color);
         }
     }
-    public void DrawTiles((float x, float y) position, (int id, uint tint, int turns, bool mirror, bool flip) tile, (int width, int height) groupSize = default, bool sameTile = default)
+    public void DrawTiles((float x, float y) position, (ushort id, uint tint, byte pose) tile, (int width, int height) groupSize = default, bool sameTile = default)
     {
         if (verts == null)
             return;
 
-        var (id, tint, angle, flipH, flipV) = tile;
+        var (id, tint, pose) = tile;
         var (w, h) = groupSize;
         w = w == 0 ? 1 : w;
         h = h == 0 ? 1 : h;
@@ -268,6 +211,7 @@ public class Layer
         var (tileX, tileY) = IndexToCoords(id);
         var (x, y) = position;
         var tsz = AtlasTileSize;
+        var (flip, ang) = GetOrientation(pose);
 
         for (var i = 0; i < Math.Abs(h); i++)
             for (var j = 0; j < Math.Abs(w); j++)
@@ -277,9 +221,7 @@ public class Layer
             FlipVertically(tiles);
         if (h < 0)
             FlipHorizontally(tiles);
-        if (flipH)
-            FlipVertically(tiles);
-        if (flipV)
+        if (flip)
             FlipHorizontally(tiles);
 
         w = Math.Abs(w);
@@ -294,12 +236,12 @@ public class Layer
                 var tl = new Vector2f((int)tx, (int)ty);
                 var br = new Vector2f((int)(tx + tsz), (int)(ty + tsz));
 
-                if (angle is 1 or 3)
+                if (ang is 1 or 3)
                     br = new((int)(tx + tsz), (int)(ty + tsz));
 
                 var tr = new Vector2f((int)br.X, (int)tl.Y);
                 var bl = new Vector2f((int)tl.X, (int)br.Y);
-                var rotated = GetRotatedPoints((sbyte)angle, texTl, texTr, texBr, texBl);
+                var rotated = GetRotatedPoints(ang, texTl, texTr, texBr, texBl);
                 texTl = rotated.p1;
                 texTr = rotated.p2;
                 texBr = rotated.p3;
@@ -323,7 +265,7 @@ public class Layer
                 verts.Append(new(bl, c, texBl));
             }
     }
-    public void DrawTilemap((int id, uint tint, int turns, bool mirror, bool flip)[,]? tilemap)
+    public void DrawTilemap((ushort id, uint tint, byte pose)[,]? tilemap)
     {
         if (tilemap == null || tilemap.Length == 0 || verts == null)
             return;
@@ -334,7 +276,7 @@ public class Layer
         for (var y = 0; y < cellCountH; y++)
             for (var x = 0; x < cellCountW; x++)
             {
-                var (id, tint, angle, isFlippedHorizontally, isFlippedVertically) = tilemap[x, y];
+                var (id, tint, pose) = tilemap[x, y];
 
                 if (id == default)
                     continue;
@@ -345,20 +287,20 @@ public class Layer
                 var br = new Vector2f((x + 1) * tsz, (y + 1) * tsz);
                 var bl = new Vector2f(x * tsz, (y + 1) * tsz);
                 var (texTl, texTr, texBr, texBl) = GetTexCoords(id, (1, 1));
-                var rotated = GetRotatedPoints((sbyte)-angle, tl, tr, br, bl);
-                var (flipX, flipY) = (isFlippedHorizontally, isFlippedVertically);
+                var (flip, ang) = GetOrientation(pose);
+                var rotated = GetRotatedPoints((sbyte)-ang, tl, tr, br, bl);
 
-                if (flipX)
+                if (flip)
                 {
                     (texTl, texTr) = (texTr, texTl);
                     (texBl, texBr) = (texBr, texBl);
                 }
 
-                if (flipY)
-                {
-                    (texTl, texBl) = (texBl, texTl);
-                    (texTr, texBr) = (texBr, texTr);
-                }
+                // if (flipV)
+                // {
+                //     (texTl, texBl) = (texBl, texTl);
+                //     (texTr, texBr) = (texBr, texTr);
+                // }
 
                 tl = rotated.p1;
                 tr = rotated.p2;
@@ -560,11 +502,6 @@ public class Layer
         tilesets["default"].CopyToImage().SaveToFile(filePath);
     }
 
-    public static implicit operator byte[](Layer layer)
-    {
-        return layer.ToBytes();
-    }
-
 #region Backend
     // per tile shader data map (8x8 pixels)
     //
@@ -742,6 +679,10 @@ public class Layer
                 if (includeArea)
                     shaderParams.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl));
             }
+    }
+    private static (bool mirrorH, sbyte angle) GetOrientation(byte pose)
+    {
+        return (pose > 3, (sbyte)(pose % 4));
     }
 
     internal void DrawQueue()

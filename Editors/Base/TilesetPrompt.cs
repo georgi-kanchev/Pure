@@ -125,7 +125,7 @@ internal class TilesetPrompt
     }
     private void PromptTileFullAccept()
     {
-        var result = (int)stepper.Value;
+        var result = (ushort)stepper.Value;
 
         editor.LayerGrid.AtlasTileIdFull = result;
         editor.LayerMap.AtlasTileIdFull = result;

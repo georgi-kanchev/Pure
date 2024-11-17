@@ -237,8 +237,8 @@ public static class MapperUserInterface
             return;
 
         var arrow = ThemeScrollArrow;
-        var scrollUpAngle = (sbyte)(scroll.IsVertical ? 1 : 0);
-        var scrollDownAngle = (sbyte)(scroll.IsVertical ? 3 : 2);
+        var scrollUpAngle = scroll.IsVertical ? Pose.Right : Pose.Default;
+        var scrollDownAngle = scroll.IsVertical ? Pose.Left : Pose.Down;
         var up = scroll.Increase.Position;
         var down = scroll.Decrease.Position;
 
@@ -276,8 +276,8 @@ public static class MapperUserInterface
 
         Clear(maps, stepper, zOrder);
         maps.Tilemaps[zOrder].SetBox(stepper.Area, fill, corner, fill, mask);
-        maps.Tilemaps[zOrder + 1].SetTile(upPos, new(arrow.Id, upTint, 3), mask);
-        maps.Tilemaps[zOrder + 1].SetTile(downPos, new(arrow.Id, downTint, 1), mask);
+        maps.Tilemaps[zOrder + 1].SetTile(upPos, new(arrow.Id, upTint, Pose.Left), mask);
+        maps.Tilemaps[zOrder + 1].SetTile(downPos, new(arrow.Id, downTint, Pose.Right), mask);
         maps.Tilemaps[zOrder + 1].SetText((x + 1, y), text, textTint, mask: mask);
         maps.Tilemaps[zOrder + 1].SetText((x + 1, y + 1), value, valueTint, mask: mask);
         maps.Tilemaps[zOrder + 1].SetTile(stepper.Minimum.Position, min, mask);
@@ -479,7 +479,7 @@ public static class MapperUserInterface
         ThemeScrollArrow = arrow;
         ThemeButtonBox = (new(BOX_CORNER_ROUND, g), new(FULL, g), new(FULL, g), g.ToBright());
         ThemeButtonBar = (new(BAR_BIG_EDGE, g), new(FULL, g), g.ToBright());
-        ThemeInputBox = (new(FULL, g.ToDark(0.4f)), new(SHAPE_LINE, White, 2), g.ToBright(), Blue);
+        ThemeInputBox = (new(FULL, g.ToDark(0.4f)), new(SHAPE_LINE, White, Pose.Down), g.ToBright(), Blue);
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
         ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(SHAPE_CIRCLE_BIG, g.ToBright()));
         ThemeTooltip = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), textTint: White);
@@ -488,7 +488,7 @@ public static class MapperUserInterface
         ThemePromptItems = [new(ICON_YES, Green), new(ICON_NO, Red)];
         ThemePalette = (FULL, new(ICON_PICK, g), new(SHADE_5, g.ToDark()), new(SHAPE_CIRCLE_SMALL, g));
         ThemePanel = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), White);
-        ThemeList = (new(FULL, dg), new(MATH_GREATER, g, 1), g.ToBright(0.3f), Green, g.ToDark(0.3f));
+        ThemeList = (new(FULL, dg), new(MATH_GREATER, g, Pose.Right), g.ToBright(0.3f), Green, g.ToDark(0.3f));
 
         var min = new Tile(MATH_MUCH_LESS, g);
         var mid = new Tile(PUNCTUATION_PIPE, g);

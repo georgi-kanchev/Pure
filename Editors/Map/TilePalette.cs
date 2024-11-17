@@ -110,7 +110,7 @@ internal class TilePalette
         for (var i = 0; i < mh; i++)
             for (var j = 0; j < mw; j++)
             {
-                var id = (i, j).ToIndex1D((mw, mh));
+                var id = (ushort)(i, j).ToIndex1D((mw, mh));
                 var tile = new Tile(id, Color.White);
                 map.SetTile((j, i), tile);
             }
@@ -182,19 +182,17 @@ internal class TilePalette
         var (sx, sy) = selected.Position;
         sx += map.View.X;
         sy += map.View.Y;
-        var (m, f) = (inspector?.tileOrientation.mirror ?? false, inspector?.tileOrientation.flip ?? false);
+        var pose = inspector?.pose.Items.IndexOf(inspector.pose.SelectedItems[0]) ?? 0;
         var (sw, sh) = selected.Size;
         var tiles = map.TilesIn(((int)sx, (int)sy, (int)sw, (int)sh));
         for (var i = 0; i < tiles.GetLength(1); i++)
             for (var j = 0; j < tiles.GetLength(0); j++)
             {
                 tiles[j, i].Tint = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
-                tiles[j, i].Turns = inspector?.tileTurns ?? 0;
-                tiles[j, i].IsMirrored = m;
-                tiles[j, i].IsFlipped = f;
+                tiles[j, i].Pose = (Pose)pose;
             }
 
-        tiles = tiles.Rotate(-inspector?.tileTurns ?? 0);
+        tiles = tiles.Rotate(-pose % 4);
 
         return tiles;
     }
@@ -331,19 +329,19 @@ internal class TilePalette
         else if (tool == 9) // rotate
             ProcessRegion(tile =>
             {
-                tile.Turns++;
+                // tile.Pose++;
                 return tile;
             });
         else if (tool == 10) // mirror
             ProcessRegion(tile =>
             {
-                tile.IsMirrored = tile.IsMirrored == false;
+                // tile.IsMirrored = tile.IsMirrored == false;
                 return tile;
             });
         else if (tool == 11) // flip
             ProcessRegion(tile =>
             {
-                tile.IsFlipped = tile.IsFlipped == false;
+                // tile.IsFlipped = tile.IsFlipped == false;
                 return tile;
             });
         else if (tool == 12) // color
@@ -355,13 +353,13 @@ internal class TilePalette
         else if (tool == 13) // pick
         {
             var tile = tilemap.TileAt((mx, my));
-            var coords = tile.Id.ToIndex2D(layer.AtlasTileCount);
+            var coords = ((int)tile.Id).ToIndex2D(layer.AtlasTileCount);
             inspector.paletteColor.SelectedColor = tile.Tint;
             inspector.pickedTile = tile;
             justPickedTile = true;
-            inspector.mirror.IsSelected = tile.IsMirrored;
-            inspector.flip.IsSelected = tile.IsFlipped;
-            inspector.tileTurns = tile.Turns;
+            // inspector.mirror.IsSelected = tile.IsMirrored;
+            // inspector.flip.IsSelected = tile.IsFlipped;
+            // inspector.tileTurns = tile.Turns;
             selectedPos = coords;
             selectedSz = (1, 1);
         }
@@ -395,11 +393,9 @@ internal class TilePalette
         var lmb = Mouse.Button.Left.IsPressed();
         var (szw, szh) = (end.x - start.x, end.y - start.y);
         var (offX, offY) = (1, 1);
-        var (m, f) = (inspector.tileOrientation.mirror, inspector.tileOrientation.flip);
+        var pose = inspector.pose.Items.IndexOf(inspector.pose.SelectedItems[0]);
         randomTile.Tint = inspector.paletteColor.SelectedColor;
-        randomTile.Turns = inspector.tileTurns;
-        randomTile.IsMirrored = m;
-        randomTile.IsFlipped = f;
+        randomTile.Pose = (Pose)pose;
 
         if (inspector.tools.Current == 14) // select
         {

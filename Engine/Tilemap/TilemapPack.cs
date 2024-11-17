@@ -49,12 +49,12 @@ public class TilemapPack
             map.Flood(cell, exactTile, mask, tiles);
     }
 
-    public void ConfigureText(int lowercase = Tile.LOWERCASE_A, int uppercase = Tile.UPPERCASE_A, int numbers = Tile.NUMBER_0)
+    public void ConfigureText(ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
     {
         foreach (var map in Tilemaps)
             map.ConfigureText(lowercase, uppercase, numbers);
     }
-    public void ConfigureText(string symbols, int firstTileId)
+    public void ConfigureText(string symbols, ushort firstTileId)
     {
         foreach (var map in Tilemaps)
             map.ConfigureText(symbols, firstTileId);
@@ -73,17 +73,17 @@ public class TilemapPack
 
         return result;
     }
-    public int TileIdFrom(char symbol)
+    public ushort TileIdFrom(char symbol)
     {
         // not very reliable method since the user might configure text on each
-        // tilemap individually but the idea of the tilemap manager is to bundle
+        // tilemap individually but the idea of the tilemap pack is to bundle
         // multiple tilemaps with COMMON properties, therefore same text configuration
         return Tilemaps[0].TileIdFrom(symbol);
     }
-    public int[] TileIdsFrom(string text)
+    public ushort[] TileIdsFrom(string text)
     {
         // not very reliable method since the user might configure text on each
-        // tilemap individually but the idea of the tilemap manager is to bundle
+        // tilemap individually but the idea of the tilemap pack is to bundle
         // multiple tilemaps with COMMON properties, therefore same text configuration
         return Tilemaps[0].TileIdsFrom(text);
     }

@@ -109,9 +109,9 @@ public static class Collision
     }
     private static void SetRoad(this Tilemap tilemap, (int x, int y) pointA, (int x, int y) pointB)
     {
-        var angle = pointA.x == pointB.x ? 1 : 0;
+        var pose = pointA.x == pointB.x ? Pose.Right : Pose.Default;
         tilemap.SetLine(pointA, pointB, null,
-            new Tile(Tile.BAR_SPIKE_STRAIGHT, Brown, (sbyte)angle));
+            new Tile(Tile.BAR_SPIKE_STRAIGHT, Brown, pose));
     }
     private static void SetHouses(this Tilemap tilemap, params (int x, int y)[] positions)
     {
@@ -122,11 +122,11 @@ public static class Collision
             var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Brown.ToBright());
 
             tilemap.SetTile((x, y), roof);
-            roof.IsMirrored = true;
+            roof.Pose = Pose.Mirror;
             tilemap.SetTile((x + 1, y), roof);
 
             tilemap.SetTile((x, y + 1), walls);
-            walls.IsMirrored = true;
+            walls.Pose = Pose.Mirror;
             tilemap.SetTile((x + 1, y + 1), walls);
         }
     }
@@ -135,21 +135,21 @@ public static class Collision
         tilemap.SetEllipse(position, radius, true, null, Tile.MATH_APPROXIMATE);
         tilemap.Replace((0, 0, tilemap.Size.width, tilemap.Size.height), Tile.MATH_APPROXIMATE, null,
             new Tile(Tile.ICON_WAVE, Blue),
-            new Tile(Tile.ICON_WAVE, Blue, 2),
+            new Tile(Tile.ICON_WAVE, Blue, Pose.Down),
             new Tile(Tile.ICON_WAVES, Blue),
-            new Tile(Tile.ICON_WAVES, Blue, 2));
+            new Tile(Tile.ICON_WAVES, Blue, Pose.Down));
     }
     private static void FillWithRandomGrass(this Tilemap tilemap)
     {
         var color = Green.ToDark(0.4f);
         tilemap.Replace((0, 0, tilemap.Size.width, tilemap.Size.height), 0, null,
             new Tile(Tile.SHADE_1, color),
-            new Tile(Tile.SHADE_1, color, 1),
-            new Tile(Tile.SHADE_1, color, 2),
-            new Tile(Tile.SHADE_1, color, 3),
+            new Tile(Tile.SHADE_1, color, Pose.Right),
+            new Tile(Tile.SHADE_1, color, Pose.Down),
+            new Tile(Tile.SHADE_1, color, Pose.Left),
             new Tile(Tile.SHADE_2, color),
-            new Tile(Tile.SHADE_2, color, 1),
-            new Tile(Tile.SHADE_2, color, 2),
-            new Tile(Tile.SHADE_2, color, 3));
+            new Tile(Tile.SHADE_2, color, Pose.Right),
+            new Tile(Tile.SHADE_2, color, Pose.Down),
+            new Tile(Tile.SHADE_2, color, Pose.Left));
     }
 }

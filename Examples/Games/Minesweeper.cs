@@ -3,7 +3,6 @@ namespace Pure.Examples.Games;
 using Engine.Window;
 using Engine.Utilities;
 using Engine.Tilemap;
-using Engine.Collision;
 
 public static class Minesweeper
 {
@@ -56,7 +55,7 @@ public static class Minesweeper
                         var pos = (x + j, y + k);
                         var id = maps.Tilemaps[0].TileAt(pos).Id;
                         if (id != TILE_MINE)
-                            maps.Tilemaps[0].SetTile(pos, id + 1);
+                            maps.Tilemaps[0].SetTile(pos, (ushort)(id + 1));
                     }
 
                 maps.Tilemaps[0].SetTile((x, y), new(TILE_MINE, Color.Black));

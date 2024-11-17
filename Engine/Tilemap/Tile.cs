@@ -1,77 +1,73 @@
 ﻿namespace Pure.Engine.Tilemap;
 
-public struct Tile(int id, uint tint = uint.MaxValue, int turns = default, bool mirror = false, bool flip = false)
+public enum Pose : byte
 {
-    public int Id { get; set; } = id;
-    public uint Tint { get; set; } = tint;
-    public int Turns { get; set; } = turns;
-    public bool IsMirrored { get; set; } = mirror;
-    public bool IsFlipped { get; set; } = flip;
+    Default = 0,
+    Right = 1,
+    Down = 2,
+    Left = 3,
+    Mirror = 4,
+    MirrorRight = 5,
+    MirrorDown = 6,
+    MirrorLeft = 7
+}
 
-    public Tile((int id, uint tint, int turns, bool mirror, bool flip) bundle) : this(bundle.id, bundle.tint, bundle.turns, bundle.mirror, bundle.flip)
+public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Default)
+{
+    public ushort Id { get; set; } = id;
+    public uint Tint { get; set; } = tint;
+    public Pose Pose { get; set; } = pose;
+
+    public Tile((ushort id, uint tint, byte pose) bundle) : this(bundle.id, bundle.tint, (Pose)bundle.pose)
     {
     }
 
-    public (int id, uint tint, int turns, bool mirror, bool flip) ToBundle()
+    public (ushort id, uint tint, byte pose) ToBundle()
     {
-        return (Id, Tint, Turns, IsMirrored, IsFlipped);
+        return (Id, Tint, (byte)Pose);
     }
     public override string ToString()
     {
         return $"Tile {Id}";
     }
 
-    /// <summary>Indicates whether this instance and a specified object are equal.</summary>
-    /// <param name="obj">The object to compare with the current instance.</param>
-    /// <returns>
-    /// <see langword="true" /> if <paramref name="obj" /> and this instance are the same type and represent the same value; otherwise, <see langword="false" />.</returns>
     public override bool Equals(object? obj)
     {
         return obj is Tile other && this == other;
     }
-    /// <summary>Returns the hash code for this instance.</summary>
-    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
     public override int GetHashCode()
     {
-        return HashCode.Combine(Id, Tint, Turns, IsMirrored, IsFlipped);
+        return HashCode.Combine(Id, Tint, Pose);
     }
 
-    public static implicit operator int(Tile tile)
+    public static implicit operator ushort(Tile tile)
     {
         return tile.Id;
     }
-    public static implicit operator Tile(int id)
+    public static implicit operator Tile(ushort id)
     {
         return new(id);
     }
-    public static implicit operator Tile((int id, uint tint, int turns, bool mirror, bool flip) bundle)
+    public static implicit operator Tile((ushort id, uint tint, byte pose) bundle)
     {
         return new(bundle);
     }
-    public static implicit operator (int id, uint tint, int turns, bool mirror, bool flip)(Tile tile)
+    public static implicit operator (ushort id, uint tint, byte pose)(Tile tile)
     {
         return tile.ToBundle();
     }
 
     public static bool operator ==(Tile a, Tile b)
     {
-        return a.Id == b.Id &&
-               a.Tint == b.Tint &&
-               a.Turns == b.Turns &&
-               a.IsMirrored == b.IsMirrored &&
-               a.IsFlipped == b.IsFlipped;
+        return a.Id == b.Id && a.Tint == b.Tint && a.Pose == b.Pose;
     }
     public static bool operator !=(Tile a, Tile b)
     {
-        return a.Id != b.Id ||
-               a.Tint != b.Tint ||
-               a.Turns != b.Turns ||
-               a.IsMirrored != b.IsMirrored ||
-               a.IsFlipped != b.IsFlipped;
+        return a.Id != b.Id || a.Tint != b.Tint || a.Pose != b.Pose;
     }
 
 #region General
-    public const int EMPTY = 0,
+    public const ushort EMPTY = 0,
         FULL = 10,
 #endregion
 

@@ -103,7 +103,7 @@ public class Editor
         Input.TilemapSize = MapsUi.View.Size;
 
         for (var i = 0; i < 5; i++)
-            CreateViewButton(i);
+            CreateViewButton((byte)i);
 
         CreateResizeButtons();
 
@@ -483,7 +483,7 @@ public class Editor
         ViewMove(); // reclamp view position
         Log($"View {w}x{h}");
     }
-    private void CreateViewButton(int rotations)
+    private void CreateViewButton(byte rotations)
     {
         var offsets = new (int x, int y)[] { (1, 0), (0, 1), (-1, 0), (0, -1), (0, 0) };
         var btn = new Button { Size = (1, 1) };
@@ -499,7 +499,7 @@ public class Editor
         btn.OnDisplay += () =>
         {
             var color = btn.GetInteractionColor(Color.Gray.ToBright());
-            var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (sbyte)rotations);
+            var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (Pose)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
             MapsUi.Tilemaps[(int)LayerMapsUi.Front].SetTile(btn.Position, rotations == 4 ? center : arrow);
         };

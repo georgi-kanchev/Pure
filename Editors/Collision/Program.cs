@@ -176,8 +176,8 @@ public static class Program
             MapperUserInterface.ThemePromptItems = CanDrawLayer ?
                 [
                     new(Tile.ICON_TICK, Color.Green),
-                    new(Tile.ARROW, Color.Gray, 3),
-                    new(Tile.ARROW, Color.Gray, 1)
+                    new(Tile.ARROW, Color.Gray, Pose.Left),
+                    new(Tile.ARROW, Color.Gray, Pose.Right)
                 ] :
                 [];
 

@@ -21,7 +21,7 @@ public class PathMap
         foreach (var cell in cells)
             pathfind.SetNode(cell, penalty);
     }
-    public void SetObstacle(float penalty, int tileId, int[,]? tileIds)
+    public void SetObstacle(float penalty, ushort tileId, ushort[,]? tileIds)
     {
         if (tileIds == null || tileIds.Length == 0)
             return;
@@ -74,7 +74,7 @@ public class PathMap
 
     private void Init()
     {
-        SetObstacle(0, 0, new int[Size.width, Size.height]);
+        SetObstacle(0, 0, new ushort[Size.width, Size.height]);
     }
 #endregion
 }
