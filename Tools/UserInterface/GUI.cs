@@ -18,7 +18,7 @@ public static class GUI
 
         maps.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush);
     }
-    public static bool Button((int x, int y, int width, int height) area, string text, Interaction trueWhen = Interaction.Trigger)
+    public static bool Button(Area area, string text, Interaction trueWhen = Interaction.Trigger)
     {
         var block = TryCache<Button>(text, area);
         maps.SetButton(block);
@@ -110,14 +110,14 @@ public static class GUI
         block.Pick.IsDisabled = true;
         return block.IsJustInteracted(Interaction.Select) ? block.SelectedColor : null;
     }
-    public static string[]? FileViewer((int x, int y, int width, int height) area, string? fileFilter = null, bool multiSelect = false)
+    public static string[]? FileViewer(Area area, string? fileFilter = null, bool multiSelect = false)
     {
         var block = TryCache<FileViewer>("", area);
         block.FileFilter = fileFilter;
         block.FilesAndFolders.IsSingleSelecting = multiSelect == false;
         return block.IsJustInteracted(Interaction.Select) ? block.SelectedPaths : null;
     }
-    public static string[]? FolderViewer((int x, int y, int width, int height) area, bool multiSelect = false)
+    public static string[]? FolderViewer(Area area, bool multiSelect = false)
     {
         var block = TryCache<FileViewer>("", area);
         block.IsSelectingFolders = true;
@@ -268,7 +268,7 @@ public static class GUI
             }
             else if (type == typeof(List))
             {
-                var list = new List((0, 0), span: span);
+                var list = new List((0, 0), 0, span);
                 imGuiCache[area] = (2, list);
                 list.OnDisplay += () => maps.SetList(list);
                 list.OnItemDisplay += item => maps.SetListItem(list, item);
