@@ -20,6 +20,7 @@ public class Tilemap
         bundleCache = new (ushort id, uint tint, byte pose)[w, h];
         ids = new ushort[w, h];
         View = (0, 0, w, h);
+        ConfigureText();
     }
     public Tilemap(Tile[,]? tileData)
     {
@@ -39,6 +40,8 @@ public class Tilemap
                 bundleCache[j, i] = tileData[j, i];
                 ids[j, i] = tileData[j, i].Id;
             }
+
+        ConfigureText();
     }
 
     public (ushort id, uint tint, byte pose)[,] ToBundle()
@@ -427,11 +430,11 @@ public class Tilemap
 
     public void ConfigureText(ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
     {
-        textIdLowercase = lowercase;
-        textIdUppercase = uppercase;
-        textIdNumbers = numbers;
+        ConfigureText(lowercase, "abcdefghijklmnopqrstuvwxyz");
+        ConfigureText(uppercase, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        ConfigureText(numbers, "0123456789");
     }
-    public void ConfigureText(string symbols, ushort firstTileId)
+    public void ConfigureText(ushort firstTileId, string symbols)
     {
         for (var i = 0; i < symbols.Length; i++)
             symbolMap[symbols[i]] = (ushort)(firstTileId + i);
@@ -447,13 +450,7 @@ public class Tilemap
     public ushort TileIdFrom(char symbol)
     {
         var id = default(ushort);
-        if (symbol is >= 'A' and <= 'Z')
-            id = (ushort)(symbol - 'A' + textIdUppercase);
-        else if (symbol is >= 'a' and <= 'z')
-            id = (ushort)(symbol - 'a' + textIdLowercase);
-        else if (symbol is >= '0' and <= '9')
-            id = (ushort)(symbol - '0' + textIdNumbers);
-        else if (symbolMap.TryGetValue(symbol, out var value))
+        if (symbolMap.TryGetValue(symbol, out var value))
             id = value;
 
         return id;
@@ -542,8 +539,6 @@ public class Tilemap
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
     internal class DoNotSave : Attribute;
 
-    private ushort textIdNumbers = Tile.NUMBER_0, textIdUppercase = Tile.UPPERCASE_A,
-        textIdLowercase = Tile.LOWERCASE_A;
     private readonly Dictionary<char, ushort> symbolMap = new()
     {
         { '░', 2 }, { '▒', 5 }, { '▓', 7 }, { '█', 10 },

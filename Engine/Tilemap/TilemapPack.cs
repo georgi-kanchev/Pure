@@ -54,10 +54,10 @@ public class TilemapPack
         foreach (var map in Tilemaps)
             map.ConfigureText(lowercase, uppercase, numbers);
     }
-    public void ConfigureText(string symbols, ushort firstTileId)
+    public void ConfigureText(ushort firstTileId, string symbols)
     {
         foreach (var map in Tilemaps)
-            map.ConfigureText(symbols, firstTileId);
+            map.ConfigureText(firstTileId, symbols);
     }
 
     public bool IsOverlapping((int x, int y) cell)

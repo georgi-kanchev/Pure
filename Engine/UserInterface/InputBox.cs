@@ -49,12 +49,14 @@ public class InputBox : Block
     /// The text that should be displayed in the input box when it is empty.
     /// Defaults to "Type…".
     /// </summary>
-    public string Placeholder { get; set; }
-    public string Value
+    public string? Placeholder { get; set; }
+    public string? Value
     {
         get => value;
         set
         {
+            value ??= "";
+
             var prev = this.value;
             value = value[..Math.Min(value.Length, SymbolLimit)];
             this.value = value;
@@ -348,7 +350,7 @@ public class InputBox : Block
     public void CursorScroll()
     {
         var (cpx, cpy) = PositionFromIndices(CursorIndices);
-        for (var i = 0; i < Value.Length; i++)
+        for (var i = 0; i < Value?.Length; i++)
         {
             if (IsOverlapping((cpx, cpy)))
                 break;
@@ -929,7 +931,7 @@ public class InputBox : Block
         if (IsDisabled == false && (IsHovered || IsPressedAndHeld))
             Input.CursorResult = MouseCursor.Text;
 
-        if (IsHovered && IsReadOnly && Value.Length == 0)
+        if (IsHovered && IsReadOnly && Value?.Length == 0)
             Input.CursorResult = MouseCursor.Arrow;
     }
     private bool TryCopyPasteCut(ref bool justDeletedSelection, ref bool shouldDelete, out bool isPasting)

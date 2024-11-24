@@ -89,7 +89,7 @@ public class Layer
         get => IsOverlapping(PixelToPosition(Mouse.CursorPosition));
     }
 
-    public Layer((int width, int height) size = default, bool fitWindow = true)
+    public Layer((int width, int height) size = default, bool center = true)
     {
         Init();
 
@@ -99,8 +99,8 @@ public class Layer
         Size = size;
         Zoom = 1f;
 
-        if (fitWindow)
-            FitWindow();
+        if (center)
+            FitWindow((0.5f, 0.5f));
     }
 
     public void ToDefault()
@@ -113,16 +113,23 @@ public class Layer
         AtlasTileIdFull = 10;
     }
 
-    public void FitWindow()
+    public void FitWindow((float x, float y) alignment)
     {
         Window.TryCreate();
 
-        Offset = (0f, 0f);
         var (mw, mh) = Monitor.Current.Size;
         var (ww, wh) = Window.Size;
         var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
         var (rw, rh) = ((float)mw / ww, (float)mh / wh);
         Zoom = Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+
+        var halfW = w / 2f;
+        var halfH = h / 2f;
+        var rendW = Window.rendTexViewSz.w / 2f / Zoom;
+        var rendH = Window.rendTexViewSz.h / 2f / Zoom;
+        var x = Map(alignment.x, 0, 1, -rendW + halfW, rendW - halfW);
+        var y = Map(alignment.y, 0, 1, -rendH + halfH, rendH - halfH);
+        Offset = (x, y);
     }
 
     public void DrawCursor(ushort tileId = 546, uint tint = 3789677055)

@@ -56,12 +56,12 @@ public static class ImmediateGui
                 log = $"horizontal slider:\n{percent}";
             }
 
-            var sliderVer = GUI.Slider((9, 14), 9, true);
+            var sliderVer = GUI.Slider((9, 14), 9, vertical: true);
             if (float.IsNaN(sliderVer) == false)
                 log = $"vertical slider:\n{sliderVer:F1}";
 
             GUI.Tooltip = (tooltip, Side.Left, 0.5f);
-            var scrollVer = GUI.Scroll((11, 14), 9, true);
+            var scrollVer = GUI.Scroll((11, 14), 9, vertical: true);
             if (float.IsNaN(scrollVer) == false)
                 log = $"vertical scroll:\n{scrollVer:F1}";
             GUI.Tooltip = default;

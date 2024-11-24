@@ -2,6 +2,7 @@
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
 using Pure.Tools.Tilemap;
+using static Pure.Engine.UserInterface.SymbolGroup;
 
 namespace Pure.Tools.ImmediateGraphicalUserInterface;
 
@@ -11,31 +12,49 @@ public static class GUI
 
     public static (string? text, Side side, float alignment) Tooltip { get; set; } = ("", Side.Top, 0.5f);
 
-    public static void Text((int x, int y) cell, string text, int zOrder = 0, uint tint = 4294967295U, char tintBrush = '#', Area? mask = null)
+    public static void Text((int x, int y) cell, string text, int zOrder = 0, uint tint = uint.MaxValue, char tintBrush = '#', Area? mask = null)
     {
-        if (maps.Tilemaps.Count <= zOrder)
-            return;
-
-        maps.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush);
+        if (zOrder < maps.Tilemaps.Count)
+            maps.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush, mask);
     }
     public static bool Button(Area area, string text, Interaction trueWhen = Interaction.Trigger)
     {
-        var block = TryCache<Button>(text, area);
+        var block = TryCache<Button>(text, area, out _);
         maps.SetButton(block);
         return block.IsJustInteracted(trueWhen);
     }
-    public static bool? Checkbox((int x, int y) cell, string text)
+    public static bool? Checkbox((int x, int y) cell, string text, bool selected = false)
     {
-        var block = TryCache<Button>(text, (cell.x, cell.y, text.Length + 2, 1));
+        var block = TryCache<Button>(text, (cell.x, cell.y, text.Length + 2, 1), out var cached);
+
+        if (cached == false)
+            block.IsSelected = selected;
+
         maps.SetCheckbox(block);
         return block.IsJustInteracted(Interaction.Select) ? block.IsSelected : null;
     }
-    public static string? InputBox(Area area, string placeholder = "Type…", SymbolGroup symbolGroup = SymbolGroup.All, int symbolLimit = int.MaxValue)
+    public static bool? Switch((int x, int y) cell, (string left, string right) text, bool right = false)
     {
-        var block = TryCache<InputBox>("", area);
+        var label = $"{text.left}—{text.right}";
+        var block = TryCache<Button>(label, (cell.x, cell.y, label.Length, 1), out var cached);
+
+        if (cached == false)
+            block.IsSelected = right;
+
+        block.Text = label;
+        maps.SetSwitch(block, '—');
+        return block.IsJustInteracted(Interaction.Select) ? block.IsSelected : null;
+    }
+    public static string? InputBox(Area area, string? value = "", string? placeholder = "Type…", SymbolGroup symbolGroup = All, int symbolLimit = int.MaxValue)
+    {
+        var block = TryCache<InputBox>("", area, out var cached);
         block.Placeholder = placeholder;
         block.SymbolGroup = symbolGroup;
         block.SymbolLimit = symbolLimit;
+
+        if (cached == false)
+            block.Value = value;
+
         maps.SetInputBox(block);
 
         if (block.Height == 1)
@@ -43,44 +62,59 @@ public static class GUI
 
         return block.Value;
     }
-    public static float Slider((int x, int y) cell, int size, bool vertical = false)
+    public static float Slider((int x, int y) cell, int size, float progress = 0, bool vertical = false)
     {
         var (w, h) = (vertical ? 1 : size, vertical ? size : 1);
-        var block = TryCache<Slider>("", (cell.x, cell.y, w, h));
+        var block = TryCache<Slider>("", (cell.x, cell.y, w, h), out var cached);
+
+        if (cached == false)
+            block.Progress = progress;
+
         maps.SetSlider(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Progress : float.NaN;
     }
-    public static float Scroll((int x, int y) cell, int size, bool vertical = false)
+    public static float Scroll((int x, int y) cell, int size, float progress = 0, bool vertical = false)
     {
         var (w, h) = (vertical ? 1 : size, vertical ? size : 1);
-        var block = TryCache<Scroll>("", (cell.x, cell.y, w, h));
+        var block = TryCache<Scroll>("", (cell.x, cell.y, w, h), out var cached);
+
+        if (cached == false)
+            block.Slider.Progress = progress;
+
         maps.SetScroll(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Slider.Progress : float.NaN;
     }
-    public static float Stepper((int x, int y) cell, string text, float step = 1f, float min = float.MinValue, float max = float.MaxValue)
+    public static float Stepper((int x, int y) cell, string text, float value = 0, float step = 1f, float min = float.MinValue, float max = float.MaxValue)
     {
         var (w, h) = (text.Length + 1, 2);
-        var block = TryCache<Stepper>(text, (cell.x, cell.y, w, h));
+        var block = TryCache<Stepper>(text, (cell.x, cell.y, w, h), out var cached);
         block.Step = step;
         block.Range = (min, max);
+
+        if (cached == false)
+            block.Value = value;
+
         maps.SetStepper(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Value : float.NaN;
     }
-    public static float Pages((int x, int y) cell, int size = 12, int totalCount = 10, int itemWidth = 2)
+    public static float Pages((int x, int y) cell, int size = 12, int current = 0, int totalCount = 10, int itemWidth = 2)
     {
         var (w, h) = (size, 1);
-        var block = TryCache<Pages>("", (cell.x, cell.y, w, h));
+        var block = TryCache<Pages>("", (cell.x, cell.y, w, h), out var cached);
         block.Count = totalCount;
         block.ItemWidth = itemWidth;
+
+        if (cached == false)
+            block.Current = current;
+
         return block.IsJustInteracted(Interaction.Select) ? block.Current : float.NaN;
     }
-    public static string[]? List(Area area, string[]? items, bool dropdown = false, bool multiselect = true)
+    public static string[]? List(Area area, string[]? items, bool dropdown = false, bool multiselect = true, string[]? selected = null)
     {
         if (items == null || items.Length == 0)
             return null;
 
-        var block = TryCache<List>("", area, dropdown ? Span.Dropdown : Span.Vertical);
-        var selected = new List<string>();
+        var block = TryCache<List>("", area, out var cached, dropdown ? Span.Dropdown : Span.Vertical);
 
         if (items.Length != block.Items.Count)
         {
@@ -90,48 +124,78 @@ public static class GUI
         }
 
         block.Edit(items);
-
         block.IsSingleSelecting = multiselect == false;
         block.ItemSize = (area.Width, 1);
         block.ItemGap = 0;
 
+        if (cached == false)
+        {
+            var selectedList = (selected ?? []).ToList();
+            foreach (var item in block.Items)
+                if (selectedList.Contains(item.Text))
+                    block.Select(item);
+        }
+
         if (block.IsJustInteracted(Interaction.Select) == false)
             return null;
 
+        var result = new List<string>();
         foreach (var item in block.SelectedItems)
-            selected.Add(item.Text);
+            result.Add(item.Text);
 
-        return selected.ToArray();
+        return result.ToArray();
     }
-    public static uint? Palette((int x, int y) cell)
+    public static uint? Palette((int x, int y) cell, uint selectedColor = uint.MaxValue)
     {
-        var block = TryCache<Palette>("", (cell.x, cell.y, 1, 1));
+        var block = TryCache<Palette>("", (cell.x, cell.y, 1, 1), out var cached);
         block.Pick.IsHidden = true;
         block.Pick.IsDisabled = true;
+
+        if (cached == false)
+            block.SelectedColor = selectedColor;
+
         return block.IsJustInteracted(Interaction.Select) ? block.SelectedColor : null;
     }
-    public static string[]? FileViewer(Area area, string? fileFilter = null, bool multiSelect = false)
+    public static string[]? FileViewer(Area area, string? fileFilter = null, bool multiSelect = false, string[]? selected = null)
     {
-        var block = TryCache<FileViewer>("", area);
+        var block = TryCache<FileViewer>("", area, out var cached);
         block.FileFilter = fileFilter;
         block.FilesAndFolders.IsSingleSelecting = multiSelect == false;
+
+        if (cached)
+            return block.IsJustInteracted(Interaction.Select) ? block.SelectedPaths : null;
+
+        var selectedList = (selected ?? []).ToList();
+        foreach (var item in block.FilesAndFolders.Items)
+            if (selectedList.Contains(item.Text))
+                block.FilesAndFolders.Select(item);
+
         return block.IsJustInteracted(Interaction.Select) ? block.SelectedPaths : null;
     }
-    public static string[]? FolderViewer(Area area, bool multiSelect = false)
+    public static string[]? FolderViewer(Area area, bool multiSelect = false, string[]? selected = null)
     {
-        var block = TryCache<FileViewer>("", area);
+        var block = TryCache<FileViewer>("", area, out var cached);
         block.IsSelectingFolders = true;
         block.FilesAndFolders.IsSingleSelecting = multiSelect == false;
+
+        if (cached)
+            return block.IsJustInteracted(Interaction.Select) ? block.SelectedPaths : null;
+
+        var selectedList = (selected ?? []).ToList();
+        foreach (var item in block.FilesAndFolders.Items)
+            if (selectedList.Contains(item.Text))
+                block.FilesAndFolders.Select(item);
+
         return block.IsJustInteracted(Interaction.Select) ? block.SelectedPaths : null;
     }
 
-    public static string? PromptInput(string text, int width = 20, SymbolGroup symbolGroup = SymbolGroup.All)
+    public static string? PromptInput(string text, int width = 20, SymbolGroup symbolGroup = All)
     {
         if (showPrompt == false)
             return null;
 
-        var prompt = TryCache<Prompt>(text, (-1, 0, 1, 1));
-        var input = TryCache<InputBox>("", (-2, 0, width, 1), skipUpdate: true);
+        var prompt = TryCache<Prompt>(text, (-1, 0, 1, 1), out _);
+        var input = TryCache<InputBox>("", (-2, 0, width, 1), out _, skipUpdate: true);
         input.SymbolGroup = symbolGroup;
         maps.SetInputBox(input, 3);
 
@@ -151,7 +215,7 @@ public static class GUI
         if (showPrompt == false)
             return float.NaN;
 
-        var prompt = TryCache<Prompt>(text, (-3, 0, 1, 1));
+        var prompt = TryCache<Prompt>(text, (-3, 0, 1, 1), out _);
 
         if (prompt.IsHidden)
             prompt.Open(null, true, choiceAmount, -1, -2, index => lastChoice = index);
@@ -208,9 +272,9 @@ public static class GUI
     {
         maps.ConfigureText(lowercase, uppercase, numbers);
     }
-    public static void ConfigureText(string symbols, ushort firstTileId)
+    public static void ConfigureText(ushort firstTileId, string symbols)
     {
-        maps.ConfigureText(symbols, firstTileId);
+        maps.ConfigureText(firstTileId, symbols);
     }
 
 #region Backend
@@ -219,12 +283,14 @@ public static class GUI
     private static TilemapPack maps = new(0, (0, 0));
     private static readonly Dictionary<Area, (int framesLeft, Block block)> imGuiCache = [];
 
-    private static T TryCache<T>(string text, Area area, Span span = Span.Vertical, bool skipUpdate = false) where T : Block
+    private static T TryCache<T>(string text, Area area, out bool wasCached, Span span = Span.Vertical, bool skipUpdate = false) where T : Block
     {
         var type = typeof(T);
+        wasCached = true;
 
         if (imGuiCache.ContainsKey(area) == false)
         {
+            wasCached = false;
             if (type == typeof(Button))
                 imGuiCache[area] = (2, new Button { Text = text });
             else if (type == typeof(InputBox))
@@ -241,6 +307,7 @@ public static class GUI
             {
                 var fileViewer = new FileViewer();
                 imGuiCache[area] = (2, fileViewer);
+
                 fileViewer.OnDisplay += () => maps.SetFileViewer(fileViewer);
                 fileViewer.FilesAndFolders.OnItemDisplay += item => maps.SetFileViewerItem(fileViewer, item);
                 fileViewer.HardDrives.OnItemDisplay += item => maps.SetFileViewerItem(fileViewer, item);
@@ -292,7 +359,7 @@ public static class GUI
             string.IsNullOrWhiteSpace(Tooltip.text))
             return (T)cache.block;
 
-        var tooltip = TryCache<Tooltip>(Tooltip.text ?? "", (0, 0, 1, 1));
+        var tooltip = TryCache<Tooltip>(Tooltip.text ?? "", (0, 0, 1, 1), out _);
         tooltip.Side = Tooltip.side;
         tooltip.Alignment = Tooltip.alignment;
         tooltip.Show(cache.block.Area);
