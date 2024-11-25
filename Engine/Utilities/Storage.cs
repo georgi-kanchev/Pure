@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
+using static System.Reflection.BindingFlags;
 
 namespace Pure.Engine.Utilities;
 
@@ -308,25 +309,16 @@ public static class Storage
 
             return TableToTSV(result);
         }
-        else if (IsStruct(type) || type.IsClass)
-        {
-            var sorted = GetFieldsInOrder(type);
-            var result = new string[sorted.Count, 2];
-
-            var i = 0;
-            foreach (var (_, fields) in sorted)
-                foreach (var field in fields)
-                {
-                    result[i, 0] = $"{field.Name.Replace("<", "").Replace(">k__BackingField", "")}";
-                    result[i, 1] = ToTSV(field.GetValue(value));
-                    i++;
-                }
-
-            return TableToTSV(result);
-        }
+        else if ((IsStruct(type) || type.IsClass) && IsDelegate(type) == false)
+            return TableToTSV(InstanceToTable(value, type));
 
         return $"{value}";
     }
+    public static string ToTSV(this Type staticClass)
+    {
+        return TableToTSV(InstanceToTable(null, staticClass));
+    }
+
     public static string?[,] ToTable(this string tsvText)
     {
         var placeholders = new List<string>();
@@ -370,6 +362,11 @@ public static class Storage
     public static T? ToObject<T>(this string tsvText)
     {
         return (T?)ToObject(tsvText, typeof(T));
+    }
+    public static void ToStatic(this string tsvText, Type staticClass)
+    {
+        var table = ToTable(tsvText);
+        TableToInstance(table, staticClass);
     }
 
     public static T? ToPrimitive<T>(this string primitiveAsText) where T : struct, IComparable, IConvertible
@@ -644,22 +641,8 @@ public static class Storage
 
             return dict;
         }
-        else if (IsStruct(expectedType) || expectedType.IsClass)
-        {
-            var sorted = GetFieldsInOrder(expectedType);
-            var instance = CreateInstance(expectedType);
-            var i = 0;
-
-            foreach (var (_, fields) in sorted)
-                foreach (var field in fields)
-                {
-                    var obj = ToObject(table[i, 1], field.FieldType);
-                    field.SetValue(instance, obj);
-                    i++;
-                }
-
-            return instance;
-        }
+        else if ((IsStruct(expectedType) || expectedType.IsClass) && IsDelegate(expectedType) == false)
+            return TableToInstance(table, expectedType);
 
         return default;
     }
@@ -700,6 +683,10 @@ public static class Storage
     private static bool IsStruct(Type type)
     {
         return type is { IsValueType: true, IsEnum: false, IsPrimitive: false };
+    }
+    private static bool IsDelegate(Type type)
+    {
+        return typeof(Delegate).IsAssignableFrom(type) && type != typeof(Delegate);
     }
 
     private static List<object?> GetTupleItems(object tuple)
@@ -882,6 +869,48 @@ public static class Storage
         return elementType;
     }
 
+    private static string[,] InstanceToTable(object? value, Type type)
+    {
+        var sorted = GetFieldsInOrder(type);
+        var result = new string[sorted.Count, 2];
+
+        var i = 0;
+        foreach (var (_, fields) in sorted)
+            foreach (var field in fields)
+            {
+                result[i, 0] = $"{field.Name.Replace("<", "").Replace(">k__BackingField", "")}";
+                result[i, 1] = ToTSV(field.GetValue(value));
+                i++;
+            }
+
+        return result;
+    }
+    private static object? TableToInstance(string?[,] table, Type expectedType)
+    {
+        var sorted = GetFieldsInOrder(expectedType);
+        var isStatic = expectedType is { IsAbstract: true, IsSealed: true };
+        var instance = isStatic ? null : CreateInstance(expectedType);
+
+        foreach (var (_, fields) in sorted)
+            foreach (var field in fields)
+            {
+                var i = -1;
+                for (var j = 0; j < table.GetLength(0); j++)
+                    if (table[j, 0] == field.Name.Replace("<", "").Replace(">k__BackingField", ""))
+                    {
+                        i = j;
+                        break;
+                    }
+
+                if (i == -1)
+                    continue;
+
+                var obj = ToObject(table[i, 1], field.FieldType);
+                field.SetValue(instance, obj);
+            }
+
+        return instance;
+    }
     private static string TableToTSV(string[,] array)
     {
         var numRows = array.GetLength(0);
@@ -946,7 +975,7 @@ public static class Storage
         var instance = FormatterServices.GetUninitializedObject(type);
 #pragma warning restore SYSLIB0050
         var emptyConstructor = type.GetConstructor(
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            Instance | Public | NonPublic,
             null, Type.EmptyTypes, null);
 
         // in case there is a parameterless constructor, call it manually
@@ -963,14 +992,16 @@ public static class Storage
                 return [];
 
         var result = new SortedDictionary<uint, List<FieldInfo>>();
-        var props = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance)
-            .Concat(type.GetProperties(BindingFlags.Public | BindingFlags.Instance)).ToArray();
-        var fields = type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
-            .Concat(type.GetFields(BindingFlags.Public | BindingFlags.Instance)).ToArray();
+        var props = type.GetProperties(NonPublic | Public | Instance | Static);
+        var fields = type.GetFields(NonPublic | Public | Instance | Static);
 
         var i = (uint)1;
         foreach (var field in fields)
         {
+            var isConst = field is { IsLiteral: true, IsStatic: true };
+            if (IsDelegate(field.FieldType) || isConst)
+                continue;
+
             var doNotSave = field.IsDefined(typeof(DoNotSave), false);
             var attributes = field.GetCustomAttributes();
 

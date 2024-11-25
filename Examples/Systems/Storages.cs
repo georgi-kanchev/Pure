@@ -18,8 +18,20 @@ public static class Storages
         public int? b = null;
         public SomeEnum someEnum = SomeEnum.ValueNumber3;
 
+        public static string Something { get; set; } = "heeeelloooo";
+
         [SaveAtOrder(10)]
         public float D { get; set; } = 33.6f;
+    }
+
+    public struct SomeStruct
+    {
+        public static int MyInt { get; set; } = 12;
+    }
+
+    public static class StaticClass
+    {
+        public static float MyNumber { get; set; } = 87.1f;
     }
 
     public static void Run()
@@ -47,7 +59,10 @@ public static class Storages
         var tilemap = new Tilemap((48, 27));
         tilemap.SetEllipse((48 / 2, 27 / 2), (10, 10), true, null, Tile.NUMBER_1, Tile.NUMBER_2);
 
-        var a = array2D.ToTSV();
-        var b = a.ToObject<List<int[,]>>();
+        var tsv = typeof(SomeStruct).ToTSV();
+        "MyInt\t23".ToStatic(typeof(SomeStruct));
+        var test = SomeStruct.MyInt;
+        var a = new Test().ToTSV();
+        var b = a.ToObject<Test>();
     }
 }

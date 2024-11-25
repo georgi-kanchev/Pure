@@ -508,6 +508,20 @@ public class Layer
     {
         tilesets["default"].CopyToImage().SaveToFile(filePath);
     }
+    public static void ReloadGraphics()
+    {
+        var paths = tilesets.Keys.ToArray();
+
+        foreach (var path in paths)
+        {
+            if (path == "default")
+                continue;
+
+            tilesets[path].Dispose();
+            tilesets[path] = null!;
+            tilesets[path] = new(path) { Repeated = true };
+        }
+    }
 
 #region Backend
     // per tile shader data map (8x8 pixels)
