@@ -246,7 +246,7 @@ public static class GUI
         Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta,
             Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
 
-        var toRemove = new List<Area>();
+        var toRemove = new List<string>();
         foreach (var kvp in imGuiCache)
         {
             var cache = kvp.Value;
@@ -281,32 +281,33 @@ public static class GUI
     private static bool showPrompt;
     private static float lastChoice = float.NaN;
     private static TilemapPack maps = new(0, (0, 0));
-    private static readonly Dictionary<Area, (int framesLeft, Block block)> imGuiCache = [];
+    private static readonly Dictionary<string, (int framesLeft, Block block)> imGuiCache = [];
 
     private static T TryCache<T>(string text, Area area, out bool wasCached, Span span = Span.Vertical, bool skipUpdate = false) where T : Block
     {
         var type = typeof(T);
         wasCached = true;
 
-        if (imGuiCache.ContainsKey(area) == false)
+        var key = $"{area} {type.Name} {text}";
+        if (imGuiCache.ContainsKey(key) == false)
         {
             wasCached = false;
             if (type == typeof(Button))
-                imGuiCache[area] = (2, new Button { Text = text });
+                imGuiCache[key] = (2, new Button { Text = text });
             else if (type == typeof(InputBox))
-                imGuiCache[area] = (2, new InputBox());
+                imGuiCache[key] = (2, new InputBox());
             else if (type == typeof(Slider))
-                imGuiCache[area] = (2, new Slider((0, 0), area.Width == 1));
+                imGuiCache[key] = (2, new Slider((0, 0), area.Width == 1));
             else if (type == typeof(Scroll))
-                imGuiCache[area] = (2, new Scroll((0, 0), area.Width == 1));
+                imGuiCache[key] = (2, new Scroll((0, 0), area.Width == 1));
             else if (type == typeof(Stepper))
-                imGuiCache[area] = (2, new Stepper { Text = text });
+                imGuiCache[key] = (2, new Stepper { Text = text });
             else if (type == typeof(Tooltip))
-                imGuiCache[area] = (2, new Tooltip { Text = text });
+                imGuiCache[key] = (2, new Tooltip { Text = text });
             else if (type == typeof(FileViewer))
             {
                 var fileViewer = new FileViewer();
-                imGuiCache[area] = (2, fileViewer);
+                imGuiCache[key] = (2, fileViewer);
 
                 fileViewer.OnDisplay += () => maps.SetFileViewer(fileViewer);
                 fileViewer.FilesAndFolders.OnItemDisplay += item => maps.SetFileViewerItem(fileViewer, item);
@@ -315,7 +316,7 @@ public static class GUI
             else if (type == typeof(Palette))
             {
                 var palette = new Palette();
-                imGuiCache[area] = (2, palette);
+                imGuiCache[key] = (2, palette);
                 palette.OnDisplay += () => maps.SetPalette(palette);
             }
             else if (type == typeof(Prompt))
@@ -324,27 +325,28 @@ public static class GUI
                 prompt.AlignInside((0.5f, 0.5f));
                 prompt.OnDisplay += () => maps.SetPrompt(prompt, 3);
                 prompt.OnItemDisplay += item => maps.SetPromptItem(prompt, item, 5);
-                imGuiCache[area] = (2, prompt);
+                imGuiCache[key] = (2, prompt);
             }
             else if (type == typeof(Pages))
             {
                 var pages = new Pages();
-                imGuiCache[area] = (2, pages);
+                imGuiCache[key] = (2, pages);
                 pages.OnDisplay += () => maps.SetPages(pages);
                 pages.OnItemDisplay += page => maps.SetPagesItem(pages, page);
             }
             else if (type == typeof(List))
             {
                 var list = new List((0, 0), 0, span);
-                imGuiCache[area] = (2, list);
+                imGuiCache[key] = (2, list);
                 list.OnDisplay += () => maps.SetList(list);
                 list.OnItemDisplay += item => maps.SetListItem(list, item);
             }
         }
 
-        var cache = imGuiCache[area];
-        imGuiCache[area] = (2, cache.block); // reset frame timer
+        var cache = imGuiCache[key];
+        imGuiCache[key] = (2, cache.block); // reset frame timer
         cache.block.Area = area;
+        cache.block.Text = text;
 
         if (skipUpdate)
             cache.block.AlignInside((0.5f, 0.5f));

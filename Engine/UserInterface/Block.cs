@@ -387,7 +387,7 @@ public class Block
             y = (int)MathF.Round(Map(a, (0, 1), ex ? (ry - h - offset, ry + rh + offset) : (ry, ry + rh - h)));
 
         if (edge == Side.Left && targetEdge is Side.Left or Side.Right)
-            x = targetEdge == Side.Left ? rx : rx + rw + offset;
+            x = targetEdge == Side.Left ? rx + offset + 1 : rx + rw + offset;
         else if (edge == Side.Left)
             x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx, rx + rw + offset)));
 
@@ -404,7 +404,7 @@ public class Block
         if (edge == Side.Bottom && targetEdge is Side.Left or Side.Right)
             y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry - h - offset, ry + rh - h)));
         else if (edge == Side.Bottom)
-            y = targetEdge == Side.Top ? ry - h - offset : ry + rh - h + offset;
+            y = targetEdge == Side.Top ? ry - h - offset : ry + rh - h + offset + 1;
 
         Position = (x, y);
     }

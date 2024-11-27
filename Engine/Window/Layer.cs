@@ -81,12 +81,16 @@ public class Layer
     public float Zoom
     {
         get => zoom;
-        set => zoom = Math.Clamp(value, 0, 1000f);
+        set => zoom = Math.Clamp(value, 0f, 1000f);
     }
 
     public bool IsHovered
     {
         get => IsOverlapping(PixelToPosition(Mouse.CursorPosition));
+    }
+    public (float x, float y) MouseCursorPosition
+    {
+        get => PixelToPosition(Mouse.CursorPosition);
     }
 
     public Layer((int width, int height) size = default, bool center = true)
@@ -131,10 +135,24 @@ public class Layer
         var y = Map(alignment.y, 0, 1, -rendH + halfH, rendH - halfH);
         Offset = (x, y);
     }
+    public void DragAndZoom(Mouse.Button dragButton = Mouse.Button.Middle, float zoomDelta = 0.05f, bool limit = true)
+    {
+        if (Mouse.ScrollDelta != 0)
+            Zoom *= Mouse.ScrollDelta > 0 ? 1f + zoomDelta : 1f - zoomDelta;
+        if (dragButton.IsPressed())
+            Offset = (Offset.x + Mouse.CursorDelta.x / Zoom, Offset.y + Mouse.CursorDelta.y / Zoom);
+
+        if (limit == false)
+            return;
+
+        var (w, h) = ((float)TilemapPixelSize.w, (float)TilemapPixelSize.h);
+        var (x, y) = Offset;
+        Offset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
+    }
 
     public void DrawCursor(ushort tileId = 546, uint tint = 3789677055)
     {
-        if (Mouse.isOverWindow == false)
+        if (Mouse.IsCursorInWindow == false)
             return;
 
         var (offX, offY) = cursorOffsets[(int)Mouse.CursorCurrent];
@@ -712,7 +730,7 @@ public class Layer
         verts ??= new(PrimitiveType.Quads);
         shaderParams ??= new(PrimitiveType.Points);
 
-        if (queue == null || queue.Size.X != Size.width || queue.Size.Y != Size.height)
+        if (queue == null || queue.Size.X != Size.width * AtlasTileSize || queue.Size.Y != Size.height * AtlasTileSize)
         {
             queue?.Dispose();
             data?.Dispose();

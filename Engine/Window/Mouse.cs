@@ -8,10 +8,7 @@ public static class Mouse
     /// <summary>
     /// The common mouse button types.
     /// </summary>
-    public enum Button
-    {
-        Left, Right, Middle, Extra1, Extra2
-    }
+    public enum Button { Left, Right, Middle, Extra1, Extra2 }
 
     /// <summary>
     /// The types of mouse cursor graphics that can be displayed on the window.
@@ -27,6 +24,7 @@ public static class Mouse
     /// Gets the current position of the mouse cursor.
     /// </summary>
     public static (int x, int y) CursorPosition { get; private set; }
+    public static (int x, int y) CursorDelta { get; private set; }
 
     /// <summary>
     /// Gets or sets the graphics for the mouse cursor.
@@ -56,6 +54,7 @@ public static class Mouse
         }
     }
     public static bool IsCursorVisible { get; set; }
+    public static bool IsCursorInWindow { get; internal set; }
 
     /// <summary>
     /// Gets an array of currently pressed mouse buttons, in order.
@@ -165,19 +164,17 @@ public static class Mouse
     }
 
 #region Backend
-    private static Action<Button>? onPressAny, onReleaseAny, onHoldAny;
-    private static readonly Dictionary<Button, Action>
-        onPress = new(), onRelease = new(), onHold = new();
-    private static Action? scroll, move;
-    private static readonly List<Button> pressed = new(), prevPressed = new();
-
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
-    private static readonly Stopwatch hold = new(), holdTrigger = new();
-    private static bool isJustHeld;
 
+    private static Action<Button>? onPressAny, onReleaseAny, onHoldAny;
+    private static readonly Dictionary<Button, Action> onPress = new(), onRelease = new(), onHold = new();
+    private static Action? scroll, move;
+    private static readonly List<Button> pressed = [], prevPressed = [];
+    private static readonly Stopwatch hold = new(), holdTrigger = new();
+    private static bool isJustHeld, isGrabbed;
     private static Cursor cursor;
     private static SFML.Window.Cursor sysCursor = new(SFML.Window.Cursor.CursorType.Arrow);
-    private static bool isGrabbed;
+    private static (int x, int y) prevPos;
 
     private static bool IsOverRender
     {
@@ -191,11 +188,9 @@ public static class Mouse
         }
     }
 
-    internal static bool isOverWindow;
-
     internal static void OnMove(object? s, MouseMoveEventArgs e)
     {
-        isOverWindow = true;
+        IsCursorInWindow = true;
         CursorPosition = (e.X, e.Y);
         move?.Invoke();
     }
@@ -204,7 +199,7 @@ public static class Mouse
         hold.Restart();
         holdTrigger.Restart();
 
-        isOverWindow = true;
+        IsCursorInWindow = true;
         var btn = (Button)e.Button;
         var contains = pressed.Contains(btn);
 
@@ -220,7 +215,7 @@ public static class Mouse
     }
     internal static void OnButtonReleased(object? s, MouseButtonEventArgs e)
     {
-        isOverWindow = true;
+        IsCursorInWindow = true;
         var btn = (Button)e.Button;
         var contains = pressed.Contains(btn);
 
@@ -236,17 +231,17 @@ public static class Mouse
     }
     internal static void OnWheelScrolled(object? s, MouseWheelScrollEventArgs e)
     {
-        isOverWindow = true;
+        IsCursorInWindow = true;
         ScrollDelta = e.Delta < 0 ? -1 : 1;
         scroll?.Invoke();
     }
     internal static void OnEnter(object? sender, EventArgs e)
     {
-        isOverWindow = true;
+        IsCursorInWindow = true;
     }
     internal static void OnLeft(object? sender, EventArgs e)
     {
-        isOverWindow = false;
+        IsCursorInWindow = false;
     }
 
     internal static void Update()
@@ -274,8 +269,10 @@ public static class Mouse
         prevPressed.Clear();
         prevPressed.AddRange(pressed);
 
+        CursorDelta = (CursorPosition.x - prevPos.x, CursorPosition.y - prevPos.y);
+        prevPos = CursorPosition;
         ScrollDelta = 0;
-        Window.window?.SetMouseCursorVisible(isOverWindow == false ||
+        Window.window?.SetMouseCursorVisible(IsCursorInWindow == false ||
                                              IsCursorVisible ||
                                              IsOverRender == false);
     }
