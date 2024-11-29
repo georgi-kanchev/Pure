@@ -83,6 +83,19 @@ public class Layer
         get => zoom;
         set => zoom = Math.Clamp(value, 0f, 1000f);
     }
+    public float ZoomWindowFit
+    {
+        get
+        {
+            Window.TryCreate();
+
+            var (mw, mh) = Monitor.Current.Size;
+            var (ww, wh) = Window.Size;
+            var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
+            var (rw, rh) = ((float)mw / ww, (float)mh / wh);
+            return Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+        }
+    }
 
     public bool IsHovered
     {
@@ -93,7 +106,7 @@ public class Layer
         get => PixelToPosition(Mouse.CursorPosition);
     }
 
-    public Layer((int width, int height) size = default, bool center = true)
+    public Layer((int width, int height) size = default, bool fitWindow = true)
     {
         Init();
 
@@ -103,8 +116,11 @@ public class Layer
         Size = size;
         Zoom = 1f;
 
-        if (center)
-            FitWindow((0.5f, 0.5f));
+        if (fitWindow == false)
+            return;
+
+        Zoom = ZoomWindowFit;
+        Offset = (0, 0);
     }
 
     public void ToDefault()
@@ -117,16 +133,11 @@ public class Layer
         AtlasTileIdFull = 10;
     }
 
-    public void FitWindow((float x, float y) alignment)
+    public void Align((float x, float y) alignment)
     {
         Window.TryCreate();
 
-        var (mw, mh) = Monitor.Current.Size;
-        var (ww, wh) = Window.Size;
         var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
-        var (rw, rh) = ((float)mw / ww, (float)mh / wh);
-        Zoom = Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
-
         var halfW = w / 2f;
         var halfH = h / 2f;
         var rendW = Window.rendTexViewSz.w / 2f / Zoom;
@@ -137,6 +148,8 @@ public class Layer
     }
     public void DragAndZoom(Mouse.Button dragButton = Mouse.Button.Middle, float zoomDelta = 0.05f, bool limit = true)
     {
+        Window.TryCreate();
+
         if (Mouse.ScrollDelta != 0)
             Zoom *= Mouse.ScrollDelta > 0 ? 1f + zoomDelta : 1f - zoomDelta;
         if (dragButton.IsPressed())
