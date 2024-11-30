@@ -234,7 +234,7 @@ public static class GUI
         showPrompt = true;
     }
 
-    public static void DrawImGui(this Layer layer)
+    public static void DrawGUI(this Layer layer)
     {
         if (layer.Size != TilemapPack.Size)
             TilemapPack = new(6, layer.Size);

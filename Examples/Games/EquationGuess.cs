@@ -22,7 +22,7 @@ public static class EquationGuess
             if (GUI.Button((21, 10, 10, 3), "Submit"))
                 Console.WriteLine(equation.Calculate());
 
-            page.DrawImGui();
+            page.DrawGUI();
         }
     }
 }

@@ -47,7 +47,7 @@ public static class NumberGuess
 
             log.Display((20, 19 - log.Count("\n")));
 
-            layer.DrawImGui();
+            layer.DrawGUI();
         }
 
         string GenerateRandomNumber()

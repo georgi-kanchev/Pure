@@ -114,7 +114,7 @@ public static class ImmediateGui
              "Left Shift = Input Popup").Display((20, 0));
             log.Constrain(layer.Size, false, Alignment.Bottom).Display((0, -1));
 
-            layer.DrawImGui();
+            layer.DrawGUI();
         }
 
         void PromptInfo()

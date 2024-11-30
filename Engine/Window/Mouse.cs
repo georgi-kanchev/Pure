@@ -80,6 +80,21 @@ public static class Mouse
     /// </summary>
     public static int ScrollDelta { get; private set; }
 
+    public static void SimulatePress(this Button button)
+    {
+        simulatedPresses.Add(button);
+
+        if (pressed.Contains(button) == false)
+            OnButtonPressed(null, new(new() { Button = (SFML.Window.Mouse.Button)button }));
+    }
+    public static void SimulateScroll(bool up)
+    {
+        OnWheelScrolled(null, new(new() { Delta = up ? 1 : -1 }));
+    }
+    public static void SimulateCursorMove((int x, int y) position)
+    {
+        OnMove(null, new(new() { X = position.x, Y = position.y }));
+    }
     public static void CancelInput()
     {
         ScrollDelta = 0;
@@ -95,17 +110,17 @@ public static class Mouse
     {
         return pressed.Contains(button);
     }
-    public static bool IsJustPressed(this Button key)
+    public static bool IsJustPressed(this Button button)
     {
-        return IsPressed(key) && prevPressed.Contains(key) == false;
+        return IsPressed(button) && prevPressed.Contains(button) == false;
     }
-    public static bool IsJustReleased(this Button key)
+    public static bool IsJustReleased(this Button button)
     {
-        return IsPressed(key) == false && prevPressed.Contains(key);
+        return IsPressed(button) == false && prevPressed.Contains(button);
     }
-    public static bool IsJustPressedAndHeld(this Button key)
+    public static bool IsJustPressedAndHeld(this Button button)
     {
-        return IsJustPressed(key) || (IsPressed(key) && isJustHeld);
+        return IsJustPressed(button) || (IsPressed(button) && isJustHeld);
     }
 
     public static bool IsAnyPressed()
@@ -166,6 +181,7 @@ public static class Mouse
 #region Backend
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
 
+    private static readonly List<Button> simulatedPresses = [], prevSimulatedPressed = [];
     private static Action<Button>? onPressAny, onReleaseAny, onHoldAny;
     private static readonly Dictionary<Button, Action> onPress = new(), onRelease = new(), onHold = new();
     private static Action? scroll, move;
@@ -275,6 +291,14 @@ public static class Mouse
         Window.window?.SetMouseCursorVisible(IsCursorInWindow == false ||
                                              IsCursorVisible ||
                                              IsOverRender == false);
+
+        foreach (var button in prevSimulatedPressed)
+            if (simulatedPresses.Contains(button) == false)
+                OnButtonReleased(null, new(new() { Button = (SFML.Window.Mouse.Button)button }));
+
+        prevSimulatedPressed.Clear();
+        prevSimulatedPressed.AddRange(simulatedPresses);
+        simulatedPresses.Clear();
     }
 
     internal static void TryUpdateSystemCursor()

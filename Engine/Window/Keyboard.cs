@@ -57,6 +57,13 @@ public static class Keyboard
         }
     }
 
+    public static void SimulatePress(this Key key)
+    {
+        simulatedPresses.Add(key);
+
+        if (pressed.Contains(key) == false)
+            OnPress(null, new(new() { Code = (SFML.Window.Keyboard.Key)key }));
+    }
     public static void CancelInput()
     {
         pressed.Clear();
@@ -153,10 +160,11 @@ public static class Keyboard
         onHoldAny += method;
     }
 
-    #region Backend
+#region Backend
+    private static readonly List<Key> simulatedPresses = [], prevSimulatedPressed = [];
+
     private static Action<Key>? onPressAny, onReleaseAny, onHoldAny;
-    private static readonly Dictionary<Key, Action>
-        onPress = new(), onRelease = new(), onHold = new();
+    private static readonly Dictionary<Key, Action> onPress = new(), onRelease = new(), onHold = new();
     private static readonly List<Key> pressed = [], prevPressed = [];
     private static readonly Dictionary<Key, (string, string)> symbols;
     private static readonly string[] shiftNumbers;
@@ -205,6 +213,14 @@ public static class Keyboard
 
         prevPressed.Clear();
         prevPressed.AddRange(pressed);
+
+        foreach (var key in prevSimulatedPressed)
+            if (simulatedPresses.Contains(key) == false)
+                OnRelease(null, new(new() { Code = (SFML.Window.Keyboard.Key)key }));
+
+        prevSimulatedPressed.Clear();
+        prevSimulatedPressed.AddRange(simulatedPresses);
+        simulatedPresses.Clear();
     }
 
     private static bool IsBetween(int number, int a, int b)
@@ -273,5 +289,5 @@ public static class Keyboard
         if (e.Unicode[0] is >= 'A' and <= 'Z')
             KeyTyped = KeyTyped.ToUpper();
     }
-    #endregion
+#endregion
 }
