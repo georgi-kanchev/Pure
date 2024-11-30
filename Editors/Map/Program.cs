@@ -72,7 +72,7 @@ public static class Program
                 editor.PromptTileset((layer, map) =>
                     {
                         var zoomFactor = 3.8f / layer.Zoom;
-                        layer.Offset = (198f * zoomFactor, 88f * zoomFactor);
+                        layer.PixelOffset = (198f * zoomFactor, 88f * zoomFactor);
                         tilePalette.layer = layer;
                         tilePalette.map = map;
                     },

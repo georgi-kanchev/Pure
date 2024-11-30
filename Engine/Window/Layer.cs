@@ -77,7 +77,30 @@ public class Layer
             shader?.SetUniform("lightFlags", (int)value);
         }
     }
-    public (float x, float y) Offset { get; set; }
+    public (float x, float y) PixelOffset { get; set; }
+    public (float x, float y) Position
+    {
+        get
+        {
+            var (x, y) = PixelOffset;
+            x /= AtlasTileSize;
+            y /= AtlasTileSize;
+
+            x -= Size.width / 2f;
+            y -= Size.height / 2f;
+            return (x, y);
+        }
+        set
+        {
+            var (x, y) = (-value.x, -value.y);
+            x += Size.width / 2f;
+            y += Size.height / 2f;
+
+            x *= AtlasTileSize;
+            y *= AtlasTileSize;
+            PixelOffset = (x, y);
+        }
+    }
     public float Zoom
     {
         get => zoom;
@@ -120,7 +143,7 @@ public class Layer
             return;
 
         Zoom = ZoomWindowFit;
-        Offset = (0, 0);
+        PixelOffset = (0, 0);
     }
 
     public void ToDefault()
@@ -144,7 +167,7 @@ public class Layer
         var rendH = Window.rendTexViewSz.h / 2f / Zoom;
         var x = Map(alignment.x, 0, 1, -rendW + halfW, rendW - halfW);
         var y = Map(alignment.y, 0, 1, -rendH + halfH, rendH - halfH);
-        Offset = (x, y);
+        PixelOffset = (x, y);
     }
     public void DragAndZoom(Mouse.Button dragButton = Mouse.Button.Middle, float zoomDelta = 0.05f, bool limit = true)
     {
@@ -153,14 +176,14 @@ public class Layer
         if (Mouse.ScrollDelta != 0)
             Zoom *= Mouse.ScrollDelta > 0 ? 1f + zoomDelta : 1f - zoomDelta;
         if (dragButton.IsPressed())
-            Offset = (Offset.x + Mouse.CursorDelta.x / Zoom, Offset.y + Mouse.CursorDelta.y / Zoom);
+            PixelOffset = (PixelOffset.x + Mouse.CursorDelta.x / Zoom, PixelOffset.y + Mouse.CursorDelta.y / Zoom);
 
         if (limit == false)
             return;
 
         var (w, h) = ((float)TilemapPixelSize.w, (float)TilemapPixelSize.h);
-        var (x, y) = Offset;
-        Offset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
+        var (x, y) = PixelOffset;
+        PixelOffset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
     }
 
     public void DrawCursor(ushort tileId = 546, uint tint = 3789677055)
@@ -501,13 +524,12 @@ public class Layer
     }
     public (float x, float y) PixelToPosition((int x, int y) pixel)
     {
-        if (Window.window == null)
-            return (float.NaN, float.NaN);
+        Window.TryCreate();
 
         var (px, py) = (pixel.x * 1f, pixel.y * 1f);
         var (vw, vh) = Window.rendTexViewSz;
         var (cw, ch) = Size;
-        var (ox, oy) = Offset;
+        var (ox, oy) = PixelOffset;
         var (mw, mh) = (cw * AtlasTileSize, ch * AtlasTileSize);
         var (ww, wh, ow, oh) = Window.GetRenderOffset();
 
@@ -533,6 +555,45 @@ public class Layer
         y -= oy * ch;
 
         return (x, y);
+    }
+    public (int x, int y) PixelFromPosition((float x, float y) position)
+    {
+        Window.TryCreate();
+
+        var (posX, posY) = position;
+        var (vw, vh) = Window.rendTexViewSz;
+        var (cw, ch) = Size;
+        var (ox, oy) = PixelOffset;
+        var (mw, mh) = (cw * AtlasTileSize, ch * AtlasTileSize);
+        var (ww, wh, ow, oh) = Window.GetRenderOffset();
+
+        ox /= mw;
+        oy /= mh;
+
+        posX += ox * cw;
+        posY += oy * ch;
+
+        posX -= cw / 2f;
+        posY -= ch / 2f;
+
+        posX /= vw / Zoom / mw;
+        posY /= vh / Zoom / mh;
+
+        var px = Map(posX, 0, cw, 0, ww);
+        var py = Map(posY, 0, ch, 0, wh);
+
+        px += ww / 2f;
+        py += wh / 2f;
+
+        px += ow;
+        py += oh;
+
+        return ((int)px, (int)py);
+    }
+    public (float x, float y) PositionToLayer((float x, float y) position, Layer layer)
+    {
+        var pixel = PixelFromPosition(position);
+        return layer.PixelToPosition(pixel);
     }
 
     public static void DefaultGraphicsToFile(string filePath)

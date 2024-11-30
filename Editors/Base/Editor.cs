@@ -160,7 +160,7 @@ public class Editor
 
             MapGrid.View = MapsEditor.View;
             var gridView = MapGrid.UpdateView();
-            LayerGrid.Offset = ViewPosition;
+            LayerGrid.PixelOffset = ViewPosition;
             LayerGrid.Zoom = ViewZoom;
             LayerGrid.DrawTilemap(gridView.ToBundle());
 
@@ -573,7 +573,7 @@ public class Editor
         TryViewZoom();
         TryViewMove();
 
-        LayerMap.Offset = ViewPosition;
+        LayerMap.PixelOffset = ViewPosition;
         LayerMap.Zoom = ViewZoom;
 
         if (Math.Abs(prevZoom - ViewZoom) > 0.01f)

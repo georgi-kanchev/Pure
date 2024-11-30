@@ -5,6 +5,8 @@ public class StateMachine
 {
     public enum Path { Running, RunningPrevious, Root, Parent, Child, First, Last, Next, Previous }
 
+    public State? Current { get; private set; }
+
     public State? this[Action? method]
     {
         get
@@ -25,7 +27,7 @@ public class StateMachine
 
     public State? Get(params Path[] path)
     {
-        var result = current;
+        var result = Current;
         foreach (var target in path)
         {
             if (result == null)
@@ -100,6 +102,10 @@ public class StateMachine
         foreach (var state in states)
             match.children.Add(new(state) { parent = match, root = match.root });
     }
+    public void GoTo(params Path[] path)
+    {
+        Current = Get(path);
+    }
     public void GoTo(Action? state)
     {
         if (state == null)
@@ -108,30 +114,26 @@ public class StateMachine
             return;
         }
 
-        previous = current;
-        current = this[state];
+        previous = Current;
+        Current = this[state];
 
         if (previous != null)
             previous.IsRunning = false;
 
-        if (current != null)
-            current.IsRunning = true;
-    }
-    public void GoTo(params Path[] path)
-    {
-        GoTo(Get(path)?.method);
+        if (Current != null)
+            Current.IsRunning = true;
     }
     public void Update()
     {
         if (roots.Count == 0)
             return;
 
-        if (current == null)
+        if (Current == null)
             Reset();
 
-        var disabled = current?.IsDisabled ?? false;
+        var disabled = Current?.IsDisabled ?? false;
         if (disabled == false)
-            current?.method.Invoke();
+            Current?.method.Invoke();
     }
 
     public string ToTree()
@@ -145,13 +147,11 @@ public class StateMachine
 #region Backend
     private readonly Dictionary<string, State> roots = new();
     private State? previous;
-    private State? current;
 
     private State Reset()
     {
-        var state = roots.First().Value;
-        GoTo(state.method);
-        return state;
+        Current = roots.First().Value;
+        return Current;
     }
 #endregion
 }

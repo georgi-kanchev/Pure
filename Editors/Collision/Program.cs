@@ -193,7 +193,7 @@ public static class Program
         promptPanel.OnDisplay += () => editor.MapsUi.SetPanel(promptPanel, PROMPT_BACK);
 
         layer.Size = map.Size;
-        layer.Offset = (0f, 0f);
+        layer.PixelOffset = (0f, 0f);
 
         SubscribeToClicks();
     }

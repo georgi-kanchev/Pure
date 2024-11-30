@@ -236,8 +236,8 @@ public static class Window
         layer.DrawQueue();
 
         var tr = Transform.Identity;
-        tr.Translate(layer.Offset.x, layer.Offset.y);
-        tr.Scale(layer.Zoom, layer.Zoom, -layer.Offset.x, -layer.Offset.y);
+        tr.Translate(layer.PixelOffset.x, layer.PixelOffset.y);
+        tr.Scale(layer.Zoom, layer.Zoom, -layer.PixelOffset.x, -layer.PixelOffset.y);
 
         var (w, h) = (layer.result?.Texture.Size.X ?? 0, layer.result?.Texture.Size.Y ?? 0);
         vertsWindow[0] = new(new(-w / 2f, -h / 2f), Color.White, new(0, 0));
