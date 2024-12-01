@@ -16,7 +16,7 @@ public static class MapperUserInterface
     public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemeButtonBox { get; set; }
     public static (Tile edge, Tile fill, uint tintText) ThemeButtonBar { get; set; }
     public static (Tile background, Tile cursor, uint tintText, uint selectionTint) ThemeInputBox { get; set; }
-    public static (Tile yes, Tile no) ThemeCheckbox { get; set; }
+    public static (Tile on, Tile off) ThemeCheckbox { get; set; }
     public static (Tile arrow, uint tintOn, uint tintOff) ThemeSwitch { get; set; }
     public static (Tile edge, Tile fill, Tile handle) ThemeSlider { get; set; }
     public static Tile ThemeScrollArrow { get; set; }
@@ -47,8 +47,8 @@ public static class MapperUserInterface
         if (maps.Tilemaps.Count <= zOrder || button.IsHidden)
             return;
 
-        var (yes, no) = ThemeCheckbox;
-        var tile = button.IsSelected ? yes : no;
+        var (on, off) = ThemeCheckbox;
+        var tile = button.IsSelected ? on : off;
         var textPos = (button.X + 2, button.Y);
 
         tile.Tint = button.GetInteractionColor(tile.Tint);

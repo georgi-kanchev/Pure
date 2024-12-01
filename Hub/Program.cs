@@ -32,11 +32,11 @@ public static class Program
 
         apps.Edit([
             "Asteroids", "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris",
-            "Number Guess", "Equation Guess"
+            "Number Guess"
         ]);
         apps.AlignInside((0.18f, 0.25f));
         OnTrigger(apps, Asteroids.Run, Chat.Run, EightBallPool.Run, FlappyBird.Run, Minesweeper.Run,
-            Pong.Run, Tetris.Run, NumberGuess.Run, EquationGuess.Run);
+            Pong.Run, Tetris.Run, NumberGuess.Run);
         OnDisplay(apps);
 
         uis.Edit([

@@ -258,7 +258,7 @@ public class Layer
             QueueLine((a.x, a.y), (b.x, b.y), a.color);
         }
     }
-    public void DrawTiles((float x, float y) position, (ushort id, uint tint, byte pose) tile, (int width, int height) groupSize = default, bool sameTile = default)
+    public void DrawTiles((float x, float y) position, (ushort id, uint tint, byte pose) tile, float scale = 1f, (int width, int height) groupSize = default, bool sameTile = default)
     {
         if (verts == null)
             return;
@@ -295,10 +295,10 @@ public class Layer
                 var (tx, ty) = (Math.Floor((x + j) * tsz), Math.Floor((y + i) * tsz));
                 var c = new Color(tint);
                 var tl = new Vector2f((int)tx, (int)ty);
-                var br = new Vector2f((int)(tx + tsz), (int)(ty + tsz));
+                var br = new Vector2f((int)(tx + tsz * scale), (int)(ty + tsz * scale));
 
                 if (ang is 1 or 3)
-                    br = new((int)(tx + tsz), (int)(ty + tsz));
+                    br = new((int)(tx + tsz * scale), (int)(ty + tsz * scale));
 
                 var tr = new Vector2f((int)br.X, (int)tl.Y);
                 var bl = new Vector2f((int)tl.X, (int)br.Y);

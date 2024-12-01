@@ -13,7 +13,7 @@ public static class GUI
 
     public static (string? text, Side side, float alignment) Tooltip { get; set; } = ("", Side.Top, 0.5f);
 
-    public static void Display(this string? text, (int x, int y) cell = default, int zOrder = 0, uint tint = uint.MaxValue, char tintBrush = '#', Area? mask = null)
+    public static void Text(this string? text, (int x, int y) cell = default, int zOrder = 0, uint tint = uint.MaxValue, char tintBrush = '#', Area? mask = null)
     {
         if (zOrder < TilemapPack.Tilemaps.Count)
             TilemapPack.Tilemaps[zOrder].SetText(cell, text, tint, tintBrush, mask);

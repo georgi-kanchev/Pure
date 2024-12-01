@@ -292,7 +292,7 @@ public class List : Block
 
         Height = IsCollapsed ? 1 : originalHeight;
 
-        if (SelectedItems.Count == 0)
+        if (Items.Count > 0 && SelectedItems.Count == 0)
             Select(Items[0]);
     }
     private void UpdateSelectedItems()

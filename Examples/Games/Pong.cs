@@ -98,9 +98,9 @@ public static class Pong
         }
         void Draw()
         {
-            layer.DrawTiles(paddleLeftPosition, new Tile(Tile.SHADE_4), (1, PADDLE_HEIGHT), true);
-            layer.DrawTiles(paddleRightPosition, new Tile(Tile.SHADE_4), (1, PADDLE_HEIGHT), true);
-            layer.DrawTiles(ballPosition, new Tile(Tile.SHAPE_CIRCLE), (1, 1), true);
+            layer.DrawTiles(paddleLeftPosition, new Tile(Tile.SHADE_4), 1f, (1, PADDLE_HEIGHT), true);
+            layer.DrawTiles(paddleRightPosition, new Tile(Tile.SHADE_4), 1f, (1, PADDLE_HEIGHT), true);
+            layer.DrawTiles(ballPosition, new Tile(Tile.SHAPE_CIRCLE), 1f, (1, 1), true);
             layer.DrawCursor();
             layer.Draw();
         }

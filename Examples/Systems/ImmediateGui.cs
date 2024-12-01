@@ -49,7 +49,7 @@ public static class ImmediateGui
                 log = $"fileViewer:\n{fileViewer.ToString(", ")}";
 
             var sliderHor = GUI.Slider((0, 7), 9);
-            percent.Display((9, 7), 2);
+            percent.Text((9, 7), 2);
             if (float.IsNaN(sliderHor) == false)
             {
                 percent = $"{sliderHor * 100f:F0}%";
@@ -111,8 +111,8 @@ public static class ImmediateGui
             promptStates.Update();
 
             ("Left Control = Info Popup\n" +
-             "Left Shift = Input Popup").Display((20, 0));
-            log.Constrain(layer.Size, false, Alignment.Bottom).Display((0, -1));
+             "Left Shift = Input Popup").Text((20, 0));
+            log.Constrain(layer.Size, false, Alignment.Bottom).Text((0, -1));
 
             layer.DrawGUI();
         }

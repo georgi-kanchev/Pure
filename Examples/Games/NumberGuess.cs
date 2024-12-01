@@ -45,7 +45,7 @@ public static class NumberGuess
                 }
             }
 
-            log.Display((20, 19 - log.Count("\n")));
+            log.Text((20, 19 - log.Count("\n")));
 
             layer.DrawGUI();
         }
