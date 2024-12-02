@@ -182,6 +182,10 @@ public struct Point : IEquatable<Point>
     {
         return base.Equals(obj);
     }
+    public bool Equals(Point other)
+    {
+        return val.Equals(other.val) && Color == other.Color;
+    }
 
     public static Point? Average(params Point[]? points)
     {
@@ -198,11 +202,6 @@ public struct Point : IEquatable<Point>
         }
 
         return new Point(sumX / points.Length, sumY / points.Length);
-    }
-
-    public bool Equals(Point other)
-    {
-        return val.Equals(other.val) && Color == other.Color;
     }
 
     public static implicit operator Point((int x, int y) position)

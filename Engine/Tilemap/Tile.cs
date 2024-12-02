@@ -2,14 +2,7 @@
 
 public enum Pose : byte
 {
-    Default = 0,
-    Right = 1,
-    Down = 2,
-    Left = 3,
-    Mirror = 4,
-    MirrorRight = 5,
-    MirrorDown = 6,
-    MirrorLeft = 7
+    Default = 0, Right = 1, Down = 2, Left = 3, Mirror = 4, MirrorRight = 5, MirrorDown = 6, MirrorLeft = 7
 }
 
 public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Default)

@@ -99,7 +99,8 @@ public class List : Block
         Span = span;
 
         var items = CreateAmount(itemCount);
-        Items.AddRange(items);
+        if (items.Length > 0)
+            Items.AddRange(items);
 
         isInitialized = true;
 
@@ -386,7 +387,7 @@ public class List : Block
         if (isInitialized == false || Items.Count == 0)
             return;
 
-        if (IsCollapsed && isInitialized && SelectedItems.Count > 0)
+        if (IsCollapsed && SelectedItems.Count > 0)
         {
             var selectedItem = SelectedItems[0];
 

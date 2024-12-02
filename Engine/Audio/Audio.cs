@@ -21,7 +21,7 @@ public class Audio
         get => filePath;
         set
         {
-            Dispose();
+            Destroy();
             filePath = value;
         }
     }
@@ -123,7 +123,7 @@ public class Audio
         get => isStreamed;
         set
         {
-            Dispose();
+            Destroy();
             isStreamed = value;
         }
     }
@@ -157,7 +157,7 @@ public class Audio
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
     internal class DoNotSave : Attribute;
 
-    private class Settings
+    private sealed class Settings
     {
         public SoundStatus st;
         public bool loop, gl;
@@ -182,7 +182,7 @@ public class Audio
     {
     }
 
-    private void Dispose()
+    private void Destroy()
     {
         sound?.Dispose();
         music?.Dispose();

@@ -112,12 +112,11 @@ public static class Time
         if (units.HasFlag(Unit.Hour))
         {
             var sep = counter > 0 ? separator : string.Empty;
-            var val = counter == 0 ?
-                (int)ts.TotalHours :
-                units.HasFlag(Unit.AmPm) ?
-                    (int)Wrap(ts.Hours, 12) :
-                    ts.Hours;
-            //val = val == 0 ? 12 : val;
+            var val = (int)ts.TotalHours;
+
+            if (counter != 0)
+                val = units.HasFlag(Unit.AmPm) ? (int)Wrap(ts.Hours, 12) : ts.Hours;
+
             result += $"{sep}{val:D2}";
             counter++;
         }
@@ -238,7 +237,7 @@ public static class Time
 #region Backend
     private static readonly Stopwatch dt = new();
 
-    private class Timer(Action? method, Action<float>? methodF, float delay, bool loop)
+    private sealed class Timer(Action? method, Action<float>? methodF, float delay, bool loop)
     {
         public Action? method = method;
         public Action<float>? methodF = methodF;

@@ -33,8 +33,8 @@ public class StateMachine
             if (result == null)
                 return Reset();
 
-            var siblings = result.IsRoot ? roots.Values.ToList() : result.parent?.children;
-            var index = siblings?.IndexOf(result) ?? -1;
+            var siblings = (result.IsRoot ? roots.Values.ToList() : result.parent?.children) ?? [];
+            var index = siblings.IndexOf(result);
 
             switch (target)
             {
@@ -49,24 +49,24 @@ public class StateMachine
                     break;
                 case Path.Next:
                 {
-                    if (index >= 0 && !(index >= siblings?.Count - 1))
-                        result = siblings?[index + 1];
+                    if (index >= 0 && index < siblings.Count - 1)
+                        result = siblings[index + 1];
                     break;
                 }
                 case Path.Previous:
                 {
-                    if (index >= 1 && !(index >= siblings?.Count))
-                        result = siblings?[index - 1];
+                    if (index >= 1 && index < siblings.Count)
+                        result = siblings[index - 1];
                     break;
                 }
                 case Path.First:
                 {
-                    result = siblings?[0];
+                    result = siblings[0];
                     break;
                 }
                 case Path.Last:
                 {
-                    result = siblings?[^1];
+                    result = siblings[^1];
                     break;
                 }
                 case Path.Child:

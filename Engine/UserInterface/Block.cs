@@ -227,7 +227,7 @@ public class Block
         var (ix, iy) = Input.Position;
 
         mask = wasMaskSet ? mask : Input.Mask;
-        wasHovered = IsHovered;
+        var wasHovered = IsHovered;
         var (mx, my, mw, mh) = mask;
         var isInputInsideMask = ix >= mx && iy >= my && ix < mx + mw && iy < my + mh;
         IsHovered = IsOverlapping(Input.Position) && isInputInsideMask;
@@ -307,8 +307,6 @@ public class Block
 
         Interact(Interaction.Scroll);
         ApplyScroll();
-
-        return;
 
         void TryDisplaySelfAndProcessChildren()
         {
@@ -500,7 +498,7 @@ public class Block
     internal (int, int) position, size, listSizeTrimOffset, sizeMinimum = (1, 1),
         sizeMaximum = (int.MaxValue, int.MaxValue);
     internal bool hasParent, isTextReadonly, wasMaskSet;
-    private bool wasHovered, isReadyForDoubleClick;
+    private bool isReadyForDoubleClick;
 
     private readonly List<Interaction> justInteracted = [];
     [DoNotSave]
@@ -558,7 +556,7 @@ public class Block
                 return;
             }
 
-            if (isReadyForDoubleClick && isAllowed)
+            if (isAllowed)
                 Interact(Interaction.DoubleTrigger);
 
             isReadyForDoubleClick = false;

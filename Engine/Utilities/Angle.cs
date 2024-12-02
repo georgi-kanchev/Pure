@@ -57,7 +57,7 @@ public struct Angle
             var rad = Radians;
             return (MathF.Cos(rad), MathF.Sin(rad));
         }
-        set => Degrees = MathF.Atan2(value.x, value.y) * (180f / MathF.PI);
+        set => Degrees = MathF.Atan2(value.y, value.x) * (180f / MathF.PI);
     }
 
     public Angle(float degrees)
@@ -176,6 +176,27 @@ public struct Angle
     public override string ToString()
     {
         return $"{degrees}°";
+    }
+    public bool Equals(Angle other)
+    {
+        return degrees.Equals(other.degrees);
+    }
+    public override bool Equals(object? obj)
+    {
+        return obj is Angle other && Equals(other);
+    }
+    public override int GetHashCode()
+    {
+        return degrees.GetHashCode();
+    }
+
+    public static bool operator ==(Angle left, Angle right)
+    {
+        return left.Equals(right);
+    }
+    public static bool operator !=(Angle left, Angle right)
+    {
+        return left.Equals(right) == false;
     }
 
     public static implicit operator Angle((int x, int y) direction)

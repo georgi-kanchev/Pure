@@ -271,8 +271,6 @@ public class Tilemap
             }
         }
 
-        return;
-
         void Set()
         {
             var c = cell;

@@ -131,8 +131,6 @@ public class Panel : Block
                 Input.CursorResult = MouseCursor.ResizeDiagonal2;
         }
 
-        return;
-
         void Process(ref bool condition, MouseCursor cursor)
         {
             if (Input.IsButtonJustPressed() && IsFocused)

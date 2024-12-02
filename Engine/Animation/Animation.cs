@@ -158,11 +158,5 @@ public class Animation<T> where T : notnull
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    private static T[] Copy(T[] array)
-    {
-        var copy = new T[array.Length];
-        Array.Copy(array, copy, array.Length);
-        return copy;
-    }
 #endregion
 }

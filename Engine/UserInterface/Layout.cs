@@ -36,7 +36,7 @@ public class Layout : Block
     }
 
 #region Backend
-    private class Segment(float rate, Side side, Segment? parent)
+    private sealed class Segment(float rate, Side side, Segment? parent)
     {
         public readonly float rate = Math.Clamp(rate, 0, 1);
         public readonly Side side = side;

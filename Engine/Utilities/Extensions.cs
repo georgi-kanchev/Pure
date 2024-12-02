@@ -522,16 +522,16 @@ public static class Extensions
         }
         float GetNumber(ref int i)
         {
-            var num = string.Empty;
+            var num = new StringBuilder();
             while (i < mathExpression.Length &&
                    (char.IsDigit(mathExpression[i]) || mathExpression[i] == '.'))
             {
-                num += mathExpression[i];
+                num.Append(mathExpression[i]);
                 i++;
             }
 
             i--;
-            return num.ToNumber();
+            return num.ToString().ToNumber();
         }
     }
     /// <param name="text">
@@ -668,14 +668,15 @@ public static class Extensions
                     lastHiddenTag = colors[^1].tag;
             }
 
-        result = string.Empty;
+        var sb = new StringBuilder();
         for (var i = start; i < end; i++)
         {
             var nl = i == start ? lastHiddenTag : "\n";
-            result += nl + TryAlignHorizontally(lineList[i]);
+            sb.Append(nl + TryAlignHorizontally(lineList[i]));
         }
 
-        return result;
+        return sb.ToString();
+
         string TryAlignHorizontally(string line)
         {
             var tags = GetColorTags(line, tintBrush);
@@ -972,7 +973,7 @@ public static class Extensions
         if (overflow)
         {
             var d = range.b - range.a;
-            return d == 0 ? range.a : ((number - range.a) % d + d) % d + range.a;
+            return d < 0.001f ? range.a : ((number - range.a) % d + d) % d + range.a;
         }
         else
         {

@@ -43,8 +43,7 @@ public static class TiledLoader
 
     private static XmlNodeList LoadLayers(string tmxPath)
     {
-        if (tmxPath == null)
-            throw new ArgumentNullException(nameof(tmxPath));
+        ArgumentNullException.ThrowIfNull(tmxPath);
 
         if (File.Exists(tmxPath) == false)
             throw new ArgumentException($"No tmx file was found at '{tmxPath}'.");

@@ -300,10 +300,11 @@ public struct Line
         var magnitude = abx * abx + aby * aby;
         var dot = apx * abx + apy * aby;
         var distance = dot / magnitude;
+        var result = (ax + abx * distance, ay + aby * distance, uint.MaxValue);
+        result = distance < 0 ? (ax, ay, uint.MaxValue) : result;
+        result = distance > 1 ? (bx, ay, uint.MaxValue) : result;
 
-        return distance < 0 ? (ax, ay, uint.MaxValue) :
-            distance > 1 ? (bx, ay, uint.MaxValue) :
-            (ax + abx * distance, ay + aby * distance, uint.MaxValue);
+        return result;
     }
 
     public bool IsLeftOf((float x, float y) point)
@@ -379,7 +380,7 @@ public struct Line
         var dy2 = by2 - ay2;
         var det = dx1 * dy2 - dy1 * dx2;
 
-        if (det == 0)
+        if (det is > -0.001f and < 0.001f)
             return (float.NaN, float.NaN, uint.MaxValue);
 
         var s = ((ay1 - ay2) * dx2 - (ax1 - ax2) * dy2) / det;

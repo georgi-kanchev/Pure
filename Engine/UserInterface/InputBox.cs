@@ -382,21 +382,21 @@ public class InputBox : Block
         if (allowedSymbolsCache.TryGetValue(symbol, out var allowed))
             return allowed;
 
-        var set = string.Empty;
+        var set = new StringBuilder();
         var values = symbolSets.Values;
         var keys = symbolSets.Keys;
         var isNotInSets = true;
 
         foreach (var flag in keys)
             if (SymbolGroup.HasFlag(flag))
-                set += symbolSets[flag];
+                set.Append(symbolSets[flag]);
 
         foreach (var charSet in values)
             if (charSet.Contains(symbol))
                 isNotInSets = false;
 
         var isOther = SymbolGroup.HasFlag(SymbolGroup.Other) && isNotInSets;
-        var result = set.Contains(symbol) || isOther;
+        var result = set.ToString().Contains(symbol) || isOther;
         allowedSymbolsCache[symbol] = result;
         return result;
     }
@@ -419,8 +419,7 @@ public class InputBox : Block
     private const char SELECTION = '█', SPACE = ' ';
     private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
     private static readonly Stopwatch holdDelay = new(), hold = new(), clickDelay = new(),
-        cursorBlink = new(),
-        scrollHold = new();
+        cursorBlink = new(), scrollHold = new();
     private int cx, cy, sx, sy, clicks, scrX, scrY, cxDesired;
     private (int, int) lastClickIndices = (-1, -1), prevSize;
     private string value = string.Empty;
@@ -688,11 +687,15 @@ public class InputBox : Block
         var hasSel = shift == false && i != s;
         var justL = JustPressed(Key.ArrowLeft);
         var justR = JustPressed(Key.ArrowRight);
+        var sameLineL = (i < s ? 0 : s - i, 0);
+        var sameLineR = (i > s ? 0 : s - i, 0);
+        var otherLineL = i < s ? (0, 0) : (sx - cx, sy - cy);
+        var otherLineR = i > s ? (0, 0) : (sx - cx, sy - cy);
 
         var hotkeys = new[]
         {
-            (hasSel && justL, cy == sy ? (i < s ? 0 : s - i, 0) : i < s ? (0, 0) : (sx - cx, sy - cy)),
-            (hasSel && justR, cy == sy ? (i > s ? 0 : s - i, 0) : i > s ? (0, 0) : (sx - cx, sy - cy)),
+            (hasSel && justL, cy == sy ? sameLineL : otherLineL),
+            (hasSel && justR, cy == sy ? sameLineR : otherLineR),
             (ctrl && JustPressed(Key.ArrowUp), (-cx, 0)),
             (ctrl && JustPressed(Key.ArrowDown), (Size.width, 0)),
             (JustPressed(Key.Home), (-cx, -cy)),

@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Pure.Engine.Execution;
 
 using System.Text.RegularExpressions;
@@ -82,17 +84,18 @@ public class State
     }
     internal string ToTree(string indent = "", bool isLast = true)
     {
-        var result = indent;
+        var result = new StringBuilder(indent);
         var disabled = root == this ? "║ " : " ";
+        var enabled = isLast ? "╚═" : "╠═";
 
-        result += IsDisabled ? disabled : isLast ? "╚═" : "╠═";
+        result.Append(IsDisabled ? disabled : enabled);
         indent += isLast ? "  " : "║ ";
-        result += $"{Name}{(IsRunning ? "◄" : "")}\n";
+        result.AppendLine($"{Name}{(IsRunning ? "◄" : "")}");
 
         for (var i = 0; i < children.Count; i++)
-            result += children[i].ToTree(indent, i == children.Count - 1);
+            result.Append(children[i].ToTree(indent, i == children.Count - 1));
 
-        return result;
+        return result.ToString();
     }
 #endregion
 }

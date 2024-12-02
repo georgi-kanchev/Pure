@@ -8,7 +8,7 @@ public enum Edge
 }
 
 [Flags]
-public enum LightFlags
+public enum Light
 {
     Default = 0, Flat = 1 << 0, Mask = 1 << 1, Inverted = 1 << 2, ObstaclesInShadow = 1 << 3
 }
@@ -22,7 +22,7 @@ public class Layer
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                atlasPath = "default";
+                atlasPath = DEFAULT_GRAPHICS;
                 Init();
                 return;
             }
@@ -42,7 +42,7 @@ public class Layer
             }
             catch (Exception)
             {
-                atlasPath = "default";
+                atlasPath = DEFAULT_GRAPHICS;
                 Init();
             }
         }
@@ -68,12 +68,12 @@ public class Layer
     }
     public uint BackgroundColor { get; set; }
 
-    public LightFlags LightFlags
+    public Light Light
     {
-        get => lightFlags;
+        get => light;
         set
         {
-            lightFlags = value;
+            light = value;
             shader?.SetUniform("lightFlags", (int)value);
         }
     }
@@ -194,12 +194,7 @@ public class Layer
         var (offX, offY) = cursorOffsets[(int)Mouse.CursorCurrent];
         var pose = default(byte);
 
-        if (Mouse.CursorCurrent == Mouse.Cursor.ResizeVertical)
-        {
-            tileId--;
-            pose = 1;
-        }
-        else if (Mouse.CursorCurrent == Mouse.Cursor.ResizeTopLeftBottomRight)
+        if (Mouse.CursorCurrent is Mouse.Cursor.ResizeVertical or Mouse.Cursor.ResizeTopLeftBottomRight)
         {
             tileId--;
             pose = 1;
@@ -606,7 +601,7 @@ public class Layer
 
         foreach (var path in paths)
         {
-            if (path == "default")
+            if (path == DEFAULT_GRAPHICS)
                 continue;
 
             tilesets[path].Dispose();
@@ -654,11 +649,13 @@ public class Layer
     //
     // blka: light block area =   [x, y, w, h]
 
-    [Window.DoNotSave]
+    private const string DEFAULT_GRAPHICS = "default";
+
+    [DoNotSave]
     internal RenderTexture? queue, result, data;
-    [Window.DoNotSave]
+    [DoNotSave]
     internal Shader? shader;
-    [Window.DoNotSave]
+    [DoNotSave]
     private VertexArray? verts, shaderParams;
 
     internal int lightCount, obstacleCount;
@@ -671,9 +668,11 @@ public class Layer
     private string atlasPath;
     private (int width, int height) size;
     private float zoom;
-    private LightFlags lightFlags;
+    private Light light;
 
+    [DoNotSave]
     internal static readonly Dictionary<string, Texture> tilesets = new();
+    [DoNotSave]
     private static readonly List<(float, float)> cursorOffsets =
     [
         (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
@@ -682,8 +681,8 @@ public class Layer
 
     static Layer()
     {
-        // var str = DefaultGraphics.PngToBase64String("graphics.png");
-        tilesets["default"] = DefaultGraphics.CreateTexture();
+        // var base64 = DefaultGraphics.PngToBase64String("graphics.png");
+        tilesets[DEFAULT_GRAPHICS] = DefaultGraphics.CreateTexture();
         // DefaultGraphicsToFile("graphics.png");
     }
 
@@ -820,8 +819,8 @@ public class Layer
         }
 
         var atlas = tilesets[AtlasPath];
-        var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
-        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, shader);
+        var (w, h) = (queue.Texture.Size.X, queue.Texture.Size.Y);
+        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue.Texture, shader);
 
         data?.Clear(Color.Transparent);
         data?.Draw(shaderParams, new(BlendMode.None, Transform.Identity, atlas, null));
@@ -834,9 +833,9 @@ public class Layer
         shader?.SetUniform("time", Window.time.ElapsedTime.AsSeconds());
         shader?.SetUniform("data", data?.Texture);
 
-        queue?.Clear(new(BackgroundColor));
-        queue?.Draw(verts, new(atlas));
-        queue?.Display();
+        queue.Clear(new(BackgroundColor));
+        queue.Draw(verts, new(atlas));
+        queue.Display();
 
         Window.vertsWindow[0] = new(new(0, 0), Color.White, new(0, 0));
         Window.vertsWindow[1] = new(new(w, 0), Color.White, new(w, 0));

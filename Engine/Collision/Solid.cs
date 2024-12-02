@@ -98,12 +98,8 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     /// point; otherwise, false.</returns>
     public bool IsOverlapping((float x, float y) point)
     {
-        var (x, y) = Position;
-        var (w, h) = Size;
-        var (px, py) = point;
-
-        var containsX = x < px && px < x + w;
-        var containsY = y < py && py < y + h;
+        var containsX = X < point.x && point.x < X + Width;
+        var containsY = Y < point.y && point.y < Y + Height;
         return containsX && containsY;
     }
     public bool IsOverlapping((float x, float y, uint color) point)
@@ -133,8 +129,8 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     }
     public bool IsContaining(Solid solid)
     {
-        var (x, y, w, h, _) = solid.ToBundle();
-        return IsContaining((x, y)) && IsContaining((x + w, y + h));
+        var (bx, by, w, h, _) = solid.ToBundle();
+        return IsContaining((bx, by)) && IsContaining((bx + w, by + h));
     }
     public bool IsContaining(Line line)
     {

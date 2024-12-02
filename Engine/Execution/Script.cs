@@ -49,6 +49,7 @@ public class Script
     }
 
 #region Backend
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
     internal class DoNotSave : Attribute;
 
     private readonly MoonSharp.Interpreter.Script script = new(CoreModules.None);

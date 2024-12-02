@@ -26,7 +26,7 @@ public abstract class Communication
 
 #region Backend
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
-    private class DoNotSave : Attribute;
+    private sealed class DoNotSave : Attribute;
 
     internal Action<string> onError, onClientConnect, onClientDisconnect;
     internal Action<(string fromNickname, byte tag, string message)> onReceiveMsg;

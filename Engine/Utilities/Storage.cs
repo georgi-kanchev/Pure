@@ -24,10 +24,6 @@ public static class Storage
     {
         return Convert.ToBase64String(Compress(Encoding.UTF8.GetBytes(value)));
     }
-    public static string Decompress(this string compressedText)
-    {
-        return Encoding.UTF8.GetString(Decompress(Convert.FromBase64String(compressedText)));
-    }
     public static byte[] Compress(this byte[]? data)
     {
         try
@@ -47,6 +43,10 @@ public static class Storage
         {
             return data ?? [];
         }
+    }
+    public static string Decompress(this string compressedText)
+    {
+        return Encoding.UTF8.GetString(Decompress(Convert.FromBase64String(compressedText)));
     }
     public static byte[] Decompress(this byte[]? compressedData)
     {
@@ -197,6 +197,56 @@ public static class Storage
         }
     }
 
+    public static T? ToObject<T>(this string tsvText)
+    {
+        return (T?)ToObject(tsvText, typeof(T));
+    }
+    public static string?[,] ToTable(this string tsvText)
+    {
+        var placeholders = new List<string>();
+        var removedDoubleQuotes = tsvText.Replace("\"\"", QUOTE_PLACEHOLDER);
+        var escaped = AddPlaceholders(removedDoubleQuotes, placeholders);
+
+        var rows = escaped.Replace("\r", "").Split("\n").ToList();
+        var numCols = 1;
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            var columns = rows[i].Split('\t').Length;
+            if (numCols < columns)
+                numCols = columns;
+        }
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            if (rows[i].StartsWith(@"\\") == false)
+                continue;
+
+            rows.Remove(rows[i]);
+            i--;
+        }
+
+        var result = new string?[rows.Count, numCols];
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            var cols = rows[i].Split('\t');
+            for (var j = 0; j < numCols; j++)
+            {
+                var value = j >= cols.Length ? null : FilterPlaceholders(cols[j], placeholders);
+                value = value != null ? value.Replace(QUOTE_PLACEHOLDER, "\"") : value;
+                result[i, j] = value;
+            }
+        }
+
+        return result;
+    }
+    public static void ToStatic(this string tsvText, Type staticClass)
+    {
+        var table = ToTable(tsvText);
+        TableToInstance(table, staticClass);
+    }
+
     public static string? ToBase64(this string? value)
     {
         return string.IsNullOrEmpty(value) ? null : ToBase64(Encoding.UTF8.GetBytes(value));
@@ -319,56 +369,6 @@ public static class Storage
         return TableToTSV(InstanceToTable(null, staticClass));
     }
 
-    public static string?[,] ToTable(this string tsvText)
-    {
-        var placeholders = new List<string>();
-        var removedDoubleQuotes = tsvText.Replace("\"\"", QUOTE_PLACEHOLDER);
-        var escaped = AddPlaceholders(removedDoubleQuotes, placeholders);
-
-        var rows = escaped.Replace("\r", "").Split("\n").ToList();
-        var numCols = 1;
-
-        for (var i = 0; i < rows.Count; i++)
-        {
-            var columns = rows[i].Split('\t').Length;
-            if (numCols < columns)
-                numCols = columns;
-        }
-
-        for (var i = 0; i < rows.Count; i++)
-        {
-            if (rows[i].StartsWith(@"\\") == false)
-                continue;
-
-            rows.Remove(rows[i]);
-            i--;
-        }
-
-        var result = new string?[rows.Count, numCols];
-
-        for (var i = 0; i < rows.Count; i++)
-        {
-            var cols = rows[i].Split('\t');
-            for (var j = 0; j < numCols; j++)
-            {
-                var value = j >= cols.Length ? null : FilterPlaceholders(cols[j], placeholders);
-                value = value != null ? value.Replace(QUOTE_PLACEHOLDER, "\"") : value;
-                result[i, j] = value;
-            }
-        }
-
-        return result;
-    }
-    public static T? ToObject<T>(this string tsvText)
-    {
-        return (T?)ToObject(tsvText, typeof(T));
-    }
-    public static void ToStatic(this string tsvText, Type staticClass)
-    {
-        var table = ToTable(tsvText);
-        TableToInstance(table, staticClass);
-    }
-
     public static T? ToPrimitive<T>(this string primitiveAsText) where T : struct, IComparable, IConvertible
     {
         var value = TextToPrimitive(typeof(T), primitiveAsText);
@@ -376,7 +376,7 @@ public static class Storage
     }
 
 #region Backend
-    private const string STRING_PLACEHOLDER = "—", QUOTE_PLACEHOLDER = "❝";
+    private const string STRING_PLACEHOLDER = "—", QUOTE_PLACEHOLDER = "❝", GENERATED_FIELD = ">k__BackingField";
 
     private static object? ToObject(byte[]? data, Type? expectedType, out byte[]? remaining)
     {
@@ -878,7 +878,7 @@ public static class Storage
         foreach (var (_, fields) in sorted)
             foreach (var field in fields)
             {
-                result[i, 0] = $"{field.Name.Replace("<", "").Replace(">k__BackingField", "")}";
+                result[i, 0] = $"{field.Name.Replace("<", "").Replace(GENERATED_FIELD, "")}";
                 result[i, 1] = ToTSV(field.GetValue(value));
                 i++;
             }
@@ -896,7 +896,7 @@ public static class Storage
             {
                 var i = -1;
                 for (var j = 0; j < table.GetLength(0); j++)
-                    if (table[j, 0] == field.Name.Replace("<", "").Replace(">k__BackingField", ""))
+                    if (table[j, 0] == field.Name.Replace("<", "").Replace(GENERATED_FIELD, ""))
                     {
                         i = j;
                         break;
@@ -974,8 +974,7 @@ public static class Storage
 #pragma warning disable SYSLIB0050
         var instance = FormatterServices.GetUninitializedObject(type);
 #pragma warning restore SYSLIB0050
-        var emptyConstructor = type.GetConstructor(
-            Instance | Public | NonPublic,
+        var emptyConstructor = type.GetConstructor(Instance | Public | NonPublic,
             null, Type.EmptyTypes, null);
 
         // in case there is a parameterless constructor, call it manually
@@ -1018,9 +1017,9 @@ public static class Storage
 
             // some fields are auto generated by a property, so extract the attributes
             // from said property (searching by name) and use them for the field
-            if (field.Name.Contains(">k__BackingField"))
+            if (field.Name.Contains(GENERATED_FIELD))
             {
-                var name = field.Name.Replace("<", "").Replace(">k__BackingField", "");
+                var name = field.Name.Replace("<", "").Replace(GENERATED_FIELD, "");
                 foreach (var prop in props)
                     if (prop.Name == name)
                     {

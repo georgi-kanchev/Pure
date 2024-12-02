@@ -25,7 +25,6 @@
         <ProjectReference Include="..\Examples\Games\Pure.Examples.Games.csproj"/>
         <ProjectReference Include="..\Examples\UserInterface\Pure.Examples.UserInterface.csproj"/>
         <ProjectReference Include="..\Examples\Systems\Pure.Examples.Systems.csproj"/>
-        <ProjectReference Include="..\Editors\UserInterface\Pure.Editors.UserInterface.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -155,7 +155,6 @@ public class FileViewer : Block
             case Directory.Desktop: return GetFolderPath(SpecialFolder.Desktop);
             case Directory.Programs: return GetFolderPath(SpecialFolder.Programs);
             case Directory.LocalApplicationData:
-            default: return GetFolderPath(SpecialFolder.LocalApplicationData);
             case Directory.Favorites: return GetFolderPath(SpecialFolder.Favorites);
             case Directory.Recent: return GetFolderPath(SpecialFolder.Recent);
             case Directory.UserProfile: return GetFolderPath(SpecialFolder.UserProfile);
@@ -164,6 +163,7 @@ public class FileViewer : Block
             case Directory.MyVideos: return GetFolderPath(SpecialFolder.MyVideos);
             case Directory.MyPictures: return GetFolderPath(SpecialFolder.MyPictures);
             case Directory.Fonts: return GetFolderPath(SpecialFolder.Fonts);
+            default: return GetFolderPath(SpecialFolder.LocalApplicationData);
         }
     }
 

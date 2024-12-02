@@ -3,6 +3,7 @@
 /// <summary>
 /// Handles keyboard input.
 /// </summary>
+[DoNotSave]
 public static class Keyboard
 {
     /// <summary>
@@ -33,7 +34,7 @@ public static class Keyboard
     /// <summary>
     /// Gets the text representation of the latest key typed by the user.
     /// </summary>
-    public static string KeyTyped { get; internal set; }
+    public static string KeyTyped { get; internal set; } = "";
     /// <summary>
     /// Gets an array of currently pressed keys.
     /// </summary>
@@ -166,28 +167,21 @@ public static class Keyboard
     private static Action<Key>? onPressAny, onReleaseAny, onHoldAny;
     private static readonly Dictionary<Key, Action> onPress = new(), onRelease = new(), onHold = new();
     private static readonly List<Key> pressed = [], prevPressed = [];
-    private static readonly Dictionary<Key, (string, string)> symbols;
-    private static readonly string[] shiftNumbers;
+    private static readonly Dictionary<Key, (string, string)> symbols = new()
+    {
+        { Key.BracketLeft, ("[", "{") }, { Key.BracketRight, ("]", "}") },
+        { Key.Semicolon, (";", ":") }, { Key.Comma, (",", "<") }, { Key.Dot, (".", ">") },
+        { Key.Quote, ("'", "\"") }, { Key.Slash, ("/", "?") }, { Key.Backslash, ("\\", "|") },
+        { Key.Tilde, ("`", "~") }, { Key.Equal, ("=", "+") }, { Key.Hyphen, ("-", "_") },
+        { Key.Space, (" ", " ") }, { Key.Enter, ("\n", "\n") },
+        { Key.Tab, ("\t", string.Empty) }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
+        { Key.Asterisk, ("*", "*") }, { Key.Divide, ("/", "/") }
+    };
+    private static readonly string[] shiftNumbers = [")", "!", "@", "#", "$", "%", "^", "&", "*", "("];
 
     private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     private static readonly Stopwatch hold = new(), holdTrigger = new();
     private static bool isJustHeld;
-
-    static Keyboard()
-    {
-        KeyTyped = string.Empty;
-        symbols = new()
-        {
-            { Key.BracketLeft, ("[", "{") }, { Key.BracketRight, ("]", "}") },
-            { Key.Semicolon, (";", ":") }, { Key.Comma, (",", "<") }, { Key.Dot, (".", ">") },
-            { Key.Quote, ("'", "\"") }, { Key.Slash, ("/", "?") }, { Key.Backslash, ("\\", "|") },
-            { Key.Tilde, ("`", "~") }, { Key.Equal, ("=", "+") }, { Key.Hyphen, ("-", "_") },
-            { Key.Space, (" ", " ") }, { Key.Enter, ("\n", "\n") },
-            { Key.Tab, ("\t", string.Empty) }, { Key.Add, ("+", "+") }, { Key.Minus, ("-", "-") },
-            { Key.Asterisk, ("*", "*") }, { Key.Divide, ("/", "/") }
-        };
-        shiftNumbers = [")", "!", "@", "#", "$", "%", "^", "&", "*", "("];
-    }
 
     internal static void Update()
     {

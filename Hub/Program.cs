@@ -15,15 +15,14 @@ public static class Program
         Storages.Run();
 
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
-        var editors = new List((0, 0), 3) { Size = (14, 3), ItemSize = (14, 1), Text = "Editors:" };
+        var editors = new List((0, 0), 2) { Size = (14, 2), ItemSize = (14, 1), Text = "Editors:" };
         var apps = new List((0, 0), 9) { Size = (15, 9), ItemSize = (15, 1), Text = "Example Games:" };
         var uis = new List((0, 0), 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
         var systems = new List((0, 0), 7) { Size = (22, 7), ItemSize = (22, 1), Text = "Example Systems:" };
 
-        editors.Edit(["Collision", "Map", "User Interface"]);
+        editors.Edit(["Collision", "Map"]);
         editors.AlignInside((0.75f, 0.25f));
-        OnTrigger(editors, Editors.Collision.Program.Run, Editors.Map.Program.Run,
-            Editors.UserInterface.Program.Run);
+        OnTrigger(editors, Editors.Collision.Program.Run, Editors.Map.Program.Run);
         OnDisplay(editors, () =>
         {
             maps.Tilemaps[0].SetText((0, 0),

@@ -3,6 +3,7 @@
 /// <summary>
 /// Handles mouse input.
 /// </summary>
+[DoNotSave]
 public static class Mouse
 {
     /// <summary>

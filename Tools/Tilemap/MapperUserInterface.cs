@@ -168,7 +168,7 @@ public static class MapperUserInterface
             return;
 
         var (img, audio, font, txt, zip, vid, cfg, exe) = ThemeFileViewer;
-        var (bg, arrow, tint, select, disable) = ThemeList;
+        var (_, _, tint, select, _) = ThemeList;
         var isFolder = fileViewer.IsFolder(item);
         var isHardDrive = fileViewer.HardDrives.Items.Contains(item);
         var isFileOrFolder = fileViewer.FilesAndFolders.Items.Contains(item);
@@ -226,7 +226,7 @@ public static class MapperUserInterface
         bool Ext(params string[] ext)
         {
             foreach (var ex in ext)
-                if (Path.GetExtension(item.Text).ToLower() == $".{ex}")
+                if (Path.GetExtension(item.Text).Equals($".{ex}", StringComparison.CurrentCultureIgnoreCase))
                     return true;
 
             return false;
@@ -433,7 +433,7 @@ public static class MapperUserInterface
         if (maps.Tilemaps.Count <= zOrder + 2 || list.IsHidden)
             return;
 
-        var (bg, arrow, tint, select, disable) = ThemeList;
+        var (bg, arrow, _, _, _) = ThemeList;
         var arrowPos = (list.X + list.Width - 1, list.Y);
 
         arrow.Tint = list.GetInteractionColor(arrow.Tint);
@@ -452,7 +452,7 @@ public static class MapperUserInterface
         if (maps.Tilemaps.Count <= zOrder || item.IsHidden)
             return;
 
-        var (bg, arrow, tint, select, disable) = ThemeList;
+        var (_, _, tint, select, disable) = ThemeList;
         var color = item.IsSelected && showSelected ? select : tint;
         var isLeftCrop = list.Span == Span.Horizontal &&
                          item.Width < list.ItemSize.width &&
@@ -495,12 +495,10 @@ public static class MapperUserInterface
     }
 
 #region Backend
-    private static readonly int seed;
+    private static readonly int seed = (-1_000_000, 1_000_000).Random();
 
     static MapperUserInterface()
     {
-        seed = (-1_000_000, 1_000_000).Random();
-
         var g = Gray;
         var dg = g.ToDark();
         var dim = Black.ToTransparent();

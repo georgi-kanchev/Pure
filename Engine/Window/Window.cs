@@ -3,11 +3,13 @@ global using SFML.System;
 global using SFML.Window;
 global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
-global using System.Text;
 global using SFML.Graphics.Glsl;
 global using System.Numerics;
 
 namespace Pure.Engine.Window;
+
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+internal class DoNotSave : Attribute;
 
 /// <summary>
 /// Possible window modes.
@@ -146,67 +148,6 @@ public static class Window
         }
     }
 
-    public static void FromBytes(byte[] bytes)
-    {
-        var b = Decompress(bytes);
-        var offset = 0;
-
-        mode = (Mode)GetBytesFrom(b, 1, ref offset)[0];
-        var bTitleLength = GetInt();
-        title = Encoding.UTF8.GetString(GetBytesFrom(b, bTitleLength, ref offset));
-        isRetro = GetBool();
-        backgroundColor = GetUInt();
-        monitor = GetUInt();
-        pixelScale = GetFloat();
-        isVerticallySynced = GetBool();
-        maximumFrameRate = GetUInt();
-        var (x, y, w, h) = (GetInt(), GetInt(), GetUInt(), GetUInt());
-        TryCreate();
-        window.Position = new(x, y);
-        window.Size = new(w, h);
-
-        float GetFloat()
-        {
-            return BitConverter.ToSingle(GetBytesFrom(b, 4, ref offset));
-        }
-
-        int GetInt()
-        {
-            return BitConverter.ToInt32(GetBytesFrom(b, 4, ref offset));
-        }
-
-        uint GetUInt()
-        {
-            return BitConverter.ToUInt32(GetBytesFrom(b, 4, ref offset));
-        }
-
-        bool GetBool()
-        {
-            return BitConverter.ToBoolean(GetBytesFrom(b, 1, ref offset));
-        }
-    }
-    public static byte[] ToBytes()
-    {
-        TryCreate();
-
-        var result = new List<byte>();
-        var bTitle = Encoding.UTF8.GetBytes(Title);
-        result.Add((byte)Mode);
-        result.AddRange(BitConverter.GetBytes(bTitle.Length));
-        result.AddRange(bTitle);
-        result.AddRange(BitConverter.GetBytes(IsRetro));
-        result.AddRange(BitConverter.GetBytes(BackgroundColor));
-        result.AddRange(BitConverter.GetBytes(Monitor));
-        result.AddRange(BitConverter.GetBytes(PixelScale));
-        result.AddRange(BitConverter.GetBytes(IsVerticallySynced));
-        result.AddRange(BitConverter.GetBytes(MaximumFrameRate));
-        result.AddRange(BitConverter.GetBytes(window.Position.X));
-        result.AddRange(BitConverter.GetBytes(window.Position.Y));
-        result.AddRange(BitConverter.GetBytes(window.Size.X));
-        result.AddRange(BitConverter.GetBytes(window.Size.Y));
-        return Compress(result.ToArray());
-    }
-
     public static bool KeepOpen()
     {
         if (isRecreating)
@@ -332,20 +273,28 @@ public static class Window
     }
 
 #region Backend
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    internal class DoNotSave : Attribute;
+    private const float RETRO_TURNOFF_TIME = 0.5f;
 
+    [DoNotSave]
     internal static RenderWindow? window;
+    [DoNotSave]
     private static RenderTexture? allLayers;
+    [DoNotSave]
     internal static (int w, int h) rendTexViewSz;
 
+    [DoNotSave]
     private static Action? close, recreate;
+    [DoNotSave]
     private static Shader? retroShader;
+    [DoNotSave]
     private static readonly Random retroRand = new();
+    [DoNotSave]
     internal static readonly Clock time = new();
+    [DoNotSave]
     private static System.Timers.Timer? retroTurnoff;
+    [DoNotSave]
     private static Clock? retroTurnoffTime;
-    private const float RETRO_TURNOFF_TIME = 0.5f;
+    [DoNotSave]
     internal static readonly Vertex[] vertsWindow = new Vertex[4];
 
     private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating;
@@ -524,126 +473,6 @@ public static class Window
             ww = (uint)(wh * ratio);
 
         return (ww, wh, (window.Size.X - ww) / 2f, (window.Size.Y - wh) / 2f);
-    }
-    internal static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
-    }
-
-    private class Node
-    {
-        public byte value;
-        public int freq;
-        public Node? left, right;
-    }
-
-    private static Dictionary<byte, string> GetTable(Node root)
-    {
-        var codeTable = new Dictionary<byte, string>();
-        BuildCode(root, "", codeTable);
-        return codeTable;
-
-        void BuildCode(Node node, string code, Dictionary<byte, string> table)
-        {
-            if (node.left == null && node.right == null)
-                table[node.value] = code;
-
-            if (node.left != null) BuildCode(node.left, code + "0", table);
-            if (node.right != null) BuildCode(node.right, code + "1", table);
-        }
-    }
-    private static Node GetTree(Dictionary<byte, int> frequencies)
-    {
-        var nodes = new List<Node>(frequencies.Select(f => new Node { value = f.Key, freq = f.Value }));
-        while (nodes.Count > 1)
-        {
-            nodes = nodes.OrderBy(n => n.freq).ToList();
-            var left = nodes[0];
-            var right = nodes[1];
-            var parent = new Node { left = left, right = right, freq = left.freq + right.freq };
-            nodes.RemoveRange(0, 2);
-            nodes.Add(parent);
-        }
-
-        return nodes[0];
-    }
-    internal static byte[] Compress(byte[] data)
-    {
-        var compressed = new List<byte>();
-        for (var i = 0; i < data.Length; i++)
-        {
-            var count = (byte)1;
-            while (i + 1 < data.Length && data[i] == data[i + 1] && count < 255)
-            {
-                count++;
-                i++;
-            }
-
-            compressed.Add(count);
-            compressed.Add(data[i]);
-        }
-
-        var frequencies = compressed.GroupBy(b => b).ToDictionary(g => g.Key, g => g.Count());
-        var root = GetTree(frequencies);
-        var codeTable = GetTable(root);
-        var header = new List<byte> { (byte)frequencies.Count };
-        foreach (var kvp in frequencies)
-        {
-            header.Add(kvp.Key);
-            header.AddRange(BitConverter.GetBytes(kvp.Value));
-        }
-
-        var bitString = string.Join("", compressed.Select(b => codeTable[b]));
-        var byteList = new List<byte>(header);
-
-        for (var i = 0; i < bitString.Length; i += 8)
-        {
-            var byteStr = bitString.Substring(i, Math.Min(8, bitString.Length - i));
-            byteList.Add(Convert.ToByte(byteStr, 2));
-        }
-
-        return byteList.ToArray();
-    }
-    internal static byte[] Decompress(byte[] compressedData)
-    {
-        var index = 0;
-        var tableSize = (int)compressedData[index++];
-
-        var frequencies = new Dictionary<byte, int>();
-        for (var i = 0; i < tableSize; i++)
-        {
-            var key = compressedData[index++];
-            var frequency = BitConverter.ToInt32(compressedData, index);
-            index += 4;
-            frequencies[key] = frequency;
-        }
-
-        var root = GetTree(frequencies);
-        var decompressed = new List<byte>();
-
-        var node = root;
-        for (var i = index; i < compressedData.Length; i++)
-        {
-            var bits = Convert.ToString(compressedData[i], 2).PadLeft(8, '0');
-            foreach (var bit in bits)
-            {
-                node = bit == '0' ? node.left : node.right;
-                if ((node!.left == null && node.right == null) == false)
-                    continue;
-
-                decompressed.Add(node.value);
-                node = root;
-            }
-        }
-
-        var result = new List<byte>();
-        for (var i = 0; i < decompressed.Count; i += 2)
-            for (var j = 0; j < decompressed[i]; j++)
-                result.Add(decompressed[i + 1]);
-
-        return result.ToArray();
     }
 #endregion
 }

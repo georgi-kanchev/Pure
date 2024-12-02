@@ -114,8 +114,6 @@ public class Prompt : Block
         var (w, h) = (sz.width / 2, 0);
         var (x, y) = (sz.width / 4, sz.height / 2 + lines.Length / 2);
 
-        panel.IsDisabled = IsHidden;
-        panel.position = IsHidden ? (int.MaxValue, int.MaxValue) : (0, 0);
         panel.size = sz;
         panel.Update();
 
@@ -143,7 +141,7 @@ public class Prompt : Block
             x = sz.width / 2 - w / 2;
         }
 
-        position = IsHidden ? (int.MaxValue, int.MaxValue) : (x, y - lines.Length);
+        position = (x, y - lines.Length);
         size = (w, lines.Length + h + 1);
 
         var btnXs = Distribute(buttons.Count, (x, x + w));

@@ -116,10 +116,9 @@ public class Notes : Audio
                     Map(noteProgress, (noteB, 1f), (1f, 0f)) :
                     1f;
 
-                samples[sampleIndex] =
-                    (short)(frequency == 0 ?
-                        0 :
-                        GetWaveSample(sampleIndex, frequency, wave) * fadeValue);
+                samples[sampleIndex] = (short)(frequency is > -0.001f and < 0.001f ?
+                    0 :
+                    GetWaveSample(sampleIndex, frequency, wave) * fadeValue);
                 sampleIndex++;
             }
         }
@@ -146,7 +145,7 @@ public class Notes : Audio
 
             if (float.IsNaN(frequency))
                 continue;
-            else if (frequency == 0) // pause
+            else if (frequency is > -0.001f and < 0.001f) // pause
             {
                 var pauses = note.Split(Symbols.pause);
                 if (note != Symbols.pause.ToString() && pauses.Length == 2)

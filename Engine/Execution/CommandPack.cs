@@ -70,7 +70,7 @@ public class CommandPack
 
 #region Backend
     private const string STR_PLACEHOLDER = "—";
-    private static int parameterIndex;
+    private int parameterIndex;
     private static readonly Dictionary<string, Func<string?>> commands = new();
     private static readonly List<string> parameters = [];
 

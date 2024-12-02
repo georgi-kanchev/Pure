@@ -126,8 +126,8 @@ public static class Input
     internal const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
     internal const float DOUBLE_CLICK_DELAY = 0.5f;
     internal static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
-    private static readonly List<Key> pressedKeys = new(), prevPressedKeys = new();
-    internal static readonly List<MouseButton> pressedBtns = new(), prevPressedBtns = new();
+    private static readonly List<Key> pressedKeys = [], prevPressedKeys = [];
+    internal static readonly List<MouseButton> pressedBtns = [], prevPressedBtns = [];
     private static (int width, int height) tilemapSize;
     internal static Action? onTextCopy;
     internal static Block? FocusedPrevious { get; set; }

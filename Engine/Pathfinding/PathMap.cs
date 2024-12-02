@@ -42,7 +42,7 @@ public class PathMap
     }
     public bool IsEmpty((int x, int y) cell)
     {
-        return PenaltyAt(cell) == 0;
+        return PenaltyAt(cell) is > -0.001f and < 0.001f;
     }
 
     public float PenaltyAt((int x, int y) cell)

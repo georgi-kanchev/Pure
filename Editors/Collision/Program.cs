@@ -403,7 +403,7 @@ public static class Program
             else if (index == 9) // copy
                 Window.Clipboard = Convert.ToBase64String(Save());
             else if (index == 10) // paste
-                editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value)));
+                editor.PromptBase64(() => Load(Convert.FromBase64String(editor.PromptInput.Value!)));
         });
         menu.OnUpdate += () =>
         {

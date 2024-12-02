@@ -31,7 +31,7 @@ public static class LineOfSightAndLights
 
         Window.BackgroundColor = Color.Gray.ToDark(0.65f);
         layer.BackgroundColor = Color.Gray;
-        layer.LightFlags = LightFlags.Mask | LightFlags.ObstaclesInShadow;
+        layer.Light = Light.Mask | Light.ObstaclesInShadow;
 
         while (Window.KeepOpen())
         {
