@@ -207,7 +207,7 @@ public class Editor
             foreach (var map in MapsUi.Tilemaps)
                 LayerUi.DrawTilemap(map.ToBundle());
 
-            LayerUi.DrawCursor();
+            LayerUi.DrawMouseCursor();
 
             //========
 

@@ -44,7 +44,7 @@ public static class LineOfSightAndLights
             layer.ApplyLights(20f, (120f, angle), (mx, my, Color.White));
 
             layer.DrawTilemap(tilemap);
-            layer.DrawCursor();
+            layer.DrawMouseCursor();
             layer.Draw();
         }
     }

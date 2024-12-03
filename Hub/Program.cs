@@ -16,9 +16,9 @@ public static class Program
 
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
         var editors = new List((0, 0), 2) { Size = (14, 2), ItemSize = (14, 1), Text = "Editors:" };
-        var apps = new List((0, 0), 9) { Size = (15, 9), ItemSize = (15, 1), Text = "Example Games:" };
+        var apps = new List((0, 0), 8) { Size = (15, 8), ItemSize = (15, 1), Text = "Example Games:" };
         var uis = new List((0, 0), 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
-        var systems = new List((0, 0), 7) { Size = (22, 7), ItemSize = (22, 1), Text = "Example Systems:" };
+        var systems = new List((0, 0), 9) { Size = (22, 9), ItemSize = (22, 1), Text = "Example Systems:" };
 
         editors.Edit(["Collision", "Map"]);
         editors.AlignInside((0.75f, 0.25f));
@@ -54,11 +54,11 @@ public static class Program
 
         systems.Edit([
             "Default Graphics", "Collision", "Line of Sight & Lights", "Pathfinding", "Audio",
-            "Terrain Generation", "Immediate GUI"
+            "Terrain Generation", "Immediate GUI", "Animations", "Particles"
         ]);
-        systems.AlignInside((0.05f, 0.77f));
-        OnTrigger(systems, DefaultGraphics.Run, Collision.Run, LineOfSightAndLights.Run,
-            Pathfinding.Run, Audio.Run, TerrainGeneration.Run, ImmediateGui.Run);
+        systems.AlignInside((0.05f, 0.85f));
+        OnTrigger(systems, DefaultGraphics.Run, Collision.Run, LineOfSightAndLights.Run, Pathfinding.Run,
+            Audio.Run, TerrainGeneration.Run, ImmediateGui.Run, Animations.Run, Particles.Run);
         OnDisplay(systems);
 
         ui.Blocks.AddRange([editors, apps, uis, systems]);

@@ -15,12 +15,11 @@ public static class Flow
         stateMachine.Add(Attack, Miss, Hit, Kill);
         stateMachine.Add(Kill, Win, Lose);
 
-        var ticker = () =>
+        Time.CallAfter(1f, () =>
         {
             Console.Clear();
             Console.WriteLine(stateMachine.ToTree());
-        };
-        ticker.CallAfter(1f, true);
+        }, true);
 
         while (Window.KeepOpen())
         {

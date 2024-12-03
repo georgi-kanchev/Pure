@@ -264,7 +264,7 @@ public static class GUI
         foreach (var map in TilemapPack.Tilemaps)
             layer.DrawTilemap(map);
 
-        layer.DrawCursor(Cursor.Id, Cursor.Tint);
+        layer.DrawMouseCursor(Cursor.Id, Cursor.Tint);
         layer.Draw();
         TilemapPack.Flush();
     }

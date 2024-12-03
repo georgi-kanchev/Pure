@@ -28,7 +28,7 @@ public static class DefaultGraphics
             tilemap.SetText((27, 13), $"{id}");
 
             layer.DrawTilemap(tilemap.ToBundle());
-            layer.DrawCursor();
+            layer.DrawMouseCursor();
             layer.Draw();
         }
     }

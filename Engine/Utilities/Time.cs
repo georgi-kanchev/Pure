@@ -192,11 +192,11 @@ public static class Time
         };
     }
 
-    public static void CallAfter(this Action method, float seconds, bool repeat = false)
+    public static void CallAfter(float seconds, Action method, bool repeat = false)
     {
         timers.Add(new(method, null, seconds, repeat));
     }
-    public static void CallFor(this Action<float> method, float seconds, bool repeat = false)
+    public static void CallFor(float seconds, Action<float> method, bool repeat = false)
     {
         timers.Add(new(null, method, seconds, repeat));
     }
@@ -204,13 +204,13 @@ public static class Time
     /// Cancels a scheduled method call.
     /// </summary>
     /// <param name="method">The method to cancel.</param>
-    public static void CancelCall(this Action method)
+    public static void CancelCall(Action method)
     {
         foreach (var t in timers)
             if (t.method == method)
                 t.method = null;
     }
-    public static void CancelCall(this Action<float> method)
+    public static void CancelCall(Action<float> method)
     {
         foreach (var t in timers)
             if (t.methodF == method)
@@ -221,13 +221,13 @@ public static class Time
     /// </summary>
     /// <param name="method">The method to offset the call time for.</param>
     /// <param name="seconds">The number of seconds to offset the call time by.</param>
-    public static void DelayCall(this Action method, float seconds)
+    public static void DelayCall(float seconds, Action method)
     {
         foreach (var t in timers)
             if (t.method == method)
                 t.startTime += seconds;
     }
-    public static void ExtendCall(this Action<float> method, float seconds)
+    public static void ExtendCall(float seconds, Action<float> method)
     {
         foreach (var t in timers)
             if (t.methodF == method)
@@ -248,11 +248,11 @@ public static class Time
             var progress = RuntimeClock.Map((startTime, startTime + delay), (0, 1));
             if (RuntimeClock < startTime + delay)
             {
-                methodF?.Invoke(progress);
+                methodF?.Invoke(Math.Clamp(progress, 0f, 1f));
                 return;
             }
 
-            methodF?.Invoke(progress);
+            methodF?.Invoke(Math.Clamp(progress, 0f, 1f));
             method?.Invoke();
             startTime = RuntimeClock;
 

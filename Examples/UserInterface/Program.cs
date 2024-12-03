@@ -37,7 +37,7 @@ public static class Program
             foreach (var map in maps.Tilemaps)
                 layer.DrawTilemap(map);
 
-            layer.DrawCursor();
+            layer.DrawMouseCursor();
             layer.Draw();
         }
     }

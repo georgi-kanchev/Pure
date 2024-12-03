@@ -186,7 +186,7 @@ public class Layer
         PixelOffset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
     }
 
-    public void DrawCursor(ushort tileId = 546, uint tint = 3789677055)
+    public void DrawMouseCursor(ushort tileId = 546, uint tint = 3789677055)
     {
         if (Mouse.IsCursorInWindow == false)
             return;

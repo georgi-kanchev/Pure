@@ -2,7 +2,6 @@ using Pure.Engine.Pathfinding;
 using Pure.Engine.Window;
 using Pure.Engine.Tilemap;
 using Pure.Engine.Utilities;
-
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -37,7 +36,7 @@ public static class Pathfinding
             layer.DrawTilemap(tilemap);
             layer.DrawLines(lines);
             layer.DrawPoints(points);
-            layer.DrawCursor();
+            layer.DrawMouseCursor();
             layer.Draw();
         }
     }

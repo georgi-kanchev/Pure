@@ -19,12 +19,11 @@ public static class Tetris
         map.SetBox((ax, ay, aw + 1, ah + 1), Tile.EMPTY, Tile.BOX_CORNER_ROUND, Tile.FULL);
         piece = new((map.Size.width / 2, 0));
 
-        var ticker = () =>
+        Time.CallAfter(0.5f, () =>
         {
             if (piece.TryMoveAt(Angle.Down) == false)
                 Collide();
-        };
-        ticker.CallAfter(0.5f, true);
+        }, true);
 
         HandleInput();
 
@@ -51,7 +50,7 @@ public static class Tetris
             if (map != null)
                 layer?.DrawTilemap(map);
 
-            layer?.DrawCursor();
+            layer?.DrawMouseCursor();
             layer?.Draw();
         }
         void Collide()

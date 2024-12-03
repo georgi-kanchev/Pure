@@ -156,7 +156,7 @@ public static class FlappyBird
             layer.DrawTilemap(foreground.ToBundle());
             var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdPose);
             layer.DrawTiles((BIRD_X, birdY), tile);
-            layer.DrawCursor();
+            layer.DrawMouseCursor();
             layer.Draw();
         }
     }
