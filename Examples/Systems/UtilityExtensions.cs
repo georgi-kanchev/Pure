@@ -1,6 +1,6 @@
 namespace Pure.Examples.Systems;
 
-using Engine.Utilities;
+using Engine.Utility;
 
 public static class UtilityExtensions
 {

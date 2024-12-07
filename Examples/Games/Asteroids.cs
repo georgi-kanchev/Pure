@@ -3,7 +3,7 @@ namespace Pure.Examples.Games;
 using Engine.Execution;
 using Engine.Tilemap;
 using Engine.Window;
-using Engine.Utilities;
+using Engine.Utility;
 using Engine.Collision;
 
 public static class Asteroids

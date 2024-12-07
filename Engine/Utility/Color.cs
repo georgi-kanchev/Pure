@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Utilities;
+﻿namespace Pure.Engine.Utility;
 
 /// <summary>
 /// Represents a color in RGBA format and performs color operations.

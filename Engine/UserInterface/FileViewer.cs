@@ -150,21 +150,21 @@ public class FileViewer : Block
     }
     public static string GetPath(Directory directory)
     {
-        switch (directory)
+        return directory switch
         {
-            case Directory.Desktop: return GetFolderPath(SpecialFolder.Desktop);
-            case Directory.Programs: return GetFolderPath(SpecialFolder.Programs);
-            case Directory.LocalApplicationData:
-            case Directory.Favorites: return GetFolderPath(SpecialFolder.Favorites);
-            case Directory.Recent: return GetFolderPath(SpecialFolder.Recent);
-            case Directory.UserProfile: return GetFolderPath(SpecialFolder.UserProfile);
-            case Directory.MyDocuments: return GetFolderPath(SpecialFolder.MyDocuments);
-            case Directory.MyMusic: return GetFolderPath(SpecialFolder.MyMusic);
-            case Directory.MyVideos: return GetFolderPath(SpecialFolder.MyVideos);
-            case Directory.MyPictures: return GetFolderPath(SpecialFolder.MyPictures);
-            case Directory.Fonts: return GetFolderPath(SpecialFolder.Fonts);
-            default: return GetFolderPath(SpecialFolder.LocalApplicationData);
-        }
+            Directory.Desktop => GetFolderPath(SpecialFolder.Desktop),
+            Directory.Programs => GetFolderPath(SpecialFolder.Programs),
+            Directory.LocalApplicationData => GetFolderPath(SpecialFolder.LocalApplicationData),
+            Directory.Favorites => GetFolderPath(SpecialFolder.Favorites),
+            Directory.Recent => GetFolderPath(SpecialFolder.Recent),
+            Directory.UserProfile => GetFolderPath(SpecialFolder.UserProfile),
+            Directory.MyDocuments => GetFolderPath(SpecialFolder.MyDocuments),
+            Directory.MyMusic => GetFolderPath(SpecialFolder.MyMusic),
+            Directory.MyVideos => GetFolderPath(SpecialFolder.MyVideos),
+            Directory.MyPictures => GetFolderPath(SpecialFolder.MyPictures),
+            Directory.Fonts => GetFolderPath(SpecialFolder.Fonts),
+            _ => GetFolderPath(SpecialFolder.LocalApplicationData)
+        };
     }
 
 #region Backend

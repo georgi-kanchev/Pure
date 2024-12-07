@@ -1,4 +1,4 @@
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 using Pure.Engine.Collision;
 using Pure.Engine.Tilemap;
 using Pure.Engine.Window;

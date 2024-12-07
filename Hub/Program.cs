@@ -1,5 +1,5 @@
 ﻿using Pure.Engine.UserInterface;
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 using Pure.Engine.Window;
 using Pure.Examples.Systems;
 using Pure.Examples.Games;

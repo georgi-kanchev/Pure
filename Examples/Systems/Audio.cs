@@ -1,5 +1,5 @@
 using Pure.Engine.Audio;
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 using Pure.Engine.Window;
 
 namespace Pure.Examples.Systems;

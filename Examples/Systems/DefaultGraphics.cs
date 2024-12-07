@@ -1,6 +1,6 @@
 using Pure.Engine.Window;
 using Pure.Engine.Tilemap;
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -21,7 +21,7 @@ public static class DefaultGraphics
 
             for (var i = 0; i < 26; i++)
                 for (var j = 0; j < 26; j++)
-                    tilemap.SetTile((j, i), (ushort)(i, j).ToIndex1D((26, 26)));
+                    tilemap.SetTile((j, i), (ushort)(i, j).ToIndex((26, 26)));
 
             var (x, y) = layer.PixelToPosition(Mouse.CursorPosition);
             var id = tilemap.TileAt(((int)x, (int)y)).Id;

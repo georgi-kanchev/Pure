@@ -41,7 +41,7 @@ internal class Inspector : Panel
             if (tools?.Current < 9 && tilePalette.layer.IsHovered && editor.Prompt.IsHidden)
             {
                 var (mx, my) = tilePalette.mousePos;
-                var index = (my, mx).ToIndex1D(tilePalette.map.Size);
+                var index = (my, mx).ToIndex(tilePalette.map.Size);
                 editor.MapsUi.Tilemaps[FRONT].SetText((X + 1, Y + 29), $"{index} ({mx} {my})");
             }
 
@@ -296,7 +296,7 @@ internal class Inspector : Panel
         pose = new((X + 1, 20), 8, Span.Dropdown) { Size = (14, 8), ItemSize = (14, 1) };
         pose.Edit([
             nameof(Pose.Default), nameof(Pose.Right), nameof(Pose.Down), nameof(Pose.Left),
-            nameof(Pose.Mirror), nameof(Pose.MirrorRight), nameof(Pose.MirrorDown), nameof(Pose.MirrorLeft)
+            nameof(Pose.Flip), nameof(Pose.FlipRight), nameof(Pose.FlipDown), nameof(Pose.FlipLeft)
         ]);
 
         OnDisplay += () =>

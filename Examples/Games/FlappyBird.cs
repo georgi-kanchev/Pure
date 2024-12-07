@@ -1,9 +1,8 @@
 namespace Pure.Examples.Games;
 
-using Engine.Animation;
 using Engine.Collision;
 using Engine.Tilemap;
-using Engine.Utilities;
+using Engine.Utility;
 using Engine.Window;
 
 public static class FlappyBird
@@ -24,12 +23,13 @@ public static class FlappyBird
 
         var birdY = 5f;
         var birdVelocity = 0f;
-        var birdAnimation = new Animation<(ushort, Pose)>(0.8f, false,
-            (Tile.ARROW_DIAGONAL, Pose.Default),
-            (Tile.ARROW_DIAGONAL, Pose.Default), // first frame twice for a bit more upward time
-            (Tile.ARROW, Pose.Default),
-            (Tile.ARROW_DIAGONAL, Pose.Right)); // rotated 1 time (90 degrees clockwise)
-
+        var birdAnimation = new[]
+        {
+            new Tile(Tile.ARROW_DIAGONAL, Color.Yellow),
+            new Tile(Tile.ARROW_DIAGONAL, Color.Yellow), // first frame twice for a bit more upward time
+            new Tile(Tile.ARROW, Color.Yellow),
+            new Tile(Tile.ARROW_DIAGONAL, Color.Yellow, Pose.Right) // rotated 1 time (90 degrees clockwise)
+        };
         var pipes = new List<(float, int, int)>();
         var collisionMap = new SolidMap();
         var layer = new Layer(background.Size);
@@ -44,7 +44,7 @@ public static class FlappyBird
         Keyboard.Key.Space.OnPress(() =>
         {
             birdVelocity = -8f;
-            birdAnimation.CurrentProgress = 0;
+            birdAnimation = birdAnimation.ToArray(); // reset the animation
 
             if (isGameOver == false)
                 return;
@@ -59,7 +59,6 @@ public static class FlappyBird
         while (Window.KeepOpen())
         {
             Time.Update();
-            birdAnimation.Update(Time.Delta);
 
             background.Fill(null, new Tile(Tile.FULL, Color.Blue.ToDark()));
             foreground.Flush();
@@ -142,7 +141,7 @@ public static class FlappyBird
 
         void Draw()
         {
-            var (birdTile, birdPose) = birdAnimation.CurrentValue;
+            var birdTile = birdAnimation.Animate(3f, false);
 
             var scoreText = $"Score: {score}";
             foreground.SetText((width / 2 - scoreText.Length / 2, 1), scoreText);
@@ -154,7 +153,7 @@ public static class FlappyBird
 
             layer.DrawTilemap(background.ToBundle());
             layer.DrawTilemap(foreground.ToBundle());
-            var tile = new Tile(isGameOver ? Tile.UPPERCASE_X : birdTile, Color.Yellow, birdPose);
+            var tile = isGameOver ? new(Tile.UPPERCASE_X) : birdTile;
             layer.DrawTiles((BIRD_X, birdY), tile);
             layer.DrawMouseCursor();
             layer.Draw();

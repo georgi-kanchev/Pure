@@ -3,13 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Utilities", "Engine\Utilities\Pure.Engine.Utilities.csproj", "{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Utility", "Engine\Utility\Pure.Engine.Utility.csproj", "{E892F7D5-7811-40EC-9A8B-6F0889AFB98E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.UserInterface", "Engine\UserInterface\Pure.Engine.UserInterface.csproj", "{3A2602AA-081E-47E2-89E1-610CA6C15367}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Collision", "Engine\Collision\Pure.Engine.Collision.csproj", "{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Animation", "Engine\Animation\Pure.Engine.Animation.csproj", "{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pure.Engine.Tilemap", "Engine\Tilemap\Pure.Engine.Tilemap.csproj", "{E10DCE19-23F2-4CB0-89E5-1254144DE690}"
 EndProject
@@ -69,10 +67,6 @@ Global
 		{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E0E2311-B5DE-4ED8-9353-29E33BCFF912}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E10DCE19-23F2-4CB0-89E5-1254144DE690}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E10DCE19-23F2-4CB0-89E5-1254144DE690}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E10DCE19-23F2-4CB0-89E5-1254144DE690}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -145,7 +139,6 @@ Global
 		SolutionGuid = {3579098F-F943-43B3-9473-D1D72D32FFC5}
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{B86DAEB4-ADFA-4808-8C5C-4354C0D03B6F} = {A8122EE6-919B-43EB-842D-D157ACF49736}
 		{09AA518A-1AA0-4198-9478-893E3DF05855} = {A8122EE6-919B-43EB-842D-D157ACF49736}
 		{0E0E2311-B5DE-4ED8-9353-29E33BCFF912} = {A8122EE6-919B-43EB-842D-D157ACF49736}
 		{46834276-33C0-4687-AC41-883F98118246} = {A8122EE6-919B-43EB-842D-D157ACF49736}

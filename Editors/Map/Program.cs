@@ -2,7 +2,7 @@
 global using Pure.Editors.Base;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
-global using Pure.Engine.Utilities;
+global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
 

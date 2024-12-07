@@ -181,13 +181,13 @@ public static class TiledLoader
         else if (bits == (false, true, true))
             pose = Pose.Left;
         else if (bits == (true, false, false))
-            pose = Pose.Mirror;
+            pose = Pose.Flip;
         else if (bits == (true, true, true))
-            pose = Pose.MirrorRight;
+            pose = Pose.FlipRight;
         else if (bits == (false, true, false))
-            pose = Pose.MirrorDown;
+            pose = Pose.FlipDown;
         else if (bits == (false, false, true))
-            pose = Pose.MirrorLeft;
+            pose = Pose.FlipLeft;
 
         var tile = new Tile
         {

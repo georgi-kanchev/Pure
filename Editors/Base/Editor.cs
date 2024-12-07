@@ -1,12 +1,11 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
 global using Pure.Engine.Tilemap;
 global using Pure.Engine.UserInterface;
-global using Pure.Engine.Utilities;
+global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tilemap;
 global using Monitor = Pure.Engine.Window.Monitor;
-global using Color = Pure.Engine.Utilities.Color;
-global using System.Text;
+global using Color = Pure.Engine.Utility.Color;
 
 namespace Pure.Editors.Base;
 

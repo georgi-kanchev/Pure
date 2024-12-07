@@ -1,5 +1,5 @@
 using Pure.Engine.Tilemap;
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 
 namespace Pure.Tools.Tilemap;
 

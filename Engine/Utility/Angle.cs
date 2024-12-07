@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Utilities;
+﻿namespace Pure.Engine.Utility;
 
 public struct Angle
 {

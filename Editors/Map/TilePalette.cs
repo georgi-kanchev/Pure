@@ -110,7 +110,7 @@ internal class TilePalette
         for (var i = 0; i < mh; i++)
             for (var j = 0; j < mw; j++)
             {
-                var id = (ushort)(i, j).ToIndex1D((mw, mh));
+                var id = (ushort)(i, j).ToIndex((mw, mh));
                 var tile = new Tile(id, Color.White);
                 map.SetTile((j, i), tile);
             }
@@ -192,7 +192,10 @@ internal class TilePalette
                 tiles[j, i].Pose = (Pose)pose;
             }
 
-        tiles = tiles.Rotate(-pose % 4);
+        if (pose > 3)
+            tiles.Flip((false, true));
+
+        tiles = tiles.Rotate(-pose);
 
         return tiles;
     }
@@ -353,7 +356,7 @@ internal class TilePalette
         else if (tool == 13) // pick
         {
             var tile = tilemap.TileAt((mx, my));
-            var coords = ((int)tile.Id).ToIndex2D(layer.AtlasTileCount);
+            var coords = ((int)tile.Id).ToIndexes(layer.AtlasTileCount);
             inspector.paletteColor.SelectedColor = tile.Tint;
             inspector.pickedTile = tile;
             justPickedTile = true;

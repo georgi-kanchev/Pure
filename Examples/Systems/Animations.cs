@@ -1,5 +1,7 @@
-using Pure.Engine.Utilities;
+using Pure.Engine.Tilemap;
+using Pure.Engine.Utility;
 using Pure.Engine.Window;
+using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
 
@@ -9,26 +11,36 @@ public static class Animations
     {
         Window.Title = "Pure - Animation Example";
 
-        var layer = new Layer((48, 27));
-
-        var frames = new[] { (0f, 3f), (5f, 1f), (1.5f, 6f), (0.3f, 4.2f) };
-        Time.CallFor(3f, Animation, true);
+        var (w, h) = Monitor.Current.AspectRatio;
+        var layer = new Layer((w * 3, h * 3));
+        var tilemap = new Tilemap(layer.Size);
+        var texts = new[] { "#1: This is a message", "#2: Another message", "#3: And yet another one" };
+        var arrows = new[]
+        {
+            new Tile(Tile.ARROW, Color.Red),
+            new Tile(Tile.ARROW_DIAGONAL, Color.Green, Pose.Right),
+            new Tile(Tile.ARROW, Color.Blue, Pose.Right),
+            new Tile(Tile.ARROW_DIAGONAL, Color.Cyan, Pose.Down),
+            new Tile(Tile.ARROW, Color.Yellow, Pose.Down),
+            new Tile(Tile.ARROW_DIAGONAL, Color.Brown, Pose.Left),
+            new Tile(Tile.ARROW, Color.Orange, Pose.Left),
+            new Tile(Tile.ARROW_DIAGONAL, Color.Azure)
+        };
 
         while (Window.KeepOpen())
         {
             Time.Update();
 
-            if (Keyboard.Key.A.IsJustPressed())
-                Time.CancelCall(Animation);
+            tilemap.Flush();
+            tilemap.SetText((0, 0), texts.Animate(0.3f));
+            tilemap.SetTile((10, 10), arrows.Animate(1f));
 
+            if (Keyboard.Key.A.IsJustPressed())
+                texts[0] = "#1: Hello, World!";
+
+            layer.DrawTilemap(tilemap);
             layer.DrawMouseCursor();
             layer.Draw();
-        }
-
-        void Animation(float unit)
-        {
-            var index = (int)Math.Min(unit * frames.Length, frames.Length - 1);
-            Console.WriteLine(frames[index]);
         }
     }
 }

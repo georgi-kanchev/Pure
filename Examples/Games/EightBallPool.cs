@@ -3,7 +3,7 @@ namespace Pure.Examples.Games;
 using Engine.Window;
 using Engine.Tilemap;
 using Engine.Collision;
-using Engine.Utilities;
+using Engine.Utility;
 
 public static class EightBallPool
 {

@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using static System.Reflection.BindingFlags;
 
-namespace Pure.Engine.Utilities;
+namespace Pure.Engine.Utility;
 
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 public class SaveAtOrder(uint order) : Attribute

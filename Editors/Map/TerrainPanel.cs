@@ -1,5 +1,5 @@
 using static Pure.Engine.Tilemap.Tile;
-using static Pure.Engine.Utilities.Color;
+using static Pure.Engine.Utility.Color;
 
 namespace Pure.Editors.Map;
 

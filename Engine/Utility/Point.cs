@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Utilities;
+﻿namespace Pure.Engine.Utility;
 
 public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value }
 
@@ -52,8 +52,7 @@ public struct Point : IEquatable<Point>
     public Point((float x, float y, uint color) bundle) : this(bundle.x, bundle.y, bundle.color)
     {
     }
-    public Point((float x, float y) position, uint color = uint.MaxValue)
-        : this(position.x, position.y, color)
+    public Point((float x, float y) position, uint color = uint.MaxValue) : this(position.x, position.y, color)
     {
     }
     public Point(byte[] bytes)

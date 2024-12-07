@@ -1,9 +1,9 @@
 ﻿using Pure.Engine.Window;
 using Pure.Engine.Tilemap;
 using Pure.Engine.UserInterface;
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 using static Pure.Engine.Tilemap.Tile;
-using static Pure.Engine.Utilities.Color;
+using static Pure.Engine.Utility.Color;
 using Maps = Pure.Engine.Tilemap.TilemapPack;
 using static Pure.Engine.Window.Keyboard;
 

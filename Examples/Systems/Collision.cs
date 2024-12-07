@@ -1,8 +1,8 @@
 using Pure.Engine.Collision;
 using Pure.Engine.Tilemap;
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 using Pure.Engine.Window;
-using static Pure.Engine.Utilities.Color;
+using static Pure.Engine.Utility.Color;
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -122,11 +122,11 @@ public static class Collision
             var walls = new Tile(Tile.GEOMETRY_ANGLE_RIGHT, Brown.ToBright());
 
             tilemap.SetTile((x, y), roof);
-            roof.Pose = Pose.Mirror;
+            roof.Pose = Pose.Flip;
             tilemap.SetTile((x + 1, y), roof);
 
             tilemap.SetTile((x, y + 1), walls);
-            walls.Pose = Pose.Mirror;
+            walls.Pose = Pose.Flip;
             tilemap.SetTile((x + 1, y + 1), walls);
         }
     }

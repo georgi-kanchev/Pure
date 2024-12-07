@@ -1,7 +1,7 @@
 ﻿using Pure.Editors.Base;
 using Pure.Tools.Tilemap;
 using Pure.Engine.Collision;
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 using Pure.Engine.Tilemap;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
@@ -475,7 +475,7 @@ public static class Program
         if (layers.Length == 0)
             return;
 
-        currentLayer = (currentLayer + offset).Limit((0, layers.Length - 1), true);
+        currentLayer = (currentLayer + offset).Wrap((0, layers.Length - 1));
     }
 
     private static (float x, float y) Snap((float x, float y) pair)

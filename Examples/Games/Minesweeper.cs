@@ -1,7 +1,7 @@
 namespace Pure.Examples.Games;
 
 using Engine.Window;
-using Engine.Utilities;
+using Engine.Utility;
 using Engine.Tilemap;
 
 public static class Minesweeper

@@ -1,7 +1,7 @@
 using Pure.Engine.Pathfinding;
 using Pure.Engine.Window;
 using Pure.Engine.Tilemap;
-using Pure.Engine.Utilities;
+using Pure.Engine.Utility;
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;

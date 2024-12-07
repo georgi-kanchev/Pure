@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Pure.Engine.Utilities;
+namespace Pure.Engine.Utility;
 
 /// <summary>
 /// Provides various time-related functionalities, such as time conversion and clock-related calculations.
@@ -88,6 +88,7 @@ public static class Time
         UpdateCount++;
 
         UpdateTimers();
+        Collections.TryRemoveAnimations();
     }
     /// <summary>
     /// Converts a duration in seconds to a formatted clock string.

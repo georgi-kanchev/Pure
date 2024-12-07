@@ -1,7 +1,7 @@
 global using static Pure.Tools.Tilemap.MapperUserInterface;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Tilemap;
-global using Pure.Engine.Utilities;
+global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
 global using Key = Pure.Engine.Window.Keyboard.Key;
 global using Monitor = Pure.Engine.Window.Monitor;
