@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Pathfinding;
+﻿namespace Pure.Engine.Collision;
 
 public class PathMap
 {

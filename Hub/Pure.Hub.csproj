@@ -15,7 +15,6 @@
         <ProjectReference Include="..\Engine\Audio\Pure.Engine.Audio.csproj"/>
         <ProjectReference Include="..\Engine\Collision\Pure.Engine.Collision.csproj"/>
         <ProjectReference Include="..\Engine\Particles\Pure.Engine.Particles.csproj"/>
-        <ProjectReference Include="..\Engine\Pathfinding\Pure.Engine.Pathfinding.csproj"/>
         <ProjectReference Include="..\Engine\Tilemap\Pure.Engine.Tilemap.csproj"/>
         <ProjectReference Include="..\Engine\UserInterface\Pure.Engine.UserInterface.csproj"/>
         <ProjectReference Include="..\Engine\Utility\Pure.Engine.Utility.csproj"/>

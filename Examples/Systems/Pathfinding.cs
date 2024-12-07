@@ -1,4 +1,4 @@
-using Pure.Engine.Pathfinding;
+using Pure.Engine.Collision;
 using Pure.Engine.Window;
 using Pure.Engine.Tilemap;
 using Pure.Engine.Utility;
