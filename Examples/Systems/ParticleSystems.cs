@@ -1,8 +1,9 @@
+using Pure.Engine.Utility;
 using Pure.Engine.Window;
 
 namespace Pure.Examples.Systems;
 
-public static class Particles
+public static class ParticleSystems
 {
     public static void Run()
     {
@@ -10,8 +11,12 @@ public static class Particles
 
         var layer = new Layer((48, 27));
 
+        Particles.SpawnInCircle(100, (10f, 10f));
+
         while (Window.KeepOpen())
         {
+            Time.Update();
+            layer.DrawPoints(Particles.ToBundle());
             layer.DrawMouseCursor();
             layer.Draw();
         }

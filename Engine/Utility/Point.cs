@@ -1,7 +1,5 @@
 ﻿namespace Pure.Engine.Utility;
 
-public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value }
-
 public struct Point : IEquatable<Point>
 {
     public static Point NaN
@@ -136,21 +134,13 @@ public struct Point : IEquatable<Point>
         var result = MoveIn(target - this, speed, deltaTime);
 
         speed *= deltaTime;
-        return result.Distance(target) < speed * 1.1f ? target : result;
+        return result.Distance(target) < speed * 0.51f ? target : result;
     }
     public Point PercentTo(float percent, Point target)
     {
         var x = Map(percent, 0, 100, X, target.X);
         var y = Map(percent, 0, 100, Y, target.Y);
         return new(x, y);
-    }
-    public float ToNoise(Noise noise = Noise.ValueCubic, float scale = 10f, int seed = 0)
-    {
-        var noiseValue = new FastNoiseLite(seed);
-        noiseValue.SetNoiseType((FastNoiseLite.NoiseType)noise);
-        noiseValue.SetFrequency(1f / scale);
-
-        return noiseValue.GetNoise(X, Y).Map((-1, 1), (0, 1));
     }
     public float Distance(Point targetPoint)
     {
@@ -277,7 +267,7 @@ public struct Point : IEquatable<Point>
         return a.val != b.val;
     }
 
-#region Backend
+    #region Backend
     private (float x, float y) val;
 
     private static float ToAngle((float x, float y) direction)
@@ -300,5 +290,5 @@ public struct Point : IEquatable<Point>
         offset += amount;
         return result;
     }
-#endregion
+    #endregion
 }

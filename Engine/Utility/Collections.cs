@@ -343,7 +343,7 @@ public static class Collections
         return collection[index];
     }
 
-#region Backend
+    #region Backend
     private static readonly Dictionary<int, (float time, float removeAfter)> animations = [];
 
     internal static void TryRemoveAnimations()
@@ -358,5 +358,5 @@ public static class Collections
                 animations.Remove(key);
         }
     }
-#endregion
+    #endregion
 }

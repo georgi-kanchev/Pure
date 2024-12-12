@@ -89,6 +89,7 @@ public static class Time
 
         UpdateTimers();
         Collections.TryRemoveAnimations();
+        Particles.Update();
     }
     /// <summary>
     /// Converts a duration in seconds to a formatted clock string.
@@ -235,7 +236,7 @@ public static class Time
                 t.startTime += seconds;
     }
 
-#region Backend
+    #region Backend
     private static readonly Stopwatch dt = new();
 
     private sealed class Timer(Action? method, Action<float>? methodF, float delay, bool loop)
@@ -281,5 +282,5 @@ public static class Time
         foreach (var timer in toBeRemoved)
             timers.Remove(timer);
     }
-#endregion
+    #endregion
 }

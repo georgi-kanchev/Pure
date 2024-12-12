@@ -81,7 +81,7 @@ public static class Other
         return EqualityComparer<T>.Default.Equals(value, default);
     }
 
-#region Backend
+    #region Backend
     private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
     private static readonly Dictionary<string, bool> gates = new();
 
@@ -90,5 +90,5 @@ public static class Other
         holdFrequency.Start();
         holdDelay.Start();
     }
+    #endregion
 }
-#endregion

@@ -28,7 +28,7 @@ public class MapGenerator
                 if (TargetTileId != currTileId)
                     continue;
 
-                var value = new Point(x + Offset.x, y + Offset.y).ToNoise(Noise, Scale, Seed);
+                var value = ((float)x + Offset.x, (float)y + Offset.y).ToNoise(Noise, Scale, Seed);
                 var currBottom = 0f;
                 foreach (var (rule, tile) in Elevations)
                 {

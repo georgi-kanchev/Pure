@@ -62,6 +62,8 @@ public enum Curve
     InOut
 }
 
+public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value }
+
 public static class Number
 {
     public static float AnimateEase(this float unit, Ease ease, Curve curve)
@@ -500,6 +502,7 @@ public static class Number
         foreach (var p in parameters)
             seed = Seed(p);
         return (int)seed;
+
         long Seed(int a)
         {
             seed ^= a;
@@ -518,5 +521,13 @@ public static class Number
     {
         index = Math.Clamp(index, 0, size.width * size.height);
         return (index % size.width, index / size.width);
+    }
+    public static float ToNoise(this (float x, float y) point, Noise noise = Noise.ValueCubic, float scale = 10f, int seed = 0)
+    {
+        var noiseValue = new FastNoiseLite(seed);
+        noiseValue.SetNoiseType((FastNoiseLite.NoiseType)noise);
+        noiseValue.SetFrequency(1f / scale);
+
+        return noiseValue.GetNoise(point.x, point.y).Map((-1, 1), (0, 1));
     }
 }
