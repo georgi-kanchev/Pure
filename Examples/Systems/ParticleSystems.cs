@@ -11,12 +11,20 @@ public static class ParticleSystems
 
         var layer = new Layer((48, 27));
 
-        Particles.SpawnInCircle(100, (10f, 10f));
+        var particles = Particles.Spawn(100, 5f);
+        particles.MakeCircle((10f, 10f));
+        particles.ApplyGravity((0f, 0.5f));
+        var particles2 = Particles.Spawn(100, 5f);
+        particles2.MakeLine((20f, 20f, 25f, 15f));
+
+        Mouse.Button.Left.OnPress(() => particles.PushAt(Angle.DownLeft, 2f));
 
         while (Window.KeepOpen())
         {
             Time.Update();
-            layer.DrawPoints(Particles.ToBundle());
+
+            layer.DrawPoints(particles);
+            layer.DrawPoints(particles2);
             layer.DrawMouseCursor();
             layer.Draw();
         }
