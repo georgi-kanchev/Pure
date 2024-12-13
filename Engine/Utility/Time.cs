@@ -236,7 +236,7 @@ public static class Time
                 t.startTime += seconds;
     }
 
-    #region Backend
+#region Backend
     private static readonly Stopwatch dt = new();
 
     private sealed class Timer(Action? method, Action<float>? methodF, float delay, bool loop)
@@ -247,7 +247,7 @@ public static class Time
 
         public void TryTrigger()
         {
-            var progress = RuntimeClock.Map((startTime, startTime + delay), (0, 1));
+            var progress = delay <= 0.001f ? 1f : RuntimeClock.Map((startTime, startTime + delay), (0, 1));
             if (RuntimeClock < startTime + delay)
             {
                 methodF?.Invoke(Math.Clamp(progress, 0f, 1f));
@@ -282,5 +282,5 @@ public static class Time
         foreach (var timer in toBeRemoved)
             timers.Remove(timer);
     }
-    #endregion
+#endregion
 }

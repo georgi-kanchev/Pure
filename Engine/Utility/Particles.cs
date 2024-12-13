@@ -2,20 +2,23 @@ namespace Pure.Engine.Utility;
 
 public static class Particles
 {
-    public static (float x, float y, uint color)[] Spawn(int amount, float ageSeconds)
+    public static (float x, float y, uint color)[] SpawnCluster(int amount, float ageSeconds)
     {
         var pts = new (float x, float y, uint color)[amount];
         var key = pts.GetHashCode();
-        data[key] = new ParticleData[amount];
+        data[key] = new(ageSeconds);
+        movement[key] = new (float x, float y)[amount];
         points.Add(pts);
 
         for (var i = 0; i < amount; i++)
-        {
             pts[i] = (0f, 0f, Color.White);
-            data[key][i] = new(ageSeconds);
-        }
 
         return pts;
+    }
+
+    public static bool IsClusterExisting((float x, float y, uint color)[] particles)
+    {
+        return points.Contains(particles) && data.ContainsKey(particles.GetHashCode());
     }
 
     public static void MakeLine(this (float x, float y, uint color)[] particles, (float ax, float ay, float bx, float by) line)
@@ -55,30 +58,25 @@ public static class Particles
 
     public static void ApplyGravity(this (float x, float y, uint color)[] particles, (float x, float y) force)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var value) == false || points.Contains(particles) == false)
-            return;
-
-        for (var i = 0; i < particles.Length; i++)
-            value[i].Gravity = force;
+        if (data.TryGetValue(particles.GetHashCode(), out var cluster) && points.Contains(particles))
+            cluster.Gravity = force;
     }
     public static void ApplyFriction(this (float x, float y, uint color)[] particles, float strength)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var value) == false || points.Contains(particles) == false)
-            return;
-
-        for (var i = 0; i < particles.Length; i++)
-            value[i].Friction = strength;
+        if (data.TryGetValue(particles.GetHashCode(), out var cluster) && points.Contains(particles))
+            cluster.Friction = strength;
     }
     public static void ApplyOrbit(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var value) == false || points.Contains(particles) == false)
+        if (data.TryGetValue(particles.GetHashCode(), out var cluster) == false || points.Contains(particles) == false)
             return;
 
-        for (var i = 0; i < particles.Length; i++)
-        {
-            value[i].OrbitPoint = point;
-            value[i].OrbitRadius = radius;
-        }
+        cluster.OrbitPoint = point;
+        cluster.OrbitRadius = radius;
+    }
+    public static void ApplyAge(this (float x, float y, uint color)[] particles, float ageSeconds)
+    {
+        data[particles.GetHashCode()].TimeLeft = ageSeconds;
     }
 
     public static void PushFrom(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
@@ -91,19 +89,44 @@ public static class Particles
     }
     public static void PushAt(this (float x, float y, uint color)[] particles, float angle, float force)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var value) == false || points.Contains(particles) == false)
+        var key = particles.GetHashCode();
+
+        if (data.TryGetValue(key, out _) == false || points.Contains(particles) == false)
             return;
 
         var dir = new Angle(angle).Direction;
         for (var i = 0; i < particles.Length; i++)
         {
-            var (mx, my) = value[i].Movement;
-            value[i].Movement = (mx + dir.x * force, my + dir.y * force);
+            var (mx, my) = movement[key][i];
+            movement[key][i] = (mx + dir.x * force, my + dir.y * force);
         }
     }
 
+    public static void FadeTo(this (float x, float y, uint color)[] particles, uint color, float duration = 1f)
+    {
+        var index = points.IndexOf(particles);
+        var pts = points[index];
+        var (tr, tg, tb, ta) = new Color(color).ToBundle();
+        var copy = pts.ToArray();
+
+        Time.CallFor(duration, progress =>
+        {
+            for (var i = 0; i < pts.Length; i++)
+            {
+                var (sr, sg, sb, sa) = new Color(copy[i].color).ToBundle();
+                var r = (byte)progress.Map((0f, 1f), (sr, tr));
+                var g = (byte)progress.Map((0f, 1f), (sg, tg));
+                var b = (byte)progress.Map((0f, 1f), (sb, tb));
+                var a = (byte)progress.Map((0f, 1f), (sa, ta));
+
+                pts[i] = (pts[i].x, pts[i].y, new Color(r, g, b, a).Value);
+            }
+        });
+    }
+
 #region Backend
-    private static readonly Dictionary<int, ParticleData[]> data = [];
+    private static readonly Dictionary<int, ClusterData> data = [];
+    private static readonly Dictionary<int, (float x, float y)[]> movement = [];
     private static readonly List<(float x, float y, uint color)[]> points = [];
 
     private static void PushOrPull(bool push, (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
@@ -111,6 +134,7 @@ public static class Particles
         if (data.TryGetValue(particles.GetHashCode(), out var value) == false || points.Contains(particles) == false)
             return;
 
+        var key = particles.GetHashCode();
         var index = points.IndexOf(particles);
         for (var i = 0; i < particles.Length; i++)
         {
@@ -123,8 +147,8 @@ public static class Particles
             var speed = weakerFurther ? dist.Map((0f, radius), (force, 0f)) : force;
             speed *= push ? -1 : 1;
             var dir = Angle.BetweenPoints((x, y), point).Direction;
-            var (mx, my) = value[i].Movement;
-            value[i].Movement = (mx + dir.x * speed, my + dir.y * speed);
+            var (mx, my) = movement[key][i];
+            movement[key][i] = (mx + dir.x * speed, my + dir.y * speed);
         }
     }
 
@@ -135,26 +159,27 @@ public static class Particles
         {
             var pts = points[i];
             var key = pts.GetHashCode();
-            var pData = data[key];
+            var cluster = data[key];
+
+            cluster.TimeLeft -= dt;
 
             for (var j = 0; j < pts.Length; j++)
             {
                 var (x, y, color) = pts[j];
-                var p = pData[j];
-                var (mx, my) = p.Movement;
+                var (mx, my) = movement[key][j];
 
-                mx += p.Gravity.x * dt;
-                my += p.Gravity.y * dt;
+                mx += cluster.Gravity.x * dt;
+                my += cluster.Gravity.y * dt;
 
-                mx = mx.MoveTo(0f, p.Friction, dt);
-                my = my.MoveTo(0f, p.Friction, dt);
+                mx = mx.MoveTo(0f, cluster.Friction, dt);
+                my = my.MoveTo(0f, cluster.Friction, dt);
 
-                var dist = new Point(x, y).Distance(p.OrbitPoint);
+                var dist = new Point(x, y).Distance(cluster.OrbitPoint);
 
-                if (dist < p.OrbitRadius)
+                if (dist < cluster.OrbitRadius)
                 {
-                    var speed = -(p.OrbitRadius - dist);
-                    var dir = Angle.BetweenPoints(p.OrbitPoint, (x, y)).Direction;
+                    var speed = -(cluster.OrbitRadius - dist);
+                    var dir = Angle.BetweenPoints(cluster.OrbitPoint, (x, y)).Direction;
                     mx += dir.x * dt * speed;
                     my += dir.y * dt * speed;
                 }
@@ -163,9 +188,19 @@ public static class Particles
                 y += my * dt;
 
                 pts[j] = (x, y, color);
-                p.Movement = (mx, my);
-                p.TimeLeft -= dt;
+                movement[key][j] = (mx, my);
             }
+
+            if (data[key].TimeLeft > 0f)
+                continue;
+
+            for (var j = 0; j < pts.Length; j++)
+                pts[j] = default;
+
+            data.Remove(key);
+            movement.Remove(key);
+            points.Remove(pts);
+            i--;
         }
     }
 #endregion
