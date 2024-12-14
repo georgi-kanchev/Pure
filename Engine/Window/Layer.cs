@@ -585,6 +585,7 @@ public class Layer
 
         return ((int)px, (int)py);
     }
+
     public (float x, float y) PositionToLayer((float x, float y) position, Layer layer)
     {
         var pixel = PixelFromPosition(position);

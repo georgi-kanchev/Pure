@@ -1,9 +1,9 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
-global using Pure.Engine.Tilemap;
+global using Pure.Engine.Tiles;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
-global using Pure.Tools.Tilemap;
+global using Pure.Tools.Tiles;
 global using Monitor = Pure.Engine.Window.Monitor;
 global using Color = Pure.Engine.Utility.Color;
 
@@ -25,9 +25,9 @@ public class Editor
     public Layer LayerMap { get; }
     public Layer LayerUi { get; }
 
-    public Tilemap MapGrid { get; private set; }
-    public TilemapPack MapsEditor { get; private set; }
-    public TilemapPack MapsUi { get; }
+    public TileMap MapGrid { get; private set; }
+    public TileMapPack MapsEditor { get; private set; }
+    public TileMapPack MapsUi { get; }
 
     public BlockPack Ui { get; }
     public Prompt Prompt { get; }
@@ -203,7 +203,7 @@ public class Editor
 
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-            foreach (var map in MapsUi.Tilemaps)
+            foreach (var map in MapsUi.TileMaps)
                 LayerUi.DrawTilemap(map.ToBundle());
 
             LayerUi.DrawMouseCursor();
@@ -309,7 +309,7 @@ public class Editor
                 onAccept?.Invoke();
         });
     }
-    public void PromptTileset(Action<Layer, Tilemap>? onSuccess, Action? onFail)
+    public void PromptTileset(Action<Layer, TileMap>? onSuccess, Action? onFail)
     {
         tilesetPrompt.OnSuccess = onSuccess;
         tilesetPrompt.OnFail = onFail;
@@ -370,7 +370,7 @@ public class Editor
             try
             {
                 var gen = default(MapGenerator);
-                var maps = default(TilemapPack);
+                var maps = default(TileMapPack);
                 if (Path.GetExtension(file) == ".tmx" && file != null)
                 {
                     var (layers, tilemapPack) = TiledLoader.Load(file);
@@ -383,8 +383,8 @@ public class Editor
                     maps = LoadMap(bytes, ref resultLayers, ref gen);
                 }
 
-                MapsEditor.Tilemaps.Clear();
-                MapsEditor.Tilemaps.AddRange(maps.Tilemaps);
+                MapsEditor.TileMaps.Clear();
+                MapsEditor.TileMaps.AddRange(maps.TileMaps);
 
                 onLoad.Invoke(resultLayers, gen);
             }
@@ -402,8 +402,8 @@ public class Editor
             var layers = Array.Empty<string>();
             var gen = default(MapGenerator);
             var maps = LoadMap(bytes, ref layers, ref gen);
-            MapsEditor.Tilemaps.Clear();
-            MapsEditor.Tilemaps.AddRange(maps.Tilemaps);
+            MapsEditor.TileMaps.Clear();
+            MapsEditor.TileMaps.AddRange(maps.TileMaps);
 
             onLoad.Invoke(layers, gen);
         });
@@ -459,12 +459,12 @@ public class Editor
         ChangeMapSize((w, h));
 
         var (vw, vh) = MapsEditor.View.Size;
-        var packCopy = MapsEditor.ToBytes().ToObject<TilemapPack>();
+        var packCopy = MapsEditor.ToBytes().ToObject<TileMapPack>();
         if (packCopy == null)
             return;
 
-        for (var j = 0; j < packCopy.Tilemaps.Count; j++)
-            MapsEditor.Tilemaps[j].SetGroup((0, 0), packCopy.Tilemaps[j]!);
+        for (var j = 0; j < packCopy.TileMaps.Count; j++)
+            MapsEditor.TileMaps[j].SetGroup((0, 0), packCopy.TileMaps[j]!);
         MapsEditor.View = new(MapsEditor.View.Position, (vw, vh));
 
         SetGrid();
@@ -500,7 +500,7 @@ public class Editor
             var color = btn.GetInteractionColor(Color.Gray.ToBright());
             var arrow = new Tile(Tile.ARROW_TAILLESS_ROUND, color, (Pose)rotations);
             var center = new Tile(Tile.SHAPE_CIRCLE, color);
-            MapsUi.Tilemaps[(int)LayerMapsUi.Front].SetTile(btn.Position, rotations == 4 ? center : arrow);
+            MapsUi.TileMaps[(int)LayerMapsUi.Front].SetTile(btn.Position, rotations == 4 ? center : arrow);
         };
 
         Ui.Blocks.Add(btn);
@@ -542,14 +542,14 @@ public class Editor
         MapPanel.Update();
 
         var gray = Color.Gray.ToDark();
-        MapsUi.Tilemaps[(int)LayerMapsUi.Back].SetBox(
+        MapsUi.TileMaps[(int)LayerMapsUi.Back].SetBox(
             MapPanel.Area, new(Tile.FULL, gray), new(Tile.BOX_CORNER_ROUND, gray), new(Tile.FULL, gray));
 
-        MapsUi.Tilemaps[FRONT].SetText((0, 0), $"FPS:{fps}");
-        MapsUi.Tilemaps[FRONT].SetText((11, bottomY - 2), $"{mw} x {mh}");
-        MapsUi.Tilemaps[FRONT].SetText((12, bottomY), $"{vw} x {vh}");
+        MapsUi.TileMaps[FRONT].SetText((0, 0), $"FPS:{fps}");
+        MapsUi.TileMaps[FRONT].SetText((11, bottomY - 2), $"{mw} x {mh}");
+        MapsUi.TileMaps[FRONT].SetText((12, bottomY), $"{vw} x {vh}");
 
-        MapsUi.Tilemaps[FRONT].SetText((x, bottomY),
+        MapsUi.TileMaps[FRONT].SetText((x, bottomY),
             $"Cursor {(int)mx}, {(int)my}".Constrain((TEXT_WIDTH, 1), alignment: Alignment.Center));
 
         if (infoTextTimer <= 0)
@@ -559,7 +559,7 @@ public class Editor
         }
 
         var text = infoText.Constrain((TEXT_WIDTH, TEXT_HEIGHT), alignment: Alignment.Top, scrollProgress: 1f);
-        MapsUi.Tilemaps[FRONT].SetText((x, 0), text);
+        MapsUi.TileMaps[FRONT].SetText((x, 0), text);
     }
 
     private void TryViewInteract()
@@ -604,7 +604,7 @@ public class Editor
             ViewPosition.y + (my - py) * ((float)ah / wh) / LayerMap.Zoom * 122.5f);
     }
 
-    private static TilemapPack LoadMap(byte[] bytes, ref string[] layerNames, ref MapGenerator? gen)
+    private static TileMapPack LoadMap(byte[] bytes, ref string[] layerNames, ref MapGenerator? gen)
     {
         // if the file was exported with this editor, there should be some extra editor data at the end
         // however, if it was exported purely by tilemapPack.ToBytes().Compress(),
@@ -629,12 +629,12 @@ public class Editor
 
             gen = generatorBytes.ToObject<MapGenerator>();
             layerNames = layerBytes.ToObject<string[]>()!;
-            var maps = mapsBytes.ToObject<TilemapPack>()!;
+            var maps = mapsBytes.ToObject<TileMapPack>()!;
             return maps;
         }
         catch (Exception)
         {
-            var maps = bytes.Decompress().ToObject<TilemapPack>();
+            var maps = bytes.Decompress().ToObject<TileMapPack>();
 
             if (maps == null)
                 throw new();

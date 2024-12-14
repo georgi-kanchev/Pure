@@ -2,13 +2,13 @@ namespace Pure.Examples.UserInterface;
 
 public static class Palettes
 {
-    public static Block[] Create(TilemapPack maps)
+    public static Block[] Create(TileMapPack maps)
     {
         Window.Title = "Pure - Palettes Example";
 
         var palette = new Palette { Size = (13, 3) };
         palette.AlignInside((0.5f, 0.5f));
-        palette.OnPick += position => maps.Tilemaps[1].TileAt(((int)position.x, (int)position.y)).Tint;
+        palette.OnPick += position => maps.TileMaps[1].TileAt(((int)position.x, (int)position.y)).Tint;
         palette.OnDisplay += () => maps.SetPalette(palette);
 
         //===============
@@ -29,7 +29,7 @@ public static class Palettes
 
             var progress = Time.RuntimeClock / 2f;
             text = text.Constrain((w, h), alignment: Alignment.Center, symbolProgress: progress);
-            maps.Tilemaps[1].SetText((x, y), text);
+            maps.TileMaps[1].SetText((x, y), text);
         };
 
         return [hack, palette];

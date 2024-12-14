@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Tilemap;
+﻿namespace Pure.Engine.Tiles;
 
 public struct Area(int x, int y, int width, int height, uint color = uint.MaxValue)
 {

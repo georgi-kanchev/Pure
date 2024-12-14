@@ -2,7 +2,7 @@ namespace Pure.Examples.Games;
 
 using Engine.Window;
 using Engine.Utility;
-using Engine.Tilemap;
+using Engine.Tiles;
 using Engine.Collision;
 
 public static class Tetris
@@ -98,7 +98,7 @@ public static class Tetris
     private static readonly SortedDictionary<(int y, int x), Box> fallen = new();
     private static Area playArea;
     private static Layer? layer;
-    private static Tilemap? map;
+    private static TileMap? map;
     private static Piece? piece;
 
     private class Piece

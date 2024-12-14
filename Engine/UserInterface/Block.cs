@@ -1,7 +1,4 @@
-﻿using System.IO.Compression;
-using System.Text;
-
-namespace Pure.Engine.UserInterface;
+﻿namespace Pure.Engine.UserInterface;
 
 public enum Side { Left, Right, Top, Bottom }
 

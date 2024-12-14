@@ -1,8 +1,8 @@
 ﻿using Pure.Editors.Base;
-using Pure.Tools.Tilemap;
+using Pure.Tools.Tiles;
 using Pure.Engine.Collision;
 using Pure.Engine.Utility;
-using Pure.Engine.Tilemap;
+using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
 using System.Diagnostics.CodeAnalysis;
@@ -24,7 +24,7 @@ public static class Program
             linePack.Position = (-vx, -vy);
 
             if ((vx, vy) != prevViewPos)
-                solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
+                solidMap.Update(editor.MapsEditor.TileMaps[currentLayer]);
 
             prevViewPos = (vx, vy);
 
@@ -79,7 +79,7 @@ public static class Program
     private static readonly Editor editor;
     private static readonly List tools;
     private static readonly Layer layer = new();
-    private static readonly Tilemap map = new((3, 3));
+    private static readonly TileMap map = new((3, 3));
     private static readonly Panel promptPanel;
     private static readonly Palette palette;
     private static SolidPack solidPack = new();
@@ -131,8 +131,8 @@ public static class Program
     {
         editor = new("Pure - Collision Editor");
         var (mw, mh) = editor.MapsEditor.Size;
-        editor.MapsEditor.Tilemaps.Clear();
-        editor.MapsEditor.Tilemaps.AddRange([new((mw, mh)), new((mw, mh))]);
+        editor.MapsEditor.TileMaps.Clear();
+        editor.MapsEditor.TileMaps.AddRange([new((mw, mh)), new((mw, mh))]);
         editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
         CreateMenu();
 
@@ -225,7 +225,7 @@ public static class Program
             var (x, y) = MousePos;
             x += editor.MapsEditor.View.X;
             y += editor.MapsEditor.View.Y;
-            currentTile = editor.MapsEditor.Tilemaps[currentLayer].TileAt(((int)x, (int)y));
+            currentTile = editor.MapsEditor.TileMaps[currentLayer].TileAt(((int)x, (int)y));
 
             layer.AtlasTileGap = editor.LayerMap.AtlasTileGap;
             layer.AtlasPath = editor.LayerMap.AtlasPath;
@@ -247,7 +247,7 @@ public static class Program
                         editor.Prompt.Close();
                         var (vx, vy) = editor.MapsEditor.View.Position;
                         solidMap.Offset = (-vx, -vy);
-                        solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
+                        solidMap.Update(editor.MapsEditor.TileMaps[currentLayer]);
                         return;
                     }
 
@@ -377,14 +377,14 @@ public static class Program
                 {
                     layers = resultLayers;
                     originalMapViewPos = editor.MapsEditor.View.Position;
-                    solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
+                    solidMap.Update(editor.MapsEditor.TileMaps[currentLayer]);
                 });
             else if (index == 4) // paste tilemap
                 editor.PromptLoadMapBase64((resultLayers, _) =>
                 {
                     layers = resultLayers;
                     originalMapViewPos = editor.MapsEditor.View.Position;
-                    solidMap.Update(editor.MapsEditor.Tilemaps[currentLayer]);
+                    solidMap.Update(editor.MapsEditor.TileMaps[currentLayer]);
                 });
             else if (index == 6) // new
                 editor.PromptConfirm(() =>

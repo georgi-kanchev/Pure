@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class Steppers
 {
-    public static Block[] Create(TilemapPack maps)
+    public static Block[] Create(TileMapPack maps)
     {
         Window.Title = "Pure - Steppers Example";
 
@@ -11,7 +11,7 @@ public static class Steppers
         stepper.OnDisplay += () =>
         {
             var (x, y) = stepper.Position;
-            maps.Tilemaps[0].SetText((x, y - 1), "Step: 1 / Range: (-8, 10)");
+            maps.TileMaps[0].SetText((x, y - 1), "Step: 1 / Range: (-8, 10)");
             maps.SetStepper(stepper);
         };
 
@@ -22,7 +22,7 @@ public static class Steppers
         stepperDecimal.OnDisplay += () =>
         {
             var (x, y) = stepperDecimal.Position;
-            maps.Tilemaps[0].SetText((x, y - 1), "Step: 0.1");
+            maps.TileMaps[0].SetText((x, y - 1), "Step: 0.1");
             maps.SetStepper(stepperDecimal);
         };
 

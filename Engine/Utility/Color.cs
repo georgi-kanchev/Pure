@@ -5,10 +5,6 @@
 /// </summary>
 public struct Color
 {
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(r, g, b, a, v);
-    }
     public static Color Black
     {
         get => new(0, 0, 0);
@@ -74,6 +70,37 @@ public struct Color
         get => new(0, 127, 255);
     }
 
+    public static Color RandomBright
+    {
+        get
+        {
+            var r = (byte)(127, 255).Random();
+            var g = (byte)(127, 255).Random();
+            var b = (byte)(127, 255).Random();
+            return new(r, g, b);
+        }
+    }
+    public static Color RandomDark
+    {
+        get
+        {
+            var r = (byte)(0, 127).Random();
+            var g = (byte)(0, 127).Random();
+            var b = (byte)(0, 127).Random();
+            return new(r, g, b);
+        }
+    }
+    public static Color Random
+    {
+        get
+        {
+            var r = (byte)(0, 255).Random();
+            var g = (byte)(0, 255).Random();
+            var b = (byte)(0, 255).Random();
+            return new(r, g, b);
+        }
+    }
+
     /// <summary>
     /// Gets or sets the red component of the color.
     /// </summary>
@@ -122,7 +149,6 @@ public struct Color
             UpdateValue();
         }
     }
-
     public uint Value
     {
         get => this;
@@ -169,10 +195,12 @@ public struct Color
     /// </summary>
     /// <param name="bundle">A bundle tuple containing the red, green, blue, and alpha
     /// components of the color.</param>
-    public Color((byte red, byte green, byte blue, byte alpha) bundle) : this(bundle.red, bundle.green, bundle.blue, bundle.alpha)
+    public Color((byte red, byte green, byte blue, byte alpha) bundle) :
+        this(bundle.red, bundle.green, bundle.blue, bundle.alpha)
     {
     }
-    public Color(byte rgb, byte alpha = 255) : this(rgb, rgb, rgb, alpha)
+    public Color(byte rgb, byte alpha = 255) :
+        this(rgb, rgb, rgb, alpha)
     {
     }
 
@@ -221,7 +249,6 @@ public struct Color
     {
         return this;
     }
-
     /// <returns>
     /// A string that represents this color.</returns>
     public override string ToString()
@@ -233,7 +260,6 @@ public struct Color
     {
         return $"{brush}{v:X}{brush}";
     }
-
     /// <param name="bundle">
     /// The bundle tuple of RGBA values to convert.</param>
     /// <returns>A new color instance initialized with the specified RGBA values.</returns>
@@ -262,7 +288,6 @@ public struct Color
     {
         return color.v;
     }
-
     /// <summary>
     /// Determines whether two color instances are equal.
     /// </summary>
@@ -289,6 +314,10 @@ public struct Color
     public override bool Equals(object? obj)
     {
         return obj is Color other && Equals(other);
+    }
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(r, g, b, a, v);
     }
 
 #region Backend

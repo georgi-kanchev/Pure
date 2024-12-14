@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
-namespace Pure.Engine.Tilemap;
+namespace Pure.Engine.Tiles;
 
-public class Tilemap
+public class TileMap
 {
     public List<(int[] matchIds, Tile replacedCenter)> AutoTiles { get; } = [];
     public (int x, int y, int z) SeedOffset { get; set; }
@@ -11,7 +11,7 @@ public class Tilemap
     public (int width, int height) Size { get; }
     public Area View { get; set; }
 
-    public Tilemap((int width, int height) size)
+    public TileMap((int width, int height) size)
     {
         var (w, h) = (Math.Max(size.width, 1), Math.Max(size.height, 1));
 
@@ -22,7 +22,7 @@ public class Tilemap
         View = (0, 0, w, h);
         ConfigureText();
     }
-    public Tilemap(Tile[,]? tileData)
+    public TileMap(Tile[,]? tileData)
     {
         tileData ??= new Tile[0, 0];
 
@@ -488,10 +488,10 @@ public class Tilemap
         return result;
     }
 
-    public Tilemap UpdateView()
+    public TileMap UpdateView()
     {
         var (vx, vy, vw, vh, _) = View.ToBundle();
-        var result = new Tilemap((View.Width, View.Height));
+        var result = new TileMap((View.Width, View.Height));
         var i = 0;
         for (var x = vx; x != vx + vw; x++)
         {
@@ -508,29 +508,29 @@ public class Tilemap
         return result;
     }
 
-    public static implicit operator Tilemap?(Tile[,]? data)
+    public static implicit operator TileMap?(Tile[,]? data)
     {
         return data == null ? null : new(data);
     }
-    public static implicit operator Tile[,]?(Tilemap? tilemap)
+    public static implicit operator Tile[,]?(TileMap? tileMap)
     {
-        return tilemap == null ? null : Duplicate(tilemap.data);
+        return tileMap == null ? null : Duplicate(tileMap.data);
     }
-    public static implicit operator (ushort id, uint tint, byte pose)[,]?(Tilemap? tilemap)
+    public static implicit operator (ushort id, uint tint, byte pose)[,]?(TileMap? tileMap)
     {
-        return tilemap?.ToBundle();
+        return tileMap?.ToBundle();
     }
-    public static implicit operator Area(Tilemap tilemap)
+    public static implicit operator Area(TileMap tileMap)
     {
-        return (0, 0, tilemap.Size.width, tilemap.Size.height);
+        return (0, 0, tileMap.Size.width, tileMap.Size.height);
     }
-    public static implicit operator Area?(Tilemap? tilemap)
+    public static implicit operator Area?(TileMap? tileMap)
     {
-        return tilemap == null ? null : (0, 0, tilemap.Size.width, tilemap.Size.height);
+        return tileMap == null ? null : (0, 0, tileMap.Size.width, tileMap.Size.height);
     }
-    public static implicit operator ushort[,]?(Tilemap? tilemap)
+    public static implicit operator ushort[,]?(TileMap? tileMap)
     {
-        return tilemap?.ids;
+        return tileMap?.ids;
     }
 
 #region Backend

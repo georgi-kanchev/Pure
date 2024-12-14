@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class InputBoxes
 {
-    public static Block[] Create(TilemapPack maps)
+    public static Block[] Create(TileMapPack maps)
     {
         Window.Title = "Pure - Input Boxes Example";
 
@@ -32,7 +32,7 @@ public static class InputBoxes
         {
             var text = messages.Constrain((w, h), alignment: Alignment.BottomRight,
                 scrollProgress: scroll.Slider.Progress);
-            maps.Tilemaps[0].SetText((x, y), text);
+            maps.TileMaps[0].SetText((x, y), text);
             maps.SetInputBox(chat);
         };
         scroll.OnDisplay += () => maps.SetScroll(scroll);
@@ -64,7 +64,7 @@ public static class InputBoxes
         password.OnDisplay += () =>
         {
             var pos = password.Position;
-            maps.Tilemaps[0].SetText((pos.x, pos.y - 1), pass);
+            maps.TileMaps[0].SetText((pos.x, pos.y - 1), pass);
             maps.SetInputBox(password);
         };
 
@@ -83,7 +83,7 @@ public static class InputBoxes
         equation.OnDisplay += () =>
         {
             var pos = equation.Position;
-            maps.Tilemaps[0].SetText((pos.x, pos.y - 1), mathResult);
+            maps.TileMaps[0].SetText((pos.x, pos.y - 1), mathResult);
             maps.SetInputBox(equation);
         };
 

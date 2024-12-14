@@ -5,7 +5,7 @@ namespace Pure.Editors.Map;
 internal class TilePalette
 {
     public bool justPickedTile;
-    public Tilemap map;
+    public TileMap map;
     public Layer layer;
     public (int x, int y) mousePos;
     public (int x, int y) start, end;
@@ -154,7 +154,7 @@ internal class TilePalette
             for (var j = 0; j < tiles.GetLength(0); j++)
                 tiles[j, i].Tint = color;
 
-        var preview = new Tilemap(tiles);
+        var preview = new TileMap(tiles);
         var randomTile = tiles.Flatten().ChooseOne(seed);
         var tilemap = inspector?.GetSelectedTilemap();
         var (szw, szh) = (end.x - start.x, end.y - start.y);
@@ -385,7 +385,7 @@ internal class TilePalette
             tilemap.SetGroup(start, region);
         }
     }
-    private void OnMouseHold(Tile randomTile, Tilemap? tilemap)
+    private void OnMouseHold(Tile randomTile, TileMap? tilemap)
     {
         if (IsPaintAllowed() == false)
             return;

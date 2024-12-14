@@ -1,6 +1,6 @@
 namespace Pure.Examples.Games;
 
-using Engine.Tilemap;
+using Engine.Tiles;
 using Engine.Utility;
 using Engine.Window;
 using Engine.Collision;
@@ -15,7 +15,7 @@ public static class Pong
     {
         Window.Title = "Pure - Pong Example";
 
-        var tilemap = new Tilemap((48, 27));
+        var tilemap = new TileMap((48, 27));
         var center = new Point(tilemap.Size.width / 2f, tilemap.Size.height / 2f);
         var ballAngle = new Angle(45f);
         var ballPosition = center;

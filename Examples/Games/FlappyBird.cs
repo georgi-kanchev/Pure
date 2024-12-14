@@ -1,7 +1,7 @@
 namespace Pure.Examples.Games;
 
 using Engine.Collision;
-using Engine.Tilemap;
+using Engine.Tiles;
 using Engine.Utility;
 using Engine.Window;
 
@@ -17,8 +17,8 @@ public static class FlappyBird
         var score = 0;
         var isGameOver = false;
         var ratio = Monitor.Current.AspectRatio;
-        var background = new Tilemap((ratio.width * 3, ratio.height * 3));
-        var foreground = new Tilemap(background.Size);
+        var background = new TileMap((ratio.width * 3, ratio.height * 3));
+        var foreground = new TileMap(background.Size);
         var (width, height) = background.Size;
 
         var birdY = 5f;

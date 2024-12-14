@@ -1,7 +1,7 @@
-using Pure.Engine.Tilemap;
+using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
-using Pure.Tools.Tilemap;
+using Pure.Tools.Tiles;
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -15,7 +15,7 @@ public static class TerrainGeneration
 
         var aspectRatio = Monitor.Current.AspectRatio;
         var layer = new Layer((aspectRatio.width * 5, aspectRatio.height * 5));
-        var terrain = new Tilemap(layer.Size);
+        var terrain = new TileMap(layer.Size);
         var generator = new MapGenerator();
 
         RegenerateMap();

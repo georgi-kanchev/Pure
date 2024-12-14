@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class SlidersAndScrolls
 {
-    public static Block[] Create(TilemapPack maps)
+    public static Block[] Create(TileMapPack maps)
     {
         Window.Title = "Pure - Sliders & Scrolls Example";
 

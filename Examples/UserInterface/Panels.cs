@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class Panels
 {
-    public static Block[] Create(TilemapPack maps)
+    public static Block[] Create(TileMapPack maps)
     {
         Window.Title = "Pure - Panels Example";
 
@@ -20,7 +20,7 @@ public static class Panels
 
             maps.SetPanel(panelText);
             text = text.Constrain((w - 2, h - 2));
-            maps.Tilemaps[1].SetText((x + 1, y + 1), text, Color.Green);
+            maps.TileMaps[1].SetText((x + 1, y + 1), text, Color.Green);
         };
 
         //============

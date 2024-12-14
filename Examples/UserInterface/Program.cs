@@ -1,6 +1,6 @@
-global using static Pure.Tools.Tilemap.MapperUserInterface;
+global using static Pure.Tools.Tiles.MapperUserInterface;
 global using Pure.Engine.UserInterface;
-global using Pure.Engine.Tilemap;
+global using Pure.Engine.Tiles;
 global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
 global using Key = Pure.Engine.Window.Keyboard.Key;
@@ -10,35 +10,37 @@ namespace Pure.Examples.UserInterface;
 
 public static class Program
 {
-    public static (TilemapPack, BlockPack) Initialize()
+    public static Layer? Layer { get; private set; }
+
+    public static (TileMapPack, BlockPack) Initialize()
     {
         var (width, height) = Monitor.Current.AspectRatio;
-        var maps = new TilemapPack(7, (width * 3, height * 3));
+        var maps = new TileMapPack(7, (width * 3, height * 3));
         var blocks = new BlockPack();
         Input.TilemapSize = maps.Size;
         return (maps, blocks);
     }
-    public static void Run(TilemapPack maps, BlockPack blocks)
+    public static void Run(TileMapPack maps, BlockPack blocks)
     {
-        var layer = new Layer(maps.Size);
+        Layer = new(maps.Size);
         while (Window.KeepOpen())
         {
             Time.Update();
             maps.Flush();
 
             Input.PositionPrevious = Input.Position;
-            Input.Position = layer.PixelToPosition(Mouse.CursorPosition);
+            Input.Position = Layer.MouseCursorPosition;
             Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta, Keyboard.KeyIdsPressed, Keyboard.KeyTyped);
 
             blocks.Update();
 
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-            foreach (var map in maps.Tilemaps)
-                layer.DrawTilemap(map);
+            foreach (var map in maps.TileMaps)
+                Layer.DrawTilemap(map);
 
-            layer.DrawMouseCursor();
-            layer.Draw();
+            Layer.DrawMouseCursor();
+            Layer.Draw();
         }
     }
 }

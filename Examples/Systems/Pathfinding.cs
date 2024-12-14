@@ -1,6 +1,6 @@
 using Pure.Engine.Collision;
 using Pure.Engine.Window;
-using Pure.Engine.Tilemap;
+using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 using Monitor = Pure.Engine.Window.Monitor;
 
@@ -13,7 +13,7 @@ public static class Pathfinding
         Window.Title = "Pure - Pathfinding Example";
 
         var (w, h) = Monitor.Current.AspectRatio;
-        var tilemap = new Tilemap((w * 3, h * 3));
+        var tilemap = new TileMap((w * 3, h * 3));
         var layer = new Layer(tilemap.Size);
         var pathMap = new PathMap(tilemap.Size);
 

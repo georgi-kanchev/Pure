@@ -187,7 +187,7 @@ public static class Window
         vertsWindow[3] = new(new(-w / 2f, h / 2f), Color.White, new(0, h));
 
         allLayers?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.result?.Texture, null));
-        //allLayers?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.data?.Texture, null));
+        // allLayers?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.data?.Texture, null));
     }
     public static void Close()
     {
@@ -206,6 +206,7 @@ public static class Window
         close?.Invoke();
         window.Close();
     }
+
     public static void Scale(float scale)
     {
         scale = Math.Max(scale, 0.05f);
@@ -228,6 +229,7 @@ public static class Window
 
         window.Position = new(x, y);
     }
+
     public static void SetIconFromTile(Layer layer, (int id, uint tint) tile, (int id, uint tint) tileBack = default, bool saveAsFile = false)
     {
         TryCreate();

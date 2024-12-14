@@ -1,10 +1,10 @@
 ﻿global using System.Diagnostics.CodeAnalysis;
 global using Pure.Editors.Base;
-global using Pure.Engine.Tilemap;
+global using Pure.Engine.Tiles;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
-global using Pure.Tools.Tilemap;
+global using Pure.Tools.Tiles;
 
 namespace Pure.Editors.Map;
 
@@ -34,8 +34,8 @@ public static class Program
         var (mw, mh) = (50, 50);
 
         editor = new("Pure - Map Editor");
-        editor.MapsEditor.Tilemaps.Clear();
-        editor.MapsEditor.Tilemaps.Add(new((mw, mh)));
+        editor.MapsEditor.TileMaps.Clear();
+        editor.MapsEditor.TileMaps.Add(new((mw, mh)));
         editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
         editor.MapsEditorVisible.Clear();
         editor.MapsEditorVisible.Add(true);

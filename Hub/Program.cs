@@ -4,7 +4,7 @@ using Pure.Engine.Window;
 using Pure.Examples.Systems;
 using Pure.Examples.Games;
 using Pure.Examples.UserInterface;
-using Pure.Tools.Tilemap;
+using Pure.Tools.Tiles;
 
 namespace Pure.Hub;
 
@@ -25,7 +25,7 @@ public static class Program
         OnTrigger(editors, Editors.Collision.Program.Run, Editors.Map.Program.Run);
         OnDisplay(editors, () =>
         {
-            maps.Tilemaps[0].SetText((0, 0),
+            maps.TileMaps[0].SetText((0, 0),
                 "(click on a Hub Project to start it)".Constrain(maps.Size, alignment: Alignment.Top));
         });
 
@@ -90,7 +90,7 @@ public static class Program
             list.OnDisplay += () =>
             {
                 extraCode?.Invoke();
-                maps.Tilemaps[0].SetText((list.Position.x, list.Position.y - 1), list.Text);
+                maps.TileMaps[0].SetText((list.Position.x, list.Position.y - 1), list.Text);
                 maps.SetList(list);
             };
             list.OnItemDisplay += item => maps.SetListItem(list, item);

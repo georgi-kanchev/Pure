@@ -1,7 +1,7 @@
-using Pure.Engine.Tilemap;
+using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 
-namespace Pure.Tools.Tilemap;
+namespace Pure.Tools.Tiles;
 
 public class MapGenerator
 {
@@ -13,7 +13,7 @@ public class MapGenerator
 
     public SortedDictionary<byte, Tile> Elevations { get; } = new();
 
-    public void Apply(Engine.Tilemap.Tilemap? tilemap)
+    public void Apply(TileMap? tilemap)
     {
         if (tilemap == null || Elevations.Count == 0)
             return;

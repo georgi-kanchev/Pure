@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Tilemap;
+﻿namespace Pure.Engine.Tiles;
 
 public enum Pose : byte
 {

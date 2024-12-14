@@ -1,7 +1,7 @@
 namespace Pure.Examples.Games;
 
 using Engine.Window;
-using Engine.Tilemap;
+using Engine.Tiles;
 using Engine.Collision;
 using Engine.Utility;
 

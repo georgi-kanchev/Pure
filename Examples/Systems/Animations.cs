@@ -1,4 +1,4 @@
-using Pure.Engine.Tilemap;
+using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
 using Monitor = Pure.Engine.Window.Monitor;
@@ -13,7 +13,7 @@ public static class Animations
 
         var (w, h) = Monitor.Current.AspectRatio;
         var layer = new Layer((w * 3, h * 3));
-        var tilemap = new Tilemap(layer.Size);
+        var tilemap = new TileMap(layer.Size);
         var texts = new[] { "#1: This is a message", "#2: Another message", "#3: And yet another one" };
         var arrows = new[]
         {

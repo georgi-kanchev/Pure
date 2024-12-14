@@ -21,7 +21,7 @@ public static class Particles
         return points.Contains(particles) && data.ContainsKey(particles.GetHashCode());
     }
 
-    public static void MakeLine(this (float x, float y, uint color)[] particles, (float ax, float ay, float bx, float by) line)
+    public static void MakeLine(this (float x, float y, uint color)[] particles, (float ax, float ay, float bx, float by) line, bool keepMovement = false)
     {
         var key = particles.GetHashCode();
 
@@ -36,14 +36,21 @@ public static class Particles
         for (var i = 0; i < particles.Length; i++)
         {
             point = point.MoveTo(b, step);
+
+            if (keepMovement == false)
+                movement[key][i] = default;
+
             points[index][i] = (point.X, point.Y, points[index][i].color);
         }
     }
-    public static void MakeCircle(this (float x, float y, uint color)[] particles, (float x, float y) position, float radius = 1f)
+    public static void MakeCircle(this (float x, float y, uint color)[] particles, (float x, float y) position, float radius = 1f, bool keepMovement = false, bool distribute = false)
     {
         var key = particles.GetHashCode();
 
         if (data.ContainsKey(key) == false || points.Contains(particles) == false)
+            return;
+
+        if (distribute)
             return;
 
         var angStep = 360f / particles.Length;
@@ -52,42 +59,92 @@ public static class Particles
         {
             var dir = new Angle(angStep * i).Direction;
             var point = new Point(position).MoveIn(dir, radius);
+
+            if (keepMovement == false)
+                movement[key][i] = default;
+
             points[index][i] = (point.X, point.Y, points[index][i].color);
         }
+    }
+    public static void MakeRectangle(this (float x, float y, uint color)[] particles, (float x, float y, float width, float height) rectangle, bool keepMovement = false)
+    {
+        var key = particles.GetHashCode();
+
+        if (data.ContainsKey(key) == false || points.Contains(particles) == false)
+            return;
+    }
+
+    public static (float x, float y)[] DistributePointsAlongRadius(double radius, int numberOfPoints, double angleDegrees)
+    {
+        var angleRadians = angleDegrees * (MathF.PI / 180.0);
+        var spacing = radius / (numberOfPoints - 1);
+        var pts = new (float x, float y)[numberOfPoints];
+
+        for (var i = 0; i < numberOfPoints; i++)
+        {
+            var r = i * spacing;
+            var x = (float)(r * Math.Cos(angleRadians));
+            var y = (float)(r * Math.Sin(angleRadians));
+
+            pts[i] = (x, y);
+        }
+
+        return pts;
     }
 
     public static void ApplyGravity(this (float x, float y, uint color)[] particles, (float x, float y) force)
     {
         if (data.TryGetValue(particles.GetHashCode(), out var cluster) && points.Contains(particles))
-            cluster.Gravity = force;
+            cluster.gravity = force;
     }
     public static void ApplyFriction(this (float x, float y, uint color)[] particles, float strength)
     {
         if (data.TryGetValue(particles.GetHashCode(), out var cluster) && points.Contains(particles))
-            cluster.Friction = strength;
+            cluster.friction = strength;
     }
     public static void ApplyOrbit(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius)
     {
         if (data.TryGetValue(particles.GetHashCode(), out var cluster) == false || points.Contains(particles) == false)
             return;
 
-        cluster.OrbitPoint = point;
-        cluster.OrbitRadius = radius;
+        cluster.orbitPoint = point;
+        cluster.orbitRadius = radius;
     }
     public static void ApplyAge(this (float x, float y, uint color)[] particles, float ageSeconds)
     {
-        data[particles.GetHashCode()].TimeLeft = ageSeconds;
+        data[particles.GetHashCode()].timeLeft = Math.Max(ageSeconds, 0f);
+    }
+    public static void ApplyBounce(this (float x, float y, uint color)[] particles, float strength)
+    {
+        data[particles.GetHashCode()].bounceStrength = strength;
+    }
+    public static void ApplyTimeScale(this (float x, float y, uint color)[] particles, float timeScale)
+    {
+        data[particles.GetHashCode()].timeScale = timeScale;
+    }
+    public static void ApplySize(this (float x, float y, uint color)[] particles, float size)
+    {
+        data[particles.GetHashCode()].size = Math.Max(size / 2f, 0f);
     }
 
-    public static void PushFrom(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
+    public static void BounceFromNothing(this (float x, float y, uint color)[] particles)
+    {
+        data[particles.GetHashCode()].bounceRects.Clear();
+    }
+    public static void BounceFromObstacles(this (float x, float y, uint color)[] particles, params (float x, float y, float width, float height)[] obstacles)
+    {
+        data[particles.GetHashCode()].bounceRects.AddRange(obstacles);
+    }
+
+    public static void PushFromPoint(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
     {
         PushOrPull(true, particles, point, force, radius, weakerFurther);
     }
-    public static void PullTo(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
+    public static void PullToPoint(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
     {
         PushOrPull(false, particles, point, force, radius, weakerFurther);
     }
-    public static void PushAt(this (float x, float y, uint color)[] particles, float angle, float force)
+    public static void PushAtAngle(this (float x, float y, uint color)[] particles, float angle, float force)
     {
         var key = particles.GetHashCode();
 
@@ -102,14 +159,15 @@ public static class Particles
         }
     }
 
-    public static void FadeTo(this (float x, float y, uint color)[] particles, uint color, float duration = 1f)
+    public static void FadeToColor(this (float x, float y, uint color)[] particles, uint color, float duration = 1f)
     {
         var index = points.IndexOf(particles);
         var pts = points[index];
         var (tr, tg, tb, ta) = new Color(color).ToBundle();
         var copy = pts.ToArray();
+        var timeScale = data[particles.GetHashCode()].timeScale;
 
-        Time.CallFor(duration, progress =>
+        Time.CallFor(duration / timeScale, progress =>
         {
             for (var i = 0; i < pts.Length; i++)
             {
@@ -154,32 +212,36 @@ public static class Particles
 
     internal static void Update()
     {
-        var dt = Time.Delta;
+        var delta = Time.Delta;
         for (var i = 0; i < points.Count; i++)
         {
             var pts = points[i];
             var key = pts.GetHashCode();
             var cluster = data[key];
+            var dt = delta * cluster.timeScale;
+            var rects = cluster.bounceRects;
+            var sz = Math.Max(cluster.size, 0.01f);
+            var bs = cluster.bounceStrength;
 
-            cluster.TimeLeft -= dt;
+            cluster.timeLeft -= dt;
 
             for (var j = 0; j < pts.Length; j++)
             {
                 var (x, y, color) = pts[j];
                 var (mx, my) = movement[key][j];
 
-                mx += cluster.Gravity.x * dt;
-                my += cluster.Gravity.y * dt;
+                mx += cluster.gravity.x * dt;
+                my += cluster.gravity.y * dt;
 
-                mx = mx.MoveTo(0f, cluster.Friction, dt);
-                my = my.MoveTo(0f, cluster.Friction, dt);
+                mx = mx.MoveTo(0f, cluster.friction, dt);
+                my = my.MoveTo(0f, cluster.friction, dt);
 
-                var dist = new Point(x, y).Distance(cluster.OrbitPoint);
+                var dist = new Point(x, y).Distance(cluster.orbitPoint);
 
-                if (dist < cluster.OrbitRadius)
+                if (dist < cluster.orbitRadius)
                 {
-                    var speed = -(cluster.OrbitRadius - dist);
-                    var dir = Angle.BetweenPoints(cluster.OrbitPoint, (x, y)).Direction;
+                    var speed = -(cluster.orbitRadius - dist);
+                    var dir = Angle.BetweenPoints(cluster.orbitPoint, (x, y)).Direction;
                     mx += dir.x * dt * speed;
                     my += dir.y * dt * speed;
                 }
@@ -187,11 +249,57 @@ public static class Particles
                 x += mx * dt;
                 y += my * dt;
 
+                if (float.IsNaN(cluster.bounceStrength) == false)
+                    foreach (var rect in rects)
+                    {
+                        var left = rect.x - sz;
+                        var right = rect.x + rect.w + sz;
+                        var top = rect.y - sz;
+                        var bottom = rect.y + rect.h + sz;
+
+                        if (x.IsBetween((left, right)) == false || y.IsBetween((top, bottom)) == false)
+                            continue;
+
+                        var ang = new Angle(mx, my);
+                        var l = Math.Abs(x - left);
+                        var r = Math.Abs(x - right);
+                        var t = Math.Abs(y - top);
+                        var b = Math.Abs(y - bottom);
+
+                        var (rx, ry) = (mx, my);
+                        var speed = new Point(mx, my).Distance((0f, 0f));
+                        if (l < r && l < t && l < b)
+                        {
+                            (rx, ry) = ang.Reflect(Angle.Left).Direction;
+                            x = left;
+                        }
+                        else if (r < l && r < t && r < b)
+                        {
+                            (rx, ry) = ang.Reflect(Angle.Right).Direction;
+                            x = right;
+                        }
+                        else if (t < l && t < r && t < b)
+                        {
+                            (rx, ry) = ang.Reflect(Angle.Up).Direction;
+                            y = top;
+                        }
+                        else if (b < t && b < l && b < r)
+                        {
+                            (rx, ry) = ang.Reflect(Angle.Down).Direction;
+                            y = bottom;
+                        }
+
+                        mx = rx * speed;
+                        my = ry * speed;
+                        mx *= bs;
+                        my *= bs;
+                    }
+
                 pts[j] = (x, y, color);
                 movement[key][j] = (mx, my);
             }
 
-            if (data[key].TimeLeft > 0f)
+            if (data[key].timeLeft > 0f)
                 continue;
 
             for (var j = 0; j < pts.Length; j++)

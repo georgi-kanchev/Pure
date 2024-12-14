@@ -31,7 +31,7 @@ internal class TilesetPrompt
         });
     }
 
-    public Action<Layer, Tilemap>? OnSuccess { get; set; }
+    public Action<Layer, TileMap>? OnSuccess { get; set; }
     public Action? OnFail { get; set; }
 
     public void Open()
@@ -46,7 +46,7 @@ internal class TilesetPrompt
 
 #region Backend
     private readonly Layer layer = new((1, 1));
-    private Tilemap? map;
+    private TileMap? map;
     private readonly Editor editor;
     private readonly FileViewer fileViewer;
     private readonly Stepper stepper;

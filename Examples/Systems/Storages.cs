@@ -1,4 +1,4 @@
-using Pure.Engine.Tilemap;
+using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 
 namespace Pure.Examples.Systems;
@@ -55,7 +55,7 @@ public static class Storages
             { "fast", [1, 88] }
         };
 
-        var tilemap = new Tilemap((48, 27));
+        var tilemap = new TileMap((48, 27));
         tilemap.SetEllipse((48 / 2, 27 / 2), (10, 10), true, null, Tile.NUMBER_1, Tile.NUMBER_2);
 
         var tsv = typeof(SomeStruct).ToTSV();

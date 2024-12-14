@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class FileViewers
 {
-    public static Block[] Create(TilemapPack maps)
+    public static Block[] Create(TileMapPack maps)
     {
         Window.Title = "Pure - File Viewers Example";
 
@@ -39,7 +39,7 @@ public static class FileViewers
         return [fileViewer, folderViewer];
     }
 
-    private static void DisplayExtra(TilemapPack maps, FileViewer fileViewer)
+    private static void DisplayExtra(TileMapPack maps, FileViewer fileViewer)
     {
         var e = fileViewer;
         var selected = e.SelectedPaths;
@@ -49,7 +49,7 @@ public static class FileViewers
             paths += $"\n\n{path}";
 
         var (x, y, w, h) = (e.Position.x, e.Position.y + e.Size.height - 1, e.Size.width, 20);
-        maps.Tilemaps[0].SetText((x, y - 1), fileViewer.Text);
-        maps.Tilemaps[0].SetText((x, y), paths.Constrain((w, h)));
+        maps.TileMaps[0].SetText((x, y - 1), fileViewer.Text);
+        maps.TileMaps[0].SetText((x, y), paths.Constrain((w, h)));
     }
 }
