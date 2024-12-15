@@ -8,11 +8,6 @@ public static class ParticleSystems
 {
     public static void Run()
     {
-        // per particle collision
-        // color / position variety
-        // circle distribution
-        // rect + rect distribution
-
         Window.Title = "Pure - Particles Example";
 
         var layer = new Layer((48, 27));
@@ -22,18 +17,19 @@ public static class ParticleSystems
         var r = new Area(20, 5, 1, 16, Color.Red);
         // var c = new Area(15, 15, 2, 4, Color.Red);
         // var c2 = new Area(9, 12, 4, 3, Color.Red);
-        var particles = Particles.SpawnCluster(100, float.PositiveInfinity);
+        var particles = Particles.SpawnCluster(27, float.PositiveInfinity);
 
-        particles.MakeCircle((10f, 10f));
-        particles.ApplyGravity((0f, 0.5f));
-        particles.ApplyBounce(1f);
-        particles.ApplyTimeScale(4f);
+        particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.FillRandomly);
+        // particles.ApplyGravity((0f, 0.5f));
+        particles.ApplyBounciness(1f);
+        particles.ApplyTimeScale(0.5f);
+        particles.ApplyFriction(1f);
         // particles.ApplySize(0.4f);
-        particles.BounceFromObstacles(t, b, l, r);
+        particles.ApplyBounceObstacles(t, b, l, r);
 
-        Mouse.Button.Left.OnPress(() => particles.PullToPoint(layer.MouseCursorPosition, 3f, 3f));
-        Mouse.Button.Right.OnPress(() => particles.MakeCircle((10f, 10f)));
-        Mouse.Button.Middle.OnPress(() => particles.FadeToColor(Color.Red));
+        Mouse.Button.Left.OnPress(() => particles.PushFromPoint(layer.MouseCursorPosition, 3f, 3f));
+        Mouse.Button.Right.OnPress(() => particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.Outline));
+        Mouse.Button.Middle.OnPress(() => particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.FillRandomly));
 
         var randomColors = new Color[particles.Length];
 

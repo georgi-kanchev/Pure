@@ -468,8 +468,11 @@ public static class Number
     /// <param name="seed">The seed to use for the random generator (default is NaN, 
     /// meaning randomly chosen).</param>
     /// <returns>A random float value between the specified range of values.</returns>
-    public static float Random(this (float a, float b) range, float precision = 0, float seed = float.NaN)
+    public static float Random(this (float a, float b) range, float precision = 100f, float seed = float.NaN)
     {
+        if (Math.Abs(range.a - range.b) < 0.0001f)
+            return range.a;
+
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
 
