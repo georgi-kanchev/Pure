@@ -10,7 +10,7 @@ public static class ParticleSystems
     {
         Window.Title = "Pure - Particles Example";
 
-        var layer = new Layer((48, 27));
+        var layer = new Layer((48, 27)) { BackgroundColor = Color.Gray.ToDark() };
         var b = new Area(5, 20, 15, 1, Color.Red);
         var t = new Area(5, 5, 15, 1, Color.Red);
         var l = new Area(5, 5, 1, 15, Color.Red);
@@ -22,7 +22,6 @@ public static class ParticleSystems
         particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.FillRandomly);
         // particles.ApplyGravity((0f, 0.5f));
         particles.ApplyBounciness(1f);
-        particles.ApplyTimeScale(0.5f);
         particles.ApplyFriction(1f);
         // particles.ApplySize(0.4f);
         particles.ApplyBounceObstacles(t, b, l, r);
@@ -31,10 +30,11 @@ public static class ParticleSystems
         Mouse.Button.Right.OnPress(() => particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.Outline));
         Mouse.Button.Middle.OnPress(() => particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.FillRandomly));
 
-        var randomColors = new Color[particles.Length];
-
-        for (var i = 0; i < randomColors.Length; i++)
-            randomColors[i] = Color.Random;
+        // var rain = Particles.SpawnCluster(200, float.PositiveInfinity);
+        // rain.MakeRectangle((0, 0, layer.Size.width, layer.Size.height));
+        // rain.PushAtAngle(Angle.Down + 30, 8f);
+        // rain.ApplyWrap((0, 0, layer.Size.width, layer.Size.height));
+        // rain.ApplySize(1f);
 
         while (Window.KeepOpen())
         {
@@ -43,11 +43,13 @@ public static class ParticleSystems
             // particles.ApplyOrbit(layer.MouseCursorPosition, 3f);
             layer.DrawRectangles(t, b, l, r);
 
-            // for (var i = 0; i < particles.Length; i++)
+            // for (var i = 0; i < rain.Length; i++)
             // {
-            //     var (x, y, color) = particles[i];
-            //     layer.DrawTiles((x - 0.5f, y - 0.5f), new Tile(Tile.SHAPE_CIRCLE_SMALL_HOLLOW, randomColors[i]));
+            //     var (x, y, color) = rain[i];
+            //     var end = new Point(x, y).MoveAt(Angle.Down + 30, (0.1f, 1f).Random(seed: i));
+            //     layer.DrawLines((x, y, end.X, end.Y, Color.Cyan));
             // }
+
             layer.DrawPoints(particles);
             layer.DrawMouseCursor();
             layer.Draw();

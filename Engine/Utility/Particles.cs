@@ -73,7 +73,7 @@ public static class Particles
             points[index][i] = (point.X, point.Y, points[index][i].color);
         }
     }
-    public static void MakeRectangle(this (float x, float y, uint color)[] particles, (float x, float y, float width, float height) rectangle, bool keepMovement = false, Distribution distribution = Distribution.FillEvenly)
+    public static void MakeRectangle(this (float x, float y, uint color)[] particles, (float x, float y, float width, float height) area, bool keepMovement = false, Distribution distribution = Distribution.FillEvenly)
     {
         var key = particles.GetHashCode();
 
@@ -81,7 +81,7 @@ public static class Particles
             return;
 
         var index = points.IndexOf(particles);
-        var (x, y, width, height) = rectangle;
+        var (x, y, width, height) = area;
 
         for (var i = 0; i < particles.Length; i++)
         {
@@ -236,6 +236,10 @@ public static class Particles
             }
         });
     }
+    public static void ApplyWrap(this (float x, float y, uint color)[] particles, (float x, float y, float width, float height)? area)
+    {
+        data[particles.GetHashCode()].wrapArea = area;
+    }
 
     public static void PushFromPoint(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
     {
@@ -329,6 +333,16 @@ public static class Particles
 
                 x += (-cluster.shake.x, cluster.shake.x).Random();
                 y += (-cluster.shake.y, cluster.shake.y).Random();
+
+                if (cluster.wrapArea != null)
+                {
+                    var (wx, wy, ww, wh) = cluster.wrapArea ?? default;
+
+                    x = x > wx + ww + sz ? wx - sz + x % (ww + sz) : x;
+                    x = x < wx - sz ? wx + ww + sz + (x - wx) % (ww + sz) : x;
+                    y = y > wy + wh + sz ? wy - sz + y % (wh + sz) : y;
+                    y = y < wy - sz ? wy + wh + sz + (y - wy) % (wh + sz) : y;
+                }
 
                 // movement (should be before bounce & collision)
                 x += mx * dt;

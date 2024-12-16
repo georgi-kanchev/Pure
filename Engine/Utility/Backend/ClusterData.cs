@@ -11,7 +11,10 @@ internal class ClusterData(float timeLeft)
     public float orbitRadius;
 
     public (float x, float y) shake;
-    public float bounceStrength = 0.5f;
+
     public float size;
+    public float bounceStrength = 0.5f;
     public readonly List<(float x, float y, float w, float h)> bounceRects = [];
+
+    public (float x, float y, float width, float height)? wrapArea = null;
 }
