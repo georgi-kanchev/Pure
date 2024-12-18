@@ -69,8 +69,8 @@ public static class Collision
             hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Red : Green;
 
-            layer.DrawTilemap(maps.TileMaps[0]);
-            layer.DrawTilemap(maps.TileMaps[1]);
+            layer.DrawTiles(maps.TileMaps[0]);
+            layer.DrawTiles(maps.TileMaps[1]);
 
             //layer.DrawRectangles(collisionMap);
             layer.DrawLines(line);

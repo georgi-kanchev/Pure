@@ -37,7 +37,7 @@ public static class Program
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
             foreach (var map in maps.TileMaps)
-                Layer.DrawTilemap(map);
+                Layer.DrawTiles(map);
 
             Layer.DrawMouseCursor();
             Layer.Draw();

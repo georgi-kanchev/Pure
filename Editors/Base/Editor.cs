@@ -161,7 +161,7 @@ public class Editor
             var gridView = MapGrid.UpdateView();
             LayerGrid.PixelOffset = ViewPosition;
             LayerGrid.Zoom = ViewZoom;
-            LayerGrid.DrawTilemap(gridView.ToBundle());
+            LayerGrid.DrawTiles(gridView.ToBundle());
 
             //========
 
@@ -183,7 +183,7 @@ public class Editor
                 if (i < MapsEditorVisible.Count && MapsEditorVisible[i] == false)
                     continue;
 
-                LayerMap.DrawTilemap(view[i].ToBundle());
+                LayerMap.DrawTiles(view[i].ToBundle());
             }
 
             //========
@@ -204,7 +204,7 @@ public class Editor
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
             foreach (var map in MapsUi.TileMaps)
-                LayerUi.DrawTilemap(map.ToBundle());
+                LayerUi.DrawTiles(map.ToBundle());
 
             LayerUi.DrawMouseCursor();
 

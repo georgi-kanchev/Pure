@@ -321,18 +321,18 @@ public class Layer
                 verts.Append(new(bl, c, texBl));
             }
     }
-    public void DrawTilemap((ushort id, uint tint, byte pose)[,]? tilemap)
+    public void DrawTiles((ushort id, uint tint, byte pose)[,]? tiles)
     {
-        if (tilemap == null || tilemap.Length == 0 || verts == null)
+        if (tiles == null || tiles.Length == 0 || verts == null)
             return;
 
-        var (cellCountW, cellCountH) = (tilemap.GetLength(0), tilemap.GetLength(1));
+        var (cellCountW, cellCountH) = (tiles.GetLength(0), tiles.GetLength(1));
         var tsz = AtlasTileSize;
 
         for (var y = 0; y < cellCountH; y++)
             for (var x = 0; x < cellCountW; x++)
             {
-                var (id, tint, pose) = tilemap[x, y];
+                var (id, tint, pose) = tiles[x, y];
 
                 if (id == default)
                     continue;

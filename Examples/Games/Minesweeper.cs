@@ -26,7 +26,7 @@ public static class Minesweeper
             Time.Update();
 
             foreach (var map in maps.TileMaps)
-                layer.DrawTilemap(map);
+                layer.DrawTiles(map);
 
             layer.DrawMouseCursor();
             layer.Draw();

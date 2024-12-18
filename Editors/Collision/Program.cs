@@ -30,7 +30,7 @@ public static class Program
 
             if (CanDrawLayer)
             {
-                layer.DrawTilemap(map);
+                layer.DrawTiles(map);
                 solidMap.Update(map);
                 layer.DrawRectangles(solidMap);
             }

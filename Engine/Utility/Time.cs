@@ -270,17 +270,16 @@ public static class Time
 
     private static void UpdateTimers()
     {
-        var toBeRemoved = new List<Timer>();
-        foreach (var timer in timers)
+        for (var i = 0; i < timers.Count; i++)
         {
-            timer.TryTrigger();
+            timers[i].TryTrigger();
 
-            if (timer.method == null && timer.methodF == null)
-                toBeRemoved.Add(timer);
+            if (timers[i].method != null || timers[i].methodF != null)
+                continue;
+
+            timers.Remove(timers[i]);
+            i--;
         }
-
-        foreach (var timer in toBeRemoved)
-            timers.Remove(timer);
     }
 #endregion
 }

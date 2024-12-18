@@ -262,7 +262,7 @@ public static class GUI
             imGuiCache.Remove(cacheKey);
 
         foreach (var map in TileMapPack.TileMaps)
-            layer.DrawTilemap(map);
+            layer.DrawTiles(map);
 
         layer.DrawMouseCursor(Cursor.Id, Cursor.Tint);
         layer.Draw();

@@ -177,7 +177,8 @@ public static class Particles
     }
     public static void ApplyBounciness(this (float x, float y, uint color)[] particles, float strength)
     {
-        data[particles.GetHashCode()].bounceStrength = strength;
+        var key = particles.GetHashCode();
+        data[key].bounceStrength = strength;
     }
 
     public static void ApplyAge(this (float x, float y, uint color)[] particles, float ageSeconds)
