@@ -36,7 +36,7 @@ public static class Minesweeper
         {
             Window.BackgroundColor = Color.Gray;
             gameOver = false;
-            maps.TileMaps[0].Fill(null, Tile.NUMBER_0);
+            maps.TileMaps[0].Fill(Tile.NUMBER_0);
 
             for (var i = 0; i < 200; i++)
             {
@@ -61,22 +61,22 @@ public static class Minesweeper
                 maps.TileMaps[0].SetTile((x, y), new(TILE_MINE, Color.Black));
             }
 
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_0, null,
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_0,
                 new Tile(TILE_0, Color.Gray.ToDark()));
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_1, null, new Tile(Tile.NUMBER_1, Color.Blue));
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_2, null,
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_1, new Tile(Tile.NUMBER_1, Color.Blue));
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_2,
                 new Tile(Tile.NUMBER_2, Color.Green.ToDark(0.7f)));
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_3, null, new Tile(Tile.NUMBER_3, Color.Red));
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_4, null,
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_3, new Tile(Tile.NUMBER_3, Color.Red));
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_4,
                 new Tile(Tile.NUMBER_4, Color.Blue.ToDark()));
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_5, null, new Tile(Tile.NUMBER_5, Color.Red.ToDark()));
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_6, null,
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_5, new Tile(Tile.NUMBER_5, Color.Red.ToDark()));
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_6,
                 new Tile(Tile.NUMBER_6, Color.Azure.ToDark()));
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_7, null, new Tile(Tile.NUMBER_7, Color.Black));
-            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_8, null,
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_7, new Tile(Tile.NUMBER_7, Color.Black));
+            maps.TileMaps[0].Replace(maps.View, Tile.NUMBER_8,
                 new Tile(Tile.NUMBER_8, Color.Gray.ToDark()));
-            maps.TileMaps[1].Fill(null, new Tile(Tile.FULL, Color.Gray.ToDark()));
-            maps.TileMaps[2].Fill(null, new Tile(Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Gray));
+            maps.TileMaps[1].Fill(new Tile(Tile.FULL, Color.Gray.ToDark()));
+            maps.TileMaps[2].Fill(new Tile(Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Gray));
         }
 
         void HandleInput()

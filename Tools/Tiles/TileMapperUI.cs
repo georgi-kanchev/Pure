@@ -8,11 +8,12 @@ using static Pure.Engine.Window.Keyboard;
 
 namespace Pure.Tools.Tiles;
 
-public static class MapperUserInterface
+public static class TileMapperUI
 {
     public static bool IsInteractable { get; set; } = true;
 
     public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemeButtonBox { get; set; }
+    public static (Tile[,] tiles3X3, uint tintText) ThemeButtonPatch { get; set; }
     public static (Tile edge, Tile fill, uint tintText) ThemeButtonBar { get; set; }
     public static (Tile background, Tile cursor, uint tintText, uint selectionTint) ThemeInputBox { get; set; }
     public static (Tile on, Tile off) ThemeCheckbox { get; set; }
@@ -37,9 +38,12 @@ public static class MapperUserInterface
         var (corner, edge, fill, textTint) = ThemeTooltip;
         var (x, y) = tooltip.Position;
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = tooltip.Mask;
         Clear(maps, tooltip, zOrder);
-        maps.TileMaps[zOrder].SetBox(tooltip.Area, fill, corner, edge, tooltip.Mask);
-        maps.TileMaps[zOrder + 1].SetText((x + 1, y), tooltip.Text, textTint, mask: tooltip.Mask);
+        maps.TileMaps[zOrder].SetBox(tooltip.Area, fill, corner, edge);
+        maps.TileMaps[zOrder + 1].SetText((x + 1, y), tooltip.Text, textTint);
+        TileMapper.Mask = prev;
     }
     public static void SetCheckbox(this TileMapPack maps, Button button, int zOrder = 1)
     {
@@ -52,9 +56,12 @@ public static class MapperUserInterface
 
         tile.Tint = button.GetInteractionColor(tile.Tint);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = button.Mask;
         Clear(maps, button, zOrder);
         maps.TileMaps[zOrder].SetTile(button.Position, tile, button.Mask);
-        maps.TileMaps[zOrder].SetText(textPos, button.Text, tile.Tint, mask: button.Mask);
+        maps.TileMaps[zOrder].SetText(textPos, button.Text, tile.Tint);
+        TileMapper.Mask = prev;
     }
     public static void SetSwitch(this TileMapPack maps, Button button, char arrowAtSymbol = ' ', int zOrder = 1)
     {
@@ -74,16 +81,19 @@ public static class MapperUserInterface
         if (button.IsSelected)
             (on, off) = (off, on);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = button.Mask;
         if (split.Length != 2)
+            maps.TileMaps[zOrder].SetText((x, y), button.Text, on);
+        else
         {
-            maps.TileMaps[zOrder].SetText((x, y), button.Text, on, mask: button.Mask);
-            return;
+            Clear(maps, button, zOrder);
+            maps.TileMaps[zOrder].SetTile(arrowPos, arrow, button.Mask);
+            maps.TileMaps[zOrder].SetText((x, y), split[0], on);
+            maps.TileMaps[zOrder].SetText((x + split[0].Length + 1, y), split[1], off);
         }
 
-        Clear(maps, button, zOrder);
-        maps.TileMaps[zOrder].SetTile(arrowPos, arrow, button.Mask);
-        maps.TileMaps[zOrder].SetText((x, y), split[0], on, mask: button.Mask);
-        maps.TileMaps[zOrder].SetText((x + split[0].Length + 1, y), split[1], off, mask: button.Mask);
+        TileMapper.Mask = prev;
     }
     public static void SetButton(this TileMapPack maps, Button button, int zOrder = 1)
     {
@@ -98,23 +108,27 @@ public static class MapperUserInterface
         var textPos = (button.X + offsetW, button.Y + h / 2);
         var isBar = button.Height == 1;
 
-        bCorner.Tint = button.GetInteractionColor(bCorner.Tint, 0.3f);
-        bEdge.Tint = button.GetInteractionColor(bEdge.Tint, 0.3f);
-        bFill.Tint = button.GetInteractionColor(bFill.Tint, 0.3f);
-        bTextTint = button.GetInteractionColor(bTextTint, 0.3f);
-
-        rEdge.Tint = button.GetInteractionColor(rEdge.Tint, 0.3f);
-        rFill.Tint = button.GetInteractionColor(rFill.Tint, 0.3f);
-        rTextTint = button.GetInteractionColor(rTextTint, 0.3f);
-
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = button.Mask;
         Clear(maps, button, zOrder);
-
         if (isBar)
-            maps.TileMaps[zOrder].SetBar(button.Position, rEdge, rFill, button.Width, mask: button.Mask);
+        {
+            rEdge.Tint = button.GetInteractionColor(rEdge.Tint, 0.3f);
+            rFill.Tint = button.GetInteractionColor(rFill.Tint, 0.3f);
+            rTextTint = button.GetInteractionColor(rTextTint, 0.3f);
+            maps.TileMaps[zOrder].SetBar(button.Position, rEdge, rFill, button.Width);
+        }
         else
-            maps.TileMaps[zOrder].SetBox(button.Area, bFill, bCorner, bEdge, button.Mask);
+        {
+            bCorner.Tint = button.GetInteractionColor(bCorner.Tint, 0.3f);
+            bEdge.Tint = button.GetInteractionColor(bEdge.Tint, 0.3f);
+            bFill.Tint = button.GetInteractionColor(bFill.Tint, 0.3f);
+            bTextTint = button.GetInteractionColor(bTextTint, 0.3f);
+            maps.TileMaps[zOrder].SetBox(button.Area, bFill, bCorner, bEdge);
+        }
 
-        maps.TileMaps[zOrder + 1].SetText(textPos, text, isBar ? rTextTint : bTextTint, mask: button.Mask);
+        maps.TileMaps[zOrder + 1].SetText(textPos, text, isBar ? rTextTint : bTextTint);
+        TileMapper.Mask = prev;
     }
     public static void SetButtonIcon(this TileMapPack maps, Button button, Tile icon, int zOrder = 0)
     {
@@ -144,22 +158,25 @@ public static class MapperUserInterface
 
         background.Tint = box.GetInteractionColor(background.Tint, 0.05f);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = box.Mask;
         Clear(maps, inputBox, zOrder);
-        maps.TileMaps[zOrder].SetArea(box.Area, box.Mask, background);
-        maps.TileMaps[zOrder].SetText(box.Position, selection, selectColor, mask: box.Mask);
-        maps.TileMaps[zOrder + 1].SetText(box.Position, text, textTint, mask: box.Mask);
+        maps.TileMaps[zOrder].SetArea(box.Area, background);
+        maps.TileMaps[zOrder].SetText(box.Position, selection, selectColor);
+        maps.TileMaps[zOrder + 1].SetText(box.Position, text, textTint);
 
         if (string.IsNullOrEmpty(box.Value))
-            maps.TileMaps[zOrder + 1].SetText(box.Position, placeholder, placeholderTint, mask: box.Mask);
+            maps.TileMaps[zOrder + 1].SetText(box.Position, placeholder, placeholderTint);
 
         if (scrollY > 0)
-            maps.TileMaps[zOrder + 0].SetArea((box.X, box.Y, w, 1), box.Mask, textAboveOrBelow);
+            maps.TileMaps[zOrder + 0].SetArea((box.X, box.Y, w, 1), textAboveOrBelow);
 
         if (scrollY < box.LineCount - box.Height)
-            maps.TileMaps[zOrder + 0].SetArea((box.X, box.Y + h - 1, w, 1), box.Mask, textAboveOrBelow);
+            maps.TileMaps[zOrder + 0].SetArea((box.X, box.Y + h - 1, w, 1), textAboveOrBelow);
 
         if (box.IsCursorVisible)
             maps.TileMaps[zOrder + 2].SetTile(cursorPos, cursor, box.Mask);
+        TileMapper.Mask = prev;
     }
     public static void SetFileViewerItem(this TileMapPack maps, FileViewer fileViewer, Button item, int zOrder = 1)
     {
@@ -218,9 +235,11 @@ public static class MapperUserInterface
         }
 
         icon.Tint = item.GetInteractionColor(icon.Tint);
-
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = item.Mask;
         maps.TileMaps[zOrder].SetTile(item.Position, icon, item.Mask);
-        maps.TileMaps[zOrder].SetText((item.X + 1, item.Y), text, color, mask: item.Mask);
+        maps.TileMaps[zOrder].SetText((item.X + 1, item.Y), text, color);
+        TileMapper.Mask = prev;
 
         bool Ext(params string[] ext)
         {
@@ -238,11 +257,13 @@ public static class MapperUserInterface
 
         var bg = ThemeList.background;
         bg.Tint = new Color(bg.Tint).ToDark(0.2f);
-
-        maps.TileMaps[zOrder].SetArea(fileViewer.Area, fileViewer.Mask, bg);
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = fileViewer.Mask;
+        maps.TileMaps[zOrder].SetArea(fileViewer.Area, bg);
         maps.SetList(fileViewer.FilesAndFolders, zOrder);
         maps.SetFileViewerItem(fileViewer, fileViewer.User, zOrder + 1);
         maps.SetFileViewerItem(fileViewer, fileViewer.Back, zOrder + 1);
+        TileMapper.Mask = prev;
     }
     public static void SetSlider(this TileMapPack maps, Slider slider, int zOrder = 0)
     {
@@ -256,9 +277,12 @@ public static class MapperUserInterface
         fill.Tint = slider.GetInteractionColor(fill.Tint, 0.3f);
         handle.Tint = slider.Handle.GetInteractionColor(handle.Tint, 0.3f);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = slider.Mask;
         Clear(maps, slider, zOrder);
-        maps.TileMaps[zOrder].SetBar(slider.Position, edge, fill, size, slider.IsVertical, slider.Mask);
+        maps.TileMaps[zOrder].SetBar(slider.Position, edge, fill, size, slider.IsVertical);
         maps.TileMaps[zOrder + 1].SetTile(slider.Handle.Position, handle, slider.Mask);
+        TileMapper.Mask = prev;
     }
     public static void SetScroll(this TileMapPack maps, Scroll scroll, int zOrder = 0)
     {
@@ -274,10 +298,13 @@ public static class MapperUserInterface
         var upTint = scroll.Increase.GetInteractionColor(arrow.Tint, 0.3f);
         var downTint = scroll.Decrease.GetInteractionColor(arrow.Tint, 0.3f);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = scroll.Mask;
         Clear(maps, scroll, zOrder);
         maps.SetSlider(scroll.Slider, zOrder);
         maps.TileMaps[zOrder + 1].SetTile(up, new(arrow.Id, upTint, scrollUpAngle), scroll.Mask);
         maps.TileMaps[zOrder + 1].SetTile(down, new(arrow.Id, downTint, scrollDownAngle), scroll.Mask);
+        TileMapper.Mask = prev;
     }
     public static void SetStepper(this TileMapPack maps, Stepper stepper, int zOrder = 0)
     {
@@ -303,15 +330,18 @@ public static class MapperUserInterface
         mid.Tint = stepper.Middle.GetInteractionColor(mid.Tint, 0.3f);
         max.Tint = stepper.Maximum.GetInteractionColor(max.Tint, 0.3f);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = mask;
         Clear(maps, stepper, zOrder);
-        maps.TileMaps[zOrder].SetBox(stepper.Area, fill, corner, fill, mask);
+        maps.TileMaps[zOrder].SetBox(stepper.Area, fill, corner, fill);
         maps.TileMaps[zOrder + 1].SetTile(upPos, new(arrow.Id, upTint, Pose.Left), mask);
         maps.TileMaps[zOrder + 1].SetTile(downPos, new(arrow.Id, downTint, Pose.Right), mask);
-        maps.TileMaps[zOrder + 1].SetText((x + 1, y), text, textTint, mask: mask);
-        maps.TileMaps[zOrder + 1].SetText((x + 1, y + 1), value, valueTint, mask: mask);
+        maps.TileMaps[zOrder + 1].SetText((x + 1, y), text, textTint);
+        maps.TileMaps[zOrder + 1].SetText((x + 1, y + 1), value, valueTint);
         maps.TileMaps[zOrder + 1].SetTile(stepper.Minimum.Position, min, mask);
         maps.TileMaps[zOrder + 1].SetTile(stepper.Middle.Position, mid, mask);
         maps.TileMaps[zOrder + 1].SetTile(stepper.Maximum.Position, max, mask);
+        TileMapper.Mask = prev;
     }
     public static void SetPrompt(this TileMapPack maps, Prompt prompt, int zOrder = 0)
     {
@@ -322,10 +352,13 @@ public static class MapperUserInterface
         var newLines = prompt.Text.Count("\n") + 1;
         var text = prompt.Text.Constrain((prompt.Width, newLines), alignment: Alignment.Center);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = prompt.Mask;
         Clear(maps, prompt, zOrder);
-        maps.TileMaps[zOrder].SetArea((0, 0, maps.Size.width, maps.Size.height), prompt.Mask, dim);
-        maps.TileMaps[zOrder + 1].SetBox(prompt.Area, fill, corner, edge, prompt.Mask);
-        maps.TileMaps[zOrder + 2].SetText(prompt.Position, text, textTint, mask: prompt.Mask);
+        maps.TileMaps[zOrder].SetArea((0, 0, maps.Size.width, maps.Size.height), dim);
+        maps.TileMaps[zOrder + 1].SetBox(prompt.Area, fill, corner, edge);
+        maps.TileMaps[zOrder + 2].SetText(prompt.Position, text, textTint);
+        TileMapper.Mask = prev;
     }
     public static void SetPromptItem(this TileMapPack maps, Prompt prompt, Button item, int zOrder = 2)
     {
@@ -351,9 +384,12 @@ public static class MapperUserInterface
         var textPos = (panel.X + panel.Width / 2 - panel.Text.Length / 2, panel.Y);
         var text = panel.Text.Shorten(Math.Min(panel.Width, panel.Text.Length));
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = panel.Mask;
         Clear(maps, panel, zOrder);
-        maps.TileMaps[zOrder].SetBox(panel.Area, fill, corner, edge, panel.Mask);
-        maps.TileMaps[zOrder + 1].SetText(textPos, text, textTint, mask: panel.Mask);
+        maps.TileMaps[zOrder].SetBox(panel.Area, fill, corner, edge);
+        maps.TileMaps[zOrder + 1].SetText(textPos, text, textTint);
+        TileMapper.Mask = prev;
     }
     public static void SetPalette(this TileMapPack maps, Palette palette, int zOrder = 0)
     {
@@ -371,9 +407,11 @@ public static class MapperUserInterface
 
         pick.Tint = palette.Pick.GetInteractionColor(pick.Tint);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = palette.Mask;
         Clear(maps, palette, zOrder);
-        maps.TileMaps[zOrder].SetArea(palette.Opacity.Area, palette.Mask, halfShade);
-        maps.TileMaps[zOrder + 1].SetArea(palette.Opacity.Area, palette.Mask, resultTile);
+        maps.TileMaps[zOrder].SetArea(palette.Opacity.Area, halfShade);
+        maps.TileMaps[zOrder + 1].SetArea(palette.Opacity.Area, resultTile);
         maps.TileMaps[zOrder + 2].SetTile(palette.Opacity.Handle.Position, handle, palette.Mask);
         maps.TileMaps[zOrder + 2].SetTile(palette.Brightness.Handle.Position, handle, palette.Mask);
 
@@ -392,6 +430,7 @@ public static class MapperUserInterface
 
         if (palette.Pick.IsHidden == false)
             maps.TileMaps[zOrder + 1].SetTile(palette.Pick.Position, pick, palette.Mask);
+        TileMapper.Mask = prev;
     }
     public static void SetPages(this TileMapPack maps, Pages pages, int zOrder = 0)
     {
@@ -425,7 +464,10 @@ public static class MapperUserInterface
         var text = item.Text.ToNumber().PadZeros(-pages.ItemWidth);
         text = text.Constrain(item.Size, alignment: Alignment.Center);
 
-        maps.TileMaps[zOrder].SetText(item.Position, text, color, mask: item.Mask);
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = item.Mask;
+        maps.TileMaps[zOrder].SetText(item.Position, text, color);
+        TileMapper.Mask = prev;
     }
     public static void SetList(this TileMapPack maps, List list, int zOrder = 0)
     {
@@ -437,14 +479,17 @@ public static class MapperUserInterface
 
         arrow.Tint = list.GetInteractionColor(arrow.Tint);
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = list.Mask;
         Clear(maps, list, zOrder);
-        maps.TileMaps[zOrder].SetArea(list.Area, list.Mask, bg);
+        maps.TileMaps[zOrder].SetArea(list.Area, bg);
 
         if (list.IsScrollAvailable)
             SetScroll(maps, list.Scroll, zOrder + 1);
 
         if (list.IsCollapsed)
             maps.TileMaps[zOrder + 2].SetTile(arrowPos, arrow, list.Mask);
+        TileMapper.Mask = prev;
     }
     public static void SetListItem(this TileMapPack maps, List list, Button item, int zOrder = 1, bool showSelected = true)
     {
@@ -461,7 +506,10 @@ public static class MapperUserInterface
 
         color = item.GetInteractionColor(item.IsDisabled ? disable : color);
 
-        maps.TileMaps[zOrder].SetText(pos, text, color, mask: item.Mask);
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = item.Mask;
+        maps.TileMaps[zOrder].SetText(pos, text, color);
+        TileMapper.Mask = prev;
     }
     public static void SetLayoutSegment(this TileMapPack maps, (int x, int y, int width, int height) segment, int index, bool showIndex, int zOrder = 0)
     {
@@ -470,13 +518,17 @@ public static class MapperUserInterface
             (byte)(20, 200).Random(seed / (index + 2f)),
             (byte)(20, 200).Random(seed / (index + 3f)));
 
-        maps.TileMaps[zOrder].SetBox(
-            segment, new(FULL, color), new(BOX_CORNER_ROUND, color), new(FULL, color), segment);
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = segment;
+        maps.TileMaps[zOrder].SetBox(segment, new(FULL, color), new(BOX_CORNER_ROUND, color), new(FULL, color));
 
         if (showIndex)
-            maps.TileMaps[zOrder + 1].SetText(
-                (segment.x, segment.y), index.ToString().Constrain((segment.width, segment.height),
-                    alignment: Alignment.Center), mask: segment);
+        {
+            var text = index.ToString().Constrain((segment.width, segment.height), alignment: Alignment.Center);
+            maps.TileMaps[zOrder + 1].SetText((segment.x, segment.y), text);
+        }
+
+        TileMapper.Mask = prev;
     }
 
     public static Color GetInteractionColor(this Block block, Color baseColor, float amount = 0.5f)
@@ -496,12 +548,14 @@ public static class MapperUserInterface
 #region Backend
     private static readonly int seed = (-1_000_000, 1_000_000).Random();
 
-    static MapperUserInterface()
+    static TileMapperUI()
     {
         var g = Gray;
         var dg = g.ToDark();
         var dim = Black.ToTransparent();
         var arrow = new Tile(ARROW_TAILLESS_ROUND, g);
+        const ushort CORNER = BOX_HOLLOW_CORNER!;
+        const ushort STRAIGHT = BOX_HOLLOW_STRAIGHT!;
 
         ThemeScrollArrow = arrow;
         ThemeButtonBox = (new(BOX_CORNER_ROUND, g), new(FULL, g), new(FULL, g), g.ToBright());
@@ -517,6 +571,12 @@ public static class MapperUserInterface
         ThemePalette = (FULL, new(ICON_PICK, g), new(SHADE_5, g.ToDark()), new(SHAPE_CIRCLE_SMALL, g));
         ThemePanel = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), tintText: White);
         ThemeList = (new(FULL, dg), new(MATH_GREATER, g, Pose.Right), g.ToBright(0.3f), Green, g.ToDark(0.3f));
+        ThemeButtonPatch = (new[,]
+        {
+            { new(CORNER, g), new(STRAIGHT, g), new Tile(CORNER, g).Rotate(1) },
+            { new Tile(STRAIGHT, g).Rotate(1), new(), new Tile(STRAIGHT, g).Rotate(1) },
+            { new Tile(CORNER, g).Rotate(3), new(STRAIGHT, g), new Tile(CORNER, g).Rotate(2) }
+        }, g.ToBright());
 
         var min = new Tile(MATH_MUCH_LESS, g);
         var mid = new Tile(PUNCTUATION_PIPE, g);
@@ -539,9 +599,12 @@ public static class MapperUserInterface
         var (x, y) = block.Position;
         var (w, h) = block.Size;
 
+        var prev = TileMapper.Mask;
+        TileMapper.Mask = block.Mask;
         for (var i = zOrder; i < zOrder + 3; i++)
             if (i < maps.TileMaps.Count)
-                maps.TileMaps[i].SetArea((x, y, w, h), block.Mask, EMPTY);
+                maps.TileMaps[i].SetArea((x, y, w, h), EMPTY);
+        TileMapper.Mask = prev;
     }
 #endregion
 }

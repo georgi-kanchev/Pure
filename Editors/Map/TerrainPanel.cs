@@ -39,7 +39,7 @@ internal class TerrainPanel : Panel
                 foreach (var curY in ys)
                 {
                     editor.MapsUi.TileMaps[MIDDLE].SetLine(
-                        (X, Y + curY), (X + Width - 1, Y + curY), null, tileMid);
+                        (X, Y + curY), (X + Width - 1, Y + curY), tileMid);
                     editor.MapsUi.TileMaps[MIDDLE].SetTile((X, Y + curY), tileLeft);
                     editor.MapsUi.TileMaps[MIDDLE].SetTile((X + Width - 1, Y + curY), tileRight);
                 }
@@ -102,7 +102,7 @@ internal class TerrainPanel : Panel
                     return;
 
                 var id = btn.Text == "any" ? -1 : int.Parse(btn.Text);
-                autoTiles[pages.Current - 1].matchIds[index] = id;
+                autoTiles[pages.Current - 1].matchIds3X3[index] = id;
             });
         }
 
@@ -114,7 +114,7 @@ internal class TerrainPanel : Panel
             inspector.pickedTile = autoTiles[pages.Current - 1].replacedCenter;
             for (var i = 0; i < matchIds.Count; i++)
             {
-                var id = autoTiles[pages.Current - 1].matchIds[i];
+                var id = autoTiles[pages.Current - 1].matchIds3X3[i];
                 matchIds[i].Text = id < 0 ? "any" : $"{id}";
             }
         });
@@ -184,8 +184,8 @@ internal class TerrainPanel : Panel
             if (empty == false)
             {
                 var colorArea = (X + 12, Y + 9, 2, 2);
-                editor.MapsUi.TileMaps[MIDDLE].SetArea(colorArea, null, new Tile(SHADE_5, Gray));
-                editor.MapsUi.TileMaps[FRONT].SetArea(colorArea, null, new Tile(FULL, pickedTile.Tint));
+                editor.MapsUi.TileMaps[MIDDLE].SetArea(colorArea, new Tile(SHADE_5, Gray));
+                editor.MapsUi.TileMaps[FRONT].SetArea(colorArea, new Tile(FULL, pickedTile.Tint));
             }
 
             editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), FRONT);
@@ -398,7 +398,7 @@ internal class TerrainPanel : Panel
         var selected = inspector.layers.SelectedItems;
         return selected.Count != 1 ? -1 : inspector.layers.Items.IndexOf(selected[0]);
     }
-    private List<(int[] matchIds, Tile replacedCenter)> GetAutoTiles()
+    private List<(int[] matchIds3X3, Tile replacedCenter)> GetAutoTiles()
     {
         var layer = GetLayer();
         return layer == -1 ? new() : editor.MapsEditor.TileMaps[GetLayer()].AutoTiles;

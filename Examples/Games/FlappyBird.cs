@@ -60,7 +60,7 @@ public static class FlappyBird
         {
             Time.Update();
 
-            background.Fill(null, new Tile(Tile.FULL, Color.Blue.ToDark()));
+            background.Fill(new Tile(Tile.FULL, Color.Blue.ToDark()));
             foreground.Flush();
 
             UpdateBird();
@@ -102,9 +102,9 @@ public static class FlappyBird
                 pipes[i] = (pipeX, pipeY, holeSize); // update the pipe itself
 
                 var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
-                background.SetArea(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), null,
+                background.SetArea(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT),
                     new Tile(Tile.FULL, Color.Green.ToDark(0.8f)));
-                background.SetArea(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT), null,
+                background.SetArea(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT),
                     new Tile(Tile.FULL, Color.Green.ToDark(0.8f)));
                 foreground.SetBox(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), Tile.EMPTY,
                     new(Tile.BOX_DEFAULT_CORNER, Color.Green),

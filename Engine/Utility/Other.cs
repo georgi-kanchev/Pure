@@ -76,12 +76,24 @@ public static class Other
             method.Invoke();
     }
 
-    public static bool IsDefault<T>(this T? value)
+    public static bool IsOneOf<T>(this T value, params T[] values)
     {
-        return EqualityComparer<T>.Default.Equals(value, default);
+        for (var i = 0; i < values?.Length; i++)
+            if (EqualityComparer<T>.Default.Equals(value, values[i]))
+                return true;
+
+        return false;
+    }
+    public static bool IsAllOf<T>(this T value, params T[] values)
+    {
+        for (var i = 0; i < values?.Length; i++)
+            if (EqualityComparer<T>.Default.Equals(value, values[i]) == false)
+                return false;
+
+        return true;
     }
 
-    #region Backend
+#region Backend
     private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
     private static readonly Dictionary<string, bool> gates = new();
 
@@ -90,5 +102,5 @@ public static class Other
         holdFrequency.Start();
         holdDelay.Start();
     }
-    #endregion
+#endregion
 }

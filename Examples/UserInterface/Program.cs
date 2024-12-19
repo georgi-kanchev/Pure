@@ -1,4 +1,4 @@
-global using static Pure.Tools.Tiles.MapperUserInterface;
+global using static Pure.Tools.Tiles.TileMapperUI;
 global using Pure.Engine.UserInterface;
 global using Pure.Engine.Tiles;
 global using Pure.Engine.Utility;

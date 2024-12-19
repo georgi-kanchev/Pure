@@ -98,20 +98,18 @@ public static class Collision
         foreach (var t in positions)
         {
             var (x, y) = t;
-            tileMap.SetEllipse((x, y - 1), (1, 1), true, null,
-                new Tile(Tile.PATTERN_33, Green.ToDark(0.7f)));
+            tileMap.SetEllipse((x, y - 1), (1, 1), true, new Tile(Tile.PATTERN_33, Green.ToDark(0.7f)));
             tileMap.SetTile((x, y), new(Tile.UPPERCASE_I, Brown.ToDark(0.4f)));
         }
     }
     private static void SetBridge(this TileMap tileMap, (int x, int y) pointA, (int x, int y) pointB)
     {
-        tileMap.SetLine(pointA, pointB, null, new Tile(Tile.BAR_STRIP_STRAIGHT, Brown.ToDark()));
+        tileMap.SetLine(pointA, pointB, new Tile(Tile.BAR_STRIP_STRAIGHT, Brown.ToDark()));
     }
     private static void SetRoad(this TileMap tileMap, (int x, int y) pointA, (int x, int y) pointB)
     {
         var pose = pointA.x == pointB.x ? Pose.Right : Pose.Default;
-        tileMap.SetLine(pointA, pointB, null,
-            new Tile(Tile.BAR_SPIKE_STRAIGHT, Brown, pose));
+        tileMap.SetLine(pointA, pointB, new Tile(Tile.BAR_SPIKE_STRAIGHT, Brown, pose));
     }
     private static void SetHouses(this TileMap tileMap, params (int x, int y)[] positions)
     {
@@ -132,8 +130,8 @@ public static class Collision
     }
     private static void SetLake(this TileMap tileMap, (int x, int y) position, (int width, int height) radius)
     {
-        tileMap.SetEllipse(position, radius, true, null, Tile.MATH_APPROXIMATE);
-        tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), Tile.MATH_APPROXIMATE, null,
+        tileMap.SetEllipse(position, radius, true, Tile.MATH_APPROXIMATE);
+        tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), Tile.MATH_APPROXIMATE,
             new Tile(Tile.ICON_WAVE, Blue),
             new Tile(Tile.ICON_WAVE, Blue, Pose.Down),
             new Tile(Tile.ICON_WAVES, Blue),
@@ -142,7 +140,7 @@ public static class Collision
     private static void FillWithRandomGrass(this TileMap tileMap)
     {
         var color = Green.ToDark(0.4f);
-        tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), 0, null,
+        tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), 0,
             new Tile(Tile.SHADE_1, color),
             new Tile(Tile.SHADE_1, color, Pose.Right),
             new Tile(Tile.SHADE_1, color, Pose.Down),

@@ -13,10 +13,10 @@ public static class GUI
 
     public static (string? text, Side side, float alignment) Tooltip { get; set; } = ("", Side.Top, 0.5f);
 
-    public static void Text(this string? text, (int x, int y) cell = default, int zOrder = 0, uint tint = uint.MaxValue, char tintBrush = '#', Area? mask = null)
+    public static void Text(this string? text, (int x, int y) cell = default, int zOrder = 0, uint tint = uint.MaxValue, char tintBrush = '#')
     {
         if (zOrder < TileMapPack.TileMaps.Count)
-            TileMapPack.TileMaps[zOrder].SetText(cell, text, tint, tintBrush, mask);
+            TileMapPack.TileMaps[zOrder].SetText(cell, text, tint, tintBrush);
     }
     public static bool Button(Area area, string text, Interaction trueWhen = Interaction.Trigger)
     {

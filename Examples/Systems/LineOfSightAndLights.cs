@@ -19,12 +19,12 @@ public static class LineOfSightAndLights
         var angle = 0f;
         var opaque = new Tile(Tile.FULL, Color.Green);
 
-        tilemap.SetEllipse((21, 8), (10, 7), true, null, opaque);
-        tilemap.SetEllipse((5, 9), (4, 7), true, null, opaque);
-        tilemap.SetEllipse((32, 20), (9, 3), true, null, opaque);
-        tilemap.SetLine((0, 0), (48, 27), null, Tile.SHADE_1);
-        tilemap.SetLine((0, 1), (48, 27), null, Tile.SHADE_1);
-        tilemap.SetLine((1, 0), (48, 27), null, Tile.SHADE_1);
+        tilemap.SetEllipse((21, 8), (10, 7), true, opaque);
+        tilemap.SetEllipse((5, 9), (4, 7), true, opaque);
+        tilemap.SetEllipse((32, 20), (9, 3), true, opaque);
+        tilemap.SetLine((0, 0), (48, 27), Tile.SHADE_1);
+        tilemap.SetLine((0, 1), (48, 27), Tile.SHADE_1);
+        tilemap.SetLine((1, 0), (48, 27), Tile.SHADE_1);
 
         solidMap.AddSolids(Tile.FULL, new Solid(0, 0, 1, 1, Color.Red));
         solidMap.Update(tilemap);

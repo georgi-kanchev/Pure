@@ -49,7 +49,7 @@ internal class Inspector : Panel
             {
                 foreach (var curY in ys)
                 {
-                    editor.MapsUi.TileMaps[MIDDLE].SetLine((x, curY), (x + w, curY), null, tileMid);
+                    editor.MapsUi.TileMaps[MIDDLE].SetLine((x, curY), (x + w, curY), tileMid);
                     editor.MapsUi.TileMaps[MIDDLE].SetTile((x, curY), tileLeft);
                     editor.MapsUi.TileMaps[MIDDLE].SetTile((x + w - 1, curY), tileRight);
                 }
@@ -274,9 +274,9 @@ internal class Inspector : Panel
             var (px, py) = paletteColor.Position;
             var area = (px - 1, py, 1, 3);
             var tile = new Tile(FULL, paletteColor.SelectedColor);
-            editor.MapsUi.TileMaps[0].SetArea(area, null, new Tile(FULL, Black));
-            editor.MapsUi.TileMaps[MIDDLE].SetArea(area, null, new Tile(SHADE_5, Gray));
-            editor.MapsUi.TileMaps[FRONT].SetArea(area, null, tile);
+            editor.MapsUi.TileMaps[0].SetArea(area, new Tile(FULL, Black));
+            editor.MapsUi.TileMaps[MIDDLE].SetArea(area, new Tile(SHADE_5, Gray));
+            editor.MapsUi.TileMaps[FRONT].SetArea(area, tile);
         };
     }
     [MemberNotNull(nameof(paletteScrollV)), MemberNotNull(nameof(paletteScrollH))]

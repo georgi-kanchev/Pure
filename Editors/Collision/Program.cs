@@ -173,7 +173,7 @@ public static class Program
 
         editor.OnPromptItemDisplay = item =>
         {
-            MapperUserInterface.ThemePromptItems = CanDrawLayer ?
+            TileMapperUI.ThemePromptItems = CanDrawLayer ?
                 [
                     new(Tile.ICON_TICK, Color.Green),
                     new(Tile.ARROW, Color.Gray, Pose.Left),

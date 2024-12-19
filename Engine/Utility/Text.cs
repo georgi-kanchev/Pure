@@ -320,6 +320,14 @@ public static class Text
             text = indicator + text[^index..];
         return text;
     }
+    public static bool StartsWith(this string text, params string[] values)
+    {
+        for (var i = 0; i < values.Length; i++)
+            if (text.StartsWith(values[i]))
+                return true;
+
+        return false;
+    }
 
 #region Backend
     private static List<(int index, string tag)> GetColorTags(string input, char tintBrush)

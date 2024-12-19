@@ -38,16 +38,6 @@ public class TileMapPack
         foreach (var t in TileMaps)
             t.Flush();
     }
-    public void Fill(Area? mask = null, params Tile[]? tiles)
-    {
-        foreach (var t in TileMaps)
-            t.Fill(mask, tiles);
-    }
-    public void Flood((int x, int y) cell, bool exactTile, Area? mask = null, params Tile[] tiles)
-    {
-        foreach (var map in TileMaps)
-            map.Flood(cell, exactTile, mask, tiles);
-    }
 
     public void ConfigureText(ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
     {
@@ -62,7 +52,7 @@ public class TileMapPack
 
     public bool IsOverlapping((int x, int y) cell)
     {
-        return TileMaps.Count > 0 && TileMaps[0].IsOverlapping(cell);
+        return TileMaps.Count > 0 && TileMaps[0].IsContaining(cell);
     }
 
     public Tile[] TilesAt((int x, int y) cell)

@@ -335,20 +335,18 @@ public class Editor
         var color = Color.Gray.ToDark(0.6f);
         var (x, y) = (0, 0);
 
-        MapGrid.Fill(null, new Tile(LayerMap.AtlasTileIdFull, Color.Gray.ToDark(0.7f)));
+        MapGrid.Fill(new Tile(LayerMap.AtlasTileIdFull, Color.Gray.ToDark(0.7f)));
 
         for (var i = 0; i < size.width + GRID_GAP; i += GRID_GAP)
         {
             var newX = x - (x + i) % GRID_GAP;
-            MapGrid.SetLine((newX + i, y), (newX + i, y + size.height), null,
-                new Tile(LayerMap.AtlasTileIdFull, color));
+            MapGrid.SetLine((newX + i, y), (newX + i, y + size.height), new Tile(LayerMap.AtlasTileIdFull, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
-            MapGrid.SetLine((x, newY + i), (x + size.width, newY + i), null,
-                new Tile(LayerMap.AtlasTileIdFull, color));
+            MapGrid.SetLine((x, newY + i), (x + size.width, newY + i), new Tile(LayerMap.AtlasTileIdFull, color));
         }
 
         OnSetGrid?.Invoke();
@@ -398,7 +396,7 @@ public class Editor
     {
         PromptBase64(() =>
         {
-            var bytes = Convert.FromBase64String(PromptInput.Value);
+            var bytes = Convert.FromBase64String(PromptInput.Value ?? "");
             var layers = Array.Empty<string>();
             var gen = default(MapGenerator);
             var maps = LoadMap(bytes, ref layers, ref gen);
@@ -449,9 +447,9 @@ public class Editor
     }
     private void ResizePressMap(int i)
     {
-        var text = promptSize.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+        var text = promptSize.Value?.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
-        if (i != 0 || text.Length != 2)
+        if (i != 0 || text?.Length != 2)
             return;
 
         var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
@@ -464,7 +462,7 @@ public class Editor
             return;
 
         for (var j = 0; j < packCopy.TileMaps.Count; j++)
-            MapsEditor.TileMaps[j].SetGroup((0, 0), packCopy.TileMaps[j]!);
+            MapsEditor.TileMaps[j].SetTiles((0, 0), packCopy.TileMaps[j]!);
         MapsEditor.View = new(MapsEditor.View.Position, (vw, vh));
 
         SetGrid();
@@ -472,9 +470,9 @@ public class Editor
     }
     private void ResizePressView(int i)
     {
-        var text = promptSize.Value.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+        var text = promptSize.Value?.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
-        if (i != 0 || text.Length != 2)
+        if (i != 0 || text?.Length != 2)
             return;
 
         var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());

@@ -6,12 +6,7 @@ public static class Panels
     {
         Window.Title = "Pure - Panels Example";
 
-        var text = $"- Useful for containing other elements\n\n" +
-                   $"- Title\n\n" +
-                   $"- Can be optionally moved and/or resized\n\n" +
-                   $"- Cannot be resized or moved outside the window\n\n" +
-                   $"- Minimum sizes";
-        var panelText = new Panel { Text = "Cool Title", Size = (19, 19), SizeMinimum = (4, 2) };
+        var panelText = new Panel { Text = "Cool Title", Size = (19, 19), SizeMinimum = (2, 2) };
         panelText.AlignInside((0.1f, 0.5f));
         panelText.OnDisplay += () =>
         {
@@ -19,7 +14,11 @@ public static class Panels
             var (w, h) = panelText.Size;
 
             maps.SetPanel(panelText);
-            text = text.Constrain((w - 2, h - 2));
+            var text = ($"- Useful for containing other elements\n\n" +
+                        $"- Title\n\n" +
+                        $"- Can be optionally moved and/or resized\n\n" +
+                        $"- Cannot be resized or moved outside the window\n\n" +
+                        $"- Minimum sizes").Constrain((w - 2, h - 2));
             maps.TileMaps[1].SetText((x + 1, y + 1), text, Color.Green);
         };
 

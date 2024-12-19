@@ -15,15 +15,59 @@ public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Defaul
     {
     }
 
+    public Tile Rotate(int times)
+    {
+        var angle = (int)Pose;
+
+        if (angle > 3)
+            angle -= 4;
+
+        angle = (angle + times) % 4;
+
+        if (angle > 3)
+            angle += 4;
+
+        return new(Id, Tint, (Pose)angle);
+    }
+    public Tile FlipHorizontally()
+    {
+        switch (Pose)
+        {
+            default:
+            case Pose.Default: return new(Id, Tint, Pose.Flip);
+            case Pose.Right: return new(Id, Tint, Pose.FlipLeft);
+            case Pose.Down: return new(Id, Tint, Pose.FlipDown);
+            case Pose.Left: return new(Id, Tint, Pose.FlipRight);
+            case Pose.Flip: return new(Id, Tint);
+            case Pose.FlipRight: return new(Id, Tint, Pose.Left);
+            case Pose.FlipDown: return new(Id, Tint, Pose.Down);
+            case Pose.FlipLeft: return new(Id, Tint, Pose.Right);
+        }
+    }
+    public Tile FlipVertically()
+    {
+        switch (Pose)
+        {
+            default:
+            case Pose.Default: return new(Id, Tint, Pose.FlipDown);
+            case Pose.Right: return new(Id, Tint, Pose.FlipRight);
+            case Pose.Down: return new(Id, Tint, Pose.Flip);
+            case Pose.Left: return new(Id, Tint, Pose.FlipLeft);
+            case Pose.Flip: return new(Id, Tint, Pose.Down);
+            case Pose.FlipRight: return new(Id, Tint, Pose.Right);
+            case Pose.FlipDown: return new(Id, Tint);
+            case Pose.FlipLeft: return new(Id, Tint, Pose.Left);
+        }
+    }
+
     public (ushort id, uint tint, byte pose) ToBundle()
     {
         return (Id, Tint, (byte)Pose);
     }
     public override string ToString()
     {
-        return $"Tile {Id}";
+        return $"Id({Id}) Tint({Tint}) Pose({Pose})";
     }
-
     public override bool Equals(object? obj)
     {
         return obj is Tile other && this == other;
@@ -49,7 +93,6 @@ public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Defaul
     {
         return tile.ToBundle();
     }
-
     public static bool operator ==(Tile a, Tile b)
     {
         return a.Id == b.Id && a.Tint == b.Tint && a.Pose == b.Pose;

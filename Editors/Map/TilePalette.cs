@@ -52,7 +52,7 @@ internal class TilePalette
                 return;
 
             var tilemap = inspector?.GetSelectedTilemap();
-            tilemap?.SetGroup(start, copyTiles ?? new Tile[0, 0]);
+            tilemap?.SetTiles(start, copyTiles ?? new Tile[0, 0]);
         });
         Keyboard.Key.X.OnPress(() =>
         {
@@ -66,7 +66,7 @@ internal class TilePalette
             var tilemap = inspector?.GetSelectedTilemap();
 
             copyTiles = tilemap?.TilesIn(rect.ToBundle());
-            tilemap?.SetArea(rect.ToBundle(), null, Tile.EMPTY);
+            tilemap?.SetArea(rect.ToBundle(), Tile.EMPTY);
         });
         Keyboard.Key.Delete.OnPress(() =>
         {
@@ -77,7 +77,7 @@ internal class TilePalette
             var (szw, szh) = (end.x - start.x, end.y - start.y);
             var rect = new Solid(start.x, start.y, szw, szh, Color.White);
 
-            tilemap?.SetArea(rect.ToBundle(), null, Tile.EMPTY);
+            tilemap?.SetArea(rect.ToBundle(), Tile.EMPTY);
         });
     }
     [MemberNotNull(nameof(map), nameof(layer))]
@@ -270,7 +270,7 @@ internal class TilePalette
 
                 isDraggingTiles = true;
                 draggingTiles = tilemap?.TilesIn(rect.ToBundle());
-                tilemap?.SetArea(rect.ToBundle(), null, Tile.EMPTY);
+                tilemap?.SetArea(rect.ToBundle(), Tile.EMPTY);
 
                 return;
             }
@@ -315,44 +315,28 @@ internal class TilePalette
         }
 
         if (tool == 3) // rectangle of random tiles
-            tilemap.SetArea((start.x, start.y, Math.Abs(szw), Math.Abs(szh)), null, tiles);
+            tilemap.SetArea((start.x, start.y, Math.Abs(szw), Math.Abs(szh)), tiles);
         else if (tool == 4) // line of random tiles
-            tilemap.SetLine(start, (end.x - 1, end.y - 1), null, tiles);
+            tilemap.SetLine(start, (end.x - 1, end.y - 1), tiles);
         else if (tool is 5 or 6) // ellipse of random tiles
         {
             var center = ((Point)start).PercentTo(50f, (end.x - 1, end.y - 1));
             var radius = ((int)((end.x - start.x - 1) / 2f), (int)((end.y - start.y - 1) / 2f));
 
-            tilemap.SetEllipse(center, radius, tool == 5, null, tiles);
+            tilemap.SetEllipse(center, radius, tool == 5, tiles);
         }
         else if (tool == 7) // replace
-            tilemap.Replace((0, 0, tw, th), tilemap.TileAt(start), null, tiles);
+            tilemap.Replace((0, 0, tw, th), tilemap.TileAt(start), tiles);
         else if (tool == 8) // fill
-            tilemap.Flood((mx, my), true, null, tiles);
+            tilemap.Flood((mx, my), true, tiles);
         else if (tool == 9) // rotate
-            ProcessRegion(tile =>
-            {
-                // tile.Pose++;
-                return tile;
-            });
+            ProcessRegion(tile => tile.Rotate(1));
         else if (tool == 10) // mirror
-            ProcessRegion(tile =>
-            {
-                // tile.IsMirrored = tile.IsMirrored == false;
-                return tile;
-            });
+            ProcessRegion(tile => tile.FlipHorizontally());
         else if (tool == 11) // flip
-            ProcessRegion(tile =>
-            {
-                // tile.IsFlipped = tile.IsFlipped == false;
-                return tile;
-            });
+            ProcessRegion(tile => tile.FlipVertically());
         else if (tool == 12) // color
-            ProcessRegion(tile =>
-            {
-                tile.Tint = inspector.paletteColor.SelectedColor;
-                return tile;
-            });
+            ProcessRegion(tile => new(tile.Id, inspector.paletteColor.SelectedColor, tile.Pose));
         else if (tool == 13) // pick
         {
             var tile = tilemap.TileAt((mx, my));
@@ -367,7 +351,7 @@ internal class TilePalette
             selectedSz = (1, 1);
         }
         else if (tool == 14 && isDraggingTiles && draggingTiles != null) // select
-            tilemap.SetGroup(start, draggingTiles);
+            tilemap.SetTiles(start, draggingTiles);
 
         if (tool != 14)
             start = end;
@@ -382,7 +366,7 @@ internal class TilePalette
                 for (var j = 0; j < region.GetLength(0); j++)
                     region[j, i] = editTile.Invoke(region[j, i]);
 
-            tilemap.SetGroup(start, region);
+            tilemap.SetTiles(start, region);
         }
     }
     private void OnMouseHold(Tile randomTile, TileMap? tilemap)
@@ -433,7 +417,7 @@ internal class TilePalette
         }
 
         if (lmb && tool == 1) // group of tiles
-            tilemap?.SetGroup(pos, GetSelectedTiles());
+            tilemap?.SetTiles(pos, GetSelectedTiles());
         else if (lmb && tool == 2) // single random tile of tiles
             tilemap?.SetTile(pos, randomTile);
     }
