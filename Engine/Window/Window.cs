@@ -236,7 +236,7 @@ public static class Window
 
         const uint SIZE = 64;
         var rend = new RenderTexture(SIZE, SIZE);
-        var texture = Layer.tilesets[layer.AtlasPath];
+        var texture = Layer.atlases[layer.AtlasPath];
         var (bx, by) = IndexToCoords(tileBack.id, layer);
         var (fx, fy) = IndexToCoords(tile.id, layer);
         var tsz = layer.AtlasTileSize;

@@ -78,11 +78,19 @@ public static class Other
 
     public static bool IsOneOf<T>(this T value, params T[] values)
     {
+        return value.IsAnyOf(values);
+    }
+    public static bool IsAnyOf<T>(this T value, params T[] values)
+    {
         for (var i = 0; i < values?.Length; i++)
             if (EqualityComparer<T>.Default.Equals(value, values[i]))
                 return true;
 
         return false;
+    }
+    public static bool IsNoneOf<T>(this T value, params T[] values)
+    {
+        return value.IsAnyOf(values) == false;
     }
     public static bool IsAllOf<T>(this T value, params T[] values)
     {

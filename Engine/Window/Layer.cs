@@ -27,7 +27,7 @@ public class Layer
                 return;
             }
 
-            if (tilesets.TryGetValue(value, out var tileset))
+            if (atlases.TryGetValue(value, out var tileset))
             {
                 atlasPath = value;
                 tilesetPixelSize = tileset.Size;
@@ -36,9 +36,9 @@ public class Layer
 
             try
             {
-                tilesets[value] = new(value) { Repeated = true };
+                atlases[value] = new(value) { Repeated = true };
                 atlasPath = value;
-                tilesetPixelSize = tilesets[value].Size;
+                tilesetPixelSize = atlases[value].Size;
             }
             catch (Exception)
             {
@@ -154,6 +154,20 @@ public class Layer
         atlasPath = string.Empty;
         AtlasPath = string.Empty;
         AtlasTileIdFull = 10;
+    }
+
+    public uint AtlasColorAt((int x, int y) pixel)
+    {
+        if (pixel.x < 0 ||
+            pixel.y < 0 ||
+            pixel.x >= atlases[atlasPath].Size.X ||
+            pixel.y >= atlases[atlasPath].Size.Y)
+            return default;
+
+        images.TryAdd(atlasPath, atlases[atlasPath].CopyToImage());
+        var img = images[atlasPath];
+        var color = img.GetPixel((uint)pixel.x, (uint)pixel.y).ToInteger();
+        return color;
     }
 
     public void Align((float x, float y) alignment)
@@ -594,20 +608,20 @@ public class Layer
 
     public static void DefaultGraphicsToFile(string filePath)
     {
-        tilesets["default"].CopyToImage().SaveToFile(filePath);
+        atlases["default"].CopyToImage().SaveToFile(filePath);
     }
     public static void ReloadGraphics()
     {
-        var paths = tilesets.Keys.ToArray();
+        var paths = atlases.Keys.ToArray();
 
         foreach (var path in paths)
         {
             if (path == DEFAULT_GRAPHICS)
                 continue;
 
-            tilesets[path].Dispose();
-            tilesets[path] = null!;
-            tilesets[path] = new(path) { Repeated = true };
+            atlases[path].Dispose();
+            atlases[path] = null!;
+            atlases[path] = new(path) { Repeated = true };
         }
     }
 
@@ -672,7 +686,9 @@ public class Layer
     private Light light;
 
     [DoNotSave]
-    internal static readonly Dictionary<string, Texture> tilesets = new();
+    internal static readonly Dictionary<string, Texture> atlases = new();
+    [DoNotSave]
+    internal static readonly Dictionary<string, Image> images = new();
     [DoNotSave]
     private static readonly List<(float, float)> cursorOffsets =
     [
@@ -683,7 +699,7 @@ public class Layer
     static Layer()
     {
         // var base64 = DefaultGraphics.PngToBase64String("graphics.png");
-        tilesets[DEFAULT_GRAPHICS] = DefaultGraphics.CreateTexture();
+        atlases[DEFAULT_GRAPHICS] = DefaultGraphics.CreateTexture();
         // DefaultGraphicsToFile("graphics.png");
     }
 
@@ -819,7 +835,7 @@ public class Layer
             result = new(rw, rh);
         }
 
-        var atlas = tilesets[AtlasPath];
+        var atlas = atlases[AtlasPath];
         var (w, h) = (queue.Texture.Size.X, queue.Texture.Size.Y);
         var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue.Texture, shader);
 
