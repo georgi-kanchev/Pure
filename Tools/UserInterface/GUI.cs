@@ -2,6 +2,7 @@
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
 using Pure.Tools.Tiles;
+
 using static Pure.Engine.UserInterface.SymbolGroup;
 
 namespace Pure.Tools.ImmediateGraphicalUserInterface;
@@ -278,7 +279,7 @@ public static class GUI
         TileMapPack.ConfigureText(firstTileId, symbols);
     }
 
-#region Backend
+    #region Backend
     private static bool showPrompt;
     private static float lastChoice = float.NaN;
     private static readonly Dictionary<string, (int framesLeft, Block block)> imGuiCache = [];
@@ -340,12 +341,15 @@ public static class GUI
                 imGuiCache[key] = (2, list);
                 list.OnDisplay += () => TileMapPack.SetList(list);
                 list.OnItemDisplay += item => TileMapPack.SetListItem(list, item);
+                list.Area = area; // set for dropdown only once
             }
         }
 
         var cache = imGuiCache[key];
+        var isDropdown = cache.block is List { Span: Span.Dropdown };
         imGuiCache[key] = (2, cache.block); // reset frame timer
-        cache.block.Area = area;
+        if (isDropdown == false)
+            cache.block.Area = area;
         cache.block.Text = text;
 
         if (skipUpdate)
@@ -369,5 +373,5 @@ public static class GUI
 
         return (T)cache.block;
     }
-#endregion
+    #endregion
 }

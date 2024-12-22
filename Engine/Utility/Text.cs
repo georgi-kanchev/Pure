@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+
 using static Pure.Engine.Utility.Alignment;
 
 namespace Pure.Engine.Utility;
@@ -63,6 +64,7 @@ public static class Text
             if (Process())
                 return float.NaN;
         return values.Count == 0 ? float.NaN : values.Pop();
+
         bool Process()
         {
             if (values.Count < 2 || operators.Count < 1)
@@ -73,10 +75,12 @@ public static class Text
             values.Push(ApplyOperator(val1, val2, op));
             return false;
         }
+
         bool IsOperator(char c)
         {
             return c is '+' or '-' or '*' or '/' or '^' or '%';
         }
+
         int Priority(char op)
         {
             if (op is '+' or '-') return 1;
@@ -84,6 +88,7 @@ public static class Text
             if (op is '^') return 3;
             return 0;
         }
+
         float ApplyOperator(float val1, float val2, char op)
         {
             if (op == '+') return val1 + val2;
@@ -94,6 +99,7 @@ public static class Text
             if (op == '^') return MathF.Pow(val1, val2);
             return float.NaN;
         }
+
         float GetNumber(ref int i)
         {
             var num = new StringBuilder();
@@ -151,9 +157,9 @@ public static class Text
     /// If the input string is not a valid number, returns <see cref="float.NaN"/>.</returns>
     public static float ToNumber(this string text)
     {
-        text = text.Replace(',', '.');
-        var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture,
-            out var result);
+        var cultDecPoint = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+        text = text.Replace(cultDecPoint, ".");
+        var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var result);
         return parsed ? result : float.NaN;
     }
     /// <summary>
@@ -248,6 +254,7 @@ public static class Text
             line = ApplyColorTags(line, tags);
             return line;
         }
+
         void TryAlignVertically()
         {
             var yDiff = size.height - lineList.Count;
@@ -258,6 +265,7 @@ public static class Text
                 for (var i = 0; i < yDiff; i++)
                     lineList.Insert(0, string.Empty);
         }
+
         void TryWordWrap()
         {
             for (var i = 0; i < lineList.Count; i++)
@@ -286,6 +294,7 @@ public static class Text
                 lineList[i] = line[..endIndex].TrimStart();
                 lineList.Insert(i + 1, line[(newLineIndex + 1)..line.Length]);
                 ApplyNewLineToColors();
+
                 void ApplyNewLineToColors()
                 {
                     var lineLengthNoSpaces = lineList[i].Length - lineList[i].Count(" ");
@@ -329,7 +338,7 @@ public static class Text
         return false;
     }
 
-#region Backend
+    #region Backend
     private static List<(int index, string tag)> GetColorTags(string input, char tintBrush)
     {
         input = input.Replace(" ", "").Replace("\r", "").Replace("\n", "n");
@@ -381,5 +390,5 @@ public static class Text
 
         return builder.ToString();
     }
-#endregion
+    #endregion
 }

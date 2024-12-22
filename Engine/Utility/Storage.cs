@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
+
 using static System.Reflection.BindingFlags;
 
 namespace Pure.Engine.Utility;
@@ -33,9 +34,7 @@ public static class Storage
 
             using var memoryStream = new MemoryStream();
             using (var gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal, true))
-            {
                 gzipStream.Write(data, 0, data.Length);
-            }
 
             return memoryStream.ToArray();
         }
@@ -375,7 +374,7 @@ public static class Storage
         return value == null ? null : (T)value;
     }
 
-#region Backend
+    #region Backend
     private const string STRING_PLACEHOLDER = "—", QUOTE_PLACEHOLDER = "❝", GENERATED_FIELD = ">k__BackingField";
 
     private static object? ToObject(byte[]? data, Type? expectedType, out byte[]? remaining)
@@ -948,6 +947,8 @@ public static class Storage
         if (type == typeof(bool) && bool.TryParse(text, out var b))
             return b;
 
+        var cultDecPoint = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+        text = text.Replace(cultDecPoint, ".");
         decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
 
         if (type == typeof(sbyte)) return Wrap(number, sbyte.MinValue, sbyte.MaxValue);
@@ -1079,5 +1080,5 @@ public static class Storage
             return replacedValue;
         });
     }
-#endregion
+    #endregion
 }

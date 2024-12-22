@@ -68,7 +68,7 @@ public class CommandPack
         return obj is "" or null ? default : (T)obj;
     }
 
-#region Backend
+    #region Backend
     private const string STR_PLACEHOLDER = "—";
     private int parameterIndex;
     private static readonly Dictionary<string, Func<string?>> commands = new();
@@ -92,6 +92,8 @@ public class CommandPack
             return Convert.ToBoolean(dataAsText);
         if (type == typeof(char) && char.TryParse(dataAsText, out _)) return Convert.ToChar(dataAsText);
 
+        var cultDecPoint = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+        dataAsText = dataAsText.Replace(cultDecPoint, ".");
         decimal.TryParse(dataAsText, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
 
         if (type == typeof(sbyte)) return Wrap(number, sbyte.MinValue, sbyte.MaxValue);
@@ -160,5 +162,5 @@ public class CommandPack
         });
         return result;
     }
-#endregion
+    #endregion
 }
