@@ -355,7 +355,7 @@ public static class TileMapper
         }
     }
 
-#region Backend
+    #region Backend
     private static float Limit(float number, float rangeA, float rangeB, bool isOverflowing = false)
     {
         if (rangeA > rangeB)
@@ -366,14 +366,12 @@ public static class TileMapper
             var d = rangeB - rangeA;
             return ((number - rangeA) % d + d) % d + rangeA;
         }
-        else
-        {
-            if (number < rangeA)
-                return rangeA;
-            else if (number > rangeB)
-                return rangeB;
-            return number;
-        }
+
+        if (number < rangeA)
+            return rangeA;
+        if (number > rangeB)
+            return rangeB;
+        return number;
     }
     private static int Limit(int number, int rangeA, int rangeB, bool isOverflowing = false)
     {
@@ -439,5 +437,5 @@ public static class TileMapper
 
         return colors;
     }
-#endregion
+    #endregion
 }

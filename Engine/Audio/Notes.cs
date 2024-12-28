@@ -1,4 +1,5 @@
 ﻿using SFML.Audio;
+
 using static System.MathF;
 
 namespace Pure.Engine.Audio;
@@ -40,7 +41,7 @@ public class Notes : Audio
         sound?.SoundBuffer?.SaveToFile(path);
     }
 
-#region Backend
+    #region Backend
     private (float start, float end) fade;
 
     // this avoids switch or if chain to determine the wave, should speed up generation a bit
@@ -145,7 +146,7 @@ public class Notes : Audio
 
             if (float.IsNaN(frequency))
                 continue;
-            else if (frequency is > -0.001f and < 0.001f) // pause
+            if (frequency is > -0.001f and < 0.001f) // pause
             {
                 var pauses = note.Split(Symbols.pause);
                 if (note != Symbols.pause.ToString() && pauses.Length == 2)
@@ -169,5 +170,5 @@ public class Notes : Audio
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-#endregion
+    #endregion
 }

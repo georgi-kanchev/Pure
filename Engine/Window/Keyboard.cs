@@ -79,17 +79,20 @@ public static class Keyboard
             var str = ((char)('A' + i)).ToString();
             return shift ? str : str.ToLower();
         }
-        else if (IsBetween((int)i, (int)Key.Number0, (int)Key.Number9))
+
+        if (IsBetween((int)i, (int)Key.Number0, (int)Key.Number9))
         {
             var n = i - Key.Number0;
             return shift ? shiftNumbers[n] : ((char)('0' + n)).ToString();
         }
-        else if (IsBetween((int)i, (int)Key.Numpad0, (int)Key.Numpad9))
+
+        if (IsBetween((int)i, (int)Key.Numpad0, (int)Key.Numpad9))
         {
             var n = i - Key.Numpad0;
             return ((char)('0' + n)).ToString();
         }
-        else if (symbols.ContainsKey(key))
+
+        if (symbols.ContainsKey(key))
             return shift ? symbols[key].Item2 : symbols[key].Item1;
 
         return string.Empty;
@@ -161,7 +164,7 @@ public static class Keyboard
         onHoldAny += method;
     }
 
-#region Backend
+    #region Backend
     private static readonly List<Key> simulatedPresses = [], prevSimulatedPressed = [];
 
     private static Action<Key>? onPressAny, onReleaseAny, onHoldAny;
@@ -283,5 +286,5 @@ public static class Keyboard
         if (e.Unicode[0] is >= 'A' and <= 'Z')
             KeyTyped = KeyTyped.ToUpper();
     }
-#endregion
+    #endregion
 }

@@ -2,7 +2,9 @@ using Pure.Engine.Collision;
 using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
+
 using static Pure.Engine.Utility.Color;
+
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -54,6 +56,9 @@ public static class Collision
         waves.Update(maps.TileMaps[1]);
         var wavesRects = waves.ToBundle();
 
+        layer.EffectBlur((127, 127), (0, 0, w, h, Blue));
+        layer.EffectWave((0, 50), (0, 50), wavesRects);
+
         while (Window.KeepOpen())
         {
             Time.Update();
@@ -76,9 +81,6 @@ public static class Collision
             layer.DrawLines(line);
             layer.DrawPoints(crossPoints);
             layer.DrawTiles(mousePosition, tile);
-
-            layer.ApplyBlur((127, 127), (0, 0, w, h, Blue));
-            layer.ApplyWaves((0, 50), (0, 50), wavesRects);
 
             layer.Draw();
         }

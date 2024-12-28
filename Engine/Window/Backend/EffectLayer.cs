@@ -266,16 +266,16 @@ vec4 compute_color_tint(vec2 coord, vec4 color) {
 }" +
             // color replace functions
             @"
-vec4 compute_color_replace(vec2 coord, vec4 color) {
-	vec4 area = get_area(0, 2);
-	vec4 target = get_data(1, 2);
+vec4 compute_color_replace(vec2 coord, vec4 color, vec2 indexes) {
+	vec4 area = get_area(indexes.x, indexes.y);
+	vec4 target = get_data(indexes.x + 1, indexes.y);
 	bool isTargetColor = target == vec4(0.0) || (!is(target, vec4(0.0)) && is(color, target));	
 	vec4 off = vec4(0.0, 0.0, 0.4, 0.4);	
 
 	if (!is_inside(coord, area, off) || !isTargetColor)
 		return color;
 	
-	return get_data(2, 2);
+	return get_data(indexes.x + 2, indexes.y);
 }" +
             // blur functions
             @"
@@ -355,7 +355,15 @@ void main(void) {
 	vec4 color = texture2D(texture, coord) * gl_Color;
 	
 	color = compute_edges(coord, color);
-	color = compute_color_replace(coord, color);
+	color = compute_color_replace(coord, color, vec2(0, 2)); // 1
+	color = compute_color_replace(coord, color, vec2(5, 0)); // 2
+	color = compute_color_replace(coord, color, vec2(5, 1)); // 3
+	color = compute_color_replace(coord, color, vec2(5, 2)); // 4
+	color = compute_color_replace(coord, color, vec2(5, 3)); // 5
+	color = compute_color_replace(coord, color, vec2(5, 4)); // 6
+	color = compute_color_replace(coord, color, vec2(5, 5)); // 7
+	color = compute_color_replace(coord, color, vec2(5, 6)); // 8
+	color = compute_color_replace(coord, color, vec2(5, 7)); // 9
 	color = compute_blur(coord, color);
 	color = compute_color_adjust(coord, color);
 	color = compute_lights(coord, color);

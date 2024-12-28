@@ -1,9 +1,12 @@
 ﻿global using SFML.Graphics;
 global using SFML.System;
 global using SFML.Window;
+
 global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
+
 global using SFML.Graphics.Glsl;
+
 global using System.Numerics;
 
 namespace Pure.Engine.Window;
@@ -274,7 +277,7 @@ public static class Window
         recreate += method;
     }
 
-#region Backend
+    #region Backend
     private const float RETRO_TURNOFF_TIME = 0.5f;
 
     [DoNotSave]
@@ -387,8 +390,7 @@ public static class Window
         if (Mode != Mode.Fullscreen)
             Center();
 
-        if (wasRecreating)
-            recreate?.Invoke();
+        recreate?.Invoke();
     }
     [MemberNotNull(nameof(allLayers))]
     private static void RecreateRenderTextures()
@@ -476,5 +478,5 @@ public static class Window
 
         return (ww, wh, (window.Size.X - ww) / 2f, (window.Size.Y - wh) / 2f);
     }
-#endregion
+    #endregion
 }

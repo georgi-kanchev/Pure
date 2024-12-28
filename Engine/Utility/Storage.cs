@@ -16,6 +16,18 @@ public class SaveAtOrder(uint order) : Attribute
     public uint Value { get; } = order;
 }
 
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public class Space(uint newLineAmount = 1) : Attribute
+{
+    public uint NewLineAmount { get; } = newLineAmount;
+}
+
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public class Comment(string text) : Attribute
+{
+    public string Text { get; } = text;
+}
+
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
 public class DoNotSave : Attribute;
 
@@ -79,29 +91,29 @@ public static class Storage
 
         if (value is bool valueBool)
             return [1, 0, 0, 0, (byte)(valueBool ? 1 : 0)];
-        else if (value is byte valueByte)
+        if (value is byte valueByte)
             return [1, 0, 0, 0, valueByte];
-        else if (value is sbyte valueSbyte)
+        if (value is sbyte valueSbyte)
             return [1, 0, 0, 0, Convert.ToByte(valueSbyte)];
-        else if (value is char valueChar)
+        if (value is char valueChar)
             return new byte[] { 2, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueChar)).ToArray();
-        else if (value is short valueShort)
+        if (value is short valueShort)
             return new byte[] { 2, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueShort)).ToArray();
-        else if (value is ushort valueUshort)
+        if (value is ushort valueUshort)
             return new byte[] { 2, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueUshort)).ToArray();
-        else if (value is int valueInt)
+        if (value is int valueInt)
             return new byte[] { 4, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueInt)).ToArray();
-        else if (value is uint valueUint)
+        if (value is uint valueUint)
             return new byte[] { 4, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueUint)).ToArray();
-        else if (value is float valueFl)
+        if (value is float valueFl)
             return new byte[] { 4, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueFl)).ToArray();
-        else if (value is long valueLong)
+        if (value is long valueLong)
             return new byte[] { 8, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueLong)).ToArray();
-        else if (value is ulong valueUlong)
+        if (value is ulong valueUlong)
             return new byte[] { 8, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueUlong)).ToArray();
-        else if (value is double valueDb)
+        if (value is double valueDb)
             return new byte[] { 8, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueDb)).ToArray();
-        else if (value is decimal valueDec)
+        if (value is decimal valueDec)
         {
             var bits = decimal.GetBits(valueDec);
             var bytes = new byte[16];
@@ -110,14 +122,16 @@ public static class Storage
 
             return new byte[] { 16, 0, 0, 0 }.Concat(bytes).ToArray();
         }
-        else if (value is string valueStr)
+
+        if (value is string valueStr)
         {
             var data = Encoding.UTF8.GetBytes(valueStr);
             return BitConverter.GetBytes(data.Length).Concat(data).ToArray();
         }
-        else if (type.IsEnum)
+
+        if (type.IsEnum)
             return ToBytes(Convert.ChangeType(value, Enum.GetUnderlyingType(type)));
-        else if (IsTuple(type))
+        if (IsTuple(type))
         {
             var result = new List<byte>();
             var tuple = GetTupleItems(value);
@@ -126,7 +140,8 @@ public static class Storage
 
             return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
-        else if (type.IsArray)
+
+        if (type.IsArray)
         {
             var result = new List<byte>();
             var array = ToJagged((Array)value);
@@ -135,7 +150,8 @@ public static class Storage
 
             return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
-        else if (IsList(type))
+
+        if (IsList(type))
         {
             var result = new List<byte>();
             var list = (IList)value;
@@ -144,7 +160,8 @@ public static class Storage
 
             return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
-        else if (IsDictionary(type))
+
+        if (IsDictionary(type))
         {
             var result = new List<byte>();
             var dict = (IDictionary)value;
@@ -158,7 +175,8 @@ public static class Storage
             var size = BitConverter.GetBytes(result.Count);
             return size.Concat(result).ToArray();
         }
-        else if (IsStruct(type) || type.IsClass)
+
+        if (IsStruct(type) || type.IsClass)
         {
             var sorted = GetFieldsInOrder(type);
 
@@ -167,7 +185,7 @@ public static class Storage
 
             var result = new List<byte>();
             foreach (var (_, fields) in sorted)
-                foreach (var field in fields)
+                foreach (var (field, space, comment) in fields)
                     result.AddRange(ToBytes(field.GetValue(value)));
 
             return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
@@ -288,19 +306,21 @@ public static class Storage
 
         if (type.IsPrimitive || type == typeof(string))
             return $"{value}";
-        else if (IsTuple(type))
+        if (IsTuple(type))
             return ToTSV(GetTupleItems(value).ToArray());
-        else if (type.IsEnum)
+        if (type.IsEnum)
         {
             var enumType = Enum.GetUnderlyingType(type);
             return ToTSV(ToObject(value.ToBytes(), enumType, out _));
         }
-        else if (IsList(type))
+
+        if (IsList(type))
         {
             var jaggedArrayType = NestedListToJaggedArrayType(type);
             return ToTSV(ToObject(value.ToBytes(), jaggedArrayType, out _));
         }
-        else if (type.IsArray)
+
+        if (type.IsArray)
         {
             if (type.GetArrayRank() == 1)
             {
@@ -330,7 +350,8 @@ public static class Storage
                     result[0, i] = ToTSV(array.GetValue(i));
                 return TableToTSV(result);
             }
-            else if (rank == 2)
+
+            if (rank == 2)
             {
                 if (itemType == typeof(string))
                     return TableToTSV((string[,])value);
@@ -396,29 +417,29 @@ public static class Storage
 
         if ((expectedType == typeof(bool) || expectedType == typeof(bool?)) && size == 1)
             return BitConverter.ToBoolean(bytes);
-        else if ((expectedType == typeof(byte) || expectedType == typeof(byte?)) && size == 1)
+        if ((expectedType == typeof(byte) || expectedType == typeof(byte?)) && size == 1)
             return bytes[0];
-        else if ((expectedType == typeof(sbyte) || expectedType == typeof(sbyte?)) && size == 1)
+        if ((expectedType == typeof(sbyte) || expectedType == typeof(sbyte?)) && size == 1)
             return bytes[0];
-        else if ((expectedType == typeof(char) || expectedType == typeof(char?)) && size == 2)
+        if ((expectedType == typeof(char) || expectedType == typeof(char?)) && size == 2)
             return BitConverter.ToChar(bytes);
-        else if ((expectedType == typeof(short) || expectedType == typeof(short?)) && size == 2)
+        if ((expectedType == typeof(short) || expectedType == typeof(short?)) && size == 2)
             return BitConverter.ToInt16(bytes);
-        else if ((expectedType == typeof(ushort) || expectedType == typeof(ushort?)) && size == 2)
+        if ((expectedType == typeof(ushort) || expectedType == typeof(ushort?)) && size == 2)
             return BitConverter.ToUInt16(bytes);
-        else if ((expectedType == typeof(int) || expectedType == typeof(int?)) && size == 4)
+        if ((expectedType == typeof(int) || expectedType == typeof(int?)) && size == 4)
             return BitConverter.ToInt32(bytes);
-        else if ((expectedType == typeof(uint) || expectedType == typeof(uint?)) && size == 4)
+        if ((expectedType == typeof(uint) || expectedType == typeof(uint?)) && size == 4)
             return BitConverter.ToUInt32(bytes);
-        else if ((expectedType == typeof(float) || expectedType == typeof(float?)) && size == 4)
+        if ((expectedType == typeof(float) || expectedType == typeof(float?)) && size == 4)
             return BitConverter.ToSingle(bytes);
-        else if ((expectedType == typeof(long) || expectedType == typeof(long?)) && size == 8)
+        if ((expectedType == typeof(long) || expectedType == typeof(long?)) && size == 8)
             return BitConverter.ToInt64(bytes);
-        else if ((expectedType == typeof(ulong) || expectedType == typeof(ulong?)) && size == 8)
+        if ((expectedType == typeof(ulong) || expectedType == typeof(ulong?)) && size == 8)
             return BitConverter.ToUInt64(bytes);
-        else if ((expectedType == typeof(double) || expectedType == typeof(double?)) && size == 8)
+        if ((expectedType == typeof(double) || expectedType == typeof(double?)) && size == 8)
             return BitConverter.ToDouble(bytes);
-        else if ((expectedType == typeof(decimal) || expectedType == typeof(decimal?)) && size == 16)
+        if ((expectedType == typeof(decimal) || expectedType == typeof(decimal?)) && size == 16)
         {
             var lo = BitConverter.ToInt32(bytes, 0);
             var mid = BitConverter.ToInt32(bytes, 4);
@@ -426,15 +447,17 @@ public static class Storage
             var flags = BitConverter.ToInt32(bytes, 12);
             return new decimal(lo, mid, hi, (flags & 0x80000000) != 0, (byte)((flags >> 16) & 255));
         }
-        else if (expectedType == typeof(string))
+
+        if (expectedType == typeof(string))
             return Encoding.UTF8.GetString(bytes);
-        else if (expectedType.IsEnum)
+        if (expectedType.IsEnum)
         {
             var enumType = Enum.GetUnderlyingType(expectedType);
             var obj = ToObject(data, enumType, out _);
             return obj == null ? null : Enum.ToObject(expectedType, obj);
         }
-        else if (IsTuple(expectedType))
+
+        if (IsTuple(expectedType))
         {
             var fields = GetTupleFields(expectedType);
             var instance = Activator.CreateInstance(expectedType);
@@ -447,7 +470,8 @@ public static class Storage
 
             return instance;
         }
-        else if (expectedType.IsArray)
+
+        if (expectedType.IsArray)
         {
             // turn to jagged array, only working with int[][][], not int[,,]
             // since we may be multiple recursion levels in and not know the "final" type
@@ -473,7 +497,8 @@ public static class Storage
 
             return expectingRegularArray ? ToArray(jagged) : jagged;
         }
-        else if (IsList(expectedType))
+
+        if (IsList(expectedType))
         {
             // keep it straightforward, parse as an array & make it a list
             // that supports List<List<List<>>> too
@@ -489,7 +514,8 @@ public static class Storage
 
             return list;
         }
-        else if (IsDictionary(expectedType))
+
+        if (IsDictionary(expectedType))
         {
             var dict = Activator.CreateInstance(expectedType) as IDictionary;
             var keyType = expectedType.GetGenericArguments()[0];
@@ -507,13 +533,14 @@ public static class Storage
 
             return dict;
         }
-        else if (IsStruct(expectedType) || expectedType.IsClass)
+
+        if (IsStruct(expectedType) || expectedType.IsClass)
         {
             var sorted = GetFieldsInOrder(expectedType);
             var instance = CreateInstance(expectedType);
 
             foreach (var (_, fields) in sorted)
-                foreach (var field in fields)
+                foreach (var (field, space, comment) in fields)
                 {
                     var obj = ToObject(bytes, field.FieldType, out var left);
                     bytes = left;
@@ -536,7 +563,7 @@ public static class Storage
 
         if (expectedType.IsPrimitive || expectedType == typeof(string))
             return TextToPrimitive(expectedType, tsvText);
-        else if (expectedType.IsEnum)
+        if (expectedType.IsEnum)
         {
             var value = TextToPrimitive(Enum.GetUnderlyingType(expectedType), tsvText);
             return value == null ? default : Enum.ToObject(expectedType, value);
@@ -558,7 +585,8 @@ public static class Storage
 
             return instance;
         }
-        else if (expectedType.IsArray)
+
+        if (expectedType.IsArray)
         {
             if (table.Length == 1 && table[0, 0] == "")
                 return Array.CreateInstance(expectedType.GetElementType()!, 0);
@@ -581,7 +609,8 @@ public static class Storage
 
                 return result;
             }
-            else if (ranks == 2)
+
+            if (ranks == 2)
             {
                 var result = Array.CreateInstance(itemType, table.GetLength(0), table.GetLength(1));
                 for (var i = 0; i < table.GetLength(0); i++)
@@ -594,7 +623,8 @@ public static class Storage
 
             return default;
         }
-        else if (IsList(expectedType))
+
+        if (IsList(expectedType))
         {
             // keep it straightforward, parse as an array & make it a list
             // that supports List<List<>> too
@@ -626,7 +656,8 @@ public static class Storage
 
             return list;
         }
-        else if (IsDictionary(expectedType))
+
+        if (IsDictionary(expectedType))
         {
             var dict = Activator.CreateInstance(expectedType) as IDictionary;
             var keyType = expectedType.GetGenericArguments()[0];
@@ -640,7 +671,8 @@ public static class Storage
 
             return dict;
         }
-        else if ((IsStruct(expectedType) || expectedType.IsClass) && IsDelegate(expectedType) == false)
+
+        if ((IsStruct(expectedType) || expectedType.IsClass) && IsDelegate(expectedType) == false)
             return TableToInstance(table, expectedType);
 
         return default;
@@ -871,16 +903,44 @@ public static class Storage
     private static string[,] InstanceToTable(object? value, Type type)
     {
         var sorted = GetFieldsInOrder(type);
-        var result = new string[sorted.Count, 2];
+        var list = new List<List<string>>();
 
-        var i = 0;
         foreach (var (_, fields) in sorted)
-            foreach (var field in fields)
+            foreach (var (field, space, comment) in fields)
             {
-                result[i, 0] = $"{field.Name.Replace("<", "").Replace(GENERATED_FIELD, "")}";
-                result[i, 1] = ToTSV(field.GetValue(value));
-                i++;
+                for (var i = 0; i < space; i++)
+                {
+                    list.Add([]);
+                    list[^1].AddRange([" ", " "]);
+                }
+
+                if (string.IsNullOrWhiteSpace(comment) == false)
+                {
+                    var commentLines = comment.Replace("\r", "").Split("\n");
+                    for (var i = 0; i < commentLines.Length; i++)
+                    {
+                        var com = commentLines[i].Split("\t");
+                        var com1 = com.Length == 1 ? "\t " : com[1];
+
+                        for (var j = 2; j < com.Length; j++)
+                            com1 += $"\t{com[j]}";
+
+                        list.Add([]);
+                        list[^1].AddRange([$@"\\ {com[0]}", com1]);
+                    }
+                }
+
+                list.Add([]);
+                list[^1].Add($"{field.Name.Replace("<", "").Replace(GENERATED_FIELD, "")}");
+                list[^1].Add(ToTSV(field.GetValue(value)));
             }
+
+        var result = new string[list.Count, 2];
+        for (var i = 0; i < list.Count; i++)
+        {
+            result[i, 0] = list[i][0];
+            result[i, 1] = list[i][1];
+        }
 
         return result;
     }
@@ -891,7 +951,7 @@ public static class Storage
         var instance = isStatic ? null : CreateInstance(expectedType);
 
         foreach (var (_, fields) in sorted)
-            foreach (var field in fields)
+            foreach (var (field, space, comment) in fields)
             {
                 var i = -1;
                 for (var j = 0; j < table.GetLength(0); j++)
@@ -984,14 +1044,14 @@ public static class Storage
         return instance;
     }
 
-    private static SortedDictionary<uint, List<FieldInfo>> GetFieldsInOrder(Type type)
+    private static SortedDictionary<uint, List<(FieldInfo field, uint space, string comment)>> GetFieldsInOrder(Type type)
     {
         var classAttributes = type.GetCustomAttributes();
         foreach (var att in classAttributes)
             if (att.GetType().Name == "DoNotSave")
                 return [];
 
-        var result = new SortedDictionary<uint, List<FieldInfo>>();
+        var result = new SortedDictionary<uint, List<(FieldInfo field, uint space, string comment)>>();
         var props = type.GetProperties(NonPublic | Public | Instance | Static);
         var fields = type.GetFields(NonPublic | Public | Instance | Static);
 
@@ -1015,6 +1075,8 @@ public static class Storage
             }
 
             var order = field.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? i;
+            var space = field.GetCustomAttribute<Space>(false)?.NewLineAmount ?? 0;
+            var comment = field.GetCustomAttribute<Comment>(false)?.Text ?? "";
 
             // some fields are auto generated by a property, so extract the attributes
             // from said property (searching by name) and use them for the field
@@ -1026,6 +1088,8 @@ public static class Storage
                     {
                         doNotSave = prop.IsDefined(typeof(DoNotSave), false);
                         order = prop.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? i;
+                        space = prop.GetCustomAttribute<Space>(false)?.NewLineAmount ?? 0;
+                        comment = prop.GetCustomAttribute<Comment>(false)?.Text ?? "";
                     }
             }
 
@@ -1033,7 +1097,7 @@ public static class Storage
                 continue;
 
             result.TryAdd(order, []);
-            result[order].Add(field);
+            result[order].Add((field, space, comment));
             i++;
         }
 

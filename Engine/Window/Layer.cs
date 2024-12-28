@@ -389,32 +389,39 @@ public class Layer
             }
     }
 
-    public void ApplyColorReplacement(uint newColor, params (float x, float y, float width, float height, uint oldColor)[] areas)
+    public void EffectChangeColor(int id, uint oldColor, uint newColor, params (float x, float y, float width, float height)[]? areas)
     {
-        for (var i = 0; i < areas?.Length; i++)
+        if (id is < 0 or > 8 || oldColor == newColor)
+            return;
+
+        if (areas == null || areas.Length == 0)
+            areas = [(0, 0, Size.width, Size.height)];
+
+        var indexes = new List<(int x, int y)[]>
         {
-            var (x, y, w, h, c) = areas[i];
-            SetShaderData((x, y, w, h), (0, 2), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 2), new(c), false);
-            SetShaderData((x, y, w, h), (2, 2), new(newColor), false);
+            { [(0, 2), (1, 2), (2, 2)] }, { [(5, 0), (6, 0), (7, 0)] }, { [(5, 1), (6, 1), (7, 1)] },
+            { [(5, 2), (6, 2), (7, 2)] }, { [(5, 3), (6, 3), (7, 3)] }, { [(5, 4), (6, 4), (7, 4)] },
+            { [(5, 5), (6, 5), (7, 5)] }, { [(5, 6), (6, 6), (7, 6)] }, { [(5, 7), (6, 7), (7, 7)] }
+        };
+
+        for (var i = 0; i < areas.Length; i++)
+        {
+            SetShaderData(areas[i], indexes[id][0], Color.Transparent, true);
+            SetShaderData(areas[i], indexes[id][1], new(oldColor), false);
+            SetShaderData(areas[i], indexes[id][2], new(newColor), false);
         }
     }
-    public void ApplyColorAdjustments(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params (float x, float y, float width, float height)[] areas)
+    public void EffectAdjustColor(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params (float x, float y, float width, float height, uint targetColor)[]? areas)
     {
-        for (var i = 0; i < areas?.Length; i++)
-        {
-            var (x, y, w, h) = areas[i];
-            ApplyColorAdjustments(gamma, saturation, contrast, brightness, (x, y, w, h, 0));
-        }
-    }
-    public void ApplyColorAdjustments(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params (float x, float y, float width, float height, uint targetColor)[] areas)
-    {
+        if (areas == null || areas.Length == 0)
+            areas = [(0, 0, Size.width, Size.height, 0)];
+
         var g = (byte)(gamma + 128);
         var s = (byte)(saturation + 128);
         var ct = (byte)(contrast + 128);
         var b = (byte)(brightness + 128);
 
-        for (var i = 0; i < areas?.Length; i++)
+        for (var i = 0; i < areas.Length; i++)
         {
             var (x, y, w, h, c) = areas[i];
             SetShaderData((x, y, w, h), (0, 3), Color.Transparent, true);
@@ -422,17 +429,12 @@ public class Layer
             SetShaderData((x, y, w, h), (2, 3), new(c), false);
         }
     }
-    public void ApplyColorTint(uint tint, params (float x, float y, float width, float height)[] areas)
+    public void EffectTintColor(uint tint, params (float x, float y, float width, float height, uint targetColor)[]? areas)
     {
-        for (var i = 0; i < areas?.Length; i++)
-        {
-            var (x, y, w, h) = areas[i];
-            ApplyColorTint(tint, (x, y, w, h, 0));
-        }
-    }
-    public void ApplyColorTint(uint tint, params (float x, float y, float width, float height, uint targetColor)[] areas)
-    {
-        for (var i = 0; i < areas?.Length; i++)
+        if (areas == null || areas.Length == 0)
+            areas = [(0, 0, Size.width, Size.height, 0)];
+
+        for (var i = 0; i < areas.Length; i++)
         {
             var (x, y, w, h, c) = areas[i];
             SetShaderData((x, y, w, h), (0, 0), Color.Transparent, true);
@@ -440,7 +442,7 @@ public class Layer
             SetShaderData((x, y, w, h), (2, 0), new(c), false);
         }
     }
-    public void ApplyLights(float radius, (float width, float angle) cone, params (float x, float y, uint color)[] points)
+    public void EffectAddLight(float radius, (float width, float angle) cone, params (float x, float y, uint color)[] points)
     {
         radius /= Size.height;
         var (w, ang) = cone;
@@ -459,7 +461,7 @@ public class Layer
             shader?.SetUniform($"lightColor[{lightCount - 1}]", new Color(color));
         }
     }
-    public void ApplyLightObstacles(params (float x, float y, float width, float height)[] areas)
+    public void EffectAddLightObstacles(params (float x, float y, float width, float height)[] areas)
     {
         for (var i = 0; i < areas?.Length; i++)
         {
@@ -475,17 +477,20 @@ public class Layer
             shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
         }
     }
-    public void ApplyLightObstacles(params (float x, float y, float width, float height, uint _)[] areas)
+    public void EffectAddLightObstacles(params (float x, float y, float width, float height, uint _)[] areas)
     {
         for (var i = 0; i < areas?.Length; i++)
         {
             var (x, y, w, h, _) = areas[i];
-            ApplyLightObstacles((x, y, w, h));
+            EffectAddLightObstacles((x, y, w, h));
         }
     }
-    public void ApplyEdges(uint color, Edge edges, params (float x, float y, float width, float height, uint targetColor)[] areas)
+    public void EffectColorEdges(uint color, Edge edges, params (float x, float y, float width, float height, uint targetColor)[]? areas)
     {
-        for (var i = 0; i < areas?.Length; i++)
+        if (areas == null || areas.Length == 0)
+            areas = [(0, 0, Size.width, Size.height, 0)];
+
+        for (var i = 0; i < areas.Length; i++)
         {
             var (x, y, w, h, c) = areas[i];
             SetShaderData((x, y, w, h), (0, 5), Color.Transparent, true);
@@ -494,11 +499,13 @@ public class Layer
             SetShaderData((x, y, w, h), (3, 5), new((byte)edges, 0, 0, 0), false);
         }
     }
-    public void ApplyBlur((byte x, byte y) strength, params (float x, float y, float width, float height, uint targetColor)[] areas)
+    public void EffectBlur((byte x, byte y) strength, params (float x, float y, float width, float height, uint targetColor)[]? areas)
     {
-        var (sx, sy) = strength;
+        if (areas == null || areas.Length == 0)
+            areas = [(0, 0, Size.width, Size.height, 0)];
 
-        for (var i = 0; i < areas?.Length; i++)
+        var (sx, sy) = strength;
+        for (var i = 0; i < areas.Length; i++)
         {
             var (x, y, w, h, c) = areas[i];
             SetShaderData((x, y, w, h), (0, 1), Color.Transparent, true);
@@ -506,23 +513,22 @@ public class Layer
             SetShaderData((x, y, w, h), (2, 1), new(sx, sy, 0, 0), false);
         }
     }
-    public void ApplyBlur((byte x, byte y) strength, params (float x, float y, float width, float height)[] areas)
+    public void EffectWave((sbyte x, sbyte y) speed, (byte x, byte y) frequency, params (float x, float y, float width, float height, uint targetColor)[]? areas)
     {
-        for (var i = 0; i < areas?.Length; i++)
-        {
-            var (x, y, w, h) = areas[i];
-            ApplyBlur(strength, (x, y, w, h, 0));
-        }
-    }
-    public void ApplyWaves((sbyte x, sbyte y) speed, (byte x, byte y) frequency, params (float x, float y, float width, float height, uint targetColor)[] areas)
-    {
-        for (var i = 0; i < areas?.Length; i++)
+        if (areas == null || areas.Length == 0)
+            areas = [(0, 0, Size.width, Size.height, 0)];
+
+        for (var i = 0; i < areas.Length; i++)
         {
             var (x, y, w, h, c) = areas[i];
             SetShaderData((x, y, w, h), (0, 4), Color.Transparent, true);
             SetShaderData((x, y, w, h), (1, 4), new((byte)speed.x, (byte)speed.y, frequency.x, frequency.y), false);
             SetShaderData((x, y, w, h), (2, 4), new(c), false);
         }
+    }
+    public void ClearAllEffects()
+    {
+        data?.Clear(Color.Transparent);
     }
 
     public bool IsOverlapping((float x, float y) position)
@@ -625,17 +631,17 @@ public class Layer
         }
     }
 
-#region Backend
+    #region Backend
     // per tile shader data map (8x8 pixels)
     //
-    // [tnta][tntc][tntt][    ][    ][    ][    ][    ]
-    // [blra][blrt][blrs][    ][    ][    ][    ][    ]
-    // [repa][repo][repn][    ][    ][    ][    ][    ]
-    // [adja][adjd][adjt][    ][    ][    ][    ][    ]
-    // [wava][wavd][wavt][    ][    ][    ][    ][    ]
-    // [edga][edgt][edgc][edgy][    ][    ][    ][    ]
-    // [blka][    ][    ][    ][    ][    ][    ][    ]
-    // [    ][    ][    ][    ][    ][    ][    ][    ]
+    // [tnta][tntc][tntt][    ][    ][rea2][reo2][ren2]
+    // [blra][blrt][blrs][    ][    ][rea3][reo3][ren3]
+    // [rea1][reo1][ren1][    ][    ][rea4][reo4][ren4]
+    // [adja][adjd][adjt][    ][    ][rea5][reo5][ren5]
+    // [wava][wavd][wavt][    ][    ][rea6][reo6][ren6]
+    // [edga][edgt][edgc][edgy][    ][rea7][reo7][ren7]
+    // [blka][    ][    ][    ][    ][rea8][reo8][ren8]
+    // [    ][    ][    ][    ][    ][rea9][reo9][ren9]
     //
     // tnta: tint area =          [x, y, w, h]
     // tntc: tint color =         [r, g, b, a]
@@ -645,9 +651,9 @@ public class Layer
     // adjd: adjustments data =   [g, s, c, b] (g = gamma, s = saturation, c = contrast, b = brightness)
     // adjt: adj target color =   [r, g, b, a]
     //
-    // repa: replace area =       [x, y, w, h]
-    // repo: replace color old =  [r, g, b, a]
-    // repn: replace color new =  [r, g, b, a]
+    // rea#: replace area =       [x, y, w, h]
+    // reo#: replace color old =  [r, g, b, a]
+    // ren#: replace color new =  [r, g, b, a]
     //
     // blra: blur area =          [x, y, w, h]
     // blrt: blur target color =  [r, g, b, a]
@@ -665,6 +671,7 @@ public class Layer
     // blka: light block area =   [x, y, w, h]
 
     private const string DEFAULT_GRAPHICS = "default";
+    private bool drawShaderData;
 
     [DoNotSave]
     internal RenderTexture? queue, result, data;
@@ -775,11 +782,15 @@ public class Layer
     }
     private void SetShaderData((float x, float y, float width, float height) area, (int x, int y) tilePixel, Color data, bool includeArea)
     {
-        if (shaderParams == null)
-            return;
+        TryInit();
+
+        drawShaderData = true;
 
         var (x, y, w, h) = area;
         var (ix, iy) = ((int)x, (int)y);
+        var full = GetTexCoords(AtlasTileIdFull, (1, 1));
+        var (px, py) = tilePixel;
+        var centerOff = new Vector2f(AtlasTileSize / 2f, AtlasTileSize / 2f);
 
         for (var j = y; j <= y + h; j++)
             for (var i = x; i <= x + w; i++)
@@ -800,13 +811,11 @@ public class Layer
 
                 var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
                 var (vx, vy) = (tx * AtlasTileSize, ty * AtlasTileSize);
-                var full = GetTexCoords(AtlasTileIdFull, (1, 1));
-                var (px, py) = tilePixel;
 
-                shaderParams.Append(new(new(vx + px, vy + 0.5f + py), data, full.tl));
+                shaderParams.Append(new(new(vx + px, vy + 0.5f + py), data, full.tl + centerOff));
 
                 if (includeArea)
-                    shaderParams.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl));
+                    shaderParams.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl + centerOff));
             }
     }
     private static (bool mirrorH, sbyte angle) GetOrientation(byte pose)
@@ -814,34 +823,41 @@ public class Layer
         return (pose > 3, (sbyte)(pose % 4));
     }
 
-    internal void DrawQueue()
+    private void TryInit()
     {
         shader ??= new EffectLayer().Shader;
         verts ??= new(PrimitiveType.Quads);
         shaderParams ??= new(PrimitiveType.Points);
 
-        if (queue == null || queue.Size.X != Size.width * AtlasTileSize || queue.Size.Y != Size.height * AtlasTileSize)
-        {
-            queue?.Dispose();
-            data?.Dispose();
-            result?.Dispose();
-            queue = null;
-            data = null;
-            result = null;
+        if (queue != null && queue.Size.X == Size.width * AtlasTileSize && queue.Size.Y == Size.height * AtlasTileSize)
+            return;
 
-            var (rw, rh) = ((uint)Size.width * AtlasTileSize, (uint)Size.height * AtlasTileSize);
-            queue = new(rw, rh);
-            data = new(rw, rh);
-            result = new(rw, rh);
-        }
+        queue?.Dispose();
+        data?.Dispose();
+        result?.Dispose();
+        queue = null;
+        data = null;
+        result = null;
+
+        var (rw, rh) = ((uint)Size.width * AtlasTileSize, (uint)Size.height * AtlasTileSize);
+        queue = new(rw, rh);
+        data = new(rw, rh);
+        result = new(rw, rh);
+    }
+    internal void DrawQueue()
+    {
+        TryInit();
 
         var atlas = atlases[AtlasPath];
         var (w, h) = (queue.Texture.Size.X, queue.Texture.Size.Y);
         var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue.Texture, shader);
 
-        data?.Clear(Color.Transparent);
-        data?.Draw(shaderParams, new(BlendMode.None, Transform.Identity, atlas, null));
-        data?.Display();
+        if (drawShaderData && data != null && shaderParams != null)
+        {
+            drawShaderData = false;
+            data.Draw(shaderParams, new(BlendMode.None, Transform.Identity, atlas, null));
+            data.Display();
+        }
 
         lightCount = 0;
         obstacleCount = 0;
@@ -863,8 +879,8 @@ public class Layer
         result?.Draw(Window.vertsWindow, PrimitiveType.Quads, r);
         result?.Display();
 
-        //result?.Texture.CopyToImage().SaveToFile("render.png");
-        //data?.Texture.CopyToImage().SaveToFile("data.png");
+        // result?.Texture.CopyToImage().SaveToFile($"render-{GetHashCode()}.png");
+        // data?.Texture.CopyToImage().SaveToFile($"shader-data-{GetHashCode()}.png");
 
         verts.Clear();
         shaderParams.Clear();
@@ -941,5 +957,5 @@ public class Layer
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-#endregion
+    #endregion
 }

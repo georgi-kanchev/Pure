@@ -2,6 +2,7 @@ using Pure.Engine.Utility;
 using Pure.Engine.Collision;
 using Pure.Engine.Tiles;
 using Pure.Engine.Window;
+
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -40,8 +41,8 @@ public static class LineOfSightAndLights
 
             var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
 
-            layer.ApplyLightObstacles(solidMap);
-            layer.ApplyLights(20f, (120f, angle), (mx, my, Color.White));
+            layer.EffectAddLightObstacles(solidMap);
+            layer.EffectAddLight(20f, (120f, angle), (mx, my, Color.White));
 
             layer.DrawTiles(tilemap);
             layer.DrawMouseCursor();

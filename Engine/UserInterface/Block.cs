@@ -238,7 +238,8 @@ public class Block
             TryDisplaySelfAndProcessChildren();
             return;
         }
-        else if (IsHovered)
+
+        if (IsHovered)
             Input.CursorResult = MouseCursor.Arrow;
 
         var isJustPressed = Input.IsButtonJustPressed() && IsPressed();
@@ -488,7 +489,7 @@ public class Block
         return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
     }
 
-#region Backend
+    #region Backend
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
     internal class DoNotSave : Attribute;
 
@@ -572,5 +573,5 @@ public class Block
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-#endregion
+    #endregion
 }

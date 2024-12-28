@@ -156,7 +156,7 @@ public static class Number
     {
         if (curvePoints.Length == 0)
             return (float.NaN, float.NaN);
-        else if (curvePoints.Length == 1)
+        if (curvePoints.Length == 1)
             return curvePoints[0];
 
         var numPoints = curvePoints.Length;
@@ -328,7 +328,7 @@ public static class Number
         var result = Move(number, goingPos ? Sign(speed, false) : Sign(speed, true), deltaTime);
         if (goingPos && result > targetNumber)
             return targetNumber;
-        else if (goingPos == false && result < targetNumber)
+        if (goingPos == false && result < targetNumber)
             return targetNumber;
         return result;
     }

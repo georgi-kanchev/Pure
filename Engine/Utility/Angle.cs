@@ -131,9 +131,9 @@ public struct Angle
     {
         var difference = degrees - target.degrees;
         if (difference is >= 0 and < 180) return false;
-        else if (difference is >= -180 and < 0) return true;
-        else if (difference is >= -360 and < -180) return false;
-        else if (difference is >= 180 and < 360) return true;
+        if (difference is >= -180 and < 0) return true;
+        if (difference is >= -360 and < -180) return false;
+        if (difference is >= 180 and < 360) return true;
 
         return false;
     }
@@ -236,7 +236,7 @@ public struct Angle
         return angle.degrees;
     }
 
-#region Backend
+    #region Backend
     private float degrees;
-#endregion
+    #endregion
 }

@@ -19,23 +19,21 @@ public static class Other
     {
         if (gates.ContainsKey(uniqueId) == false && condition == false)
             return false;
-        else if (gates.ContainsKey(uniqueId) == false && condition)
+        if (gates.ContainsKey(uniqueId) == false && condition)
         {
             gates[uniqueId] = true;
             return true;
         }
-        else
+
+        if (gates[uniqueId] && condition)
+            return false;
+        if (gates[uniqueId] == false && condition)
         {
-            if (gates[uniqueId] && condition)
-                return false;
-            else if (gates[uniqueId] == false && condition)
-            {
-                gates[uniqueId] = true;
-                return true;
-            }
-            else
-                gates[uniqueId] = false;
+            gates[uniqueId] = true;
+            return true;
         }
+
+        gates[uniqueId] = false;
 
         return false;
     }
@@ -101,7 +99,7 @@ public static class Other
         return true;
     }
 
-#region Backend
+    #region Backend
     private static readonly Stopwatch holdFrequency = new(), holdDelay = new();
     private static readonly Dictionary<string, bool> gates = new();
 
@@ -110,5 +108,5 @@ public static class Other
         holdFrequency.Start();
         holdDelay.Start();
     }
-#endregion
+    #endregion
 }

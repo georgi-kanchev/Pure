@@ -175,7 +175,7 @@ internal class TcpClient : IDisposable
     /// </summary>
     private int OptionSendBufferSize { get; set; } = 8192;
 
-#region Connect/Disconnect client
+    #region Connect/Disconnect client
     private SocketAsyncEventArgs connectEventArg;
 
     /// <summary>
@@ -464,9 +464,9 @@ internal class TcpClient : IDisposable
 
         return ConnectAsync();
     }
-#endregion
+    #endregion
 
-#region Send/Recieve data
+    #region Send/Recieve data
     // Receive buffer
     private bool receiving;
     private Buffer receiveBuffer;
@@ -609,8 +609,7 @@ internal class TcpClient : IDisposable
             // Avoid multiple send handlers
             if (sending)
                 return true;
-            else
-                sending = true;
+            sending = true;
 
             // Try to send the main buffer
             TrySend();
@@ -753,7 +752,6 @@ internal class TcpClient : IDisposable
             process = false;
 
             lock (sendLock)
-            {
                 // Is previous socket send in progress?
                 if (sendBufferFlush.IsEmpty)
                 {
@@ -777,7 +775,6 @@ internal class TcpClient : IDisposable
                 }
                 else
                     return;
-            }
 
             // Call the empty send buffer handler
             if (empty)
@@ -817,9 +814,9 @@ internal class TcpClient : IDisposable
             BytesSending = 0;
         }
     }
-#endregion
+    #endregion
 
-#region IO processing
+    #region IO processing
     /// <summary>
     /// This method is called whenever a receive or send operation is completed on a socket
     /// </summary>
@@ -954,8 +951,7 @@ internal class TcpClient : IDisposable
             // If zero is returned from a read operation, the remote end has closed the connection
             if (size > 0)
                 return true;
-            else
-                DisconnectAsync();
+            DisconnectAsync();
         }
         else
         {
@@ -1001,16 +997,13 @@ internal class TcpClient : IDisposable
         // Try to send again if the client is valid
         if (e.SocketError == SocketError.Success)
             return true;
-        else
-        {
-            SendError(e.SocketError);
-            DisconnectAsync();
-            return false;
-        }
+        SendError(e.SocketError);
+        DisconnectAsync();
+        return false;
     }
-#endregion
+    #endregion
 
-#region Session handlers
+    #region Session handlers
     /// <summary>
     /// Handle client connecting notification
     /// </summary>
@@ -1079,9 +1072,9 @@ internal class TcpClient : IDisposable
     protected virtual void OnError(SocketError error)
     {
     }
-#endregion
+    #endregion
 
-#region Error handling
+    #region Error handling
     /// <summary>
     /// Send error notification
     /// </summary>
@@ -1098,9 +1091,9 @@ internal class TcpClient : IDisposable
 
         OnError(error);
     }
-#endregion
+    #endregion
 
-#region IDisposable implementation
+    #region IDisposable implementation
     /// <summary>
     /// Disposed flag
     /// </summary>
@@ -1146,5 +1139,5 @@ internal class TcpClient : IDisposable
             IsDisposed = true;
         }
     }
-#endregion
+    #endregion
 }

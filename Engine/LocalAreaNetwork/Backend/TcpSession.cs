@@ -125,22 +125,16 @@ internal class TcpSession : IDisposable
         if (Server.OptionKeepAlive)
             Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
         if (Server.OptionTcpKeepAliveTime >= 0)
-        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime,
                 Server.OptionTcpKeepAliveTime);
-        }
 
         if (Server.OptionTcpKeepAliveInterval >= 0)
-        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval,
                 Server.OptionTcpKeepAliveInterval);
-        }
 
         if (Server.OptionTcpKeepAliveRetryCount >= 0)
-        {
             Socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount,
                 Server.OptionTcpKeepAliveRetryCount);
-        }
 
         // Apply the option: no delay
         if (Server.OptionNoDelay)
@@ -398,8 +392,7 @@ internal class TcpSession : IDisposable
             // Avoid multiple send handlers
             if (sending)
                 return true;
-            else
-                sending = true;
+            sending = true;
 
             // Try to send the main buffer
             TrySend();
@@ -543,7 +536,6 @@ internal class TcpSession : IDisposable
             process = false;
 
             lock (sendLock)
-            {
                 // Is previous socket send in progress?
                 if (sendBufferFlush.IsEmpty)
                 {
@@ -567,7 +559,6 @@ internal class TcpSession : IDisposable
                 }
                 else
                     return;
-            }
 
             // Call the empty send buffer handler
             if (empty)
@@ -682,8 +673,7 @@ internal class TcpSession : IDisposable
             // If zero is returned from a read operation, the remote end has closed the connection
             if (size > 0)
                 return true;
-            else
-                Disconnect();
+            Disconnect();
         }
         else
         {
@@ -730,12 +720,9 @@ internal class TcpSession : IDisposable
         // Try to send again if the session is valid
         if (e.SocketError == SocketError.Success)
             return true;
-        else
-        {
-            SendError(e.SocketError);
-            Disconnect();
-            return false;
-        }
+        SendError(e.SocketError);
+        Disconnect();
+        return false;
     }
     #endregion
 
@@ -864,10 +851,8 @@ internal class TcpSession : IDisposable
         if (!IsDisposed)
         {
             if (disposingManagedResources)
-            {
                 // Dispose managed resources here...
                 Disconnect();
-            }
 
             // Dispose unmanaged resources here...
 
