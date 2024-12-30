@@ -87,6 +87,7 @@ public static class Time
         UpdatesPerSecondAverage = UpdateCount / RuntimeClock;
         UpdateCount++;
 
+        Flow.Update();
         UpdateTimers();
         Collections.TryRemoveAnimations();
         Particles.Update();
@@ -194,13 +195,17 @@ public static class Time
         };
     }
 
-    public static void CallAfter(float seconds, Action method, bool repeat = false)
+    public static void CallAfter(float seconds, Action method)
     {
-        timers.Add(new(method, null, seconds, repeat));
+        timers.Add(new(method, null, seconds, false));
     }
-    public static void CallFor(float seconds, Action<float> method, bool repeat = false)
+    public static void CallEvery(float seconds, Action method)
     {
-        timers.Add(new(null, method, seconds, repeat));
+        timers.Add(new(method, null, seconds, true));
+    }
+    public static void CallFor(float seconds, Action<float> method)
+    {
+        timers.Add(new(null, method, seconds, false));
     }
     /// <summary>
     /// Cancels a scheduled method call.
@@ -236,9 +241,7 @@ public static class Time
                 t.startTime += seconds;
     }
 
-#region Backend
-    private static readonly Stopwatch dt = new();
-
+    #region Backend
     private sealed class Timer(Action? method, Action<float>? methodF, float delay, bool loop)
     {
         public Action? method = method;
@@ -267,8 +270,9 @@ public static class Time
     }
 
     private static readonly List<Timer> timers = [];
+    private static readonly Stopwatch dt = new();
 
-    private static void UpdateTimers()
+    internal static void UpdateTimers()
     {
         for (var i = 0; i < timers.Count; i++)
         {
@@ -281,5 +285,5 @@ public static class Time
             i--;
         }
     }
-#endregion
+    #endregion
 }

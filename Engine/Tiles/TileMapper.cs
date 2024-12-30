@@ -72,6 +72,10 @@ public static class TileMapper
             tileMap.SetTile((x, y), tile, Mask);
         }
     }
+    public static void Replace(this TileMap tileMap, Tile targetTile, params Tile[] tiles)
+    {
+        tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), targetTile, tiles);
+    }
 
     public static void SetTiles(this TileMap tileMap, (int x, int y) cell, Tile[,]? tiles)
     {

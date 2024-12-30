@@ -39,7 +39,7 @@ public static class ParticleSystems
         for (var i = 0; i < 5; i++)
             allDrops.Add(Particles.SpawnCluster(5, float.PositiveInfinity));
 
-        Time.CallAfter(0.75f, () =>
+        Time.CallEvery(0.75f, () =>
         {
             for (var i = 2; i < allDrops.Count; i++)
             {
@@ -47,8 +47,8 @@ public static class ParticleSystems
                 allDrops[i].ApplyColor(Color.Cyan);
                 allDrops[i].ApplyColorFade(0);
             }
-        }, true);
-        Time.CallAfter(0.5f, () =>
+        });
+        Time.CallEvery(0.5f, () =>
         {
             for (var i = 0; i < allDrops.Count - 3; i++)
             {
@@ -56,8 +56,8 @@ public static class ParticleSystems
                 allDrops[i].ApplyColor(Color.Cyan);
                 allDrops[i].ApplyColorFade(0);
             }
-        }, true);
-        
+        });
+
         while (Window.KeepOpen())
         {
             Time.Update();

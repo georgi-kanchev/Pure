@@ -19,11 +19,11 @@ public static class Tetris
         map.SetBox((ax, ay, aw + 1, ah + 1), Tile.EMPTY, Tile.BOX_CORNER_ROUND, Tile.FULL);
         piece = new((map.Size.width / 2, 0));
 
-        Time.CallAfter(0.5f, () =>
+        Time.CallEvery(0.5f, () =>
         {
             if (piece.TryMoveAt(Angle.Down) == false)
                 Collide();
-        }, true);
+        });
 
         HandleInput();
 
@@ -40,6 +40,7 @@ public static class Tetris
             Keyboard.Key.ArrowDown.OnPressAndHold(() => piece?.TryMoveAt(Angle.Down));
             Keyboard.Key.Space.OnPress(() => piece?.Rotate());
         }
+
         void Draw()
         {
             piece?.Draw();
@@ -53,6 +54,7 @@ public static class Tetris
             layer?.DrawMouseCursor();
             layer?.Draw();
         }
+
         void Collide()
         {
             var ys = piece?.GetBoxYs() ?? [];
@@ -64,6 +66,7 @@ public static class Tetris
 
             piece = new((map?.Size.width / 2 ?? 0, 0));
         }
+
         bool IsLineFull(float y)
         {
             var count = 0;
@@ -75,6 +78,7 @@ public static class Tetris
 
             return count == playArea.Width - 1;
         }
+
         void ClearLine(float y)
         {
             for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
@@ -94,7 +98,7 @@ public static class Tetris
         }
     }
 
-#region Backend
+    #region Backend
     private static readonly SortedDictionary<(int y, int x), Box> fallen = new();
     private static Area playArea;
     private static Layer? layer;
@@ -188,10 +192,10 @@ public static class Tetris
                 box.Draw();
         }
 
-#region Backend
+        #region Backend
         private bool isFrozen;
         private readonly Box[] boxes;
-#endregion
+        #endregion
     }
 
     private class Box
@@ -221,9 +225,9 @@ public static class Tetris
             layer?.DrawTiles(Position, tile);
         }
 
-#region Backend
+        #region Backend
         private readonly Tile tile;
-#endregion
+        #endregion
     }
-#endregion
+    #endregion
 }
