@@ -141,11 +141,14 @@ public static class Window
             window.SetFramerateLimit(value);
         }
     }
-    public static string? Clipboard
+    public static string Clipboard
     {
         get => clipboardCache;
         set
         {
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+
             clipboardCache = value;
             SFML.Window.Clipboard.Contents = value;
         }
@@ -304,7 +307,7 @@ public static class Window
 
     private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating;
     private static string title = "Game";
-    private static string? clipboardCache;
+    private static string clipboardCache = "";
     private static uint backgroundColor, monitor, maximumFrameRate;
     private static Mode mode;
     private static float pixelScale = 5f;
@@ -377,6 +380,7 @@ public static class Window
         Title = title;
         IsVerticallySynced = isVerticallySynced;
         MaximumFrameRate = maximumFrameRate;
+
         Clipboard = SFML.Window.Clipboard.Contents;
 
         Mouse.CursorCurrent = Mouse.CursorCurrent;

@@ -8,17 +8,16 @@ public static class Flow
     {
         flows.Add(flow);
     }
-
-    public static bool IsPaused(string? key)
+    public static bool IsWaiting(string? key)
     {
         return key != null && resumptions.ContainsKey(key);
     }
-    public static bool IsWaiting(string? key)
-    {
-        return IsPaused(key);
-    }
 
-    public static IEnumerator Wait(float seconds, string? key = null)
+    public static IEnumerator WaitForFlow(IEnumerator flow)
+    {
+        return WaitForSignal(flow.GetType().FullName);
+    }
+    public static IEnumerator WaitForDelay(float seconds, string? key = null)
     {
         var time = 0f;
 
@@ -31,14 +30,15 @@ public static class Flow
             return time <= seconds;
         });
     }
-    public static IEnumerator Pause(string? key)
+    public static IEnumerator WaitForSignal(string? key)
     {
         var keepWaiting = true;
         if (key != null && resumptions.TryAdd(key, () => keepWaiting = false) == false)
             resumptions[key] += () => keepWaiting = false;
         return new Rule(() => keepWaiting);
     }
-    public static void Resume(string? key)
+
+    public static void Signal(string? key)
     {
         if (key == null || resumptions.TryGetValue(key, out var cb) == false)
             return;
@@ -107,6 +107,8 @@ public static class Flow
 
             void Remove()
             {
+                Signal(flow.GetType().FullName); // notify WaitForFlow waiters
+
                 flows.Remove(flows[i]);
                 i--;
             }

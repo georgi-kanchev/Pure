@@ -14,16 +14,23 @@ public static class Flows
             Time.Update();
 
             if (Keyboard.Key.A.IsJustPressed())
-                Flow.Start(MyNewFlow());
-            if (Keyboard.Key.Space.IsJustPressed())
-                Flow.End(MyNewFlow());
+            {
+                Flow.Start(A());
+                Flow.Start(B());
+            }
         }
     }
 
-    private static IEnumerator MyNewFlow()
+    private static IEnumerator A()
     {
-        yield return Flow.Wait(5f, nameof(MyNewFlow));
-        Console.WriteLine(Time.RuntimeClock);
-        Flow.Start(MyNewFlow());
+        Console.WriteLine("A: A started!");
+        yield return Flow.WaitForDelay(3f);
+        Console.WriteLine("A: A finished!");
+    }
+    private static IEnumerator B()
+    {
+        Console.WriteLine("B: B started!");
+        yield return Flow.WaitForFlow(A());
+        Console.WriteLine("B: B finished!");
     }
 }
