@@ -13,6 +13,7 @@ public static class Program
 {
     public static void Main()
     {
+        Flows.Run();
         Storages.Run();
 
         var (maps, ui) = Examples.UserInterface.Program.Initialize();

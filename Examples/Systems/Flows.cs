@@ -14,6 +14,8 @@ public static class Flows
             Time.Update();
             Flow.Update(Time.Delta);
 
+            if (Flow.TrueEvery(1f))
+                Console.WriteLine(Time.RuntimeClock);
             if (Keyboard.Key.A.IsJustPressed())
             {
                 Flow.Start(A());

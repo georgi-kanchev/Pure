@@ -51,6 +51,13 @@ public static class Flow
                 i--;
             }
         }
+
+        foreach (var (start, curr) in trueEvery)
+        {
+            // clamp should be before to let it go 1 time below 0 for detection
+            trueEvery[start] = trueEvery[start] < 0f ? start : trueEvery[start];
+            trueEvery[start] -= dt;
+        }
     }
 
     public static void Start(IEnumerator flow)
@@ -225,7 +232,7 @@ public static class Flow
             method.Invoke();
     }
 
-    public static bool TrueEvery(this float seconds)
+    public static bool TrueEvery(float seconds)
     {
         trueEvery.TryAdd(seconds, seconds);
         return trueEvery[seconds] < 0f;
