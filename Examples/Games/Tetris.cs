@@ -1,3 +1,5 @@
+using Pure.Engine.Execution;
+
 namespace Pure.Examples.Games;
 
 using Engine.Window;
@@ -19,7 +21,7 @@ public static class Tetris
         map.SetBox((ax, ay, aw + 1, ah + 1), Tile.EMPTY, Tile.BOX_CORNER_ROUND, Tile.FULL);
         piece = new((map.Size.width / 2, 0));
 
-        Time.CallEvery(0.5f, () =>
+        Flow.CallEvery(0.5f, () =>
         {
             if (piece.TryMoveAt(Angle.Down) == false)
                 Collide();
@@ -30,6 +32,7 @@ public static class Tetris
         while (Window.KeepOpen())
         {
             Time.Update();
+            Flow.Update(Time.Delta);
             Draw();
         }
 
@@ -98,7 +101,7 @@ public static class Tetris
         }
     }
 
-    #region Backend
+#region Backend
     private static readonly SortedDictionary<(int y, int x), Box> fallen = new();
     private static Area playArea;
     private static Layer? layer;
@@ -192,10 +195,10 @@ public static class Tetris
                 box.Draw();
         }
 
-        #region Backend
+#region Backend
         private bool isFrozen;
         private readonly Box[] boxes;
-        #endregion
+#endregion
     }
 
     private class Box
@@ -225,9 +228,9 @@ public static class Tetris
             layer?.DrawTiles(Position, tile);
         }
 
-        #region Backend
+#region Backend
         private readonly Tile tile;
-        #endregion
+#endregion
     }
-    #endregion
+#endregion
 }

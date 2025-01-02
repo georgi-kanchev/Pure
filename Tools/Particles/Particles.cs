@@ -1,4 +1,7 @@
-namespace Pure.Engine.Utility;
+using Pure.Engine.Execution;
+using Pure.Engine.Utility;
+
+namespace Pure.Tools.Particles;
 
 public enum Distribution { FillEvenly, FillRandomly, Outline }
 
@@ -219,7 +222,7 @@ public static class Particles
         var timeScale = data[key].timeScale;
         var v = (int)variety;
 
-        Time.CallFor(duration / timeScale, progress =>
+        Flow.CallFor(duration / timeScale, progress =>
         {
             for (var i = 0; i < pts.Length; i++)
             {

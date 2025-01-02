@@ -1,6 +1,8 @@
+using Pure.Engine.Execution;
 using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
+using Pure.Tools.Particles;
 
 namespace Pure.Examples.Systems;
 
@@ -39,28 +41,29 @@ public static class ParticleSystems
         for (var i = 0; i < 5; i++)
             allDrops.Add(Particles.SpawnCluster(5, float.PositiveInfinity));
 
-        Time.CallEvery(0.75f, () =>
+        Flow.CallEvery(0.75f, () =>
         {
             for (var i = 2; i < allDrops.Count; i++)
             {
                 allDrops[i].MakeRectangle((0, h / 2f, w, h / 2f), false, Distribution.FillRandomly);
                 allDrops[i].ApplyColor(Color.Cyan);
-                allDrops[i].ApplyColorFade(0);
+                // allDrops[i].ApplyColorFade(0);
             }
         });
-        Time.CallEvery(0.5f, () =>
+        Flow.CallEvery(0.5f, () =>
         {
             for (var i = 0; i < allDrops.Count - 3; i++)
             {
                 allDrops[i].MakeRectangle((0, h / 2f, w, h / 2f), false, Distribution.FillRandomly);
                 allDrops[i].ApplyColor(Color.Cyan);
-                allDrops[i].ApplyColorFade(0);
+                // allDrops[i].ApplyColorFade(0);
             }
         });
 
         while (Window.KeepOpen())
         {
             Time.Update();
+            Flow.Update(Time.Delta);
 
             layer.DrawRectangles(t, b, l, r);
 

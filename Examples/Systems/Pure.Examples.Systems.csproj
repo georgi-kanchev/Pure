@@ -12,6 +12,7 @@
         <ProjectReference Include="..\..\Engine\Collision\Pure.Engine.Collision.csproj"/>
         <ProjectReference Include="..\..\Engine\Execution\Pure.Engine.Execution.csproj"/>
         <ProjectReference Include="..\..\Engine\LocalAreaNetwork\Pure.Engine.LocalAreaNetwork.csproj"/>
+        <ProjectReference Include="..\..\Tools\Particles\Pure.Tools.Particles.csproj"/>
         <ProjectReference Include="..\..\Engine\Tiles\Pure.Engine.Tiles.csproj"/>
         <ProjectReference Include="..\..\Engine\UserInterface\Pure.Engine.UserInterface.csproj"/>
         <ProjectReference Include="..\..\Engine\Utility\Pure.Engine.Utility.csproj"/>

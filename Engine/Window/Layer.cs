@@ -631,7 +631,7 @@ public class Layer
         }
     }
 
-    #region Backend
+#region Backend
     // per tile shader data map (8x8 pixels)
     //
     // [tnta][tntc][tntt][    ][    ][rea2][reo2][ren2]
@@ -812,10 +812,10 @@ public class Layer
                 var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
                 var (vx, vy) = (tx * AtlasTileSize, ty * AtlasTileSize);
 
-                shaderParams.Append(new(new(vx + px, vy + 0.5f + py), data, full.tl + centerOff));
+                shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), data, full.tl + centerOff));
 
                 if (includeArea)
-                    shaderParams.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl + centerOff));
+                    shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl + centerOff));
             }
     }
     private static (bool mirrorH, sbyte angle) GetOrientation(byte pose)
@@ -849,8 +849,8 @@ public class Layer
         TryInit();
 
         var atlas = atlases[AtlasPath];
-        var (w, h) = (queue.Texture.Size.X, queue.Texture.Size.Y);
-        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue.Texture, shader);
+        var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
+        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, shader);
 
         if (drawShaderData && data != null && shaderParams != null)
         {
@@ -866,9 +866,9 @@ public class Layer
         shader?.SetUniform("time", Window.time.ElapsedTime.AsSeconds());
         shader?.SetUniform("data", data?.Texture);
 
-        queue.Clear(new(BackgroundColor));
-        queue.Draw(verts, new(atlas));
-        queue.Display();
+        queue?.Clear(new(BackgroundColor));
+        queue?.Draw(verts, new(atlas));
+        queue?.Display();
 
         Window.vertsWindow[0] = new(new(0, 0), Color.White, new(0, 0));
         Window.vertsWindow[1] = new(new(w, 0), Color.White, new(w, 0));
@@ -882,8 +882,8 @@ public class Layer
         // result?.Texture.CopyToImage().SaveToFile($"render-{GetHashCode()}.png");
         // data?.Texture.CopyToImage().SaveToFile($"shader-data-{GetHashCode()}.png");
 
-        verts.Clear();
-        shaderParams.Clear();
+        verts?.Clear();
+        shaderParams?.Clear();
     }
 
     private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int tileId, (int w, int h) size)
@@ -957,5 +957,5 @@ public class Layer
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }

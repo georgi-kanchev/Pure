@@ -343,7 +343,32 @@ public static class Collections
         return collection[index];
     }
 
-    #region Backend
+    public static bool IsOneOf<T>(this T value, params T[] values)
+    {
+        return value.IsAnyOf(values);
+    }
+    public static bool IsAnyOf<T>(this T value, params T[] values)
+    {
+        for (var i = 0; i < values?.Length; i++)
+            if (EqualityComparer<T>.Default.Equals(value, values[i]))
+                return true;
+
+        return false;
+    }
+    public static bool IsNoneOf<T>(this T value, params T[] values)
+    {
+        return value.IsAnyOf(values) == false;
+    }
+    public static bool IsAllOf<T>(this T value, params T[] values)
+    {
+        for (var i = 0; i < values?.Length; i++)
+            if (EqualityComparer<T>.Default.Equals(value, values[i]) == false)
+                return false;
+
+        return true;
+    }
+
+#region Backend
     private static readonly Dictionary<int, (float time, float removeAfter)> animations = [];
 
     internal static void TryRemoveAnimations()
@@ -358,5 +383,5 @@ public static class Collections
                 animations.Remove(key);
         }
     }
-    #endregion
+#endregion
 }

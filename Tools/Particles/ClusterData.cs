@@ -1,4 +1,4 @@
-﻿namespace Pure.Engine.Utility;
+﻿namespace Pure.Tools.Particles;
 
 internal class ClusterData(float timeLeft)
 {

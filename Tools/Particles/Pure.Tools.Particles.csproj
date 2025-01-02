@@ -4,11 +4,12 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>Storage</RootNamespace>
+        <RootNamespace>Particles</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Engine\Utilities\Pure.Engine.Utilities.csproj"/>
+        <ProjectReference Include="..\..\Engine\Execution\Pure.Engine.Execution.csproj"/>
+        <ProjectReference Include="..\..\Engine\Utility\Pure.Engine.Utility.csproj"/>
     </ItemGroup>
 
 </Project>

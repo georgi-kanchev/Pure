@@ -87,10 +87,7 @@ public static class Time
         UpdatesPerSecondAverage = UpdateCount / RuntimeClock;
         UpdateCount++;
 
-        Flow.Update();
-        UpdateTimers();
         Collections.TryRemoveAnimations();
-        Particles.Update();
     }
     /// <summary>
     /// Converts a duration in seconds to a formatted clock string.
@@ -195,95 +192,7 @@ public static class Time
         };
     }
 
-    public static void CallAfter(float seconds, Action method)
-    {
-        timers.Add(new(method, null, seconds, false));
-    }
-    public static void CallEvery(float seconds, Action method)
-    {
-        timers.Add(new(method, null, seconds, true));
-    }
-    public static void CallFor(float seconds, Action<float> method)
-    {
-        timers.Add(new(null, method, seconds, false));
-    }
-    /// <summary>
-    /// Cancels a scheduled method call.
-    /// </summary>
-    /// <param name="method">The method to cancel.</param>
-    public static void CancelCall(Action method)
-    {
-        foreach (var t in timers)
-            if (t.method == method)
-                t.method = null;
-    }
-    public static void CancelCall(Action<float> method)
-    {
-        foreach (var t in timers)
-            if (t.methodF == method)
-                t.methodF = null;
-    }
-    /// <summary>
-    /// Offsets the scheduled call time of a method.
-    /// </summary>
-    /// <param name="method">The method to offset the call time for.</param>
-    /// <param name="seconds">The number of seconds to offset the call time by.</param>
-    public static void DelayCall(float seconds, Action method)
-    {
-        foreach (var t in timers)
-            if (t.method == method)
-                t.startTime += seconds;
-    }
-    public static void ExtendCall(float seconds, Action<float> method)
-    {
-        foreach (var t in timers)
-            if (t.methodF == method)
-                t.startTime += seconds;
-    }
-
-    #region Backend
-    private sealed class Timer(Action? method, Action<float>? methodF, float delay, bool loop)
-    {
-        public Action? method = method;
-        public Action<float>? methodF = methodF;
-        public float startTime = RuntimeClock;
-
-        public void TryTrigger()
-        {
-            var progress = delay <= 0.001f ? 1f : RuntimeClock.Map((startTime, startTime + delay), (0, 1));
-            if (RuntimeClock < startTime + delay)
-            {
-                methodF?.Invoke(Math.Clamp(progress, 0f, 1f));
-                return;
-            }
-
-            methodF?.Invoke(Math.Clamp(progress, 0f, 1f));
-            method?.Invoke();
-            startTime = RuntimeClock;
-
-            if (loop)
-                return;
-
-            methodF = null;
-            method = null;
-        }
-    }
-
-    private static readonly List<Timer> timers = [];
+#region Backend
     private static readonly Stopwatch dt = new();
-
-    internal static void UpdateTimers()
-    {
-        for (var i = 0; i < timers.Count; i++)
-        {
-            timers[i].TryTrigger();
-
-            if (timers[i].method != null || timers[i].methodF != null)
-                continue;
-
-            timers.Remove(timers[i]);
-            i--;
-        }
-    }
-    #endregion
+#endregion
 }

@@ -1,5 +1,5 @@
 using System.Collections;
-
+using Pure.Engine.Execution;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
 
@@ -12,6 +12,7 @@ public static class Flows
         while (Window.KeepOpen())
         {
             Time.Update();
+            Flow.Update(Time.Delta);
 
             if (Keyboard.Key.A.IsJustPressed())
             {
