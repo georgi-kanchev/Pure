@@ -34,8 +34,8 @@ public static class FlappyBird
         var collisionMap = new SolidMap();
         var layer = new Layer(background.Size);
 
-        collisionMap.AddSolids(Tile.BOX_DEFAULT_CORNER, new Solid(0, 0, 1, 1));
-        collisionMap.AddSolids(Tile.BOX_DEFAULT_STRAIGHT, new Solid(0, 0, 1, 1));
+        collisionMap.AddSolids(Tile.PIPE_SOLID_CORNER, new Solid(0, 0, 1, 1));
+        collisionMap.AddSolids(Tile.PIPE_SOLID_STRAIGHT, new Solid(0, 0, 1, 1));
 
         InitializePipes();
 
@@ -107,12 +107,12 @@ public static class FlappyBird
                 background.SetArea(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT),
                     new Tile(Tile.FULL, Color.Green.ToDark(0.8f)));
                 foreground.SetBox(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), Tile.EMPTY,
-                    new(Tile.BOX_DEFAULT_CORNER, Color.Green),
-                    new(Tile.BOX_DEFAULT_STRAIGHT, Color.Green));
+                    new(Tile.PIPE_SOLID_CORNER, Color.Green),
+                    new(Tile.PIPE_SOLID_STRAIGHT, Color.Green));
                 foreground.SetBox(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT),
                     Tile.EMPTY,
-                    new(Tile.BOX_DEFAULT_CORNER, Color.Green),
-                    new(Tile.BOX_DEFAULT_STRAIGHT, Color.Green));
+                    new(Tile.PIPE_SOLID_CORNER, Color.Green),
+                    new(Tile.PIPE_SOLID_STRAIGHT, Color.Green));
             }
         }
 

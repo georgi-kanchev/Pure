@@ -28,9 +28,9 @@ internal class TerrainPanel : Panel
 
             editor.MapsUi.SetPanel(this);
 
-            var tileLeft = new Tile(BOX_GRID_T_SHAPED, Blue);
-            var tileMid = new Tile(BOX_GRID_STRAIGHT, Blue);
-            var tileRight = new Tile(BOX_GRID_T_SHAPED, Blue, Pose.Down);
+            var tileLeft = new Tile(PIPE_GRID_T_SHAPED, Blue);
+            var tileMid = new Tile(PIPE_GRID_STRAIGHT, Blue);
+            var tileRight = new Tile(PIPE_GRID_T_SHAPED, Blue, Pose.Down);
 
             SetLine(17);
 

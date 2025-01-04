@@ -2,9 +2,7 @@ using Pure.Engine.Collision;
 using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
-
 using static Pure.Engine.Utility.Color;
-
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -111,7 +109,7 @@ public static class Collision
     private static void SetRoad(this TileMap tileMap, (int x, int y) pointA, (int x, int y) pointB)
     {
         var pose = pointA.x == pointB.x ? Pose.Right : Pose.Default;
-        tileMap.SetLine(pointA, pointB, new Tile(Tile.BAR_SPIKE_STRAIGHT, Brown, pose));
+        tileMap.SetLine(pointA, pointB, new Tile(Tile.BAR_SQUARE_STRAIGHT, Brown, pose));
     }
     private static void SetHouses(this TileMap tileMap, params (int x, int y)[] positions)
     {

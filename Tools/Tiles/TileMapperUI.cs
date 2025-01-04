@@ -27,7 +27,9 @@ public static class TileMapperUI
     public static Tile[]? ThemePromptItems { get; set; }
     public static (Tile full, Tile pick, Tile halfShade, Tile handle) ThemePalette { get; set; }
     public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemePanel { get; set; }
-    public static (Tile background, Tile arrow, uint tint, uint tintSelect, uint tintDisable) ThemeList { get; set; }
+    public static (uint tint, uint tintSelect, uint tintDisable) ThemeListText { get; set; }
+    public static Tile[,] ThemeListPatch { get; set; }
+    public static (Tile edgeLeft, Tile fill, Tile edgeRight, Tile arrow) ThemeListBar { get; set; }
     public static (Tile img, Tile audio, Tile font, Tile txt, Tile zip, Tile vid, Tile cfg, Tile exe) ThemeFileViewer { get; set; }
 
     public static void SetTooltip(this TileMapPack maps, Tooltip tooltip, int zOrder = 1)
@@ -184,7 +186,7 @@ public static class TileMapperUI
             return;
 
         var (img, audio, font, txt, zip, vid, cfg, exe) = ThemeFileViewer;
-        var (_, _, tint, select, _) = ThemeList;
+        var (tint, select, _) = ThemeListText;
         var isFolder = fileViewer.IsFolder(item);
         var isHardDrive = fileViewer.HardDrives.Items.Contains(item);
         var isFileOrFolder = fileViewer.FilesAndFolders.Items.Contains(item);
@@ -255,11 +257,8 @@ public static class TileMapperUI
         if (maps.TileMaps.Count <= zOrder + 1 || fileViewer.IsHidden)
             return;
 
-        var bg = ThemeList.background;
-        bg.Tint = new Color(bg.Tint).ToDark(0.2f);
         var prev = TileMapper.Mask;
         TileMapper.Mask = fileViewer.Mask;
-        maps.TileMaps[zOrder].SetArea(fileViewer.Area, bg);
         maps.SetList(fileViewer.FilesAndFolders, zOrder);
         maps.SetFileViewerItem(fileViewer, fileViewer.User, zOrder + 1);
         maps.SetFileViewerItem(fileViewer, fileViewer.Back, zOrder + 1);
@@ -474,7 +473,7 @@ public static class TileMapperUI
         if (maps.TileMaps.Count <= zOrder + 2 || list.IsHidden)
             return;
 
-        var (bg, arrow, _, _, _) = ThemeList;
+        var (edgeLeft, fill, edgeRight, arrow) = ThemeListBar;
         var arrowPos = (list.X + list.Width - 1, list.Y);
 
         arrow.Tint = list.GetInteractionColor(arrow.Tint);
@@ -482,13 +481,18 @@ public static class TileMapperUI
         var prev = TileMapper.Mask;
         TileMapper.Mask = list.Mask;
         Clear(maps, list, zOrder);
-        maps.TileMaps[zOrder].SetArea(list.Area, bg);
 
         if (list.IsScrollAvailable)
             SetScroll(maps, list.Scroll, zOrder + 1);
 
         if (list.IsCollapsed)
+        {
+            maps.TileMaps[zOrder].SetBar(list.Position, edgeLeft, fill, list.Width);
             maps.TileMaps[zOrder + 2].SetTile(arrowPos, arrow, list.Mask);
+        }
+        else
+            maps.TileMaps[zOrder].SetPatch(list.Area, ThemeListPatch);
+
         TileMapper.Mask = prev;
     }
     public static void SetListItem(this TileMapPack maps, List list, Button item, int zOrder = 1, bool showSelected = true)
@@ -496,7 +500,7 @@ public static class TileMapperUI
         if (maps.TileMaps.Count <= zOrder || item.IsHidden)
             return;
 
-        var (_, _, tint, select, disable) = ThemeList;
+        var (tint, select, disable) = ThemeListText;
         var color = item.IsSelected && showSelected ? select : tint;
         var isLeftCrop = list.Span == Span.Horizontal &&
                          item.Width < list.ItemSize.width &&
@@ -520,7 +524,7 @@ public static class TileMapperUI
 
         var prev = TileMapper.Mask;
         TileMapper.Mask = segment;
-        maps.TileMaps[zOrder].SetBox(segment, new(FULL, color), new(BOX_CORNER_ROUND, color), new(FULL, color));
+        maps.TileMaps[zOrder].SetBox(segment, new(FULL, color), new(BOX_CORNER, color), new(FULL, color));
 
         if (showIndex)
         {
@@ -554,23 +558,30 @@ public static class TileMapperUI
         var dg = g.ToDark();
         var dim = Black.ToTransparent();
         var arrow = new Tile(ARROW_TAILLESS_ROUND, g);
-        const ushort CORNER = BOX_HOLLOW_CORNER!;
-        const ushort STRAIGHT = BOX_HOLLOW_STRAIGHT!;
+        const ushort CORNER = PIPE_HOLLOW_CORNER!;
+        const ushort STRAIGHT = PIPE_HOLLOW_STRAIGHT!;
 
         ThemeScrollArrow = arrow;
-        ThemeButtonBox = (new(BOX_CORNER_ROUND, g), new(FULL, g), new(FULL, g), g.ToBright());
+        ThemeButtonBox = (new(BOX_CORNER, g), new(FULL, g), new(FULL, g), g.ToBright());
         ThemeButtonBar = (new(BAR_BIG_EDGE, g), new(FULL, g), g.ToBright());
         ThemeInputBox = (new(FULL, g.ToDark(0.4f)), new(SHAPE_LINE, White, Pose.Down), g.ToBright(), selectionTint: Blue);
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
         ThemeSwitch = (new(ARROW_TAILLESS_ROUND, White), Green, dg);
         ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(SHAPE_CIRCLE_BIG, g.ToBright()));
-        ThemeTooltip = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), tintText: White);
+        ThemeTooltip = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), tintText: White);
         ThemePages = (new(MATH_MUCH_LESS, g), new(MATH_LESS, g), new(MATH_GREATER, g), new(MATH_MUCH_GREATER, g));
-        ThemePrompt = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), new(FULL, dim), tintText: White);
+        ThemePrompt = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), new(FULL, dim), tintText: White);
         ThemePromptItems = [new(ICON_YES, Green), new(ICON_NO, Red)];
         ThemePalette = (FULL, new(ICON_PICK, g), new(SHADE_5, g.ToDark()), new(SHAPE_CIRCLE_SMALL, g));
-        ThemePanel = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), new(FULL, dg), tintText: White);
-        ThemeList = (new(FULL, dg), new(MATH_GREATER, g, Pose.Right), g.ToBright(0.3f), Green, g.ToDark(0.3f));
+        ThemePanel = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), tintText: White);
+        ThemeListText = (g.ToBright(0.3f), Green, g.ToDark(0.3f));
+        ThemeListBar = (new(FULL, dg), new(FULL, dg), new(FULL, dg), new(MATH_GREATER, g, Pose.Right));
+        ThemeListPatch = new Tile[,]
+        {
+            { new(FULL, dg), new(FULL, dg), new(FULL, dg) },
+            { new(FULL, dg), new(FULL, dg), new(FULL, dg) },
+            { new(FULL, dg), new(FULL, dg), new(FULL, dg) }
+        };
         ThemeButtonPatch = (new[,]
         {
             { new(CORNER, g), new(STRAIGHT, g), new Tile(CORNER, g).Rotate(1) },
@@ -581,7 +592,7 @@ public static class TileMapperUI
         var min = new Tile(MATH_MUCH_LESS, g);
         var mid = new Tile(PUNCTUATION_PIPE, g);
         var max = new Tile(MATH_MUCH_GREATER, g);
-        ThemeStepper = (new(BOX_CORNER_ROUND, dg), new(FULL, dg), arrow, min, mid, max, tintText: g, valueTint: White);
+        ThemeStepper = (new(BOX_CORNER, dg), new(FULL, dg), arrow, min, mid, max, tintText: g, valueTint: White);
 
         var img = new Tile(ICON_PICTURE, Cyan);
         var audio = new Tile(AUDIO_NOTES_BEAMED_EIGHT, Purple.ToBright(0.35f));

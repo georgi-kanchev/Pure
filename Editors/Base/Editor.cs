@@ -134,7 +134,7 @@ public class Editor
     {
         SetGrid();
 
-        Input.OnTextCopy(() => Window.Clipboard = Input.Clipboard);
+        Input.OnTextCopy(() => Window.Clipboard = Input.Clipboard ?? "");
         while (Window.KeepOpen())
         {
             Time.Update();
@@ -541,7 +541,7 @@ public class Editor
 
         var gray = Color.Gray.ToDark();
         MapsUi.TileMaps[(int)LayerMapsUi.Back].SetBox(
-            MapPanel.Area, new(Tile.FULL, gray), new(Tile.BOX_CORNER_ROUND, gray), new(Tile.FULL, gray));
+            MapPanel.Area, new(Tile.FULL, gray), new(Tile.BOX_CORNER, gray), new(Tile.FULL, gray));
 
         MapsUi.TileMaps[FRONT].SetText((0, 0), $"FPS:{fps}");
         MapsUi.TileMaps[FRONT].SetText((11, bottomY - 2), $"{mw} x {mh}");
