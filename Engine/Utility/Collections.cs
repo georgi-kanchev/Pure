@@ -5,16 +5,16 @@ namespace Pure.Engine.Utility;
 public static class Collections
 {
     /// <summary>
-    /// Randomly shuffles the elements in the given collection.
+    /// Randomly shuffles the elements in the given collection according to an optional seed.
     /// </summary>
     /// <typeparam name="T">The type of elements in the collection.</typeparam>
     /// <param name="collection">The collection to shuffle.</param>
-    public static void Shuffle<T>(this IList<T> collection)
+    /// <param name="seed">The optional seed.</param>
+    public static void Shuffle<T>(this IList<T> collection, float seed = float.NaN)
     {
-        var rand = new Random();
         for (var i = collection.Count - 1; i > 0; i--)
         {
-            var j = rand.Next(i + 1);
+            var j = (0, i).Random(seed);
             (collection[j], collection[i]) = (collection[i], collection[j]);
         }
     }
