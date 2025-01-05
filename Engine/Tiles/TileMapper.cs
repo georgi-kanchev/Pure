@@ -249,9 +249,45 @@ public static class TileMapper
         if (w <= 0 || h <= 0)
             return;
 
-        if (w == 1 || h == 1)
+        if (w == 1 && h == 1)
         {
-            tileMap.SetTile((x, y), tiles3X3[1, 1]);
+            tileMap.SetTile((x, y), tiles3X3[1, 1], Mask);
+            return;
+        }
+
+        if (h == 1)
+        {
+            tileMap.SetTile((x, y), tiles3X3[1, 0], Mask);
+
+            if (w > 2)
+                tileMap.SetArea((x + 1, y, w - 2, 1), tiles3X3[1, 1]);
+
+            tileMap.SetTile((x + w - 1, y), tiles3X3[1, 2], Mask);
+            return;
+        }
+
+        if (w == 1)
+        {
+            tileMap.SetTile((x, y), tiles3X3[0, 1], Mask);
+
+            if (h > 2)
+                tileMap.SetArea((x, y + 1, 1, h - 2), tiles3X3[1, 1]);
+
+            tileMap.SetTile((x, y + h - 1), tiles3X3[2, 1], Mask);
+            return;
+        }
+
+        if (w == 2)
+        {
+            tileMap.SetArea((x, y, 1, h), tiles3X3[1, 0]);
+            tileMap.SetArea((x + 1, y, 1, h), tiles3X3[1, 2]);
+            return;
+        }
+
+        if (h == 2)
+        {
+            tileMap.SetArea((x, y, w, 1), tiles3X3[0, 1]);
+            tileMap.SetArea((x, y + 1, w, 1), tiles3X3[2, 1]);
             return;
         }
 
@@ -259,18 +295,16 @@ public static class TileMapper
         tileMap.SetArea((x + 1, y, w - 2, 1), tiles3X3[0, 1]);
         tileMap.SetTile((x + w - 1, y), tiles3X3[0, 2], Mask);
 
-        if (h != 2)
-        {
-            tileMap.SetArea((x, y + 1, 1, h - 2), tiles3X3[1, 0]);
-            tileMap.SetArea((x + 1, y + 1, w - 2, h - 2), tiles3X3[1, 1]);
-            tileMap.SetArea((x + w - 1, y + 1, 1, h - 2), tiles3X3[1, 2]);
-        }
+        tileMap.SetArea((x, y + 1, 1, h - 2), tiles3X3[1, 0]);
+        tileMap.SetArea((x + 1, y + 1, w - 2, h - 2), tiles3X3[1, 1]);
+        tileMap.SetArea((x + w - 1, y + 1, 1, h - 2), tiles3X3[1, 2]);
 
         tileMap.SetTile((x, y + h - 1), tiles3X3[2, 0], Mask);
         tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), tiles3X3[2, 1]);
         tileMap.SetTile((x + w - 1, y + h - 1), tiles3X3[2, 2], Mask);
     }
-    public static void SetBar(this TileMap tileMap, (int x, int y) cell, Tile edge, Tile fill, int size = 5, bool vertical = false)
+
+    public static void SetBar(this TileMap tileMap, (int x, int y) cell, Tile edge1, Tile fill, Tile edge2, int size = 5, bool vertical = false)
     {
         var (x, y) = cell;
         var off = size == 1 ? 0 : 1;
@@ -279,24 +313,24 @@ public static class TileMapper
         {
             if (size > 1)
             {
-                tileMap.SetTile(cell, new(edge.Id, edge.Tint, Pose.Right), Mask);
-                tileMap.SetTile((x, y + size - 1), new(edge.Id, edge.Tint, Pose.Left), Mask);
+                tileMap.SetTile(cell, edge1, Mask);
+                tileMap.SetTile((x, y + size - 1), edge2, Mask);
             }
 
             if (size != 2)
-                tileMap.SetArea((x, y + off, 1, size - 2), new Tile(fill.Id, fill.Tint, Pose.Right));
+                tileMap.SetArea((x, y + off, 1, size - 2), fill);
 
             return;
         }
 
         if (size > 1)
         {
-            tileMap.SetTile(cell, new(edge.Id, edge.Tint), Mask);
-            tileMap.SetTile((x + size - 1, y), new(edge.Id, edge.Tint, Pose.Down), Mask);
+            tileMap.SetTile(cell, edge1, Mask);
+            tileMap.SetTile((x + size - 1, y), edge2, Mask);
         }
 
         if (size != 2)
-            tileMap.SetArea((x + off, y, size - 2, 1), new Tile(fill.Id, fill.Tint));
+            tileMap.SetArea((x + off, y, size - 2, 1), fill);
     }
     public static void SetText(this TileMap tileMap, (int x, int y) cell, string? text, uint tint = uint.MaxValue, char tintBrush = '#')
     {
@@ -359,7 +393,7 @@ public static class TileMapper
         }
     }
 
-    #region Backend
+#region Backend
     private static float Limit(float number, float rangeA, float rangeB, bool isOverflowing = false)
     {
         if (rangeA > rangeB)
@@ -441,5 +475,5 @@ public static class TileMapper
 
         return colors;
     }
-    #endregion
+#endregion
 }

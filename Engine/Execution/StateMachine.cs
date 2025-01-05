@@ -93,7 +93,7 @@ public class StateMachine
             {
                 var st = new State(state);
                 st.root = st;
-                roots[state.Method.Name] = st;
+                roots[$"{st}"] = st;
             }
 
             return;

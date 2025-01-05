@@ -68,12 +68,12 @@ public class Layer
     }
     public uint BackgroundColor { get; set; }
 
-    public Light Light
+    public Light EffectLight
     {
-        get => light;
+        get => effectLight;
         set
         {
-            light = value;
+            effectLight = value;
             shader?.SetUniform("lightFlags", (int)value);
         }
     }
@@ -690,7 +690,7 @@ public class Layer
     private string atlasPath;
     private (int width, int height) size;
     private float zoom;
-    private Light light;
+    private Light effectLight;
 
     [DoNotSave]
     internal static readonly Dictionary<string, Texture> atlases = new();

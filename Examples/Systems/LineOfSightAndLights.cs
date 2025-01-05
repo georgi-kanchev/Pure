@@ -2,7 +2,6 @@ using Pure.Engine.Utility;
 using Pure.Engine.Collision;
 using Pure.Engine.Tiles;
 using Pure.Engine.Window;
-
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -32,7 +31,7 @@ public static class LineOfSightAndLights
 
         Window.BackgroundColor = Color.Gray.ToDark(0.65f);
         layer.BackgroundColor = Color.Gray;
-        layer.Light = Light.Mask | Light.ObstaclesInShadow;
+        layer.EffectLight = Light.Mask | Light.ObstaclesInShadow;
 
         while (Window.KeepOpen())
         {

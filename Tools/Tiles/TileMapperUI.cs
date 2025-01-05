@@ -14,11 +14,11 @@ public static class TileMapperUI
 
     public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemeButtonBox { get; set; }
     public static (Tile[,] tiles3X3, uint tintText) ThemeButtonPatch { get; set; }
-    public static (Tile edge, Tile fill, uint tintText) ThemeButtonBar { get; set; }
+    public static (Tile left, Tile fill, Tile right, uint tintText) ThemeButtonBar { get; set; }
     public static (Tile background, Tile cursor, uint tintText, uint selectionTint) ThemeInputBox { get; set; }
     public static (Tile on, Tile off) ThemeCheckbox { get; set; }
     public static (Tile arrow, uint tintOn, uint tintOff) ThemeSwitch { get; set; }
-    public static (Tile edge, Tile fill, Tile handle) ThemeSlider { get; set; }
+    public static (Tile edge1, Tile fill, Tile edge2, Tile handle) ThemeSlider { get; set; }
     public static Tile ThemeScrollArrow { get; set; }
     public static (Tile corner, Tile fill, Tile arrow, Tile min, Tile mid, Tile max, uint tintText, uint valueTint) ThemeStepper { get; set; }
     public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemeTooltip { get; set; }
@@ -29,7 +29,7 @@ public static class TileMapperUI
     public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemePanel { get; set; }
     public static (uint tint, uint tintSelect, uint tintDisable) ThemeListText { get; set; }
     public static Tile[,] ThemeListPatch { get; set; }
-    public static (Tile edgeLeft, Tile fill, Tile edgeRight, Tile arrow) ThemeListBar { get; set; }
+    public static (Tile left, Tile fill, Tile right, Tile arrow) ThemeListBar { get; set; }
     public static (Tile img, Tile audio, Tile font, Tile txt, Tile zip, Tile vid, Tile cfg, Tile exe) ThemeFileViewer { get; set; }
 
     public static void SetTooltip(this TileMapPack maps, Tooltip tooltip, int zOrder = 1)
@@ -105,7 +105,7 @@ public static class TileMapperUI
         var (w, h) = button.Size;
         var offsetW = w / 2 - Math.Min(button.Text.Length, h == 1 ? w : w - 2) / 2;
         var (bCorner, bEdge, bFill, bTextTint) = ThemeButtonBox;
-        var (rEdge, rFill, rTextTint) = ThemeButtonBar;
+        var (rLeft, rFill, rRight, rTextTint) = ThemeButtonBar;
         var text = button.Text.Shorten(h == 1 ? w : w - 2);
         var textPos = (button.X + offsetW, button.Y + h / 2);
         var isBar = button.Height == 1;
@@ -115,17 +115,18 @@ public static class TileMapperUI
         Clear(maps, button, zOrder);
         if (isBar)
         {
-            rEdge.Tint = button.GetInteractionColor(rEdge.Tint, 0.3f);
-            rFill.Tint = button.GetInteractionColor(rFill.Tint, 0.3f);
-            rTextTint = button.GetInteractionColor(rTextTint, 0.3f);
-            maps.TileMaps[zOrder].SetBar(button.Position, rEdge, rFill, button.Width);
+            rLeft.Tint = button.GetInteractionColor(rLeft.Tint);
+            rFill.Tint = button.GetInteractionColor(rFill.Tint);
+            rRight.Tint = button.GetInteractionColor(rRight.Tint);
+            rTextTint = button.GetInteractionColor(rTextTint);
+            maps.TileMaps[zOrder].SetBar(button.Position, rLeft, rFill, rRight, button.Width);
         }
         else
         {
-            bCorner.Tint = button.GetInteractionColor(bCorner.Tint, 0.3f);
-            bEdge.Tint = button.GetInteractionColor(bEdge.Tint, 0.3f);
-            bFill.Tint = button.GetInteractionColor(bFill.Tint, 0.3f);
-            bTextTint = button.GetInteractionColor(bTextTint, 0.3f);
+            bCorner.Tint = button.GetInteractionColor(bCorner.Tint);
+            bEdge.Tint = button.GetInteractionColor(bEdge.Tint);
+            bFill.Tint = button.GetInteractionColor(bFill.Tint);
+            bTextTint = button.GetInteractionColor(bTextTint);
             maps.TileMaps[zOrder].SetBox(button.Area, bFill, bCorner, bEdge);
         }
 
@@ -269,17 +270,25 @@ public static class TileMapperUI
         if (maps.TileMaps.Count <= zOrder + 1 || slider.IsHidden)
             return;
 
-        var (edge, fill, handle) = ThemeSlider;
+        var (edge1, fill, edge2, handle) = ThemeSlider;
         var size = slider.IsVertical ? slider.Height : slider.Width;
 
-        edge.Tint = slider.GetInteractionColor(edge.Tint, 0.3f);
-        fill.Tint = slider.GetInteractionColor(fill.Tint, 0.3f);
-        handle.Tint = slider.Handle.GetInteractionColor(handle.Tint, 0.3f);
+        edge1.Tint = slider.GetInteractionColor(edge1.Tint);
+        fill.Tint = slider.GetInteractionColor(fill.Tint);
+        edge2.Tint = slider.GetInteractionColor(edge2.Tint);
+        handle.Tint = slider.Handle.GetInteractionColor(handle.Tint);
+
+        if (slider.IsVertical)
+        {
+            edge1 = edge1.Rotate(1);
+            fill = fill.Rotate(1);
+            edge2 = edge2.Rotate(1);
+        }
 
         var prev = TileMapper.Mask;
         TileMapper.Mask = slider.Mask;
         Clear(maps, slider, zOrder);
-        maps.TileMaps[zOrder].SetBar(slider.Position, edge, fill, size, slider.IsVertical);
+        maps.TileMaps[zOrder].SetBar(slider.Position, edge1, fill, edge2, size, slider.IsVertical);
         maps.TileMaps[zOrder + 1].SetTile(slider.Handle.Position, handle, slider.Mask);
         TileMapper.Mask = prev;
     }
@@ -294,8 +303,8 @@ public static class TileMapperUI
         var up = scroll.Increase.Position;
         var down = scroll.Decrease.Position;
 
-        var upTint = scroll.Increase.GetInteractionColor(arrow.Tint, 0.3f);
-        var downTint = scroll.Decrease.GetInteractionColor(arrow.Tint, 0.3f);
+        var upTint = scroll.Increase.GetInteractionColor(arrow.Tint);
+        var downTint = scroll.Decrease.GetInteractionColor(arrow.Tint);
 
         var prev = TileMapper.Mask;
         TileMapper.Mask = scroll.Mask;
@@ -317,17 +326,17 @@ public static class TileMapperUI
         var maxTextSize = Math.Min(stepper.Width - 1, stepper.Text.Length);
         var upPos = stepper.Increase.Position;
         var downPos = stepper.Decrease.Position;
-        var upTint = stepper.Increase.GetInteractionColor(arrow.Tint, 0.4f);
-        var downTint = stepper.Decrease.GetInteractionColor(arrow.Tint, 0.4f);
+        var upTint = stepper.Increase.GetInteractionColor(arrow.Tint);
+        var downTint = stepper.Decrease.GetInteractionColor(arrow.Tint);
         var text = stepper.Text.Shorten(maxTextSize);
         var mask = stepper.Mask;
 
         value = value.Shorten(stepper.Width - 4);
         fill.Tint = stepper.GetInteractionColor(fill.Tint, 0.05f);
         corner.Tint = stepper.GetInteractionColor(corner.Tint, 0.05f);
-        min.Tint = stepper.Minimum.GetInteractionColor(min.Tint, 0.3f);
-        mid.Tint = stepper.Middle.GetInteractionColor(mid.Tint, 0.3f);
-        max.Tint = stepper.Maximum.GetInteractionColor(max.Tint, 0.3f);
+        min.Tint = stepper.Minimum.GetInteractionColor(min.Tint);
+        mid.Tint = stepper.Middle.GetInteractionColor(mid.Tint);
+        max.Tint = stepper.Maximum.GetInteractionColor(max.Tint);
 
         var prev = TileMapper.Mask;
         TileMapper.Mask = mask;
@@ -473,10 +482,15 @@ public static class TileMapperUI
         if (maps.TileMaps.Count <= zOrder + 2 || list.IsHidden)
             return;
 
-        var (edgeLeft, fill, edgeRight, arrow) = ThemeListBar;
+        var (left, fill, right, arrow) = ThemeListBar;
         var arrowPos = (list.X + list.Width - 1, list.Y);
+        var sel = list.SelectedItems;
+        Block obj = list.IsCollapsed && sel.Count > 0 && sel[0].IsHovered ? sel[0] : list;
 
-        arrow.Tint = list.GetInteractionColor(arrow.Tint);
+        arrow.Tint = obj.GetInteractionColor(arrow.Tint);
+        left.Tint = obj.GetInteractionColor(left.Tint);
+        fill.Tint = obj.GetInteractionColor(fill.Tint);
+        right.Tint = obj.GetInteractionColor(right.Tint);
 
         var prev = TileMapper.Mask;
         TileMapper.Mask = list.Mask;
@@ -487,11 +501,16 @@ public static class TileMapperUI
 
         if (list.IsCollapsed)
         {
-            maps.TileMaps[zOrder].SetBar(list.Position, edgeLeft, fill, list.Width);
+            maps.TileMaps[zOrder].SetBar(list.Position, left, fill, right, list.Width);
             maps.TileMaps[zOrder + 2].SetTile(arrowPos, arrow, list.Mask);
         }
         else
-            maps.TileMaps[zOrder].SetPatch(list.Area, ThemeListPatch);
+        {
+            if (list.Height == 1)
+                maps.TileMaps[zOrder].SetBar(list.Position, left, fill, right, list.Width);
+            else
+                maps.TileMaps[zOrder].SetPatch(list.Area, ThemeListPatch);
+        }
 
         TileMapper.Mask = prev;
     }
@@ -535,7 +554,7 @@ public static class TileMapperUI
         TileMapper.Mask = prev;
     }
 
-    public static Color GetInteractionColor(this Block block, Color baseColor, float amount = 0.5f)
+    public static Color GetInteractionColor(this Block block, Color baseColor, float amount = 0.1f)
     {
         var hotkeyIsPressed = block is Button btn &&
                               ((Key)btn.Hotkey.id).IsPressed() &&
@@ -563,11 +582,11 @@ public static class TileMapperUI
 
         ThemeScrollArrow = arrow;
         ThemeButtonBox = (new(BOX_CORNER, g), new(FULL, g), new(FULL, g), g.ToBright());
-        ThemeButtonBar = (new(BAR_BIG_EDGE, g), new(FULL, g), g.ToBright());
+        ThemeButtonBar = (new(BAR_BIG_EDGE, g), new(FULL, g), new(BAR_BIG_EDGE, g, Pose.Down), g.ToBright());
         ThemeInputBox = (new(FULL, g.ToDark(0.4f)), new(SHAPE_LINE, White, Pose.Down), g.ToBright(), selectionTint: Blue);
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
         ThemeSwitch = (new(ARROW_TAILLESS_ROUND, White), Green, dg);
-        ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(SHAPE_CIRCLE_BIG, g.ToBright()));
+        ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(BAR_BIG_EDGE, g, Pose.Down), new(SHAPE_CIRCLE_BIG, g.ToBright()));
         ThemeTooltip = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), tintText: White);
         ThemePages = (new(MATH_MUCH_LESS, g), new(MATH_LESS, g), new(MATH_GREATER, g), new(MATH_MUCH_GREATER, g));
         ThemePrompt = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), new(FULL, dim), tintText: White);
