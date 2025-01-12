@@ -13,7 +13,8 @@ public enum Interaction
     Trigger, DoubleTrigger,
     PressAndHold, PressRight, ReleaseRight, PressMiddle, ReleaseMiddle,
     Scroll,
-    Select
+    Select,
+    Custom1, Custom2, Custom3 // for custom user behavior, not used by the engine
 }
 
 public enum MouseCursor

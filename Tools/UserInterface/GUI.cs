@@ -2,7 +2,6 @@
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
 using Pure.Tools.Tiles;
-
 using static Pure.Engine.UserInterface.SymbolGroup;
 
 namespace Pure.Tools.ImmediateGraphicalUserInterface;
@@ -191,9 +190,9 @@ public static class GUI
         return block.IsJustInteracted(Interaction.Select) ? block.SelectedPaths : null;
     }
 
-    public static string? PromptInput(string text, int width = 20, SymbolGroup symbolGroup = All)
+    public static string? PromptInput(string key, string text, int width = 20, SymbolGroup symbolGroup = All)
     {
-        if (showPrompt == false)
+        if (visiblePrompt != key)
             return null;
 
         var prompt = TryCache<Prompt>(text, (-1, 0, 1, 1), out _);
@@ -205,34 +204,37 @@ public static class GUI
             prompt.Open(input, onButtonTrigger: index =>
             {
                 if (index == 0)
-                    input.Interact(Interaction.Select);
+                    input.Interact(Interaction.Custom1);
 
-                showPrompt = false;
+                visiblePrompt = null;
             });
 
-        return input.IsJustInteracted(Interaction.Select) ? input.Value : null;
+        return input.IsJustInteracted(Interaction.Custom1) ? input.Value : null;
     }
-    public static float PromptChoice(string text, int choiceAmount = 2)
+    public static float PromptChoice(string key, string text, int choiceAmount = 2)
     {
-        if (showPrompt == false)
+        if (visiblePrompt != key)
             return float.NaN;
 
         var prompt = TryCache<Prompt>(text, (-3, 0, 1, 1), out _);
 
+        if (choiceAmount == 1)
+            Keyboard.Key.Escape.OnPress(() => prompt.TriggerButton(0));
+
         if (prompt.IsHidden)
-            prompt.Open(null, true, choiceAmount, -1, -2, index => lastChoice = index);
+            prompt.Open(null, true, choiceAmount, 0, 1, index => lastChoice = index);
 
         if (float.IsNaN(lastChoice))
             return float.NaN;
 
         var result = lastChoice;
         lastChoice = float.NaN;
-        showPrompt = false;
+        visiblePrompt = null;
         return result;
     }
-    public static void Prompt()
+    public static void ShowPrompt(string key)
     {
-        showPrompt = true;
+        visiblePrompt = key;
     }
 
     public static void DrawGUI(this Layer layer)
@@ -245,18 +247,17 @@ public static class GUI
         Input.TilemapSize = layer.Size;
         Input.PositionPrevious = Input.Position;
         Input.Position = layer.PixelToPosition(Mouse.CursorPosition);
-        Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta,
-            Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
+        Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta, Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
 
         var toRemove = new List<string>();
-        foreach (var kvp in imGuiCache)
+        foreach (var (key, value) in imGuiCache)
         {
-            var cache = kvp.Value;
+            var cache = value;
             cache.framesLeft--;
-            imGuiCache[kvp.Key] = cache;
+            imGuiCache[key] = cache;
 
             if (cache.framesLeft <= 0)
-                toRemove.Add(kvp.Key);
+                toRemove.Add(key);
         }
 
         foreach (var cacheKey in toRemove)
@@ -279,10 +280,11 @@ public static class GUI
         TileMapPack.ConfigureText(firstTileId, symbols);
     }
 
-    #region Backend
+#region Backend
     private static bool showPrompt;
     private static float lastChoice = float.NaN;
     private static readonly Dictionary<string, (int framesLeft, Block block)> imGuiCache = [];
+    private static string? visiblePrompt;
 
     private static T TryCache<T>(string text, Area area, out bool wasCached, Span span = Span.Vertical, bool skipUpdate = false) where T : Block
     {
@@ -373,5 +375,5 @@ public static class GUI
 
         return (T)cache.block;
     }
-    #endregion
+#endregion
 }

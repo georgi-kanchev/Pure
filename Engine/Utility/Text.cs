@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using static Pure.Engine.Utility.Alignment;
 
 namespace Pure.Engine.Utility;
@@ -209,6 +208,7 @@ public static class Text
     {
         if (string.IsNullOrEmpty(text) || size.width <= 0 || size.height <= 0)
             return string.Empty;
+
         var result = text;
         var colorTags = GetColorTags(result, tintBrush);
         result = RemoveColorTags(result, tintBrush);
@@ -338,7 +338,7 @@ public static class Text
         return false;
     }
 
-    #region Backend
+#region Backend
     private static List<(int index, string tag)> GetColorTags(string input, char tintBrush)
     {
         input = input.Replace(" ", "").Replace("\r", "").Replace("\n", "n");
@@ -372,7 +372,7 @@ public static class Text
         var builder = new StringBuilder(input);
         for (var i = 0; i < builder.Length; i++)
         {
-            if (char.IsWhiteSpace(builder[i]))
+            if (builder[i] == ' ')
                 continue;
 
             // multiple tags on the same index?
@@ -385,10 +385,11 @@ public static class Text
 
             if (storedTags.Count == 0)
                 return builder.ToString();
+
             realIndex++;
         }
 
         return builder.ToString();
     }
-    #endregion
+#endregion
 }

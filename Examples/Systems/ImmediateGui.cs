@@ -24,9 +24,6 @@ public static class ImmediateGui
                        "Oh my!\n" +
                        "It keeps going!").Constrain((16, 5), false, Alignment.Center);
 
-        var promptStates = new StateMachine();
-        promptStates.Add(null, PromptChoice, PromptInput, PromptInfo);
-
         while (Window.KeepOpen())
         {
             var checkbox = GUI.Checkbox((0, 5), "Checkbox");
@@ -93,25 +90,19 @@ public static class ImmediateGui
             // prompts should be last
 
             if (Keyboard.Key.ControlLeft.IsJustPressed())
-            {
-                GUI.Prompt();
-                promptStates.GoTo(PromptChoice);
-            }
-            else if (Keyboard.Key.ShiftLeft.IsJustPressed())
-            {
-                GUI.Prompt();
-                promptStates.GoTo(PromptInput);
-            }
-            else if (Keyboard.Key.AltLeft.IsJustPressed())
-            {
-                GUI.Prompt();
-                promptStates.GoTo(PromptInfo);
-            }
+                GUI.ShowPrompt(nameof(PromptChoice));
+            if (Keyboard.Key.ShiftLeft.IsJustPressed())
+                GUI.ShowPrompt(nameof(PromptInput));
+            if (Keyboard.Key.AltLeft.IsJustPressed())
+                GUI.ShowPrompt(nameof(PromptInfo));
 
-            promptStates.Update();
+            PromptChoice();
+            PromptInput();
+            PromptInfo();
 
-            ("Left Control = Info Popup\n" +
-             "Left Shift = Input Popup").Text((20, 0));
+            ("Left Control = Choice Popup\n" +
+             "Left Shift = Input Popup\n" +
+             "Left Alt = Info Popup").Text((20, 0));
             log.Constrain(layer.Size, false, Alignment.Bottom).Text((0, -1));
 
             layer.DrawGUI();
@@ -119,16 +110,18 @@ public static class ImmediateGui
 
         void PromptInfo()
         {
-            var choice = GUI.PromptChoice("This is some useful info!\n" +
-                                          " And some more useful info. ", 1);
+            var choice = GUI.PromptChoice(nameof(PromptInfo),
+                "This is some useful info!\n" +
+                " And some more useful info. ", 1);
             if (float.IsNaN(choice) == false)
-                log = $"prompt info:\nclosed";
+                log = "prompt info:\nclosed";
         }
 
         void PromptChoice()
         {
-            var choice = GUI.PromptChoice("Are you ready to pick a\n" +
-                                          "choice from all the choices?", 3);
+            var choice = GUI.PromptChoice(nameof(PromptChoice),
+                "Are you ready to pick a\n" +
+                "choice from all the choices?", 3);
             if (float.IsNaN(choice) == false)
                 log = $"prompt choice:\n{(int)choice}";
         }
@@ -136,7 +129,7 @@ public static class ImmediateGui
         void PromptInput()
         {
             GUI.Tooltip = (tooltip, Side.Bottom, 0.5f);
-            var prompt = GUI.PromptInput("Type in stuff:");
+            var prompt = GUI.PromptInput(nameof(PromptInput), "Type in stuff:");
             if (prompt != null)
                 log = $"prompt input:\n{prompt}";
             GUI.Tooltip = default;

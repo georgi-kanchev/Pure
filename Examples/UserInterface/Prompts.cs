@@ -42,7 +42,7 @@ public static class Prompts
         {
             input.IsHidden = true;
 
-            prompt.Text = $"This should be some\nimportant message!";
+            prompt.Text = "This should be some\nimportant message!";
             prompt.Open(btnCount: 1);
         });
 
