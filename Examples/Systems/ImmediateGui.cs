@@ -90,11 +90,11 @@ public static class ImmediateGui
             // prompts should be last
 
             if (Keyboard.Key.ControlLeft.IsJustPressed())
-                GUI.ShowPrompt(nameof(PromptChoice));
+                GUI.Prompt(nameof(PromptChoice));
             if (Keyboard.Key.ShiftLeft.IsJustPressed())
-                GUI.ShowPrompt(nameof(PromptInput));
+                GUI.Prompt(nameof(PromptInput));
             if (Keyboard.Key.AltLeft.IsJustPressed())
-                GUI.ShowPrompt(nameof(PromptInfo));
+                GUI.Prompt(nameof(PromptInfo));
 
             PromptChoice();
             PromptInput();

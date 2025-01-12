@@ -12,15 +12,28 @@ public static class Storages
 
     public class Test
     {
-        public readonly string c = "test";
-        public uint[] a = [123, 56, 12, 47, 31];
-        public int? b = null;
-        public SomeEnum someEnum = SomeEnum.ValueNumber3;
+        // public readonly string c = "test";
+        // public uint[] a = [123, 56, 12, 47, 31];
+        // public int? b = null;
+        // public SomeEnum someEnum = SomeEnum.ValueNumber3;
+        //
+        // public static string Something { get; set; } = "heeeelloooo";
+        //
+        // [SaveAtOrder(10)]
+        // public float D { get; set; } = 33.6f;
 
-        public static string Something { get; set; } = "heeeelloooo";
+        public (float chance, string[] tiles)[] PlainRegionClustersChanceTiles { get; private set; } = [];
 
-        [SaveAtOrder(10)]
-        public float D { get; set; } = 33.6f;
+        public Test()
+        {
+            PlainRegionClustersChanceTiles =
+            [
+                (0.2f, [
+                    "*RegionBush1", "*RegionBush2", "*RegionBush3",
+                    "*RegionBush4", "*RegionBush5", "*RegionBush6"
+                ])
+            ];
+        }
     }
 
     public struct SomeStruct
@@ -55,12 +68,6 @@ public static class Storages
             { "fast", [1, 88] }
         };
 
-        var tilemap = new TileMap((48, 27));
-        tilemap.SetEllipse((48 / 2, 27 / 2), (10, 10), true, Tile.NUMBER_1, Tile.NUMBER_2);
-
-        var tsv = typeof(SomeStruct).ToTSV();
-        "MyInt\t23".ToStatic(typeof(SomeStruct));
-        var test = SomeStruct.MyInt;
         var a = new Test().ToTSV();
         var b = a.ToObject<Test>();
     }

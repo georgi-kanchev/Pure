@@ -134,7 +134,7 @@ public static class Keyboard
     {
         return IsAnyJustPressed() || isJustHeld;
     }
-
+ 
     public static void OnPress(this Key key, Action method)
     {
         if (onPress.TryAdd(key, method) == false)

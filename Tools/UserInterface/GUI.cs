@@ -10,6 +10,7 @@ public static class GUI
 {
     public static TileMapPack TileMapPack { get; private set; } = new(0, (0, 0));
     public static Tile Cursor { get; set; } = new(546, 3789677055);
+    public static string? CurrentPrompt { get; private set; }
 
     public static (string? text, Side side, float alignment) Tooltip { get; set; } = ("", Side.Top, 0.5f);
 
@@ -192,7 +193,7 @@ public static class GUI
 
     public static string? PromptInput(string key, string text, int width = 20, SymbolGroup symbolGroup = All)
     {
-        if (visiblePrompt != key)
+        if (CurrentPrompt != key)
             return null;
 
         var prompt = TryCache<Prompt>(text, (-1, 0, 1, 1), out _);
@@ -206,14 +207,14 @@ public static class GUI
                 if (index == 0)
                     input.Interact(Interaction.Custom1);
 
-                visiblePrompt = null;
+                CurrentPrompt = null;
             });
 
         return input.IsJustInteracted(Interaction.Custom1) ? input.Value : null;
     }
     public static float PromptChoice(string key, string text, int choiceAmount = 2)
     {
-        if (visiblePrompt != key)
+        if (CurrentPrompt != key)
             return float.NaN;
 
         var prompt = TryCache<Prompt>(text, (-3, 0, 1, 1), out _);
@@ -229,12 +230,12 @@ public static class GUI
 
         var result = lastChoice;
         lastChoice = float.NaN;
-        visiblePrompt = null;
+        CurrentPrompt = null;
         return result;
     }
-    public static void ShowPrompt(string key)
+    public static void Prompt(string key)
     {
-        visiblePrompt = key;
+        CurrentPrompt = key;
     }
 
     public static void DrawGUI(this Layer layer)
@@ -281,10 +282,8 @@ public static class GUI
     }
 
 #region Backend
-    private static bool showPrompt;
     private static float lastChoice = float.NaN;
     private static readonly Dictionary<string, (int framesLeft, Block block)> imGuiCache = [];
-    private static string? visiblePrompt;
 
     private static T TryCache<T>(string text, Area area, out bool wasCached, Span span = Span.Vertical, bool skipUpdate = false) where T : Block
     {

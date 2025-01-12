@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-
 using static System.Reflection.BindingFlags;
 
 namespace Pure.Engine.Utility;
@@ -46,7 +45,9 @@ public static class Storage
 
             using var memoryStream = new MemoryStream();
             using (var gzipStream = new GZipStream(memoryStream, CompressionLevel.Optimal, true))
+            {
                 gzipStream.Write(data, 0, data.Length);
+            }
 
             return memoryStream.ToArray();
         }
@@ -329,6 +330,21 @@ public static class Storage
                 if (jaggedDims > 2)
                     return $"{value}";
 
+                // this hack works around a specific case, for example for (float, string[])[]
+                // the parser thinks of the parent [] as jagged, which is kinda true
+                // it still is an [] inside an [] but not in the pure jagged sense [][]
+                // so we cast the inner [] to TSV which is a string rather than the current []
+                // this happens BEFORE we turn the "jagged"[] to a multi-D[] (which it is not), just in time
+                // so that the serializer sees some nested & escaped structure rather than a [,]
+                // and happens to work & hopefully doesn't break anything else :D
+                if (IsKindaJagged(value))
+                {
+                    var arr = value as Array;
+                    for (var i = 0; i < arr?.Length; i++)
+                        if (arr.GetValue(i) is Array a)
+                            arr.SetValue(a.ToTSV(), i);
+                }
+
                 value = ToArray(value);
                 type = value.GetType();
             }
@@ -395,7 +411,7 @@ public static class Storage
         return value == null ? null : (T)value;
     }
 
-    #region Backend
+#region Backend
     private const string STRING_PLACEHOLDER = "—", QUOTE_PLACEHOLDER = "❝", GENERATED_FIELD = ">k__BackingField";
 
     private static object? ToObject(byte[]? data, Type? expectedType, out byte[]? remaining)
@@ -899,6 +915,24 @@ public static class Storage
             elementType = elementType.GetElementType();
         return elementType;
     }
+    private static bool IsKindaJagged(object jaggedArray)
+    {
+        return jaggedArray is Array arr && Determine(arr);
+
+        bool Determine(Array array)
+        {
+            foreach (var item in array)
+            {
+                if (item is not Array a)
+                    continue;
+
+                if (Determine(a) == false)
+                    return true;
+            }
+
+            return false;
+        }
+    }
 
     private static string[,] InstanceToTable(object? value, Type type)
     {
@@ -1144,5 +1178,5 @@ public static class Storage
             return replacedValue;
         });
     }
-    #endregion
+#endregion
 }
