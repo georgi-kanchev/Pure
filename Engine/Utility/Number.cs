@@ -463,42 +463,42 @@ public static class Number
         return HasChance((float)percent, seed);
     }
 
-    public static float Random(this (float a, float b) range, float seed = float.NaN)
-    {
-        if (Math.Abs(range.a - range.b) < 0.0001f)
-            return range.a;
-
-        if (range.a > range.b)
-            (range.a, range.b) = (range.b, range.a);
-
-        var precision = 5f;
-        precision = (int)Limit(precision, (0f, 5f));
-        precision = MathF.Pow(10, precision);
-
-        range.a *= precision;
-        range.b *= precision;
-        var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
-        var random = new Random(s);
-        var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
-        return randInt / precision;
-    }
     // public static float Random(this (float a, float b) range, float seed = float.NaN)
     // {
-    //     var (a, b) = range;
-    //     // ReSharper disable once CompareOfFloatsByEqualityOperator
-    //     if (a == b)
-    //         return a;
+    //     if (Math.Abs(range.a - range.b) < 0.0001f)
+    //         return range.a;
     //
-    //     if (a > b)
-    //         (a, b) = (b, a);
+    //     if (range.a > range.b)
+    //         (range.a, range.b) = (range.b, range.a);
     //
-    //     var r = b - a;
+    //     var precision = 5f;
+    //     precision = (int)Limit(precision, (0f, 5f));
+    //     precision = MathF.Pow(10, precision);
     //
-    //     long intSeed = float.IsNaN(seed) ? Environment.TickCount : BitConverter.SingleToInt32Bits(seed);
-    //     intSeed = (1103515245 * intSeed + 12345) % 2147483648;
-    //     var normalized = (intSeed & 0x7FFFFFFF) / (float)2147483648;
-    //     return a + normalized * r;
+    //     range.a *= precision;
+    //     range.b *= precision;
+    //     var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
+    //     var random = new Random(s);
+    //     var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
+    //     return randInt / precision;
     // }
+    public static float Random(this (float a, float b) range, float seed = float.NaN)
+    {
+        var (a, b) = range;
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
+        if (a == b)
+            return a;
+    
+        if (a > b)
+            (a, b) = (b, a);
+    
+        var r = b - a;
+    
+        long intSeed = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : BitConverter.SingleToInt32Bits(seed);
+        intSeed = (1103515245 * intSeed + 12345) % 2147483648;
+        var normalized = (intSeed & 0x7FFFFFFF) / (float)2147483648;
+        return a + normalized * r;
+    }
     /// <summary>
     /// Returns a random int value between the given inclusive range of values.
     /// </summary>
