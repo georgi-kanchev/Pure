@@ -70,7 +70,7 @@ public static class ParticleSystems
             for (var i = 0; i < rain.Length; i++)
             {
                 var (x, y, color) = rain[i];
-                var end = new Point(x, y).MoveAt(Angle.Down + 30, (0.1f, 1f).Random(seed: i));
+                var end = new Point(x, y).MoveAt(Angle.Down + 30, (0.1f, 1f).Random(i));
                 layer.DrawLines((x, y, end.X, end.Y, Color.Cyan));
             }
 

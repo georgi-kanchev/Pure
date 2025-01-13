@@ -441,9 +441,12 @@ public static class Number
     /// false otherwise.</returns>
     public static bool HasChance(this float percent, float seed = float.NaN)
     {
+        if (percent <= 0.0001f)
+            return false;
+        
         percent = percent.Limit((0, 100));
         // should not roll 0 so it doesn't return true with 0% (outside of roll)
-        var n = Random((1f, 100f), 0f, seed);
+        var n = Random((0f, 100f), seed);
         return n <= percent;
     }
     /// <summary>
@@ -460,15 +463,7 @@ public static class Number
         return HasChance((float)percent, seed);
     }
 
-    /// <summary>
-    /// Returns a random float value between the given inclusive range of values.
-    /// </summary>
-    /// <param name="range">The two range values.</param>
-    /// <param name="precision">The precision of the generated random value (default is 0).</param>
-    /// <param name="seed">The seed to use for the random generator (default is NaN, 
-    /// meaning randomly chosen).</param>
-    /// <returns>A random float value between the specified range of values.</returns>
-    public static float Random(this (float a, float b) range, float precision = 100f, float seed = float.NaN)
+    public static float Random(this (float a, float b) range, float seed = float.NaN)
     {
         if (Math.Abs(range.a - range.b) < 0.0001f)
             return range.a;
@@ -476,6 +471,7 @@ public static class Number
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
 
+        var precision = 5f;
         precision = (int)Limit(precision, (0f, 5f));
         precision = MathF.Pow(10, precision);
 
@@ -486,6 +482,23 @@ public static class Number
         var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
         return randInt / precision;
     }
+    // public static float Random(this (float a, float b) range, float seed = float.NaN)
+    // {
+    //     var (a, b) = range;
+    //     // ReSharper disable once CompareOfFloatsByEqualityOperator
+    //     if (a == b)
+    //         return a;
+    //
+    //     if (a > b)
+    //         (a, b) = (b, a);
+    //
+    //     var r = b - a;
+    //
+    //     long intSeed = float.IsNaN(seed) ? Environment.TickCount : BitConverter.SingleToInt32Bits(seed);
+    //     intSeed = (1103515245 * intSeed + 12345) % 2147483648;
+    //     var normalized = (intSeed & 0x7FFFFFFF) / (float)2147483648;
+    //     return a + normalized * r;
+    // }
     /// <summary>
     /// Returns a random int value between the given inclusive range of values.
     /// </summary>
@@ -495,7 +508,7 @@ public static class Number
     /// <returns>A random int value between the specified range of values.</returns>
     public static int Random(this (int a, int b) range, float seed = float.NaN)
     {
-        return (int)Random(range, 0, seed);
+        return (int)Random(((float)range.a, range.b), seed);
     }
 
     public static int ToSeed(this int number, params int[] parameters)

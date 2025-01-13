@@ -58,7 +58,7 @@ public static class Particles
 
         for (var i = 0; i < particles.Length; i++)
         {
-            var r = distribution == Distribution.FillRandomly ? (0f, radius).Random(10f) : radius;
+            var r = distribution == Distribution.FillRandomly ? (0f, radius).Random() : radius;
             var ang = 360f * i / particles.Length;
 
             if (distribution == Distribution.FillEvenly)

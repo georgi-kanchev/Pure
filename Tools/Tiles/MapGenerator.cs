@@ -9,7 +9,7 @@ public class MapGenerator
     public float Scale { get; set; } = 10f;
     public int Seed { get; set; }
     public (int x, int y) Offset { get; set; }
-    public int TargetTileId { get; set; }
+    public ushort TargetTileId { get; set; }
 
     public SortedDictionary<byte, Tile> Elevations { get; } = new();
 
