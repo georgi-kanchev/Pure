@@ -443,7 +443,7 @@ public static class Number
     {
         if (percent <= 0.0001f)
             return false;
-        
+
         percent = percent.Limit((0, 100));
         // should not roll 0 so it doesn't return true with 0% (outside of roll)
         var n = Random((0f, 100f), seed);
@@ -488,12 +488,12 @@ public static class Number
         // ReSharper disable once CompareOfFloatsByEqualityOperator
         if (a == b)
             return a;
-    
+
         if (a > b)
             (a, b) = (b, a);
-    
+
         var r = b - a;
-    
+
         long intSeed = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : BitConverter.SingleToInt32Bits(seed);
         intSeed = (1103515245 * intSeed + 12345) % 2147483648;
         var normalized = (intSeed & 0x7FFFFFFF) / (float)2147483648;
@@ -508,7 +508,7 @@ public static class Number
     /// <returns>A random int value between the specified range of values.</returns>
     public static int Random(this (int a, int b) range, float seed = float.NaN)
     {
-        return (int)Random(((float)range.a, range.b), seed);
+        return (int)Math.Round(Random(((float)range.a, range.b), seed));
     }
 
     public static int ToSeed(this int number, params int[] parameters)
