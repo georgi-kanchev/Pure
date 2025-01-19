@@ -226,6 +226,8 @@ public class Editor
     }
     public void Log(string text)
     {
+        // TODO make editor log be hover info
+
         // var infoTextSplit = infoText.Replace("\r", "").Split("\n", StringSplitOptions.RemoveEmptyEntries);
         // if (infoTextSplit.Length > 0 && infoTextSplit[^1].Contains(text))
         // {

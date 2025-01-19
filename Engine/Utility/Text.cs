@@ -317,6 +317,8 @@ public static class Text
     }
     public static string Shorten(this string text, int maxLength, string indicator = "…", char tintBrush = '#')
     {
+        // BUG does not account for tintBrush
+
         if (maxLength == 0)
             return string.Empty;
 

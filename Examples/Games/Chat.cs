@@ -4,6 +4,7 @@ using Engine.LocalAreaNetwork;
 
 public static class Chat
 {
+    // TODO make this use a window & graphical UI
     public static void Run()
     {
         Log("[host/join]");

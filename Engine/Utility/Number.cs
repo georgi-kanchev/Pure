@@ -463,25 +463,6 @@ public static class Number
         return HasChance((float)percent, seed);
     }
 
-    // public static float Random(this (float a, float b) range, float seed = float.NaN)
-    // {
-    //     if (Math.Abs(range.a - range.b) < 0.0001f)
-    //         return range.a;
-    //
-    //     if (range.a > range.b)
-    //         (range.a, range.b) = (range.b, range.a);
-    //
-    //     var precision = 5f;
-    //     precision = (int)Limit(precision, (0f, 5f));
-    //     precision = MathF.Pow(10, precision);
-    //
-    //     range.a *= precision;
-    //     range.b *= precision;
-    //     var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
-    //     var random = new Random(s);
-    //     var randInt = random.Next((int)range.a, Limit((int)range.b, ((int)range.a, (int)range.b)) + 1);
-    //     return randInt / precision;
-    // }
     public static float Random(this (float a, float b) range, float seed = float.NaN)
     {
         var (a, b) = range;

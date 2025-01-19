@@ -7,6 +7,7 @@ namespace Pure.Engine.UserInterface;
 /// </summary>
 public enum Interaction
 {
+    // TODO make these more consistent throughout blocks, some don't make sense now
     Focus, Unfocus,
     Hover, Unhover,
     Press, Release,
