@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -337,7 +338,7 @@ public static class Storage
                 // this happens BEFORE we turn the "jagged"[] to a multi-D[] (which it is not), just in time
                 // so that the serializer sees some nested & escaped structure rather than a [,]
                 // and happens to work & hopefully doesn't break anything else :D
-                if (IsKindaJagged(value))
+                if (IsKindaJagged(value) && jaggedDims == 1)
                 {
                     var arr = value as Array;
                     for (var i = 0; i < arr?.Length; i++)
@@ -594,8 +595,7 @@ public static class Storage
             var i = 0;
             foreach (var field in fields)
             {
-                var obj = ToObject(table[0, i], field.FieldType);
-                field.SetValue(instance, obj);
+                field.SetValue(instance, ToObject(table[0, i], field.FieldType));
                 i++;
             }
 
@@ -675,14 +675,14 @@ public static class Storage
 
         if (IsDictionary(expectedType))
         {
-            var dict = Activator.CreateInstance(expectedType) as IDictionary;
+            var dict = (Activator.CreateInstance(expectedType) as IDictionary)!;
             var keyType = expectedType.GetGenericArguments()[0];
             var valueType = expectedType.GetGenericArguments()[1];
 
             for (var i = 0; i < table.GetLength(0); i++)
             {
-                var key = ToObject(table[i, 0], keyType);
-                dict![key!] = ToObject(table[i, 1], valueType);
+                var key = ToObject(table[i, 0], keyType)!;
+                dict[key] = ToObject(table[i, 1], valueType);
             }
 
             return dict;
@@ -938,6 +938,7 @@ public static class Storage
     {
         var sorted = GetFieldsInOrder(type);
         var list = new List<List<string>>();
+        var maxWidth = 2;
 
         foreach (var (_, fields) in sorted)
             foreach (var (field, space, comment) in fields)
@@ -964,17 +965,71 @@ public static class Storage
                     }
                 }
 
+                var fieldName = $"{field.Name.Replace("<", "").Replace(GENERATED_FIELD, "")}";
+                var fieldType = field.FieldType;
+                var fieldValue = field.GetValue(value);
+
                 list.Add([]);
-                list[^1].Add($"{field.Name.Replace("<", "").Replace(GENERATED_FIELD, "")}");
-                list[^1].Add(ToTSV(field.GetValue(value)));
+                list[^1].Add(fieldName);
+
+                if (IsTuple(fieldType))
+                {
+                    var items = GetTupleItems(fieldValue!);
+                    for (var i = 0; i < items.Count; i++)
+                        list[^1].Add(ToTSV(items[i]));
+
+                    maxWidth = maxWidth < list[^1].Count ? list[^1].Count : maxWidth;
+                    continue;
+                }
+
+                if (IsList(fieldType))
+                {
+                    var asList = (fieldValue as IList)!;
+                    for (var i = 0; i < asList.Count; i++)
+                        list[^1].Add(ToTSV(asList[i]));
+
+                    maxWidth = maxWidth < list[^1].Count ? list[^1].Count : maxWidth;
+                    continue;
+                }
+
+                if (fieldType.IsArray && fieldValue is Array arr)
+                {
+                    var rank = fieldType.GetArrayRank();
+                    if (rank == 1)
+                        for (var i = 0; i < arr.Length; i++)
+                            list[^1].Add(ToTSV(arr.GetValue(i)));
+                    else
+                    {
+                        var jagged = ToJagged(arr);
+                        for (var i = 0; i < jagged.Length; i++)
+                            list[^1].Add(ToTSV(jagged.GetValue(i)));
+                    }
+
+                    maxWidth = maxWidth < list[^1].Count ? list[^1].Count : maxWidth;
+                    continue;
+                }
+
+                if (IsDictionary(fieldType))
+                {
+                    var asDict = (fieldValue as IDictionary)!;
+
+                    foreach (DictionaryEntry obj in asDict)
+                    {
+                        list[^1].Add(ToTSV(obj.Key));
+                        list[^1].Add(ToTSV(obj.Value));
+                    }
+
+                    maxWidth = maxWidth < list[^1].Count ? list[^1].Count : maxWidth;
+                    continue;
+                }
+
+                list[^1].Add(ToTSV(fieldValue));
             }
 
-        var result = new string[list.Count, 2];
+        var result = new string[list.Count, maxWidth];
         for (var i = 0; i < list.Count; i++)
-        {
-            result[i, 0] = list[i][0];
-            result[i, 1] = list[i][1];
-        }
+            for (var j = 0; j < list[i].Count; j++)
+                result[i, j] = list[i][j];
 
         return result;
     }
@@ -998,8 +1053,78 @@ public static class Storage
                 if (i == -1)
                     continue;
 
-                var obj = ToObject(table[i, 1], field.FieldType);
-                field.SetValue(instance, obj);
+                var type = field.FieldType;
+                var isArray = type.IsArray && type.GetArrayRank() == 1;
+                var isList = IsList(type);
+                var isDict = IsDictionary(type);
+                var width = table.GetLength(1) - 1;
+
+                // find the array length since the width of the table may be bigger than the array
+                // the table width gets the length of the biggest array + 1 (for the field name)
+                if (isList || isArray || isDict)
+                    for (var j = 1; j < table.GetLength(1); j++)
+                        if (table[i, j] == null)
+                        {
+                            width = j - 1;
+                            break;
+                        }
+
+                if (IsTuple(type))
+                {
+                    var tupleFields = GetTupleFields(type);
+                    var newTuple = Activator.CreateInstance(type);
+                    var tupleIndex = 1;
+                    foreach (var tupleField in tupleFields)
+                    {
+                        tupleField.SetValue(newTuple, ToObject(table[i, tupleIndex], tupleField.FieldType));
+                        tupleIndex++;
+                    }
+
+                    field.SetValue(instance, newTuple);
+                    continue;
+                }
+
+                if (isList)
+                {
+                    var elementType = type.GetGenericArguments()[0];
+                    var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(elementType)) as IList;
+                    for (var j = 0; j < width; j++)
+                        if (table[i, j + 1] != null)
+                            list?.Add(ToObject(table[i, j + 1], elementType));
+
+                    field.SetValue(instance, ToObject(list.ToTSV(), field.FieldType));
+                    continue;
+                }
+
+                if (isArray)
+                {
+                    var elementType = type.GetElementType()!;
+                    var arr = Array.CreateInstance(elementType, width);
+                    for (var j = 0; j < width; j++)
+                        if (table[i, j + 1] != null)
+                            arr.SetValue(ToObject(table[i, j + 1], elementType), j);
+
+                    field.SetValue(instance, ToObject(arr.ToTSV(), field.FieldType));
+                    continue;
+                }
+
+                if (isDict)
+                {
+                    var dict = (Activator.CreateInstance(type) as IDictionary)!;
+                    var keyType = type.GetGenericArguments()[0];
+                    var valueType = type.GetGenericArguments()[1];
+
+                    for (var j = 0; j < width; j += 2)
+                    {
+                        var key = ToObject(table[i, j + 1], keyType)!;
+                        dict[key] = ToObject(table[i, j + 2], valueType);
+                    }
+
+                    field.SetValue(instance, ToObject(dict.ToTSV(), field.FieldType));
+                    continue;
+                }
+
+                field.SetValue(instance, ToObject(table[i, 1], field.FieldType));
             }
 
         return instance;
@@ -1014,13 +1139,16 @@ public static class Storage
         {
             for (var j = 0; j < numCols; j++)
             {
+                if (array[i, j] == null)
+                    break;
+
                 var value = $"{array[i, j]}".Replace("\"", "\"\"");
                 if (value.Contains('\t') || value.Contains('\n') || value.Contains("\"\""))
                     value = $"\"{value}\"";
 
                 sb.Append(value);
 
-                if (j < numCols - 1)
+                if (j < numCols - 1 && array[i, j + 1] != null)
                     sb.Append('\t');
             }
 

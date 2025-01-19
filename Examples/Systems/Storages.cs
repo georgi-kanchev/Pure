@@ -12,28 +12,37 @@ public static class Storages
 
     public class Test
     {
-        // public readonly string c = "test";
-        // public uint[] a = [123, 56, 12, 47, 31];
-        // public int? b = null;
-        // public SomeEnum someEnum = SomeEnum.ValueNumber3;
-        //
-        // public static string Something { get; set; } = "heeeelloooo";
-        //
-        // [SaveAtOrder(10)]
-        // public float D { get; set; } = 33.6f;
+        public readonly string c = "test";
+        // public List<(string, uint)> arr = [("m", 123), ("hmmm", 56), ("he", 12), ("she", 47), ("ai", 31)];
+        public (int, bool, float) a = (3, true, 0.3f);
+        public SomeEnum someEnum = SomeEnum.ValueNumber3;
+        public static string Something { get; set; } = "heeeelloooo";
+        public float D { get; set; } = 33.6f;
 
-        public (float chance, string[] tiles)[] PlainRegionClustersChanceTiles { get; private set; } = [];
-
-        public Test()
+        // public Dictionary<string, int[]> dict = new()
+        // {
+        //     { "hello", [35, 4] },
+        //     { "test", [12, 7] },
+        //     { "fast", [1, 88] }
+        // };
+        public int[][] arr2D =
         {
-            PlainRegionClustersChanceTiles =
-            [
-                (0.2f, [
-                    "*RegionBush1", "*RegionBush2", "*RegionBush3",
-                    "*RegionBush4", "*RegionBush5", "*RegionBush6"
-                ])
-            ];
-        }
+            [0, 3, 5, 12],
+            [125, 5, 612, 3]
+        };
+
+        // public (float chance, string[] tiles)[] PlainRegionClustersChanceTiles { get; private set; } = [];
+        //
+        // public Test()
+        // {
+        //     PlainRegionClustersChanceTiles =
+        //     [
+        //         (0.2f, [
+        //             "*RegionBush1", "*RegionBush2", "*RegionBush3",
+        //             "*RegionBush4", "*RegionBush5", "*RegionBush6"
+        //         ])
+        //     ];
+        // }
     }
 
     public struct SomeStruct
