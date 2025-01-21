@@ -75,7 +75,7 @@ public class TileMap
             for (var j = area.Y; j < area.Width; j++)
                 foreach (var (rule, replacement) in AutoTiles)
                 {
-                    if (rule.GetLength(0) != 3 || rule.GetLength(1) != 3)
+                    if (rule.Length != 9)
                         continue;
 
                     var isMatch = true;
