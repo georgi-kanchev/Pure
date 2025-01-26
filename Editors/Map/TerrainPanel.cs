@@ -102,7 +102,7 @@ internal class TerrainPanel : Panel
                     return;
 
                 var id = btn.Text == "any" ? -1 : int.Parse(btn.Text);
-                autoTiles[pages.Current - 1].matchIds3X3[index] = id;
+                autoTiles[pages.Current - 1].from3X3[index] = id;
             });
         }
 
@@ -111,10 +111,10 @@ internal class TerrainPanel : Panel
             if (autoTiles.Count == 0)
                 return;
 
-            inspector.pickedTile = autoTiles[pages.Current - 1].replacedCenter;
+            inspector.pickedTile = autoTiles[pages.Current - 1].to3X3;
             for (var i = 0; i < matchIds.Count; i++)
             {
-                var id = autoTiles[pages.Current - 1].matchIds3X3[i];
+                var id = autoTiles[pages.Current - 1].from3X3[i];
                 matchIds[i].Text = id < 0 ? "any" : $"{id}";
             }
         });
@@ -152,7 +152,7 @@ internal class TerrainPanel : Panel
             if (autoTiles.Count > 0 && tilePalette.justPickedTile)
             {
                 var curr = autoTiles[pages.Current - 1];
-                curr.replacedCenter = inspector.pickedTile;
+                curr.to3X3 = inspector.pickedTile;
                 autoTiles[pages.Current - 1] = curr;
             }
 
@@ -398,10 +398,11 @@ internal class TerrainPanel : Panel
         var selected = inspector.layers.SelectedItems;
         return selected.Count != 1 ? -1 : inspector.layers.Items.IndexOf(selected[0]);
     }
-    private List<(int[] matchIds3X3, Tile replacedCenter)> GetAutoTiles()
+    private List<(int[] from3X3, Tile to3X3)> GetAutoTiles()
     {
-        var layer = GetLayer();
-        return layer == -1 ? new() : editor.MapsEditor.TileMaps[GetLayer()].AutoTiles;
+        return [];
+        // var layer = GetLayer();
+        // return layer == -1 ? new() : editor.MapsEditor.TileMaps[GetLayer()].AutoTiles;
     }
     private byte GetFreeDepth(byte starting = 0)
     {

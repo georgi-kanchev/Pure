@@ -18,7 +18,7 @@ public static class TileMapper
         for (var y = 0; y < tileMap.Size.height; y++)
             for (var x = 0; x < tileMap.Size.width; x++)
             {
-                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
+                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y, 0)));
                 tileMap.SetTile((x, y), tile, Mask);
             }
     }
@@ -35,7 +35,7 @@ public static class TileMapper
         {
             var (x, y) = stack.Pop();
             var curTile = tileMap.TileAt((x, y));
-            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
+            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y, 0)));
             var exact = curTile == tile || curTile != initialTile;
             var onlyId = curTile.Id == tile.Id || curTile.Id != initialTile.Id;
 
@@ -68,7 +68,7 @@ public static class TileMapper
             if (tileMap.TileAt((x, y)).Id != targetTile.Id)
                 continue;
 
-            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
+            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y, 0)));
             tileMap.SetTile((x, y), tile, Mask);
         }
     }
@@ -100,7 +100,7 @@ public static class TileMapper
                 if (i > Math.Abs(area.Width * area.Height))
                     return;
 
-                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y)));
+                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y, 0)));
                 tileMap.SetTile((x, y), tile, Mask);
                 i++;
             }
@@ -161,17 +161,17 @@ public static class TileMapper
             var o = tiles.Length == 1;
             if (fill == false)
             {
-                tileMap.SetTile((c.x + x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y - y))), Mask);
-                tileMap.SetTile((c.x - x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y - y))), Mask);
-                tileMap.SetTile((c.x - x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y + y))), Mask);
-                tileMap.SetTile((c.x + x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y + y))), Mask);
+                tileMap.SetTile((c.x + x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y - y, 0))), Mask);
+                tileMap.SetTile((c.x - x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y - y, 0))), Mask);
+                tileMap.SetTile((c.x - x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y + y, 0))), Mask);
+                tileMap.SetTile((c.x + x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y + y, 0))), Mask);
                 return;
             }
 
             for (var i = c.x - x; i <= c.x + x; i++)
             {
-                tileMap.SetTile((i, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y - y))), Mask);
-                tileMap.SetTile((i, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y + y))), Mask);
+                tileMap.SetTile((i, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y - y, 0))), Mask);
+                tileMap.SetTile((i, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y + y, 0))), Mask);
             }
         }
     }
@@ -190,7 +190,7 @@ public static class TileMapper
 
         while (true)
         {
-            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x0, y0)));
+            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x0, y0, 0)));
             tileMap.SetTile((x0, y0), tile, Mask);
 
             if (x0 == x1 && y0 == y1)
@@ -303,6 +303,29 @@ public static class TileMapper
         tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), tiles3X3[2, 1]);
         tileMap.SetTile((x + w - 1, y + h - 1), tiles3X3[2, 2], Mask);
     }
+    public static void SetBlob(this TileMap tileMap, (int x, int y) cell, int radius, int warp = 2, int sides = 20, params Tile[]? tiles)
+    {
+        var boundaryPoints = new List<(int x, int y)>();
+        const float CIRCLE = MathF.PI * 2f;
+
+        for (var angle = 0f; angle < CIRCLE; angle += CIRCLE / sides)
+        {
+            var r = radius + Random((-warp, warp), ToSeed((cell.x, cell.y, (int)(angle * 314f))));
+            var x = cell.x + (int)(r * MathF.Cos(angle));
+            var y = cell.y + (int)(r * MathF.Sin(angle));
+
+            boundaryPoints.Add((x, y));
+        }
+
+        for (var i = 0; i < boundaryPoints.Count; i++)
+        {
+            var (x1, y1) = boundaryPoints[i];
+            var (x2, y2) = boundaryPoints[(i + 1) % boundaryPoints.Count];
+            SetLine(tileMap, (x1, y1), (x2, y2), tiles);
+        }
+
+        Flood(tileMap, (cell.x, cell.y), false, tiles);
+    }
 
     public static void SetBar(this TileMap tileMap, (int x, int y) cell, Tile edge1, Tile fill, Tile edge2, int size = 5, bool vertical = false)
     {
@@ -394,71 +417,55 @@ public static class TileMapper
     }
 
 #region Backend
-    private static float Limit(float number, float rangeA, float rangeB, bool isOverflowing = false)
+    private static float Random(this (float a, float b) range, float seed = float.NaN)
     {
-        if (rangeA > rangeB)
-            (rangeA, rangeB) = (rangeB, rangeA);
+        var (a, b) = range;
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
+        if (a == b)
+            return a;
 
-        if (isOverflowing)
-        {
-            var d = rangeB - rangeA;
-            return ((number - rangeA) % d + d) % d + rangeA;
-        }
+        if (a > b)
+            (a, b) = (b, a);
 
-        if (number < rangeA)
-            return rangeA;
-        if (number > rangeB)
-            return rangeB;
-        return number;
+        var r = b - a;
+
+        long intSeed = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : BitConverter.SingleToInt32Bits(seed);
+        intSeed = (1103515245 * intSeed + 12345) % 2147483648;
+        var normalized = (intSeed & 0x7FFFFFFF) / (float)2147483648;
+        return a + normalized * r;
     }
-    private static int Limit(int number, int rangeA, int rangeB, bool isOverflowing = false)
+    private static T? ChooseOne<T>(this IList<T> collection, float seed = float.NaN)
     {
-        return (int)Limit((float)number, rangeA, rangeB, isOverflowing);
+        return collection.Count == 0 ? default : collection[(0, collection.Count - 1).Random(seed)];
     }
-    private static float Random(float rangeA, float rangeB, float precision = 0, float seed = float.NaN)
+    private static int Random(this (int a, int b) range, float seed = float.NaN)
     {
-        if (rangeA > rangeB)
-            (rangeA, rangeB) = (rangeB, rangeA);
-
-        precision = (int)Limit(precision, 0, 5);
-        precision = MathF.Pow(10, precision);
-
-        rangeA *= precision;
-        rangeB *= precision;
-
-        var s = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : (int)seed;
-        var random = new Random(s);
-        var randInt = random.Next((int)rangeA, Limit((int)rangeB, (int)rangeA, (int)rangeB) + 1);
-
-        return randInt / precision;
+        return (int)Math.Round(Random(((float)range.a, range.b), seed));
     }
-    private static T ChooseOne<T>(IList<T> collection, float seed)
+    private static int ToSeed((int a, int b, int c) parameters)
     {
-        return collection[(int)Random(0, collection.Count - 1, 0, seed)];
-    }
-    private static int ToSeed((int a, int b) parameters)
-    {
-        var (a, b) = parameters;
+        var (a, b, c) = parameters;
         var (x, y, z) = SeedOffset;
 
-        return ToSeed(z, a + x, b + y);
-    }
-    private static int ToSeed(int number, params int[] parameters)
-    {
-        var seed = 2654435769L;
-        Seed(number);
-        foreach (var p in parameters)
-            seed = Seed(p);
+        return Calculate(z, a + x, b + y, c);
 
-        return (int)seed;
-
-        long Seed(int a)
+        int Calculate(int number, params int[] more)
         {
-            seed ^= a;
-            seed = (seed ^ (seed >> 16)) * 2246822519L;
-            seed = (seed ^ (seed >> 13)) * 3266489917L;
-            seed ^= seed >> 16;
+            var seed = 2654435769L;
+            Seed(number);
+            foreach (var p in more)
+                seed = Seed(p);
+
             return (int)seed;
+
+            long Seed(int s)
+            {
+                seed ^= s;
+                seed = (seed ^ (seed >> 16)) * 2246822519L;
+                seed = (seed ^ (seed >> 13)) * 3266489917L;
+                seed ^= seed >> 16;
+                return (int)seed;
+            }
         }
     }
     private static List<(uint color, string tag, int index)> GetColors(string input, char brush)

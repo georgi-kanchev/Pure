@@ -4,7 +4,7 @@ namespace Pure.Engine.Tiles;
 
 public class TileMap
 {
-    public List<(int[] matchIds3X3, Tile replacedCenter)> AutoTiles { get; } = [];
+    public List<(Tile[] from3X3, Tile[] to3X3)> AutoTiles { get; } = [];
     public (int x, int y, int z) SeedOffset { get; set; }
 
     public (int width, int height) Size { get; }
@@ -73,27 +73,33 @@ public class TileMap
 
         for (var i = area.X; i < area.Height; i++)
             for (var j = area.Y; j < area.Width; j++)
-                foreach (var (rule, replacement) in AutoTiles)
+                foreach (var (from, to) in AutoTiles)
                 {
-                    if (rule.Length != 9)
+                    if (from.Length != 9 || to.Length != 9)
                         continue;
 
                     var isMatch = true;
 
-                    for (var k = 0; k < rule.Length; k++)
+                    for (var k = 0; k < from.Length; k++)
                     {
                         var (ox, oy) = (k % 3 - 1, k / 3 - 1);
                         var offTile = TileAt((j + ox, i + oy));
 
-                        if (offTile.Id == rule[k] || rule[k] < 0)
+                        if (offTile == from[k] || from[k].Id == 0)
                             continue;
 
                         isMatch = false;
                         break;
                     }
 
-                    if (isMatch)
-                        result[(j, i)] = replacement;
+                    if (isMatch == false)
+                        continue;
+
+                    for (var k = 0; k < to.Length; k++)
+                    {
+                        var (ox, oy) = (k % 3 - 1, k / 3 - 1);
+                        result[(j + ox, i + oy)] = to[k];
+                    }
                 }
 
         foreach (var kvp in result)
