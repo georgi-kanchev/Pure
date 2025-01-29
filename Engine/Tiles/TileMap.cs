@@ -82,7 +82,7 @@ public class TileMap
 
                     for (var k = 0; k < from.Length; k++)
                     {
-                        var (ox, oy) = (k % 3 - 1, k / 3 - 1);
+                        var (oy, ox) = (k % 3 - 1, k / 3 - 1);
                         var offTile = TileAt((j + ox, i + oy));
 
                         if (offTile == from[k] || from[k].Id == 0)
@@ -97,8 +97,10 @@ public class TileMap
 
                     for (var k = 0; k < to.Length; k++)
                     {
-                        var (ox, oy) = (k % 3 - 1, k / 3 - 1);
-                        result[(j + ox, i + oy)] = to[k];
+                        var (oy, ox) = (k % 3 - 1, k / 3 - 1);
+
+                        if (to[k].Id != 0)
+                            result[(j + ox, i + oy)] = to[k];
                     }
                 }
 
