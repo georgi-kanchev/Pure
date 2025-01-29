@@ -4,8 +4,34 @@ namespace Pure.Engine.Tiles;
 
 public static class TileMapper
 {
-    public static (int x, int y, int z) SeedOffset { get; set; }
-    public static Area? Mask { get; set; }
+    public static int GetSeed(this TileMap tileMap)
+    {
+        return seeds.GetValueOrDefault(tileMap.GetHashCode()).z;
+    }
+    public static (int x, int y) GetSeedOffset(this TileMap tileMap)
+    {
+        var (x, y, z) = seeds.GetValueOrDefault(tileMap.GetHashCode());
+        return (x, y);
+    }
+    public static Area? GetMask(this TileMap tileMap)
+    {
+        return masks.GetValueOrDefault(tileMap.GetHashCode());
+    }
+
+    public static void ApplySeed(this TileMap tileMap, int seed)
+    {
+        var (x, y, z) = seeds[tileMap.GetHashCode()];
+        seeds[tileMap.GetHashCode()] = (x, y, seed);
+    }
+    public static void ApplySeedOffset(this TileMap tileMap, (int x, int y) offset)
+    {
+        var (x, y, z) = seeds[tileMap.GetHashCode()];
+        seeds[tileMap.GetHashCode()] = (offset.x, offset.y, z);
+    }
+    public static void ApplyMask(this TileMap tileMap, Area? mask)
+    {
+        masks[tileMap.GetHashCode()] = mask;
+    }
 
     public static void Fill(this TileMap tileMap, params Tile[]? tiles)
     {
@@ -15,11 +41,12 @@ public static class TileMapper
             return;
         }
 
+        var mask = GetMask(tileMap);
         for (var y = 0; y < tileMap.Size.height; y++)
             for (var x = 0; x < tileMap.Size.width; x++)
             {
-                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y, 0)));
-                tileMap.SetTile((x, y), tile, Mask);
+                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (x, y, 0)));
+                tileMap.SetTile((x, y), tile, mask);
             }
     }
     public static void Flood(this TileMap tileMap, (int x, int y) cell, bool exactTile, params Tile[]? tiles)
@@ -27,6 +54,7 @@ public static class TileMapper
         if (tiles == null || tiles.Length == 0)
             return;
 
+        var mask = GetMask(tileMap);
         var stack = new Stack<(int x, int y)>();
         var initialTile = tileMap.TileAt(cell);
         stack.Push(cell);
@@ -35,7 +63,7 @@ public static class TileMapper
         {
             var (x, y) = stack.Pop();
             var curTile = tileMap.TileAt((x, y));
-            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y, 0)));
+            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (x, y, 0)));
             var exact = curTile == tile || curTile != initialTile;
             var onlyId = curTile.Id == tile.Id || curTile.Id != initialTile.Id;
 
@@ -43,7 +71,7 @@ public static class TileMapper
                 (exactTile == false && onlyId))
                 continue;
 
-            tileMap.SetTile((x, y), tile, Mask);
+            tileMap.SetTile((x, y), tile, mask);
 
             if (tileMap.IsContaining((x - 1, y)))
                 stack.Push((x - 1, y));
@@ -60,6 +88,7 @@ public static class TileMapper
         if (tiles.Length == 0)
             return;
 
+        var mask = GetMask(tileMap);
         for (var i = 0; i < Math.Abs(area.Width * area.Height); i++)
         {
             var x = area.X + i % Math.Abs(area.Width) * (area.Width < 0 ? -1 : 1);
@@ -68,8 +97,8 @@ public static class TileMapper
             if (tileMap.TileAt((x, y)).Id != targetTile.Id)
                 continue;
 
-            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y, 0)));
-            tileMap.SetTile((x, y), tile, Mask);
+            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (x, y, 0)));
+            tileMap.SetTile((x, y), tile, mask);
         }
     }
     public static void Replace(this TileMap tileMap, Tile targetTile, params Tile[] tiles)
@@ -82,9 +111,10 @@ public static class TileMapper
         if (tiles == null || tiles.Length == 0)
             return;
 
+        var mask = GetMask(tileMap);
         for (var i = 0; i < tiles.GetLength(1); i++)
             for (var j = 0; j < tiles.GetLength(0); j++)
-                tileMap.SetTile((cell.x + j, cell.y + i), tiles[j, i], Mask);
+                tileMap.SetTile((cell.x + j, cell.y + i), tiles[j, i], mask);
     }
     public static void SetArea(this TileMap tileMap, Area area, params Tile[]? tiles)
     {
@@ -94,14 +124,15 @@ public static class TileMapper
         var xStep = area.Width < 0 ? -1 : 1;
         var yStep = area.Height < 0 ? -1 : 1;
         var i = 0;
+        var mask = GetMask(tileMap);
         for (var y = area.Y; y != area.Y + area.Height; y += yStep)
             for (var x = area.X; x != area.X + area.Width; x += xStep)
             {
                 if (i > Math.Abs(area.Width * area.Height))
                     return;
 
-                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x, y, 0)));
-                tileMap.SetTile((x, y), tile, Mask);
+                var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (x, y, 0)));
+                tileMap.SetTile((x, y), tile, mask);
                 i++;
             }
     }
@@ -116,6 +147,7 @@ public static class TileMapper
         var y = radius.height;
         var px = 0;
         var py = rxSq * 2 * y;
+        var mask = GetMask(tileMap);
 
         // Region 1
         var p = (int)(rySq - rxSq * radius.height + 0.25f * rxSq);
@@ -161,17 +193,17 @@ public static class TileMapper
             var o = tiles.Length == 1;
             if (fill == false)
             {
-                tileMap.SetTile((c.x + x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y - y, 0))), Mask);
-                tileMap.SetTile((c.x - x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y - y, 0))), Mask);
-                tileMap.SetTile((c.x - x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x - x, c.y + y, 0))), Mask);
-                tileMap.SetTile((c.x + x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((c.x + x, c.y + y, 0))), Mask);
+                tileMap.SetTile((c.x + x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (c.x + x, c.y - y, 0))), mask);
+                tileMap.SetTile((c.x - x, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (c.x - x, c.y - y, 0))), mask);
+                tileMap.SetTile((c.x - x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (c.x - x, c.y + y, 0))), mask);
+                tileMap.SetTile((c.x + x, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (c.x + x, c.y + y, 0))), mask);
                 return;
             }
 
             for (var i = c.x - x; i <= c.x + x; i++)
             {
-                tileMap.SetTile((i, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y - y, 0))), Mask);
-                tileMap.SetTile((i, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed((i, c.y + y, 0))), Mask);
+                tileMap.SetTile((i, c.y - y), o ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (i, c.y - y, 0))), mask);
+                tileMap.SetTile((i, c.y + y), o ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (i, c.y + y, 0))), mask);
             }
         }
     }
@@ -187,11 +219,12 @@ public static class TileMapper
         var sx = x0 < x1 ? 1 : -1;
         var sy = y0 < y1 ? 1 : -1;
         var err = dx - dy;
+        var mask = GetMask(tileMap);
 
         while (true)
         {
-            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed((x0, y0, 0)));
-            tileMap.SetTile((x0, y0), tile, Mask);
+            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (x0, y0, 0)));
+            tileMap.SetTile((x0, y0), tile, mask);
 
             if (x0 == x1 && y0 == y1)
                 break;
@@ -224,9 +257,11 @@ public static class TileMapper
             return;
         }
 
-        tileMap.SetTile((x, y), new(corner.Id, corner.Tint), Mask);
+        var mask = GetMask(tileMap);
+
+        tileMap.SetTile((x, y), new(corner.Id, corner.Tint), mask);
         tileMap.SetArea((x + 1, y, w - 2, 1), new Tile(edge.Id, edge.Tint));
-        tileMap.SetTile((x + w - 1, y), new(corner.Id, corner.Tint, Pose.Right), Mask);
+        tileMap.SetTile((x + w - 1, y), new(corner.Id, corner.Tint, Pose.Right), mask);
 
         if (h != 2)
         {
@@ -235,9 +270,9 @@ public static class TileMapper
             tileMap.SetArea((x + w - 1, y + 1, 1, h - 2), new Tile(edge.Id, edge.Tint, Pose.Right));
         }
 
-        tileMap.SetTile((x, y + h - 1), new(corner.Id, corner.Tint, Pose.Left), Mask);
+        tileMap.SetTile((x, y + h - 1), new(corner.Id, corner.Tint, Pose.Left), mask);
         tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), new Tile(edge.Id, edge.Tint, Pose.Down));
-        tileMap.SetTile((x + w - 1, y + h - 1), new(corner.Id, corner.Tint, Pose.Down), Mask);
+        tileMap.SetTile((x + w - 1, y + h - 1), new(corner.Id, corner.Tint, Pose.Down), mask);
     }
     public static void SetPatch(this TileMap tileMap, Area area, Tile[,]? tiles3X3)
     {
@@ -245,35 +280,36 @@ public static class TileMapper
             return;
 
         var (x, y, w, h, _) = area.ToBundle();
+        var mask = GetMask(tileMap);
 
         if (w <= 0 || h <= 0)
             return;
 
         if (w == 1 && h == 1)
         {
-            tileMap.SetTile((x, y), tiles3X3[1, 1], Mask);
+            tileMap.SetTile((x, y), tiles3X3[1, 1], mask);
             return;
         }
 
         if (h == 1)
         {
-            tileMap.SetTile((x, y), tiles3X3[1, 0], Mask);
+            tileMap.SetTile((x, y), tiles3X3[1, 0], mask);
 
             if (w > 2)
                 tileMap.SetArea((x + 1, y, w - 2, 1), tiles3X3[1, 1]);
 
-            tileMap.SetTile((x + w - 1, y), tiles3X3[1, 2], Mask);
+            tileMap.SetTile((x + w - 1, y), tiles3X3[1, 2], mask);
             return;
         }
 
         if (w == 1)
         {
-            tileMap.SetTile((x, y), tiles3X3[0, 1], Mask);
+            tileMap.SetTile((x, y), tiles3X3[0, 1], mask);
 
             if (h > 2)
                 tileMap.SetArea((x, y + 1, 1, h - 2), tiles3X3[1, 1]);
 
-            tileMap.SetTile((x, y + h - 1), tiles3X3[2, 1], Mask);
+            tileMap.SetTile((x, y + h - 1), tiles3X3[2, 1], mask);
             return;
         }
 
@@ -291,17 +327,17 @@ public static class TileMapper
             return;
         }
 
-        tileMap.SetTile((x, y), tiles3X3[0, 0], Mask);
+        tileMap.SetTile((x, y), tiles3X3[0, 0], mask);
         tileMap.SetArea((x + 1, y, w - 2, 1), tiles3X3[0, 1]);
-        tileMap.SetTile((x + w - 1, y), tiles3X3[0, 2], Mask);
+        tileMap.SetTile((x + w - 1, y), tiles3X3[0, 2], mask);
 
         tileMap.SetArea((x, y + 1, 1, h - 2), tiles3X3[1, 0]);
         tileMap.SetArea((x + 1, y + 1, w - 2, h - 2), tiles3X3[1, 1]);
         tileMap.SetArea((x + w - 1, y + 1, 1, h - 2), tiles3X3[1, 2]);
 
-        tileMap.SetTile((x, y + h - 1), tiles3X3[2, 0], Mask);
+        tileMap.SetTile((x, y + h - 1), tiles3X3[2, 0], mask);
         tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), tiles3X3[2, 1]);
-        tileMap.SetTile((x + w - 1, y + h - 1), tiles3X3[2, 2], Mask);
+        tileMap.SetTile((x + w - 1, y + h - 1), tiles3X3[2, 2], mask);
     }
     public static void SetBlob(this TileMap tileMap, (int x, int y) cell, int radius, int warp = 2, int sides = 20, params Tile[]? tiles)
     {
@@ -310,7 +346,7 @@ public static class TileMapper
 
         for (var angle = 0f; angle < CIRCLE; angle += CIRCLE / sides)
         {
-            var r = radius + Random((-warp, warp), ToSeed((cell.x, cell.y, (int)(angle * 314f))));
+            var r = radius + Random((-warp, warp), ToSeed(tileMap, (cell.x, cell.y, (int)(angle * 314f))));
             var x = cell.x + (int)(r * MathF.Cos(angle));
             var y = cell.y + (int)(r * MathF.Sin(angle));
 
@@ -331,13 +367,14 @@ public static class TileMapper
     {
         var (x, y) = cell;
         var off = size == 1 ? 0 : 1;
+        var mask = GetMask(tileMap);
 
         if (vertical)
         {
             if (size > 1)
             {
-                tileMap.SetTile(cell, edge1, Mask);
-                tileMap.SetTile((x, y + size - 1), edge2, Mask);
+                tileMap.SetTile(cell, edge1, mask);
+                tileMap.SetTile((x, y + size - 1), edge2, mask);
             }
 
             if (size != 2)
@@ -348,8 +385,8 @@ public static class TileMapper
 
         if (size > 1)
         {
-            tileMap.SetTile(cell, edge1, Mask);
-            tileMap.SetTile((x + size - 1, y), edge2, Mask);
+            tileMap.SetTile(cell, edge1, mask);
+            tileMap.SetTile((x + size - 1, y), edge2, mask);
         }
 
         if (size != 2)
@@ -362,6 +399,7 @@ public static class TileMapper
 
         var colors = GetColors(text, tintBrush);
         var (x, y) = cell;
+        var mask = GetMask(tileMap);
 
         for (var j = 0; j < text.Length; j++)
         {
@@ -400,7 +438,7 @@ public static class TileMapper
 
             var index = tileMap.TileIdFrom(text[j]);
             if (index != default && text[j] != ' ')
-                tileMap.SetTile((x, y), new(index, tint), Mask);
+                tileMap.SetTile((x, y), new(index, tint), mask);
 
             x++;
         }
@@ -417,6 +455,9 @@ public static class TileMapper
     }
 
 #region Backend
+    private static readonly Dictionary<int, Area?> masks = [];
+    private static readonly Dictionary<int, (int x, int y, int z)> seeds = [];
+
     private static float Random(this (float a, float b) range, float seed = float.NaN)
     {
         var (a, b) = range;
@@ -442,10 +483,10 @@ public static class TileMapper
     {
         return (int)Math.Round(Random(((float)range.a, range.b), seed));
     }
-    private static int ToSeed((int a, int b, int c) parameters)
+    private static int ToSeed(TileMap map, (int a, int b, int c) parameters)
     {
         var (a, b, c) = parameters;
-        var (x, y, z) = SeedOffset;
+        var (x, y, z) = seeds[map.GetHashCode()];
 
         return Calculate(z, a + x, b + y, c);
 

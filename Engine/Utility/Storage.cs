@@ -205,6 +205,9 @@ public static class Storage
             var type = typeof(T);
             var obj = ToObject(data, type, out _);
 
+            if (type == obj?.GetType())
+                return (T?)obj;
+
             if (obj != null && type.IsArray && type.GetArrayRank() > 1) // expects regular array
                 obj = ToArray(obj);
 

@@ -287,8 +287,7 @@ internal class TilePalette
             return;
         }
 
-        if (tilemap != null)
-            tilemap.SeedOffset = (0, 0, clickSeed);
+        tilemap?.ApplySeed(clickSeed);
     }
     private void OnMouseRelease()
     {

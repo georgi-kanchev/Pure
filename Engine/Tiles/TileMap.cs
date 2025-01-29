@@ -5,7 +5,6 @@ namespace Pure.Engine.Tiles;
 public class TileMap
 {
     public List<(Tile[] from3X3, Tile[] to3X3)> AutoTiles { get; } = [];
-    public (int x, int y, int z) SeedOffset { get; set; }
 
     public (int width, int height) Size { get; }
     public Area View { get; set; }
@@ -212,6 +211,18 @@ public class TileMap
     public static implicit operator ushort[,]?(TileMap? tileMap)
     {
         return tileMap?.ids;
+    }
+    public static implicit operator TileMap?(ushort[,]? ids)
+    {
+        if (ids == null)
+            return null;
+
+        var result = new TileMap((ids.GetLength(0), ids.GetLength(1)));
+        for (var i = 0; i < ids.GetLength(0); i++)
+            for (var j = 0; j < ids.GetLength(1); j++)
+                result.SetTile((i, j), ids[i, j]);
+
+        return result;
     }
 
 #region Backend
