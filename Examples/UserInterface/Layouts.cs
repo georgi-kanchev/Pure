@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class Layouts
 {
-    public static Block[] Create(TileMapPack maps)
+    public static Block[] Create(List<TileMap> maps)
     {
         Window.Title = "Pure - Layouts Example";
 
@@ -32,7 +32,7 @@ public static class Layouts
                 var text = $"- Useful for containing structured elements\n\n" +
                            $"- Can be dynamically resized without losing its ratios";
                 text = text.Constrain((segment.width, segment.height));
-                maps.TileMaps[1].SetText((segment.x, segment.y), text);
+                maps[1].SetText((segment.x, segment.y), text);
                 return;
             }
 

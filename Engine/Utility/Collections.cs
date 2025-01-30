@@ -305,6 +305,23 @@ public static class Collections
         return result.ToString();
     }
 
+    public static T1[] ForEachGet<T, T1>(this IList<T> collection, Func<T, T1> function)
+    {
+        return collection.Select(function).ToArray();
+    }
+
+    public static void BringToFront<T>(this IList<T> collection, params T[]? blocks)
+    {
+        if (blocks == null || blocks.Length == 0)
+            return;
+
+        for (var i = blocks.Length - 1; i >= 0; i--)
+        {
+            collection.Remove(blocks[i]);
+            collection.Add(blocks[i]);
+        }
+    }
+
     /// <typeparam name="T">
     /// The type of elements in the collection.</typeparam>
     /// <param name="collection">The collection to check for duplicates.</param>
@@ -341,6 +358,14 @@ public static class Collections
 
         animations[hash] = (animations[hash].time + Time.Delta, 1f);
         return collection[index];
+    }
+
+    public static List<T> AddDuplicates<T>(this List<T> list, int amount, Func<T> item)
+    {
+        for (var i = 0; i < amount; i++)
+            list.Add(item.Invoke());
+
+        return list;
     }
 
     public static bool IsOneOf<T>(this T value, params T[] values)

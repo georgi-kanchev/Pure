@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class Panels
 {
-    public static Block[] Create(TileMapPack maps)
+    public static Block[] Create(List<TileMap> maps)
     {
         Window.Title = "Pure - Panels Example";
 
@@ -19,7 +19,7 @@ public static class Panels
                         $"- Can be optionally moved and/or resized\n\n" +
                         $"- Cannot be resized or moved outside the window\n\n" +
                         $"- Minimum sizes").Constrain((w - 2, h - 2));
-            maps.TileMaps[1].SetText((x + 1, y + 1), text, Color.Green);
+            maps[1].SetText((x + 1, y + 1), text, Color.Green);
         };
 
         //============

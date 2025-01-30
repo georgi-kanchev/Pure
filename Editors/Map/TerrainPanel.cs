@@ -12,7 +12,7 @@ internal class TerrainPanel : Panel
         this.editor = editor;
         this.inspector = inspector;
 
-        var h = editor.MapsUi.Size.height;
+        var h = editor.MapsUi[0].Size.height;
         Text = string.Empty;
         Size = (15, h - 8);
         IsMovable = false;
@@ -38,10 +38,9 @@ internal class TerrainPanel : Panel
             {
                 foreach (var curY in ys)
                 {
-                    editor.MapsUi.TileMaps[MIDDLE].SetLine(
-                        (X, Y + curY), (X + Width - 1, Y + curY), tileMid);
-                    editor.MapsUi.TileMaps[MIDDLE].SetTile((X, Y + curY), tileLeft);
-                    editor.MapsUi.TileMaps[MIDDLE].SetTile((X + Width - 1, Y + curY), tileRight);
+                    editor.MapsUi[MIDDLE].SetLine((X, Y + curY), (X + Width - 1, Y + curY), tileMid);
+                    editor.MapsUi[MIDDLE].SetTile((X, Y + curY), tileLeft);
+                    editor.MapsUi[MIDDLE].SetTile((X + Width - 1, Y + curY), tileRight);
                 }
             }
         };
@@ -49,9 +48,9 @@ internal class TerrainPanel : Panel
         var autoButtons = AddAutoTiles(tilePalette);
         var terrainBlocks = AddTerrainBlocks(tilePalette);
 
-        editor.Ui.Blocks.AddRange([this, toggle]);
-        editor.Ui.Blocks.AddRange(autoButtons);
-        editor.Ui.Blocks.AddRange(terrainBlocks);
+        editor.Ui.AddRange([this, toggle]);
+        editor.Ui.AddRange(autoButtons);
+        editor.Ui.AddRange(terrainBlocks);
     }
 
     public void UpdateUI()
@@ -130,7 +129,7 @@ internal class TerrainPanel : Panel
         apply.OnInteraction(Interaction.Trigger, () =>
         {
             var layer = GetLayer();
-            editor.MapsEditor.TileMaps[layer].SetAutoTiles(editor.MapsEditor.TileMaps[layer]);
+            // editor.MapsEditor[layer].SetAutoTiles(editor.MapsEditor[layer]);
         });
         remove.OnInteraction(Interaction.Trigger, () => { editor.PromptYesNo("Remove this autotile rule?", () => autoTiles.RemoveAt(pages.Current - 1)); });
         pages.OnItemDisplay += page => editor.MapsUi.SetPagesItem(pages, page);
@@ -176,16 +175,15 @@ internal class TerrainPanel : Panel
                 $"Id: {pickedTile.Id}\n" +
                 $"Pose: {pickedTile.Pose}";
 
-            editor.MapsUi.TileMaps[FRONT].SetText((X + 1, Y + 6),
-                $"To change the\ncenter to:", White);
-            editor.MapsUi.TileMaps[FRONT].SetText((X + 1, Y + 8), pickText, Gray);
-            editor.MapsUi.TileMaps[FRONT].SetText((X + 1, Y + 1), "Match Ids:", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 6), "To change the\ncenter to:", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 8), pickText, Gray);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 1), "Match Ids:", White);
 
             if (empty == false)
             {
                 var colorArea = (X + 12, Y + 9, 2, 2);
-                editor.MapsUi.TileMaps[MIDDLE].SetArea(colorArea, new Tile(SHADE_5, Gray));
-                editor.MapsUi.TileMaps[FRONT].SetArea(colorArea, new Tile(FULL, pickedTile.Tint));
+                editor.MapsUi[MIDDLE].SetArea(colorArea, new Tile(SHADE_5, Gray));
+                editor.MapsUi[FRONT].SetArea(colorArea, new Tile(FULL, pickedTile.Tint));
             }
 
             editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), FRONT);
@@ -240,7 +238,7 @@ internal class TerrainPanel : Panel
                 var color = btn.GetInteractionColor(Gray);
                 var arrow = new Tile(ARROW_TAILLESS_ROUND, color, (Pose)(byte)index);
                 var center = new Tile(SHAPE_CIRCLE, color);
-                editor.MapsUi.TileMaps[FRONT].SetTile(btn.Position, index == 4 ? center : arrow);
+                editor.MapsUi[FRONT].SetTile(btn.Position, index == 4 ? center : arrow);
             };
 
             result.Add(btn);
@@ -284,7 +282,7 @@ internal class TerrainPanel : Panel
             if (layer == -1)
                 return;
 
-            var map = editor.MapsEditor.TileMaps[layer];
+            var map = editor.MapsEditor[layer];
             map.Flush();
             generator.Apply(map);
         });
@@ -357,26 +355,26 @@ internal class TerrainPanel : Panel
                     UpdateUI();
             }
 
-            editor.MapsUi.TileMaps[FRONT].SetText((X + 1, Y + 21), "Scale", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 21), "Scale", White);
             editor.MapsUi.SetInputBox(scale);
-            editor.MapsUi.TileMaps[FRONT].SetText((X + 1, Y + 22), "Seed", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 22), "Seed", White);
             editor.MapsUi.SetInputBox(seed);
-            editor.MapsUi.TileMaps[FRONT].SetText((X + 1, Y + 23),
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 23),
                 $"Offset {generator.Offset.x} {generator.Offset.y}", White);
 
-            editor.MapsUi.TileMaps[FRONT].SetText((X + 5, Y + 25), "Height|Id", White);
+            editor.MapsUi[FRONT].SetText((X + 5, Y + 25), "Height|Id", White);
             editor.MapsUi.SetList(tiles);
 
             if (tiles.SelectedItems.Count > 0)
-                editor.MapsUi.TileMaps[FRONT].SetText((X + 1, Y + 28), $"use\n" +
-                                                                       $"pick\n" +
-                                                                       $"tool", Gray);
+                editor.MapsUi[FRONT].SetText((X + 1, Y + 28), $"use\n" +
+                                                              $"pick\n" +
+                                                              $"tool", Gray);
 
             editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), MIDDLE);
             editor.MapsUi.SetButtonIcon(edit, new(ICON_PEN, Gray), MIDDLE);
             editor.MapsUi.SetButtonIcon(remove, new(ICON_TRASH, Gray), MIDDLE);
 
-            editor.MapsUi.TileMaps[FRONT].SetText((X + 1, Y + 18), "Noise Type", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 18), "Noise Type", White);
             editor.MapsUi.SetList(noiseType);
 
             editor.MapsUi.SetButton(generate);

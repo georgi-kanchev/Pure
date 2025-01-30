@@ -52,7 +52,7 @@ public static class Tetris
                 kvp.Value.Draw();
 
             if (map != null)
-                layer?.DrawTiles(map);
+                layer?.DrawTileMap(map);
 
             layer?.DrawMouseCursor();
             layer?.Draw();

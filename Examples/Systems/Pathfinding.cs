@@ -33,8 +33,8 @@ public static class Pathfinding
             var lines = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Red);
             var points = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Green);
 
-            layer.DrawTiles(tilemap);
-            layer.DrawLines(lines);
+            layer.DrawTileMap(tilemap);
+            layer.DrawLine(lines);
             layer.DrawPoints(points);
             layer.DrawMouseCursor();
             layer.Draw();

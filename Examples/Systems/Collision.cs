@@ -13,9 +13,9 @@ public static class Collision
     {
         Window.Title = "Pure - Collision Example";
 
-        var aspectRatio = Monitor.Current.AspectRatio;
-        var maps = new TileMapPack(2, (aspectRatio.width * 3, aspectRatio.height * 3));
-        var (w, h) = maps.Size;
+        var (aw, ah) = Monitor.Current.AspectRatio;
+        var (w, h) = (aw * 3, ah * 3);
+        var maps = new List<TileMap> { new((w, h)), new((w, h)) };
 
         var collisionMap = new SolidMap();
         collisionMap.AddSolids(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Yellow)); // lake
@@ -32,26 +32,26 @@ public static class Collision
         var hitbox = new SolidPack(new Solid(0, 0, 1, 1)) { Scale = (SCALE, SCALE) };
         var layer = new Layer((w, h));
 
-        maps.TileMaps[1].FillWithRandomGrass();
-        maps.TileMaps[1].SetLake((0, 0), (14, 9));
-        maps.TileMaps[1].SetLake((26, 18), (5, 7));
-        maps.TileMaps[1].SetLake((16, 24), (12, 6));
-        maps.TileMaps[1].SetHouses((30, 10), (34, 11), (33, 8));
-        maps.TileMaps[1].SetBridge((21, 16), (31, 16));
-        maps.TileMaps[1].SetRoad((32, 0), (32, 26));
-        maps.TileMaps[1].SetRoad((33, 10), (47, 10));
-        maps.TileMaps[1].SetRoad((20, 16), (0, 16));
-        maps.TileMaps[1].SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
-        maps.TileMaps[1].SetBackgrounds(maps.TileMaps[0]);
+        maps[1].FillWithRandomGrass();
+        maps[1].SetLake((0, 0), (14, 9));
+        maps[1].SetLake((26, 18), (5, 7));
+        maps[1].SetLake((16, 24), (12, 6));
+        maps[1].SetHouses((30, 10), (34, 11), (33, 8));
+        maps[1].SetBridge((21, 16), (31, 16));
+        maps[1].SetRoad((32, 0), (32, 26));
+        maps[1].SetRoad((33, 10), (47, 10));
+        maps[1].SetRoad((20, 16), (0, 16));
+        maps[1].SetTrees((31, 5), (26, 8), (20, 12), (39, 11), (36, 18), (38, 19));
+        maps[1].SetBackgrounds(maps[0]);
 
-        collisionMap.Update(maps.TileMaps[1]);
+        collisionMap.Update(maps[1]);
         var collisionPack = collisionMap.ToArray();
 
         var waves = new SolidMap();
         waves.AddSolids(Tile.ICON_WAVE, new Solid(0, 0, 1, 1, Blue.ToDark()));
         waves.AddSolids(Tile.ICON_WAVES, new Solid(0, 0, 1, 1, Blue.ToDark()));
         waves.AddSolids(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
-        waves.Update(maps.TileMaps[1]);
+        waves.Update(maps[1]);
         var wavesRects = waves.ToBundle();
 
         layer.EffectBlur((127, 127), (0, 0, w, h, Blue));
@@ -72,8 +72,8 @@ public static class Collision
             hitbox.Position = mousePosition;
             line.Color = crossPoints.Length > 0 ? Red : Green;
 
-            layer.DrawTiles(maps.TileMaps[0]);
-            layer.DrawTiles(maps.TileMaps[1]);
+            layer.DrawTileMap(maps[0]);
+            layer.DrawTileMap(maps[1]);
 
             //layer.DrawRectangles(collisionMap);
             layer.DrawLines(line);

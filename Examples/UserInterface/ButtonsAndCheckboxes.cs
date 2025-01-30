@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class ButtonsAndCheckboxes
 {
-    public static Block[] Create(TileMapPack maps)
+    public static Block[] Create(List<TileMap> maps)
     {
         Window.Title = "Pure - Buttons & Checkboxes Example";
 
@@ -14,7 +14,7 @@ public static class ButtonsAndCheckboxes
         button.OnDisplay += () =>
         {
             maps.SetButton(button);
-            maps.TileMaps[1].SetText((0, 0), $"The {button.Text} was pressed {counter} times.");
+            maps[1].SetText((0, 0), $"The {button.Text} was pressed {counter} times.");
         };
 
         // ==============
@@ -31,8 +31,7 @@ public static class ButtonsAndCheckboxes
         buttonDisabled.AlignInside((0.5f, 0.8f));
         buttonDisabled.OnDisplay += () =>
         {
-            maps.TileMaps[0].SetText(buttonDisabled.Position, buttonDisabled.Text,
-                Color.Gray.ToDark(0.7f));
+            maps[0].SetText(buttonDisabled.Position, buttonDisabled.Text, Color.Gray.ToDark(0.7f));
         };
 
         return [button, checkbox, buttonDisabled];

@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class Prompts
 {
-    public static Block[] Create(TileMapPack maps)
+    public static Block[] Create(List<TileMap> maps)
     {
         Window.Title = "Pure - Prompts Example";
 
@@ -12,7 +12,7 @@ public static class Prompts
         var info = new Button { Position = (int.MaxValue, 0) };
         var text = $"Press <{HOTKEY_LOG}> to type and log\n" +
                    $"Press <{HOTKEY_MSG}> to show a message";
-        info.OnDisplay += () => maps.TileMaps[0].SetText((0, 0), text);
+        info.OnDisplay += () => maps[0].SetText((0, 0), text);
 
         var input = new InputBox
         {

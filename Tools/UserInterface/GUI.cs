@@ -8,7 +8,7 @@ namespace Pure.Tools.ImmediateGraphicalUserInterface;
 
 public static class GUI
 {
-    public static TileMapPack TileMapPack { get; private set; } = new(0, (0, 0));
+    public static List<TileMap> TileMaps { get; } = [];
     public static Tile Cursor { get; set; } = new(546, 3789677055);
     public static string? CurrentPrompt { get; private set; }
 
@@ -16,13 +16,13 @@ public static class GUI
 
     public static void Text(this string? text, (int x, int y) cell = default, int zOrder = 0, uint tint = uint.MaxValue, char tintBrush = '#')
     {
-        if (zOrder < TileMapPack.TileMaps.Count)
-            TileMapPack.TileMaps[zOrder].SetText(cell, text, tint, tintBrush);
+        if (zOrder < TileMaps.Count)
+            TileMaps[zOrder].SetText(cell, text, tint, tintBrush);
     }
     public static bool Button(Area area, string text, Interaction trueWhen = Interaction.Trigger)
     {
         var block = TryCache<Button>(text, area, out _);
-        TileMapPack.SetButton(block);
+        TileMaps.SetButton(block);
         return block.IsJustInteracted(trueWhen);
     }
     public static bool? Checkbox((int x, int y) cell, string text, bool selected = false)
@@ -32,7 +32,7 @@ public static class GUI
         if (cached == false)
             block.IsSelected = selected;
 
-        TileMapPack.SetCheckbox(block);
+        TileMaps.SetCheckbox(block);
         return block.IsJustInteracted(Interaction.Select) ? block.IsSelected : null;
     }
     public static bool? Switch((int x, int y) cell, (string left, string right) text, bool right = false)
@@ -44,7 +44,7 @@ public static class GUI
             block.IsSelected = right;
 
         block.Text = label;
-        TileMapPack.SetSwitch(block, '—');
+        TileMaps.SetSwitch(block, '—');
         return block.IsJustInteracted(Interaction.Select) ? block.IsSelected : null;
     }
     public static string? InputBox(Area area, string? value = "", string? placeholder = "Type…", SymbolGroup symbolGroup = All, int symbolLimit = int.MaxValue)
@@ -57,7 +57,7 @@ public static class GUI
         if (cached == false)
             block.Value = value;
 
-        TileMapPack.SetInputBox(block);
+        TileMaps.SetInputBox(block);
 
         if (block.Height == 1)
             return block.IsJustInteracted(Interaction.Select) ? block.Value : null;
@@ -72,7 +72,7 @@ public static class GUI
         if (cached == false)
             block.Progress = progress;
 
-        TileMapPack.SetSlider(block);
+        TileMaps.SetSlider(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Progress : float.NaN;
     }
     public static float Scroll((int x, int y) cell, int size, float progress = 0, bool vertical = false)
@@ -83,7 +83,7 @@ public static class GUI
         if (cached == false)
             block.Slider.Progress = progress;
 
-        TileMapPack.SetScroll(block);
+        TileMaps.SetScroll(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Slider.Progress : float.NaN;
     }
     public static float Stepper((int x, int y) cell, string text, float value = 0, float step = 1f, float min = float.MinValue, float max = float.MaxValue)
@@ -96,7 +96,7 @@ public static class GUI
         if (cached == false)
             block.Value = value;
 
-        TileMapPack.SetStepper(block);
+        TileMaps.SetStepper(block);
         return block.IsJustInteracted(Interaction.Select) ? block.Value : float.NaN;
     }
     public static float Pages((int x, int y) cell, int size = 12, int current = 0, int totalCount = 10, int itemWidth = 2)
@@ -199,7 +199,7 @@ public static class GUI
         var prompt = TryCache<Prompt>(text, (-1, 0, 1, 1), out _);
         var input = TryCache<InputBox>("", (-2, 0, width, 1), out _, skipUpdate: true);
         input.SymbolGroup = symbolGroup;
-        TileMapPack.SetInputBox(input, 3);
+        TileMaps.SetInputBox(input, 3);
 
         if (prompt.IsHidden)
             prompt.Open(input, onButtonTrigger: index =>
@@ -240,8 +240,12 @@ public static class GUI
 
     public static void DrawGUI(this Layer layer)
     {
-        if (layer.Size != TileMapPack.Size)
-            TileMapPack = new(6, layer.Size);
+        if (TileMaps.Count == 0 || layer.Size != TileMaps[0].Size)
+        {
+            TileMaps.Clear();
+            for (var i = 0; i < 6; i++)
+                TileMaps.Add(new(layer.Size));
+        }
 
         Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
@@ -264,21 +268,19 @@ public static class GUI
         foreach (var cacheKey in toRemove)
             imGuiCache.Remove(cacheKey);
 
-        foreach (var map in TileMapPack.TileMaps)
-            layer.DrawTiles(map);
-
+        TileMaps.ForEach(map => layer.DrawTileMap(map));
         layer.DrawMouseCursor(Cursor.Id, Cursor.Tint);
         layer.Draw();
-        TileMapPack.Flush();
+        TileMaps.ForEach(map => map.Flush());
     }
 
     public static void ConfigureText(ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
     {
-        TileMapPack.ConfigureText(lowercase, uppercase, numbers);
+        TileMaps.ForEach(map => map.ConfigureText(lowercase, uppercase, numbers));
     }
     public static void ConfigureText(ushort firstTileId, string symbols)
     {
-        TileMapPack.ConfigureText(firstTileId, symbols);
+        TileMaps.ForEach(map => map.ConfigureText(firstTileId, symbols));
     }
 
 #region Backend
@@ -311,37 +313,37 @@ public static class GUI
                 var fileViewer = new FileViewer();
                 imGuiCache[key] = (2, fileViewer);
 
-                fileViewer.OnDisplay += () => TileMapPack.SetFileViewer(fileViewer);
-                fileViewer.FilesAndFolders.OnItemDisplay += item => TileMapPack.SetFileViewerItem(fileViewer, item);
-                fileViewer.HardDrives.OnItemDisplay += item => TileMapPack.SetFileViewerItem(fileViewer, item);
+                fileViewer.OnDisplay += () => TileMaps.SetFileViewer(fileViewer);
+                fileViewer.FilesAndFolders.OnItemDisplay += item => TileMaps.SetFileViewerItem(fileViewer, item);
+                fileViewer.HardDrives.OnItemDisplay += item => TileMaps.SetFileViewerItem(fileViewer, item);
             }
             else if (type == typeof(Palette))
             {
                 var palette = new Palette();
                 imGuiCache[key] = (2, palette);
-                palette.OnDisplay += () => TileMapPack.SetPalette(palette);
+                palette.OnDisplay += () => TileMaps.SetPalette(palette);
             }
             else if (type == typeof(Prompt))
             {
-                var prompt = new Prompt { Text = text, Size = TileMapPack.Size };
+                var prompt = new Prompt { Text = text, Size = TileMaps[0].Size };
                 prompt.AlignInside((0.5f, 0.5f));
-                prompt.OnDisplay += () => TileMapPack.SetPrompt(prompt, 3);
-                prompt.OnItemDisplay += item => TileMapPack.SetPromptItem(prompt, item, 5);
+                prompt.OnDisplay += () => TileMaps.SetPrompt(prompt, 3);
+                prompt.OnItemDisplay += item => TileMaps.SetPromptItem(prompt, item, 5);
                 imGuiCache[key] = (2, prompt);
             }
             else if (type == typeof(Pages))
             {
                 var pages = new Pages();
                 imGuiCache[key] = (2, pages);
-                pages.OnDisplay += () => TileMapPack.SetPages(pages);
-                pages.OnItemDisplay += page => TileMapPack.SetPagesItem(pages, page);
+                pages.OnDisplay += () => TileMaps.SetPages(pages);
+                pages.OnItemDisplay += page => TileMaps.SetPagesItem(pages, page);
             }
             else if (type == typeof(List))
             {
                 var list = new List((0, 0), 0, span);
                 imGuiCache[key] = (2, list);
-                list.OnDisplay += () => TileMapPack.SetList(list);
-                list.OnItemDisplay += item => TileMapPack.SetListItem(list, item);
+                list.OnDisplay += () => TileMaps.SetList(list);
+                list.OnItemDisplay += item => TileMaps.SetListItem(list, item);
                 list.Area = area; // set for dropdown only once
             }
         }
@@ -370,7 +372,7 @@ public static class GUI
         tooltip.Side = Tooltip.side;
         tooltip.Alignment = Tooltip.alignment;
         tooltip.Show(cache.block.Area);
-        TileMapPack.SetTooltip(tooltip);
+        TileMaps.SetTooltip(tooltip);
 
         return (T)cache.block;
     }

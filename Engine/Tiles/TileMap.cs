@@ -4,8 +4,6 @@ namespace Pure.Engine.Tiles;
 
 public class TileMap
 {
-    public List<(Tile[] from3X3, Tile[] to3X3)> AutoTiles { get; } = [];
-
     public (int width, int height) Size { get; }
     public Area View { get; set; }
 
@@ -66,46 +64,6 @@ public class TileMap
         bundleCache[cell.x, cell.y] = tile;
     }
 
-    public void SetAutoTiles(Area area, Area? mask = null)
-    {
-        var result = new Dictionary<(int x, int y), Tile>();
-
-        for (var i = area.X; i < area.Height; i++)
-            for (var j = area.Y; j < area.Width; j++)
-                foreach (var (from, to) in AutoTiles)
-                {
-                    if (from.Length != 9 || to.Length != 9)
-                        continue;
-
-                    var isMatch = true;
-
-                    for (var k = 0; k < from.Length; k++)
-                    {
-                        var (oy, ox) = (k % 3 - 1, k / 3 - 1);
-                        var offTile = TileAt((j + ox, i + oy));
-
-                        if (offTile == from[k] || from[k].Id == 0)
-                            continue;
-
-                        isMatch = false;
-                        break;
-                    }
-
-                    if (isMatch == false)
-                        continue;
-
-                    for (var k = 0; k < to.Length; k++)
-                    {
-                        var (oy, ox) = (k % 3 - 1, k / 3 - 1);
-
-                        if (to[k].Id != 0)
-                            result[(j + ox, i + oy)] = to[k];
-                    }
-                }
-
-        foreach (var kvp in result)
-            SetTile(kvp.Key, kvp.Value, mask);
-    }
     public void ConfigureText(ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
     {
         ConfigureText(lowercase, "abcdefghijklmnopqrstuvwxyz");

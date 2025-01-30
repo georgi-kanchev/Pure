@@ -6,22 +6,20 @@ namespace Pure.Tools.Tiles;
 
 public static class TiledLoader
 {
-    public static (string[] layers, TileMapPack maps) Load(string tmxPath)
+    public static (string layerName, TileMap map)[] Load(string tmxPath)
     {
         var layerList = LoadLayers(tmxPath);
-        var result = new TileMapPack();
-        var names = new List<string>();
+        var result = new List<(string name, TileMap map)>();
 
         foreach (XmlElement element in layerList)
         {
             var name = element.Attributes["name"]?.Value;
             var (layer, data) = GetLayer(layerList, tmxPath, name);
 
-            result.TileMaps.Add(ParseData(layer, data));
-            names.Add(name ?? string.Empty);
+            result.Add((name ?? string.Empty, ParseData(layer, data)));
         }
 
-        return (names.ToArray(), result);
+        return result.ToArray();
     }
     public static TileMap Load(string tmxPath, string layerName)
     {

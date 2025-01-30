@@ -27,7 +27,7 @@ public static class TerrainGeneration
 
         while (Window.KeepOpen())
         {
-            layer.DrawTiles(terrain);
+            layer.DrawTileMap(terrain);
             layer.DrawMouseCursor();
             layer.Draw();
         }

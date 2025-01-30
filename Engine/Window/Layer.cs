@@ -241,15 +241,7 @@ public class Layer
             QueueRectangle((x, y), (width, height), color);
         }
     }
-    public void DrawLines(params (float ax, float ay, float bx, float by, uint color)[]? lines)
-    {
-        if (lines == null || lines.Length == 0)
-            return;
-
-        foreach (var line in lines)
-            QueueLine((line.ax, line.ay), (line.bx, line.by), line.color);
-    }
-    public void DrawLines(params (float x, float y, uint color)[]? points)
+    public void DrawLine(params (float x, float y, uint color)[]? points)
     {
         if (points == null || points.Length == 0)
             return;
@@ -266,6 +258,14 @@ public class Layer
             var b = points[i];
             QueueLine((a.x, a.y), (b.x, b.y), a.color);
         }
+    }
+    public void DrawLines(params (float ax, float ay, float bx, float by, uint color)[]? lines)
+    {
+        if (lines == null || lines.Length == 0)
+            return;
+
+        foreach (var line in lines)
+            QueueLine((line.ax, line.ay), (line.bx, line.by), line.color);
     }
     public void DrawTiles((float x, float y) position, (ushort id, uint tint, byte pose) tile, float scale = 1f, (int width, int height) groupSize = default, bool sameTile = default)
     {
@@ -335,18 +335,18 @@ public class Layer
                 verts.Append(new(bl, c, texBl));
             }
     }
-    public void DrawTiles((ushort id, uint tint, byte pose)[,]? tiles)
+    public void DrawTileMap((ushort id, uint tint, byte pose)[,]? tileMap)
     {
-        if (tiles == null || tiles.Length == 0 || verts == null)
+        if (tileMap == null || tileMap.Length == 0 || verts == null)
             return;
 
-        var (cellCountW, cellCountH) = (tiles.GetLength(0), tiles.GetLength(1));
+        var (cellCountW, cellCountH) = (tileMap.GetLength(0), tileMap.GetLength(1));
         var tsz = AtlasTileSize;
 
         for (var y = 0; y < cellCountH; y++)
             for (var x = 0; x < cellCountW; x++)
             {
-                var (id, tint, pose) = tiles[x, y];
+                var (id, tint, pose) = tileMap[x, y];
 
                 if (id == default)
                     continue;

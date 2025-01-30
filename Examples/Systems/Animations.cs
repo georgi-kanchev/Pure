@@ -38,7 +38,7 @@ public static class Animations
             if (Keyboard.Key.A.IsJustPressed())
                 texts[0] = "#1: Hello, World!";
 
-            layer.DrawTiles(tilemap);
+            layer.DrawTileMap(tilemap);
             layer.DrawMouseCursor();
             layer.Draw();
         }

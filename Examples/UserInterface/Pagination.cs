@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class Pagination
 {
-    public static Block[] Create(TileMapPack maps)
+    public static Block[] Create(List<TileMap> maps)
     {
         Window.Title = "Pure - Pages Example";
 

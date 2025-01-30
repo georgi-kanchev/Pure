@@ -18,19 +18,19 @@ public static class Program
 
         editor.OnUpdateUi += () =>
         {
-            var (vx, vy) = editor.MapsEditor.View.Position;
+            var (vx, vy) = editor.MapsEditor[0].View.Position;
             solidPack.Position = (-vx, -vy);
             solidMap.Offset = CanDrawLayer ? (0, 0) : (-vx, -vy);
             linePack.Position = (-vx, -vy);
 
             if ((vx, vy) != prevViewPos)
-                solidMap.Update(editor.MapsEditor.TileMaps[currentLayer]);
+                solidMap.Update(editor.MapsEditor[currentLayer]);
 
             prevViewPos = (vx, vy);
 
             if (CanDrawLayer)
             {
-                layer.DrawTiles(map);
+                layer.DrawTileMap(map);
                 solidMap.Update(map);
                 layer.DrawRectangles(solidMap);
             }
@@ -130,10 +130,10 @@ public static class Program
     static Program()
     {
         editor = new("Pure - Collision Editor");
-        var (mw, mh) = editor.MapsEditor.Size;
-        editor.MapsEditor.TileMaps.Clear();
-        editor.MapsEditor.TileMaps.AddRange([new((mw, mh)), new((mw, mh))]);
-        editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
+        var (mw, mh) = editor.MapsEditor[0].Size;
+        editor.MapsEditor.Clear();
+        editor.MapsEditor.AddRange([new((mw, mh)), new((mw, mh))]);
+        editor.MapsEditor.ForEach(m => m.View = new(editor.MapsEditor[0].View.Position, (mw, mh)));
         CreateMenu();
 
         const int MIDDLE = (int)Editor.LayerMapsUi.Middle;
@@ -167,7 +167,7 @@ public static class Program
         };
         palette.AlignInside((0.8f, 0f));
 
-        editor.Ui.Blocks.AddRange([tools, palette]);
+        editor.Ui.AddRange([tools, palette]);
 
         // override the default prompt buttons
 
@@ -223,9 +223,9 @@ public static class Program
                 return;
 
             var (x, y) = MousePos;
-            x += editor.MapsEditor.View.X;
-            y += editor.MapsEditor.View.Y;
-            currentTile = editor.MapsEditor.TileMaps[currentLayer].TileAt(((int)x, (int)y));
+            x += editor.MapsEditor[0].View.X;
+            y += editor.MapsEditor[0].View.Y;
+            currentTile = editor.MapsEditor[currentLayer].TileAt(((int)x, (int)y));
 
             layer.AtlasTileGap = editor.LayerMap.AtlasTileGap;
             layer.AtlasPath = editor.LayerMap.AtlasPath;
@@ -245,9 +245,9 @@ public static class Program
                     if (i == 0)
                     {
                         editor.Prompt.Close();
-                        var (vx, vy) = editor.MapsEditor.View.Position;
+                        var (vx, vy) = editor.MapsEditor[0].View.Position;
                         solidMap.Offset = (-vx, -vy);
-                        solidMap.Update(editor.MapsEditor.TileMaps[currentLayer]);
+                        solidMap.Update(editor.MapsEditor[currentLayer]);
                         return;
                     }
 
@@ -278,7 +278,7 @@ public static class Program
 
             solid.Size = Snap((Math.Abs(solid.Size.width), Math.Abs(solid.Size.height)));
 
-            var (vx, vy) = editor.MapsEditor.View.Position;
+            var (vx, vy) = editor.MapsEditor[0].View.Position;
             var curSolid = solid;
             if (CanEditGlobal)
             {
@@ -376,15 +376,15 @@ public static class Program
                 editor.PromptLoadMap((resultLayers, _) =>
                 {
                     layers = resultLayers;
-                    originalMapViewPos = editor.MapsEditor.View.Position;
-                    solidMap.Update(editor.MapsEditor.TileMaps[currentLayer]);
+                    originalMapViewPos = editor.MapsEditor[0].View.Position;
+                    solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
             else if (index == 4) // paste tilemap
                 editor.PromptLoadMapBase64((resultLayers, _) =>
                 {
                     layers = resultLayers;
-                    originalMapViewPos = editor.MapsEditor.View.Position;
-                    solidMap.Update(editor.MapsEditor.TileMaps[currentLayer]);
+                    originalMapViewPos = editor.MapsEditor[0].View.Position;
+                    solidMap.Update(editor.MapsEditor[currentLayer]);
                 });
             else if (index == 6) // new
                 editor.PromptConfirm(() =>

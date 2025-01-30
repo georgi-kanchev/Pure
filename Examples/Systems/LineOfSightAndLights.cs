@@ -43,7 +43,7 @@ public static class LineOfSightAndLights
             layer.EffectAddLightObstacles(solidMap);
             layer.EffectAddLight(20f, (120f, angle), (mx, my, Color.White));
 
-            layer.DrawTiles(tilemap);
+            layer.DrawTileMap(tilemap);
             layer.DrawMouseCursor();
             layer.Draw();
         }

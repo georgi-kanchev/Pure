@@ -4,12 +4,12 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 
 [Script.DoNotSave]
-public class CommandPack
+public class Commands
 {
     public bool IsDisabled { get; set; }
     public (char command, char value, char text, char array) Dividers { get; set; } = (';', ' ', '`', '|');
 
-    public void Add(string command, Func<string?> onExecute)
+    public void Create(string command, Func<string?> onExecute)
     {
         if (string.IsNullOrWhiteSpace(command))
             return;
@@ -68,7 +68,7 @@ public class CommandPack
         return obj is "" or null ? default : (T)obj;
     }
 
-    #region Backend
+#region Backend
     private const string STR_PLACEHOLDER = "—";
     private int parameterIndex;
     private static readonly Dictionary<string, Func<string?>> commands = new();
@@ -162,5 +162,5 @@ public class CommandPack
         });
         return result;
     }
-    #endregion
+#endregion
 }

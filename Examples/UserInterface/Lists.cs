@@ -2,7 +2,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class Lists
 {
-    public static Block[] Create(TileMapPack maps)
+    public static Block[] Create(List<TileMap> maps)
     {
         Window.Title = "Pure - Lists Example";
 
@@ -16,7 +16,7 @@ public static class Lists
         listVertical.OnDisplay += () =>
         {
             var (x, y) = listVertical.Position;
-            maps.TileMaps[0].SetText((x, y - 1), "Single select");
+            maps[0].SetText((x, y - 1), "Single select");
             maps.SetList(listVertical);
         };
         listVertical.OnItemDisplay += item => maps.SetListItem(listVertical, item);
@@ -33,7 +33,7 @@ public static class Lists
         listHorizontal.OnDisplay += () =>
         {
             var (x, y) = listHorizontal.Position;
-            maps.TileMaps[0].SetText((x, y - 1), "Multi select");
+            maps[0].SetText((x, y - 1), "Multi select");
             maps.SetList(listHorizontal);
         };
         listHorizontal.OnItemDisplay += item => maps.SetListItem(listHorizontal, item);
@@ -45,7 +45,7 @@ public static class Lists
         listDropdown.OnDisplay += () =>
         {
             var (x, y) = listDropdown.Position;
-            maps.TileMaps[0].SetText((x, y - 1), "Dropdown");
+            maps[0].SetText((x, y - 1), "Dropdown");
             maps.SetList(listDropdown);
         };
         listDropdown.OnItemDisplay += item => maps.SetListItem(listDropdown, item);

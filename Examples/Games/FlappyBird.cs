@@ -151,8 +151,8 @@ public static class FlappyBird
             if (isGameOver)
                 foreground.SetText((0, 0), text);
 
-            layer.DrawTiles(background.ToBundle());
-            layer.DrawTiles(foreground.ToBundle());
+            layer.DrawTileMap(background.ToBundle());
+            layer.DrawTileMap(foreground.ToBundle());
             var tile = isGameOver ? new(Tile.UPPERCASE_X) : birdTile;
             layer.DrawTiles((BIRD_X, birdY), tile);
             layer.DrawMouseCursor();

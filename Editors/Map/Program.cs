@@ -34,9 +34,9 @@ public static class Program
         var (mw, mh) = (50, 50);
 
         editor = new("Pure - Map Editor");
-        editor.MapsEditor.TileMaps.Clear();
-        editor.MapsEditor.TileMaps.Add(new((mw, mh)));
-        editor.MapsEditor.View = new(editor.MapsEditor.View.Position, (mw, mh));
+        editor.MapsEditor.Clear();
+        editor.MapsEditor.Add(new((mw, mh)));
+        editor.MapsEditor.ForEach(map => map.View = new(editor.MapsEditor[0].View.Position, (mw, mh)));
         editor.MapsEditorVisible.Clear();
         editor.MapsEditorVisible.Add(true);
 

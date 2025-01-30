@@ -6,9 +6,9 @@ public static class Commands
 {
     public static void Run()
     {
-        var cmd = new CommandPack();
+        var cmd = new Engine.Execution.Commands();
 
-        cmd.Add("log", () =>
+        cmd.Create("log", () =>
         {
             var text = cmd.GetNextValue<string>();
             var intArray = cmd.GetNextValue<int[]>();

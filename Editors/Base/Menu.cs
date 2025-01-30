@@ -40,7 +40,7 @@ public class Menu : List
                 IsHidden = true;
         });
 
-        editor.Ui.Blocks.Add(this);
+        editor.Ui.Add(this);
     }
 
     public void Show((int x, int y) position)

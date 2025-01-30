@@ -166,7 +166,7 @@ public static class Asteroids
             Position = new Point(Position).MoveAt(MoveAngle, Velocity, Time.Delta);
             Angle = new Angle(Angle).Rotate(Torque, Time.Delta);
 
-            layer.DrawLines(ToBundlePoints());
+            layer.DrawLine(ToBundlePoints());
         }
     }
 #endregion

@@ -12,33 +12,36 @@ public static class Program
 {
     public static Layer? Layer { get; private set; }
 
-    public static (TileMapPack, BlockPack) Initialize()
+    public static (List<TileMap>, List<Block>) Initialize()
     {
         var (width, height) = Monitor.Current.AspectRatio;
-        var maps = new TileMapPack(7, (width * 3, height * 3));
-        var blocks = new BlockPack();
-        Input.TilemapSize = maps.Size;
+        var sz = (width * 3, height * 3);
+        var maps = new List<TileMap>();
+        var blocks = new List<Block>();
+        Input.TilemapSize = sz;
+
+        for (var i = 0; i < 7; i++)
+            maps.Add(new(sz));
+
         return (maps, blocks);
     }
-    public static void Run(TileMapPack maps, BlockPack blocks)
+    public static void Run(List<TileMap> maps, List<Block> blocks)
     {
-        Layer = new(maps.Size);
+        Layer = new(maps[0].Size);
         while (Window.KeepOpen())
         {
             Time.Update();
-            maps.Flush();
+            maps.ForEach(map => map.Flush());
 
             Input.PositionPrevious = Input.Position;
             Input.Position = Layer.MouseCursorPosition;
             Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta, Keyboard.KeyIdsPressed, Keyboard.KeyTyped);
 
-            blocks.Update();
+            blocks.ForEach(block => block.Update());
 
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-            foreach (var map in maps.TileMaps)
-                Layer.DrawTiles(map);
-
+            maps.ForEach(map => Layer.DrawTileMap(map));
             Layer.DrawMouseCursor();
             Layer.Draw();
         }
