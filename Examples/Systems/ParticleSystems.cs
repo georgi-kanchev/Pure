@@ -64,6 +64,7 @@ public static class ParticleSystems
         {
             Time.Update();
             Flow.Update(Time.Delta);
+            Particles.Update();
 
             layer.DrawRectangles(t, b, l, r);
 

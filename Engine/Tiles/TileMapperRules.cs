@@ -9,22 +9,19 @@ public class TileMapperRules
 
         for (var i = ar.X; i < ar.Height; i++)
             for (var j = ar.Y; j < ar.Width; j++)
-                foreach (var tiles in rules)
+                foreach (var (tile, match) in rules)
                 {
-                    if (tiles.Length != 10)
+                    if (match.Length != 9)
                         continue;
 
                     var isMatch = true;
-
-                    if (i == 10 && j == 10)
-                        ;
 
                     for (var k = 0; k < 9; k++)
                     {
                         var (ox, oy) = (k % 3 - 1, k / 3 - 1);
                         var offTile = tileMap.TileAt((j + ox, i + oy));
 
-                        if (tiles[k] == null || tiles[k] == offTile)
+                        if (match[k] == null || match[k] == offTile.Id)
                             continue;
 
                         isMatch = false;
@@ -32,38 +29,86 @@ public class TileMapperRules
                     }
 
                     if (isMatch)
-                        result[(j, i)] = tiles[9]!.Value;
+                        result[(j, i)] = tile;
                 }
 
         foreach (var (cell, tile) in result)
             tileMap.SetTile(cell, tile, mask);
     }
 
-    public void AddRule(Tile result, Tile?[] match3X3)
+    public void AddRule(Tile result, ushort?[] match3X3, bool alsoRotations = true)
     {
-        var items = match3X3.Concat([result]).ToArray();
-        var itemsHash = GetItemsHash(items);
+        if (match3X3 is not { Length: 9 })
+            return;
+
+        TryAdd(result, match3X3);
+
+        if (alsoRotations == false)
+            return;
+
+        var match = new[,]
+        {
+            { match3X3[0], match3X3[1], match3X3[2] },
+            { match3X3[3], match3X3[4], match3X3[5] },
+            { match3X3[6], match3X3[7], match3X3[8] }
+        };
+        for (var i = 1; i < 4; i++)
+            TryAdd(result.Rotate(i), Flatten(Rotate(match, i)));
+    }
+
+#region Backend
+    private readonly List<int> hashes = [];
+    private readonly List<(Tile tile, ushort?[] match)> rules = [];
+
+    private void TryAdd(Tile tile, ushort?[] match)
+    {
+        var itemsHash = GetItemsHash(match);
 
         if (hashes.Contains(itemsHash))
             return;
 
         hashes.Add(itemsHash);
-        rules.Add(items);
-    }
-    public void AddRulesForRegion()
-    {
-    }
-    public void AddRulesForPath()
-    {
+        rules.Add((tile, match));
     }
 
-#region Backend
-    private readonly List<int> hashes = []; //    items hash
-    private readonly List<Tile?[]> rules = []; // match3X3[0...8] + result[9]
-
-    private static int GetItemsHash(Tile?[] array)
+    private static int GetItemsHash(ushort?[] array)
     {
         return array.Aggregate(17, (hash, val) => hash * 31 + (val?.GetHashCode() ?? 0));
+    }
+    private static T[,] Rotate<T>(T[,] matrix, int direction)
+    {
+        var dir = Math.Abs(direction) % 4;
+        if (dir == 0)
+            return matrix;
+
+        var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
+        var rotated = new T[n, m];
+
+        if (direction > 0)
+        {
+            for (var i = 0; i < n; i++)
+                for (var j = 0; j < m; j++)
+                    rotated[i, j] = matrix[m - j - 1, i];
+            direction--;
+            return Rotate(rotated, direction);
+        }
+
+        for (var i = 0; i < n; i++)
+            for (var j = 0; j < m; j++)
+                rotated[i, j] = matrix[j, n - i - 1];
+
+        direction++;
+        return Rotate(rotated, direction);
+    }
+    private static T[] Flatten<T>(T[,] matrix)
+    {
+        var rows = matrix.GetLength(0);
+        var cols = matrix.GetLength(1);
+        var result = new T[rows * cols];
+        for (var i = 0; i < rows; i++)
+            for (var j = 0; j < cols; j++)
+                result[i * cols + j] = matrix[i, j];
+        return result;
     }
 #endregion
 }

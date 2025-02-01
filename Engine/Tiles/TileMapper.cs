@@ -207,6 +207,10 @@ public static class TileMapper
             }
         }
     }
+    public static void SetCircle(this TileMap tileMap, (int x, int y) cell, int radius, bool fill, params Tile[]? tiles)
+    {
+        SetEllipse(tileMap, cell, (radius, radius), fill, tiles);
+    }
     public static void SetLine(this TileMap tileMap, (int x, int y) cellA, (int x, int y) cellB, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)

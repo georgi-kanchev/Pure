@@ -13,43 +13,86 @@ public static class AutoTiling
         var (w, h) = Monitor.Current.AspectRatio;
         var layer = new Layer((w * 3, h * 3));
         var original = new TileMap(layer.Size);
-        var autoTiled = new TileMap(layer.Size);
+        var firstPass = new TileMap(layer.Size);
+        var secondPass = new TileMap(layer.Size);
         var flag = false;
-        var rules = new TileMapperRules();
+        var boxRules = new TileMapperRules();
+        var pipeRules = new TileMapperRules();
 
-        original.SetArea((10, 10, 15, 10), Tile.FULL);
-        original.SetArea((18, 5, 10, 10), Tile.FULL);
-
-        autoTiled.SetTiles((0, 0), original);
-        autoTiled.SetText((0, 0), "<LMB> to remove rules:");
-
-        original.SetText((0, 0), "<LMB> to apply rules:");
-
-        Mouse.Button.Left.OnPress(() => flag = !flag);
-
-        rules.AddRule(Tile.SHADE_3, [
-            new(), new(), new(),
-            new(), Tile.FULL, Tile.FULL,
-            new(), Tile.FULL, Tile.FULL
+        boxRules.AddRule(Tile.BOX_OUTLINE_CORNER, [
+            null, null /**/, null /**/,
+            null, Tile.FULL, Tile.FULL,
+            null, Tile.FULL, Tile.FULL
         ]);
-        rules.AddRule(Tile.SHADE_3, [
-            new(), new(), new(),
-            new(), Tile.FULL, Tile.FULL,
-            new(), Tile.FULL, Tile.FULL
+        boxRules.AddRule(Tile.BOX_OUTLINE_EDGE, [
+            null /**/, null /**/, null /**/,
+            Tile.FULL, Tile.FULL, Tile.FULL,
+            Tile.FULL, Tile.FULL, Tile.FULL
         ]);
-        rules.AddRule(Tile.SHADE_4, [
+        boxRules.AddRule(new Tile(Tile.BOX_OUTLINE_CORNER).Rotate(2), [
+            null /**/, Tile.FULL, Tile.FULL,
+            Tile.FULL, Tile.FULL, Tile.FULL,
+            Tile.FULL, Tile.FULL, Tile.FULL
+        ]);
+        boxRules.AddRule(Tile.FULL, [
             Tile.FULL, Tile.FULL, Tile.FULL,
             Tile.FULL, Tile.FULL, Tile.FULL,
             Tile.FULL, Tile.FULL, Tile.FULL
         ]);
-        rules.Apply(autoTiled);
+
+        pipeRules.AddRule(Tile.PIPE_BIG_STRAIGHT, [
+            null /*   */, null /*   */, null,
+            Tile.SHADE_9, Tile.SHADE_9, null,
+            null /*   */, null /*   */, null
+        ]);
+        pipeRules.AddRule(Tile.PIPE_BIG_CORNER, [
+            null, null /*   */, null /*   */,
+            null, Tile.SHADE_9, Tile.SHADE_9,
+            null, Tile.SHADE_9, null /*   */
+        ]);
+        pipeRules.AddRule(Tile.PIPE_BIG_T_SHAPED, [
+            null, Tile.SHADE_9, null /*   */,
+            null, Tile.SHADE_9, Tile.SHADE_9,
+            null, Tile.SHADE_9, null /*   */
+        ]);
+        pipeRules.AddRule(Tile.PIPE_BIG_CROSS, [
+            null /*   */, Tile.SHADE_9, null /*   */,
+            Tile.SHADE_9, Tile.SHADE_9, Tile.SHADE_9,
+            null /*   */, Tile.SHADE_9, null /*   */
+        ]);
+
+        Mouse.Button.Left.OnPress(() => flag = !flag);
 
         while (Window.KeepOpen())
         {
             Time.Update();
             Flow.Update(Time.Delta);
 
-            layer.DrawTileMap(flag ? original : autoTiled);
+            original.Flush();
+            firstPass.Flush();
+            secondPass.Flush();
+
+            original.SetArea((10, 10, 15, 10), Tile.FULL);
+            original.SetArea((18, 5, 10, 10), Tile.FULL);
+            original.SetLine((20, 7), (25, 9), Tile.SHADE_1);
+            original.SetCircle((13, 17), 1, true, Tile.SHADE_1);
+            original.SetBox((30, 5, 12, 12), Tile.EMPTY, Tile.SHADE_9, Tile.SHADE_9);
+            original.SetLine((37, 5), (37, 15), Tile.SHADE_9);
+            original.SetLine((30, 8), (40, 8), Tile.SHADE_9);
+            original.SetTile(layer.MouseCursorCell, Tile.SHADE_1);
+
+            firstPass.SetTiles((0, 0), original);
+            firstPass.SetText((0, 0), "<LMB> to remove rules");
+            original.SetText((0, 0), "<LMB> to apply rules");
+
+            boxRules.Apply(firstPass);
+            pipeRules.Apply(firstPass);
+
+            secondPass.SetTiles((0, 0), firstPass);
+            boxRules.Apply(secondPass);
+            secondPass.Replace(Tile.FULL, Tile.EMPTY);
+
+            layer.DrawTileMap(flag ? original : secondPass);
             layer.DrawMouseCursor();
             layer.Draw();
         }

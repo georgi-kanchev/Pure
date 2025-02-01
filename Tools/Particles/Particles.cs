@@ -268,35 +268,7 @@ public static class Particles
         }
     }
 
-#region Backend
-    private static readonly Dictionary<int, ClusterData> data = [];
-    private static readonly Dictionary<int, (float x, float y)[]> movement = [];
-    private static readonly List<(float x, float y, uint color)[]> points = [];
-
-    private static void PushOrPull(bool push, (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
-    {
-        if (data.TryGetValue(particles.GetHashCode(), out var value) == false || points.Contains(particles) == false)
-            return;
-
-        var key = particles.GetHashCode();
-        var index = points.IndexOf(particles);
-        for (var i = 0; i < particles.Length; i++)
-        {
-            var (x, y, _) = points[index][i];
-            var dist = new Point(x, y).Distance(point);
-
-            if (dist > radius)
-                continue;
-
-            var speed = weakerFurther ? dist.Map((0f, radius), (force, 0f)) : force;
-            speed *= push ? -1 : 1;
-            var dir = Angle.BetweenPoints((x, y), point).Direction;
-            var (mx, my) = movement[key][i];
-            movement[key][i] = (mx + dir.x * speed, my + dir.y * speed);
-        }
-    }
-
-    internal static void Update()
+    public static void Update()
     {
         var delta = Time.Delta;
 
@@ -408,6 +380,34 @@ public static class Particles
             movement.Remove(key);
             points.Remove(pts);
             i--;
+        }
+    }
+
+#region Backend
+    private static readonly Dictionary<int, ClusterData> data = [];
+    private static readonly Dictionary<int, (float x, float y)[]> movement = [];
+    private static readonly List<(float x, float y, uint color)[]> points = [];
+
+    private static void PushOrPull(bool push, (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
+    {
+        if (data.TryGetValue(particles.GetHashCode(), out var value) == false || points.Contains(particles) == false)
+            return;
+
+        var key = particles.GetHashCode();
+        var index = points.IndexOf(particles);
+        for (var i = 0; i < particles.Length; i++)
+        {
+            var (x, y, _) = points[index][i];
+            var dist = new Point(x, y).Distance(point);
+
+            if (dist > radius)
+                continue;
+
+            var speed = weakerFurther ? dist.Map((0f, radius), (force, 0f)) : force;
+            speed *= push ? -1 : 1;
+            var dir = Angle.BetweenPoints((x, y), point).Direction;
+            var (mx, my) = movement[key][i];
+            movement[key][i] = (mx + dir.x * speed, my + dir.y * speed);
         }
     }
 #endregion

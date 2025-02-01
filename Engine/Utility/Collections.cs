@@ -162,7 +162,7 @@ public static class Collections
         direction++;
         return Rotate(rotated, direction);
     }
-    public static void Flip<T>(this T[,] matrix, (bool horizontally, bool vertically) flip)
+    public static T[,] Flip<T>(this T[,] matrix, (bool horizontally, bool vertically) flip)
     {
         var rows = matrix.GetLength(0);
         var cols = matrix.GetLength(1);
@@ -173,11 +173,13 @@ public static class Collections
                     (matrix[i, cols - j - 1], matrix[i, j]) = (matrix[i, j], matrix[i, cols - j - 1]);
 
         if (flip.vertically == false)
-            return;
+            return matrix;
 
         for (var i = 0; i < rows / 2; i++)
             for (var j = 0; j < cols; j++)
                 (matrix[rows - i - 1, j], matrix[i, j]) = (matrix[i, j], matrix[rows - i - 1, j]);
+
+        return matrix;
     }
     public static T[] Flatten<T>(this T[,] matrix)
     {

@@ -128,6 +128,10 @@ public class Layer
     {
         get => PixelToPosition(Mouse.CursorPosition);
     }
+    public (int x, int y) MouseCursorCell
+    {
+        get => ((int)MouseCursorPosition.x, (int)MouseCursorPosition.y);
+    }
 
     public Layer((int width, int height) size = default, bool fitWindow = true)
     {
