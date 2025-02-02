@@ -10,6 +10,8 @@ public static class AutoTiling
 {
     public static void Run()
     {
+        Window.Title = "Pure - Auto Tiling Example";
+
         var (w, h) = Monitor.Current.AspectRatio;
         var layer = new Layer((w * 3, h * 3));
         var original = new TileMap(layer.Size);
@@ -19,49 +21,51 @@ public static class AutoTiling
         var boxRules = new TileMapperRules();
         var pipeRules = new TileMapperRules();
 
-        boxRules.AddRule(Tile.BOX_OUTLINE_CORNER, [
-            null, null /**/, null /**/,
-            null, Tile.FULL, Tile.FULL,
-            null, Tile.FULL, Tile.FULL
-        ]);
-        boxRules.AddRule(Tile.BOX_OUTLINE_EDGE, [
-            null /**/, null /**/, null /**/,
+        boxRules.Add(Tile.FULL, [
+            Tile.FULL, Tile.FULL, Tile.FULL,
             Tile.FULL, Tile.FULL, Tile.FULL,
             Tile.FULL, Tile.FULL, Tile.FULL
         ]);
-        boxRules.AddRule(new Tile(Tile.BOX_OUTLINE_CORNER).Rotate(2), [
+        boxRules.Add(new Tile(Tile.BOX_OUTLINE_CORNER).Rotate(2), [
             null /**/, Tile.FULL, Tile.FULL,
             Tile.FULL, Tile.FULL, Tile.FULL,
             Tile.FULL, Tile.FULL, Tile.FULL
         ]);
-        boxRules.AddRule(Tile.FULL, [
-            Tile.FULL, Tile.FULL, Tile.FULL,
+        boxRules.Add(Tile.BOX_OUTLINE_EDGE, [
+            null /**/, null /**/, null /**/,
             Tile.FULL, Tile.FULL, Tile.FULL,
             Tile.FULL, Tile.FULL, Tile.FULL
         ]);
+        boxRules.Add(Tile.BOX_OUTLINE_CORNER, [
+            null, null /**/, null /**/,
+            null, Tile.FULL, Tile.FULL,
+            null, Tile.FULL, Tile.FULL
+        ]);
 
-        pipeRules.AddRule(Tile.PIPE_BIG_STRAIGHT, [
-            null /*   */, null /*   */, null,
-            Tile.SHADE_9, Tile.SHADE_9, null,
-            null /*   */, null /*   */, null
-        ]);
-        pipeRules.AddRule(Tile.PIPE_BIG_CORNER, [
-            null, null /*   */, null /*   */,
-            null, Tile.SHADE_9, Tile.SHADE_9,
-            null, Tile.SHADE_9, null /*   */
-        ]);
-        pipeRules.AddRule(Tile.PIPE_BIG_T_SHAPED, [
-            null, Tile.SHADE_9, null /*   */,
-            null, Tile.SHADE_9, Tile.SHADE_9,
-            null, Tile.SHADE_9, null /*   */
-        ]);
-        pipeRules.AddRule(Tile.PIPE_BIG_CROSS, [
+        pipeRules.Add(Tile.PIPE_BIG_CROSS, [
             null /*   */, Tile.SHADE_9, null /*   */,
             Tile.SHADE_9, Tile.SHADE_9, Tile.SHADE_9,
             null /*   */, Tile.SHADE_9, null /*   */
         ]);
+        pipeRules.Add(Tile.PIPE_BIG_T_SHAPED, [
+            null, Tile.SHADE_9, null /*   */,
+            null, Tile.SHADE_9, Tile.SHADE_9,
+            null, Tile.SHADE_9, null /*   */
+        ]);
+        pipeRules.Add(Tile.PIPE_BIG_CORNER, [
+            null, null /*   */, null /*   */,
+            null, Tile.SHADE_9, Tile.SHADE_9,
+            null, Tile.SHADE_9, null /*   */
+        ]);
+        pipeRules.Add(Tile.PIPE_BIG_STRAIGHT, [
+            null /*   */, null /*   */, null,
+            Tile.SHADE_9, Tile.SHADE_9, null,
+            null /*   */, null /*   */, null
+        ]);
 
         Mouse.Button.Left.OnPress(() => flag = !flag);
+
+        var rule = boxRules.Get(2, 1);
 
         while (Window.KeepOpen())
         {

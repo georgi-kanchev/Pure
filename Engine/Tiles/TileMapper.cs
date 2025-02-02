@@ -490,7 +490,10 @@ public static class TileMapper
     private static int ToSeed(TileMap map, (int a, int b, int c) parameters)
     {
         var (a, b, c) = parameters;
-        var (x, y, z) = seeds[map.GetHashCode()];
+        var (x, y, z) = (0, 0, Random((-100_000_000, 100_000_000)));
+
+        if (seeds.TryGetValue(map.GetHashCode(), out var seed))
+            (x, y, z) = seed;
 
         return Calculate(z, a + x, b + y, c);
 

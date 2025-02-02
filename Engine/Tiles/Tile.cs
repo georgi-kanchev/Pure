@@ -24,7 +24,7 @@ public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Defaul
 
         angle = (angle + times) % 4;
 
-        if (angle > 3)
+        if ((int)Pose > 3)
             angle += 4;
 
         return new(Id, Tint, (Pose)angle);
