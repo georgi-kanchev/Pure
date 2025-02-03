@@ -266,6 +266,25 @@ public static class Collections
         return sum / collection.Count;
     }
 
+    public static T[] Join<T>(this T[] array, params T[][] otherArrays)
+    {
+        var result = array.ToList();
+
+        for (var i = 0; i < otherArrays?.Length; i++)
+            result.AddRange(otherArrays[i]);
+
+        return result.ToArray();
+    }
+    public static List<T> Join<T>(this List<T> list, params List<T>[] otherLists)
+    {
+        var result = new List<T>(list);
+
+        for (var i = 0; i < otherLists?.Length; i++)
+            result.AddRange(otherLists[i]);
+
+        return result;
+    }
+
     /// <summary>
     /// Iterates over a collection, calls <see cref="object.ToString"/>
     /// on each element and adds the returned string to the result, alongside
