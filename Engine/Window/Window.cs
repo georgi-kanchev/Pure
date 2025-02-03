@@ -5,6 +5,7 @@ global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using SFML.Graphics.Glsl;
 global using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace Pure.Engine.Window;
 
@@ -302,12 +303,43 @@ public static class Window
     [DoNotSave]
     internal static readonly Vertex[] vertsWindow = new Vertex[4];
 
-    private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating;
+    private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating, shouldGetClipboard;
     private static string title = "Game";
     private static string clipboardCache = "";
     private static uint backgroundColor, monitor, maximumFrameRate;
     private static Mode mode;
     private static float pixelScale = 5f;
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int XInitThreadsDelegate();
+
+    // this below and here ^^^ is a weird issue related to how SFML waits to get the clipboard from X11 on linux
+    // so we spin a thread to not freeze the main one
+    // this only triggers if something non-text is copied
+    static Window()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && NativeLibrary.TryLoad("libX11.so.6", out var libX11))
+        {
+            var funcPtr = NativeLibrary.GetExport(libX11, "XInitThreads");
+            var func = Marshal.GetDelegateForFunctionPointer<XInitThreadsDelegate>(funcPtr);
+            var result = func.Invoke(); // 1 should be ok, 0 fail
+        }
+
+        var thread = new Thread(() =>
+        {
+            while (true)
+            {
+                if (shouldGetClipboard)
+                {
+                    shouldGetClipboard = false;
+                    Clipboard = SFML.Window.Clipboard.Contents;
+                }
+
+                Thread.Sleep(100);
+            }
+        });
+        thread.Start();
+    }
 
     [MemberNotNull(nameof(window))]
     internal static void TryCreate()
@@ -359,7 +391,7 @@ public static class Window
         window.MouseMoved += Mouse.OnMove;
         window.MouseEntered += Mouse.OnEnter;
         window.MouseLeft += Mouse.OnLeft;
-        window.GainedFocus += (_, _) => Clipboard = SFML.Window.Clipboard.Contents;
+        window.GainedFocus += (_, _) => shouldGetClipboard = true;
         window.LostFocus += (_, _) =>
         {
             Mouse.CancelInput();

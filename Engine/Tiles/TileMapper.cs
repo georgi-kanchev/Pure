@@ -20,7 +20,7 @@ public static class TileMapper
 
     public static void ApplySeed(this TileMap tileMap, int seed)
     {
-        var (x, y, z) = seeds[tileMap.GetHashCode()];
+        var (x, y, z) = seeds.GetValueOrDefault(tileMap.GetHashCode());
         seeds[tileMap.GetHashCode()] = (x, y, seed);
     }
     public static void ApplySeedOffset(this TileMap tileMap, (int x, int y) offset)
