@@ -309,6 +309,7 @@ public static class Window
     private static uint backgroundColor, monitor, maximumFrameRate;
     private static Mode mode;
     private static float pixelScale = 5f;
+    private static Thread? clipboardThread;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int XInitThreadsDelegate();
@@ -325,9 +326,9 @@ public static class Window
             var result = func.Invoke(); // 1 should be ok, 0 fail
         }
 
-        var thread = new Thread(() =>
+        clipboardThread = new(() =>
         {
-            while (true)
+            while (window is { IsOpen: true })
             {
                 if (shouldGetClipboard)
                 {
@@ -338,7 +339,7 @@ public static class Window
                 Thread.Sleep(100);
             }
         });
-        thread.Start();
+        clipboardThread.Start();
     }
 
     [MemberNotNull(nameof(window))]
