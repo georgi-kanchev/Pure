@@ -349,12 +349,13 @@ public static class TileMapperUI
         var newLines = prompt.Text.Count("\n") + 1;
         var text = prompt.Text.Constrain((prompt.Width, newLines), alignment: Alignment.Center);
         var (w, h) = Input.TilemapSize;
+        var (x, y) = prompt.Position;
 
         ApplyMasks(maps, prompt.Mask);
         Clear(maps, prompt, zOrder);
         maps[zOrder].SetArea((0, 0, w, h), dim);
         maps[zOrder + 1].SetBox(prompt.Area, fill, corner, edge);
-        maps[zOrder + 2].SetText(prompt.Position, text, textTint);
+        maps[zOrder + 2].SetText((x, y + 1), text, textTint);
         RestoreMasks(maps);
     }
     public static void SetPromptItem(this IList<TileMap> maps, Prompt prompt, Button item, int zOrder = 2)

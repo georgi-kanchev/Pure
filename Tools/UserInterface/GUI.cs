@@ -325,7 +325,7 @@ public static class GUI
             }
             else if (type == typeof(Prompt))
             {
-                var prompt = new Prompt { Text = text, Size = TileMaps[0].Size };
+                var prompt = new Prompt { Text = text };
                 prompt.AlignInside((0.5f, 0.5f));
                 prompt.OnDisplay += () => TileMaps.SetPrompt(prompt, 3);
                 prompt.OnItemDisplay += item => TileMaps.SetPromptItem(prompt, item, 5);

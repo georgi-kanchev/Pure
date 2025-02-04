@@ -309,14 +309,13 @@ public static class Window
     private static uint backgroundColor, monitor, maximumFrameRate;
     private static Mode mode;
     private static float pixelScale = 5f;
-    private static Thread? clipboardThread;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int XInitThreadsDelegate();
 
     // this below and here ^^^ is a weird issue related to how SFML waits to get the clipboard from X11 on linux
     // so we spin a thread to not freeze the main one
-    // this only triggers if something non-text is copied
+    // this issue only happens if something non-text is copied
     static Window()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && NativeLibrary.TryLoad("libX11.so.6", out var libX11))
@@ -326,9 +325,9 @@ public static class Window
             var result = func.Invoke(); // 1 should be ok, 0 fail
         }
 
-        clipboardThread = new(() =>
+        var thread = new Thread(() =>
         {
-            while (window is { IsOpen: true })
+            while (hasClosed == false)
             {
                 if (shouldGetClipboard)
                 {
@@ -339,7 +338,7 @@ public static class Window
                 Thread.Sleep(100);
             }
         });
-        clipboardThread.Start();
+        thread.Start();
     }
 
     [MemberNotNull(nameof(window))]

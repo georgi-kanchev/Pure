@@ -26,13 +26,17 @@ public class Commands
         if (IsDisabled)
             return [];
 
-        var strings = AddPlaceholders(ref command);
+        var strings = AddPlaceholders(ref command, Dividers.text.ToString());
         var results = new List<string>();
         var cmds = command.Trim().Split(Dividers.command);
 
         foreach (var cmd in cmds)
         {
             var parts = cmd.Trim().Split();
+
+            if (commands.ContainsKey(parts[0]) == false)
+                continue;
+
             var callback = commands[parts[0]];
 
             parameterIndex = 0;
@@ -58,14 +62,18 @@ public class Commands
     }
     public T? GetNextValue<T>()
     {
+        return (T?)GetNextValue(typeof(T));
+    }
+    public object? GetNextValue(Type type)
+    {
         if (parameterIndex >= parameters.Count)
             return default;
 
         var str = parameters[parameterIndex];
         parameterIndex++;
 
-        var obj = TextToObject<T>(str);
-        return obj is "" or null ? default : (T)obj;
+        var obj = TextToObject(str, type);
+        return obj is "" or null ? default : Convert.ChangeType(obj, type);
     }
 
 #region Backend
@@ -74,14 +82,13 @@ public class Commands
     private static readonly Dictionary<string, Func<string?>> commands = new();
     private static readonly List<string> parameters = [];
 
-    private object? TextToObject<T>(string dataAsText)
+    private object? TextToObject(string dataAsText, Type type)
     {
-        var t = typeof(T);
-        if (t.IsArray && IsArray(dataAsText))
-            return TextToArray(dataAsText, t);
+        if (type.IsArray && IsArray(dataAsText))
+            return TextToArray(dataAsText, type);
 
-        if (t.IsPrimitive || t == typeof(string))
-            return TextToPrimitive(dataAsText, t);
+        if (type.IsPrimitive || type == typeof(string))
+            return TextToPrimitive(dataAsText, type);
 
         return default;
     }
@@ -151,12 +158,13 @@ public class Commands
         return dataAsText.Contains(Dividers.array);
     }
 
-    private static List<string> AddPlaceholders(ref string dataAsText)
+    private static List<string> AddPlaceholders(ref string dataAsText, string dividerText)
     {
+        var pattern = $"{Regex.Escape(dividerText)}(.*?){Regex.Escape(dividerText)}";
         var result = new List<string>();
-        dataAsText = Regex.Replace(dataAsText, "`([^`]+)`", match =>
+        dataAsText = Regex.Replace(dataAsText, pattern, match =>
         {
-            var replacedValue = "—" + result.Count;
+            var replacedValue = STR_PLACEHOLDER + result.Count;
             result.Add(match.Groups[1].Value);
             return replacedValue;
         });

@@ -47,9 +47,6 @@ public class Prompt : Block
 
             buttons.Add(btn);
         }
-
-        if (block != null)
-            block.IsFocused = true;
     }
     public void Close()
     {
@@ -121,6 +118,19 @@ public class Prompt : Block
         {
             currentBlock.Update();
 
+            // nasty hacks ahead, proceed with caution
+            var isHoveringBtns = false;
+            foreach (var btn in buttons)
+                if (btn.IsHovered)
+                {
+                    isHoveringBtns = true;
+                    break;
+                }
+
+            // this ^^^ and this VVV helps to not lose hotkey functionality on the buttons for some reason (?)
+            if (isHoveringBtns == false)
+                currentBlock.IsFocused = true;
+
             // update might call Close which invalidates the previous check
             if (currentBlock != null)
             {
@@ -141,10 +151,10 @@ public class Prompt : Block
             x = sz.width / 2 - w / 2;
         }
 
-        position = (x, y - lines.Length);
-        size = (w, lines.Length + h + 1);
+        position = (x - 1, y - lines.Length - 1);
+        size = (w + 2, lines.Length + h + 3);
 
-        var btnXs = Distribute(buttons.Count, (x, x + w));
+        var btnXs = Distribute(buttons.Count, (position.Item1, position.Item1 + size.Item1));
         for (var i = 0; i < buttons.Count; i++)
         {
             var btn = buttons[i];
