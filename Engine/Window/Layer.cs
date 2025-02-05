@@ -160,20 +160,6 @@ public class Layer
         AtlasTileIdFull = 10;
     }
 
-    public uint AtlasColorAt((int x, int y) pixel)
-    {
-        if (pixel.x < 0 ||
-            pixel.y < 0 ||
-            pixel.x >= atlases[atlasPath].Size.X ||
-            pixel.y >= atlases[atlasPath].Size.Y)
-            return default;
-
-        images.TryAdd(atlasPath, atlases[atlasPath].CopyToImage());
-        var img = images[atlasPath];
-        var color = img.GetPixel((uint)pixel.x, (uint)pixel.y).ToInteger();
-        return color;
-    }
-
     public void Align((float x, float y) alignment)
     {
         Window.TryCreate();
@@ -202,6 +188,10 @@ public class Layer
         var (w, h) = ((float)TilemapPixelSize.w, (float)TilemapPixelSize.h);
         var (x, y) = PixelOffset;
         PixelOffset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
+    }
+    public void FormatTextTile(ushort symbolTileId, float newSymbolWidth)
+    {
+        textTileWidths[symbolTileId] = newSymbolWidth;
     }
 
     public void DrawMouseCursor(ushort tileId = 546, uint tint = 3789677055)
@@ -348,18 +338,29 @@ public class Layer
         var tsz = AtlasTileSize;
 
         for (var y = 0; y < cellCountH; y++)
+        {
+            var accumulativeX = 0f;
+            var wasText = false;
+
             for (var x = 0; x < cellCountW; x++)
             {
                 var (id, tint, pose) = tileMap[x, y];
+                var isText = textTileWidths.ContainsKey(id);
 
-                if (id == default)
+                if (wasText == false && isText)
+                    accumulativeX = x;
+                if (wasText && isText == false)
+                    accumulativeX = x + 1f;
+
+                if (id == default && isText == false)
                     continue;
 
+                var curX = isText ? accumulativeX - (1f - textTileWidths[id]) / 2f : x;
                 var color = new Color(tint);
-                var tl = new Vector2f(x * tsz, y * tsz);
-                var tr = new Vector2f((x + 1) * tsz, y * tsz);
-                var br = new Vector2f((x + 1) * tsz, (y + 1) * tsz);
-                var bl = new Vector2f(x * tsz, (y + 1) * tsz);
+                var tl = new Vector2f(curX * tsz, y * tsz);
+                var tr = new Vector2f((curX + 1) * tsz, y * tsz);
+                var br = new Vector2f((curX + 1) * tsz, (y + 1) * tsz);
+                var bl = new Vector2f(curX * tsz, (y + 1) * tsz);
                 var (texTl, texTr, texBr, texBl) = GetTexCoords(id, (1, 1));
                 var (flip, ang) = GetOrientation(pose);
                 var rotated = GetRotatedPoints((sbyte)-ang, tl, tr, br, bl);
@@ -369,12 +370,6 @@ public class Layer
                     (texTl, texTr) = (texTr, texTl);
                     (texBl, texBr) = (texBr, texBl);
                 }
-
-                // if (flipV)
-                // {
-                //     (texTl, texBl) = (texBl, texTl);
-                //     (texTr, texBr) = (texBr, texTr);
-                // }
 
                 tl = rotated.p1;
                 tr = rotated.p2;
@@ -390,7 +385,13 @@ public class Layer
                 verts.Append(new(tr, color, texTr));
                 verts.Append(new(br, color, texBr));
                 verts.Append(new(bl, color, texBl));
+
+                if (isText)
+                    accumulativeX += textTileWidths[id];
+
+                wasText = isText;
             }
+        }
     }
 
     public void EffectChangeColor(int id, uint oldColor, uint newColor, params (float x, float y, float width, float height)[]? areas)
@@ -616,6 +617,20 @@ public class Layer
         return layer.PixelToPosition(pixel);
     }
 
+    public uint AtlasColorAt((int x, int y) pixel)
+    {
+        if (pixel.x < 0 ||
+            pixel.y < 0 ||
+            pixel.x >= atlases[atlasPath].Size.X ||
+            pixel.y >= atlases[atlasPath].Size.Y)
+            return default;
+
+        images.TryAdd(atlasPath, atlases[atlasPath].CopyToImage());
+        var img = images[atlasPath];
+        var color = img.GetPixel((uint)pixel.x, (uint)pixel.y).ToInteger();
+        return color;
+    }
+
     public static void DefaultGraphicsToFile(string filePath)
     {
         atlases["default"].CopyToImage().SaveToFile(filePath);
@@ -695,6 +710,8 @@ public class Layer
     private (int width, int height) size;
     private float zoom;
     private Light effectLight;
+
+    private Dictionary<ushort, float> textTileWidths = [];
 
     [DoNotSave]
     internal static readonly Dictionary<string, Texture> atlases = new();

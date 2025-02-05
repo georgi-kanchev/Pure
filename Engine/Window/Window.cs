@@ -22,6 +22,9 @@ public enum Mode { Windowed, Borderless, Fullscreen }
 /// </summary>
 public static class Window
 {
+    public static Action? OnClose { get; set; }
+    public static Action? OnRecreate { get; set; }
+
     /// <summary>
     /// Gets the mode that the window was created with.
     /// </summary>
@@ -207,7 +210,7 @@ public static class Window
         }
 
         hasClosed = true;
-        close?.Invoke();
+        OnClose?.Invoke();
         window.Close();
     }
 
@@ -269,15 +272,6 @@ public static class Window
         image.Dispose();
     }
 
-    public static void OnClose(Action method)
-    {
-        close += method;
-    }
-    public static void OnRecreate(Action method)
-    {
-        recreate += method;
-    }
-
 #region Backend
     private const float RETRO_TURNOFF_TIME = 0.5f;
 
@@ -288,8 +282,6 @@ public static class Window
     [DoNotSave]
     internal static (int w, int h) rendTexViewSz;
 
-    [DoNotSave]
-    private static Action? close, recreate;
     [DoNotSave]
     private static Shader? retroShader;
     [DoNotSave]
@@ -381,6 +373,9 @@ public static class Window
             view.Center = new(e.Width / 2f, e.Height / 2f);
             view.Size = new(e.Width, e.Height);
             window.SetView(view);
+
+            var mousePos = SFML.Window.Mouse.GetPosition(window);
+            Mouse.OnMove(null, new(new() { X = mousePos.X, Y = mousePos.Y }));
         };
         window.KeyPressed += Keyboard.OnPress;
         window.KeyReleased += Keyboard.OnRelease;
@@ -423,7 +418,7 @@ public static class Window
         if (Mode != Mode.Fullscreen)
             Center();
 
-        recreate?.Invoke();
+        OnRecreate?.Invoke();
     }
     [MemberNotNull(nameof(allLayers))]
     private static void RecreateRenderTextures()
@@ -448,7 +443,7 @@ public static class Window
         retroTurnoff.Elapsed += (_, _) =>
         {
             hasClosed = true;
-            close?.Invoke();
+            OnClose?.Invoke();
             window?.Close();
         };
     }

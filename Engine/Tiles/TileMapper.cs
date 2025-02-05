@@ -401,6 +401,8 @@ public static class TileMapper
         if (string.IsNullOrWhiteSpace(text))
             return;
 
+        TryInitText(tileMap);
+
         var colors = GetColors(text, tintBrush);
         var (x, y) = cell;
         var mask = GetMask(tileMap);
@@ -441,7 +443,7 @@ public static class TileMapper
             }
 
             var index = tileMap.TileIdFrom(text[j]);
-            if (index != default && text[j] != ' ')
+            if (index != default)
                 tileMap.SetTile((x, y), new(index, tint), mask);
 
             x++;
@@ -458,9 +460,104 @@ public static class TileMapper
         }
     }
 
+    public static void ConfigureText(this TileMap tileMap, ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
+    {
+        ConfigureText(tileMap, lowercase, "abcdefghijklmnopqrstuvwxyz");
+        ConfigureText(tileMap, uppercase, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        ConfigureText(tileMap, numbers, "0123456789");
+    }
+    public static void ConfigureText(this TileMap tileMap, ushort firstTileId, string symbols)
+    {
+        TryInitText(tileMap);
+
+        var hash = tileMap.GetHashCode();
+        for (var i = 0; i < symbols.Length; i++)
+            symbolMaps[hash][symbols[i]] = (ushort)(firstTileId + i);
+    }
+
+    public static ushort TileIdFrom(this TileMap tileMap, char symbol)
+    {
+        var id = default(ushort);
+        if (symbolMaps[tileMap.GetHashCode()].TryGetValue(symbol, out var value))
+            id = value;
+
+        return id;
+    }
+    public static ushort[] TileIdsFrom(this TileMap tileMap, string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return [];
+
+        var result = new ushort[text.Length];
+        for (var i = 0; i < text.Length; i++)
+            result[i] = TileIdFrom(tileMap, text[i]);
+
+        return result;
+    }
+
 #region Backend
     private static readonly Dictionary<int, Area?> masks = [];
     private static readonly Dictionary<int, (int x, int y, int z)> seeds = [];
+    private static readonly Dictionary<int, Dictionary<char, ushort>> symbolMaps = [];
+
+    private static void TryInitText(TileMap tileMap)
+    {
+        var hash = tileMap.GetHashCode();
+        if (symbolMaps.ContainsKey(hash))
+            return;
+
+        symbolMaps[hash] = new()
+        {
+            { '░', 2 }, { '▒', 5 }, { '▓', 7 }, { '█', 10 },
+
+            { '⅛', 140 }, { '⅐', 141 }, { '⅙', 142 }, { '⅕', 143 }, { '¼', 144 },
+            { '⅓', 145 }, { '⅜', 146 }, { '⅖', 147 }, { '½', 148 }, { '⅗', 149 },
+            { '⅝', 150 }, { '⅔', 151 }, { '¾', 152 }, { '⅘', 153 }, { '⅚', 154 }, { '⅞', 155 },
+
+            { '₀', 156 }, { '₁', 157 }, { '₂', 158 }, { '₃', 159 }, { '₄', 160 },
+            { '₅', 161 }, { '₆', 162 }, { '₇', 163 }, { '₈', 164 }, { '₉', 165 },
+
+            { '⁰', 169 }, { '¹', 170 }, { '²', 171 }, { '³', 172 }, { '⁴', 173 },
+            { '⁵', 174 }, { '⁶', 175 }, { '⁷', 176 }, { '⁸', 177 }, { '⁹', 178 },
+
+            { '+', 182 }, { '-', 183 }, { '×', 184 }, { '―', 185 }, { '÷', 186 }, { '%', 187 },
+            { '=', 188 }, { '≠', 189 }, { '≈', 190 }, { '√', 191 }, { '∫', 193 }, { 'Σ', 194 },
+            { 'ε', 195 }, { 'γ', 196 }, { 'ϕ', 197 }, { 'π', 198 }, { 'δ', 199 }, { '∞', 200 },
+            { '≪', 204 }, { '≫', 205 }, { '≤', 206 }, { '≥', 207 }, { '<', 208 }, { '>', 209 },
+            { '(', 210 }, { ')', 211 }, { '[', 212 }, { ']', 213 }, { '{', 214 }, { '}', 215 },
+            { '⊥', 216 }, { '∥', 217 }, { '∠', 218 }, { '∟', 219 }, { '~', 220 }, { '°', 221 },
+            { '℃', 222 }, { '℉', 223 }, { '*', 224 }, { '^', 225 }, { '#', 226 }, { '№', 227 },
+            { '$', 228 }, { '€', 229 }, { '£', 230 }, { '¥', 231 }, { '¢', 232 }, { '¤', 233 },
+
+            { '!', 234 }, { '?', 235 }, { '.', 236 }, { ',', 237 }, { '…', 238 },
+            { ':', 239 }, { ';', 240 }, { '"', 241 }, { '\'', 242 }, { '`', 243 }, { '–', 244 },
+            { '_', 245 }, { '|', 246 }, { '/', 247 }, { '\\', 248 }, { '@', 249 }, { '&', 250 },
+            { '®', 251 }, { '℗', 252 }, { '©', 253 }, { '™', 254 },
+
+            //{ '→', 282 }, { '↓', 283 }, { '←', 284 }, { '↑', 285 },
+            //{ '⇨', 330 }, { '⇩', 331 }, { '⇦', 332 }, { '⇧', 333 },
+            //{ '➡', 334 }, { '⬇', 335 }, { '⬅', 336 }, { '⬆', 337 },
+
+            { '─', 260 }, { '┌', 261 }, { '├', 262 }, { '┼', 263 },
+            { '═', 272 }, { '╔', 273 }, { '╠', 274 }, { '╬', 275 },
+
+            { '♩', 428 }, { '♪', 429 }, { '♫', 430 }, { '♬', 431 }, { '♭', 432 }, { '♮', 433 },
+            { '♯', 434 },
+
+            { '★', 360 }, { '☆', 361 }, { '✓', 395 }, { '⏎', 399 },
+
+            { '●', 604 }, { '○', 607 }, { '■', 598 }, { '□', 601 }, { '▲', 610 }, { '△', 612 },
+
+            { '♟', 664 }, { '♜', 665 }, { '♞', 666 }, { '♝', 667 }, { '♛', 668 }, { '♚', 669 },
+            { '♙', 670 }, { '♖', 671 }, { '♘', 672 }, { '♗', 673 }, { '♕', 674 }, { '♔', 675 },
+            { '♠', 656 }, { '♥', 657 }, { '♣', 658 }, { '♦', 659 },
+            { '♤', 660 }, { '♡', 661 }, { '♧', 662 }, { '♢', 663 },
+
+            { '▕', 614 }
+        };
+
+        ConfigureText(tileMap);
+    }
 
     private static float Random(this (float a, float b) range, float seed = float.NaN)
     {

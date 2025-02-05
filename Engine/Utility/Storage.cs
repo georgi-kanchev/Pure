@@ -1211,10 +1211,8 @@ public static class Storage
 
     private static SortedDictionary<uint, List<(FieldInfo field, uint space, string comment)>> GetFieldsInOrder(Type type)
     {
-        var classAttributes = type.GetCustomAttributes();
-        foreach (var att in classAttributes)
-            if (att.GetType().Name == "DoNotSave")
-                return [];
+        if (HasFlagDoNotSave(type))
+            return [];
 
         var result = new SortedDictionary<uint, List<(FieldInfo field, uint space, string comment)>>();
         var props = type.GetProperties(NonPublic | Public | Instance | Static);
@@ -1227,18 +1225,7 @@ public static class Storage
             if (IsDelegate(field.FieldType) || isConst)
                 continue;
 
-            var doNotSave = field.IsDefined(typeof(DoNotSave), false);
-            var attributes = field.GetCustomAttributes();
-
-            foreach (var attribute in attributes)
-            {
-                if (attribute.GetType().Name != "DoNotSave")
-                    continue;
-
-                doNotSave = true;
-                break;
-            }
-
+            var doNotSave = HasFlagDoNotSave(field);
             var order = field.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? i;
             var space = field.GetCustomAttribute<Space>(false)?.NewLineAmount ?? 0;
             var comment = field.GetCustomAttribute<Comment>(false)?.Text ?? "";
@@ -1251,7 +1238,7 @@ public static class Storage
                 foreach (var prop in props)
                     if (prop.Name == name)
                     {
-                        doNotSave = prop.IsDefined(typeof(DoNotSave), false);
+                        doNotSave = HasFlagDoNotSave(prop);
                         order = prop.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? i;
                         space = prop.GetCustomAttribute<Space>(false)?.NewLineAmount ?? 0;
                         comment = prop.GetCustomAttribute<Comment>(false)?.Text ?? "";
@@ -1308,6 +1295,16 @@ public static class Storage
             strings.Add(value);
             return replacedValue;
         });
+    }
+    private static bool HasFlagDoNotSave(MemberInfo memberInfo)
+    {
+        var attributes = memberInfo.GetCustomAttributes();
+
+        foreach (var attribute in attributes)
+            if (attribute.GetType().Name == nameof(DoNotSave))
+                return true;
+
+        return false;
     }
 #endregion
 }

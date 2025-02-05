@@ -198,17 +198,18 @@ public static class Text
         symbolProgress = Math.Clamp(symbolProgress, 0, 1);
         return text.Remove((int)(text.Length * symbolProgress));
     }
-    public static string PadLeftAndRight(this string text, int length)
+    public static string PadLeftAndRight(this string text, int length, char paddingCharacter = ' ')
     {
         var spaces = length - text.Length;
         var padLeft = spaces / 2 + text.Length;
-        return text.PadLeft(padLeft).PadRight(length);
+        return text.PadLeft(padLeft, paddingCharacter).PadRight(length, paddingCharacter);
     }
     public static string Constrain(this string text, (int width, int height) size, bool wordWrap = true, Alignment alignment = TopLeft, float scrollProgress = 0f, float symbolProgress = 1f, char tintBrush = '#')
     {
         if (string.IsNullOrEmpty(text) || size.width <= 0 || size.height <= 0)
             return string.Empty;
 
+        const char SPACE = ' ';
         var result = text;
         var colorTags = GetColorTags(result, tintBrush);
         result = RemoveColorTags(result, tintBrush);
@@ -248,7 +249,7 @@ public static class Text
             var tags = GetColorTags(line, tintBrush);
             line = RemoveColorTags(line, tintBrush);
             if (alignment is TopRight or Right or BottomRight)
-                line = line.PadLeft(size.width);
+                line = line.PadLeft(size.width, SPACE);
             else if (alignment is Top or Center or Bottom)
                 line = PadLeftAndRight(line, size.width);
             line = ApplyColorTags(line, tags);
@@ -297,7 +298,7 @@ public static class Text
 
                 void ApplyNewLineToColors()
                 {
-                    var lineLengthNoSpaces = lineList[i].Length - lineList[i].Count(" ");
+                    var lineLengthNoSpaces = lineList[i].Length - lineList[i].Count(SPACE.ToString());
                     lineList[i] = ApplyColorTags(lineList[i], colors);
                     for (var j = 0; j < colors.Count; j++)
                         colors[j] = (colors[j].index - lineLengthNoSpaces, colors[j].tag);
@@ -309,7 +310,7 @@ public static class Text
             int GetSafeNewLineIndex(string line, uint endLineIndex)
             {
                 for (var i = (int)endLineIndex; i >= 0; i--)
-                    if (line[i] == ' ' && i <= size.width)
+                    if (line[i] == SPACE && i <= size.width)
                         return i;
                 return default;
             }

@@ -28,6 +28,23 @@ public static class Program
     public static void Run(List<TileMap> maps, List<Block> blocks)
     {
         Layer = new(maps[0].Size);
+
+        for (var i = 78; i < 130; i++)
+            Layer.FormatTextTile((ushort)i, 1f);
+
+        foreach (var map in maps)
+            map.ConfigureText(255, " ");
+
+        Layer.FormatTextTile(255, 0.5f);
+        Layer.FormatTextTile(Tile.LOWERCASE_I, 0.5f);
+        Layer.FormatTextTile(Tile.LOWERCASE_T, 0.75f);
+        Layer.FormatTextTile(Tile.LOWERCASE_L, 0.75f);
+        Layer.FormatTextTile(Tile.PUNCTUATION_AMPERSAND, 1f);
+        Layer.FormatTextTile(Tile.BRACKET_ROUND_LEFT, 1f);
+        Layer.FormatTextTile(Tile.BRACKET_ROUND_RIGHT, 1f);
+        Layer.FormatTextTile(Tile.PUNCTUATION_COLON, 0.5f);
+        Layer.FormatTextTile(Tile.PUNCTUATION_SLASH, 1f);
+
         while (Window.KeepOpen())
         {
             Time.Update();
