@@ -189,7 +189,7 @@ public class Layer
         var (x, y) = PixelOffset;
         PixelOffset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
     }
-    public void FormatTextTile(ushort symbolTileId, float newSymbolWidth)
+    public void FormatTileMapText(ushort symbolTileId, float newSymbolWidth)
     {
         textTileWidths[symbolTileId] = newSymbolWidth;
     }
@@ -340,6 +340,7 @@ public class Layer
         for (var y = 0; y < cellCountH; y++)
         {
             var accumulativeX = 0f;
+            var textOffset = 0f;
             var wasText = false;
 
             for (var x = 0; x < cellCountW; x++)
@@ -348,7 +349,11 @@ public class Layer
                 var isText = textTileWidths.ContainsKey(id);
 
                 if (wasText == false && isText)
+                {
                     accumulativeX = x;
+                    textOffset = 0f; //GetTextOffset((x, y), tileMap);
+                }
+
                 if (wasText && isText == false)
                     accumulativeX = x + 1f;
 
@@ -356,6 +361,7 @@ public class Layer
                     continue;
 
                 var curX = isText ? accumulativeX - (1f - textTileWidths[id]) / 2f : x;
+                curX += textOffset;
                 var color = new Color(tint);
                 var tl = new Vector2f(curX * tsz, y * tsz);
                 var tr = new Vector2f((curX + 1) * tsz, y * tsz);
@@ -650,7 +656,7 @@ public class Layer
         }
     }
 
-#region Backend
+    #region Backend
     // per tile shader data map (8x8 pixels)
     //
     // [tnta][tntc][tntt][    ][    ][rea2][reo2][ren2]
@@ -711,7 +717,7 @@ public class Layer
     private float zoom;
     private Light effectLight;
 
-    private Dictionary<ushort, float> textTileWidths = [];
+    private readonly Dictionary<ushort, float> textTileWidths = [];
 
     [DoNotSave]
     internal static readonly Dictionary<string, Texture> atlases = new();
@@ -739,6 +745,20 @@ public class Layer
         tilesetPixelSize = new(208, 208);
     }
 
+    private float GetTextOffset((int x, int y) cell, (ushort id, uint tint, byte pose)[,] tileMap)
+    {
+        var totalWidth = 0f;
+        for (var i = cell.x; i < tileMap.GetLength(1); i++)
+        {
+            var id = tileMap[i, cell.y].id;
+            if (textTileWidths.TryGetValue(id, out var width) == false)
+                return i - cell.x - totalWidth;
+
+            totalWidth += width;
+        }
+
+        return cell.x + (tileMap.GetLength(1) - totalWidth);
+    }
     private void QueueLine((float x, float y) a, (float x, float y) b, uint tint)
     {
         if (verts == null ||
@@ -978,5 +998,5 @@ public class Layer
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-#endregion
+    #endregion
 }

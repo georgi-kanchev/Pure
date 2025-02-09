@@ -2,6 +2,7 @@
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
 using Pure.Tools.Tiles;
+
 using static Pure.Engine.UserInterface.SymbolGroup;
 
 namespace Pure.Tools.ImmediateGraphicalUserInterface;
@@ -283,7 +284,7 @@ public static class GUI
         TileMaps.ForEach(map => map.ConfigureText(firstTileId, symbols));
     }
 
-#region Backend
+    #region Backend
     private static float lastChoice = float.NaN;
     private static readonly Dictionary<string, (int framesLeft, Block block)> imGuiCache = [];
 
@@ -376,5 +377,5 @@ public static class GUI
 
         return (T)cache.block;
     }
-#endregion
+    #endregion
 }

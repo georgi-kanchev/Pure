@@ -18,7 +18,7 @@ public static class Program
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
         var editors = new List((0, 0), 2) { Size = (14, 2), ItemSize = (14, 1), Text = "Editors:" };
         var apps = new List((0, 0), 8) { Size = (15, 8), ItemSize = (15, 1), Text = "Example Games:" };
-        var uis = new List((0, 0), 11) { Size = (20, 11), ItemSize = (20, 1), Text = "Example UI:" };
+        var uis = new List((0, 0), 10) { Size = (20, 10), ItemSize = (20, 1), Text = "Example UIs:" };
         var systems = new List((0, 0), 10) { Size = (22, 10), ItemSize = (22, 1), Text = "Example Systems:" };
 
         editors.Edit(["Collision", "Map"]);
@@ -31,7 +31,7 @@ public static class Program
         });
 
         apps.Edit([
-            "Asteroids", "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris",
+            "Asteroids".PadRight(15), "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris",
             "Number Guess"
         ]);
         apps.AlignInside((0.18f, 0.25f));
@@ -41,7 +41,7 @@ public static class Program
 
         uis.Edit([
             "Buttons & Checkboxes", "Sliders & Scrolls", "Input Boxes", "Steppers", "Panels",
-            "Pagination", "Lists", "Prompts", "Layouts", "File Viewers", "Palettes"
+            "Pagination", "Lists", "Prompts", "File Viewers", "Palettes"
         ]);
         uis.AlignInside((0.95f, 0.8f));
         OnTrigger(uis,
@@ -49,8 +49,7 @@ public static class Program
             () => RunUI(InputBoxes.Create(maps)), () => RunUI(Steppers.Create(maps)),
             () => RunUI(Panels.Create(maps)), () => RunUI(Pagination.Create(maps)),
             () => RunUI(Lists.Create(maps)), () => RunUI(Prompts.Create(maps)),
-            () => RunUI(Layouts.Create(maps)), () => RunUI(FileViewers.Create(maps)),
-            () => RunUI(Palettes.Create(maps)));
+            () => RunUI(FileViewers.Create(maps)), () => RunUI(Palettes.Create(maps)));
         OnDisplay(uis);
 
         systems.Edit([
