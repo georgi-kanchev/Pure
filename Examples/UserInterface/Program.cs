@@ -31,22 +31,6 @@ public static class Program
     {
         Layer = new(maps[0].Size);
 
-        for (var i = 78; i < 130; i++)
-            Layer.FormatTileMapText((ushort)i, 1f);
-
-        foreach (var map in maps)
-            map.ConfigureText(255, " ");
-
-        Layer.FormatTileMapText(255, 0.5f);
-        Layer.FormatTileMapText(Tile.LOWERCASE_I, 0.5f);
-        Layer.FormatTileMapText(Tile.LOWERCASE_T, 0.75f);
-        Layer.FormatTileMapText(Tile.LOWERCASE_L, 0.75f);
-        Layer.FormatTileMapText(Tile.PUNCTUATION_AMPERSAND, 1f);
-        Layer.FormatTileMapText(Tile.BRACKET_ROUND_LEFT, 1f);
-        Layer.FormatTileMapText(Tile.BRACKET_ROUND_RIGHT, 1f);
-        Layer.FormatTileMapText(Tile.PUNCTUATION_COLON, 0.5f);
-        Layer.FormatTileMapText(Tile.PUNCTUATION_SLASH, 1f);
-
         while (Window.KeepOpen())
         {
             Time.Update();

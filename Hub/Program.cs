@@ -26,12 +26,12 @@ public static class Program
         OnTrigger(editors, Editors.Collision.Program.Run, Editors.Map.Program.Run);
         OnDisplay(editors, () =>
         {
-            maps[0].SetText((0, 0), "(click on a Hub Project to start it)"
-                .Constrain(maps[0].Size, alignment: Alignment.Top));
+            var text = "(click on a Hub Project to start it)".PadLeftAndRight(maps[0].Size.width);
+            maps[0].SetText((0, 0), text);
         });
 
         apps.Edit([
-            "Asteroids".PadRight(15), "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris",
+            "Asteroids", "Chat", "Eight Ball Pool", "Flappy Bird", "Minesweeper", "Pong", "Tetris",
             "Number Guess"
         ]);
         apps.AlignInside((0.18f, 0.25f));

@@ -8,10 +8,9 @@ public enum Edge
 }
 
 [Flags]
-public enum Light
-{
-    Default = 0, Flat = 1 << 0, Mask = 1 << 1, Inverted = 1 << 2, ObstaclesInShadow = 1 << 3
-}
+public enum Light { Default = 0, Flat = 1 << 0, Mask = 1 << 1, Inverted = 1 << 2, ObstaclesInShadow = 1 << 3 }
+
+public enum TextAlign { Left, Center, Right }
 
 public class Layer
 {
@@ -189,9 +188,14 @@ public class Layer
         var (x, y) = PixelOffset;
         PixelOffset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
     }
-    public void FormatTileMapText(ushort symbolTileId, float newSymbolWidth)
+
+    public void TextTileCrop(ushort symbolTileId, float newSymbolWidth)
     {
         textTileWidths[symbolTileId] = newSymbolWidth;
+    }
+    public void TextTilesAlign((int x, int y, int width, int height) area, TextAlign textAlign)
+    {
+        textAligns[area] = textAlign;
     }
 
     public void DrawMouseCursor(ushort tileId = 546, uint tint = 3789677055)
@@ -350,12 +354,27 @@ public class Layer
 
                 if (wasText == false && isText)
                 {
+                    textOffset = 0f;
                     accumulativeX = x;
-                    textOffset = 0f; //GetTextOffset((x, y), tileMap);
+
+                    foreach (var ((ax, ay, aw, ah), align) in textAligns)
+                    {
+                        if (x < ax || y < ay || x >= ax + aw || y >= ay + ah)
+                            continue;
+
+                        var offset = GetTextOffset((x, y), tileMap);
+
+                        if (align == TextAlign.Left) textOffset = 0f;
+                        else if (align == TextAlign.Center) textOffset = offset / 2f;
+                        else if (align == TextAlign.Right) textOffset = offset;
+                    }
                 }
 
                 if (wasText && isText == false)
+                {
                     accumulativeX = x + 1f;
+                    textOffset = 0f;
+                }
 
                 if (id == default && isText == false)
                     continue;
@@ -616,13 +635,11 @@ public class Layer
 
         return ((int)px, (int)py);
     }
-
     public (float x, float y) PositionToLayer((float x, float y) position, Layer layer)
     {
         var pixel = PixelFromPosition(position);
         return layer.PixelToPosition(pixel);
     }
-
     public uint AtlasColorAt((int x, int y) pixel)
     {
         if (pixel.x < 0 ||
@@ -718,6 +735,7 @@ public class Layer
     private Light effectLight;
 
     private readonly Dictionary<ushort, float> textTileWidths = [];
+    private readonly Dictionary<(int x, int y, int w, int h), TextAlign> textAligns = [];
 
     [DoNotSave]
     internal static readonly Dictionary<string, Texture> atlases = new();
@@ -748,7 +766,7 @@ public class Layer
     private float GetTextOffset((int x, int y) cell, (ushort id, uint tint, byte pose)[,] tileMap)
     {
         var totalWidth = 0f;
-        for (var i = cell.x; i < tileMap.GetLength(1); i++)
+        for (var i = cell.x; i < tileMap.GetLength(0); i++)
         {
             var id = tileMap[i, cell.y].id;
             if (textTileWidths.TryGetValue(id, out var width) == false)
@@ -757,7 +775,7 @@ public class Layer
             totalWidth += width;
         }
 
-        return cell.x + (tileMap.GetLength(1) - totalWidth);
+        return tileMap.GetLength(0) - cell.x - totalWidth;
     }
     private void QueueLine((float x, float y) a, (float x, float y) b, uint tint)
     {
