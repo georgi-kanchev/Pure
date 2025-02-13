@@ -62,7 +62,8 @@ public class Commands
     }
     public T? GetNextValue<T>()
     {
-        return (T?)GetNextValue(typeof(T));
+        var value = GetNextValue(typeof(T));
+        return value == default ? default : (T?)value;
     }
     public object? GetNextValue(Type type)
     {
@@ -92,7 +93,6 @@ public class Commands
 
         return default;
     }
-
     private static object TextToPrimitive(string dataAsText, Type type)
     {
         if (type == typeof(bool) && bool.TryParse(dataAsText, out _))
@@ -136,23 +136,6 @@ public class Commands
         return resultArray;
     }
 
-    private static T Wrap<T>(decimal value, T minValue, T maxValue) where T : struct, IComparable, IConvertible
-    {
-        if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
-            throw new ArgumentException("Type must be a primitive numeric type.");
-
-        var range = Convert.ToDouble(maxValue) - Convert.ToDouble(minValue);
-        var wrappedValue = Convert.ToDouble(value);
-
-        while (wrappedValue < Convert.ToDouble(minValue))
-            wrappedValue += range;
-
-        while (wrappedValue > Convert.ToDouble(maxValue))
-            wrappedValue -= range;
-
-        return (T)Convert.ChangeType(wrappedValue, typeof(T));
-    }
-
     private bool IsArray(string dataAsText)
     {
         return dataAsText.Contains(Dividers.array);
@@ -169,6 +152,22 @@ public class Commands
             return replacedValue;
         });
         return result;
+    }
+    private static T Wrap<T>(decimal value, T minValue, T maxValue) where T : struct, IComparable, IConvertible
+    {
+        if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
+            throw new ArgumentException("Type must be a primitive numeric type.");
+
+        var range = Convert.ToDouble(maxValue) - Convert.ToDouble(minValue);
+        var wrappedValue = Convert.ToDouble(value);
+
+        while (wrappedValue < Convert.ToDouble(minValue))
+            wrappedValue += range;
+
+        while (wrappedValue > Convert.ToDouble(maxValue))
+            wrappedValue -= range;
+
+        return (T)Convert.ChangeType(wrappedValue, typeof(T));
     }
 #endregion
 }
