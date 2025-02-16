@@ -218,10 +218,10 @@ public static class Storage
             return default;
         }
     }
-
     public static T? ToObject<T>(this string tsvText)
     {
-        return (T?)ToObject(tsvText, typeof(T));
+        var obj = ToObject(tsvText, typeof(T));
+        return obj == default ? default : (T?)obj;
     }
     public static string?[,] ToTable(this string tsvText)
     {
