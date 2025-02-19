@@ -495,6 +495,30 @@ public static class TileMapper
         return result;
     }
 
+    public static TileMap ToTrimmed(this TileMap tileMap)
+    {
+        var (xMin, xMax, yMin, yMax) = (tileMap.Size.width, 0, tileMap.Size.height, 0);
+
+        for (var i = 0; i < tileMap.Size.height; i++)
+            for (var j = 0; j < tileMap.Size.width; j++)
+            {
+                if (tileMap.TileAt((j, i)).Id == 0)
+                    continue;
+
+                xMin = Math.Min(xMin, j);
+                xMax = Math.Max(xMax, j);
+                yMin = Math.Min(yMin, i);
+                yMax = Math.Max(yMax, i);
+            }
+
+        if (xMax < xMin || yMax < yMin)
+            return new((0, 0));
+
+        var result = new TileMap((xMax - xMin + 1, yMax - yMin + 1));
+        result.SetTiles((0, 0), tileMap.TilesIn((xMin, yMin, result.Size.width, result.Size.height)));
+        return result;
+    }
+
 #region Backend
     private static readonly Dictionary<int, Area?> masks = [];
     private static readonly Dictionary<int, (int x, int y, int z)> seeds = [];
