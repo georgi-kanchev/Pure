@@ -316,7 +316,9 @@ public static class Storage
         if (type.IsEnum)
         {
             var enumType = Enum.GetUnderlyingType(type);
-            return ToTSV(ToObject(value.ToBytes(), enumType, out _));
+            var obj = ToObject(value.ToBytes(), enumType, out _);
+            var name = Enum.GetName(type, obj ?? 0) ?? "";
+            return name;
         }
 
         if (IsList(type))
@@ -586,7 +588,13 @@ public static class Storage
         if (expectedType.IsEnum)
         {
             var value = TextToPrimitive(Enum.GetUnderlyingType(expectedType), tsvText);
-            return value == null ? default : Enum.ToObject(expectedType, value);
+
+            if (tsvText.IsNumber())
+                return value == null ? default : Enum.ToObject(expectedType, value);
+
+            // perhaps the enum value is a name, not value (eg Month.January, not 0 or 1)
+            var index = Enum.GetNames(expectedType).ToList().IndexOf(tsvText);
+            return index == -1 ? value : Enum.GetValues(expectedType).GetValue(index);
         }
 
         var table = ToTable(tsvText);

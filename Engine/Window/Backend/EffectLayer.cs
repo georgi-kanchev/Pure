@@ -212,14 +212,16 @@ vec2 compute_waves(vec2 coord) {
 	vec4 target = get_data(2, 4);
 	vec4 color = texture2D(texture, coord) * gl_Color;
 	bool isTargetColor = target == vec4(0.0) || (target != vec4(0.0) && is(color, target));		
-	
-	spFr.x = spFr.x < 0.5 ? -spFr.x : spFr.x - 0.5;
-	spFr.y = spFr.y < 0.5 ? -spFr.y : spFr.y - 0.5;
+	bool reverseX = spFr.x < 0.5;
+	bool reverseY = spFr.y < 0.5;	
+
+	spFr.x = reverseX ? 0.5 - spFr.x : spFr.x - 0.5;
+	spFr.y = reverseY ? 0.5 - spFr.y : spFr.y - 0.5;
 	spFr *= multiplier;
 
 	if (is_inside(coord, area, vec4(0.0)) && isTargetColor) {
-		coord.x += cos(coord.y * spFr.z + spFr.x * time) / viewSize.x / 1.5;
-		coord.y += sin(coord.x * spFr.w + spFr.y * time) / viewSize.y / 1.5;
+		coord.x += cos(coord.y * spFr.z + spFr.x * time * (reverseX ? -1.0 : 1.0)) / viewSize.x / 1.5;
+		coord.y += sin(coord.x * spFr.w + spFr.y * time * (reverseY ? -1.0 : 1.0)) / viewSize.y / 1.5;
 	}
 	return coord;
 }" +

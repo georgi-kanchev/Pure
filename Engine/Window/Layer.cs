@@ -548,11 +548,14 @@ public class Layer
         if (areas == null || areas.Length == 0)
             areas = [(0, 0, Size.width, Size.height, 0)];
 
+        var speedX = (byte)Map(speed.x, sbyte.MinValue, sbyte.MaxValue, byte.MinValue, byte.MaxValue);
+        var speedY = (byte)Map(speed.y, sbyte.MinValue, sbyte.MaxValue, byte.MinValue, byte.MaxValue);
+
         for (var i = 0; i < areas.Length; i++)
         {
             var (x, y, w, h, c) = areas[i];
             SetShaderData((x, y, w, h), (0, 4), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 4), new((byte)speed.x, (byte)speed.y, frequency.x, frequency.y), false);
+            SetShaderData((x, y, w, h), (1, 4), new(speedX, speedY, frequency.x, frequency.y), false);
             SetShaderData((x, y, w, h), (2, 4), new(c), false);
         }
     }
@@ -673,7 +676,7 @@ public class Layer
         }
     }
 
-    #region Backend
+#region Backend
     // per tile shader data map (8x8 pixels)
     //
     // [tnta][tntc][tntt][    ][    ][rea2][reo2][ren2]
@@ -1016,5 +1019,5 @@ public class Layer
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
-    #endregion
+#endregion
 }
