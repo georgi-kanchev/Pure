@@ -2,11 +2,11 @@ using System.Collections;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 using static System.Reflection.BindingFlags;
+using static System.Convert;
 
 namespace Pure.Engine.Utility;
 
@@ -35,7 +35,7 @@ public static class Storage
 {
     public static string Compress(this string value)
     {
-        return Convert.ToBase64String(Compress(Encoding.UTF8.GetBytes(value)));
+        return ToBase64String(Compress(Encoding.UTF8.GetBytes(value)));
     }
     public static byte[] Compress(this byte[]? data)
     {
@@ -59,7 +59,7 @@ public static class Storage
     }
     public static string Decompress(this string compressedText)
     {
-        return Encoding.UTF8.GetString(Decompress(Convert.FromBase64String(compressedText)));
+        return Encoding.UTF8.GetString(Decompress(FromBase64String(compressedText)));
     }
     public static byte[] Decompress(this byte[]? compressedData)
     {
@@ -96,7 +96,7 @@ public static class Storage
         if (value is byte valueByte)
             return [1, 0, 0, 0, valueByte];
         if (value is sbyte valueSbyte)
-            return [1, 0, 0, 0, Convert.ToByte(valueSbyte)];
+            return [1, 0, 0, 0, ToByte(valueSbyte)];
         if (value is char valueChar)
             return new byte[] { 2, 0, 0, 0 }.Concat(BitConverter.GetBytes(valueChar)).ToArray();
         if (value is short valueShort)
@@ -132,7 +132,7 @@ public static class Storage
         }
 
         if (type.IsEnum)
-            return ToBytes(Convert.ChangeType(value, Enum.GetUnderlyingType(type)));
+            return ToBytes(ChangeType(value, Enum.GetUnderlyingType(type)));
         if (IsTuple(type))
         {
             var result = new List<byte>();
@@ -275,11 +275,11 @@ public static class Storage
     }
     public static string? ToBase64(this byte[]? data)
     {
-        return data == null || data.Length == 0 ? null : Convert.ToBase64String(data);
+        return data == null || data.Length == 0 ? null : ToBase64String(data);
     }
     public static byte[]? ToBase64Bytes(this string? base64)
     {
-        return string.IsNullOrWhiteSpace(base64) ? null : Convert.FromBase64String(base64);
+        return string.IsNullOrWhiteSpace(base64) ? null : FromBase64String(base64);
     }
 
     public static string? ToText(this string? base64)
@@ -289,7 +289,7 @@ public static class Storage
 
         try
         {
-            var data = Convert.FromBase64String(base64);
+            var data = FromBase64String(base64);
             return Encoding.UTF8.GetString(data);
         }
         catch (Exception)
@@ -317,8 +317,8 @@ public static class Storage
         {
             var enumType = Enum.GetUnderlyingType(type);
             var obj = ToObject(value.ToBytes(), enumType, out _);
-            var name = Enum.GetName(type, obj ?? 0) ?? "";
-            return name;
+            return Enum.ToObject(type, obj ?? 0).ToString()?.Replace(",", "") ?? "";
+            // works with both flags & regular enums
         }
 
         if (IsList(type))
@@ -587,14 +587,55 @@ public static class Storage
             return TextToPrimitive(expectedType, tsvText);
         if (expectedType.IsEnum)
         {
-            var value = TextToPrimitive(Enum.GetUnderlyingType(expectedType), tsvText);
+            var enumType = Enum.GetUnderlyingType(expectedType);
+            var value = TextToPrimitive(enumType, tsvText);
+
+            if (value == null)
+                return default;
 
             if (tsvText.IsNumber())
-                return value == null ? default : Enum.ToObject(expectedType, value);
+                return Enum.ToObject(expectedType, value);
+
+            var names = Enum.GetNames(expectedType).ToList();
+            var values = Enum.GetValues(expectedType);
+
+            if (expectedType.IsDefined(typeof(FlagsAttribute)))
+            {
+                var result = Activator.CreateInstance(expectedType)!;
+
+                foreach (var name in names)
+                {
+                    var hasValue = false;
+                    var flag = (ulong)0;
+                    var split = tsvText.Split();
+
+                    foreach (var s in split)
+                        if (s.Trim() == name)
+                        {
+                            hasValue = true;
+                            flag = (ulong)ChangeType(values.GetValue(names.IndexOf(s)), typeof(ulong))!;
+                            break;
+                        }
+
+                    if (hasValue == false)
+                        continue;
+
+                    if (enumType == typeof(int)) result = (int)ChangeType(result, typeof(int)) | (int)flag;
+                    else if (enumType == typeof(sbyte)) result = (sbyte)((sbyte)ChangeType(result, typeof(sbyte)) | (sbyte)flag);
+                    else if (enumType == typeof(byte)) result = (byte)((byte)ChangeType(result, typeof(byte)) | (byte)flag);
+                    else if (enumType == typeof(short)) result = (short)((short)ChangeType(result, typeof(short)) | (short)flag);
+                    else if (enumType == typeof(ushort)) result = (ushort)((ushort)ChangeType(result, typeof(ushort)) | (ushort)flag);
+                    else if (enumType == typeof(uint)) result = (uint)ChangeType(result, typeof(uint)) | (uint)flag;
+                    else if (enumType == typeof(long)) result = (long)ChangeType(result, typeof(long)) | (long)flag;
+                    else if (enumType == typeof(ulong)) result = (ulong)ChangeType(result, typeof(ulong)) | flag;
+                }
+
+                return Enum.ToObject(expectedType, result);
+            }
 
             // perhaps the enum value is a name, not value (eg Month.January, not 0 or 1)
-            var index = Enum.GetNames(expectedType).ToList().IndexOf(tsvText);
-            return index == -1 ? value : Enum.GetValues(expectedType).GetValue(index);
+            var index = names.IndexOf(tsvText);
+            return index == -1 ? value : values.GetValue(index);
         }
 
         var table = ToTable(tsvText);
@@ -1268,16 +1309,16 @@ public static class Storage
         if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
             throw default!;
 
-        var range = Convert.ToDouble(maxValue) - Convert.ToDouble(minValue);
-        var wrappedValue = Convert.ToDouble(value);
+        var range = ToDouble(maxValue) - ToDouble(minValue);
+        var wrappedValue = ToDouble(value);
 
-        while (wrappedValue < Convert.ToDouble(minValue))
+        while (wrappedValue < ToDouble(minValue))
             wrappedValue += range;
 
-        while (wrappedValue > Convert.ToDouble(maxValue))
+        while (wrappedValue > ToDouble(maxValue))
             wrappedValue -= range;
 
-        return (T)Convert.ChangeType(wrappedValue, typeof(T));
+        return (T)ChangeType(wrappedValue, typeof(T));
     }
 
     private static string FilterPlaceholders(string dataAsText, List<string> strings)

@@ -5,9 +5,10 @@ namespace Pure.Examples.Systems;
 
 public static class Storages
 {
+    [Flags]
     public enum SomeEnum
     {
-        Value1, SecondValue, ValueNumber3
+        Value1 = 1 << 0, SecondValue = 1 << 1, ValueNumber3 = 1 << 2
     }
 
     public class Test
@@ -15,7 +16,7 @@ public static class Storages
         public readonly string c = "test";
         // public List<(string, uint)> arr = [("m", 123), ("hmmm", 56), ("he", 12), ("she", 47), ("ai", 31)];
         public (int, bool, float) a = (3, true, 0.3f);
-        public SomeEnum someEnum = SomeEnum.ValueNumber3;
+        public SomeEnum someEnum = SomeEnum.ValueNumber3 | SomeEnum.SecondValue;
         public static string Something { get; set; } = "heeeelloooo";
         public float D { get; set; } = 33.6f;
 
