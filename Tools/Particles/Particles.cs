@@ -21,50 +21,50 @@ public static class Particles
         return pts;
     }
 
-    public static bool IsClusterAlive((float x, float y, uint color)[] particles)
+    public static bool IsClusterAlive((float x, float y, uint color)[] cluster)
     {
-        return points.Contains(particles) && data.ContainsKey(particles.GetHashCode());
+        return points.Contains(cluster) && data.ContainsKey(cluster.GetHashCode());
     }
 
-    public static void MakeLine(this (float x, float y, uint color)[] particles, (float ax, float ay, float bx, float by) line, bool keepMovement = false, Distribution distribution = Distribution.FillEvenly)
+    public static void MakeLine(this (float x, float y, uint color)[] cluster, (float ax, float ay, float bx, float by) line, bool keepMovement = false, Distribution distribution = Distribution.FillEvenly)
     {
-        var key = particles.GetHashCode();
+        var key = cluster.GetHashCode();
 
-        if (data.ContainsKey(key) == false || points.Contains(particles) == false)
+        if (data.ContainsKey(key) == false || points.Contains(cluster) == false)
             return;
 
         var (a, b) = (new Point(line.ax, line.ay), new Point(line.bx, line.by));
-        var index = points.IndexOf(particles);
+        var index = points.IndexOf(cluster);
         var rand = distribution == Distribution.FillRandomly;
 
-        for (var i = 0; i < particles.Length; i++)
+        for (var i = 0; i < cluster.Length; i++)
         {
             if (keepMovement == false)
                 movement[key][i] = default;
 
-            var progress = rand ? (0f, 100f).Random() : (float)i / particles.Length * 100f;
+            var progress = rand ? (0f, 100f).Random() : (float)i / cluster.Length * 100f;
             var (x, y) = a.PercentTo(progress, b).XY;
             points[index][i] = (x, y, points[index][i].color);
         }
     }
-    public static void MakeCircle(this (float x, float y, uint color)[] particles, (float x, float y) position, float radius = 1f, bool keepMovement = false, Distribution distribution = Distribution.FillEvenly)
+    public static void MakeCircle(this (float x, float y, uint color)[] cluster, (float x, float y) position, float radius = 1f, bool keepMovement = false, Distribution distribution = Distribution.FillEvenly)
     {
-        var key = particles.GetHashCode();
+        var key = cluster.GetHashCode();
 
-        if (data.ContainsKey(key) == false || points.Contains(particles) == false)
+        if (data.ContainsKey(key) == false || points.Contains(cluster) == false)
             return;
 
-        var index = points.IndexOf(particles);
+        var index = points.IndexOf(cluster);
 
-        for (var i = 0; i < particles.Length; i++)
+        for (var i = 0; i < cluster.Length; i++)
         {
             var r = distribution == Distribution.FillRandomly ? (0f, radius).Random() : radius;
-            var ang = 360f * i / particles.Length;
+            var ang = 360f * i / cluster.Length;
 
             if (distribution == Distribution.FillEvenly)
             {
                 ang = 360f * (i * 0.6180339887f % 1f); // golden ratio
-                r = MathF.Sqrt((float)i / particles.Length) * radius;
+                r = MathF.Sqrt((float)i / cluster.Length) * radius;
             }
 
             var dir = new Angle(ang).Direction;
@@ -76,19 +76,19 @@ public static class Particles
             points[index][i] = (point.X, point.Y, points[index][i].color);
         }
     }
-    public static void MakeRectangle(this (float x, float y, uint color)[] particles, (float x, float y, float width, float height) area, bool keepMovement = false, Distribution distribution = Distribution.FillEvenly)
+    public static void MakeRectangle(this (float x, float y, uint color)[] cluster, (float x, float y, float width, float height) area, bool keepMovement = false, Distribution distribution = Distribution.FillEvenly)
     {
-        var key = particles.GetHashCode();
+        var key = cluster.GetHashCode();
 
-        if (data.ContainsKey(key) == false || points.Contains(particles) == false)
+        if (data.ContainsKey(key) == false || points.Contains(cluster) == false)
             return;
 
-        var index = points.IndexOf(particles);
+        var index = points.IndexOf(cluster);
         var (x, y, width, height) = area;
 
-        for (var i = 0; i < particles.Length; i++)
+        for (var i = 0; i < cluster.Length; i++)
         {
-            var (px, py) = (particles[i].x, particles[i].y);
+            var (px, py) = (cluster[i].x, cluster[i].y);
 
             if (distribution == Distribution.FillEvenly)
             {
@@ -103,7 +103,7 @@ public static class Particles
             else if (distribution == Distribution.Outline)
             {
                 var perimeter = 2 * (width + height);
-                var progress = (float)i / particles.Length * perimeter;
+                var progress = (float)i / cluster.Length * perimeter;
 
                 if (progress < width)
                 {
@@ -150,57 +150,56 @@ public static class Particles
         }
     }
 
-    public static void ApplyGravity(this (float x, float y, uint color)[] particles, (float x, float y) force)
+    public static void ApplyGravity(this (float x, float y, uint color)[] cluster, (float x, float y) force)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var cluster) && points.Contains(particles))
-            cluster.gravity = force;
+        if (data.TryGetValue(cluster.GetHashCode(), out var c) && points.Contains(cluster))
+            c.gravity = force;
     }
-    public static void ApplyFriction(this (float x, float y, uint color)[] particles, float strength)
+    public static void ApplyFriction(this (float x, float y, uint color)[] cluster, float strength)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var cluster) && points.Contains(particles))
-            cluster.friction = strength;
+        if (data.TryGetValue(cluster.GetHashCode(), out var c) && points.Contains(cluster))
+            c.friction = strength;
     }
-    public static void ApplyOrbit(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius)
+    public static void ApplyOrbit(this (float x, float y, uint color)[] cluster, (float x, float y) point, float radius)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var cluster) == false || points.Contains(particles) == false)
+        if (data.TryGetValue(cluster.GetHashCode(), out var c) == false || points.Contains(cluster) == false)
             return;
 
-        cluster.orbitPoint = point;
-        cluster.orbitRadius = radius;
+        c.orbitPoint = point;
+        c.orbitRadius = radius;
     }
-    public static void ApplyShake(this (float x, float y, uint color)[] particles, (float x, float y) strength)
+    public static void ApplyShake(this (float x, float y, uint color)[] cluster, (float x, float y) strength)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var cluster) && points.Contains(particles))
-            cluster.shake = (strength.x / 100f, strength.y / 100f);
+        if (data.TryGetValue(cluster.GetHashCode(), out var c) && points.Contains(cluster))
+            c.shake = (strength.x / 100f, strength.y / 100f);
     }
-    public static void ApplyBounceObstacles(this (float x, float y, uint color)[] particles, params (float x, float y, float width, float height)[] obstacles)
+    public static void ApplyBounceObstacles(this (float x, float y, uint color)[] cluster, params (float x, float y, float width, float height)[] obstacles)
     {
-        data[particles.GetHashCode()].bounceRects.Clear();
-        data[particles.GetHashCode()].bounceRects.AddRange(obstacles);
+        data[cluster.GetHashCode()].bounceRects.Clear();
+        data[cluster.GetHashCode()].bounceRects.AddRange(obstacles);
     }
-    public static void ApplyBounciness(this (float x, float y, uint color)[] particles, float strength)
+    public static void ApplyBounciness(this (float x, float y, uint color)[] cluster, float strength)
     {
-        var key = particles.GetHashCode();
-        data[key].bounceStrength = strength;
+        data[cluster.GetHashCode()].bounceStrength = strength;
     }
 
-    public static void ApplyAge(this (float x, float y, uint color)[] particles, float ageSeconds)
+    public static void ApplyAge(this (float x, float y, uint color)[] cluster, float seconds)
     {
-        data[particles.GetHashCode()].timeLeft = Math.Max(ageSeconds, 0f);
+        data[cluster.GetHashCode()].timeLeft = Math.Max(seconds, 0f);
     }
-    public static void ApplyTimeScale(this (float x, float y, uint color)[] particles, float timeScale)
+    public static void ApplyTimeScale(this (float x, float y, uint color)[] cluster, float timeScale)
     {
-        data[particles.GetHashCode()].timeScale = timeScale;
+        data[cluster.GetHashCode()].timeScale = timeScale;
     }
-    public static void ApplySize(this (float x, float y, uint color)[] particles, float size)
+    public static void ApplySize(this (float x, float y, uint color)[] cluster, float size)
     {
-        data[particles.GetHashCode()].size = Math.Max(size / 2f, 0f);
+        data[cluster.GetHashCode()].size = Math.Max(size / 2f, 0f);
     }
-    public static void ApplyColor(this (float x, float y, uint color)[] particles, uint color, byte variety = 0)
+    public static void ApplyColor(this (float x, float y, uint color)[] cluster, uint color)
     {
-        var index = points.IndexOf(particles);
+        var index = points.IndexOf(cluster);
         var pts = points[index];
-        var v = (int)variety;
+        var v = data[pts.GetHashCode()].varietyColor;
 
         for (var i = 0; i < pts.Length; i++)
         {
@@ -212,15 +211,15 @@ public static class Particles
             pts[i] = (x, y, new Color(r, g, b));
         }
     }
-    public static void ApplyColorFade(this (float x, float y, uint color)[] particles, uint color, byte variety = 0, float duration = 1f)
+    public static void ApplyColorFade(this (float x, float y, uint color)[] cluster, uint color, float duration = 1f)
     {
-        var index = points.IndexOf(particles);
+        var index = points.IndexOf(cluster);
         var pts = points[index];
         var (tr, tg, tb, ta) = new Color(color).ToBundle();
         var copy = pts.ToArray();
-        var key = particles.GetHashCode();
+        var key = cluster.GetHashCode();
         var timeScale = data[key].timeScale;
-        var v = (int)variety;
+        var v = data[pts.GetHashCode()].varietyColor;
 
         Flow.CallFor(duration / timeScale, progress =>
         {
@@ -233,35 +232,85 @@ public static class Particles
                 var a = (byte)progress.Map((0f, 1f), (sa, ta));
 
                 r = (byte)Math.Clamp(r + (-v, v).Random(key * i + 0), 0, 255);
-                g = (byte)Math.Clamp(g + (-v, v).Random(key * i * 1), 0, 255);
-                b = (byte)Math.Clamp(b + (-v, v).Random(key * i % 2), 0, 255);
+                g = (byte)Math.Clamp(g + (-v, v).Random(key * i * 2), 0, 255);
+                b = (byte)Math.Clamp(b + (-v, v).Random(key * i % 3), 0, 255);
 
                 pts[i] = (pts[i].x, pts[i].y, new Color(r, g, b, a));
             }
         });
     }
-    public static void ApplyWrap(this (float x, float y, uint color)[] particles, (float x, float y, float width, float height)? area)
+    public static void ApplyWrap(this (float x, float y, uint color)[] cluster, (float x, float y, float width, float height)? area)
     {
-        data[particles.GetHashCode()].wrapArea = area;
+        data[cluster.GetHashCode()].wrapArea = area;
+    }
+    public static void ApplySource(this (float x, float y, uint color)[] cluster, float interval, (float x, float y) position, (float x, float y) force, int step = 1)
+    {
+        var hash = cluster.GetHashCode();
+        var mov = movement[hash];
+        var c = data[hash];
+
+        if (data[hash].sourceTick != null)
+        {
+            Flow.CancelCall(data[hash].sourceTick!);
+            data[hash].sourceTick = null;
+        }
+
+        if (interval <= 0f)
+            return;
+
+        data[hash].sourceTick = () =>
+        {
+            for (var i = 0; i < step; i++)
+            {
+                var index = (data[hash].sourceIndex + i).Wrap((0, cluster.Length));
+                var ang = new Angle(force) + (-c.varietySourceAngle, c.varietySourceAngle).Random();
+                var str = new Point().Distance(force) + (0f, c.varietySourceForce).Random();
+                var dir = new Angle(ang).Direction;
+
+                cluster[index] = (position.x, position.y, cluster[index].color);
+                mov[index] = (dir.x * str, dir.y * str);
+            }
+
+            data[hash].sourceIndex += step;
+        };
+
+        Flow.CallEvery(interval, data[hash].sourceTick!);
     }
 
-    public static void PushFromPoint(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
+    public static void ApplyVarietyColor(this (float x, float y, uint color)[] cluster, float variety)
     {
-        PushOrPull(true, particles, point, force, radius, weakerFurther);
+        data[cluster.GetHashCode()].varietyColor = variety;
     }
-    public static void PullToPoint(this (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
+    public static void ApplyVarietyPushPull(this (float x, float y, uint color)[] cluster, float angle, float force)
     {
-        PushOrPull(false, particles, point, force, radius, weakerFurther);
+        var hash = cluster.GetHashCode();
+        data[hash].varietyPushPullAngle = angle;
+        data[hash].varietyPushPullForce = force;
     }
-    public static void PushAtAngle(this (float x, float y, uint color)[] particles, float angle, float force)
+    public static void ApplyVarietySource(this (float x, float y, uint color)[] cluster, float angle, float force)
     {
-        var key = particles.GetHashCode();
+        var hash = cluster.GetHashCode();
+        data[hash].varietySourceAngle = angle;
+        data[hash].varietySourceForce = force;
+    }
 
-        if (data.TryGetValue(key, out _) == false || points.Contains(particles) == false)
+    public static void PushFromPoint(this (float x, float y, uint color)[] cluster, (float x, float y) point, float radius, float force, bool weakerFurther = true)
+    {
+        PushOrPull(true, cluster, point, force, radius, weakerFurther);
+    }
+    public static void PullToPoint(this (float x, float y, uint color)[] cluster, (float x, float y) point, float radius, float force, bool weakerFurther = true)
+    {
+        PushOrPull(false, cluster, point, force, radius, weakerFurther);
+    }
+    public static void PushAtAngle(this (float x, float y, uint color)[] cluster, float angle, float force)
+    {
+        var key = cluster.GetHashCode();
+
+        if (data.TryGetValue(key, out _) == false || points.Contains(cluster) == false)
             return;
 
         var dir = new Angle(angle).Direction;
-        for (var i = 0; i < particles.Length; i++)
+        for (var i = 0; i < cluster.Length; i++)
         {
             var (mx, my) = movement[key][i];
             movement[key][i] = (mx + dir.x * force, my + dir.y * force);
@@ -331,7 +380,8 @@ public static class Particles
                         var (left, right) = (rect.x - sz, rect.x + rect.w + sz);
                         var (top, bottom) = (rect.y - sz, rect.y + rect.h + sz);
 
-                        if (x.IsBetween((left, right)) == false || y.IsBetween((top, bottom)) == false)
+                        if (x.IsBetween((left, right)) == false ||
+                            y.IsBetween((top, bottom)) == false)
                             continue;
 
                         var (l, r) = (Math.Abs(x - left), Math.Abs(x - right));
@@ -342,22 +392,22 @@ public static class Particles
                         if (l < r && l < t && l < b)
                         {
                             (rx, ry) = ang.Reflect(Angle.Left).Direction;
-                            x = left;
+                            x = left - sz;
                         }
                         else if (r < l && r < t && r < b)
                         {
                             (rx, ry) = ang.Reflect(Angle.Right).Direction;
-                            x = right;
+                            x = right + sz;
                         }
                         else if (t < l && t < r && t < b)
                         {
                             (rx, ry) = ang.Reflect(Angle.Up).Direction;
-                            y = top;
+                            y = top - sz;
                         }
                         else if (b < t && b < l && b < r)
                         {
                             (rx, ry) = ang.Reflect(Angle.Down).Direction;
-                            y = bottom;
+                            y = bottom + sz;
                         }
 
                         mx = rx * speed;
@@ -370,11 +420,14 @@ public static class Particles
                 movement[key][j] = (mx, my);
             }
 
-            if (data[key].timeLeft > 0f)
+            if (cluster.timeLeft > 0f)
                 continue;
 
             for (var j = 0; j < pts.Length; j++)
                 pts[j] = default;
+
+            if (cluster.sourceTick != null)
+                Flow.CancelCall(cluster.sourceTick);
 
             data.Remove(key);
             movement.Remove(key);
@@ -388,25 +441,33 @@ public static class Particles
     private static readonly Dictionary<int, (float x, float y)[]> movement = [];
     private static readonly List<(float x, float y, uint color)[]> points = [];
 
-    private static void PushOrPull(bool push, (float x, float y, uint color)[] particles, (float x, float y) point, float radius, float force, bool weakerFurther = true)
+    private static void PushOrPull(bool push, (float x, float y, uint color)[] cluster, (float x, float y) point, float radius, float force, bool weakerFurther = true)
     {
-        if (data.TryGetValue(particles.GetHashCode(), out var value) == false || points.Contains(particles) == false)
+        if (data.TryGetValue(cluster.GetHashCode(), out var c) == false || points.Contains(cluster) == false)
             return;
 
-        var key = particles.GetHashCode();
-        var index = points.IndexOf(particles);
-        for (var i = 0; i < particles.Length; i++)
+        var key = cluster.GetHashCode();
+        var index = points.IndexOf(cluster);
+        var pts = points[index];
+        var mov = movement[key];
+
+        for (var i = 0; i < cluster.Length; i++)
         {
-            var (x, y, _) = points[index][i];
+            var (x, y, _) = pts[i];
             var dist = new Point(x, y).Distance(point);
 
             if (dist > radius)
                 continue;
 
-            var speed = weakerFurther ? dist.Map((0f, radius), (force, 0f)) : force;
+            var (mx, my) = mov[i];
+            var f = force + (-c.varietyPushPullForce, c.varietyPushPullForce).Random();
+            var speed = weakerFurther ? dist.Map((0f, radius), (f, 0f)) : f;
+            var ang = Angle.BetweenPoints((x, y), point);
+
+            ang += (-c.varietyPushPullAngle, c.varietyPushPullAngle).Random();
             speed *= push ? -1 : 1;
-            var dir = Angle.BetweenPoints((x, y), point).Direction;
-            var (mx, my) = movement[key][i];
+
+            var dir = ang.Direction;
             movement[key][i] = (mx + dir.x * speed, my + dir.y * speed);
         }
     }

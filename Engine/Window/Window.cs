@@ -295,10 +295,10 @@ public static class Window
     [DoNotSave]
     internal static readonly Vertex[] vertsWindow = new Vertex[4];
 
-    private static bool isRetro, isClosing, hasClosed, isVerticallySynced, isRecreating, shouldGetClipboard;
+    private static bool isRetro, isClosing, hasClosed, isVerticallySynced = true, isRecreating, shouldGetClipboard;
     private static string title = "Game";
     private static string clipboardCache = "";
-    private static uint backgroundColor, monitor, maximumFrameRate;
+    private static uint backgroundColor, monitor, maximumFrameRate = 60;
     private static Mode mode;
     private static float pixelScale = 5f;
 
@@ -307,7 +307,7 @@ public static class Window
 
     // this below and here ^^^ is a weird issue related to how SFML waits to get the clipboard from X11 on linux
     // so we spin a thread to not freeze the main one
-    // this issue only happens if something non-text is copied
+    // this issue only happens if something that is non-text occuppies the clipboard (image for example)
     static Window()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && NativeLibrary.TryLoad("libX11.so.6", out var libX11))

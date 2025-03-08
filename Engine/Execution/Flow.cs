@@ -116,30 +116,45 @@ public static class Flow
             }
     }
 
-    public static void CallAfter(float seconds, Action method)
+    public static void CallAfter(float seconds, Action? method)
     {
+        if (method == null)
+            return;
+
         timers.Add(new(method, null, seconds, false));
     }
-    public static void CallEvery(float seconds, Action method)
+    public static void CallEvery(float seconds, Action? method)
     {
+        if (method == null)
+            return;
+
         timers.Add(new(method, null, seconds, true));
     }
-    public static void CallFor(float seconds, Action<float> method)
+    public static void CallFor(float seconds, Action<float>? method)
     {
+        if (method == null)
+            return;
+
         timers.Add(new(null, method, seconds, false));
     }
     /// <summary>
     /// Cancels a scheduled method call.
     /// </summary>
     /// <param name="method">The method to cancel.</param>
-    public static void CancelCall(Action method)
+    public static void CancelCall(Action? method)
     {
+        if (method == null)
+            return;
+
         foreach (var t in timers)
             if (t.method == method)
                 t.method = null;
     }
-    public static void CancelCall(Action<float> method)
+    public static void CancelCall(Action<float>? method)
     {
+        if (method == null)
+            return;
+
         foreach (var t in timers)
             if (t.methodF == method)
                 t.methodF = null;
@@ -149,14 +164,20 @@ public static class Flow
     /// </summary>
     /// <param name="method">The method to offset the call time for.</param>
     /// <param name="seconds">The number of seconds to offset the call time by.</param>
-    public static void DelayCall(float seconds, Action method)
+    public static void DelayCall(float seconds, Action? method)
     {
+        if (method == null)
+            return;
+
         foreach (var t in timers)
             if (t.method == method)
                 t.startTime += seconds;
     }
-    public static void ExtendCall(float seconds, Action<float> method)
+    public static void ExtendCall(float seconds, Action<float>? method)
     {
+        if (method == null)
+            return;
+
         foreach (var t in timers)
             if (t.methodF == method)
                 t.startTime += seconds;
@@ -195,8 +216,11 @@ public static class Flow
 
         return false;
     }
-    public static void Once(this bool condition, Action method)
+    public static void Once(this bool condition, Action? method)
     {
+        if (method == null)
+            return;
+
         if (condition.Once(method.GetHashCode().ToString()))
             method.Invoke();
     }
@@ -226,8 +250,11 @@ public static class Flow
         holdFrequency.Restart();
         return true;
     }
-    public static void PressAndHold(this bool condition, Action method, float delay = 0.5f, float frequency = 0.06f)
+    public static void PressAndHold(this bool condition, Action? method, float delay = 0.5f, float frequency = 0.06f)
     {
+        if (method == null)
+            return;
+
         if (PressAndHold(condition, method.GetHashCode().ToString(), delay, frequency))
             method.Invoke();
     }

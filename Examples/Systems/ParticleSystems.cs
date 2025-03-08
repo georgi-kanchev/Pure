@@ -14,22 +14,24 @@ public static class ParticleSystems
 
         var layer = new Layer((48, 27)) { BackgroundColor = Color.Gray.ToDark() };
         var (w, h) = layer.Size;
-        var b = new Area(5, 20, 15, 1, Color.Red);
-        var t = new Area(5, 5, 15, 1, Color.Red);
-        var l = new Area(5, 5, 1, 15, Color.Red);
+        var b = new Area(5, 20, 16, 1, Color.Red);
+        var t = new Area(5, 5, 16, 1, Color.Red);
+        var l = new Area(5, 5, 1, 16, Color.Red);
         var r = new Area(20, 5, 1, 16, Color.Red);
-        // var c = new Area(15, 15, 2, 4, Color.Red);
-        // var c2 = new Area(9, 12, 4, 3, Color.Red);
-        var particles = Particles.SpawnCluster(27, float.PositiveInfinity);
+        var c = new Area(15, 15, 2, 4, Color.Red);
+        var c2 = new Area(9, 12, 4, 3, Color.Red);
+        var particles = Particles.SpawnCluster(100, float.PositiveInfinity);
 
-        particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.FillRandomly);
-        particles.ApplyBounciness(1f);
-        particles.ApplyFriction(1f);
-        particles.ApplyBounceObstacles(t, b, l, r);
+        particles.MakeCircle((10f, 10f), 4f, distribution: Distribution.Outline);
+        particles.ApplyBounciness(0.5f);
+        particles.ApplyBounceObstacles(t, b, l, r, c, c2);
+        particles.ApplyGravity((0, 10f));
+        // particles.ApplyAge(10f);
+        particles.ApplyVarietySource(360, 0);
 
-        Mouse.Button.Left.OnPress(() => particles.PushFromPoint(layer.MouseCursorPosition, 3f, 3f));
-        Mouse.Button.Right.OnPress(() => particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.Outline));
-        Mouse.Button.Middle.OnPress(() => particles.MakeRectangle((10f, 10f, 8f, 8f), distribution: Distribution.FillRandomly));
+        Mouse.Button.Left.OnPress(() => particles.PushFromPoint(layer.MouseCursorPosition, 10f, 10f));
+        Mouse.Button.Right.OnPress(() => particles.MakeCircle((10f, 10f), 4f, distribution: Distribution.FillEvenly));
+        Mouse.Button.Middle.OnPress(() => particles.ApplyColorFade(0));
 
         var rain = Particles.SpawnCluster(200, float.PositiveInfinity);
         rain.MakeRectangle((0, 0, w, h));
@@ -41,24 +43,29 @@ public static class ParticleSystems
         for (var i = 0; i < 5; i++)
             allDrops.Add(Particles.SpawnCluster(5, float.PositiveInfinity));
 
-        Flow.CallEvery(0.75f, () =>
+        Flow.CallEvery(0.2f, () =>
         {
-            for (var i = 2; i < allDrops.Count; i++)
-            {
-                allDrops[i].MakeRectangle((0, h / 2f, w, h / 2f), false, Distribution.FillRandomly);
-                allDrops[i].ApplyColor(Color.Cyan);
-                // allDrops[i].ApplyColorFade(0);
-            }
+            particles.ApplySource(0.1f, layer.MouseCursorPosition, (5f, 5f), 10);
         });
-        Flow.CallEvery(0.5f, () =>
-        {
-            for (var i = 0; i < allDrops.Count - 3; i++)
-            {
-                allDrops[i].MakeRectangle((0, h / 2f, w, h / 2f), false, Distribution.FillRandomly);
-                allDrops[i].ApplyColor(Color.Cyan);
-                // allDrops[i].ApplyColorFade(0);
-            }
-        });
+
+        // Flow.CallEvery(0.75f, () =>
+        // {
+        //     for (var i = 2; i < allDrops.Count; i++)
+        //     {
+        //         allDrops[i].MakeRectangle((0, h - h / 4f, w, h / 4f), false, Distribution.FillRandomly);
+        //         allDrops[i].ApplyColor(Color.Cyan);
+        //         allDrops[i].ApplyColorFade(0);
+        //     }
+        // });
+        // Flow.CallEvery(0.5f, () =>
+        // {
+        //     for (var i = 0; i < allDrops.Count - 3; i++)
+        //     {
+        //         allDrops[i].MakeRectangle((0, h - h / 4f, w, h / 4f), false, Distribution.FillRandomly);
+        //         allDrops[i].ApplyColor(Color.Cyan);
+        //         allDrops[i].ApplyColorFade(0);
+        //     }
+        // });
 
         while (Window.KeepOpen())
         {
@@ -66,21 +73,21 @@ public static class ParticleSystems
             Flow.Update(Time.Delta);
             Particles.Update();
 
-            layer.DrawRectangles(t, b, l, r);
+            layer.DrawRectangles(t, b, l, r, c, c2);
 
-            for (var i = 0; i < rain.Length; i++)
-            {
-                var (x, y, color) = rain[i];
-                var end = new Point(x, y).MoveAt(Angle.Down + 30, (0.1f, 1f).Random(i));
-                layer.DrawLines((x, y, end.X, end.Y, Color.Cyan));
-            }
-
-            for (var i = 0; i < allDrops.Count; i++)
-                for (var j = 0; j < allDrops[i].Length; j++)
-                {
-                    var (x, y, color) = allDrops[i][j];
-                    layer.DrawTiles((x, y), (Tile.ICON_EYE_OPENED, color, 0));
-                }
+            // for (var i = 0; i < rain.Length; i++)
+            // {
+            //     var (x, y, color) = rain[i];
+            //     var end = new Point(x, y).MoveAt(Angle.Down + 30, (0.1f, 1f).Random(i));
+            //     layer.DrawLines((x, y, end.X, end.Y, Color.Cyan));
+            // }
+            //
+            // for (var i = 0; i < allDrops.Count; i++)
+            //     for (var j = 0; j < allDrops[i].Length; j++)
+            //     {
+            //         var (x, y, color) = allDrops[i][j];
+            //         layer.DrawTiles((x, y), (Tile.ICON_EYE_OPENED, color, 0));
+            //     }
 
             layer.DrawPoints(particles);
             layer.DrawMouseCursor();
