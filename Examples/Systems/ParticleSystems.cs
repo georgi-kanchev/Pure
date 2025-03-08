@@ -20,33 +20,28 @@ public static class ParticleSystems
         var r = new Area(20, 5, 1, 16, Color.Red);
         var c = new Area(15, 15, 2, 4, Color.Red);
         var c2 = new Area(9, 12, 4, 3, Color.Red);
-        var particles = Particles.SpawnCluster(100, float.PositiveInfinity);
+        var particles = Particles.SpawnCluster(100);
 
         particles.MakeCircle((10f, 10f), 4f, distribution: Distribution.Outline);
         particles.ApplyBounciness(0.5f);
         particles.ApplyBounceObstacles(t, b, l, r, c, c2);
         particles.ApplyGravity((0, 10f));
         // particles.ApplyAge(10f);
-        particles.ApplyVarietySource(360, 0);
+        particles.ApplyVarietySource(35, 0);
 
         Mouse.Button.Left.OnPress(() => particles.PushFromPoint(layer.MouseCursorPosition, 10f, 10f));
         Mouse.Button.Right.OnPress(() => particles.MakeCircle((10f, 10f), 4f, distribution: Distribution.FillEvenly));
         Mouse.Button.Middle.OnPress(() => particles.ApplyColorFade(0));
 
-        var rain = Particles.SpawnCluster(200, float.PositiveInfinity);
-        rain.MakeRectangle((0, 0, w, h));
-        rain.PushAtAngle(Angle.Down + 30, 8f);
-        rain.ApplyWrap((0, 0, w, h));
-        rain.ApplySize(1f);
+        // var rain = Particles.SpawnCluster(200);
+        // rain.MakeRectangle((0, 0, w, h));
+        // rain.PushAtAngle(Angle.Down + 30, 8f);
+        // rain.ApplyWrap((0, 0, w, h));
+        // rain.ApplySize(1f);
 
-        var allDrops = new List<(float x, float y, uint color)[]>();
-        for (var i = 0; i < 5; i++)
-            allDrops.Add(Particles.SpawnCluster(5, float.PositiveInfinity));
-
-        Flow.CallEvery(0.2f, () =>
-        {
-            particles.ApplySource(0.1f, layer.MouseCursorPosition, (5f, 5f), 10);
-        });
+        // var allDrops = new List<(float x, float y, uint color)[]>();
+        // for (var i = 0; i < 5; i++)
+        //     allDrops.Add(Particles.SpawnCluster(5));
 
         // Flow.CallEvery(0.75f, () =>
         // {
@@ -88,6 +83,8 @@ public static class ParticleSystems
             //         var (x, y, color) = allDrops[i][j];
             //         layer.DrawTiles((x, y), (Tile.ICON_EYE_OPENED, color, 0));
             //     }
+
+            particles.MakeSource(0.1f, layer.MouseCursorPosition, (5f, 5f), 3);
 
             layer.DrawPoints(particles);
             layer.DrawMouseCursor();

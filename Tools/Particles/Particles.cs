@@ -7,7 +7,7 @@ public enum Distribution { FillEvenly, FillRandomly, Outline }
 
 public static class Particles
 {
-    public static (float x, float y, uint color)[] SpawnCluster(int amount, float ageSeconds)
+    public static (float x, float y, uint color)[] SpawnCluster(int amount, float ageSeconds = float.PositiveInfinity)
     {
         var pts = new (float x, float y, uint color)[amount];
         var key = pts.GetHashCode();
@@ -149,6 +149,54 @@ public static class Particles
             return result;
         }
     }
+    public static void MakeSource(this (float x, float y, uint color)[] cluster, float interval, (float x, float y) position, (float x, float y) force, int step = 1)
+    {
+        var hash = cluster.GetHashCode();
+        var mov = movement[hash];
+        var c = data[hash];
+        var differentInterval = c.sourceInterval.IsWithin(interval, 0.001f) == false;
+
+        c.sourcePoint = position;
+        c.sourceForce = force;
+        c.sourceStep = step;
+
+        if (c.sourceTick == null)
+        {
+            c.sourceTick = Tick;
+            c.sourceInterval = interval;
+            c.sourceIndex = 0;
+            Flow.CallEvery(interval, c.sourceTick);
+            return;
+        }
+
+        if (differentInterval)
+        {
+            Flow.CancelCall(c.sourceTick);
+            c.sourceInterval = interval;
+            c.sourceIndex = 0;
+            Flow.CallEvery(interval, c.sourceTick);
+        }
+
+        void Tick()
+        {
+            var st = c.sourceStep;
+
+            for (var i = 0; i < st; i++)
+            {
+                var index = (c.sourceIndex + i).Wrap((0, cluster.Length));
+                var f = c.sourceForce;
+                var ang = new Angle(f) + (-c.varietySourceAngle, c.varietySourceAngle).Random();
+                var str = new Point().Distance(f) + (0f, c.varietySourceForce).Random();
+                var dir = new Angle(ang).Direction;
+                var (x, y) = c.sourcePoint;
+
+                cluster[index] = (x, y, cluster[index].color);
+                mov[index] = (dir.x * str, dir.y * str);
+            }
+
+            c.sourceIndex += st;
+        }
+    }
 
     public static void ApplyGravity(this (float x, float y, uint color)[] cluster, (float x, float y) force)
     {
@@ -242,39 +290,6 @@ public static class Particles
     public static void ApplyWrap(this (float x, float y, uint color)[] cluster, (float x, float y, float width, float height)? area)
     {
         data[cluster.GetHashCode()].wrapArea = area;
-    }
-    public static void ApplySource(this (float x, float y, uint color)[] cluster, float interval, (float x, float y) position, (float x, float y) force, int step = 1)
-    {
-        var hash = cluster.GetHashCode();
-        var mov = movement[hash];
-        var c = data[hash];
-
-        if (data[hash].sourceTick != null)
-        {
-            Flow.CancelCall(data[hash].sourceTick!);
-            data[hash].sourceTick = null;
-        }
-
-        if (interval <= 0f)
-            return;
-
-        data[hash].sourceTick = () =>
-        {
-            for (var i = 0; i < step; i++)
-            {
-                var index = (data[hash].sourceIndex + i).Wrap((0, cluster.Length));
-                var ang = new Angle(force) + (-c.varietySourceAngle, c.varietySourceAngle).Random();
-                var str = new Point().Distance(force) + (0f, c.varietySourceForce).Random();
-                var dir = new Angle(ang).Direction;
-
-                cluster[index] = (position.x, position.y, cluster[index].color);
-                mov[index] = (dir.x * str, dir.y * str);
-            }
-
-            data[hash].sourceIndex += step;
-        };
-
-        Flow.CallEvery(interval, data[hash].sourceTick!);
     }
 
     public static void ApplyVarietyColor(this (float x, float y, uint color)[] cluster, float variety)
