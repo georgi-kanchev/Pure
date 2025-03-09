@@ -149,7 +149,7 @@ public static class Particles
             return result;
         }
     }
-    public static void MakeSource(this (float x, float y, uint color)[] cluster, float interval, (float x, float y) position, (float x, float y) force, int step = 1)
+    public static void MakeSource(this (float x, float y, uint color)[] cluster, (float x, float y) position, (float x, float y) force, float interval, int burst = 1)
     {
         var hash = cluster.GetHashCode();
         var mov = movement[hash];
@@ -158,7 +158,7 @@ public static class Particles
 
         c.sourcePoint = position;
         c.sourceForce = force;
-        c.sourceStep = step;
+        c.sourceStep = burst;
 
         if (c.sourceTick == null)
         {

@@ -84,7 +84,7 @@ public static class ParticleSystems
             //         layer.DrawTiles((x, y), (Tile.ICON_EYE_OPENED, color, 0));
             //     }
 
-            particles.MakeSource(0.1f, layer.MouseCursorPosition, (5f, 5f), 3);
+            particles.MakeSource(layer.MouseCursorPosition, (5f, 5f), 0.5f, 3);
 
             layer.DrawPoints(particles);
             layer.DrawMouseCursor();
