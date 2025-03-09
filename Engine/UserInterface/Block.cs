@@ -1,4 +1,10 @@
-﻿namespace Pure.Engine.UserInterface;
+﻿global using Area = (int x, int y, int width, int height);
+global using PointI = (int x, int y);
+global using PointF = (float x, float y);
+global using Size = (int width, int height);
+global using Range = (float a, float b);
+
+namespace Pure.Engine.UserInterface;
 
 public enum Side { Left, Right, Top, Bottom }
 
@@ -15,7 +21,7 @@ public class Block
     [DoNotSave]
     public Action<(int deltaX, int deltaY)>? OnDrag { get; set; }
 
-    public (int x, int y, int width, int height) Area
+    public Area Area
     {
         get => (X, Y, Width, Height);
         set
@@ -24,7 +30,7 @@ public class Block
             Size = (value.width, value.height);
         }
     }
-    public (int x, int y, int width, int height) Mask
+    public Area Mask
     {
         get => mask;
         set
@@ -61,7 +67,7 @@ public class Block
     /// <summary>
     /// Gets or sets the position of the user interface block.
     /// </summary>
-    public (int x, int y) Position
+    public PointI Position
     {
         get => position;
         set
@@ -73,7 +79,7 @@ public class Block
     /// <summary>
     /// Gets or sets the size of the user interface block.
     /// </summary>
-    public (int width, int height) Size
+    public Size Size
     {
         get => size;
         set
@@ -88,7 +94,7 @@ public class Block
     /// <summary>
     /// Gets or sets the minimum size that this block can have.
     /// </summary>
-    public (int width, int height) SizeMinimum
+    public Size SizeMinimum
     {
         get => sizeMinimum;
         set
@@ -111,7 +117,7 @@ public class Block
     /// <summary>
     /// Gets or sets the maximum size that this block can have.
     /// </summary>
-    public (int width, int height) SizeMaximum
+    public Size SizeMaximum
     {
         get => sizeMaximum;
         set
@@ -197,7 +203,7 @@ public class Block
     /// position.
     /// </summary>
     /// <param name="position">The position of the user interface block.</param>
-    public Block((int x, int y) position)
+    public Block(PointI position)
     {
         Size = (1, 1);
         Position = position;
@@ -333,7 +339,7 @@ public class Block
     /// </summary>
     /// <param name="point">The point to check for overlap.</param>
     /// <returns>True if the block is overlapping with the point, false otherwise.</returns>
-    public bool IsOverlapping((float x, float y) point)
+    public bool IsOverlapping(PointF point)
     {
         // Check if the point is outside the tilemap boundaries
         if (point.x < 0 ||
@@ -348,7 +354,7 @@ public class Block
                point.y >= Position.y &&
                point.y < Position.y + Size.height;
     }
-    public bool IsOverlapping((int x, int y, int width, int height) area)
+    public bool IsOverlapping(Area area)
     {
         var (x, y) = Position;
         var (w, h) = Size;
@@ -362,7 +368,7 @@ public class Block
         return justInteracted.Contains(interaction);
     }
 
-    public void AlignEdges(Side edge, Side targetEdge, (int x, int y, int width, int height)? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    public void AlignEdges(Side edge, Side targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
         var rw = targetArea?.width ?? Input.TilemapSize.width;
@@ -404,7 +410,7 @@ public class Block
 
         Position = (x, y);
     }
-    public void AlignInside((float x, float y) alignment, (int x, int y, int width, int height)? targetArea = null)
+    public void AlignInside(PointF alignment, Area? targetArea = null)
     {
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
         var rw = targetArea?.width ?? Input.TilemapSize.width;
@@ -418,13 +424,13 @@ public class Block
             float.IsNaN(alignment.x) ? x : (int)newX,
             float.IsNaN(alignment.y) ? y : (int)newY);
     }
-    public void AlignOutside(Side targetEdge, (int x, int y, int width, int height)? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    public void AlignOutside(Side targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
         var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
         AlignEdges(opposites[(int)targetEdge], targetEdge, targetArea, alignment, offset + 1,
             exceedEdge);
     }
-    public void Fit((int x, int y, int width, int height)? targetArea = null)
+    public void Fit(Area? targetArea = null)
     {
         var (w, h) = Size;
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
@@ -484,12 +490,12 @@ public class Block
     /// </summary>
     /// <param name="block">The block to convert.</param>
     /// <returns>A tuple of integers representing the position and size of the Block.</returns>
-    public static implicit operator (int x, int y, int width, int height)(Block block)
+    public static implicit operator Area(Block block)
     {
         return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
     }
 
-    #region Backend
+#region Backend
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
     internal class DoNotSave : Attribute;
 
@@ -503,16 +509,16 @@ public class Block
     private readonly Dictionary<Interaction, Action> interactions = new();
 
     internal string text = string.Empty;
-    internal (int x, int y, int width, int height) mask;
+    internal Area mask;
 
-    internal void LimitSizeMin((int width, int height) minimumSize)
+    internal void LimitSizeMin(Size minimumSize)
     {
         if (Size.width < minimumSize.width)
             size = (minimumSize.width, Size.height);
         if (Size.height < minimumSize.height)
             size = (Size.width, minimumSize.height);
     }
-    internal void LimitSizeMax((int width, int height) maximumSize)
+    internal void LimitSizeMax(Size maximumSize)
     {
         if (Size.width > maximumSize.width)
             size = (maximumSize.width, Size.height);
@@ -567,11 +573,11 @@ public class Block
             IsPressedAndHeld = false;
     }
 
-    private static float Map(float number, (float a, float b) range, (float a, float b) targetRange)
+    private static float Map(float number, Range range, Range targetRange)
     {
         var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) +
                     targetRange.a;
         return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
     }
-    #endregion
+#endregion
 }

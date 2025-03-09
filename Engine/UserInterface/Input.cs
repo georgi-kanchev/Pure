@@ -54,7 +54,7 @@ public static class Input
     /// <summary>
     /// The size of the tilemap being used by the user interface.
     /// </summary>
-    public static (int width, int height) TilemapSize
+    public static Size TilemapSize
     {
         get => tilemapSize;
         set => tilemapSize = (Math.Abs(value.width), Math.Abs(value.height));
@@ -62,11 +62,11 @@ public static class Input
     /// <summary>
     /// Gets the current position of the input.
     /// </summary>
-    public static (float x, float y) Position { get; set; }
+    public static PointF Position { get; set; }
     /// <summary>
     /// Gets the previous position of the input.
     /// </summary>
-    public static (float x, float y) PositionPrevious { get; set; }
+    public static PointF PositionPrevious { get; set; }
     public static string? Clipboard { get; set; }
     public static bool IsTyping { get; internal set; }
 
@@ -130,7 +130,7 @@ public static class Input
     internal static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private static readonly List<Key> pressedKeys = [], prevPressedKeys = [];
     internal static readonly List<MouseButton> pressedBtns = [], prevPressedBtns = [];
-    private static (int width, int height) tilemapSize;
+    private static Size tilemapSize;
     internal static Action? onTextCopy;
     internal static Block? FocusedPrevious { get; set; }
 
@@ -139,7 +139,7 @@ public static class Input
     internal static string? Typed { get; private set; }
     internal static string? TypedPrevious { get; private set; }
     internal static int ScrollDelta { get; private set; }
-    internal static (int x, int y, int width, int height) Mask
+    internal static Area Mask
     {
         get => (0, 0, TilemapSize.width, TilemapSize.height);
     }

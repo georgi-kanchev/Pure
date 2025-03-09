@@ -26,9 +26,9 @@ namespace Pure.Engine.Collision;
 
 using System.Numerics;
 
-internal class Node((int x, int y) pos, int penalty)
+internal class Node(VecI pos, int penalty)
 {
-    public (int x, int y) position = pos;
+    public VecI position = pos;
     public float penalty = penalty;
 
     [PathMap.DoNotSave]
@@ -55,13 +55,13 @@ internal class Astar
     {
         get => grid.Count;
     }
-    public (int width, int height) Size
+    public SizeI Size
     {
         get => size;
         set => size = (Math.Max(value.width, 1), Math.Max(value.height, 1));
     }
 
-    public void SetNode((int x, int y) pos, float penalty)
+    public void SetNode(VecI pos, float penalty)
     {
         if (IsInside(pos) == false)
             return;
@@ -72,11 +72,11 @@ internal class Astar
         grid[pos].position = pos;
         grid[pos].penalty = penalty;
     }
-    public Node? GetNode((int x, int y) pos)
+    public Node? GetNode(VecI pos)
     {
         return IsInside(pos) && grid.TryGetValue(pos, out var value) ? value : null;
     }
-    public (float x, float y)[] FindPath((float x, float y) a, (float x, float y) b, bool includeColors, out (float x, float y, uint color)[] withColors, int maxZigzag, uint color)
+    public VecF[] FindPath(VecF a, VecF b, bool includeColors, out Point[] withColors, int maxZigzag, uint color)
     {
         a = ((int)a.x, (int)a.y);
         b = ((int)b.x, (int)b.y);
@@ -140,8 +140,8 @@ internal class Astar
         }
 
         var temp = closed[index];
-        var result = new List<(float x, float y)> { (start.position.x + 0.5f, start.position.y + 0.5f) };
-        var resultWithColors = new List<(float x, float y, uint color)>
+        var result = new List<VecF> { (start.position.x + 0.5f, start.position.y + 0.5f) };
+        var resultWithColors = new List<Point>
         {
             (start.position.x + 0.5f, start.position.y + 0.5f, color)
         };
@@ -168,8 +168,8 @@ internal class Astar
     }
 
 #region Backend
-    internal readonly Dictionary<(int x, int y), Node> grid = new();
-    private (int width, int height) size;
+    internal readonly Dictionary<VecI, Node> grid = new();
+    private SizeI size;
 
     private static bool Contains(PriorityQueue<Node, float> queue, Node item)
     {
@@ -179,7 +179,7 @@ internal class Astar
 
         return false;
     }
-    private bool IsInside((int x, int y) pos)
+    private bool IsInside(VecI pos)
     {
         return pos.x >= 0 &&
                pos.x < Size.width &&
@@ -207,7 +207,7 @@ internal class Astar
         }
     }
 
-    private static void SmoothZigzag(List<(float x, float y)> points, List<(float x, float y, uint color)> withColor, int maxZigzag)
+    private static void SmoothZigzag(List<VecF> points, List<Point> withColor, int maxZigzag)
     {
         if (points.Count < 2)
             return;
@@ -225,7 +225,7 @@ internal class Astar
             i--;
         }
     }
-    private static void RemoveRedundantPoints(List<(float x, float y)> points, List<(float x, float y, uint color)> withColor)
+    private static void RemoveRedundantPoints(List<VecF> points, List<Point> withColor)
     {
         if (points.Count < 3)
             return;
@@ -238,7 +238,7 @@ internal class Astar
                 i--;
             }
     }
-    private static bool IsLine((float x, float y) a, (float x, float y) b, (float x, float y) c)
+    private static bool IsLine(VecF a, VecF b, VecF c)
     {
         return Math.Abs((a.x - b.x) * (b.y - c.y) - (b.x - c.x) * (a.y - b.y)) < 0.01f;
     }

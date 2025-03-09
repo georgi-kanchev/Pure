@@ -2,8 +2,8 @@
 
 public abstract class Pack<T>
 {
-    public (float x, float y) Position { get; set; }
-    public (float width, float height) Scale { get; set; } = (1f, 1f);
+    public VecF Position { get; set; }
+    public SizeF Scale { get; set; } = (1f, 1f);
     public int Count
     {
         get => data.Count;
@@ -39,6 +39,10 @@ public abstract class Pack<T>
 
         foreach (var i in indexes)
             data.RemoveAt(i);
+    }
+    public void Clear()
+    {
+        data.Clear();
     }
 
 #region Backend

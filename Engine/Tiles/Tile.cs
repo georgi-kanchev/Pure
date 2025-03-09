@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.Tiles;
+﻿global using TileBundle = (ushort id, uint tint, byte pose);
+
+namespace Pure.Engine.Tiles;
 
 public enum Pose : byte
 {
@@ -11,7 +13,7 @@ public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Defaul
     public uint Tint { get; set; } = tint;
     public Pose Pose { get; set; } = pose;
 
-    public Tile((ushort id, uint tint, byte pose) bundle) : this(bundle.id, bundle.tint, (Pose)bundle.pose)
+    public Tile(TileBundle bundle) : this(bundle.id, bundle.tint, (Pose)bundle.pose)
     {
     }
 
@@ -60,7 +62,7 @@ public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Defaul
         }
     }
 
-    public (ushort id, uint tint, byte pose) ToBundle()
+    public TileBundle ToBundle()
     {
         return (Id, Tint, (byte)Pose);
     }
@@ -85,11 +87,11 @@ public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Defaul
     {
         return new(id);
     }
-    public static implicit operator Tile((ushort id, uint tint, byte pose) bundle)
+    public static implicit operator Tile(TileBundle bundle)
     {
         return new(bundle);
     }
-    public static implicit operator (ushort id, uint tint, byte pose)(Tile tile)
+    public static implicit operator TileBundle(Tile tile)
     {
         return tile.ToBundle();
     }

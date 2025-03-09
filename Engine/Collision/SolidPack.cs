@@ -9,9 +9,9 @@ public class SolidPack : Pack<Solid>
     {
     }
 
-    public (float x, float y, float width, float height, uint color)[] ToBundle()
+    public AreaF[] ToBundle()
     {
-        var result = new (float x, float y, float width, float height, uint color)[data.Count];
+        var result = new AreaF[data.Count];
         for (var i = 0; i < result.Length; i++)
             result[i] = this[i];
         return result;
@@ -95,7 +95,7 @@ public class SolidPack : Pack<Solid>
 
         return false;
     }
-    public bool IsOverlapping((float x, float y) point)
+    public bool IsOverlapping(VecF point)
     {
         for (var i = 0; i < Count; i++)
             if (this[i].IsOverlapping(point))
@@ -103,7 +103,7 @@ public class SolidPack : Pack<Solid>
 
         return false;
     }
-    public bool IsOverlapping((float x, float y, uint color) point)
+    public bool IsOverlapping(Point point)
     {
         return IsOverlapping((point.x, point.y));
     }
@@ -137,11 +137,11 @@ public class SolidPack : Pack<Solid>
     {
         return IsContaining(line.A) && IsContaining(line.B);
     }
-    public bool IsContaining((float x, float y) point)
+    public bool IsContaining(VecF point)
     {
         return IsOverlapping(point);
     }
-    public bool IsContaining((float x, float y, uint color) point)
+    public bool IsContaining(Point point)
     {
         return IsOverlapping((point.x, point.y));
     }
@@ -154,11 +154,11 @@ public class SolidPack : Pack<Solid>
     {
         return solidPack.ToArray();
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)[](SolidPack solidPack)
+    public static implicit operator AreaF[](SolidPack solidPack)
     {
         return solidPack.ToBundle();
     }
-    public static implicit operator SolidPack((float x, float y, float width, float height, uint color)[] solids)
+    public static implicit operator SolidPack(AreaF[] solids)
     {
         var result = new Solid[solids.Length];
         for (var i = 0; i < result.Length; i++)

@@ -194,7 +194,7 @@ public class InputBox : Block
             cx = Math.Clamp(x, 0, lines[cy].Length);
         }
     }
-    public (int x, int y) ScrollIndices
+    public PointI ScrollIndices
     {
         get => (scrX, scrY);
         set
@@ -245,7 +245,7 @@ public class InputBox : Block
     /// Initializes a new input box instance with a specific position and default size of (12, 1).
     /// </summary>
     /// <param name="position">The position of the input box.</param>
-    public InputBox((int x, int y) position) : base(position)
+    public InputBox(PointI position) : base(position)
     {
         isTextReadonly = true;
 
@@ -273,7 +273,7 @@ public class InputBox : Block
         SymbolGroup = SymbolGroup.All;
     }
 
-    public (int symbol, int line) PositionToIndices((int x, int y) position)
+    public (int symbol, int line) PositionToIndices(PointI position)
     {
         var (px, py) = Position;
         var (w, h) = (GetMaxLineWidth(), lines.Count - 1);
@@ -283,7 +283,7 @@ public class InputBox : Block
 
         return (newX, newY);
     }
-    public (int x, int y) PositionFromIndices((int symbol, int line) indices)
+    public PointI PositionFromIndices((int symbol, int line) indices)
     {
         var (px, py) = Position;
         var (w, h) = (GetMaxLineWidth(), lines.Count - 1);
@@ -294,7 +294,7 @@ public class InputBox : Block
         return (px - scrX + newX, py - scrY + newY);
     }
 
-    public void CursorMove((int x, int y) delta, bool select = false, bool scroll = true)
+    public void CursorMove(PointI delta, bool select = false, bool scroll = true)
     {
         clicks = 0;
         cursorBlink.Restart();

@@ -1,3 +1,4 @@
+using static Pure.Engine.Tiles.Tile;
 using System.Text.RegularExpressions;
 
 namespace Pure.Engine.Tiles;
@@ -8,7 +9,7 @@ public static class TileMapper
     {
         return seeds.GetValueOrDefault(tileMap.GetHashCode()).z;
     }
-    public static (int x, int y) GetSeedOffset(this TileMap tileMap)
+    public static VecI GetSeedOffset(this TileMap tileMap)
     {
         var (x, y, z) = seeds.GetValueOrDefault(tileMap.GetHashCode());
         return (x, y);
@@ -23,7 +24,7 @@ public static class TileMapper
         var (x, y, z) = seeds.GetValueOrDefault(tileMap.GetHashCode());
         seeds[tileMap.GetHashCode()] = (x, y, seed);
     }
-    public static void ApplySeedOffset(this TileMap tileMap, (int x, int y) offset)
+    public static void ApplySeedOffset(this TileMap tileMap, VecI offset)
     {
         var (x, y, z) = seeds[tileMap.GetHashCode()];
         seeds[tileMap.GetHashCode()] = (offset.x, offset.y, z);
@@ -49,13 +50,13 @@ public static class TileMapper
                 tileMap.SetTile((x, y), tile, mask);
             }
     }
-    public static void Flood(this TileMap tileMap, (int x, int y) cell, bool exactTile, params Tile[]? tiles)
+    public static void Flood(this TileMap tileMap, VecI cell, bool exactTile, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
 
         var mask = GetMask(tileMap);
-        var stack = new Stack<(int x, int y)>();
+        var stack = new Stack<VecI>();
         var initialTile = tileMap.TileAt(cell);
         stack.Push(cell);
 
@@ -106,7 +107,7 @@ public static class TileMapper
         tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), targetTile, tiles);
     }
 
-    public static void SetTiles(this TileMap tileMap, (int x, int y) cell, Tile[,]? tiles)
+    public static void SetTiles(this TileMap tileMap, VecI cell, Tile[,]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -136,7 +137,7 @@ public static class TileMapper
                 i++;
             }
     }
-    public static void SetEllipse(this TileMap tileMap, (int x, int y) cell, (int width, int height) radius, bool fill, params Tile[]? tiles)
+    public static void SetEllipse(this TileMap tileMap, VecI cell, SizeI radius, bool fill, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -207,11 +208,11 @@ public static class TileMapper
             }
         }
     }
-    public static void SetCircle(this TileMap tileMap, (int x, int y) cell, int radius, bool fill, params Tile[]? tiles)
+    public static void SetCircle(this TileMap tileMap, VecI cell, int radius, bool fill, params Tile[]? tiles)
     {
         SetEllipse(tileMap, cell, (radius, radius), fill, tiles);
     }
-    public static void SetLine(this TileMap tileMap, (int x, int y) cellA, (int x, int y) cellB, params Tile[]? tiles)
+    public static void SetLine(this TileMap tileMap, VecI cellA, VecI cellB, params Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -343,9 +344,9 @@ public static class TileMapper
         tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), tiles3X3[2, 1]);
         tileMap.SetTile((x + w - 1, y + h - 1), tiles3X3[2, 2], mask);
     }
-    public static void SetBlob(this TileMap tileMap, (int x, int y) cell, int radius, int warp = 2, int sides = 20, params Tile[]? tiles)
+    public static void SetBlob(this TileMap tileMap, VecI cell, int radius, int warp = 2, int sides = 20, params Tile[]? tiles)
     {
-        var boundaryPoints = new List<(int x, int y)>();
+        var boundaryPoints = new List<VecI>();
         const float CIRCLE = MathF.PI * 2f;
 
         for (var angle = 0f; angle < CIRCLE; angle += CIRCLE / sides)
@@ -367,7 +368,7 @@ public static class TileMapper
         Flood(tileMap, (cell.x, cell.y), false, tiles);
     }
 
-    public static void SetBar(this TileMap tileMap, (int x, int y) cell, Tile edge1, Tile fill, Tile edge2, int size = 5, bool vertical = false)
+    public static void SetBar(this TileMap tileMap, VecI cell, Tile edge1, Tile fill, Tile edge2, int size = 5, bool vertical = false)
     {
         var (x, y) = cell;
         var off = size == 1 ? 0 : 1;
@@ -396,7 +397,7 @@ public static class TileMapper
         if (size != 2)
             tileMap.SetArea((x + off, y, size - 2, 1), fill);
     }
-    public static void SetText(this TileMap tileMap, (int x, int y) cell, string? text, uint tint = uint.MaxValue, char tintBrush = '#')
+    public static void SetText(this TileMap tileMap, VecI cell, string? text, uint tint = uint.MaxValue, char tintBrush = '#')
     {
         if (string.IsNullOrWhiteSpace(text))
             return;
@@ -460,7 +461,7 @@ public static class TileMapper
         }
     }
 
-    public static void ConfigureText(this TileMap tileMap, ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
+    public static void ConfigureText(this TileMap tileMap, ushort lowercase = LOWERCASE_A, ushort uppercase = UPPERCASE_A, ushort numbers = NUMBER_0)
     {
         ConfigureText(tileMap, lowercase, "abcdefghijklmnopqrstuvwxyz");
         ConfigureText(tileMap, uppercase, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -582,7 +583,7 @@ public static class TileMapper
         ConfigureText(tileMap);
     }
 
-    private static float Random(this (float a, float b) range, float seed = float.NaN)
+    private static float Random(this RangeF range, float seed = float.NaN)
     {
         var (a, b) = range;
         // ReSharper disable once CompareOfFloatsByEqualityOperator
@@ -603,7 +604,7 @@ public static class TileMapper
     {
         return collection.Count == 0 ? default : collection[(0, collection.Count - 1).Random(seed)];
     }
-    private static int Random(this (int a, int b) range, float seed = float.NaN)
+    private static int Random(this RangeI range, float seed = float.NaN)
     {
         return (int)Math.Round(Random(((float)range.a, range.b), seed));
     }

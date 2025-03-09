@@ -2,18 +2,18 @@
 
 public class PathMap
 {
-    public (int width, int height) Size
+    public SizeI Size
     {
         get => pathfind.Size;
     }
 
-    public PathMap((int width, int height) size)
+    public PathMap(SizeI size)
     {
         pathfind.Size = size;
         Init();
     }
 
-    public void SetObstacle(float penalty, params (int x, int y)[]? cells)
+    public void SetObstacle(float penalty, params VecI[]? cells)
     {
         if (cells == null || cells.Length == 0)
             return;
@@ -32,32 +32,32 @@ public class PathMap
                     pathfind.SetNode((j, i), penalty);
     }
 
-    public bool IsSolid((int x, int y) cell)
+    public bool IsSolid(VecI cell)
     {
         return float.IsNaN(PenaltyAt(cell)) || float.IsInfinity(PenaltyAt(cell));
     }
-    public bool IsObstacle((int x, int y) cell)
+    public bool IsObstacle(VecI cell)
     {
         return float.IsFinite(PenaltyAt(cell));
     }
-    public bool IsEmpty((int x, int y) cell)
+    public bool IsEmpty(VecI cell)
     {
         return PenaltyAt(cell) is > -0.001f and < 0.001f;
     }
 
-    public float PenaltyAt((int x, int y) cell)
+    public float PenaltyAt(VecI cell)
     {
         return pathfind.GetNode(cell)?.penalty ?? float.NaN;
     }
 
-    public (float x, float y)[] FindPath((float x, float y) start, (float x, float y) goal, int slopeFactor = 1)
+    public VecF[] FindPath(VecF start, VecF goal, int slopeFactor = 1)
     {
         if (Size.width < 1 || Size.height < 1)
             return [];
 
         return pathfind.FindPath(start, goal, false, out _, slopeFactor, uint.MaxValue);
     }
-    public (float x, float y, uint color)[] FindPath((float x, float y) start, (float x, float y) goal, uint color, int slopeFactor = 1)
+    public Point[] FindPath(VecF start, VecF goal, uint color, int slopeFactor = 1)
     {
         if (Size.width < 1 || Size.height < 1)
             return [];

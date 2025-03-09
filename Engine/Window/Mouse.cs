@@ -24,8 +24,8 @@ public static class Mouse
     /// <summary>
     /// Gets the current position of the mouse cursor.
     /// </summary>
-    public static (int x, int y) CursorPosition { get; private set; }
-    public static (int x, int y) CursorDelta { get; private set; }
+    public static PointI CursorPosition { get; private set; }
+    public static PointI CursorDelta { get; private set; }
 
     /// <summary>
     /// Gets or sets the graphics for the mouse cursor.
@@ -92,7 +92,7 @@ public static class Mouse
     {
         OnWheelScrolled(null, new(new() { Delta = up ? 1 : -1 }));
     }
-    public static void SimulateCursorMove((int x, int y) position)
+    public static void SimulateCursorMove(PointI position)
     {
         OnMove(null, new(new() { X = position.x, Y = position.y }));
     }
@@ -191,7 +191,7 @@ public static class Mouse
     private static bool isJustHeld, isGrabbed;
     private static Cursor cursor;
     private static SFML.Window.Cursor sysCursor = new(SFML.Window.Cursor.CursorType.Arrow);
-    private static (int x, int y) prevPos;
+    private static PointI prevPos;
 
     private static bool IsOverRender
     {

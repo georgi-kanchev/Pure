@@ -1,4 +1,8 @@
 using System.Globalization;
+using Range = (float a, float b);
+using SizeI = (int width, int height);
+using PointF = (float x, float y);
+using static Pure.Engine.Utility.Noise;
 
 namespace Pure.Engine.Utility;
 
@@ -152,7 +156,7 @@ public static class Number
             default: return default;
         }
     }
-    public static (float x, float y) AnimateBezier(this float unit, params (float x, float y)[] curvePoints)
+    public static PointF AnimateBezier(this float unit, params PointF[] curvePoints)
     {
         if (curvePoints.Length == 0)
             return (float.NaN, float.NaN);
@@ -177,7 +181,7 @@ public static class Number
 
         return (xPoints[0], yPoints[0]);
     }
-    public static (float x, float y) AnimateSpline(this float unit, params (float x, float y)[] curvePoints)
+    public static PointF AnimateSpline(this float unit, params PointF[] curvePoints)
     {
         if (curvePoints.Length < 4)
             return (float.NaN, float.NaN);
@@ -208,7 +212,7 @@ public static class Number
     /// <param name="number">The number to limit.</param>
     /// <param name="range">The range value.</param>
     /// <returns>The limited float number.</returns>
-    public static float Limit(this float number, (float a, float b) range)
+    public static float Limit(this float number, Range range)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
@@ -225,7 +229,7 @@ public static class Number
     {
         return (int)Limit((float)number, range);
     }
-    public static float Wrap(this float number, (float a, float b) range)
+    public static float Wrap(this float number, Range range)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
@@ -282,7 +286,7 @@ public static class Number
     /// <param name="rangeIn">The first input range.</param>
     /// <param name="rangeOut">The second input range.</param>
     /// <returns>The mapped number.</returns>
-    public static float Map(this float number, (float a, float b) rangeIn, (float a, float b) rangeOut)
+    public static float Map(this float number, Range rangeIn, Range rangeOut)
     {
         if (Math.Abs(rangeIn.a - rangeIn.b) < 0.001f)
             return (rangeOut.a + rangeOut.b) / 2f;
@@ -337,7 +341,7 @@ public static class Number
     /// The number of values to distribute.</param>
     /// <param name="range">The range of values (inclusive). The order is maintained.</param>
     /// <returns>An array of evenly distributed numbers across the specified range.</returns>
-    public static float[] Distribute(this int amount, (float a, float b) range)
+    public static float[] Distribute(this int amount, Range range)
     {
         if (amount <= 0)
             return [];
@@ -391,7 +395,7 @@ public static class Number
         return string.Format(format, number);
     }
 
-    public static bool IsBetween(this float number, (float a, float b) range, (bool a, bool b) inclusive = default)
+    public static bool IsBetween(this float number, Range range, (bool a, bool b) inclusive = default)
     {
         if (range.a > range.b)
             (range.a, range.b) = (range.b, range.a);
@@ -463,7 +467,7 @@ public static class Number
         return HasChance((float)percent, seed);
     }
 
-    public static float Random(this (float a, float b) range, float seed = float.NaN)
+    public static float Random(this Range range, float seed = float.NaN)
     {
         var (a, b) = range;
         // ReSharper disable once CompareOfFloatsByEqualityOperator
@@ -509,17 +513,17 @@ public static class Number
             return (int)seed;
         }
     }
-    public static int ToIndex(this (int x, int y) indexes, (int width, int height) size)
+    public static int ToIndex(this (int x, int y) indexes, SizeI size)
     {
         var result = indexes.x * size.width + indexes.y;
         return Math.Clamp(result, 0, size.width * size.height);
     }
-    public static (int x, int y) ToIndexes(this int index, (int width, int height) size)
+    public static (int x, int y) ToIndexes(this int index, SizeI size)
     {
         index = Math.Clamp(index, 0, size.width * size.height);
         return (index % size.width, index / size.width);
     }
-    public static float ToNoise(this (float x, float y) point, Noise noise = Noise.ValueCubic, float scale = 10f, int seed = 0)
+    public static float ToNoise(this PointF point, Noise noise = ValueCubic, float scale = 10f, int seed = 0)
     {
         var noiseValue = new FastNoiseLite(seed);
         noiseValue.SetNoiseType((FastNoiseLite.NoiseType)noise);

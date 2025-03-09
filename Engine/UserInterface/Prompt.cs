@@ -163,7 +163,7 @@ public class Prompt : Block
         }
     }
 
-    private static float[] Distribute(int amount, (float a, float b) range)
+    private static float[] Distribute(int amount, Range range)
     {
         if (amount <= 0)
             return [];

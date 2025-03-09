@@ -9,7 +9,7 @@ public class Tooltip : Block
     {
         Size = (10, 1);
     }
-    public void Show((int x, int y, int width, int height) aroundArea)
+    public void Show(Area aroundArea)
     {
         var lines = Text.Replace("\r", "").Split("\n");
         var width = 0;

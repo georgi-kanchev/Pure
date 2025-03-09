@@ -1,11 +1,13 @@
-﻿namespace Pure.Engine.Audio;
+﻿global using VecF = (float x, float y);
+
+namespace Pure.Engine.Audio;
 
 using SFML.Audio;
 using SFML.System;
 
 public class Audio
 {
-    public static (float x, float y) ListenerPosition
+    public static VecF ListenerPosition
     {
         get => (Listener.Position.X, Listener.Position.Y);
         set => Listener.Position = new(value.x, value.y, 0f);
@@ -25,7 +27,7 @@ public class Audio
             filePath = value;
         }
     }
-    public (float x, float y) Position
+    public VecF Position
     {
         get => Get().pos;
         set
@@ -161,7 +163,7 @@ public class Audio
     {
         public SoundStatus st;
         public bool loop, gl;
-        public (float x, float y) pos;
+        public VecF pos;
         public float vol = 0.5f, pch = 1f, att, minDist, dur, pr;
     }
 

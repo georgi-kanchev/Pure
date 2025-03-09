@@ -1,4 +1,9 @@
-﻿namespace Pure.Engine.Collision;
+﻿global using AreaColorlessF = (float x, float y, float width, float height);
+global using AreaColorlessI = (int x, int y, int width, int height);
+global using AreaF = (float x, float y, float width, float height, uint color);
+global using AreaI = (int x, int y, int width, int height, uint color);
+
+namespace Pure.Engine.Collision;
 
 /// <summary>
 /// Represents a solid in 2D space defined by its position and size.
@@ -10,7 +15,7 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     public float Width { get; set; } = width;
     public float Height { get; set; } = height;
 
-    public (float x, float y) Position
+    public VecF Position
     {
         get => (X, Y);
         set
@@ -19,7 +24,7 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
             Y = value.y;
         }
     }
-    public (float width, float height) Size
+    public SizeF Size
     {
         get => (Width, Height);
         set
@@ -34,13 +39,13 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     /// </summary>
     public uint Color { get; set; } = color;
 
-    public Solid((float x, float y) position, (float width, float height) size, uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
+    public Solid(VecF position, SizeF size, uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
     {
     }
 
     /// <returns>
     /// A bundle tuple containing the position, size and the color of the solid.</returns>
-    public (float x, float y, float width, float height, uint color) ToBundle()
+    public AreaF ToBundle()
     {
         return (X, Y, Width, Height, Color);
     }
@@ -96,13 +101,13 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     /// The line to test for overlap with.</param>
     /// <returns>True if this solid overlaps with the specified 
     /// point; otherwise, false.</returns>
-    public bool IsOverlapping((float x, float y) point)
+    public bool IsOverlapping(VecF point)
     {
         var containsX = X < point.x && point.x < X + Width;
         var containsY = Y < point.y && point.y < Y + Height;
         return containsX && containsY;
     }
-    public bool IsOverlapping((float x, float y, uint color) point)
+    public bool IsOverlapping(Point point)
     {
         return IsOverlapping((point.x, point.y));
     }
@@ -136,11 +141,11 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     {
         return IsContaining(line.A) && IsContaining(line.B);
     }
-    public bool IsContaining((float x, float y) point)
+    public bool IsContaining(VecF point)
     {
         return IsOverlapping(point);
     }
-    public bool IsContaining((float x, float y, uint color) point)
+    public bool IsContaining(Point point)
     {
         return IsOverlapping((point.x, point.y));
     }
@@ -177,35 +182,35 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
         return !(left == right);
     }
 
-    public static implicit operator Solid((int x, int y, int width, int height) rectangle)
+    public static implicit operator Solid(AreaColorlessI rectangle)
     {
         return new(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
     }
-    public static implicit operator Solid((int x, int y, int width, int height, uint color) bundle)
+    public static implicit operator Solid(AreaI bundle)
     {
         return new(bundle.x, bundle.y, bundle.width, bundle.height, bundle.color);
     }
-    public static implicit operator (int x, int y, int width, int height, uint color)(Solid solid)
+    public static implicit operator AreaI(Solid solid)
     {
         return ((int)solid.X, (int)solid.Y, (int)solid.Width, (int)solid.Height, solid.Color);
     }
-    public static implicit operator (int x, int y, int width, int height)(Solid solid)
+    public static implicit operator AreaColorlessI(Solid solid)
     {
         return ((int)solid.X, (int)solid.Y, (int)solid.Width, (int)solid.Height);
     }
-    public static implicit operator Solid((float x, float y, float width, float height) rectangle)
+    public static implicit operator Solid(AreaColorlessF rectangle)
     {
         return new(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
     }
-    public static implicit operator Solid((float x, float y, float width, float height, uint color) bundle)
+    public static implicit operator Solid(AreaF bundle)
     {
         return new(bundle.x, bundle.y, bundle.width, bundle.height, bundle.color);
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)(Solid solid)
+    public static implicit operator AreaF(Solid solid)
     {
         return solid.ToBundle();
     }
-    public static implicit operator (float x, float y, float width, float height)(Solid solid)
+    public static implicit operator AreaColorlessF(Solid solid)
     {
         return (solid.Position.x, solid.Position.y, solid.Size.width, solid.Size.height);
     }

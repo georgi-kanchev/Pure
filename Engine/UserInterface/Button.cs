@@ -33,7 +33,7 @@ public class Button : Block
     /// Initializes a new button instance with the specified position and default size of (10, 1).
     /// </summary>
     /// <param name="position">The position of the button.</param>
-    public Button((int x, int y) position) : base(position)
+    public Button(PointI position) : base(position)
     {
         Size = (10, 1);
         Hotkey = (-1, false);

@@ -12,7 +12,7 @@ public class LinePack : Pack<Line>
     public LinePack(params Line[] lines) : base(lines)
     {
     }
-    public LinePack(params (float x, float y, uint color)[]? points)
+    public LinePack(params Point[]? points)
     {
         if (points == null || points.Length < 2)
             return;
@@ -28,16 +28,16 @@ public class LinePack : Pack<Line>
         data.AddRange(lines);
     }
 
-    public (float ax, float ay, float bx, float by, uint color)[] ToBundle()
+    public LineBundle[] ToBundle()
     {
-        var result = new (float ax, float ay, float bx, float by, uint color)[data.Count];
+        var result = new LineBundle[data.Count];
         for (var i = 0; i < result.Length; i++)
             result[i] = this[i];
         return result;
     }
-    public (float x, float y, uint color)[] ToBundlePoints()
+    public Point[] ToBundlePoints()
     {
-        var result = new List<(float x, float y, uint color)>();
+        var result = new List<Point>();
         for (var i = 0; i < data.Count; i++)
         {
             var line = this[i];
@@ -113,7 +113,7 @@ public class LinePack : Pack<Line>
 
         return false;
     }
-    public bool IsOverlapping((float x, float y) point)
+    public bool IsOverlapping(VecF point)
     {
         for (var i = 0; i < Count; i++)
             if (this[i].IsOverlapping(point))
@@ -121,7 +121,7 @@ public class LinePack : Pack<Line>
 
         return false;
     }
-    public bool IsOverlapping((float x, float y, uint color) point)
+    public bool IsOverlapping(Point point)
     {
         return IsOverlapping((point.x, point.y));
     }
@@ -164,7 +164,7 @@ public class LinePack : Pack<Line>
     {
         return IsContaining(line.A) && IsContaining(line.B) && IsOverlapping(line) == false;
     }
-    public bool IsContaining((float x, float y) point)
+    public bool IsContaining(VecF point)
     {
         if (data.Count < 3)
             return false;
@@ -172,46 +172,46 @@ public class LinePack : Pack<Line>
         var line = new Line((point.x, point.y), (99999f, 99999f));
         return line.CrossPoints(this).Length % 2 == 1;
     }
-    public bool IsContaining((float x, float y, uint color) point)
+    public bool IsContaining(Point point)
     {
         return IsContaining((point.x, point.y));
     }
 
-    public (float x, float y, uint color)[] CrossPoints(LinePack linePack)
+    public Point[] CrossPoints(LinePack linePack)
     {
-        var result = new List<(float x, float y, uint color)>();
+        var result = new List<Point>();
         for (var i = 0; i < data.Count; i++)
             result.AddRange(data[i].CrossPoints(linePack));
 
         return result.ToArray();
     }
-    public (float x, float y, uint color)[] CrossPoints(SolidMap solidMap)
+    public Point[] CrossPoints(SolidMap solidMap)
     {
-        var result = new List<(float x, float y, uint color)>();
+        var result = new List<Point>();
         for (var i = 0; i < data.Count; i++)
             result.AddRange(data[i].CrossPoints(solidMap));
 
         return result.ToArray();
     }
-    public (float x, float y, uint color)[] CrossPoints(SolidPack solidPack)
+    public Point[] CrossPoints(SolidPack solidPack)
     {
-        var result = new List<(float x, float y, uint color)>();
+        var result = new List<Point>();
         for (var i = 0; i < data.Count; i++)
             result.AddRange(data[i].CrossPoints(solidPack));
 
         return result.ToArray();
     }
-    public (float x, float y, uint color)[] CrossPoints(Solid solid)
+    public Point[] CrossPoints(Solid solid)
     {
-        var result = new List<(float x, float y, uint color)>();
+        var result = new List<Point>();
         for (var i = 0; i < data.Count; i++)
             result.AddRange(data[i].CrossPoints(solid));
 
         return result.ToArray();
     }
-    public (float x, float y, uint color)[] CrossPoints(Line line)
+    public Point[] CrossPoints(Line line)
     {
-        var result = new List<(float x, float y, uint color)>();
+        var result = new List<Point>();
         for (var i = 0; i < data.Count; i++)
         {
             var crossPoint = data[i].CrossPoint(line);
@@ -221,15 +221,15 @@ public class LinePack : Pack<Line>
         return result.ToArray();
     }
 
-    public (float x, float y, uint color) ClosestPoint((float x, float y, uint color) point)
+    public Point ClosestPoint(Point point)
     {
         var result = ClosestPoint((point.x, point.y));
         result.color = point.color;
         return result;
     }
-    public (float x, float y, uint color) ClosestPoint((float x, float y) point)
+    public Point ClosestPoint(VecF point)
     {
-        var closestPoints = new List<(float x, float y, uint color)>();
+        var closestPoints = new List<Point>();
         for (var i = 0; i < data.Count; i++)
             closestPoints.Add(data[i].ClosestPoint(point));
 
@@ -249,11 +249,11 @@ public class LinePack : Pack<Line>
         return result;
     }
 
-    public void NormalizeToPoint((float x, float y, uint color) point)
+    public void NormalizeToPoint(Point point)
     {
         NormalizeToPoint((point.x, point.y));
     }
-    public void NormalizeToPoint((float x, float y) point)
+    public void NormalizeToPoint(VecF point)
     {
         for (var i = 0; i < Count; i++)
         {
@@ -271,15 +271,15 @@ public class LinePack : Pack<Line>
     {
         return linePack.ToArray();
     }
-    public static implicit operator (float x, float y, uint color)[](LinePack linePack)
+    public static implicit operator Point[](LinePack linePack)
     {
         return linePack.ToBundlePoints();
     }
-    public static implicit operator (float ax, float ay, float bx, float by, uint color)[](LinePack linePack)
+    public static implicit operator LineBundle[](LinePack linePack)
     {
         return linePack.ToBundle();
     }
-    public static implicit operator LinePack((float ax, float ay, float bx, float by, uint color)[] lines)
+    public static implicit operator LinePack(LineBundle[] lines)
     {
         var result = new Line[lines.Length];
         for (var i = 0; i < result.Length; i++)
@@ -287,7 +287,7 @@ public class LinePack : Pack<Line>
 
         return new(result);
     }
-    public static implicit operator LinePack((float x, float y, uint color)[] points)
+    public static implicit operator LinePack(Point[] points)
     {
         return new(points);
     }

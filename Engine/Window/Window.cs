@@ -5,6 +5,21 @@ global using System.Diagnostics.CodeAnalysis;
 global using System.Diagnostics;
 global using SFML.Graphics.Glsl;
 global using System.Numerics;
+global using Count = (byte width, byte height);
+global using SizeU = (uint width, uint height);
+global using SizeI = (int width, int height);
+global using PointI = (int x, int y);
+global using PointF = (float x, float y);
+global using PointColored = (float x, float y, uint color);
+global using AreaColored = (float x, float y, float width, float height, uint color);
+global using AreaF = (float x, float y, float width, float height);
+global using AreaI = (int x, int y, int width, int height);
+global using AreaToColor = (float x, float y, float width, float height, uint targetColor);
+global using Line = (float ax, float ay, float bx, float by, uint color);
+global using Tile = (ushort id, uint tint, byte pose);
+global using TileStatic = (int id, uint tint);
+global using CornersP = (SFML.System.Vector2f p1, SFML.System.Vector2f p2, SFML.System.Vector2f p3, SFML.System.Vector2f p4);
+global using CornersS = (SFML.System.Vector2f tl, SFML.System.Vector2f tr, SFML.System.Vector2f br, SFML.System.Vector2f bl);
 using System.Runtime.InteropServices;
 
 namespace Pure.Engine.Window;
@@ -62,7 +77,7 @@ public static class Window
     /// <summary>
     /// Gets the size of the window.
     /// </summary>
-    public static (uint width, uint height) Size
+    public static SizeU Size
     {
         get => window != null ? (window.Size.X, window.Size.Y) : (0, 0);
     }
@@ -237,7 +252,7 @@ public static class Window
         window.Position = new(x, y);
     }
 
-    public static void SetIconFromTile(Layer layer, (int id, uint tint) tile, (int id, uint tint) tileBack = default, bool saveAsFile = false)
+    public static void SetIconFromTile(Layer layer, TileStatic tile, TileStatic tileBack = default, bool saveAsFile = false)
     {
         TryCreate();
 

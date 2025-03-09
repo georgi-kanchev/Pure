@@ -43,7 +43,7 @@ public static class Time
     public static float Clock { get; private set; }
 
     /// <summary>
-    /// Gets or sets the maximum delta time between updates.
+    /// Gets or sets the maximum delta time between updates. Default is 0.1.
     /// </summary>
     public static float DeltaMax { get; set; } = 0.1f;
     /// <summary>

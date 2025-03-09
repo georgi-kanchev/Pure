@@ -50,7 +50,7 @@ public class Stepper : Block
     public Stepper() : this((0, 0))
     {
     }
-    public Stepper((int x, int y) position, float value = 0) : base(position)
+    public Stepper(PointI position, float value = 0) : base(position)
     {
         Size = (10, 2);
         Value = value;

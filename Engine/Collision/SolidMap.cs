@@ -2,9 +2,9 @@
 
 public class SolidMap
 {
-    public List<(int x, int y)> IgnoredCells { get; } = [];
+    public List<VecI> IgnoredCells { get; } = [];
 
-    public (int x, int y) Offset { get; set; }
+    public VecI Offset { get; set; }
 
     public int TileCount
     {
@@ -15,10 +15,10 @@ public class SolidMap
         get => arrayCache?.Length ?? 0;
     }
 
-    public (float x, float y, float width, float height, uint color)[] ToBundle()
+    public AreaF[] ToBundle()
     {
         var solids = ToArray();
-        var result = new (float x, float y, float width, float height, uint color)[solids.Length];
+        var result = new AreaF[solids.Length];
         for (var i = 0; i < solids.Length; i++)
             result[i] = solids[i];
         return result;
@@ -47,7 +47,7 @@ public class SolidMap
         foreach (var solid in solids)
             rects.Remove(solid);
     }
-    public Solid[] SolidsAt((int x, int y) cell)
+    public Solid[] SolidsAt(VecI cell)
     {
         if (tileIndices.ContainsKey(cell) == false || IgnoredCells.Contains(cell))
             return [];
@@ -126,12 +126,12 @@ public class SolidMap
                 }
         }
     }
-    public (int x, int y)[] IgnoredCellsIn(params Solid[]? cellRegions)
+    public VecI[] IgnoredCellsIn(params Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return [];
 
-        var result = new List<(int x, int y)>();
+        var result = new List<VecI>();
         foreach (var region in cellRegions)
         {
             var (rx, ry) = ((int)region.Position.x, (int)region.Position.y);
@@ -236,7 +236,7 @@ public class SolidMap
 
         return false;
     }
-    public bool IsOverlapping((float x, float y) point)
+    public bool IsOverlapping(VecF point)
     {
         var neighborRects = GetNeighborRects(new Solid(point, (1, 1)));
         for (var i = 0; i < neighborRects.Count; i++)
@@ -245,7 +245,7 @@ public class SolidMap
 
         return false;
     }
-    public bool IsOverlapping((float x, float y, uint color) point)
+    public bool IsOverlapping(Point point)
     {
         return IsOverlapping((point.x, point.y));
     }
@@ -279,11 +279,11 @@ public class SolidMap
     {
         return IsContaining(line.A) && IsContaining(line.B) && line.CrossPoints(this).Length == 0;
     }
-    public bool IsContaining((float x, float y) point)
+    public bool IsContaining(VecF point)
     {
         return IsOverlapping(point);
     }
-    public bool IsContaining((float x, float y, uint color) point)
+    public bool IsContaining(Point point)
     {
         return IsOverlapping((point.x, point.y));
     }
@@ -292,13 +292,13 @@ public class SolidMap
     {
         return solidMap.ToArray();
     }
-    public static implicit operator (float x, float y, float width, float height, uint color)[](SolidMap solidMap)
+    public static implicit operator AreaF[](SolidMap solidMap)
     {
         return solidMap.ToBundle();
     }
 
 #region Backend
-    private readonly Dictionary<(int x, int y), int> tileIndices = new();
+    private readonly Dictionary<VecI, int> tileIndices = new();
     private readonly Dictionary<int, List<Solid>> cellRects = new();
     private Solid[]? arrayCache;
 

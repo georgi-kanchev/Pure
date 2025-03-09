@@ -1,35 +1,64 @@
-﻿namespace Pure.Engine.Utility;
+﻿using Position = (float x, float y);
+using DirectionF = (float x, float y);
+using DirectionI = (int x, int y);
+using PositionColored = (float x, float y, uint color);
+
+namespace Pure.Engine.Utility;
 
 public struct Angle
 {
+    /// <summary>
+    /// Degrees = 270
+    /// </summary>
     public static Angle Up
     {
         get => 270;
     }
+    /// <summary>
+    /// Degrees = 225
+    /// </summary>
     public static Angle UpLeft
     {
         get => 225;
     }
+    /// <summary>
+    /// Degrees = 315
+    /// </summary>
     public static Angle UpRight
     {
         get => 315;
     }
+    /// <summary>
+    /// Degrees = 90
+    /// </summary>
     public static Angle Down
     {
         get => 90;
     }
+    /// <summary>
+    /// Degrees = 135
+    /// </summary>
     public static Angle DownLeft
     {
         get => 135;
     }
+    /// <summary>
+    /// Degrees = 45
+    /// </summary>
     public static Angle DownRight
     {
         get => 45;
     }
+    /// <summary>
+    /// Degrees = 180
+    /// </summary>
     public static Angle Left
     {
         get => 180;
     }
+    /// <summary>
+    /// Degrees = 0
+    /// </summary>
     public static Angle Right
     {
         get => 0;
@@ -50,7 +79,7 @@ public struct Angle
         get => MathF.PI / 180f * degrees;
         set => Degrees = value * (180f / MathF.PI);
     }
-    public (float x, float y) Direction
+    public DirectionF Direction
     {
         get
         {
@@ -65,7 +94,7 @@ public struct Angle
         this.degrees = 0;
         Degrees = degrees;
     }
-    public Angle((float x, float y) direction)
+    public Angle(DirectionF direction)
     {
         degrees = 0;
         Direction = direction;
@@ -161,14 +190,14 @@ public struct Angle
         return degrees - 180;
     }
 
-    public static Angle BetweenPoints((float x, float y) point, (float x, float y) target)
+    public static Angle BetweenPoints(Position point, Position target)
     {
         var (x, y) = (target.x - point.x, target.y - point.y);
         var m = MathF.Sqrt(x * x + y * y);
 
         return (x / m, y / m);
     }
-    public static Angle BetweenPoints((float x, float y, uint color) point, (float x, float y, uint color) target)
+    public static Angle BetweenPoints(PositionColored point, PositionColored target)
     {
         return BetweenPoints((point.x, point.y), (target.x, target.y));
     }
@@ -199,22 +228,22 @@ public struct Angle
         return left.Equals(right) == false;
     }
 
-    public static implicit operator Angle((int x, int y) direction)
+    public static implicit operator Angle(DirectionI direction)
     {
         var result = MathF.Atan2(direction.y, direction.x) * (180f / MathF.PI);
         return new() { Degrees = result };
     }
-    public static implicit operator (int x, int y)(Angle angle)
+    public static implicit operator DirectionI(Angle angle)
     {
         var rad = MathF.PI / 180 * angle;
         return ((int)MathF.Round(MathF.Cos(rad)), (int)MathF.Round(MathF.Sin(rad)));
     }
-    public static implicit operator Angle((float x, float y) direction)
+    public static implicit operator Angle(DirectionF direction)
     {
         var result = MathF.Atan2(direction.y, direction.x) * (180f / MathF.PI);
         return new() { Degrees = result };
     }
-    public static implicit operator (float x, float y)(Angle angle)
+    public static implicit operator DirectionF(Angle angle)
     {
         var rad = MathF.PI / 180 * angle;
         return (MathF.Cos(rad), MathF.Sin(rad));
@@ -236,7 +265,7 @@ public struct Angle
         return angle.degrees;
     }
 
-    #region Backend
+#region Backend
     private float degrees;
-    #endregion
+#endregion
 }

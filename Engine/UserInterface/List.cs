@@ -61,7 +61,7 @@ public class List : Block
     /// </summary>
     public Span Span { get; }
 
-    public (int width, int height) ItemSize
+    public Size ItemSize
     {
         get => itemSize;
         set
@@ -85,7 +85,7 @@ public class List : Block
     /// <param name="position">The position of the top-left corner of the list.</param>
     /// <param name="itemCount">The initial number of buttons in the list.</param>
     /// <param name="span">The type of the list.</param>
-    public List((int x, int y) position, int itemCount = 10, Span span = Span.Vertical) : base(position)
+    public List(PointI position, int itemCount = 10, Span span = Span.Vertical) : base(position)
     {
         Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
         OnUpdate += OnRefresh;
@@ -207,7 +207,7 @@ public class List : Block
     private bool isSingleSelecting, isCollapsed, veryFirstUpdate = true;
     private readonly bool isInitialized;
     private int itemGap;
-    internal (int width, int height) itemSize = (5, 1);
+    internal Size itemSize = (5, 1);
     internal bool isReadOnly;
 
     [DoNotSave]

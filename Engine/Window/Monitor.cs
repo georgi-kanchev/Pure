@@ -15,8 +15,8 @@ public class Monitor
     }
 
     public string Name { get; private set; } = string.Empty;
-    public (int width, int height) AspectRatio { get; private set; }
-    public (int width, int height) Size { get; private set; }
+    public SizeI AspectRatio { get; private set; }
+    public SizeI Size { get; private set; }
     public bool IsPrimary { get; private set; }
 
     public override string ToString()
@@ -25,7 +25,7 @@ public class Monitor
     }
 
 #region Backend
-    internal (int x, int y) position;
+    internal PointI position;
     private static Monitor[] monitors = [];
 
     private Monitor()
@@ -108,7 +108,7 @@ public class Monitor
         monitors = monitorList.ToArray();
     }
 
-    private static (int width, int height) GetAspectRatio(int width, int height)
+    private static SizeI GetAspectRatio(int width, int height)
     {
         var gcd = height == 0 ? width : GetGreatestCommonDivisor(height, width % height);
         return (width / gcd, height / gcd);

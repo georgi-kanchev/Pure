@@ -80,7 +80,7 @@ public class Pages : Block
     public Pages() : this((0, 0))
     {
     }
-    public Pages((int x, int y) position, int count = 10) : base(position)
+    public Pages(PointI position, int count = 10) : base(position)
     {
         ItemWidth = 1;
         ItemGap = 1;
@@ -270,7 +270,7 @@ public class Pages : Block
             visiblePages[i].Text = $"{i + scrollIndex}";
     }
 
-    private static float[] Distribute(int amount, (float a, float b) range)
+    private static float[] Distribute(int amount, Range range)
     {
         if (amount <= 0)
             return [];

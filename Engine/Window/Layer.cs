@@ -46,7 +46,7 @@ public class Layer
             }
         }
     }
-    public (byte width, byte height) AtlasTileCount
+    public Count AtlasTileCount
     {
         get
         {
@@ -60,7 +60,7 @@ public class Layer
     public byte AtlasTileGap { get; set; }
     public ushort AtlasTileIdFull { get; set; }
 
-    public (int width, int height) Size
+    public SizeI Size
     {
         get => size;
         set => size = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
@@ -76,8 +76,8 @@ public class Layer
             shader?.SetUniform("lightFlags", (int)value);
         }
     }
-    public (float x, float y) PixelOffset { get; set; }
-    public (float x, float y) Position
+    public PointF PixelOffset { get; set; }
+    public PointF Position
     {
         get
         {
@@ -123,16 +123,16 @@ public class Layer
     {
         get => IsOverlapping(PixelToPosition(Mouse.CursorPosition));
     }
-    public (float x, float y) MouseCursorPosition
+    public PointF MouseCursorPosition
     {
         get => PixelToPosition(Mouse.CursorPosition);
     }
-    public (int x, int y) MouseCursorCell
+    public PointI MouseCursorCell
     {
         get => ((int)MouseCursorPosition.x, (int)MouseCursorPosition.y);
     }
 
-    public Layer((int width, int height) size = default, bool fitWindow = true)
+    public Layer(SizeI size = default, bool fitWindow = true)
     {
         Init();
 
@@ -159,7 +159,7 @@ public class Layer
         AtlasTileIdFull = 10;
     }
 
-    public void Align((float x, float y) alignment)
+    public void Align(PointF alignment)
     {
         Window.TryCreate();
 
@@ -184,7 +184,7 @@ public class Layer
         if (limit == false)
             return;
 
-        var (w, h) = ((float)TilemapPixelSize.w, (float)TilemapPixelSize.h);
+        var (w, h) = ((float)TilemapPixelSize.width, (float)TilemapPixelSize.height);
         var (x, y) = PixelOffset;
         PixelOffset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
     }
@@ -193,7 +193,7 @@ public class Layer
     {
         textTileWidths[symbolTileId] = newSymbolWidth;
     }
-    public void TextTilesAlign((int x, int y, int width, int height) area, TextAlign textAlign)
+    public void TextTilesAlign(AreaI area, TextAlign textAlign)
     {
         textAligns[area] = textAlign;
     }
@@ -214,7 +214,7 @@ public class Layer
         else if ((int)Mouse.CursorCurrent >= (int)Mouse.Cursor.ResizeBottomLeftTopRight)
             tileId -= 2;
 
-        (ushort id, uint tint, byte pose) tile = default;
+        Tile tile = default;
         var cursor = (ushort)Mouse.CursorCurrent;
         tile.id = (ushort)(tileId + cursor);
         tile.tint = tint;
@@ -223,7 +223,7 @@ public class Layer
         var (x, y) = PixelToPosition(Mouse.CursorPosition);
         DrawTiles((x - offX, y - offY), tile);
     }
-    public void DrawPoints(params (float x, float y, uint color)[]? points)
+    public void DrawPoints(params PointColored[]? points)
     {
         for (var i = 0; i < points?.Length; i++)
         {
@@ -231,7 +231,7 @@ public class Layer
             QueueRectangle((p.x, p.y), (1f / AtlasTileSize, 1f / AtlasTileSize), p.color);
         }
     }
-    public void DrawRectangles(params (float x, float y, float width, float height, uint color)[]? rectangles)
+    public void DrawRectangles(params AreaColored[]? rectangles)
     {
         for (var i = 0; i < rectangles?.Length; i++)
         {
@@ -239,7 +239,7 @@ public class Layer
             QueueRectangle((x, y), (width, height), color);
         }
     }
-    public void DrawLine(params (float x, float y, uint color)[]? points)
+    public void DrawLine(params PointColored[]? points)
     {
         if (points == null || points.Length == 0)
             return;
@@ -257,7 +257,7 @@ public class Layer
             QueueLine((a.x, a.y), (b.x, b.y), a.color);
         }
     }
-    public void DrawLines(params (float ax, float ay, float bx, float by, uint color)[]? lines)
+    public void DrawLines(params Line[]? lines)
     {
         if (lines == null || lines.Length == 0)
             return;
@@ -265,7 +265,7 @@ public class Layer
         foreach (var line in lines)
             QueueLine((line.ax, line.ay), (line.bx, line.by), line.color);
     }
-    public void DrawTiles((float x, float y) position, (ushort id, uint tint, byte pose) tile, float scale = 1f, (int width, int height) groupSize = default, bool sameTile = default)
+    public void DrawTiles(PointF position, Tile tile, float scale = 1f, SizeI groupSize = default, bool sameTile = default)
     {
         if (verts == null)
             return;
@@ -333,7 +333,7 @@ public class Layer
                 verts.Append(new(bl, c, texBl));
             }
     }
-    public void DrawTileMap((ushort id, uint tint, byte pose)[,]? tileMap)
+    public void DrawTileMap(Tile[,]? tileMap)
     {
         if (tileMap == null || tileMap.Length == 0 || verts == null)
             return;
@@ -419,7 +419,7 @@ public class Layer
         }
     }
 
-    public void EffectChangeColor(int id, uint oldColor, uint newColor, params (float x, float y, float width, float height)[]? areas)
+    public void EffectChangeColor(int id, uint oldColor, uint newColor, params AreaF[]? areas)
     {
         if (id is < 0 or > 8 || oldColor == newColor)
             return;
@@ -427,7 +427,7 @@ public class Layer
         if (areas == null || areas.Length == 0)
             areas = [(0, 0, Size.width, Size.height)];
 
-        var indexes = new List<(int x, int y)[]>
+        var indexes = new List<PointI[]>
         {
             { [(0, 2), (1, 2), (2, 2)] }, { [(5, 0), (6, 0), (7, 0)] }, { [(5, 1), (6, 1), (7, 1)] },
             { [(5, 2), (6, 2), (7, 2)] }, { [(5, 3), (6, 3), (7, 3)] }, { [(5, 4), (6, 4), (7, 4)] },
@@ -441,7 +441,7 @@ public class Layer
             SetShaderData(areas[i], indexes[id][2], new(newColor), false);
         }
     }
-    public void EffectAdjustColor(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params (float x, float y, float width, float height, uint targetColor)[]? areas)
+    public void EffectAdjustColor(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params AreaToColor[]? areas)
     {
         if (areas == null || areas.Length == 0)
             areas = [(0, 0, Size.width, Size.height, 0)];
@@ -459,7 +459,7 @@ public class Layer
             SetShaderData((x, y, w, h), (2, 3), new(c), false);
         }
     }
-    public void EffectTintColor(uint tint, params (float x, float y, float width, float height, uint targetColor)[]? areas)
+    public void EffectTintColor(uint tint, params AreaToColor[]? areas)
     {
         if (areas == null || areas.Length == 0)
             areas = [(0, 0, Size.width, Size.height, 0)];
@@ -472,7 +472,7 @@ public class Layer
             SetShaderData((x, y, w, h), (2, 0), new(c), false);
         }
     }
-    public void EffectAddLight(float radius, (float width, float angle) cone, params (float x, float y, uint color)[] points)
+    public void EffectAddLight(float radius, (float width, float angle) cone, params PointColored[] points)
     {
         radius /= Size.height;
         var (w, ang) = cone;
@@ -491,7 +491,7 @@ public class Layer
             shader?.SetUniform($"lightColor[{lightCount - 1}]", new Color(color));
         }
     }
-    public void EffectAddLightObstacles(params (float x, float y, float width, float height)[] areas)
+    public void EffectAddLightObstacles(params AreaF[] areas)
     {
         for (var i = 0; i < areas?.Length; i++)
         {
@@ -507,7 +507,7 @@ public class Layer
             shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
         }
     }
-    public void EffectAddLightObstacles(params (float x, float y, float width, float height, uint _)[] areas)
+    public void EffectAddLightObstacles(params AreaColored[] areas)
     {
         for (var i = 0; i < areas?.Length; i++)
         {
@@ -515,7 +515,7 @@ public class Layer
             EffectAddLightObstacles((x, y, w, h));
         }
     }
-    public void EffectColorEdges(uint color, Edge edges, params (float x, float y, float width, float height, uint targetColor)[]? areas)
+    public void EffectColorEdges(uint color, Edge edges, params AreaToColor[]? areas)
     {
         if (areas == null || areas.Length == 0)
             areas = [(0, 0, Size.width, Size.height, 0)];
@@ -529,7 +529,7 @@ public class Layer
             SetShaderData((x, y, w, h), (3, 5), new((byte)edges, 0, 0, 0), false);
         }
     }
-    public void EffectBlur((byte x, byte y) strength, params (float x, float y, float width, float height, uint targetColor)[]? areas)
+    public void EffectBlur((byte x, byte y) strength, params AreaToColor[]? areas)
     {
         if (areas == null || areas.Length == 0)
             areas = [(0, 0, Size.width, Size.height, 0)];
@@ -543,7 +543,7 @@ public class Layer
             SetShaderData((x, y, w, h), (2, 1), new(sx, sy, 0, 0), false);
         }
     }
-    public void EffectWave((sbyte x, sbyte y) speed, (byte x, byte y) frequency, params (float x, float y, float width, float height, uint targetColor)[]? areas)
+    public void EffectWave((sbyte x, sbyte y) speed, (byte x, byte y) frequency, params AreaToColor[]? areas)
     {
         if (areas == null || areas.Length == 0)
             areas = [(0, 0, Size.width, Size.height, 0)];
@@ -564,13 +564,13 @@ public class Layer
         data?.Clear(Color.Transparent);
     }
 
-    public bool IsOverlapping((float x, float y) position)
+    public bool IsOverlapping(PointF position)
     {
         return position is { x: >= 0, y: >= 0 } &&
                position.x <= Size.width &&
                position.y <= Size.height;
     }
-    public (float x, float y) PixelToPosition((int x, int y) pixel)
+    public PointF PixelToPosition(PointI pixel)
     {
         Window.TryCreate();
 
@@ -604,7 +604,7 @@ public class Layer
 
         return (x, y);
     }
-    public (int x, int y) PixelFromPosition((float x, float y) position)
+    public PointI PixelFromPosition(PointF position)
     {
         Window.TryCreate();
 
@@ -638,12 +638,12 @@ public class Layer
 
         return ((int)px, (int)py);
     }
-    public (float x, float y) PositionToLayer((float x, float y) position, Layer layer)
+    public PointF PositionToLayer(PointF position, Layer layer)
     {
         var pixel = PixelFromPosition(position);
         return layer.PixelToPosition(pixel);
     }
-    public uint AtlasColorAt((int x, int y) pixel)
+    public uint AtlasColorAt(PointI pixel)
     {
         if (pixel.x < 0 ||
             pixel.y < 0 ||
@@ -727,13 +727,13 @@ public class Layer
 
     internal int lightCount, obstacleCount;
     internal Vector2u tilesetPixelSize;
-    internal (int w, int h) TilemapPixelSize
+    internal SizeI TilemapPixelSize
     {
         get => (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
     }
 
     private string atlasPath;
-    private (int width, int height) size;
+    private SizeI size;
     private float zoom;
     private Light effectLight;
 
@@ -745,7 +745,7 @@ public class Layer
     [DoNotSave]
     internal static readonly Dictionary<string, Image> images = new();
     [DoNotSave]
-    private static readonly List<(float, float)> cursorOffsets =
+    private static readonly List<PointF> cursorOffsets =
     [
         (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
@@ -766,7 +766,7 @@ public class Layer
         tilesetPixelSize = new(208, 208);
     }
 
-    private float GetTextOffset((int x, int y) cell, (ushort id, uint tint, byte pose)[,] tileMap)
+    private float GetTextOffset(PointI cell, Tile[,] tileMap)
     {
         var totalWidth = 0f;
         for (var i = cell.x; i < tileMap.GetLength(0); i++)
@@ -780,7 +780,7 @@ public class Layer
 
         return tileMap.GetLength(0) - cell.x - totalWidth;
     }
-    private void QueueLine((float x, float y) a, (float x, float y) b, uint tint)
+    private void QueueLine(PointF a, PointF b, uint tint)
     {
         if (verts == null ||
             (IsOverlapping(a) == false && IsOverlapping(b) == false)) // fully outside?
@@ -816,12 +816,12 @@ public class Layer
         verts.Append(new(new(br.X, br.Y), color, texBr));
         verts.Append(new(new(bl.X, bl.Y), color, texBl));
     }
-    private void QueueRectangle((float x, float y) position, (float w, float h) size, uint tint)
+    private void QueueRectangle(PointF position, (float w, float h) sz, uint tint)
     {
         if (verts == null)
             return;
 
-        var (w, h) = size;
+        var (w, h) = sz;
 
         if (IsOverlapping(position) == false &&
             IsOverlapping((position.x + w, position.y)) == false &&
@@ -842,7 +842,7 @@ public class Layer
         verts.Append(new(br, color, texBr));
         verts.Append(new(bl, color, texBl));
     }
-    private void SetShaderData((float x, float y, float width, float height) area, (int x, int y) tilePixel, Color data, bool includeArea)
+    private void SetShaderData(AreaF area, PointI tilePixel, Color dataInColor, bool includeArea)
     {
         TryInit();
 
@@ -874,7 +874,7 @@ public class Layer
                 var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
                 var (vx, vy) = (tx * AtlasTileSize, ty * AtlasTileSize);
 
-                shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), data, full.tl + centerOff));
+                shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), dataInColor, full.tl + centerOff));
 
                 if (includeArea)
                     shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl + centerOff));
@@ -948,9 +948,9 @@ public class Layer
         shaderParams?.Clear();
     }
 
-    private (Vector2f tl, Vector2f tr, Vector2f br, Vector2f bl) GetTexCoords(int tileId, (int w, int h) size)
+    private CornersS GetTexCoords(int tileId, SizeI sz)
     {
-        var (w, h) = size;
+        var (w, h) = sz;
         var tsz = AtlasTileSize;
         var (tx, ty) = IndexToCoords(tileId);
         var tl = new Vector2f(tx * (tsz + AtlasTileGap), ty * (tsz + AtlasTileGap));
@@ -959,7 +959,7 @@ public class Layer
         var bl = tl + new Vector2f(0, tsz * h);
         return (tl, tr, br, bl);
     }
-    private (int x, int y) IndexToCoords(int index)
+    private PointI IndexToCoords(int index)
     {
         var (tw, th) = AtlasTileCount;
         index = index < 0 ? 0 : index;
@@ -972,7 +972,7 @@ public class Layer
         return y * AtlasTileCount.width + x;
     }
 
-    private static (Vector2f p1, Vector2f p2, Vector2f p3, Vector2f p4) GetRotatedPoints(sbyte turns, Vector2f p1, Vector2f p2, Vector2f p3, Vector2f p4)
+    private static CornersP GetRotatedPoints(sbyte turns, Vector2f p1, Vector2f p2, Vector2f p3, Vector2f p4)
     {
         var rotations = Math.Abs(turns) % 4;
         for (var i = 0; i < rotations; i++)

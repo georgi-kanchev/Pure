@@ -29,7 +29,7 @@ public class Panel : Block
     /// Initializes a new panel instance with the specified position.
     /// </summary>
     /// <param name="position">The position of the panel.</param>
-    public Panel((int x, int y) position) : base(position)
+    public Panel(PointI position) : base(position)
     {
         Size = (12, 8);
         OnUpdate += OnRefresh;
@@ -37,7 +37,7 @@ public class Panel : Block
 
 #region Backend
     private bool isMoving, isResizingL, isResizingR, isResizingU, isResizingD;
-    private (int x, int y) startBotR;
+    private PointI startBotR;
 
     private void OnRefresh()
     {

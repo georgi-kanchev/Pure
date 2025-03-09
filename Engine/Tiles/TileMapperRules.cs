@@ -84,7 +84,7 @@ public class TileMapperRules
 
     public void Apply(TileMap tileMap, Area? area = null, Area? mask = null)
     {
-        var result = new Dictionary<(int x, int y), Tile>();
+        var result = new Dictionary<VecI, Tile>();
         var ar = area ?? new((0, 0), (tileMap.Size.width, tileMap.Size.height));
 
         for (var i = ar.X; i < ar.Height; i++)

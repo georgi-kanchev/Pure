@@ -42,7 +42,7 @@ public class Slider : Block
     public Slider() : this((0, 0))
     {
     }
-    public Slider((int x, int y) position, bool vertical = false) : base(position)
+    public Slider(PointI position, bool vertical = false) : base(position)
     {
         IsVertical = vertical;
         Size = vertical ? (1, 10) : (10, 1);
@@ -83,7 +83,7 @@ public class Slider : Block
     /// position on the slider if not successful.
     /// </summary>
     /// <param name="point">The position to try move the handle to.</param>
-    public void MoveTo((int x, int y) point)
+    public void MoveTo(PointI point)
     {
         var sz = IsVertical ? Size.height : Size.width;
         var (x, y) = Position;

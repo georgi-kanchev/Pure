@@ -3,7 +3,7 @@ namespace Pure.Engine.UserInterface;
 public class Palette : Block
 {
     [DoNotSave]
-    public Func<(float x, float y), uint>? OnPick { get; set; }
+    public Func<PointF, uint>? OnPick { get; set; }
 
     [DoNotSave]
     public Slider Opacity { get; }
@@ -30,7 +30,7 @@ public class Palette : Block
     public Palette() : this((0, 0))
     {
     }
-    public Palette((int x, int y) position) : base(position)
+    public Palette(PointI position) : base(position)
     {
         Size = (13, 3);
 

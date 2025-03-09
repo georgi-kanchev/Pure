@@ -4,16 +4,16 @@ namespace Pure.Engine.Tiles;
 
 public class TileMap
 {
-    public (int width, int height) Size { get; }
+    public SizeI Size { get; }
     public Area View { get; set; }
 
-    public TileMap((int width, int height) size)
+    public TileMap(SizeI size)
     {
         var (w, h) = (Math.Max(size.width, 1), Math.Max(size.height, 1));
 
         Size = (w, h);
         data = new Tile[w, h];
-        bundleCache = new (ushort id, uint tint, byte pose)[w, h];
+        bundleCache = new TileBundle[w, h];
         ids = new ushort[w, h];
         View = (0, 0, w, h);
     }
@@ -25,7 +25,7 @@ public class TileMap
         var h = tileData.GetLength(1);
         Size = (w, h);
         data = Duplicate(tileData);
-        bundleCache = new (ushort id, uint tint, byte pose)[w, h];
+        bundleCache = new TileBundle[w, h];
         ids = new ushort[w, h];
         View = (0, 0, w, h);
 
@@ -37,7 +37,7 @@ public class TileMap
             }
     }
 
-    public (ushort id, uint tint, byte pose)[,] ToBundle()
+    public TileBundle[,] ToBundle()
     {
         TryRestoreCache();
         return bundleCache;
@@ -50,7 +50,7 @@ public class TileMap
         Array.Clear(ids);
         Array.Clear(bundleCache);
     }
-    public void SetTile((int x, int y) cell, Tile tile, Area? mask = null)
+    public void SetTile(VecI cell, Tile tile, Area? mask = null)
     {
         if (IndicesAreValid(cell, mask) == false)
             return;
@@ -61,14 +61,14 @@ public class TileMap
         bundleCache[cell.x, cell.y] = tile;
     }
 
-    public bool IsContaining((int x, int y) cell)
+    public bool IsContaining(VecI cell)
     {
         return cell is { x: >= 0, y: >= 0 } &&
                cell.x <= Size.width - 1 &&
                cell.y <= Size.height - 1;
     }
 
-    public Tile TileAt((int x, int y) cell)
+    public Tile TileAt(VecI cell)
     {
         return IndicesAreValid(cell, null) ? data[cell.x, cell.y] : default;
     }
@@ -120,7 +120,7 @@ public class TileMap
     {
         return tileMap == null ? null : Duplicate(tileMap.data);
     }
-    public static implicit operator (ushort id, uint tint, byte pose)[,]?(TileMap? tileMap)
+    public static implicit operator TileBundle[,]?(TileMap? tileMap)
     {
         return tileMap?.ToBundle();
     }
@@ -155,18 +155,18 @@ public class TileMap
 
     private readonly Tile[,] data;
     [DoNotSave]
-    private (ushort id, uint tint, byte pose)[,]? bundleCache;
+    private TileBundle[,]? bundleCache;
     [DoNotSave]
     private ushort[,]? ids;
 
-    public static (int, int) FromIndex(int index, (int width, int height) size)
+    public static (int, int) FromIndex(int index, SizeI size)
     {
         index = index < 0 ? 0 : index;
         index = index > size.width * size.height - 1 ? size.width * size.height - 1 : index;
 
         return (index % size.width, index / size.width);
     }
-    private bool IndicesAreValid((int x, int y) indices, Area? mask)
+    private bool IndicesAreValid(VecI indices, Area? mask)
     {
         var (x, y) = indices;
         var (w, h) = Size;
@@ -191,7 +191,7 @@ public class TileMap
 
         var w = data.GetLength(0);
         var h = data.GetLength(1);
-        bundleCache = new (ushort id, uint tint, byte pose)[w, h];
+        bundleCache = new TileBundle[w, h];
         ids = new ushort[w, h];
 
         for (var i = 0; i < h; i++)

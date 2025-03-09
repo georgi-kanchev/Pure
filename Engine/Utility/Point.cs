@@ -1,4 +1,9 @@
-﻿namespace Pure.Engine.Utility;
+﻿using PointF = (float x, float y);
+using Direction = (float x, float y);
+using PointI = (int x, int y);
+using Bundle = (float x, float y, uint color);
+
+namespace Pure.Engine.Utility;
 
 public struct Point : IEquatable<Point>
 {
@@ -6,16 +11,27 @@ public struct Point : IEquatable<Point>
     {
         get => new(float.NaN);
     }
+
+    /// <summary>
+    /// X = 0<br></br>
+    /// Y = 0<br></br>
+    /// Color = White
+    /// </summary>
     public static Point Zero
     {
-        get => new();
+        get => default;
     }
+    /// <summary>
+    /// X = 1<br></br>
+    /// Y = 1<br></br>
+    /// Color = White
+    /// </summary>
     public static Point One
     {
-        get => new();
+        get => new(1);
     }
 
-    public (float x, float y) XY
+    public PointF XY
     {
         get => (X, Y);
         set => val = (value.x, value.y);
@@ -47,10 +63,10 @@ public struct Point : IEquatable<Point>
     public Point(float xy, uint color = uint.MaxValue) : this(xy, xy, color)
     {
     }
-    public Point((float x, float y, uint color) bundle) : this(bundle.x, bundle.y, bundle.color)
+    public Point(Bundle bundle) : this(bundle.x, bundle.y, bundle.color)
     {
     }
-    public Point((float x, float y) position, uint color = uint.MaxValue) : this(position.x, position.y, color)
+    public Point(PointF position, uint color = uint.MaxValue) : this(position.x, position.y, color)
     {
     }
     public Point(byte[] bytes)
@@ -79,7 +95,7 @@ public struct Point : IEquatable<Point>
 
         return result.ToArray();
     }
-    public (float x, float y, uint color) ToBundle()
+    public Bundle ToBundle()
     {
         return (X, Y, Color);
     }
@@ -101,7 +117,7 @@ public struct Point : IEquatable<Point>
         y -= Y % gridSize.Y;
         return new(x, y);
     }
-    public Point MoveIn((float x, float y) direction, float speed, float deltaTime = 1)
+    public Point MoveIn(Direction direction, float speed, float deltaTime = 1)
     {
         if (direction == default)
             return this;
@@ -152,7 +168,7 @@ public struct Point : IEquatable<Point>
     {
         return Wrap(ToAngle(targetPoint - this), 360);
     }
-    public (float x, float y) Direction(Point targetPoint)
+    public PointF Direction(Point targetPoint)
     {
         var dir = targetPoint - this;
         var x = dir.X;
@@ -193,27 +209,27 @@ public struct Point : IEquatable<Point>
         return new Point(sumX / points.Length, sumY / points.Length);
     }
 
-    public static implicit operator Point((int x, int y) position)
+    public static implicit operator Point(PointI position)
     {
         return new(position.x, position.y);
     }
-    public static implicit operator (int x, int y)(Point point)
+    public static implicit operator PointI(Point point)
     {
         return ((int)MathF.Round(point.val.x), (int)MathF.Round(point.val.y));
     }
-    public static implicit operator Point((float x, float y) position)
+    public static implicit operator Point(PointF position)
     {
         return new(position);
     }
-    public static implicit operator (float x, float y)(Point point)
+    public static implicit operator PointF(Point point)
     {
         return point.val;
     }
-    public static implicit operator Point((float x, float y, uint color) bundle)
+    public static implicit operator Point(Bundle bundle)
     {
         return new(bundle);
     }
-    public static implicit operator (float x, float y, uint color)(Point point)
+    public static implicit operator Bundle(Point point)
     {
         return point.ToBundle();
     }
@@ -267,10 +283,10 @@ public struct Point : IEquatable<Point>
         return a.val != b.val;
     }
 
-    #region Backend
-    private (float x, float y) val;
+#region Backend
+    private PointF val;
 
-    private static float ToAngle((float x, float y) direction)
+    private static float ToAngle(PointF direction)
     {
         return (MathF.Atan2(direction.y, direction.x) * (180f / MathF.PI)).Wrap(360);
     }
@@ -290,5 +306,5 @@ public struct Point : IEquatable<Point>
         offset += amount;
         return result;
     }
-    #endregion
+#endregion
 }

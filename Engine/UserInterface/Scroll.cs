@@ -35,7 +35,7 @@ public class Scroll : Block
     public Scroll() : this((0, 0))
     {
     }
-    public Scroll((int x, int y) position, bool vertical = true) : base(position)
+    public Scroll(PointI position, bool vertical = true) : base(position)
     {
         IsVertical = vertical;
         Size = IsVertical ? (1, 10) : (10, 1);
