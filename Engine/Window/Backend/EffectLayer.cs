@@ -353,8 +353,8 @@ vec4 compute_edges(vec2 coord, vec4 color) {
             // main
             @"
 void main(void) {
-	vec2 coord = compute_waves(gl_TexCoord[0].xy);
-	vec4 color = texture2D(texture, coord) * gl_Color;
+	vec2 coord = gl_TexCoord[0].xy;
+	vec4 color = texture2D(texture, compute_waves(coord)) * gl_Color;
 	
 	color = compute_edges(coord, color);
 	color = compute_color_replace(coord, color, vec2(0, 2)); // 1

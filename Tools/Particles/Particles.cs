@@ -343,7 +343,7 @@ public static class Particles
             mov[i] = (mov[i].x + force.x, mov[i].y + force.y);
     }
 
-    public static void FadeToColor(this Particle[] cluster, uint targetColor, float fadeDuration = 0f)
+    public static void FadeToColor(this Particle[] cluster, uint targetColor, float fadeDuration = 0f, int affectedIndex = -1)
     {
         var index = clusters.IndexOf(cluster);
         var pts = clusters[index];
@@ -355,6 +355,12 @@ public static class Particles
         color.G = (byte)(color.G + (-v, v).Random(hash.ToSeed(index, 1))).Limit((0, 255));
         color.B = (byte)(color.B + (-v, v).Random(hash.ToSeed(index, 2))).Limit((0, 255));
         color.A = (byte)(color.A + (-v, v).Random(hash.ToSeed(index, 3))).Limit((0, 255));
+
+        if (affectedIndex > -1)
+        {
+            c.colorFades[affectedIndex] = (fadeDuration, color, fadeDuration, pts[affectedIndex].color);
+            return;
+        }
 
         for (var i = 0; i < pts.Length; i++)
             c.colorFades[i] = (fadeDuration, color, fadeDuration, pts[i].color);
