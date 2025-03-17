@@ -28,11 +28,11 @@ internal class TerrainPanel : Panel
 
             editor.MapsUi.SetPanel(this);
 
-            var tileLeft = new Tile(PIPE_GRID_T_SHAPED, Blue);
-            var tileMid = new Tile(PIPE_GRID_STRAIGHT, Blue);
-            var tileRight = new Tile(PIPE_GRID_T_SHAPED, Blue, Pose.Down);
+            var tileLeft = new Tile(PIPE_SOLID_STRAIGHT, Gray);
+            var tileMid = new Tile(PIPE_SOLID_STRAIGHT, Gray);
+            var tileRight = new Tile(PIPE_SOLID_STRAIGHT, Gray, Pose.Down);
 
-            SetLine(17);
+            SetLine(15);
 
             void SetLine(params int[] ys)
             {
@@ -82,7 +82,7 @@ internal class TerrainPanel : Panel
         var add = new Button { Size = (1, 1) };
         var remove = new Button { Size = (1, 1) };
         var apply = new Button { Size = (13, 3), Text = "Apply Rules" };
-        var pages = new Pages((0, 0), 1) { Size = (6, 1), ItemWidth = 2 };
+        var pages = new Pages((0, 0), 1) { Size = (9, 1), ItemWidth = 2 };
         var autoTiles = GetAutoTiles();
 
         for (var i = 0; i < 9; i++)
@@ -132,15 +132,16 @@ internal class TerrainPanel : Panel
             // editor.MapsEditor[layer].SetAutoTiles(editor.MapsEditor[layer]);
         });
         remove.OnInteraction(Interaction.Trigger, () => { editor.PromptYesNo("Remove this autotile rule?", () => autoTiles.RemoveAt(pages.Current - 1)); });
-        pages.OnItemDisplay += page => editor.MapsUi.SetPagesItem(pages, page);
+        pages.OnItemDisplay += page => editor.MapsUi.SetPagesItem(pages, page, 1);
 
         OnDisplay += () =>
         {
             var layer = GetLayer();
 
-            add.Position = (X + 13, Y + 13);
-            apply.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 1, Y + 14);
-            remove.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 12, Y + 13);
+            pages.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 1, Y + 11);
+            add.Position = (X + 13, Y + 11);
+            remove.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 12, Y + 11);
+            apply.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 1, Y + 12);
 
             if (pages.Count != autoTiles.Count || layer != lastLayer)
             {
@@ -157,8 +158,6 @@ internal class TerrainPanel : Panel
 
             lastLayer = layer;
 
-            pages.Position = autoTiles.Count == 0 ? (-100, 0) : (X + 1, Y + 13);
-
             remove.IsDisabled = autoTiles.Count == 0;
 
             for (var i = 0; i < matchIds.Count; i++)
@@ -173,15 +172,16 @@ internal class TerrainPanel : Panel
             var pickText = empty ?
                 "use pick tool" :
                 $"Id: {pickedTile.Id}\n" +
+                "Tint:\n" +
                 $"Pose: {pickedTile.Pose}";
 
-            editor.MapsUi[FRONT].SetText((X + 1, Y + 6), "To change the\ncenter to:", White);
-            editor.MapsUi[FRONT].SetText((X + 1, Y + 8), pickText, Gray);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 6), "To set center:", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 7), pickText, Gray);
             editor.MapsUi[FRONT].SetText((X + 1, Y + 1), "Match Ids:", White);
 
             if (empty == false)
             {
-                var colorArea = (X + 12, Y + 9, 2, 2);
+                var colorArea = (X + 7, Y + 8, 7, 1);
                 editor.MapsUi[MIDDLE].SetArea(colorArea, new Tile(SHADE_5, Gray));
                 editor.MapsUi[FRONT].SetArea(colorArea, new Tile(FULL, pickedTile.Tint));
             }
@@ -189,7 +189,7 @@ internal class TerrainPanel : Panel
             editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), FRONT);
             editor.MapsUi.SetButtonIcon(remove, new(ICON_TRASH, Gray), FRONT);
             editor.MapsUi.SetButton(apply, FRONT);
-            editor.MapsUi.SetPages(pages);
+            editor.MapsUi.SetPages(pages, 1);
 
             foreach (var btn in matchIds)
                 editor.MapsUi.SetButton(btn, FRONT);
@@ -214,8 +214,8 @@ internal class TerrainPanel : Panel
             Value = "0", SymbolLimit = 5, Size = (6, 1), SymbolGroup = SymbolGroup.Decimals
         };
         generate = new() { Text = "Generate!", Size = (13, 3) };
-        autoGenerate = new() { Text = "Auto Generate", Size = (13, 1) };
-        tiles = new((0, 0), 0) { IsSingleSelecting = true, Size = (9, 4), ItemSize = (9, 1) };
+        autoGenerate = new() { Text = "Auto Gen", Size = (13, 1) };
+        tiles = new((0, 0), 0) { IsSingleSelecting = true, Size = (9, 7), ItemSize = (9, 1) };
         var add = new Button { Size = (1, 1) };
         var edit = new Button { Size = (1, 1) };
         var remove = new Button { Size = (1, 1) };
@@ -234,7 +234,7 @@ internal class TerrainPanel : Panel
             btn.OnInteraction(Interaction.PressAndHold, Trigger);
             btn.OnDisplay += () =>
             {
-                btn.Position = (X + 2 + x, Y + 25 + y);
+                btn.Position = (X + 2 + x, Y + 22 + y);
                 var color = btn.GetInteractionColor(Gray);
                 var arrow = new Tile(ARROW_TAILLESS_ROUND, color, (Pose)(byte)index);
                 var center = new Tile(SHAPE_CIRCLE, color);
@@ -332,15 +332,15 @@ internal class TerrainPanel : Panel
 
         OnDisplay += () =>
         {
-            noiseType.Position = (X + 1, Y + 19);
-            scale.Position = (X + 8, Y + 21);
-            seed.Position = (X + 8, Y + 22);
-            tiles.Position = (X + 5, Y + 26);
-            add.Position = (X + 9, Y + 30);
-            edit.Position = (X + 11, Y + 30);
-            remove.Position = (X + 13, Y + 30);
-            autoGenerate.Position = (X + 1, Y + 32);
-            generate.Position = (X + 1, Y + 33);
+            noiseType.Position = (X + 1, Y + 17);
+            scale.Position = (X + 8, Y + 19);
+            seed.Position = (X + 8, Y + 20);
+            tiles.Position = (X + 5, Y + 25);
+            add.Position = (X + 1, Y + 31);
+            edit.Position = (X + 2, Y + 31);
+            remove.Position = (X + 4, Y + 31);
+            generate.Position = (X + 1, Y + 32);
+            autoGenerate.Position = (X + 1, Y + 35);
 
             if (tilePalette.justPickedTile)
             {
@@ -355,18 +355,17 @@ internal class TerrainPanel : Panel
                     UpdateUI();
             }
 
-            editor.MapsUi[FRONT].SetText((X + 1, Y + 21), "Scale", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 19), "Scale", White);
             editor.MapsUi.SetInputBox(scale);
-            editor.MapsUi[FRONT].SetText((X + 1, Y + 22), "Seed", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 20), "Seed", White);
             editor.MapsUi.SetInputBox(seed);
-            editor.MapsUi[FRONT].SetText((X + 1, Y + 23),
-                $"Offset {generator.Offset.x} {generator.Offset.y}", White);
+            editor.MapsUi[FRONT].SetText((X + 5, Y + 22), $"{generator.Offset.x} {generator.Offset.y}", White);
 
-            editor.MapsUi[FRONT].SetText((X + 5, Y + 25), "Height|Id", White);
+            editor.MapsUi[FRONT].SetText((X + 5, Y + 24), "Height|Id", White);
             editor.MapsUi.SetList(tiles);
 
             if (tiles.SelectedItems.Count > 0)
-                editor.MapsUi[FRONT].SetText((X + 1, Y + 28), $"use\n" +
+                editor.MapsUi[FRONT].SetText((X + 1, Y + 26), $"use\n" +
                                                               $"pick\n" +
                                                               $"tool", Gray);
 
@@ -374,7 +373,7 @@ internal class TerrainPanel : Panel
             editor.MapsUi.SetButtonIcon(edit, new(ICON_PEN, Gray), MIDDLE);
             editor.MapsUi.SetButtonIcon(remove, new(ICON_TRASH, Gray), MIDDLE);
 
-            editor.MapsUi[FRONT].SetText((X + 1, Y + 18), "Noise Type", White);
+            editor.MapsUi[FRONT].SetText((X + 1, Y + 16), "Noise Type", White);
             editor.MapsUi.SetList(noiseType);
 
             editor.MapsUi.SetButton(generate);

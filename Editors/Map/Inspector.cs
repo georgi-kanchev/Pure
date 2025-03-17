@@ -32,9 +32,9 @@ internal class Inspector : Panel
         {
             editor.MapsUi.SetPanel(this);
 
-            var tileLeft = new Tile(PIPE_GRID_T_SHAPED, Blue);
-            var tileMid = new Tile(PIPE_GRID_STRAIGHT, Blue);
-            var tileRight = new Tile(PIPE_GRID_T_SHAPED, Blue, Pose.Down);
+            var tileLeft = new Tile(PIPE_SOLID_STRAIGHT, Gray);
+            var tileMid = new Tile(PIPE_SOLID_STRAIGHT, Gray);
+            var tileRight = new Tile(PIPE_SOLID_STRAIGHT, Gray, Pose.Down);
 
             SetLine(14, 18, 23, 28);
 
@@ -95,7 +95,7 @@ internal class Inspector : Panel
             editor.MapsEditorVisible[layersVisibility.Items.IndexOf(item)] = item.IsSelected);
 
         layers = new((x + layersVisibility.Width, y), 1) { ItemSize = (13, 1), Size = (13, 11) };
-        layers.OnUpdate += () => layersVisibility.Scroll.Slider.Progress = layers?.Scroll.Slider.Progress ?? 0;
+        layers.OnUpdate += () => layersVisibility.Scroll.Slider.Progress = layers.Scroll.Slider.Progress;
         layers.OnDisplay += () => editor.MapsUi.SetList(layers);
         layers.OnItemDisplay += item => editor.MapsUi.SetListItem(layers, item);
         layers.Items[0].Text = "Layer1";
@@ -284,8 +284,8 @@ internal class Inspector : Panel
     {
         paletteScrollV = new((X + 14, Y + 29)) { Size = (1, 14) };
         paletteScrollH = new((X + 1, Y + 43), false) { Size = (14, 1) };
-        paletteScrollH.OnDisplay += () => editor.MapsUi.SetScroll(paletteScrollH);
-        paletteScrollV.OnDisplay += () => editor.MapsUi.SetScroll(paletteScrollV);
+        paletteScrollH.OnDisplay += () => editor.MapsUi.SetScroll(paletteScrollH, 1);
+        paletteScrollV.OnDisplay += () => editor.MapsUi.SetScroll(paletteScrollV, 1);
         var paletteScroll = new Button((paletteScrollH.X, paletteScrollV.Y + 1)) { Size = (13, 13) };
         paletteScroll.OnInteraction(Interaction.Scroll, () => paletteScrollV.Slider.Move(Mouse.ScrollDelta));
         return [paletteScroll];

@@ -561,16 +561,19 @@ public static class TileMapperUI
     {
         var g = Gray;
         var dg = g.ToDark();
+        var ddg = Gray.ToDark(0.6f);
+        var dark = g.ToDark(0.7f);
         var dim = Black.ToTransparent();
         var arrow = new Tile(ARROW_TAILLESS_ROUND, g);
+        var line = new Tile(SHAPE_LINE, g).Rotate(1);
         const ushort CORNER = PIPE_HOLLOW_CORNER!;
         const ushort STRAIGHT = PIPE_HOLLOW_STRAIGHT!;
 
         InteractionShade = 0.15f;
         ThemeScrollArrow = arrow;
-        ThemeButtonBox = (new(BOX_CORNER, g), new(FULL, g), new(FULL, g), g.ToBright());
-        ThemeButtonBar = (new(BAR_BIG_EDGE, g), new(FULL, g), new(BAR_BIG_EDGE, g, Pose.Down), g.ToBright());
-        ThemeInputBox = (new(FULL, g.ToDark(0.4f)), new(SHAPE_LINE, White, Pose.Down), g.ToBright(), selectionTint: Blue);
+        ThemeButtonBox = (new(BOX_SHADOW_CORNER, g), new(BOX_SHADOW_EDGE, g), new(FULL, g), g.ToBright());
+        ThemeButtonBar = (line, line, line, g);
+        ThemeInputBox = (new(FULL, dg), new(SHAPE_LINE, White, Pose.Down), g.ToBright(), selectionTint: Blue);
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
         ThemeSwitch = (new(ARROW_TAILLESS_ROUND, White), Green, dg);
         ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(BAR_BIG_EDGE, g, Pose.Down), new(SHAPE_CIRCLE_BIG, g.ToBright()));
@@ -578,21 +581,21 @@ public static class TileMapperUI
         ThemePages = (new(MATH_MUCH_LESS, g), new(MATH_LESS, g), new(MATH_GREATER, g), new(MATH_MUCH_GREATER, g));
         ThemePrompt = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), new(FULL, dim), tintText: White);
         ThemePromptItems = [new(ICON_YES, Green), new(ICON_NO, Red)];
-        ThemePalette = (FULL, new(ICON_PICK, g), new(SHADE_5, g.ToDark()), new(SHAPE_CIRCLE_SMALL, g));
-        ThemePanel = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), tintText: White);
+        ThemePalette = (FULL, new(ICON_PICK, g), new(SHADE_5, dg), new(SHAPE_CIRCLE_SMALL, g));
+        ThemePanel = (new(BOX_CORNER, ddg), new(BOX_EDGE, ddg), new(FULL, ddg), tintText: White);
         ThemeListText = (g.ToBright(0.3f), Green, g.ToDark(0.3f));
-        ThemeListBar = (new(FULL, dg), new(FULL, dg), new(FULL, dg), new(MATH_GREATER, g, Pose.Right));
+        ThemeListBar = (new(FULL, dark), new(FULL, dark), new(FULL, dark), new(MATH_GREATER, g, Pose.Right));
         ThemeListPatch = new Tile[,]
         {
-            { new(FULL, dg), new(FULL, dg), new(FULL, dg) },
-            { new(FULL, dg), new(FULL, dg), new(FULL, dg) },
-            { new(FULL, dg), new(FULL, dg), new(FULL, dg) }
+            { new(FULL, dark), new(FULL, dark), new(FULL, dark) },
+            { new(FULL, dark), new(FULL, dark), new(FULL, dark) },
+            { new(FULL, dark), new(FULL, dark), new(FULL, dark) }
         };
         ThemeButtonPatch = (new[,]
         {
             { new(CORNER, g), new(STRAIGHT, g), new Tile(CORNER, g).Rotate(1) },
             { new Tile(STRAIGHT, g).Rotate(1), new(), new Tile(STRAIGHT, g).Rotate(1) },
-            { new Tile(CORNER, g).Rotate(3), new(STRAIGHT, g), new Tile(CORNER, g).Rotate(2) }
+            { new Tile(CORNER, g).Rotate(3), new Tile(STRAIGHT, g).Rotate(2), new Tile(CORNER, g).Rotate(2) }
         }, g.ToBright());
 
         var min = new Tile(MATH_MUCH_LESS, g);

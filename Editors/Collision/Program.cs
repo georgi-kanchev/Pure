@@ -147,24 +147,19 @@ public static class Program
             IsSingleSelecting = true
         };
         tools.Items.AddRange([
-            new() { Text = "Line Pack" },
+            new() { Text = "Solid Pack" },
             new() { Text = "Solid Map" },
-            new() { Text = "Solid Pack" }
+            new() { Text = "Line Pack" }
         ]);
         tools.AlignInside((1f, 0f));
-        tools.OnDisplay += () => editor.MapsUi.SetList(tools, FRONT);
+        tools.OnDisplay += () => editor.MapsUi.SetList(tools, MIDDLE);
         tools.OnUpdate += () => tools.IsHidden = editor.Prompt.IsHidden == false;
         tools.OnItemDisplay += item => editor.MapsUi.SetListItem(tools, item, FRONT);
         tools.OnItemInteraction(Interaction.Trigger, btn => menu.Items[5].Text = $"{btn.Text}… ");
         tools.Select(tools.Items[0]);
 
         palette = new() { Pick = { IsHidden = true } };
-        palette.OnDisplay += () =>
-        {
-            editor.MapsUi.SetPalette(palette, MIDDLE);
-            editor.MapsUi.SetSlider(palette.Opacity, MIDDLE);
-            editor.MapsUi.SetSlider(palette.Brightness, MIDDLE);
-        };
+        palette.OnDisplay += () => editor.MapsUi.SetPalette(palette);
         palette.AlignInside((0.8f, 0f));
 
         editor.Ui.AddRange([tools, palette]);

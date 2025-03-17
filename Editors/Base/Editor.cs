@@ -11,15 +11,9 @@ namespace Pure.Editors.Base;
 
 public class Editor
 {
-    public enum LayerMapsEditor
-    {
-        Back, Middle, Front, Count
-    }
+    public enum LayerMapsEditor { Back, Middle, Front, Count }
 
-    public enum LayerMapsUi
-    {
-        Back, Middle, Front, PromptFade, PromptBack, PromptMiddle, PromptFront, Count
-    }
+    public enum LayerMapsUi { Back, Middle, Front, PromptFade, PromptBack, PromptMiddle, PromptFront, Count }
 
     public Layer LayerGrid { get; }
     public Layer LayerMap { get; }
@@ -40,25 +34,7 @@ public class Editor
     public (float x, float y) MousePositionWorld { get; private set; }
     public (float x, float y) MousePositionRaw { get; private set; }
 
-    public bool IsDisabledViewZoom { get; set; }
-    public bool IsDisabledViewMove { get; set; }
     public bool IsDisabledViewInteraction { get; set; }
-
-    public float ViewZoom
-    {
-        get => viewZoom;
-        set => viewZoom = Math.Clamp(value, ZOOM_MIN, ZOOM_MAX);
-    }
-    public (float x, float y) ViewPosition
-    {
-        get => viewPosition;
-        set
-        {
-            var (w, h) = MapsEditor[0].View.Size;
-            var (cw, ch) = (w * 4f * ViewZoom, h * 4f * ViewZoom);
-            viewPosition = (Math.Clamp(value.x, -cw, cw), Math.Clamp(value.y, -ch, ch));
-        }
-    }
 
     public Action? OnSetGrid { get; set; }
     public Action? OnUpdateEditor { get; set; }
@@ -86,7 +62,7 @@ public class Editor
 
         MapPanel = new() { IsResizable = false, IsMovable = false };
 
-        Ui = new();
+        Ui = [];
         Prompt = new();
         Prompt.OnDisplay += () => MapsUi.SetPrompt(Prompt, (int)LayerMapsUi.PromptFade);
         OnPromptItemDisplay = item => MapsUi.SetPromptItem(Prompt, item, (int)LayerMapsUi.PromptMiddle);
@@ -101,7 +77,7 @@ public class Editor
 
         LayerGrid = new(MapGrid.Size);
         LayerMap = new(MapsEditor[0].Size);
-        LayerUi = new(MapsUi[0].Size) { Zoom = 3f };
+        LayerUi = new(MapsUi[0].Size);
         Input.TilemapSize = MapsUi[0].View.Size;
 
         for (var i = 0; i < 5; i++)
@@ -155,15 +131,14 @@ public class Editor
                 Keyboard.KeyTyped,
                 Window.Clipboard);
 
-            prevRaw = MousePositionRaw;
             MousePositionRaw = Mouse.CursorPosition;
 
             //========
 
             MapGrid.View = MapsEditor[0].View;
             var gridView = MapGrid.UpdateView();
-            LayerGrid.PixelOffset = ViewPosition;
-            LayerGrid.Zoom = ViewZoom;
+            LayerGrid.PixelOffset = LayerMap.PixelOffset;
+            LayerGrid.Zoom = LayerMap.Zoom;
             LayerGrid.DrawTileMap(gridView.ToBundle());
 
             //========
@@ -176,7 +151,9 @@ public class Editor
             Input.Position = MousePositionWorld;
             Input.TilemapSize = MapsEditor[0].View.Size;
 
-            TryViewInteract();
+            if (IsDisabledViewInteraction == false && Prompt.IsHidden)
+                LayerMap.DragAndZoom();
+
             OnUpdateEditor?.Invoke();
 
             //========
@@ -369,7 +346,7 @@ public class Editor
 
             var selectedPaths = PromptFileViewer.SelectedPaths;
             var file = selectedPaths.Length == 1 ? selectedPaths[0] : PromptFileViewer.CurrentDirectory;
-            var resultLayers = default(string[]);
+            var resultLayers = Array.Empty<string>();
 
             try
             {
@@ -420,7 +397,7 @@ public class Editor
     }
 
 #region Backend
-    private const float PIXEL_SCALE = 1f, ZOOM_MIN = 0.1f, ZOOM_MAX = 20f;
+    private const float PIXEL_SCALE = 1f;
     private const int GRID_GAP = 10;
     private readonly InputBox promptSize;
     private readonly TilesetPrompt tilesetPrompt;
@@ -428,9 +405,7 @@ public class Editor
     private string infoText = string.Empty;
     private float infoTextTimer;
     private int fps = 60;
-    private (float x, float y) prevRaw, prevWorld, prevUi;
-    private float viewZoom = 2f;
-    private (float x, float y) viewPosition;
+    private (float x, float y) prevWorld, prevUi;
 
     private void CreateResizeButtons()
     {
@@ -479,7 +454,6 @@ public class Editor
         MapsEditor.ForEach(map => map.View = new(MapsEditor[0].View.Position, (vw, vh)));
 
         SetGrid();
-        ViewMove(); // reclamp view position
     }
     private void ResizePressView(int i)
     {
@@ -490,7 +464,6 @@ public class Editor
 
         var (w, h) = ((int)text[0].ToNumber(), (int)text[1].ToNumber());
         MapsEditor.ForEach(map => map.View = new(MapsEditor[0].View.Position, (w, h)));
-        ViewMove(); // reclamp view position
         Log($"View {w}x{h}");
     }
     private void CreateViewButton(byte rotations)
@@ -520,7 +493,6 @@ public class Editor
         {
             var (x, y) = MapsEditor[0].View.Position;
             MapsEditor.ForEach(map => map.View = new((x + offX * 5, y + offY * 5), MapsEditor[0].View.Size));
-            ;
 
             if (offX == 0 && offY == 0)
             {
@@ -555,11 +527,11 @@ public class Editor
 
         var gray = Color.Gray.ToDark();
         MapsUi[(int)LayerMapsUi.Back].SetBox(
-            MapPanel.Area, new(Tile.FULL, gray), new(Tile.BOX_CORNER, gray), new(Tile.FULL, gray));
+            MapPanel.Area, new(Tile.FULL, gray), new(Tile.FULL, gray), new(Tile.FULL, gray));
 
         MapsUi[FRONT].SetText((0, 0), $"FPS:{fps}");
-        MapsUi[FRONT].SetText((11, bottomY - 2), $"{mw} x {mh}");
-        MapsUi[FRONT].SetText((12, bottomY), $"{vw} x {vh}");
+        MapsUi[FRONT].SetText((11, bottomY - 2), $"{mw}x{mh}");
+        MapsUi[FRONT].SetText((12, bottomY), $"{vw}x{vh}");
 
         MapsUi[FRONT].SetText((x, bottomY),
             $"Cursor {(int)mx}, {(int)my}".Constrain((TEXT_WIDTH, 1), alignment: Alignment.Center));
@@ -572,48 +544,6 @@ public class Editor
 
         var text = infoText.Constrain((TEXT_WIDTH, TEXT_HEIGHT), alignment: Alignment.Top, scrollProgress: 1f);
         MapsUi[FRONT].SetText((x, 0), text);
-    }
-
-    private void TryViewInteract()
-    {
-        if (IsDisabledViewInteraction || Prompt.IsHidden == false)
-            return;
-
-        var prevZoom = ViewZoom;
-
-        TryViewZoom();
-        TryViewMove();
-
-        LayerMap.PixelOffset = ViewPosition;
-        LayerMap.Zoom = ViewZoom;
-
-        if (Math.Abs(prevZoom - ViewZoom) > 0.01f)
-            Log($"Zoom {ViewZoom * 100:F0}%");
-    }
-    private void TryViewMove()
-    {
-        var mmb = Mouse.Button.Middle.IsPressed();
-
-        if (IsDisabledViewMove || mmb == false)
-            return;
-
-        ViewMove();
-    }
-    private void TryViewZoom()
-    {
-        if (Mouse.ScrollDelta != 0 && IsDisabledViewZoom == false)
-            ViewZoom *= Mouse.ScrollDelta > 0 ? 1.05f : 0.95f;
-    }
-    private void ViewMove()
-    {
-        var (mx, my) = MousePositionRaw;
-        var (px, py) = prevRaw;
-        var (aw, ah) = Monitor.Current.AspectRatio;
-        var (ww, wh) = Window.Size;
-
-        ViewPosition = (
-            ViewPosition.x + (mx - px) * ((float)aw / ww) / LayerMap.Zoom * 122.5f,
-            ViewPosition.y + (my - py) * ((float)ah / wh) / LayerMap.Zoom * 122.5f);
     }
 
     private static List<TileMap> LoadMap(byte[] bytes, ref string[] layerNames, ref MapGenerator? gen)
