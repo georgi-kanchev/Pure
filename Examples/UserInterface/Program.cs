@@ -12,7 +12,7 @@ namespace Pure.Examples.UserInterface;
 
 public static class Program
 {
-    public static Layer? Layer { get; private set; }
+    public static LayerTiles? Layer { get; private set; }
 
     public static (List<TileMap>, List<Block>) Initialize()
     {

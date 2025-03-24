@@ -12,7 +12,7 @@ public static class Animations
         Window.Title = "Pure - Animation Example";
 
         var (w, h) = Monitor.Current.AspectRatio;
-        var layer = new Layer((w * 3, h * 3));
+        var layer = new LayerTiles((w * 3, h * 3));
         var tilemap = new TileMap(layer.Size);
         var texts = new[] { "#1: This is a message", "#2: Another message", "#3: And yet another one" };
         var arrows = new[]

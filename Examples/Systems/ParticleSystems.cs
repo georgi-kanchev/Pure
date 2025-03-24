@@ -12,7 +12,7 @@ public static class ParticleSystems
     {
         Window.Title = "Pure - Particles Example";
 
-        var layer = new Layer((48, 27)) { BackgroundColor = Color.Gray.ToDark() };
+        var layer = new LayerTiles((48, 27)) { BackgroundColor = Color.Gray.ToDark() };
         var (w, h) = layer.Size;
         var b = new Area(5, 20, 16, 1, Color.Red);
         var t = new Area(5, 5, 16, 1, Color.Red);

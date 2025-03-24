@@ -2,7 +2,6 @@
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
 using Pure.Tools.Tiles;
-
 using static Pure.Engine.UserInterface.SymbolGroup;
 
 namespace Pure.Tools.ImmediateGraphicalUserInterface;
@@ -239,20 +238,20 @@ public static class GUI
         CurrentPrompt = key;
     }
 
-    public static void DrawGUI(this Layer layer)
+    public static void DrawGUI(this LayerTiles layerTiles)
     {
-        if (TileMaps.Count == 0 || layer.Size != TileMaps[0].Size)
+        if (TileMaps.Count == 0 || layerTiles.Size != TileMaps[0].Size)
         {
             TileMaps.Clear();
             for (var i = 0; i < 6; i++)
-                TileMaps.Add(new(layer.Size));
+                TileMaps.Add(new(layerTiles.Size));
         }
 
         Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-        Input.TilemapSize = layer.Size;
+        Input.TilemapSize = layerTiles.Size;
         Input.PositionPrevious = Input.Position;
-        Input.Position = layer.PixelToPosition(Mouse.CursorPosition);
+        Input.Position = layerTiles.PositionFromPixel(Mouse.CursorPosition);
         Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta, Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
 
         var toRemove = new List<string>();
@@ -269,9 +268,9 @@ public static class GUI
         foreach (var cacheKey in toRemove)
             imGuiCache.Remove(cacheKey);
 
-        TileMaps.ForEach(map => layer.DrawTileMap(map));
-        layer.DrawMouseCursor(Cursor.Id, Cursor.Tint);
-        layer.Draw();
+        TileMaps.ForEach(map => layerTiles.DrawTileMap(map));
+        layerTiles.DrawMouseCursor(Cursor.Id, Cursor.Tint);
+        layerTiles.Draw();
         TileMaps.ForEach(map => map.Flush());
     }
 
@@ -284,7 +283,7 @@ public static class GUI
         TileMaps.ForEach(map => map.ConfigureText(firstTileId, symbols));
     }
 
-    #region Backend
+#region Backend
     private static float lastChoice = float.NaN;
     private static readonly Dictionary<string, (int framesLeft, Block block)> imGuiCache = [];
 
@@ -377,5 +376,5 @@ public static class GUI
 
         return (T)cache.block;
     }
-    #endregion
+#endregion
 }

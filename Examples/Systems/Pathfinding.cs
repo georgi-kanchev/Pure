@@ -14,7 +14,7 @@ public static class Pathfinding
 
         var (w, h) = Monitor.Current.AspectRatio;
         var tilemap = new TileMap((w * 3, h * 3));
-        var layer = new Layer(tilemap.Size);
+        var layer = new LayerTiles(tilemap.Size);
         var pathMap = new PathMap(tilemap.Size);
 
         tilemap.SetEllipse((21, 8), (10, 7), true, Tile.FULL);
@@ -29,7 +29,7 @@ public static class Pathfinding
 
         while (Window.KeepOpen())
         {
-            var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
+            var (mx, my) = layer.PositionFromPixel(Mouse.CursorPosition);
             var lines = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Red);
             var points = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Green);
 

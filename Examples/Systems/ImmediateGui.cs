@@ -3,7 +3,6 @@ using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
 using Pure.Tools.ImmediateGraphicalUserInterface;
-
 using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
@@ -15,7 +14,7 @@ public static class ImmediateGui
         Window.Title = "Pure - Immediate Graphical User Interface Example";
 
         var (w, h) = Monitor.Current.AspectRatio;
-        var layer = new Layer((w * 3, h * 3));
+        var layer = new LayerTiles((w * 3, h * 3));
 
         var items = new[] { "Stick", "Rock", "Leaf", "Bush", "Flower" };
         var animals = new[] { "Dog", "Cat", "Rabbit", "Fox", "Bear" };

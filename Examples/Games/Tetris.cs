@@ -104,7 +104,7 @@ public static class Tetris
 #region Backend
     private static readonly SortedDictionary<(int y, int x), Box> fallen = new();
     private static Area playArea;
-    private static Layer? layer;
+    private static LayerTiles? layer;
     private static TileMap? map;
     private static Piece? piece;
 

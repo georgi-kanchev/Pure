@@ -14,7 +14,7 @@ public static class LineOfSightAndLights
 
         var (w, h) = Monitor.Current.AspectRatio;
         var tilemap = new TileMap((w * 3, h * 3));
-        var layer = new Layer(tilemap.Size);
+        var layer = new LayerTiles(tilemap.Size);
         var solidMap = new SolidMap();
         var angle = 0f;
         var opaque = new Tile(Tile.FULL, Color.Green);
@@ -38,7 +38,7 @@ public static class LineOfSightAndLights
             Time.Update();
             angle += Time.Delta * 60;
 
-            var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
+            var (mx, my) = layer.PositionFromPixel(Mouse.CursorPosition);
 
             layer.EffectAddLightObstacles(solidMap);
             layer.EffectAddLight(20f, (120f, angle), (mx, my, Color.White));

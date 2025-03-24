@@ -13,7 +13,7 @@ public static class NumberGuess
         Window.Title = "Pure - Number Guess Example";
 
         var (w, h) = Monitor.Current.AspectRatio;
-        var layer = new Layer((w * 3, h * 3));
+        var layer = new LayerTiles((w * 3, h * 3));
         var log = "";
         var tries = 0;
         var randomNumber = GenerateRandomNumber();

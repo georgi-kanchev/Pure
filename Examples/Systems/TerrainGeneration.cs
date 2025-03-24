@@ -14,7 +14,7 @@ public static class TerrainGeneration
         Window.PixelScale = 3f;
 
         var aspectRatio = Monitor.Current.AspectRatio;
-        var layer = new Layer((aspectRatio.width * 5, aspectRatio.height * 5));
+        var layer = new LayerTiles((aspectRatio.width * 5, aspectRatio.height * 5));
         var terrain = new TileMap(layer.Size);
         var generator = new MapGenerator();
 

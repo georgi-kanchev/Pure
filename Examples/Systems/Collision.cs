@@ -30,7 +30,7 @@ public static class Collision
         // and the hitbox is not
         const float SCALE = 1f - 1f / 8f;
         var hitbox = new SolidPack(new Solid(0, 0, 1, 1)) { Scale = (SCALE, SCALE) };
-        var layer = new Layer((w, h));
+        var layer = new LayerTiles((w, h));
 
         maps[1].FillWithRandomGrass();
         maps[1].SetLake((0, 0), (14, 9));
@@ -61,7 +61,7 @@ public static class Collision
         {
             Time.Update();
 
-            var mousePosition = layer.PixelToPosition(Mouse.CursorPosition);
+            var mousePosition = layer.PositionFromPixel(Mouse.CursorPosition);
             var isOverlapping = collisionMap.IsOverlapping(hitbox);
             var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_SMILING;
             var tint = isOverlapping ? Red : Green;

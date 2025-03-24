@@ -32,7 +32,7 @@ public static class FlappyBird
         };
         var pipes = new List<(float, int, int)>();
         var collisionMap = new SolidMap();
-        var layer = new Layer(background.Size);
+        var layer = new LayerTiles(background.Size);
 
         collisionMap.AddSolids(Tile.PIPE_SOLID_CORNER, new Solid(0, 0, 1, 1));
         collisionMap.AddSolids(Tile.PIPE_SOLID_STRAIGHT, new Solid(0, 0, 1, 1));

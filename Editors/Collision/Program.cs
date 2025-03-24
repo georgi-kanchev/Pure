@@ -13,7 +13,7 @@ public static class Program
 {
     public static void Run()
     {
-        Window.SetIconFromTile(editor.LayerUi, (Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Blue),
+        Window.SetIconFromTile(editor.LayerTilesUi, (Tile.SHAPE_SQUARE_BIG_HOLLOW, Color.Blue),
             (Tile.SHAPE_TRIANGLE_HOLLOW, Color.Red));
 
         editor.OnUpdateUi += () =>
@@ -30,22 +30,22 @@ public static class Program
 
             if (CanDrawLayer)
             {
-                layer.DrawTileMap(map);
+                layerTiles.DrawTileMap(map);
                 solidMap.Update(map);
-                layer.DrawRectangles(solidMap);
+                layerTiles.DrawRectangles(solidMap);
             }
             else
             {
-                editor.LayerMap.DrawRectangles(solidMap);
-                editor.LayerMap.DrawRectangles(solidPack);
-                editor.LayerMap.DrawLines(linePack.ToBundle());
+                editor.LayerTilesMap.DrawRectangles(solidMap);
+                editor.LayerTilesMap.DrawRectangles(solidPack);
+                editor.LayerTilesMap.DrawLines(linePack.ToBundle());
             }
 
             if (isDragging == false)
                 return;
 
             var pos = CanDrawLayer ? MousePosPrompt : MousePos;
-            var l = CanDrawLayer ? layer : editor.LayerMap;
+            var l = CanDrawLayer ? layerTiles : editor.LayerTilesMap;
             var (sx, sy) = (1f / l.AtlasTileSize, 1f / l.AtlasTileSize);
             solid.Size = Snap((pos.x - solid.Position.x, pos.y - solid.Position.y));
             solid.Position = Snap(solid.Position);
@@ -56,19 +56,19 @@ public static class Program
                 solid.Size = (solid.Size.width, solid.Size.height - sy);
 
             if (CanDrawLayer)
-                layer.DrawRectangles(solid);
+                layerTiles.DrawRectangles(solid);
             else if (CanEditGlobal)
-                editor.LayerMap.DrawRectangles(solid);
+                editor.LayerTilesMap.DrawRectangles(solid);
             else if (CanEditLines)
             {
                 var line = new Line(Snap(clickPos), Snap(pos), solid.Color);
-                editor.LayerMap.DrawLines(line);
+                editor.LayerTilesMap.DrawLines(line);
             }
         };
         editor.OnUpdateLate += () =>
         {
             if (CanDrawLayer)
-                layer.Draw();
+                layerTiles.Draw();
         };
         editor.Run();
     }
@@ -78,7 +78,7 @@ public static class Program
     private static (int width, int height) originalMapViewPos;
     private static readonly Editor editor;
     private static readonly List tools;
-    private static readonly Layer layer = new();
+    private static readonly LayerTiles layerTiles = new();
     private static readonly TileMap map = new((3, 3));
     private static readonly Panel promptPanel;
     private static readonly Palette palette;
@@ -99,7 +99,7 @@ public static class Program
     }
     private static bool CanEdit
     {
-        get => editor.LayerMap.IsHovered &&
+        get => editor.LayerTilesMap.IsHovered &&
                editor.Prompt.IsHidden &&
                editor.MapPanel.IsHovered == false &&
                menu.IsHovered == false &&
@@ -120,11 +120,11 @@ public static class Program
     }
     private static (float x, float y) MousePos
     {
-        get => editor.LayerMap.PixelToPosition(Mouse.CursorPosition);
+        get => editor.LayerTilesMap.PositionFromPixel(Mouse.CursorPosition);
     }
     private static (float x, float y) MousePosPrompt
     {
-        get => layer.PixelToPosition(Mouse.CursorPosition);
+        get => layerTiles.PositionFromPixel(Mouse.CursorPosition);
     }
 
     static Program()
@@ -187,8 +187,8 @@ public static class Program
         };
         promptPanel.OnDisplay += () => editor.MapsUi.SetPanel(promptPanel, PROMPT_BACK);
 
-        layer.Size = map.Size;
-        layer.PixelOffset = (0f, 0f);
+        layerTiles.Size = map.Size;
+        layerTiles.PixelOffset = (0f, 0f);
 
         SubscribeToClicks();
     }
@@ -222,14 +222,14 @@ public static class Program
             y += editor.MapsEditor[0].View.Y;
             currentTile = editor.MapsEditor[currentLayer].TileAt(((int)x, (int)y));
 
-            layer.AtlasTileGap = editor.LayerMap.AtlasTileGap;
-            layer.AtlasPath = editor.LayerMap.AtlasPath;
-            layer.AtlasTileSize = editor.LayerMap.AtlasTileSize;
-            layer.AtlasTileIdFull = editor.LayerMap.AtlasTileIdFull;
-            var tsz = layer.AtlasTileSize;
+            layerTiles.AtlasTileGap = editor.LayerTilesMap.AtlasTileGap;
+            layerTiles.AtlasPath = editor.LayerTilesMap.AtlasPath;
+            layerTiles.AtlasTileSize = editor.LayerTilesMap.AtlasTileSize;
+            layerTiles.AtlasTileIdFull = editor.LayerTilesMap.AtlasTileIdFull;
+            var tsz = layerTiles.AtlasTileSize;
             var ratio = MathF.Max(tsz / 8f, tsz / 8f);
             var zoom = 28f / ratio;
-            layer.Zoom = zoom;
+            layerTiles.Zoom = zoom;
 
             UpdateMap();
             promptPanel.Text = layers[currentLayer];
@@ -281,7 +281,7 @@ public static class Program
                 if (curSolid.Size is { width: > 0, height: > 0 })
                     solidPack.Add(curSolid);
             }
-            else if (CanDrawLayer && layer.IsHovered)
+            else if (CanDrawLayer && layerTiles.IsHovered)
             {
                 curSolid.Position = (solid.Position.x - 1, solid.Position.y - 1);
                 if (curSolid.Size is { width: > 0, height: > 0 })
@@ -475,7 +475,7 @@ public static class Program
 
     private static (float x, float y) Snap((float x, float y) pair)
     {
-        var l = CanDrawLayer ? layer : editor.LayerMap;
+        var l = CanDrawLayer ? layerTiles : editor.LayerTilesMap;
         var (sx, sy) = (1f / l.AtlasTileSize, 1f / l.AtlasTileSize);
         return (pair.x.Snap(sx), pair.y.Snap(sy));
     }

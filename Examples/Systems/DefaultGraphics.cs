@@ -13,7 +13,7 @@ public static class DefaultGraphics
 
         var (w, h) = Monitor.Current.AspectRatio;
         var tilemap = new TileMap((w * 3, h * 3));
-        var layer = new Layer(tilemap.Size);
+        var layer = new LayerTiles(tilemap.Size);
 
         while (Window.KeepOpen())
         {
@@ -23,7 +23,7 @@ public static class DefaultGraphics
                 for (var j = 0; j < 26; j++)
                     tilemap.SetTile((j, i), (ushort)(i, j).ToIndex((26, 26)));
 
-            var (x, y) = layer.PixelToPosition(Mouse.CursorPosition);
+            var (x, y) = layer.PositionFromPixel(Mouse.CursorPosition);
             var id = tilemap.TileAt(((int)x, (int)y)).Id;
             tilemap.SetText((27, 13), $"{id}");
 

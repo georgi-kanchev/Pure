@@ -12,7 +12,7 @@ public static class Program
 {
     public static void Run()
     {
-        Window.SetIconFromTile(editor.LayerUi, (Tile.ICON_SKY_STARS, Color.Red.ToDark()),
+        Window.SetIconFromTile(editor.LayerTilesUi, (Tile.ICON_SKY_STARS, Color.Red.ToDark()),
             (Tile.FULL, Color.Brown.ToBright()));
 
         editor.OnUpdateUi += tilePalette.TryDraw;
@@ -73,10 +73,10 @@ public static class Program
                     {
                         var zoomFactor = 3.8f / layer.Zoom;
                         layer.PixelOffset = (198f * zoomFactor, 88f * zoomFactor);
-                        tilePalette.layer = layer;
+                        tilePalette.layerTiles = layer;
                         tilePalette.map = map;
                     },
-                    () => tilePalette.Create(tilePalette.layer.AtlasTileCount));
+                    () => tilePalette.Create(tilePalette.layerTiles.AtlasTileCount));
 
             if (index == 3) // save map
                 editor.PromptFileSave(Save());
@@ -93,7 +93,7 @@ public static class Program
             if (editor.Prompt.IsHidden == false || inspector.IsHovered || terrainPanel.IsHovered)
                 return;
 
-            var (mx, my) = editor.LayerUi.PixelToPosition(Mouse.CursorPosition);
+            var (mx, my) = editor.LayerTilesUi.PositionFromPixel(Mouse.CursorPosition);
             menu.IsHidden = false;
             menu.IsDisabled = false;
             menu.Position = ((int)mx + 1, (int)my + 1);

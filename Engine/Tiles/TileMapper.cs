@@ -364,8 +364,6 @@ public static class TileMapper
             var (x2, y2) = boundaryPoints[(i + 1) % boundaryPoints.Count];
             SetLine(tileMap, (x1, y1), (x2, y2), tiles);
         }
-
-        Flood(tileMap, (cell.x, cell.y), false, tiles);
     }
 
     public static void SetBar(this TileMap tileMap, VecI cell, Tile edge1, Tile fill, Tile edge2, int size = 5, bool vertical = false)

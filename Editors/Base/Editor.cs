@@ -15,9 +15,9 @@ public class Editor
 
     public enum LayerMapsUi { Back, Middle, Front, PromptFade, PromptBack, PromptMiddle, PromptFront, Count }
 
-    public Layer LayerGrid { get; }
-    public Layer LayerMap { get; }
-    public Layer LayerUi { get; }
+    public LayerTiles LayerTiles { get; }
+    public LayerTiles LayerTilesMap { get; }
+    public LayerTiles LayerTilesUi { get; }
 
     public TileMap MapGrid { get; private set; }
     public List<TileMap> MapsEditor { get; private set; }
@@ -75,9 +75,9 @@ public class Editor
         };
         promptSize.OnDisplay += () => MapsUi.SetInputBox(promptSize, (int)LayerMapsUi.PromptBack);
 
-        LayerGrid = new(MapGrid.Size);
-        LayerMap = new(MapsEditor[0].Size);
-        LayerUi = new(MapsUi[0].Size);
+        LayerTiles = new(MapGrid.Size);
+        LayerTilesMap = new(MapsEditor[0].Size);
+        LayerTilesUi = new(MapsUi[0].Size);
         Input.TilemapSize = MapsUi[0].View.Size;
 
         for (var i = 0; i < 5; i++)
@@ -120,9 +120,9 @@ public class Editor
 
             MapsUi.ForEach(map => map.Flush());
 
-            LayerGrid.Size = MapGrid.View.Size;
-            LayerMap.Size = MapsEditor[0].View.Size;
-            LayerUi.Size = MapsUi[0].View.Size;
+            LayerTiles.Size = MapGrid.View.Size;
+            LayerTilesMap.Size = MapsEditor[0].View.Size;
+            LayerTilesUi.Size = MapsUi[0].View.Size;
 
             Input.Update(
                 Mouse.ButtonIdsPressed,
@@ -137,13 +137,13 @@ public class Editor
 
             MapGrid.View = MapsEditor[0].View;
             var gridView = MapGrid.UpdateView();
-            LayerGrid.PixelOffset = LayerMap.PixelOffset;
-            LayerGrid.Zoom = LayerMap.Zoom;
-            LayerGrid.DrawTileMap(gridView.ToBundle());
+            LayerTiles.PixelOffset = LayerTilesMap.PixelOffset;
+            LayerTiles.Zoom = LayerTilesMap.Zoom;
+            LayerTiles.DrawTileMap(gridView.ToBundle());
 
             //========
 
-            var (x, y) = LayerMap.PixelToPosition(Mouse.CursorPosition);
+            var (x, y) = LayerTilesMap.PositionFromPixel(Mouse.CursorPosition);
             var (vw, vy) = MapsEditor[0].View.Position;
             prevWorld = MousePositionWorld;
             MousePositionWorld = (x + vw, y + vy);
@@ -152,7 +152,7 @@ public class Editor
             Input.TilemapSize = MapsEditor[0].View.Size;
 
             if (IsDisabledViewInteraction == false && Prompt.IsHidden)
-                LayerMap.DragAndZoom();
+                LayerTilesMap.DragAndZoom();
 
             OnUpdateEditor?.Invoke();
 
@@ -163,13 +163,13 @@ public class Editor
                 if (i < MapsEditorVisible.Count && MapsEditorVisible[i] == false)
                     continue;
 
-                LayerMap.DrawTileMap(views[i].ToBundle());
+                LayerTilesMap.DrawTileMap(views[i].ToBundle());
             }
 
             //========
 
             prevUi = MousePositionUi;
-            MousePositionUi = LayerUi.PixelToPosition(Mouse.CursorPosition);
+            MousePositionUi = LayerTilesUi.PositionFromPixel(Mouse.CursorPosition);
             Input.Position = MousePositionUi;
             Input.PositionPrevious = prevUi;
             Input.TilemapSize = MapsUi[0].View.Size;
@@ -183,14 +183,14 @@ public class Editor
 
             Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-            MapsUi.ForEach(map => LayerUi.DrawTileMap(map));
-            LayerUi.DrawMouseCursor();
+            MapsUi.ForEach(map => LayerTilesUi.DrawTileMap(map));
+            LayerTilesUi.DrawMouseCursor();
 
             //========
 
-            LayerGrid.Draw();
-            LayerMap.Draw();
-            LayerUi.Draw();
+            LayerTiles.Draw();
+            LayerTilesMap.Draw();
+            LayerTilesUi.Draw();
 
             OnUpdateLate?.Invoke();
         }
@@ -292,7 +292,7 @@ public class Editor
                 onAccept?.Invoke();
         });
     }
-    public void PromptTileset(Action<Layer, TileMap>? onSuccess, Action? onFail)
+    public void PromptTileset(Action<LayerTiles, TileMap>? onSuccess, Action? onFail)
     {
         tilesetPrompt.OnSuccess = onSuccess;
         tilesetPrompt.OnFail = onFail;
@@ -318,18 +318,18 @@ public class Editor
         var color = Color.Gray.ToDark(0.6f);
         var (x, y) = (0, 0);
 
-        MapGrid.Fill(new Tile(LayerMap.AtlasTileIdFull, Color.Gray.ToDark(0.7f)));
+        MapGrid.Fill(new Tile(LayerTilesMap.AtlasTileIdFull, Color.Gray.ToDark(0.7f)));
 
         for (var i = 0; i < size.width + GRID_GAP; i += GRID_GAP)
         {
             var newX = x - (x + i) % GRID_GAP;
-            MapGrid.SetLine((newX + i, y), (newX + i, y + size.height), new Tile(LayerMap.AtlasTileIdFull, color));
+            MapGrid.SetLine((newX + i, y), (newX + i, y + size.height), new Tile(LayerTilesMap.AtlasTileIdFull, color));
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
-            MapGrid.SetLine((x, newY + i), (x + size.width, newY + i), new Tile(LayerMap.AtlasTileIdFull, color));
+            MapGrid.SetLine((x, newY + i), (x + size.width, newY + i), new Tile(LayerTilesMap.AtlasTileIdFull, color));
         }
 
         OnSetGrid?.Invoke();

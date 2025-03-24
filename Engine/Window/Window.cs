@@ -8,6 +8,7 @@ global using System.Numerics;
 global using Count = (byte width, byte height);
 global using SizeU = (uint width, uint height);
 global using SizeI = (int width, int height);
+global using SizeF = (float width, float height);
 global using PointI = (int x, int y);
 global using PointF = (float x, float y);
 global using PointColored = (float x, float y, uint color);
@@ -189,31 +190,42 @@ public static class Window
         window.Clear(new(BackgroundColor));
         window.SetActive();
 
-        allLayers?.Clear(new(BackgroundColor));
+        renderResult?.Clear(new(BackgroundColor));
         return window.IsOpen;
     }
-    public static void Draw(this Layer layer)
+    public static void Draw(this LayerTiles layerTiles)
     {
         TryCreate();
 
-        layer.DrawQueue();
+        layerTiles.DrawQueue();
 
         var tr = Transform.Identity;
-        tr.Translate(layer.PixelOffset.x, layer.PixelOffset.y);
-        tr.Scale(layer.Zoom, layer.Zoom, -layer.PixelOffset.x, -layer.PixelOffset.y);
+        tr.Translate(layerTiles.PixelOffset.x, layerTiles.PixelOffset.y);
+        tr.Scale(layerTiles.Zoom, layerTiles.Zoom, -layerTiles.PixelOffset.x, -layerTiles.PixelOffset.y);
 
-        var (w, h) = (layer.result?.Texture.Size.X ?? 0, layer.result?.Texture.Size.Y ?? 0);
+        var (w, h) = (layerTiles.result?.Texture.Size.X ?? 0, layerTiles.result?.Texture.Size.Y ?? 0);
         vertsWindow[0] = new(new(-w / 2f, -h / 2f), Color.White, new(0, 0));
         vertsWindow[1] = new(new(w / 2f, -h / 2f), Color.White, new(w, 0));
         vertsWindow[2] = new(new(w / 2f, h / 2f), Color.White, new(w, h));
         vertsWindow[3] = new(new(-w / 2f, h / 2f), Color.White, new(0, h));
 
-        allLayers?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.result?.Texture, null));
-        // allLayers?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.data?.Texture, null));
+        renderResult?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layerTiles.result?.Texture, null));
+        // renderResult?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.data?.Texture, null));
+    }
+    public static void Draw(this Layer layer)
+    {
+        TryCreate();
+
+        var tr = Transform.Identity;
+        tr.Translate(layer.Position.x, layer.Position.y);
+        tr.Scale(layer.Zoom, layer.Zoom, -layer.Position.x, -layer.Position.y);
+        Layer.textures.TryGetValue(layer.TexturePath ?? "", out var texture);
+        renderResult?.Draw(layer.verts, new(BlendMode.Alpha, tr, texture, null));
+        layer.verts.Clear();
     }
     public static void Close()
     {
-        if (window == null || allLayers == null)
+        if (window == null || renderResult == null)
             return;
 
         if (IsRetro || isClosing)
@@ -252,18 +264,18 @@ public static class Window
         window.Position = new(x, y);
     }
 
-    public static void SetIconFromTile(Layer layer, TileStatic tile, TileStatic tileBack = default, bool saveAsFile = false)
+    public static void SetIconFromTile(LayerTiles layerTiles, TileStatic tile, TileStatic tileBack = default, bool saveAsFile = false)
     {
         TryCreate();
 
         const uint SIZE = 64;
         var rend = new RenderTexture(SIZE, SIZE);
-        var texture = Layer.atlases[layer.AtlasPath];
-        var (bx, by) = IndexToCoords(tileBack.id, layer);
-        var (fx, fy) = IndexToCoords(tile.id, layer);
-        var tsz = layer.AtlasTileSize;
-        tsz += layer.AtlasTileGap;
-        tsz += layer.AtlasTileGap;
+        var texture = LayerTiles.atlases[layerTiles.AtlasPath];
+        var (bx, by) = IndexToCoords(tileBack.id, layerTiles);
+        var (fx, fy) = IndexToCoords(tile.id, layerTiles);
+        var tsz = layerTiles.AtlasTileSize;
+        tsz += layerTiles.AtlasTileGap;
+        tsz += layerTiles.AtlasTileGap;
         var vertices = new Vertex[]
         {
             new(new(0, 0), new(tileBack.tint), new(tsz * bx, tsz * by)),
@@ -293,7 +305,7 @@ public static class Window
     [DoNotSave]
     internal static RenderWindow? window;
     [DoNotSave]
-    private static RenderTexture? allLayers;
+    private static RenderTexture? renderResult;
     [DoNotSave]
     internal static (int w, int h) rendTexViewSz;
 
@@ -354,7 +366,7 @@ public static class Window
         if (window != null)
             return;
 
-        if (allLayers == null)
+        if (renderResult == null)
             RecreateRenderTextures();
 
         Recreate();
@@ -435,19 +447,19 @@ public static class Window
 
         OnRecreate?.Invoke();
     }
-    [MemberNotNull(nameof(allLayers))]
+    [MemberNotNull(nameof(renderResult))]
     private static void RecreateRenderTextures()
     {
-        allLayers?.Dispose();
-        allLayers = null;
+        renderResult?.Dispose();
+        renderResult = null;
 
         var currentMonitor = Engine.Window.Monitor.Monitors[Monitor];
         var (w, h) = currentMonitor.Size;
-        allLayers = new((uint)(w / pixelScale), (uint)(h / pixelScale));
-        var view = allLayers.GetView();
+        renderResult = new((uint)(w / pixelScale), (uint)(h / pixelScale));
+        var view = renderResult.GetView();
         view.Center = new();
         rendTexViewSz = ((int)view.Size.X, (int)view.Size.Y);
-        allLayers.SetView(view);
+        renderResult.SetView(view);
     }
 
     private static void StartRetroAnimation()
@@ -464,16 +476,16 @@ public static class Window
     }
     private static void FinishDraw()
     {
-        if (allLayers == null || hasClosed)
+        if (renderResult == null || hasClosed)
             return;
 
         TryCreate();
-        allLayers.Display();
+        renderResult.Display();
 
         var (ww, wh, ow, oh) = GetRenderOffset();
-        var (tw, th) = (allLayers.Size.X, allLayers.Size.Y);
+        var (tw, th) = (renderResult.Size.X, renderResult.Size.Y);
         var shader = IsRetro ? retroShader : null;
-        var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, allLayers.Texture, shader);
+        var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, renderResult.Texture, shader);
         vertsWindow[0] = new(new(ow, oh), Color.White, new(0, 0));
         vertsWindow[1] = new(new(ww + ow, oh), Color.White, new(tw, 0));
         vertsWindow[2] = new(new(ww + ow, wh + oh), Color.White, new(tw, th));
@@ -497,9 +509,9 @@ public static class Window
         window.Draw(vertsWindow, PrimitiveType.Quads, rend);
     }
 
-    private static (int, int) IndexToCoords(int index, Layer layer)
+    private static (int, int) IndexToCoords(int index, LayerTiles layerTiles)
     {
-        var (tw, th) = layer.AtlasTileCount;
+        var (tw, th) = layerTiles.AtlasTileCount;
         index = index < 0 ? 0 : index;
         index = index > tw * th - 1 ? tw * th - 1 : index;
 
@@ -520,6 +532,11 @@ public static class Window
             ww = (uint)(wh * ratio);
 
         return (ww, wh, (window.Size.X - ww) / 2f, (window.Size.Y - wh) / 2f);
+    }
+    internal static float Map(float number, float a1, float a2, float b1, float b2)
+    {
+        var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
+        return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
     }
 #endregion
 }

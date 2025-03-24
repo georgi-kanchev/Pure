@@ -13,7 +13,7 @@ public static class AutoTiling
         Window.Title = "Pure - Auto Tiling Example";
 
         var (w, h) = Monitor.Current.AspectRatio;
-        var layer = new Layer((w * 3, h * 3));
+        var layer = new LayerTiles((w * 3, h * 3));
         var original = new TileMap(layer.Size);
         var firstPass = new TileMap(layer.Size);
         var secondPass = new TileMap(layer.Size);

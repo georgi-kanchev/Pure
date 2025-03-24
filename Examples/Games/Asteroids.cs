@@ -142,7 +142,7 @@ public static class Asteroids
         "Y2NABg32ECxwgIFhChB3APGD/f+rqqpgbIhciwNEDMJmYJgDxEegYhA2UA6IE6B6IWwgBtIbDiD0guwAia0BiwEA",
         "Y2VABg32EHxhP5A+wMAwB4gV9v+vqqpiYJgBZDMAxTmAtIYjRIwBzAZiBwYGCweIGITNwHAEiD2gYiB2gAPE3IoDIDEA"
     ];
-    private static Layer layer = new();
+    private static LayerTiles layerTiles = new();
 
     private enum Type
     {
@@ -161,12 +161,12 @@ public static class Asteroids
         public Shape(params (float x, float y, uint color)[] points) : base(points)
         {
         }
-        public void UpdateAndDraw(Layer layer)
+        public void UpdateAndDraw(LayerTiles layerTiles)
         {
             Position = new Point(Position).MoveAt(MoveAngle, Velocity, Time.Delta);
             Angle = new Angle(Angle).Rotate(Torque, Time.Delta);
 
-            layer.DrawLine(ToBundlePoints());
+            layerTiles.DrawLine(ToBundlePoints());
         }
     }
 #endregion

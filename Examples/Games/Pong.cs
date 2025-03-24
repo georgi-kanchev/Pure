@@ -21,7 +21,7 @@ public static class Pong
         var ballPosition = center;
         var paddleLeftPosition = new Point(0, y: 0);
         var paddleRightPosition = new Point(tilemap.Size.width - 1, y: 0);
-        var layer = new Layer(tilemap.Size);
+        var layer = new LayerTiles(tilemap.Size);
 
         while (Window.KeepOpen())
         {

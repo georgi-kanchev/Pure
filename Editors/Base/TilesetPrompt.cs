@@ -31,7 +31,7 @@ internal class TilesetPrompt
         });
     }
 
-    public Action<Layer, TileMap>? OnSuccess { get; set; }
+    public Action<LayerTiles, TileMap>? OnSuccess { get; set; }
     public Action? OnFail { get; set; }
 
     public void Open()
@@ -45,7 +45,7 @@ internal class TilesetPrompt
     }
 
 #region Backend
-    private readonly Layer layer = new((1, 1));
+    private readonly LayerTiles layerTiles = new((1, 1));
     private TileMap? map;
     private readonly Editor editor;
     private readonly FileViewer fileViewer;
@@ -61,14 +61,14 @@ internal class TilesetPrompt
         }
 
         var path = fileViewer.SelectedPaths[0];
-        editor.LayerGrid.AtlasPath = path;
-        editor.LayerMap.AtlasPath = path;
-        layer.AtlasPath = path;
+        editor.LayerTiles.AtlasPath = path;
+        editor.LayerTilesMap.AtlasPath = path;
+        layerTiles.AtlasPath = path;
 
-        if (editor.LayerMap.AtlasPath == "default")
+        if (editor.LayerTilesMap.AtlasPath == "default")
         {
-            editor.LayerGrid.ToDefault();
-            editor.LayerMap.ToDefault();
+            editor.LayerTiles.ToDefault();
+            editor.LayerTilesMap.ToDefault();
             OnFail?.Invoke();
             editor.PromptMessage("Could not load image!");
             return;
@@ -89,9 +89,9 @@ internal class TilesetPrompt
     private void PromptTileSizeAccept()
     {
         var result = (byte)stepper.Value;
-        editor.LayerGrid.AtlasTileSize = result;
-        editor.LayerMap.AtlasTileSize = result;
-        layer.AtlasTileSize = result;
+        editor.LayerTiles.AtlasTileSize = result;
+        editor.LayerTilesMap.AtlasTileSize = result;
+        layerTiles.AtlasTileSize = result;
         PromptTileGap();
     }
     private void PromptTileGap()
@@ -107,9 +107,9 @@ internal class TilesetPrompt
     private void PromptTileGapAccept()
     {
         var result = (byte)stepper.Value;
-        editor.LayerGrid.AtlasTileGap = result;
-        editor.LayerMap.AtlasTileGap = result;
-        layer.AtlasTileGap = result;
+        editor.LayerTiles.AtlasTileGap = result;
+        editor.LayerTilesMap.AtlasTileGap = result;
+        layerTiles.AtlasTileGap = result;
 
         PromptTileFull();
     }
@@ -127,20 +127,20 @@ internal class TilesetPrompt
     {
         var result = (ushort)stepper.Value;
 
-        editor.LayerGrid.AtlasTileIdFull = result;
-        editor.LayerMap.AtlasTileIdFull = result;
-        layer.AtlasTileIdFull = result;
+        editor.LayerTiles.AtlasTileIdFull = result;
+        editor.LayerTilesMap.AtlasTileIdFull = result;
+        layerTiles.AtlasTileIdFull = result;
 
-        var pixels = 10 * layer.AtlasTileSize;
+        var pixels = 10 * layerTiles.AtlasTileSize;
         var scaleFactor = (float)pixels / 80; // 10x10 map size * 8x8 tile size
         var newZoomLevel = 3.8f / scaleFactor;
 
-        layer.Zoom = newZoomLevel;
-        map = new(layer.AtlasTileCount) { View = (0, 0, 10, 10) };
+        layerTiles.Zoom = newZoomLevel;
+        map = new(layerTiles.AtlasTileCount) { View = (0, 0, 10, 10) };
 
         editor.SetGrid();
 
-        OnSuccess?.Invoke(layer, map);
+        OnSuccess?.Invoke(layerTiles, map);
     }
 #endregion
 }

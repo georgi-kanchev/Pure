@@ -38,7 +38,7 @@ internal class Inspector : Panel
 
             SetLine(14, 18, 23, 28);
 
-            if (tools?.Current < 9 && tilePalette.layer.IsHovered && editor.Prompt.IsHidden)
+            if (tools?.Current < 9 && tilePalette.layerTiles.IsHovered && editor.Prompt.IsHidden)
             {
                 var (mx, my) = tilePalette.mousePos;
                 var index = (my, mx).ToIndex(tilePalette.map.Size);

@@ -16,7 +16,7 @@ public static class Minesweeper
         var (aw, ah) = Monitor.Current.AspectRatio;
         var (w, h) = (aw * 3, ah * 3);
         var maps = new List<TileMap> { new((w, h)), new((w, h)), new((w, h)) };
-        var layer = new Layer((w, h));
+        var layer = new LayerTiles((w, h));
         var gameOver = false;
 
         PrepareGame();
@@ -83,7 +83,7 @@ public static class Minesweeper
                     return;
                 }
 
-                var (x, y) = layer.PixelToPosition(Mouse.CursorPosition);
+                var (x, y) = layer.PositionFromPixel(Mouse.CursorPosition);
                 var pos = ((int)x, (int)y);
                 var id = maps[0].TileAt(pos).Id;
 
@@ -100,7 +100,7 @@ public static class Minesweeper
             });
             Mouse.Button.Right.OnPress(() =>
             {
-                var (x, y) = layer.PixelToPosition(Mouse.CursorPosition);
+                var (x, y) = layer.PositionFromPixel(Mouse.CursorPosition);
                 Flag(((int)x, (int)y));
             });
         }

@@ -6,7 +6,7 @@ internal class TilePalette
 {
     public bool justPickedTile;
     public TileMap map;
-    public Layer layer;
+    public LayerTiles layerTiles;
     public (int x, int y) mousePos;
     public (int x, int y) start, end;
 
@@ -20,10 +20,10 @@ internal class TilePalette
             if (Program.menu.IsHidden == false ||
                 editor.Prompt.IsHidden == false ||
                 inspector is { IsHovered: false } ||
-                layer.IsHovered == false)
+                layerTiles.IsHovered == false)
                 return;
 
-            var pos = layer.PixelToPosition(Mouse.CursorPosition);
+            var pos = layerTiles.PositionFromPixel(Mouse.CursorPosition);
             var (vx, vy) = map.View.Position;
             selectedPos = ((int)pos.x + vx, (int)pos.y + vy);
             selectedSz = (1, 1);
@@ -80,11 +80,11 @@ internal class TilePalette
             tilemap?.SetArea(rect.ToBundle(), Tile.EMPTY);
         });
     }
-    [MemberNotNull(nameof(map), nameof(layer))]
+    [MemberNotNull(nameof(map), nameof(layerTiles))]
     public void Create((int width, int height) size)
     {
         map = new(size) { View = (0, 0, 10, 10) };
-        layer = new(map.View.Size, false) { Zoom = 7.6f, PixelOffset = (198, 88) };
+        layerTiles = new(map.View.Size, false) { Zoom = 7.6f, PixelOffset = (198, 88) };
     }
 
     public void Update(Inspector inspector, TerrainPanel terrainPanel)
@@ -101,9 +101,9 @@ internal class TilePalette
         if (editor.Prompt.IsHidden == false || tool > 8)
             return;
 
-        var (tw, th) = layer.AtlasTileCount;
+        var (tw, th) = layerTiles.AtlasTileCount;
         map.View = new(map.View.Position, (Math.Min(10, (int)tw), Math.Min(10, (int)th)));
-        layer.Size = map.View.Size;
+        layerTiles.Size = map.View.Size;
         var (mw, mh) = map.Size;
         var (vw, vh) = map.View.Size;
 
@@ -123,22 +123,22 @@ internal class TilePalette
         var h = (int)MathF.Round(inspector.paletteScrollV.Slider.Progress * (mh - vh));
         map.View = new((w, h), map.View.Size);
 
-        var (mx, my) = layer.PixelToPosition(Mouse.CursorPosition);
+        var (mx, my) = layerTiles.PositionFromPixel(Mouse.CursorPosition);
         prevMousePos = mousePos;
         mousePos = ((int)mx + w, (int)my + h);
 
         var view = map.UpdateView();
-        layer.DrawTileMap(view);
+        layerTiles.DrawTileMap(view);
 
-        if (layer.IsHovered)
-            layer.DrawTiles(((int)mx, (int)my),
-                new Tile(layer.AtlasTileIdFull, new Color(50, 100, 255, 150)));
+        if (layerTiles.IsHovered)
+            layerTiles.DrawTiles(((int)mx, (int)my),
+                new Tile(layerTiles.AtlasTileIdFull, new Color(50, 100, 255, 150)));
 
         UpdateSelected();
         var s = selected.ToBundle();
-        layer.DrawRectangles((s.x, s.y, s.width, s.height, new Color(50, 255, 100, 150)));
+        layerTiles.DrawRectangles((s.x, s.y, s.width, s.height, new Color(50, 255, 100, 150)));
 
-        layer.Draw();
+        layerTiles.Draw();
     }
 
     public void TryDraw()
@@ -162,13 +162,13 @@ internal class TilePalette
         preview.View = new((-mx, -my), tilemap?.Size ?? (1, 1));
 
         if (tool is 1) // group of tiles
-            editor.LayerMap.DrawTileMap(preview.UpdateView());
+            editor.LayerTilesMap.DrawTileMap(preview.UpdateView());
         else if (tool is 2 or 7 or 8) // single random tile of tiles/replace/fill
-            editor.LayerMap.DrawTiles((mx, my), randomTile);
+            editor.LayerTilesMap.DrawTiles((mx, my), randomTile);
         else if (rectangleTools.Contains(tool)) // rectangle/ellipse of random tiles
-            editor.LayerMap.DrawRectangles((start.x, start.y, szw, szh, color));
+            editor.LayerTilesMap.DrawRectangles((start.x, start.y, szw, szh, color));
         else if (tool == 4 && start != end) // line of random tiles
-            editor.LayerMap.DrawLines(
+            editor.LayerTilesMap.DrawLines(
                 (start.x, start.y, end.x - 1, end.y - 1, color),
                 (start.x + 1, start.y, end.x, end.y - 1, color),
                 (start.x + 1, start.y + 1, end.x, end.y, color),
@@ -219,7 +219,7 @@ internal class TilePalette
     }
     private void UpdateSelected()
     {
-        if (layer.IsHovered &&
+        if (layerTiles.IsHovered &&
             Mouse.Button.Left.IsPressed() &&
             prevMousePos != mousePos &&
             isDrawingSelection == false)
@@ -339,7 +339,7 @@ internal class TilePalette
         else if (tool == 13) // pick
         {
             var tile = tilemap.TileAt((mx, my));
-            var coords = ((int)tile.Id).ToIndexes(layer.AtlasTileCount);
+            var coords = ((int)tile.Id).ToIndexes(layerTiles.AtlasTileCount);
             inspector.paletteColor.SelectedColor = tile.Tint;
             inspector.pickedTile = tile;
             justPickedTile = true;
