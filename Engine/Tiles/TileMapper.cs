@@ -1,5 +1,7 @@
+using System.Numerics;
 using static Pure.Engine.Tiles.Tile;
 using System.Text.RegularExpressions;
+using Range = (float a, float b);
 
 namespace Pure.Engine.Tiles;
 
@@ -249,6 +251,52 @@ public static class TileMapper
             }
         }
     }
+    public static void SetLineSquiggle(this TileMap tileMap, VecI cellA, VecI cellB, float squiggle, params Tile[]? tiles)
+    {
+        if (tiles == null || tiles.Length == 0)
+            return;
+
+        if (cellA == cellB)
+        {
+            SetLine(tileMap, cellA, cellB, tiles);
+            return;
+        }
+
+        squiggle++;
+
+        var numPoints = Vector2.Distance(new(cellA.x, cellA.y), new(cellB.x, cellB.y)) / 10f * squiggle;
+        var points = new List<VecI> { cellA };
+        var dx = cellB.x - cellA.x;
+        var dy = cellB.y - cellA.y;
+        var length = MathF.Sqrt(dx * dx + dy * dy);
+        var dirX = dx / length;
+        var dirY = dy / length;
+        var perpX = -dirY;
+
+        for (var i = 0; i <= numPoints; i++)
+        {
+            var t = i / numPoints;
+            var x = (int)(cellA.x + t * (cellB.x - cellA.x));
+            var y = (int)(cellA.y + t * (cellB.y - cellA.y));
+            var seed = ToSeed(tileMap, (x, y, 0));
+            var squiggleIntensity = t < 0.5f ? Map(t, (0, 0.5f), (0, 1)) : Map(t, (0.5f, 1), (1, 0));
+            var offsetRange = new RangeF(-squiggle * squiggleIntensity, squiggle * squiggleIntensity);
+            var offset = (int)offsetRange.Random(seed);
+            var offsetX = (int)(perpX * offset);
+            var offsetY = (int)(dirX * offset);
+
+            points.Add(new(x + offsetX, y + offsetY));
+        }
+
+        points.Add(cellB);
+
+        for (var i = 0; i < points.Count - 1; i++)
+        {
+            var start = points[i];
+            var end = points[i + 1];
+            SetLine(tileMap, start, end, tiles);
+        }
+    }
     public static void SetBox(this TileMap tileMap, Area area, Tile fill, Tile corner, Tile edge)
     {
         var (x, y, w, h, _) = area.ToBundle();
@@ -362,7 +410,7 @@ public static class TileMapper
         {
             var (x1, y1) = boundaryPoints[i];
             var (x2, y2) = boundaryPoints[(i + 1) % boundaryPoints.Count];
-            SetLine(tileMap, (x1, y1), (x2, y2), tiles);
+            SetLine(tileMap, (x1, y1), (x2, y2), 0, tiles);
         }
     }
 
@@ -648,6 +696,71 @@ public static class TileMapper
         }
 
         return colors;
+    }
+    private static void SetLine(TileMap tileMap, VecI cellA, VecI cellB, float squiggle, Tile[]? tiles)
+    {
+        if (tiles == null || tiles.Length == 0)
+            return;
+
+        var (x0, y0) = cellA;
+        var (x1, y1) = cellB;
+        var dx = Math.Abs(x1 - x0);
+        var dy = Math.Abs(y1 - y0);
+        var sx = x0 < x1 ? 1 : -1;
+        var sy = y0 < y1 ? 1 : -1;
+        var err = dx - dy;
+        var mask = GetMask(tileMap);
+
+        float length = Math.Max(dx, dy); // Total distance along the path
+        var stepCount = 0; // Track steps to apply smooth variation
+
+        while (true)
+        {
+            // Calculate the current point in the line
+            var tile = tiles.Length == 1 ? tiles[0] : ChooseOne(tiles, ToSeed(tileMap, (x0, y0, 0)));
+            tileMap.SetTile((x0, y0), tile, mask);
+
+            // Exit condition: we've reached the endpoint
+            if (x0 == x1 && y0 == y1)
+                break;
+
+            var e2 = 2 * err;
+
+            // Bresenham logic for moving along the line
+            if (e2 > -dy)
+            {
+                err -= dy;
+                x0 += sx;
+            }
+
+            if (e2 < dx)
+            {
+                err += dx;
+                y0 += sy;
+            }
+
+            // Apply sinusoidal variation at intervals along the path
+            if (stepCount % 5 == 0) // Change every few steps (adjust as needed)
+            {
+                // Use a sine function to apply a smooth variation based on the current step
+                var progress = stepCount / length; // The progress along the path (0 to 1)
+                var offset = MathF.Sin(progress * MathF.PI * 1f) * squiggle;
+
+                // Apply the offset smoothly
+                x0 += (int)offset; // Modify x by the offset
+                y0 += (int)offset; // Modify y by the offset
+            }
+
+            stepCount++;
+        }
+    }
+    public static float Map(this float number, Range rangeIn, Range rangeOut)
+    {
+        if (Math.Abs(rangeIn.a - rangeIn.b) < 0.001f)
+            return (rangeOut.a + rangeOut.b) / 2f;
+        var target = rangeOut;
+        var value = (number - rangeIn.a) / (rangeIn.b - rangeIn.a) * (target.b - target.a) + target.a;
+        return float.IsNaN(value) || float.IsInfinity(value) ? rangeOut.a : value;
     }
 #endregion
 }

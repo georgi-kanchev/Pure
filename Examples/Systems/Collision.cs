@@ -52,10 +52,6 @@ public static class Collision
         waves.AddSolids(Tile.ICON_WAVES, new Solid(0, 0, 1, 1, Blue.ToDark()));
         waves.AddSolids(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
         waves.Update(maps[1]);
-        var wavesRects = waves.ToBundle();
-
-        layer.EffectBlur((127, 127), (0, 0, w, h, Blue));
-        layer.EffectWave((0, 50), (0, 50), wavesRects);
 
         while (Window.KeepOpen())
         {

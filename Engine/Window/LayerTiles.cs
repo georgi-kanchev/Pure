@@ -647,6 +647,20 @@ public class LayerTiles
         return layer.PositionFromPixel(PositionToPixel(position));
     }
 
+    public uint AtlasColorAt(PointI pixel)
+    {
+        if (pixel.x < 0 ||
+            pixel.y < 0 ||
+            pixel.x >= atlases[atlasPath].Size.X ||
+            pixel.y >= atlases[atlasPath].Size.Y)
+            return default;
+
+        images.TryAdd(atlasPath, atlases[atlasPath].CopyToImage());
+        var img = images[atlasPath];
+        var color = img.GetPixel((uint)pixel.x, (uint)pixel.y).ToInteger();
+        return color;
+    }
+
     public static void DefaultGraphicsToFile(string filePath)
     {
         atlases["default"].CopyToImage().SaveToFile(filePath);
@@ -732,6 +746,8 @@ public class LayerTiles
 
     [DoNotSave]
     internal static readonly Dictionary<string, Texture> atlases = [];
+    [DoNotSave]
+    internal static readonly Dictionary<string, Image> images = new();
     [DoNotSave]
     private static readonly List<PointF> cursorOffsets =
     [

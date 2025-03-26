@@ -31,7 +31,8 @@ public static class LineOfSightAndLights
 
         Window.BackgroundColor = Color.Gray.ToDark(0.65f);
         layer.BackgroundColor = Color.Gray;
-        layer.EffectLight = Light.Mask | Light.ObstaclesInShadow;
+
+        layer.EffectLight = Light.Flat;
 
         while (Window.KeepOpen())
         {
@@ -41,7 +42,7 @@ public static class LineOfSightAndLights
             var (mx, my) = layer.PositionFromPixel(Mouse.CursorPosition);
 
             layer.EffectAddLightObstacles(solidMap);
-            layer.EffectAddLight(20f, (120f, angle), (mx, my, Color.White));
+            layer.EffectAddLight(5f, (360f, angle), (mx, my, Color.White));
 
             layer.DrawTileMap(tilemap);
             layer.DrawMouseCursor();

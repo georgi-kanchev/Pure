@@ -16,6 +16,7 @@ public static class Pathfinding
         var tilemap = new TileMap((w * 3, h * 3));
         var layer = new LayerTiles(tilemap.Size);
         var pathMap = new PathMap(tilemap.Size);
+        var tilemap2 = new TileMap((w * 3, h * 3));
 
         tilemap.SetEllipse((21, 8), (10, 7), true, Tile.FULL);
         tilemap.SetEllipse((5, 9), (4, 7), true, Tile.FULL);
@@ -33,10 +34,17 @@ public static class Pathfinding
             var lines = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Red);
             var points = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Green);
 
+            tilemap2.ApplySeed(0);
+            tilemap2.Flush();
+            tilemap2.SetLineSquiggle((10, 10), layer.MouseCursorCell, 3f, new Tile(Tile.FULL, Color.Red));
+
             layer.DrawTileMap(tilemap);
             layer.DrawLine(lines);
             layer.DrawPoints(points);
             layer.DrawMouseCursor();
+
+            layer.DrawTileMap(tilemap2);
+
             layer.Draw();
         }
     }

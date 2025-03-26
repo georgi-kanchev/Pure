@@ -14,10 +14,10 @@ public static class Rendering
         var layer = new Layer { TexturePath = "Characters.png" };
         var animation = new (int x, int y, int w, int h)[]
         {
-            (0, 0, 26, 39),
-            (26, 0, 26, 39),
-            (26 * 2, 0, 26, 39),
-            (26 * 3, 0, 26, 39)
+            (0, 0, 26, 38),
+            (26, 0, 26, 38),
+            (26 * 2, 0, 26, 38),
+            (26 * 3, 0, 26, 38)
         };
 
         while (Window.KeepOpen())
@@ -25,7 +25,7 @@ public static class Rendering
             Time.Update();
 
             layer.DragAndZoom();
-            layer.DrawTextureArea(animation.Animate(5f), layer.MouseCursorPosition);
+            layer.DrawTextureArea(animation.Animate(2f), layer.MouseCursorPosition);
             layer.Draw();
         }
     }

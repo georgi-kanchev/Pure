@@ -10,63 +10,14 @@ namespace Pure.Engine.Utility;
 /// The type of number animations used by <see cref="Number.AnimateEase"/>.
 /// Also known as 'easing functions'.
 /// </summary>
-public enum Ease
-{
-    /// <summary>
-    /// Represents a linear/lerp animation, characterized by a constant rate of change.
-    /// </summary>
-    Line,
-    /// <summary>
-    /// Corresponds to a sine easing function, creating a gentle bending effect.
-    /// </summary>
-    Sine,
-    /// <summary>
-    /// Indicates a cubic easing function, resulting in a moderate bending motion.
-    /// </summary>
-    Cubic,
-    /// <summary>
-    /// Represents a quintic easing function, producing a strong bending effect.
-    /// </summary>
-    Quint,
-    /// <summary>
-    /// Refers to a circular easing function, often denoted as Circ, creating a circular motion.
-    /// </summary>
-    Circle,
-    /// <summary>
-    /// Describes an elastic easing function, simulating an elastic or rubber-band-like motion.
-    /// </summary>
-    Elastic,
-    /// <summary>
-    /// Represents a back easing function, generating a swinging or backward motion.
-    /// </summary>
-    Swing,
-    /// <summary>
-    /// Represents a bounce easing function, creating a bouncing effect.
-    /// </summary>
-    Bounce
-}
+public enum Ease { Line, Sine, Cubic, Quint, Circle, Elastic, Swing, Bounce }
 
 /// <summary>
 /// The type of number animation direction used by <see cref="Number.AnimateEase"/>.
 /// </summary>
-public enum Curve
-{
-    /// <summary>
-    /// Eases in for a gradual start.
-    /// </summary>
-    In,
-    /// <summary>
-    /// Eases out for a gradual slowdown or stop.
-    /// </summary>
-    Out,
-    /// <summary>
-    /// Eases in first and then eases out, combining characteristics of both
-    /// <see cref="In"/> and <see cref="Out"/>.
-    /// </summary>
-    InOut
-}
+public enum Curve { In, Out, InOut }
 
-public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value }
+public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value, Worley }
 
 public static class Number
 {
@@ -525,10 +476,40 @@ public static class Number
     }
     public static float ToNoise(this PointF point, Noise noise = ValueCubic, float scale = 10f, int seed = 0)
     {
-        var noiseValue = new FastNoiseLite(seed);
-        noiseValue.SetNoiseType((FastNoiseLite.NoiseType)noise);
-        noiseValue.SetFrequency(1f / scale);
+        if (noise == Worley)
+            return WorleyNoise(point.x, point.y, scale / 100f, seed);
 
-        return noiseValue.GetNoise(point.x, point.y).Map((-1, 1), (0, 1));
+        var obj = new FastNoiseLite(seed);
+        obj.SetNoiseType((FastNoiseLite.NoiseType)noise);
+        obj.SetFrequency(1f / scale);
+
+        return obj.GetNoise(point.x, point.y).Map((-1, 1), (0, 1));
     }
+
+#region Backend
+    private static float WorleyNoise(float x, float y, float scale, int seed)
+    {
+        x *= scale;
+        y *= scale;
+
+        var minDist = float.MaxValue;
+        var ix = (int)MathF.Floor(x);
+        var iy = (int)MathF.Floor(y);
+
+        for (var i = -1; i <= 1; i++)
+        {
+            for (var j = -1; j <= 1; j++)
+            {
+                var s = (ix + i).ToSeed(iy + j, seed);
+                var featurePoint = (ix + i + (0f, 1f).Random(s), iy + j + (0f, 1f).Random(s + 1));
+                var dist = new Point(x, y).Distance(featurePoint);
+
+                if (dist < minDist)
+                    minDist = dist;
+            }
+        }
+
+        return minDist;
+    }
+#endregion
 }
