@@ -256,7 +256,7 @@ public static class TileMapper
         if (tiles == null || tiles.Length == 0)
             return;
 
-        if (cellA == cellB)
+        if (squiggle == 0f || cellA == cellB)
         {
             SetLine(tileMap, cellA, cellB, tiles);
             return;
@@ -754,7 +754,7 @@ public static class TileMapper
             stepCount++;
         }
     }
-    public static float Map(this float number, Range rangeIn, Range rangeOut)
+    private static float Map(this float number, Range rangeIn, Range rangeOut)
     {
         if (Math.Abs(rangeIn.a - rangeIn.b) < 0.001f)
             return (rangeOut.a + rangeOut.b) / 2f;
