@@ -1,6 +1,6 @@
 namespace Pure.Engine.Window;
 
-public class Layer
+public class LayerSprites
 {
     public string? TexturePath
     {
@@ -89,10 +89,10 @@ public class Layer
         var color = new Color(tint);
         var m = Matrix3x2.Identity;
         var (x, y, w, h) = area ?? (0, 0, (int)texture.Size.X, (int)texture.Size.Y);
-        var (sw, sh) = scale ?? (w, h);
+        var (sw, sh) = (w * (scale?.width ?? 1f), h * (scale?.height ?? 1f));
         var (ox, oy) = origin ?? (0.5f, 0.5f);
 
-        m *= Matrix3x2.CreateRotation(MathF.PI / 180f * angle, new(ox * sw, oy * sh));
+        m *= Matrix3x2.CreateRotation(MathF.PI / 180f * angle);
         m *= Matrix3x2.CreateTranslation(position.x, position.y);
 
         var tl = Vector2.Transform(new(-ox * sw, -oy * sh), m);
@@ -154,9 +154,9 @@ public class Layer
     {
         return layerTiles.PositionFromPixel(PositionToPixel(position));
     }
-    public PointF PositionToLayer(PointF position, Layer layer)
+    public PointF PositionToLayer(PointF position, LayerSprites layerSprites)
     {
-        return layer.PositionFromPixel(PositionToPixel(position));
+        return layerSprites.PositionFromPixel(PositionToPixel(position));
     }
 
 #region Backend

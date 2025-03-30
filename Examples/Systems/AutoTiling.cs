@@ -98,7 +98,7 @@ public static class AutoTiling
 
             layer.DrawTileMap(flag ? original : secondPass);
             layer.DrawMouseCursor();
-            layer.Draw();
+            layer.Render();
         }
     }
 }

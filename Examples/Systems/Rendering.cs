@@ -11,7 +11,7 @@ public static class Rendering
         Window.PixelScale = 1f;
         Mouse.IsCursorVisible = true;
 
-        var layer = new Layer { TexturePath = "Characters.png" };
+        var layer = new LayerSprites { TexturePath = "Characters.png" };
         var animation = new (int x, int y, int w, int h)[]
         {
             (0, 0, 26, 38),
@@ -26,7 +26,7 @@ public static class Rendering
 
             layer.DragAndZoom();
             layer.DrawTextureArea(animation.Animate(2f), layer.MouseCursorPosition);
-            layer.Draw();
+            layer.Render();
         }
     }
 }

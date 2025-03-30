@@ -188,9 +188,9 @@ public class Editor
 
             //========
 
-            LayerTiles.Draw();
-            LayerTilesMap.Draw();
-            LayerTilesUi.Draw();
+            LayerTiles.Render();
+            LayerTilesMap.Render();
+            LayerTilesUi.Render();
 
             OnUpdateLate?.Invoke();
         }

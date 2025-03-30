@@ -357,7 +357,7 @@ public static class Collections
         return false;
     }
 
-    public static T Animate<T>(this IList<T> collection, float speed, bool repeat = true)
+    public static T Animate<T>(this IList<T> collection, float speed, bool loop = true)
     {
         var hash = collection.GetHashCode();
         var duration = collection.Count / speed;
@@ -365,7 +365,7 @@ public static class Collections
 
         if (duration <= animations[hash].time)
         {
-            if (repeat == false)
+            if (loop == false)
             {
                 animations[hash] = (duration, 1f);
                 return collection[^1];

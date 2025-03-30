@@ -1,29 +1,125 @@
 namespace Pure.Engine.Window;
 
-internal class EffectLayer : Effect
+internal static class ShaderCode
 {
-    protected override string Fragment
-    {
-        get =>
-            // general uniforms
-            @"
+    public const string VERTEX_DEFAULT = @"
+void main()
+{
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+	gl_FrontColor = gl_Color;
+}";
+    public const string FRAGMENT_DEFAULT = @"
+void main()
+{
+	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+	gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
+	gl_FrontColor = gl_Color;
+}";
+    public const string FRAGMENT_WINDOW = @"
+uniform sampler2D texture;
+uniform vec2 viewSize;
+uniform vec2 offScreen;
+uniform vec2 randomVec;
+uniform float time;
+uniform float turnoffAnimation;
+
+uniform vec2 curvature = vec2(4.0, 4.0);
+uniform vec2 scanLineOpacity = vec2(0.6, 1.0);
+uniform float vignetteOpacity = 1.0;
+uniform float brightness = 2.0;
+uniform float vignetteRoundness = 10.0;
+uniform float whiteNoiseAmount = 1.0;
+uniform float scanLineSize = 1.0;
+uniform float scanLineSpeed = 5.0;
+
+vec2 hash(vec2 p)
+{
+	p = vec2(dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)));
+	return -1.0 + 2.0*fract(sin(p)*43758.5453123);
+}
+float noise(in vec2 p)
+{
+	const float K1 = 0.366025404; // (sqrt(3)-1)/2;
+	const float K2 = 0.211324865; // (3-sqrt(3))/6;
+
+	vec2  i = floor(p + (p.x+p.y)*K1);
+	vec2  a = p - i + (i.x+i.y)*K2;
+	float m = step(a.y,a.x); 
+	vec2  o = vec2(m,1.0-m);
+	vec2  b = a - o + K2;
+	vec2  c = a - 1.0 + 2.0*K2;
+	vec3  h = max(0.5-vec3(dot(a,a), dot(b,b), dot(c,c)), 0.0);
+	vec3  n = h*h*h*h*vec3(dot(a,hash(i+0.0)), dot(b,hash(i+o)), dot(c,hash(i+1.0)));
+	return dot(n, vec3(70.0));
+}
+vec2 curveRemapUV(vec2 uv)
+{
+	uv = uv * 2.0-1.0;
+	vec2 offset = abs(uv.yx) / vec2(curvature.x, curvature.y);
+	uv = uv + uv * offset * offset;
+	uv = uv * 0.5 + 0.5;
+	return uv;
+}
+vec4 scanLineIntensity(float uv, float resolution, float opacity)
+{
+	float intensity = sin(uv * resolution * 2.0);
+	intensity = ((0.5 * intensity) + 0.5) * 0.9 + 0.1;
+	return vec4(vec3(pow(intensity, opacity)), 1.0);
+}
+vec4 vignetteIntensity(vec2 uv, vec2 resolution, float opacity, float roundness)
+{
+	float intensity = uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y);
+	return vec4(vec3(clamp(pow((resolution.x / roundness) * intensity, opacity), 0.0, 1.0)), 1.0);
+}
+void main(void)
+{
+	vec2 screenCoords = gl_FragCoord / viewSize - offScreen / viewSize;
+	vec2 remappedUV = curveRemapUV(screenCoords);
+	vec2 texCoords = gl_TexCoord[0].xy;
+	vec4 color = texture2D(texture, texCoords) * gl_Color;
+
+	float scanDarkMultiplier = (1.0 + sin((-time * scanLineSpeed) + screenCoords.y * (10.0 / scanLineSize)) / 2.0);
+	float f = noise(64.0 * (screenCoords + randomVec));
+	float o = 1.0 - turnoffAnimation * 1.5;
+	f = 0.5 + 0.5 * f;
+	
+	color *= vignetteIntensity(remappedUV, viewSize, vignetteOpacity, vignetteRoundness);
+	color *= scanLineIntensity(remappedUV.x, viewSize.y, scanLineOpacity.x);
+	color *= scanLineIntensity(remappedUV.y, viewSize.x, scanLineOpacity.y);
+	color *= vec4(vec3(brightness + f), 1.0);
+	color.rgb *= scanDarkMultiplier / 5.0 + 0.9;
+	color.rgba += f * 10 * turnoffAnimation;
+	
+	if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0 ||
+		screenCoords.y < 0.48 - o || screenCoords.y > 0.52 + o)
+		color = vec4(0.0, 0.0, 0.0, 1.0);
+	
+	if (turnoffAnimation > 0.5)
+	{
+		float dist = distance(vec2(screenCoords.x, screenCoords.y), vec2(0.5)) / 4.0 + 0.5;
+		vec4 turnoff = vec4(1.0) - turnoffAnimation / 2.0 - dist;
+		vec4 target = max(vec4(0.5), turnoff * 100.0 * turnoffAnimation);
+		color = mix(color, target, turnoffAnimation / 5.0);
+	}
+	
+	gl_FragColor = color;
+}";
+    public const string FRAGMENT_LAYER = @"
 uniform sampler2D texture;
 uniform sampler2D data;
 uniform float time;
 uniform vec2 tileSize;
-uniform vec2 tileCount;" +
-            // light uniforms
-            @"
+uniform vec2 tileCount;
+
 uniform int lightCount;
 uniform vec3 light[20]; // x, y, radius
 uniform vec2 lightCone[20]; // width, angle
 uniform vec4 lightColor[20];
 uniform int obstacleCount;
-uniform vec4 obstacleArea[200];
-uniform int lightFlags;" +
+uniform vec4 obstacleArea[256];
+uniform int lightFlags;
 
-            // utility functions
-            @"
 bool is_inside(vec2 coord, vec4 area, vec4 off) {
 	vec2 texel = 1.0 / tileCount / tileSize;
 	off.xz *= texel.x;
@@ -50,9 +146,8 @@ bool has_bit(int value, int flag)
 }
 float map(float value, float min1, float max1, float min2, float max2) {
   return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
-}" +
-            // data functions
-            @"
+}
+
 vec2 get_tile_coord(){
 	vec2 coord = gl_TexCoord[0].xy;
 	vec2 texel = 1.0 / tileCount / tileSize;
@@ -76,10 +171,8 @@ vec4 get_area(uint offsetX, uint offsetY) {
 	float w = data.b * tileSz.x + texel.x / 2.0;
 	float h = data.a * tileSz.y + texel.y / 2.0;
 	return vec4(x, y, w, h);
-}" +
+}
 
-            // light functions
-            @"
 int compute_out_code(vec2 p, vec2 rectMin, vec2 rectMax) {
 	// left: 1, right: 2, bottom: 4, top: 8
 	int code = 0;
@@ -200,18 +293,21 @@ vec4 compute_lights(vec2 coord, vec4 color) {
 	color.a = isMask && isInverted ? 1.0 - color.a : color.a;
 
 	return color;
-}" +
-            // wave functions
-            @"
+}
+
 vec2 compute_waves(vec2 coord) {
+	vec4 area = get_area(0, 4);
+	vec4 target = get_data(2, 4);
+	vec4 color = texture2D(texture, coord) * gl_Color;
+	bool isTargetColor = target == vec4(0.0) || (target != vec4(0.0) && is(color, target));
+
+	if (!is_inside(coord, area, vec4(0.0)) || !isTargetColor)
+		return coord;
+
 	vec2 viewSize = tileSize * tileCount;
 	vec4 multiplier = vec4(20.0, 20.0, 600.0, 600.0);
 	vec2 texel = 1.0 / tileCount / tileSize;
-	vec4 area = get_area(0, 4);
 	vec4 spFr = get_data(1, 4);
-	vec4 target = get_data(2, 4);
-	vec4 color = texture2D(texture, coord) * gl_Color;
-	bool isTargetColor = target == vec4(0.0) || (target != vec4(0.0) && is(color, target));		
 	bool reverseX = spFr.x < 0.5;
 	bool reverseY = spFr.y < 0.5;	
 
@@ -219,14 +315,12 @@ vec2 compute_waves(vec2 coord) {
 	spFr.y = reverseY ? 0.5 - spFr.y : spFr.y - 0.5;
 	spFr *= multiplier;
 
-	if (is_inside(coord, area, vec4(0.0)) && isTargetColor) {
-		coord.x += cos(coord.y * spFr.z + spFr.x * time * (reverseX ? -1.0 : 1.0)) / viewSize.x / 1.5;
-		coord.y += sin(coord.x * spFr.w + spFr.y * time * (reverseY ? -1.0 : 1.0)) / viewSize.y / 1.5;
-	}
+	coord.x += cos(coord.y * spFr.z + spFr.x * time * (reverseX ? -1.0 : 1.0)) / viewSize.x / 1.5;
+	coord.y += sin(coord.x * spFr.w + spFr.y * time * (reverseY ? -1.0 : 1.0)) / viewSize.y / 1.5;
+	
 	return coord;
-}" +
-            // color adjust functions
-            @"
+}
+
 vec4 compute_color_adjust(vec2 coord, vec4 color) {
 	vec4 area = get_area(0, 3);
 	vec4 target = get_data(2, 3);
@@ -248,9 +342,8 @@ vec4 compute_color_adjust(vec2 coord, vec4 color) {
 	color.rgb = mix(vec3(0.5), color.rgb, contrast);
 	color.rgb *= brightness;
 	return color;
-}" +
-            // color tint functions
-            @"
+}
+
 vec4 compute_color_tint(vec2 coord, vec4 color) {
 	vec4 area = get_area(0, 0);
 	vec4 target = get_data(2, 0);
@@ -265,9 +358,8 @@ vec4 compute_color_tint(vec2 coord, vec4 color) {
 	tint.a = color.a;	
 
 	return color * tint;
-}" +
-            // color replace functions
-            @"
+}
+
 vec4 compute_color_replace(vec2 coord, vec4 color, vec2 indexes) {
 	vec4 area = get_area(indexes.x, indexes.y);
 	vec4 target = get_data(indexes.x + 1, indexes.y);
@@ -278,9 +370,8 @@ vec4 compute_color_replace(vec2 coord, vec4 color, vec2 indexes) {
 		return color;
 	
 	return get_data(indexes.x + 2, indexes.y);
-}" +
-            // blur functions
-            @"
+}
+
 vec4 compute_blur(vec2 coord, vec4 color) {
 	vec4 a = get_area(0, 1);
 	vec4 off = vec4(0.0);
@@ -305,10 +396,15 @@ vec4 compute_blur(vec2 coord, vec4 color) {
 		texture2D(texture, coord + blur.x + blur.y) * 1.0;
 	color = (blurResult / 16.0);
 	return color;
-}" +
-            // edges functions
-            @"
+}
+
 vec4 compute_edges(vec2 coord, vec4 color) {
+	vec4 a = get_area(0, 5);
+	vec4 t = get_data(1, 5);
+
+	if (is(color, t) || !is_inside(coord, a, vec4(0.0)))
+		return color;
+
 	vec2 texel = 1.0 / tileCount / tileSize;
 	vec3 u = (texture2D(texture, vec2(coord.x, coord.y - texel.y)) * gl_Color).rgb;
 	vec3 d = (texture2D(texture, vec2(coord.x, coord.y + texel.y)) * gl_Color).rgb;
@@ -320,8 +416,6 @@ vec4 compute_edges(vec2 coord, vec4 color) {
 	vec3 ur = (texture2D(texture, vec2(coord.x - texel.x, coord.y - texel.y)) * gl_Color).rgb;
 	vec3 dr = (texture2D(texture, vec2(coord.x - texel.x, coord.y + texel.y)) * gl_Color).rgb;
 
-	vec4 a = get_area(0, 5);
-	vec4 t = get_data(1, 5);
 	vec4 c = get_data(2, 5);
 	int type = int(get_data(3, 5).x * 255);
 
@@ -335,23 +429,19 @@ vec4 compute_edges(vec2 coord, vec4 color) {
 	bool is_dl = !is_d && !is_l && is(dl, t);
 	bool is_dr = !is_d && !is_r && is(dr, t);
 
-	if (!is(color, t) && is_inside(coord, a, vec4(0.0)))
-	{
-		// types: Top = 1, Bottom = 2, Left = 4, Right = 8, Corners = 16
-		bool corners = has_bit(type, 16) && (is_ul || is_dl || is_ur || is_dr);
-		bool top = has_bit(type, 1) && is_u;
-		bool bot = has_bit(type, 2) && is_d;
-		bool left = has_bit(type, 4) && is_l;
-		bool right = has_bit(type, 8) && is_r;
+	// types: Top = 1, Bottom = 2, Left = 4, Right = 8, Corners = 16
+	bool corners = has_bit(type, 16) && (is_ul || is_dl || is_ur || is_dr);
+	bool top = has_bit(type, 1) && is_u;
+	bool bot = has_bit(type, 2) && is_d;
+	bool left = has_bit(type, 4) && is_l;
+	bool right = has_bit(type, 8) && is_r;
 
-		if (corners || top || bot || left || right)
-			color = c;
-	}
+	if (corners || top || bot || left || right)
+		color = c;
+
 	return color;
-}" +
+}
 
-            // main
-            @"
 void main(void) {
 	vec2 coord = gl_TexCoord[0].xy;
 	vec4 color = texture2D(texture, compute_waves(coord)) * gl_Color;
@@ -373,5 +463,4 @@ void main(void) {
 
 	gl_FragColor = color;
 }";
-    }
 }

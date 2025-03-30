@@ -48,7 +48,7 @@ public static class Program
 
             maps.ForEach(map => Layer.DrawTileMap(map));
             Layer.DrawMouseCursor();
-            Layer.Draw();
+            Layer.Render();
         }
     }
 }

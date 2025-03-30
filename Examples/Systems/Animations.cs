@@ -40,7 +40,7 @@ public static class Animations
 
             layer.DrawTileMap(tilemap);
             layer.DrawMouseCursor();
-            layer.Draw();
+            layer.Render();
         }
     }
 }

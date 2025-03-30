@@ -45,7 +45,7 @@ public static class Pathfinding
 
             layer.DrawTileMap(tilemap2);
 
-            layer.Draw();
+            layer.Render();
         }
     }
 }

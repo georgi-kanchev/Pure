@@ -55,7 +55,7 @@ public static class Tetris
                 layer?.DrawTileMap(map);
 
             layer?.DrawMouseCursor();
-            layer?.Draw();
+            layer?.Render();
         }
 
         void Collide()

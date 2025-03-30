@@ -29,7 +29,7 @@ public static class TerrainGeneration
         {
             layer.DrawTileMap(terrain);
             layer.DrawMouseCursor();
-            layer.Draw();
+            layer.Render();
         }
 
         void RegenerateMap()

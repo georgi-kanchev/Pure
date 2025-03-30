@@ -102,7 +102,7 @@ public static class Pong
             layer.DrawTiles(paddleRightPosition, new Tile(Tile.SHADE_4), 1f, (1, PADDLE_HEIGHT), true);
             layer.DrawTiles(ballPosition, new Tile(Tile.SHAPE_CIRCLE), 1f, (1, 1), true);
             layer.DrawMouseCursor();
-            layer.Draw();
+            layer.Render();
         }
     }
 }

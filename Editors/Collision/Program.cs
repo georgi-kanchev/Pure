@@ -68,7 +68,7 @@ public static class Program
         editor.OnUpdateLate += () =>
         {
             if (CanDrawLayer)
-                layerTiles.Draw();
+                layerTiles.Render();
         };
         editor.Run();
     }

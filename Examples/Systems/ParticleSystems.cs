@@ -98,7 +98,7 @@ public static class ParticleSystems
 
             layer.DrawPoints(particles);
             layer.DrawMouseCursor();
-            layer.Draw();
+            layer.Render();
         }
     }
 }

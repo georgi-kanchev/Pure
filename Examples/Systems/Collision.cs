@@ -76,7 +76,7 @@ public static class Collision
             layer.DrawPoints(crossPoints);
             layer.DrawTiles(mousePosition, tile);
 
-            layer.Draw();
+            layer.Render();
         }
     }
 

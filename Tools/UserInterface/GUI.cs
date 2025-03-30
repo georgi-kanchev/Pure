@@ -270,7 +270,7 @@ public static class GUI
 
         TileMaps.ForEach(map => layerTiles.DrawTileMap(map));
         layerTiles.DrawMouseCursor(Cursor.Id, Cursor.Tint);
-        layerTiles.Draw();
+        layerTiles.Render();
         TileMaps.ForEach(map => map.Flush());
     }
 

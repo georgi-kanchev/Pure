@@ -138,7 +138,7 @@ internal class TilePalette
         var s = selected.ToBundle();
         layerTiles.DrawRectangles((s.x, s.y, s.width, s.height, new Color(50, 255, 100, 150)));
 
-        layerTiles.Draw();
+        layerTiles.Render();
     }
 
     public void TryDraw()

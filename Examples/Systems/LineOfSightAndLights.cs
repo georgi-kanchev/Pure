@@ -14,10 +14,11 @@ public static class LineOfSightAndLights
 
         var (w, h) = Monitor.Current.AspectRatio;
         var tilemap = new TileMap((w * 3, h * 3));
-        var layer = new LayerTiles(tilemap.Size);
         var solidMap = new SolidMap();
         var angle = 0f;
         var opaque = new Tile(Tile.FULL, Color.Green);
+        var effect = new Effect { EffectLight = Light.Flat };
+        var layer = new LayerTiles(tilemap.Size) { Effect = effect };
 
         tilemap.SetEllipse((21, 8), (10, 7), true, opaque);
         tilemap.SetEllipse((5, 9), (4, 7), true, opaque);
@@ -32,8 +33,6 @@ public static class LineOfSightAndLights
         Window.BackgroundColor = Color.Gray.ToDark(0.65f);
         layer.BackgroundColor = Color.Gray;
 
-        layer.EffectLight = Light.Flat;
-
         while (Window.KeepOpen())
         {
             Time.Update();
@@ -41,12 +40,12 @@ public static class LineOfSightAndLights
 
             var (mx, my) = layer.PositionFromPixel(Mouse.CursorPosition);
 
-            layer.EffectAddLightObstacles(solidMap);
-            layer.EffectAddLight(5f, (360f, angle), (mx, my, Color.White));
+            effect.AddLightObstacles(solidMap);
+            effect.AddLight(5f, (360f, angle), (mx, my, Color.White));
 
             layer.DrawTileMap(tilemap);
             layer.DrawMouseCursor();
-            layer.Draw();
+            layer.Render();
         }
     }
 }

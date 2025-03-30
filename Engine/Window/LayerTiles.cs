@@ -1,15 +1,5 @@
 namespace Pure.Engine.Window;
 
-[Flags]
-public enum Edge
-{
-    Top = 1 << 0, Bottom = 1 << 1, Left = 1 << 2, Right = 1 << 3, Corners = 1 << 4,
-    AllEdges = Top | Bottom | Left | Right, AllEdgesAndCorners = AllEdges | Corners
-}
-
-[Flags]
-public enum Light { Default = 0, Flat = 1 << 0, Mask = 1 << 1, Inverted = 1 << 2, ObstaclesInShadow = 1 << 3 }
-
 public enum TextAlign { Left, Center, Right }
 
 public class LayerTiles
@@ -26,7 +16,7 @@ public class LayerTiles
                 return;
             }
 
-            if (atlases.TryGetValue(value, out var tileset))
+            if (LayerSprites.textures.TryGetValue(value, out var tileset))
             {
                 atlasPath = value;
                 tilesetPixelSize = tileset.Size;
@@ -35,9 +25,9 @@ public class LayerTiles
 
             try
             {
-                atlases[value] = new(value) { Repeated = true };
+                LayerSprites.textures[value] = new(value) { Repeated = true };
                 atlasPath = value;
-                tilesetPixelSize = atlases[value].Size;
+                tilesetPixelSize = LayerSprites.textures[value].Size;
             }
             catch (Exception)
             {
@@ -67,15 +57,6 @@ public class LayerTiles
     }
     public uint BackgroundColor { get; set; }
 
-    public Light EffectLight
-    {
-        get => effectLight;
-        set
-        {
-            effectLight = value;
-            shader?.SetUniform("lightFlags", (int)value);
-        }
-    }
     public PointF PixelOffset { get; set; }
     public PointF Position
     {
@@ -131,6 +112,8 @@ public class LayerTiles
     {
         get => ((int)MouseCursorPosition.x, (int)MouseCursorPosition.y);
     }
+
+    public Effect? Effect { get; set; }
 
     public LayerTiles(SizeI size = default, bool fitWindow = true)
     {
@@ -419,151 +402,6 @@ public class LayerTiles
         }
     }
 
-    public void EffectChangeColor(int id, uint oldColor, uint newColor, params AreaF[]? areas)
-    {
-        if (id is < 0 or > 8 || oldColor == newColor)
-            return;
-
-        if (areas == null || areas.Length == 0)
-            areas = [(0, 0, Size.width, Size.height)];
-
-        var indexes = new List<PointI[]>
-        {
-            { [(0, 2), (1, 2), (2, 2)] }, { [(5, 0), (6, 0), (7, 0)] }, { [(5, 1), (6, 1), (7, 1)] },
-            { [(5, 2), (6, 2), (7, 2)] }, { [(5, 3), (6, 3), (7, 3)] }, { [(5, 4), (6, 4), (7, 4)] },
-            { [(5, 5), (6, 5), (7, 5)] }, { [(5, 6), (6, 6), (7, 6)] }, { [(5, 7), (6, 7), (7, 7)] }
-        };
-
-        for (var i = 0; i < areas.Length; i++)
-        {
-            SetShaderData(areas[i], indexes[id][0], Color.Transparent, true);
-            SetShaderData(areas[i], indexes[id][1], new(oldColor), false);
-            SetShaderData(areas[i], indexes[id][2], new(newColor), false);
-        }
-    }
-    public void EffectAdjustColor(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params AreaToColor[]? areas)
-    {
-        if (areas == null || areas.Length == 0)
-            areas = [(0, 0, Size.width, Size.height, 0)];
-
-        var g = (byte)(gamma + 128);
-        var s = (byte)(saturation + 128);
-        var ct = (byte)(contrast + 128);
-        var b = (byte)(brightness + 128);
-
-        for (var i = 0; i < areas.Length; i++)
-        {
-            var (x, y, w, h, c) = areas[i];
-            SetShaderData((x, y, w, h), (0, 3), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 3), new(g, s, ct, b), false);
-            SetShaderData((x, y, w, h), (2, 3), new(c), false);
-        }
-    }
-    public void EffectTintColor(uint tint, params AreaToColor[]? areas)
-    {
-        if (areas == null || areas.Length == 0)
-            areas = [(0, 0, Size.width, Size.height, 0)];
-
-        for (var i = 0; i < areas.Length; i++)
-        {
-            var (x, y, w, h, c) = areas[i];
-            SetShaderData((x, y, w, h), (0, 0), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 0), new(tint), false);
-            SetShaderData((x, y, w, h), (2, 0), new(c), false);
-        }
-    }
-    public void EffectAddLight(float radius, (float width, float angle) cone, params PointColored[] points)
-    {
-        radius /= Size.height;
-        var (w, ang) = cone;
-
-        for (var i = 0; i < points?.Length; i++)
-        {
-            var (x, y, color) = points[i];
-            x /= Size.width;
-            y /= Size.height;
-
-            lightCount++;
-            shader?.SetUniform("lightCount", lightCount);
-
-            shader?.SetUniform($"light[{lightCount - 1}]", new Vec3(x, 1 - y, radius));
-            shader?.SetUniform($"lightCone[{lightCount - 1}]", new Vec2(w, ang));
-            shader?.SetUniform($"lightColor[{lightCount - 1}]", new Color(color));
-        }
-    }
-    public void EffectAddLightObstacles(params AreaF[] areas)
-    {
-        for (var i = 0; i < areas?.Length; i++)
-        {
-            var (x, y, w, h) = areas[i];
-
-            x /= Size.width;
-            y /= Size.height;
-            w /= Size.width;
-            h /= Size.height;
-
-            obstacleCount++;
-            shader?.SetUniform("obstacleCount", obstacleCount);
-            shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
-        }
-    }
-    public void EffectAddLightObstacles(params AreaColored[] areas)
-    {
-        for (var i = 0; i < areas?.Length; i++)
-        {
-            var (x, y, w, h, _) = areas[i];
-            EffectAddLightObstacles((x, y, w, h));
-        }
-    }
-    public void EffectColorEdges(uint color, Edge edges, params AreaToColor[]? areas)
-    {
-        if (areas == null || areas.Length == 0)
-            areas = [(0, 0, Size.width, Size.height, 0)];
-
-        for (var i = 0; i < areas.Length; i++)
-        {
-            var (x, y, w, h, c) = areas[i];
-            SetShaderData((x, y, w, h), (0, 5), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 5), new(c), false);
-            SetShaderData((x, y, w, h), (2, 5), new(color), false);
-            SetShaderData((x, y, w, h), (3, 5), new((byte)edges, 0, 0, 0), false);
-        }
-    }
-    public void EffectBlur((byte x, byte y) strength, params AreaToColor[]? areas)
-    {
-        if (areas == null || areas.Length == 0)
-            areas = [(0, 0, Size.width, Size.height, 0)];
-
-        var (sx, sy) = strength;
-        for (var i = 0; i < areas.Length; i++)
-        {
-            var (x, y, w, h, c) = areas[i];
-            SetShaderData((x, y, w, h), (0, 1), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 1), new(c), false);
-            SetShaderData((x, y, w, h), (2, 1), new(sx, sy, 0, 0), false);
-        }
-    }
-    public void EffectWave((sbyte x, sbyte y) speed, (byte x, byte y) frequency, params AreaToColor[]? areas)
-    {
-        if (areas == null || areas.Length == 0)
-            areas = [(0, 0, Size.width, Size.height, 0)];
-
-        var speedX = (byte)Window.Map(speed.x, sbyte.MinValue, sbyte.MaxValue, byte.MinValue, byte.MaxValue);
-        var speedY = (byte)Window.Map(speed.y, sbyte.MinValue, sbyte.MaxValue, byte.MinValue, byte.MaxValue);
-
-        for (var i = 0; i < areas.Length; i++)
-        {
-            var (x, y, w, h, c) = areas[i];
-            SetShaderData((x, y, w, h), (0, 4), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 4), new(speedX, speedY, frequency.x, frequency.y), false);
-            SetShaderData((x, y, w, h), (2, 4), new(c), false);
-        }
-    }
-    public void ClearAllEffects()
-    {
-        data?.Clear(Color.Transparent);
-    }
-
     public bool IsOverlapping(PointF position)
     {
         return position is { x: >= 0, y: >= 0 } &&
@@ -642,20 +480,20 @@ public class LayerTiles
     {
         return layerTiles.PositionFromPixel(PositionToPixel(position));
     }
-    public PointF PositionToLayer(PointF position, Layer layer)
+    public PointF PositionToLayer(PointF position, LayerSprites layerSprites)
     {
-        return layer.PositionFromPixel(PositionToPixel(position));
+        return layerSprites.PositionFromPixel(PositionToPixel(position));
     }
 
     public uint AtlasColorAt(PointI pixel)
     {
         if (pixel.x < 0 ||
             pixel.y < 0 ||
-            pixel.x >= atlases[atlasPath].Size.X ||
-            pixel.y >= atlases[atlasPath].Size.Y)
+            pixel.x >= LayerSprites.textures[atlasPath].Size.X ||
+            pixel.y >= LayerSprites.textures[atlasPath].Size.Y)
             return default;
 
-        images.TryAdd(atlasPath, atlases[atlasPath].CopyToImage());
+        images.TryAdd(atlasPath, LayerSprites.textures[atlasPath].CopyToImage());
         var img = images[atlasPath];
         var color = img.GetPixel((uint)pixel.x, (uint)pixel.y).ToInteger();
         return color;
@@ -663,73 +501,31 @@ public class LayerTiles
 
     public static void DefaultGraphicsToFile(string filePath)
     {
-        atlases["default"].CopyToImage().SaveToFile(filePath);
+        LayerSprites.textures["default"].CopyToImage().SaveToFile(filePath);
     }
     public static void ReloadGraphics()
     {
-        var paths = atlases.Keys.ToArray();
+        var paths = LayerSprites.textures.Keys.ToArray();
 
         foreach (var path in paths)
         {
             if (path == DEFAULT_GRAPHICS)
                 continue;
 
-            atlases[path].Dispose();
-            atlases[path] = null!;
-            atlases[path] = new(path) { Repeated = true };
+            LayerSprites.textures[path].Dispose();
+            LayerSprites.textures[path] = null!;
+            LayerSprites.textures[path] = new(path) { Repeated = true };
         }
     }
 
 #region Backend
-    // per tile shader data map (8x8 pixels)
-    //
-    // [tnta][tntc][tntt][    ][    ][rea2][reo2][ren2]
-    // [blra][blrt][blrs][    ][    ][rea3][reo3][ren3]
-    // [rea1][reo1][ren1][    ][    ][rea4][reo4][ren4]
-    // [adja][adjd][adjt][    ][    ][rea5][reo5][ren5]
-    // [wava][wavd][wavt][    ][    ][rea6][reo6][ren6]
-    // [edga][edgt][edgc][edgy][    ][rea7][reo7][ren7]
-    // [blka][    ][    ][    ][    ][rea8][reo8][ren8]
-    // [    ][    ][    ][    ][    ][rea9][reo9][ren9]
-    //
-    // tnta: tint area =          [x, y, w, h]
-    // tntc: tint color =         [r, g, b, a]
-    // tntt: tint target color =  [r, g, b, a]
-    //
-    // adja: adjustments area =   [x, y, w, h]
-    // adjd: adjustments data =   [g, s, c, b] (g = gamma, s = saturation, c = contrast, b = brightness)
-    // adjt: adj target color =   [r, g, b, a]
-    //
-    // rea#: replace area =       [x, y, w, h]
-    // reo#: replace color old =  [r, g, b, a]
-    // ren#: replace color new =  [r, g, b, a]
-    //
-    // blra: blur area =          [x, y, w, h]
-    // blrt: blur target color =  [r, g, b, a]
-    // blrs: blur strength =      [x, y, _, _]
-    //
-    // wava: wave area =          [x, y, w, h]
-    // wavd: wave data =          [x, y, z, w] (xy = speed, zw = frequency)
-    // wavt: wave target color =  [r, g, b, a]
-    //
-    // edga: edges area =         [x, y, w, h]
-    // edgt: edges target color = [r, g, b, a]
-    // edgc: edges color =        [r, g, b, a]
-    // edgy: edges type =         [t, _, _, _]
-    //
-    // blka: light block area =   [x, y, w, h]
-
     private const string DEFAULT_GRAPHICS = "default";
-    private bool drawShaderData;
 
     [DoNotSave]
-    internal RenderTexture? queue, result, data;
+    internal RenderTexture? queue, result;
     [DoNotSave]
-    internal Shader? shader;
-    [DoNotSave]
-    private VertexArray? verts, shaderParams;
+    private readonly VertexArray? verts = new(PrimitiveType.Quads);
 
-    internal int lightCount, obstacleCount;
     internal Vector2u tilesetPixelSize;
     internal SizeI TilemapPixelSize
     {
@@ -739,13 +535,10 @@ public class LayerTiles
     private string atlasPath;
     private SizeI size;
     private float zoom;
-    private Light effectLight;
 
     private readonly Dictionary<ushort, float> textTileWidths = [];
     private readonly Dictionary<(int x, int y, int w, int h), TextAlign> textAligns = [];
 
-    [DoNotSave]
-    internal static readonly Dictionary<string, Texture> atlases = [];
     [DoNotSave]
     internal static readonly Dictionary<string, Image> images = new();
     [DoNotSave]
@@ -758,7 +551,7 @@ public class LayerTiles
     static LayerTiles()
     {
         // var base64 = DefaultGraphics.PngToBase64String("graphics.png");
-        atlases[DEFAULT_GRAPHICS] = DefaultGraphics.CreateTexture();
+        LayerSprites.textures[DEFAULT_GRAPHICS] = DefaultGraphics.CreateTexture();
         // DefaultGraphicsToFile("graphics.png");
     }
 
@@ -846,94 +639,34 @@ public class LayerTiles
         verts.Append(new(br, color, texBr));
         verts.Append(new(bl, color, texBl));
     }
-    private void SetShaderData(AreaF area, PointI tilePixel, Color dataInColor, bool includeArea)
-    {
-        TryInit();
 
-        drawShaderData = true;
-
-        var (x, y, w, h) = area;
-        var (ix, iy) = ((int)x, (int)y);
-        var full = GetTexCoords(AtlasTileIdFull, (1, 1));
-        var (px, py) = tilePixel;
-        var centerOff = new Vector2f(AtlasTileSize / 2f, AtlasTileSize / 2f);
-
-        for (var j = y; j <= y + h; j++)
-            for (var i = x; i <= x + w; i++)
-            {
-                var (tx, ty) = ((int)Math.Clamp(i, ix, x + w), (int)Math.Clamp(j, iy, y + h));
-                var isLeft = Math.Abs(i - x) <= 0.01f;
-                var isTop = Math.Abs(j - y) <= 0.01f;
-                var isRight = Math.Abs(i - (x + w)) <= 0.01f;
-                var isBottom = Math.Abs(j - (y + h)) <= 0.01f;
-
-                var rx = isLeft ? i - tx : 0f;
-                var ry = isTop ? j - ty : 0f;
-                var rw = isLeft ? 1f - rx : 1f;
-                var rh = isTop ? 1f - ry : 1f;
-
-                rw = isRight ? i - tx : rw;
-                rh = isBottom ? j - ty : rh;
-
-                var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
-                var (vx, vy) = (tx * AtlasTileSize, ty * AtlasTileSize);
-
-                shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), dataInColor, full.tl + centerOff));
-
-                if (includeArea)
-                    shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl + centerOff));
-            }
-    }
     private static (bool mirrorH, sbyte angle) GetOrientation(byte pose)
     {
         return (pose > 3, (sbyte)(pose % 4));
     }
 
-    private void TryInit()
-    {
-        shader ??= new EffectLayer().Shader;
-        verts ??= new(PrimitiveType.Quads);
-        shaderParams ??= new(PrimitiveType.Points);
-
-        if (queue != null && queue.Size.X == Size.width * AtlasTileSize && queue.Size.Y == Size.height * AtlasTileSize)
-            return;
-
-        queue?.Dispose();
-        data?.Dispose();
-        result?.Dispose();
-        queue = null;
-        data = null;
-        result = null;
-
-        var (rw, rh) = ((uint)Size.width * AtlasTileSize, (uint)Size.height * AtlasTileSize);
-        queue = new(rw, rh);
-        data = new(rw, rh);
-        result = new(rw, rh);
-    }
     internal void DrawQueue()
     {
-        TryInit();
-
-        var atlas = atlases[AtlasPath];
-        var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
-        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, shader);
-
-        if (drawShaderData && data != null && shaderParams != null)
+        if (queue == null || queue.Size.X != Size.width * AtlasTileSize || queue.Size.Y != Size.height * AtlasTileSize)
         {
-            drawShaderData = false;
-            data.Draw(shaderParams, new(BlendMode.None, Transform.Identity, atlas, null));
-            data.Display();
+            queue?.Dispose();
+            result?.Dispose();
+            queue = null;
+            result = null;
+
+            var (rw, rh) = ((uint)Size.width * AtlasTileSize, (uint)Size.height * AtlasTileSize);
+            queue = new(rw, rh);
+            result = new(rw, rh);
         }
 
-        lightCount = 0;
-        obstacleCount = 0;
-        shader?.SetUniform("tileSize", new Vec2(AtlasTileSize, AtlasTileSize));
-        shader?.SetUniform("tileCount", new Vec2(Size.width, Size.height));
-        shader?.SetUniform("time", Window.time.ElapsedTime.AsSeconds());
-        shader?.SetUniform("data", data?.Texture);
+        var texture = LayerSprites.textures[AtlasPath];
+        var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
+        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, Effect?.shader);
+
+        Effect?.UpdateShader(texture, GetTexCoords(AtlasTileIdFull, (1, 1)), Size, AtlasTileSize);
 
         queue?.Clear(new(BackgroundColor));
-        queue?.Draw(verts, new(atlas));
+        queue?.Draw(verts, new(texture));
         queue?.Display();
 
         Window.vertsWindow[0] = new(new(0, 0), Color.White, new(0, 0));
@@ -945,11 +678,7 @@ public class LayerTiles
         result?.Draw(Window.vertsWindow, PrimitiveType.Quads, r);
         result?.Display();
 
-        // result?.Texture.CopyToImage().SaveToFile($"render-{GetHashCode()}.png");
-        // data?.Texture.CopyToImage().SaveToFile($"shader-data-{GetHashCode()}.png");
-
         verts?.Clear();
-        shaderParams?.Clear();
     }
 
     private CornersS GetTexCoords(int tileId, SizeI sz)

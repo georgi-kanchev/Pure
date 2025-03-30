@@ -29,7 +29,7 @@ public static class DefaultGraphics
 
             layer.DrawTileMap(tilemap.ToBundle());
             layer.DrawMouseCursor();
-            layer.Draw();
+            layer.Render();
         }
     }
 }

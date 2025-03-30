@@ -98,7 +98,7 @@ public static class Window
         set
         {
             if (value && retroShader == null && Shader.IsAvailable)
-                retroShader = new EffectWindow().Shader;
+                retroShader = Shader.FromString(ShaderCode.VERTEX_DEFAULT, null, ShaderCode.FRAGMENT_WINDOW);
 
             isRetro = value;
             TryCreate();
@@ -193,7 +193,7 @@ public static class Window
         renderResult?.Clear(new(BackgroundColor));
         return window.IsOpen;
     }
-    public static void Draw(this LayerTiles layerTiles)
+    public static void Render(this LayerTiles layerTiles)
     {
         TryCreate();
 
@@ -212,16 +212,16 @@ public static class Window
         renderResult?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layerTiles.result?.Texture, null));
         // renderResult?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.data?.Texture, null));
     }
-    public static void Draw(this Layer layer)
+    public static void Render(this LayerSprites layerSprites)
     {
         TryCreate();
 
         var tr = Transform.Identity;
-        tr.Translate(layer.Position.x, layer.Position.y);
-        tr.Scale(layer.Zoom, layer.Zoom, -layer.Position.x, -layer.Position.y);
-        Layer.textures.TryGetValue(layer.TexturePath ?? "", out var texture);
-        renderResult?.Draw(layer.verts, new(BlendMode.Alpha, tr, texture, null));
-        layer.verts.Clear();
+        tr.Translate(layerSprites.Position.x, layerSprites.Position.y);
+        tr.Scale(layerSprites.Zoom, layerSprites.Zoom, -layerSprites.Position.x, -layerSprites.Position.y);
+        LayerSprites.textures.TryGetValue(layerSprites.TexturePath ?? "", out var texture);
+        renderResult?.Draw(layerSprites.verts, new(BlendMode.Alpha, tr, texture, null));
+        layerSprites.verts.Clear();
     }
     public static void Close()
     {
@@ -270,7 +270,7 @@ public static class Window
 
         const uint SIZE = 64;
         var rend = new RenderTexture(SIZE, SIZE);
-        var texture = LayerTiles.atlases[layerTiles.AtlasPath];
+        var texture = LayerSprites.textures[layerTiles.AtlasPath];
         var (bx, by) = IndexToCoords(tileBack.id, layerTiles);
         var (fx, fy) = IndexToCoords(tile.id, layerTiles);
         var tsz = layerTiles.AtlasTileSize;
@@ -286,6 +286,36 @@ public static class Window
             new(new(SIZE, 0), new(tile.tint), new(tsz * (fx + 1), tsz * fy)),
             new(new(SIZE, SIZE), new(tile.tint), new(tsz * (fx + 1), tsz * (fy + 1))),
             new(new(0, SIZE), new(tile.tint), new(tsz * fx, tsz * (fy + 1)))
+        };
+        rend.Draw(vertices, PrimitiveType.Quads, new(texture));
+        rend.Display();
+        var image = rend.Texture.CopyToImage();
+        window.SetIcon(SIZE, SIZE, image.Pixels);
+
+        if (saveAsFile)
+            image.SaveToFile("icon.png");
+
+        rend.Dispose();
+        image.Dispose();
+    }
+    public static void SetIconFromTextureArea(LayerSprites layerSprites, AreaI? area = default, bool saveAsFile = false)
+    {
+        TryCreate();
+
+        const uint SIZE = 64;
+        var rend = new RenderTexture(SIZE, SIZE);
+
+        if (LayerSprites.textures.TryGetValue(layerSprites.TexturePath ?? "", out var texture) == false)
+            return;
+
+        var (x, y, w, h) = area ?? (0, 0, (int)texture.Size.X, (int)texture.Size.Y);
+
+        var vertices = new Vertex[]
+        {
+            new(new(0, 0), Color.White, new(x, y)),
+            new(new(SIZE, 0), Color.White, new(x + w, y)),
+            new(new(SIZE, SIZE), Color.White, new(x + w, y + h)),
+            new(new(0, SIZE), Color.White, new(x, y + h))
         };
         rend.Draw(vertices, PrimitiveType.Quads, new(texture));
         rend.Display();
