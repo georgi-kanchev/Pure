@@ -19,6 +19,13 @@ public class Effect
 
         if (Shader.IsAvailable)
             shader = Shader.FromString(codeVertex, null, codeFragment);
+
+        if (white != null)
+            return;
+
+        var image = new Image(new[,] { { Color.White } });
+        white = new(image) { Repeated = true };
+        image.Dispose();
     }
 
     public Light EffectLight
@@ -217,17 +224,19 @@ public class Effect
 
     private Light effectLight;
     private bool drawShaderDataOnce;
-    private CornersS full;
     private int lightCount, obstacleCount;
     private SizeI layerSize;
-    private byte atlasTileSize;
+    private SizeI atlasTileSize;
 
     [DoNotSave]
     internal readonly Shader? shader;
     [DoNotSave]
     private readonly VertexArray? shaderParams = new(PrimitiveType.Points);
     [DoNotSave]
-    internal RenderTexture? result, data;
+    internal RenderTexture? data;
+
+    [DoNotSave]
+    private static Texture? white;
 
     private void SetShaderData(AreaF area, PointI tilePixel, Color dataInColor, bool includeArea)
     {
@@ -236,7 +245,6 @@ public class Effect
         var (x, y, w, h) = area;
         var (ix, iy) = ((int)x, (int)y);
         var (px, py) = tilePixel;
-        var centerOff = new Vector2f(atlasTileSize / 2f, atlasTileSize / 2f);
 
         for (var j = y; j <= y + h; j++)
             for (var i = x; i <= x + w; i++)
@@ -256,42 +264,37 @@ public class Effect
                 rh = isBottom ? j - ty : rh;
 
                 var res = new Color((byte)(rx * 255), (byte)(ry * 255), (byte)(rw * 255), (byte)(rh * 255));
-                var (vx, vy) = (tx * atlasTileSize, ty * atlasTileSize);
+                var (vx, vy) = (tx * atlasTileSize.width, ty * atlasTileSize.height);
 
-                shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), dataInColor, full.tl + centerOff));
+                shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), dataInColor, new()));
 
                 if (includeArea)
-                    shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), res, full.tl + centerOff));
+                    shaderParams?.Append(new(new(vx + px, vy + 0.5f + py), res, new()));
             }
     }
-    internal void UpdateShader(Texture texture, CornersS cornersFull, SizeI size, byte tileSize)
+    internal void UpdateShader(SizeI size, SizeI tileSize)
     {
-        full = cornersFull;
         layerSize = size;
         atlasTileSize = tileSize;
+        var pixelSize = new Vector2u((uint)(size.width * tileSize.width), (uint)(size.height * tileSize.height));
 
-        if (result == null || result.Size.X != layerSize.width * atlasTileSize || result.Size.Y != layerSize.height * atlasTileSize)
+        if (data == null || data.Size != pixelSize)
         {
-            result?.Dispose();
             data?.Dispose();
-            result = null;
             data = null;
-
-            var (rw, rh) = ((uint)layerSize.width * atlasTileSize, (uint)layerSize.height * atlasTileSize);
-            result = new(rw, rh);
-            data = new(rw, rh);
+            data = new(pixelSize.X, pixelSize.Y);
         }
 
         if (drawShaderDataOnce && data != null && shaderParams != null)
         {
             drawShaderDataOnce = false;
-            data.Draw(shaderParams, new(BlendMode.None, Transform.Identity, texture, null));
+            data.Draw(shaderParams, new(BlendMode.None, Transform.Identity, white, null));
             data.Display();
         }
 
         lightCount = 0;
         obstacleCount = 0;
-        shader?.SetUniform("tileSize", new Vec2(atlasTileSize, atlasTileSize));
+        shader?.SetUniform("tileSize", new Vec2(tileSize.width, tileSize.height));
         shader?.SetUniform("tileCount", new Vec2(size.width, size.height));
         shader?.SetUniform("time", Window.time.ElapsedTime.AsSeconds());
         shader?.SetUniform("data", data?.Texture);

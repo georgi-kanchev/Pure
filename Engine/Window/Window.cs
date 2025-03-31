@@ -196,32 +196,12 @@ public static class Window
     public static void Render(this LayerTiles layerTiles)
     {
         TryCreate();
-
         layerTiles.DrawQueue();
-
-        var tr = Transform.Identity;
-        tr.Translate(layerTiles.PixelOffset.x, layerTiles.PixelOffset.y);
-        tr.Scale(layerTiles.Zoom, layerTiles.Zoom, -layerTiles.PixelOffset.x, -layerTiles.PixelOffset.y);
-
-        var (w, h) = (layerTiles.result?.Texture.Size.X ?? 0, layerTiles.result?.Texture.Size.Y ?? 0);
-        vertsWindow[0] = new(new(-w / 2f, -h / 2f), Color.White, new(0, 0));
-        vertsWindow[1] = new(new(w / 2f, -h / 2f), Color.White, new(w, 0));
-        vertsWindow[2] = new(new(w / 2f, h / 2f), Color.White, new(w, h));
-        vertsWindow[3] = new(new(-w / 2f, h / 2f), Color.White, new(0, h));
-
-        renderResult?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layerTiles.result?.Texture, null));
-        // renderResult?.Draw(vertsWindow, PrimitiveType.Quads, new(BlendMode.Alpha, tr, layer.data?.Texture, null));
     }
     public static void Render(this LayerSprites layerSprites)
     {
         TryCreate();
-
-        var tr = Transform.Identity;
-        tr.Translate(layerSprites.Position.x, layerSprites.Position.y);
-        tr.Scale(layerSprites.Zoom, layerSprites.Zoom, -layerSprites.Position.x, -layerSprites.Position.y);
-        LayerSprites.textures.TryGetValue(layerSprites.TexturePath ?? "", out var texture);
-        renderResult?.Draw(layerSprites.verts, new(BlendMode.Alpha, tr, texture, null));
-        layerSprites.verts.Clear();
+        layerSprites.DrawQueue();
     }
     public static void Close()
     {
@@ -335,7 +315,7 @@ public static class Window
     [DoNotSave]
     internal static RenderWindow? window;
     [DoNotSave]
-    private static RenderTexture? renderResult;
+    internal static RenderTexture? renderResult;
     [DoNotSave]
     internal static (int w, int h) rendTexViewSz;
 
@@ -350,7 +330,7 @@ public static class Window
     [DoNotSave]
     private static Clock? retroTurnoffTime;
     [DoNotSave]
-    internal static readonly Vertex[] vertsWindow = new Vertex[4];
+    internal static readonly Vertex[] verts = new Vertex[4];
 
     private static bool isRetro, isClosing, hasClosed, isVerticallySynced = true, isRecreating, shouldGetClipboard;
     private static string title = "Game";
@@ -516,10 +496,10 @@ public static class Window
         var (tw, th) = (renderResult.Size.X, renderResult.Size.Y);
         var shader = IsRetro ? retroShader : null;
         var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, renderResult.Texture, shader);
-        vertsWindow[0] = new(new(ow, oh), Color.White, new(0, 0));
-        vertsWindow[1] = new(new(ww + ow, oh), Color.White, new(tw, 0));
-        vertsWindow[2] = new(new(ww + ow, wh + oh), Color.White, new(tw, th));
-        vertsWindow[3] = new(new(ow, wh + oh), Color.White, new(0, th));
+        verts[0] = new(new(ow, oh), Color.White, new(0, 0));
+        verts[1] = new(new(ww + ow, oh), Color.White, new(tw, 0));
+        verts[2] = new(new(ww + ow, wh + oh), Color.White, new(tw, th));
+        verts[3] = new(new(ow, wh + oh), Color.White, new(0, th));
 
         if (IsRetro)
         {
@@ -536,7 +516,7 @@ public static class Window
             }
         }
 
-        window.Draw(vertsWindow, PrimitiveType.Quads, rend);
+        window.Draw(verts, PrimitiveType.Quads, rend);
     }
 
     private static (int, int) IndexToCoords(int index, LayerTiles layerTiles)

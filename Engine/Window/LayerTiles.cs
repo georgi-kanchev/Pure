@@ -522,7 +522,7 @@ public class LayerTiles
     private const string DEFAULT_GRAPHICS = "default";
 
     [DoNotSave]
-    internal RenderTexture? queue, result;
+    private RenderTexture? queue, result;
     [DoNotSave]
     private readonly VertexArray? verts = new(PrimitiveType.Quads);
 
@@ -540,12 +540,12 @@ public class LayerTiles
     private readonly Dictionary<(int x, int y, int w, int h), TextAlign> textAligns = [];
 
     [DoNotSave]
-    internal static readonly Dictionary<string, Image> images = new();
+    private static readonly Dictionary<string, Image> images = new();
     [DoNotSave]
     private static readonly List<PointF> cursorOffsets =
     [
-        (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f),
-        (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
+        (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f),
+        (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
     ];
 
     static LayerTiles()
@@ -647,7 +647,8 @@ public class LayerTiles
 
     internal void DrawQueue()
     {
-        if (queue == null || queue.Size.X != Size.width * AtlasTileSize || queue.Size.Y != Size.height * AtlasTileSize)
+        var (lw, lh) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
+        if (queue == null || queue.Size != new Vector2u((uint)lw, (uint)lh))
         {
             queue?.Dispose();
             result?.Dispose();
@@ -663,22 +664,35 @@ public class LayerTiles
         var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
         var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, Effect?.shader);
 
-        Effect?.UpdateShader(texture, GetTexCoords(AtlasTileIdFull, (1, 1)), Size, AtlasTileSize);
+        Effect?.UpdateShader(Size, (AtlasTileSize, AtlasTileSize));
 
         queue?.Clear(new(BackgroundColor));
         queue?.Draw(verts, new(texture));
         queue?.Display();
 
-        Window.vertsWindow[0] = new(new(0, 0), Color.White, new(0, 0));
-        Window.vertsWindow[1] = new(new(w, 0), Color.White, new(w, 0));
-        Window.vertsWindow[2] = new(new(w, h), Color.White, new(w, h));
-        Window.vertsWindow[3] = new(new(0, h), Color.White, new(0, h));
+        Window.verts[0] = new(new(0, 0), Color.White, new(0, 0));
+        Window.verts[1] = new(new(w, 0), Color.White, new(w, 0));
+        Window.verts[2] = new(new(w, h), Color.White, new(w, h));
+        Window.verts[3] = new(new(0, h), Color.White, new(0, h));
 
         result?.Clear(new(Color.Transparent));
-        result?.Draw(Window.vertsWindow, PrimitiveType.Quads, r);
+        result?.Draw(Window.verts, PrimitiveType.Quads, r);
         result?.Display();
 
         verts?.Clear();
+
+        var tr = Transform.Identity;
+        tr.Translate(PixelOffset.x, PixelOffset.y);
+        tr.Scale(Zoom, Zoom, -PixelOffset.x, -PixelOffset.y);
+
+        var (resW, resH) = (result?.Texture.Size.X ?? 0, result?.Texture.Size.Y ?? 0);
+        Window.verts[0] = new(new(-resW / 2f, -resH / 2f), Color.White, new(0, 0));
+        Window.verts[1] = new(new(resW / 2f, -resH / 2f), Color.White, new(resW, 0));
+        Window.verts[2] = new(new(resW / 2f, resH / 2f), Color.White, new(resW, resH));
+        Window.verts[3] = new(new(-resW / 2f, resH / 2f), Color.White, new(0, resH));
+
+        Window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, result?.Texture, null));
+        // Window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, data?.Texture, null));
     }
 
     private CornersS GetTexCoords(int tileId, SizeI sz)

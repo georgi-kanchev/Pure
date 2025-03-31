@@ -1,6 +1,6 @@
 namespace Pure.Engine.Window;
 
-public class LayerSprites
+public class LayerSprites(SizeI size)
 {
     public string? TexturePath
     {
@@ -57,15 +57,40 @@ public class LayerSprites
         }
     }
 
+    public PointF Position { get; set; }
+    public SizeI Size { get; set; } = size;
     public float Zoom
     {
         get => zoom;
         set => zoom = Math.Clamp(value, 0f, 1000f);
     }
-    public PointF Position { get; set; }
+    public float ZoomWindowFit
+    {
+        get
+        {
+            Window.TryCreate();
+
+            var (mw, mh) = Monitor.Current.Size;
+            var (ww, wh) = Window.Size;
+            var (w, h) = (Size.width, Size.height);
+            var (rw, rh) = ((float)mw / ww, (float)mh / wh);
+            return Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+        }
+    }
+
     public PointF MouseCursorPosition
     {
         get => PositionFromPixel(Mouse.CursorPosition);
+    }
+    public uint BackgroundColor { get; set; }
+    public Effect? Effect
+    {
+        get => effect;
+        set
+        {
+            effect = value;
+            effect?.UpdateShader((1, 1), Size);
+        }
     }
 
     public void DragAndZoom(Mouse.Button dragButton = Mouse.Button.Middle, float zoomDelta = 0.05f)
@@ -79,7 +104,7 @@ public class LayerSprites
             Position = (Position.x + dx / Zoom, Position.y + dy / Zoom);
     }
 
-    public void DrawTextureArea(AreaI? area = null, PointF position = default, float angle = 0f, SizeF? scale = null, PointF? origin = null, uint tint = uint.MaxValue)
+    public void DrawSprite(AreaI? textureArea = null, PointF position = default, float angle = 0f, SizeF? scale = null, PointF? origin = null, uint tint = uint.MaxValue)
     {
         textures.TryGetValue(texturePath ?? "", out var texture);
 
@@ -88,12 +113,12 @@ public class LayerSprites
 
         var color = new Color(tint);
         var m = Matrix3x2.Identity;
-        var (x, y, w, h) = area ?? (0, 0, (int)texture.Size.X, (int)texture.Size.Y);
+        var (x, y, w, h) = textureArea ?? (0, 0, (int)texture.Size.X, (int)texture.Size.Y);
         var (sw, sh) = (w * (scale?.width ?? 1f), h * (scale?.height ?? 1f));
         var (ox, oy) = origin ?? (0.5f, 0.5f);
 
         m *= Matrix3x2.CreateRotation(MathF.PI / 180f * angle);
-        m *= Matrix3x2.CreateTranslation(position.x, position.y);
+        m *= Matrix3x2.CreateTranslation(position.x + Size.width / 2f, position.y + Size.height / 2f);
 
         var tl = Vector2.Transform(new(-ox * sw, -oy * sh), m);
         var tr = Vector2.Transform(new((-ox + 1) * sw, -oy * sh), m);
@@ -164,8 +189,69 @@ public class LayerSprites
     private float zoom = 1f;
 
     [DoNotSave]
+    private Effect? effect;
+    [DoNotSave]
+    internal RenderTexture? queue, result;
+    [DoNotSave]
     internal static readonly Dictionary<string, Texture> textures = [];
     [DoNotSave]
     internal readonly VertexArray verts = new(PrimitiveType.Quads);
+
+    internal void DrawQueue()
+    {
+        var pixelSize = new Vector2u((uint)Size.width, (uint)Size.height);
+        if (queue == null || queue.Size != pixelSize)
+        {
+            queue?.Dispose();
+            result?.Dispose();
+            queue = null;
+            result = null;
+            queue = new(pixelSize.X, pixelSize.Y);
+            result = new(pixelSize.X, pixelSize.Y);
+
+            var view = queue.GetView();
+            view.Center = new(view.Size.X / 2f, view.Size.Y / 2f);
+            queue.SetView(view);
+            result.SetView(view);
+        }
+
+        if (textures.TryGetValue(TexturePath ?? "", out var texture) == false)
+            return;
+
+        var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
+        var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, Effect?.shader);
+
+        Effect?.UpdateShader((1, 1), Size);
+
+        queue?.Clear(new(BackgroundColor));
+        queue?.Draw(verts, new(texture));
+        queue?.Display();
+
+        Window.verts[0] = new(new(0, 0), Color.White, new(0, 0));
+        Window.verts[1] = new(new(w, 0), Color.White, new(w, 0));
+        Window.verts[2] = new(new(w, h), Color.White, new(w, h));
+        Window.verts[3] = new(new(0, h), Color.White, new(0, h));
+
+        result?.Clear(new(Color.Transparent));
+        result?.Draw(Window.verts, PrimitiveType.Quads, r);
+        result?.Display();
+
+        result?.Texture.CopyToImage().SaveToFile($"render-{GetHashCode()}.png");
+
+        verts.Clear();
+
+        var tr = Transform.Identity;
+        tr.Translate(Position.x, Position.y);
+        tr.Scale(Zoom, Zoom, -Position.x, -Position.y);
+
+        var (resW, resH) = (result?.Texture.Size.X ?? 0, result?.Texture.Size.Y ?? 0);
+        Window.verts[0] = new(new(-resW / 2f, -resH / 2f), Color.White, new(0, 0));
+        Window.verts[1] = new(new(resW / 2f, -resH / 2f), Color.White, new(resW, 0));
+        Window.verts[2] = new(new(resW / 2f, resH / 2f), Color.White, new(resW, resH));
+        Window.verts[3] = new(new(-resW / 2f, resH / 2f), Color.White, new(0, resH));
+
+        Window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, result?.Texture, null));
+        // Window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, data?.Texture, null));
+    }
 #endregion
 }
