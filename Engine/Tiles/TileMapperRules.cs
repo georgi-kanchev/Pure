@@ -6,10 +6,6 @@ public class TileMapperRules
     {
         get => data.Count;
     }
-    public int CountWithRotations
-    {
-        get => hashes.Count;
-    }
 
     public void Add(Tile result, ushort?[] match3X3, bool withRotations = true, int atIndex = 0)
     {
@@ -18,7 +14,7 @@ public class TileMapperRules
 
         atIndex = Math.Clamp(atIndex, 0, data.Count);
 
-        TryAdd(result, match3X3, atIndex, 0);
+        TryAdd(result, match3X3, atIndex, 0, withRotations);
 
         if (withRotations == false)
             return;
@@ -30,23 +26,15 @@ public class TileMapperRules
             { match3X3[6], match3X3[7], match3X3[8] }
         };
         for (var i = 1; i < 4; i++)
-            TryAdd(result.Rotate(i), Flatten(Rotate(match, i)), atIndex, i);
+            TryAdd(result.Rotate(i), Flatten(Rotate(match, i)), atIndex, i, withRotations);
     }
     public void Remove(int atIndex)
     {
         if (atIndex < 0 || data.Count <= atIndex)
             return;
 
-        for (var i = 0; i < data[atIndex].Length; i++)
-        {
-            if (data[atIndex].GetValue(i) is not Rule rule)
-                continue;
-
-            var itemsHash = GetItemsHash(rule.match);
-            hashes.Remove(itemsHash);
-        }
-
         data.RemoveAt(atIndex);
+        // RecalculateHashes();
     }
     public void Move(int fromIndex, int toIndex)
     {
@@ -125,22 +113,34 @@ public class TileMapperRules
     }
 
     private readonly List<Rule?[]> data = [];
-    private readonly List<int> hashes = [];
 
-    private void TryAdd(Tile tile, ushort?[] match, int atIndex, int rotation)
+    private void TryAdd(Tile tile, ushort?[] match, int atIndex, int rotation, bool withRotations)
     {
-        var itemsHash = GetItemsHash(match);
-
-        if (hashes.Contains(itemsHash))
-            return;
-
-        hashes.Add(itemsHash);
+        // if (withRotations && hashes.Contains(GetItemsHash(match)))
+        //     return;
 
         if (rotation == 0)
             data.Insert(atIndex, new Rule[4]);
 
         data[atIndex][rotation] = new(tile, match);
+        // RecalculateHashes();
     }
+
+    // private void RecalculateHashes()
+    // {
+    //     hashes.Clear();
+    //
+    //     foreach (var rule in data)
+    //         foreach (var rotation in rule)
+    //         {
+    //             if (rotation == null)
+    //                 continue;
+    //
+    //             var hash = GetItemsHash(rotation.match);
+    //             if (hashes.Contains(hash) == false)
+    //                 hashes.Add(hash);
+    //         }
+    // }
 
     private static int GetItemsHash(ushort?[] array)
     {

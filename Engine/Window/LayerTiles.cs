@@ -113,7 +113,15 @@ public class LayerTiles
         get => ((int)MouseCursorPosition.x, (int)MouseCursorPosition.y);
     }
 
-    public Effect? Effect { get; set; }
+    public Effect? Effect
+    {
+        get => effect;
+        set
+        {
+            effect = value;
+            effect?.UpdateShader(Size, (AtlasTileSize, AtlasTileSize));
+        }
+    }
 
     public LayerTiles(SizeI size = default, bool fitWindow = true)
     {
@@ -535,6 +543,7 @@ public class LayerTiles
     private string atlasPath;
     private SizeI size;
     private float zoom;
+    private Effect? effect;
 
     private readonly Dictionary<ushort, float> textTileWidths = [];
     private readonly Dictionary<(int x, int y, int w, int h), TextAlign> textAligns = [];
