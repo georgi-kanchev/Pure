@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Numerics;
 using Range = (float a, float b);
 using SizeI = (int width, int height);
 using PointF = (float x, float y);
@@ -17,7 +18,7 @@ public enum Ease { Line, Sine, Cubic, Quint, Circle, Elastic, Swing, Bounce }
 /// </summary>
 public enum Curve { In, Out, InOut }
 
-public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value, Worley }
+public enum Noise { OpenSimplex2, OpenSimplex2S, Cellular, Perlin, ValueCubic, Value, Worley, Voronoi }
 
 public static class Number
 {
@@ -478,6 +479,8 @@ public static class Number
     {
         if (noise == Worley)
             return WorleyNoise(point.x, point.y, scale / 100f, seed);
+        if (noise == Voronoi)
+            return VoronoiEdges(new(point.x, point.y), scale / 100f, seed);
 
         var obj = new FastNoiseLite(seed);
         obj.SetNoiseType((FastNoiseLite.NoiseType)noise);
@@ -510,6 +513,71 @@ public static class Number
         }
 
         return minDist;
+    }
+    private static float VoronoiEdges(Vector2 value, float scale, float seed = float.NaN)
+    {
+        value *= scale;
+        var baseCell = new Vector2((float)Math.Floor(value.X), (float)Math.Floor(value.Y));
+
+        var minDistToCell = 10f;
+        var toClosestCell = Vector2.Zero;
+        var closestCell = Vector2.Zero;
+
+        for (var x1 = -1; x1 <= 1; x1++)
+        {
+            for (var y1 = -1; y1 <= 1; y1++)
+            {
+                var cell = baseCell + new Vector2(x1, y1);
+                var cellPosition = cell + Rand2dTo2d(cell, seed);
+                var toCell = cellPosition - value;
+                var distToCell = toCell.Length();
+
+                if (distToCell >= minDistToCell)
+                    continue;
+
+                minDistToCell = distToCell;
+                closestCell = cell;
+                toClosestCell = toCell;
+            }
+        }
+
+        var minEdgeDistance = 10f;
+
+        for (var x2 = -1; x2 <= 1; x2++)
+        {
+            for (var y2 = -1; y2 <= 1; y2++)
+            {
+                var cell = baseCell + new Vector2(x2, y2);
+                var cellPosition = cell + Rand2dTo2d(cell, seed);
+                var toCell = cellPosition - value;
+
+                var diffToClosestCell = Vector2.Abs(closestCell - cell);
+                var isClosestCell = diffToClosestCell.X + diffToClosestCell.Y < 0.1f;
+
+                if (isClosestCell)
+                    continue;
+
+                var toCenter = (toClosestCell + toCell) * 0.5f;
+                var cellDifference = Vector2.Normalize(toCell - toClosestCell);
+                var edgeDistance = Vector2.Dot(toCenter, cellDifference);
+                minEdgeDistance = Math.Min(minEdgeDistance, edgeDistance);
+            }
+        }
+
+        return minEdgeDistance;
+
+        float Rand(float seed)
+        {
+            return (float)(Math.Sin(seed * 12.9898f) * 43758.5453f % 1.0);
+        }
+
+        Vector2 Rand2dTo2d(Vector2 value, float seed)
+        {
+            return new(
+                Rand(Vector2.Dot(value, new(12.9898f, 78.233f)) + seed),
+                Rand(Vector2.Dot(value, new(26.6515f, 56.7272f)) + seed)
+            );
+        }
     }
 #endregion
 }

@@ -41,7 +41,7 @@ public static class TerrainGeneration
             generator.Elevations[65] = new(Tile.SHADE_2, Color.Yellow.ToDark()); // beaches/dirt patches
             generator.Elevations[125] = new(Tile.SHADE_1, Color.Green.ToDark()); // grass
             generator.Elevations[140] = new(Tile.BRACKET_ROUND_RIGHT, Color.Green.ToDark(), Pose.Left); // hills
-            generator.Elevations[160] = new(Tile.NATURE_MOUNTAIN, Color.Gray); // rocky mountains
+            generator.Elevations[200] = new(Tile.NATURE_MOUNTAIN, Color.Gray); // rocky mountains
             generator.Elevations[255] = new(Tile.NATURE_MOUNTAIN, Color.White); // snowy mountains
             generator.TargetTileId = Tile.EMPTY;
             generator.Seed = 333;
