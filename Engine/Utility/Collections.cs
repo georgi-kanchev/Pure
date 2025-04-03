@@ -240,11 +240,15 @@ public static class Collections
     {
         return collection.Count == 0 ? default : collection[(0, collection.Count - 1).Random(seed)];
     }
-    public static T? ChooseOneFrom<T>(this T choice, T[]? choices, float seed = float.NaN)
+    public static T? ChooseOne<T>(this T choice, T[]? choices, float seed = float.NaN)
     {
         var list = choices == null ? [] : choices.ToList();
         list.Add(choice);
         return ChooseOne(list, seed);
+    }
+    public static T? ChooseOne<T>(this float seed, T[]? choices)
+    {
+        return ChooseOne(choices ?? [], seed);
     }
     /// <summary>
     /// Calculates the average number out of a collection of numbers and returns it.
