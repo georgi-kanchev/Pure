@@ -250,6 +250,10 @@ public static class Collections
     {
         return ChooseOne(choices ?? [], seed);
     }
+    public static T? ChooseOne<T>(this int seed, T[]? choices)
+    {
+        return ChooseOne(choices ?? [], seed);
+    }
     /// <summary>
     /// Calculates the average number out of a collection of numbers and returns it.
     /// </summary>
