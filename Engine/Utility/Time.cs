@@ -93,10 +93,10 @@ public static class Time
     /// Converts a duration in seconds to a formatted clock string.
     /// </summary>
     /// <param name="seconds">The duration in seconds.</param>
-    /// <param name="separator">The separator string to use between clock elements.</param>
+    /// <param name="divider">The separator string to use between clock elements.</param>
     /// <param name="units">The units to include in the formatted string.</param>
     /// <returns>A formatted clock string.</returns>
-    public static string ToClock(this float seconds, string separator = ":", Unit units = Unit.Hour | Unit.Minute | Unit.Second)
+    public static string ToClock(this float seconds, string divider = ":", Unit units = Unit.Hour | Unit.Minute | Unit.Second)
     {
         var ts = TimeSpan.FromSeconds(seconds);
         var result = string.Empty;
@@ -111,7 +111,7 @@ public static class Time
 
         if (units.HasFlag(Unit.Hour))
         {
-            var sep = counter > 0 ? separator : string.Empty;
+            var sep = counter > 0 ? divider : string.Empty;
             var val = (int)ts.TotalHours;
 
             if (counter != 0)
@@ -123,7 +123,7 @@ public static class Time
 
         if (units.HasFlag(Unit.Minute))
         {
-            var sep = counter > 0 ? separator : string.Empty;
+            var sep = counter > 0 ? divider : string.Empty;
             var val = counter == 0 ? (int)ts.TotalMinutes : ts.Minutes;
             result += $"{sep}{val:D2}";
             counter++;
@@ -131,7 +131,7 @@ public static class Time
 
         if (units.HasFlag(Unit.Second))
         {
-            var sep = counter > 0 ? separator : string.Empty;
+            var sep = counter > 0 ? divider : string.Empty;
             var val = counter == 0 ? (int)ts.TotalSeconds : ts.Seconds;
             result += $"{sep}{val:D2}";
             counter++;
@@ -141,7 +141,7 @@ public static class Time
         {
             var val = counter == 0 ? (int)ts.TotalMilliseconds : ts.Milliseconds;
             var dot = units.HasFlag(Unit.Second) ? "." : string.Empty;
-            var sep = dot == string.Empty && counter > 0 ? separator : string.Empty;
+            var sep = dot == string.Empty && counter > 0 ? divider : string.Empty;
             result += $"{sep}{dot}{val:D3}";
             counter++;
         }

@@ -11,6 +11,15 @@ namespace Pure.Engine.Utility;
 /// </summary>
 public enum Alignment { TopLeft, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight }
 
+// ReSharper disable InconsistentNaming
+[Flags]
+public enum Naming
+{
+    RaNDomCasE, lower = 1 << 0, UPPER = 1 << 1, camelCase = 1 << 2, PascalCase = 1 << 3, Sentence_case = 1 << 4,
+    PiNgPoNg_CaSe = 1 << 5, pOnGpInG_cAsE = 1 << 6, Separated = 1 << 7
+}
+// ReSharper restore InconsistentNaming
+
 public static class Text
 {
     public static bool IsSurroundedBy(this string input, string text)
@@ -339,6 +348,194 @@ public static class Text
                 return true;
 
         return false;
+    }
+
+    public static string Name(this string input, Naming naming, string divider = "")
+    {
+        divider ??= "";
+
+        if (naming == Naming.RaNDomCasE)
+        {
+            var result = new StringBuilder();
+            for (var i = 0; i < input.Length; i++)
+            {
+                var rand = (0f, 1f).Random() < 0.5f;
+                var symbol = input[i].ToString();
+                result.Append(rand ? symbol.ToLower() : symbol.ToUpper());
+            }
+
+            return result.ToString();
+        }
+
+        var (detectedNaming, detectedDivider) = input.GetNaming();
+        var words = string.IsNullOrEmpty(detectedDivider) ? [input] : input.Split(detectedDivider);
+
+        if (words.Length == 1 && divider != "" && detectedNaming.IsOneOf(Naming.camelCase, Naming.PascalCase))
+            words = AddDivCamelPascal(words[0], divider).Split(divider);
+
+        for (var i = 0; i < words.Length; i++)
+        {
+            if (naming.HasFlag(Naming.lower))
+                words[i] = words[i].ToLower();
+
+            if (naming.HasFlag(Naming.UPPER))
+                words[i] = words[i].ToUpper();
+
+            if (naming.HasFlag(Naming.camelCase))
+                words[i] = i == 0 ? words[i].ToLower() : Capitalize(words[i]);
+
+            if (naming.HasFlag(Naming.PascalCase))
+                words[i] = Capitalize(words[i]);
+
+            if (naming.HasFlag(Naming.Sentence_case))
+                words[i] = i == 0 ? Capitalize(words[i]) : words[i].ToLower();
+
+            if (naming.HasFlag(Naming.PiNgPoNg_CaSe))
+            {
+                var result = new StringBuilder();
+                var isUpper = true;
+                foreach (var c in words[i])
+                {
+                    result.Append(isUpper ? char.ToUpper(c) : char.ToLower(c));
+                    isUpper = !isUpper;
+                }
+
+                words[i] = result.ToString();
+            }
+
+            if (naming.HasFlag(Naming.pOnGpInG_cAsE) == false)
+                continue;
+
+            var res = new StringBuilder();
+            var isLower = true;
+            foreach (var c in words[i])
+            {
+                res.Append(isLower ? char.ToLower(c) : char.ToUpper(c));
+                isLower = !isLower;
+            }
+
+            words[i] = res.ToString();
+        }
+
+        return words.ToString(divider);
+
+        string Capitalize(string word)
+        {
+            return char.ToUpper(word[0]) + word[1..].ToLower();
+        }
+
+        string AddDivCamelPascal(string text, string div)
+        {
+            var result = new StringBuilder();
+
+            for (var i = 0; i < text.Length; i++)
+            {
+                if (i > 0 && i <= text.Length - 1 && char.IsUpper(text[i]) && (i == text.Length - 1 || char.IsLower(text[i + 1])))
+                    result.Append(div);
+
+                result.Append(text[i]);
+            }
+
+            return result.ToString();
+        }
+    }
+    public static (Naming naming, string divider) GetNaming(this string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return (Naming.RaNDomCasE, "");
+
+        var detectedNaming = Naming.RaNDomCasE;
+        var divider = "";
+        var match = Regex.Match(input, "[^a-zA-Z0-9]");
+        var words = new[] { input };
+
+        if (match.Success)
+        {
+            divider = match.Value[0].ToString();
+            detectedNaming |= Naming.Separated;
+            words = input.Split(divider);
+        }
+
+        var inputNoDivider = string.IsNullOrWhiteSpace(divider) ? input : input.Replace(divider, "");
+        if (inputNoDivider.All(char.IsLower))
+        {
+            detectedNaming |= Naming.lower;
+            return (detectedNaming, divider);
+        }
+
+        if (inputNoDivider.All(char.IsUpper))
+        {
+            detectedNaming |= Naming.UPPER;
+            return (detectedNaming, divider);
+        }
+
+        if (words.Length == 1)
+        {
+            if (char.IsLower(input[0]) && input.Skip(1).Any(char.IsUpper)) detectedNaming |= Naming.camelCase;
+            if (char.IsUpper(input[0]) && input.Skip(1).Any(char.IsUpper)) detectedNaming |= Naming.PascalCase;
+            return (detectedNaming, divider);
+        }
+
+        var soFarCamel = words[0].All(char.IsLower);
+        var soFarPascal = char.IsUpper(words[0][0]) && words[0].Skip(1).All(char.IsLower);
+        var soFarSentence = soFarPascal;
+        var soFarPing = IsPing(words[0]);
+        var soFarPong = IsPong(words[0]);
+
+        foreach (var word in words.Skip(1))
+        {
+            if (word.All(char.IsLower) == false)
+                soFarSentence = false;
+
+            if (char.IsUpper(word[0]) == false || word.Skip(1).All(char.IsLower) == false)
+            {
+                soFarCamel = false;
+                soFarPascal = false;
+            }
+
+            if (IsPing(word) == false)
+                soFarPing = false;
+
+            if (IsPong(word) == false)
+                soFarPong = false;
+
+            if (soFarCamel == false && soFarPascal == false && soFarSentence == false && soFarPing == false && soFarPong == false)
+                break;
+        }
+
+        if (soFarCamel) detectedNaming |= Naming.camelCase;
+        if (soFarPascal) detectedNaming |= Naming.PascalCase;
+        if (soFarSentence) detectedNaming |= Naming.Sentence_case;
+        if (soFarPing) detectedNaming |= Naming.PiNgPoNg_CaSe;
+        if (soFarPong) detectedNaming |= Naming.pOnGpInG_cAsE;
+
+        return (detectedNaming, divider);
+
+        bool IsPing(string str)
+        {
+            var isUpper = true;
+            for (var i = 0; i < str.Length; i++)
+            {
+                if (isUpper && char.IsUpper(str[i]) == false) return false;
+                if (isUpper == false && char.IsLower(str[i]) == false) return false;
+                isUpper = !isUpper;
+            }
+
+            return true;
+        }
+
+        bool IsPong(string str)
+        {
+            var isLower = true;
+            for (var i = 0; i < str.Length; i++)
+            {
+                if (isLower && char.IsLower(str[i]) == false) return false;
+                if (isLower == false && char.IsUpper(str[i]) == false) return false;
+                isLower = !isLower;
+            }
+
+            return true;
+        }
     }
 
 #region Backend

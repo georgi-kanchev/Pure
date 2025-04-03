@@ -240,7 +240,7 @@ public static class Collections
     {
         return collection.Count == 0 ? default : collection[(0, collection.Count - 1).Random(seed)];
     }
-    public static T? ChooseOneFrom<T>(this T choice, float seed = float.NaN, params T[]? choices)
+    public static T? ChooseOneFrom<T>(this T choice, T[]? choices, float seed = float.NaN)
     {
         var list = choices == null ? [] : choices.ToList();
         list.Add(choice);
@@ -292,21 +292,21 @@ public static class Collections
     /// </summary>
     /// <typeparam name="T">The type of elements in the collection.</typeparam>
     /// <param name="collection">The collection of elements to iterate over.</param>
-    /// <param name="separator">The separator string to use between elements.</param>
+    /// <param name="divider">The separator string to use between elements.</param>
     /// <returns>A string that represents the collection as a sequence of elements separated 
     /// by the specified separator string.</returns>
-    public static string ToString<T>(this IList<T> collection, string separator)
+    public static string ToString<T>(this IList<T> collection, string divider)
     {
         var sb = new StringBuilder();
         for (var i = 0; i < collection.Count; i++)
         {
-            var sep = i != 0 ? separator : string.Empty;
+            var sep = i != 0 ? divider : string.Empty;
             sb.Append(sep).Append(collection[i]);
         }
 
         return sb.ToString();
     }
-    public static string ToString<T>(this T[,] matrix, (string horizontal, string vertical) separator)
+    public static string ToString<T>(this T[,] matrix, (string horizontal, string vertical) divider)
     {
         var (m, n) = (matrix.GetLength(0), matrix.GetLength(1));
         var result = new StringBuilder();
@@ -316,10 +316,10 @@ public static class Collections
             {
                 result.Append(matrix[i, j]);
                 if (j < n - 1)
-                    result.Append(separator.horizontal);
+                    result.Append(divider.horizontal);
             }
 
-            result.Append(separator.vertical);
+            result.Append(divider.vertical);
         }
 
         result.Remove(result.Length - 1, 1);

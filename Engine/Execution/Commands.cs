@@ -1,4 +1,6 @@
-﻿namespace Pure.Engine.Execution;
+﻿using System.Text;
+
+namespace Pure.Engine.Execution;
 
 using System.Text.RegularExpressions;
 using System.Globalization;
@@ -9,35 +11,35 @@ public class Commands
     public bool IsDisabled { get; set; }
     public (char command, char value, char text, char array) Dividers { get; set; } = (';', ' ', '`', '|');
 
-    public void Create(string command, Func<string?> onExecute)
+    public void Create(string commandName, Func<string?> onExecute)
     {
-        if (string.IsNullOrWhiteSpace(command))
+        if (string.IsNullOrWhiteSpace(commandName))
             return;
 
-        command = command.Replace(Dividers.value, char.MinValue);
-        command = command.Replace(Dividers.text, char.MinValue);
-        command = command.Replace(Dividers.command, char.MinValue);
-        command = command.Replace(Dividers.array, char.MinValue);
+        commandName = commandName.Replace(Dividers.value, char.MinValue);
+        commandName = commandName.Replace(Dividers.text, char.MinValue);
+        commandName = commandName.Replace(Dividers.command, char.MinValue);
+        commandName = commandName.Replace(Dividers.array, char.MinValue);
+        commandName = Name(commandName, Naming.lower, NAME_PLACEHOLDER);
 
-        commands[command] = onExecute;
+        commands[commandName] = onExecute;
     }
-    public string[] Execute(string command)
+    public string[] Execute(string commandName)
     {
         if (IsDisabled)
             return [];
 
-        var strings = AddPlaceholders(ref command, Dividers.text.ToString());
+        var strings = AddPlaceholders(ref commandName, Dividers.text.ToString());
         var results = new List<string>();
-        var cmds = command.Trim().Split(Dividers.command);
+        var cmds = commandName.Trim().Split(Dividers.command);
 
         foreach (var cmd in cmds)
         {
             var parts = cmd.Trim().Split();
+            var name = Name(parts[0], Naming.lower, NAME_PLACEHOLDER);
 
-            if (commands.ContainsKey(parts[0]) == false)
+            if (commands.TryGetValue(name, out var callback) == false)
                 continue;
-
-            var callback = commands[parts[0]];
 
             parameterIndex = 0;
             parameters.Clear();
@@ -78,10 +80,19 @@ public class Commands
     }
 
 #region Backend
-    private const string STR_PLACEHOLDER = "—";
+    // ReSharper disable InconsistentNaming
+    [Flags]
+    private enum Naming
+    {
+        RaNDomCasE, lower = 1 << 0, UPPER = 1 << 1, camelCase = 1 << 2, PascalCase = 1 << 3, Sentence_case = 1 << 4,
+        PiNgPoNg_CaSe = 1 << 5, pOnGpInG_cAsE = 1 << 6, Separated = 1 << 7
+    }
+    // ReSharper restore InconsistentNaming
+
+    private const string STR_PLACEHOLDER = "—", NAME_PLACEHOLDER = "╌";
     private int parameterIndex;
-    private static readonly Dictionary<string, Func<string?>> commands = new();
-    private static readonly List<string> parameters = [];
+    private readonly Dictionary<string, Func<string?>> commands = new();
+    private readonly List<string> parameters = [];
 
     private object? TextToObject(string dataAsText, Type type)
     {
@@ -168,6 +179,230 @@ public class Commands
             wrappedValue -= range;
 
         return (T)Convert.ChangeType(wrappedValue, typeof(T));
+    }
+
+    private static string Name(string input, Naming naming, string divider = "")
+    {
+        divider ??= "";
+
+        if (naming == Naming.RaNDomCasE)
+        {
+            var result = new StringBuilder();
+            for (var i = 0; i < input.Length; i++)
+            {
+                var rand = Random((0f, 1f)) < 0.5f;
+                var symbol = input[i].ToString();
+                result.Append(rand ? symbol.ToLower() : symbol.ToUpper());
+            }
+
+            return result.ToString();
+        }
+
+        var (detectedNaming, detectedDivider) = GetNaming(input);
+        var words = string.IsNullOrEmpty(detectedDivider) ? [input] : input.Split(detectedDivider);
+
+        if (words.Length == 1 && divider != "" && IsOneOf(detectedNaming, Naming.camelCase, Naming.PascalCase))
+            words = AddDivCamelPascal(words[0], divider).Split(divider);
+
+        for (var i = 0; i < words.Length; i++)
+        {
+            if (naming.HasFlag(Naming.lower))
+                words[i] = words[i].ToLower();
+
+            if (naming.HasFlag(Naming.UPPER))
+                words[i] = words[i].ToUpper();
+
+            if (naming.HasFlag(Naming.camelCase))
+                words[i] = i == 0 ? words[i].ToLower() : Capitalize(words[i]);
+
+            if (naming.HasFlag(Naming.PascalCase))
+                words[i] = Capitalize(words[i]);
+
+            if (naming.HasFlag(Naming.Sentence_case))
+                words[i] = i == 0 ? Capitalize(words[i]) : words[i].ToLower();
+
+            if (naming.HasFlag(Naming.PiNgPoNg_CaSe))
+            {
+                var result = new StringBuilder();
+                var isUpper = true;
+                foreach (var c in words[i])
+                {
+                    result.Append(isUpper ? char.ToUpper(c) : char.ToLower(c));
+                    isUpper = !isUpper;
+                }
+
+                words[i] = result.ToString();
+            }
+
+            if (naming.HasFlag(Naming.pOnGpInG_cAsE) == false)
+                continue;
+
+            var res = new StringBuilder();
+            var isLower = true;
+            foreach (var c in words[i])
+            {
+                res.Append(isLower ? char.ToLower(c) : char.ToUpper(c));
+                isLower = !isLower;
+            }
+
+            words[i] = res.ToString();
+        }
+
+        return ToString(words, divider);
+
+        string Capitalize(string word)
+        {
+            return char.ToUpper(word[0]) + word[1..].ToLower();
+        }
+
+        string AddDivCamelPascal(string text, string div)
+        {
+            var result = new StringBuilder();
+
+            for (var i = 0; i < text.Length; i++)
+            {
+                if (i > 0 && i <= text.Length - 1 && char.IsUpper(text[i]) && (i == text.Length - 1 || char.IsLower(text[i + 1])))
+                    result.Append(div);
+
+                result.Append(text[i]);
+            }
+
+            return result.ToString();
+        }
+    }
+    private static (Naming naming, string divider) GetNaming(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return (Naming.RaNDomCasE, "");
+
+        var detectedNaming = Naming.RaNDomCasE;
+        var divider = "";
+        var match = Regex.Match(input, "[^a-zA-Z0-9]");
+        var words = new[] { input };
+
+        if (match.Success)
+        {
+            divider = match.Value[0].ToString();
+            detectedNaming |= Naming.Separated;
+            words = input.Split(divider);
+        }
+
+        var inputNoDivider = string.IsNullOrWhiteSpace(divider) ? input : input.Replace(divider, "");
+        if (inputNoDivider.All(char.IsLower))
+        {
+            detectedNaming |= Naming.lower;
+            return (detectedNaming, divider);
+        }
+
+        if (inputNoDivider.All(char.IsUpper))
+        {
+            detectedNaming |= Naming.UPPER;
+            return (detectedNaming, divider);
+        }
+
+        if (words.Length == 1)
+        {
+            if (char.IsLower(input[0]) && input.Skip(1).Any(char.IsUpper)) detectedNaming |= Naming.camelCase;
+            if (char.IsUpper(input[0]) && input.Skip(1).Any(char.IsUpper)) detectedNaming |= Naming.PascalCase;
+            return (detectedNaming, divider);
+        }
+
+        var soFarCamel = words[0].All(char.IsLower);
+        var soFarPascal = char.IsUpper(words[0][0]) && words[0].Skip(1).All(char.IsLower);
+        var soFarSentence = soFarPascal;
+        var soFarPing = IsPing(words[0]);
+        var soFarPong = IsPong(words[0]);
+
+        foreach (var word in words.Skip(1))
+        {
+            if (word.All(char.IsLower) == false)
+                soFarSentence = false;
+
+            if (char.IsUpper(word[0]) == false || word.Skip(1).All(char.IsLower) == false)
+            {
+                soFarCamel = false;
+                soFarPascal = false;
+            }
+
+            if (IsPing(word) == false)
+                soFarPing = false;
+
+            if (IsPong(word) == false)
+                soFarPong = false;
+
+            if (soFarCamel == false && soFarPascal == false && soFarSentence == false && soFarPing == false && soFarPong == false)
+                break;
+        }
+
+        if (soFarCamel) detectedNaming |= Naming.camelCase;
+        if (soFarPascal) detectedNaming |= Naming.PascalCase;
+        if (soFarSentence) detectedNaming |= Naming.Sentence_case;
+        if (soFarPing) detectedNaming |= Naming.PiNgPoNg_CaSe;
+        if (soFarPong) detectedNaming |= Naming.pOnGpInG_cAsE;
+
+        return (detectedNaming, divider);
+
+        bool IsPing(string str)
+        {
+            var isUpper = true;
+            for (var i = 0; i < str.Length; i++)
+            {
+                if (isUpper && char.IsUpper(str[i]) == false) return false;
+                if (isUpper == false && char.IsLower(str[i]) == false) return false;
+                isUpper = !isUpper;
+            }
+
+            return true;
+        }
+
+        bool IsPong(string str)
+        {
+            var isLower = true;
+            for (var i = 0; i < str.Length; i++)
+            {
+                if (isLower && char.IsLower(str[i]) == false) return false;
+                if (isLower == false && char.IsUpper(str[i]) == false) return false;
+                isLower = !isLower;
+            }
+
+            return true;
+        }
+    }
+    private static string ToString<T>(IList<T> collection, string divider)
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < collection.Count; i++)
+        {
+            var sep = i != 0 ? divider : string.Empty;
+            sb.Append(sep).Append(collection[i]);
+        }
+
+        return sb.ToString();
+    }
+    public static float Random((float a, float b) range, float seed = float.NaN)
+    {
+        var (a, b) = range;
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
+        if (a == b)
+            return a;
+
+        if (a > b)
+            (a, b) = (b, a);
+
+        var r = b - a;
+
+        long intSeed = float.IsNaN(seed) ? Guid.NewGuid().GetHashCode() : BitConverter.SingleToInt32Bits(seed);
+        intSeed = (1103515245 * intSeed + 12345) % 2147483648;
+        var normalized = (intSeed & 0x7FFFFFFF) / (float)2147483648;
+        return a + normalized * r;
+    }
+    public static bool IsOneOf<T>(T value, params T[] values)
+    {
+        for (var i = 0; i < values?.Length; i++)
+            if (EqualityComparer<T>.Default.Equals(value, values[i]))
+                return true;
+
+        return false;
     }
 #endregion
 }

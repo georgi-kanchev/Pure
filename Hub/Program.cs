@@ -13,7 +13,9 @@ public static class Program
 {
     public static void Main()
     {
+        UtilityExtensions.Run();
         Storages.Run();
+        Commands.Run();
 
         var (maps, ui) = Examples.UserInterface.Program.Initialize();
         var editors = new List((0, 0), 2) { Size = (14, 2), ItemSize = (14, 1), Text = "Editors:" };
