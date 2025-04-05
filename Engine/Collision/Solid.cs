@@ -1,14 +1,12 @@
-﻿global using AreaColorlessF = (float x, float y, float width, float height);
-global using AreaColorlessI = (int x, int y, int width, int height);
-global using AreaF = (float x, float y, float width, float height, uint color);
-global using AreaI = (int x, int y, int width, int height, uint color);
+﻿global using AreaF = (float x, float y, float width, float height);
+global using AreaI = (int x, int y, int width, int height);
 
 namespace Pure.Engine.Collision;
 
 /// <summary>
 /// Represents a solid in 2D space defined by its position and size.
 /// </summary>
-public struct Solid(float x, float y, float width, float height, uint color = uint.MaxValue) : IEquatable<Solid>
+public struct Solid(float x, float y, float width, float height) : IEquatable<Solid>
 {
     public float X { get; set; } = x;
     public float Y { get; set; } = y;
@@ -34,12 +32,7 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
         }
     }
 
-    /// <summary>
-    /// Gets or sets the color of the solid.
-    /// </summary>
-    public uint Color { get; set; } = color;
-
-    public Solid(VecF position, SizeF size, uint color = uint.MaxValue) : this(position.x, position.y, size.width, size.height, color)
+    public Solid(VecF position, SizeF size) : this(position.x, position.y, size.width, size.height)
     {
     }
 
@@ -47,7 +40,7 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     /// A bundle tuple containing the position, size and the color of the solid.</returns>
     public AreaF ToBundle()
     {
-        return (X, Y, Width, Height, Color);
+        return (X, Y, Width, Height);
     }
     /// <returns>
     /// A string that represents this solid. 
@@ -81,8 +74,8 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     /// <returns>True if this solids overlap; otherwise, false.</returns>
     public bool IsOverlapping(Solid solid)
     {
-        var (x1, y1, w1, h1, _) = ToBundle();
-        var (x2, y2, w2, h2, _) = solid.ToBundle();
+        var (x1, y1, w1, h1) = ToBundle();
+        var (x2, y2, w2, h2) = solid.ToBundle();
 
         return x1 < x2 + w2 &&
                x1 + w1 > x2 &&
@@ -107,10 +100,6 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
         var containsY = Y < point.y && point.y < Y + Height;
         return containsX && containsY;
     }
-    public bool IsOverlapping(Point point)
-    {
-        return IsOverlapping((point.x, point.y));
-    }
 
     public bool IsContaining(LinePack linePack)
     {
@@ -134,7 +123,7 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     }
     public bool IsContaining(Solid solid)
     {
-        var (bx, by, w, h, _) = solid.ToBundle();
+        var (bx, by, w, h) = solid.ToBundle();
         return IsContaining((bx, by)) && IsContaining((bx + w, by + h));
     }
     public bool IsContaining(Line line)
@@ -145,10 +134,6 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     {
         return IsOverlapping(point);
     }
-    public bool IsContaining(Point point)
-    {
-        return IsOverlapping((point.x, point.y));
-    }
 
     /// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
     /// <param name="other">An object to compare with this object.</param>
@@ -156,7 +141,7 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     /// <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.</returns>
     public bool Equals(Solid other)
     {
-        return X.Equals(other.X) && Y.Equals(other.Y) && Width.Equals(other.Width) && Height.Equals(other.Height) && Color == other.Color;
+        return X.Equals(other.X) && Y.Equals(other.Y) && Width.Equals(other.Width) && Height.Equals(other.Height);
     }
     /// <summary>Indicates whether this instance and a specified object are equal.</summary>
     /// <param name="obj">The object to compare with the current instance.</param>
@@ -170,7 +155,7 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
     /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
     public override int GetHashCode()
     {
-        return HashCode.Combine(X, Y, Width, Height, Color);
+        return HashCode.Combine(X, Y, Width, Height);
     }
 
     public static bool operator ==(Solid left, Solid right)
@@ -182,36 +167,20 @@ public struct Solid(float x, float y, float width, float height, uint color = ui
         return !(left == right);
     }
 
-    public static implicit operator Solid(AreaColorlessI rectangle)
-    {
-        return new(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
-    }
     public static implicit operator Solid(AreaI bundle)
     {
-        return new(bundle.x, bundle.y, bundle.width, bundle.height, bundle.color);
+        return new(bundle.x, bundle.y, bundle.width, bundle.height);
     }
     public static implicit operator AreaI(Solid solid)
     {
-        return ((int)solid.X, (int)solid.Y, (int)solid.Width, (int)solid.Height, solid.Color);
-    }
-    public static implicit operator AreaColorlessI(Solid solid)
-    {
         return ((int)solid.X, (int)solid.Y, (int)solid.Width, (int)solid.Height);
-    }
-    public static implicit operator Solid(AreaColorlessF rectangle)
-    {
-        return new(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
     }
     public static implicit operator Solid(AreaF bundle)
     {
-        return new(bundle.x, bundle.y, bundle.width, bundle.height, bundle.color);
+        return new(bundle.x, bundle.y, bundle.width, bundle.height);
     }
     public static implicit operator AreaF(Solid solid)
     {
         return solid.ToBundle();
-    }
-    public static implicit operator AreaColorlessF(Solid solid)
-    {
-        return (solid.Position.x, solid.Position.y, solid.Size.width, solid.Size.height);
     }
 }

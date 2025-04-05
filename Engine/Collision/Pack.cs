@@ -15,7 +15,10 @@ public abstract class Pack<T>
         set => data[index] = value;
     }
 
-    protected Pack(params T[] data)
+    protected Pack()
+    {
+    }
+    protected Pack(T[]? data)
     {
         Add(data);
     }
@@ -25,14 +28,14 @@ public abstract class Pack<T>
         return data.ToArray();
     }
 
-    public void Add(params T[]? items)
+    public void Add(T[]? items)
     {
         if (items == null || items.Length == 0)
             return;
 
         data.AddRange(items);
     }
-    public void RemoveAt(params int[]? indexes)
+    public void RemoveAt(int[]? indexes)
     {
         if (indexes == null || indexes.Length == 0)
             return;

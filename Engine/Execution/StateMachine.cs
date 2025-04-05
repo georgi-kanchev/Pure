@@ -25,7 +25,7 @@ public class StateMachine
         }
     }
 
-    public State? Get(params Path[] path)
+    public State? Get(Path[] path)
     {
         var result = Current;
         foreach (var target in path)
@@ -84,8 +84,11 @@ public class StateMachine
         return result;
     }
 
-    public void Add(Action? parentState, params Action[] states)
+    public void Add(Action? parentState, Action[]? states)
     {
+        if (states == null)
+            return;
+
         var match = this[parentState];
         if (match == null)
         {
@@ -102,7 +105,7 @@ public class StateMachine
         foreach (var state in states)
             match.children.Add(new(state) { parent = match, root = match.root });
     }
-    public void GoTo(params Path[] path)
+    public void GoTo(Path[] path)
     {
         Current = Get(path);
     }

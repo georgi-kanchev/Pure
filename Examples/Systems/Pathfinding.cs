@@ -18,12 +18,12 @@ public static class Pathfinding
         var pathMap = new PathMap(tilemap.Size);
         var tilemap2 = new TileMap((w * 3, h * 3));
 
-        tilemap.SetEllipse((21, 8), (10, 7), true, Tile.FULL);
-        tilemap.SetEllipse((5, 9), (4, 7), true, Tile.FULL);
-        tilemap.SetEllipse((32, 20), (9, 3), true, Tile.FULL);
-        tilemap.SetLine((0, 0), (48, 27), Tile.SHADE_1);
-        tilemap.SetLine((0, 1), (48, 27), Tile.SHADE_1);
-        tilemap.SetLine((1, 0), (48, 27), Tile.SHADE_1);
+        tilemap.SetEllipse((21, 8), (10, 7), true, [Tile.FULL]);
+        tilemap.SetEllipse((5, 9), (4, 7), true, [Tile.FULL]);
+        tilemap.SetEllipse((32, 20), (9, 3), true, [Tile.FULL]);
+        tilemap.SetLine((0, 0), (48, 27), [Tile.SHADE_1]);
+        tilemap.SetLine((0, 1), (48, 27), [Tile.SHADE_1]);
+        tilemap.SetLine((1, 0), (48, 27), [Tile.SHADE_1]);
 
         pathMap.SetObstacle(float.PositiveInfinity, Tile.FULL, tilemap);
         pathMap.SetObstacle(10, Tile.SHADE_1, tilemap);
@@ -31,12 +31,12 @@ public static class Pathfinding
         while (Window.KeepOpen())
         {
             var (mx, my) = layer.PositionFromPixel(Mouse.CursorPosition);
-            var lines = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Red);
-            var points = pathMap.FindPath((0.5f, 0.5f), (mx, my), Color.Green);
+            var lines = pathMap.FindPath((0.5f, 0.5f), (mx, my));
+            var points = pathMap.FindPath((0.5f, 0.5f), (mx, my));
 
             tilemap2.ApplySeed(0);
             tilemap2.Flush();
-            tilemap2.SetLineSquiggle((10, 10), layer.MouseCursorCell, 3f, new Tile(Tile.FULL, Color.Red));
+            tilemap2.SetLineSquiggle((10, 10), layer.MouseCursorCell, 3f, [new(Tile.FULL, Color.Red)]);
 
             layer.DrawTileMap(tilemap);
             layer.DrawLine(lines);

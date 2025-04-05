@@ -25,7 +25,7 @@ public class Monitor
     }
 
 #region Backend
-    internal PointI position;
+    internal VecI position;
     private static Monitor[] monitors = [];
 
     private Monitor()

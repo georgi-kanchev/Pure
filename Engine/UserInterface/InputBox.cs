@@ -623,8 +623,6 @@ public class InputBox : Block
     }
     private void TryCycleSelected()
     {
-        // BUG click cycle selection is broken
-
         var (hx, hy) = Input.Position;
         var isWholeLineSelected = sx == 0 && cx == lines[cy].Length;
         var ix = (int)Math.Round(scrX + hx - Position.x);

@@ -1,7 +1,6 @@
 ﻿global using VecF = (float x, float y);
 global using VecI = (int x, int y);
-global using Point = (float x, float y, uint color);
-global using LineBundle = (float ax, float ay, float bx, float by, uint color);
+global using LineBundle = (float ax, float ay, float bx, float by);
 global using SizeF = (float width, float height);
 global using SizeI = (int width, int height);
 using System.Numerics;
@@ -43,22 +42,16 @@ public struct Line
     {
         get => Normalize((B.x - A.x, B.y - A.y));
     }
-    /// <summary>
-    /// Gets or sets the color of the line.
-    /// </summary>
-    public uint Color { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the line with the specified start and end points.
     /// </summary>
     /// <param name="a">The start point of the line.</param>
     /// <param name="b">The end point of the line.</param>
-    /// <param name="color">The color of the line.</param>
-    public Line(VecF a, VecF b, uint color = uint.MaxValue)
+    public Line(VecF a, VecF b)
     {
         A = a;
         B = b;
-        Color = color;
     }
 
     /// <returns>
@@ -178,21 +171,10 @@ public struct Line
         var distanceSquared = apx * apx + apy * apy - dotProduct * dotProduct / lengthSquared;
         return distanceSquared <= 0.01f * 0.01f;
     }
-    /// <param name="point">
-    ///     The point to check for crossing.
-    /// </param>
-    /// <returns>
-    ///     True if this line is crossing with the specified
-    ///     rectangle, otherwise false.
-    /// </returns>
-    public bool IsOverlapping(Point point)
-    {
-        return IsOverlapping((point.x, point.y));
-    }
 
-    public Point[] CrossPoints(LinePack linePack)
+    public VecF[] CrossPoints(LinePack linePack)
     {
-        var result = new List<Point>();
+        var result = new List<VecF>();
         for (var i = 0; i < linePack.Count; i++)
         {
             var crossPoint = CrossPoint(linePack[i]);
@@ -202,21 +184,21 @@ public struct Line
 
         return result.ToArray();
     }
-    public Point[] CrossPoints(SolidMap solidMap)
+    public VecF[] CrossPoints(SolidMap solidMap)
     {
         var neighbours = solidMap.GetNeighborRects(this);
-        var result = new List<Point>();
+        var result = new List<VecF>();
 
         foreach (var r in neighbours)
         {
             var crossPoints = CrossPoints(r);
             foreach (var p in crossPoints)
             {
-                var (x, y, _) = p;
+                var (x, y) = p;
                 if (float.IsNaN(x) == false &&
                     float.IsNaN(y) == false &&
-                    result.Contains((x, y, uint.MaxValue)) == false)
-                    result.Add((x, y, uint.MaxValue));
+                    result.Contains((x, y)) == false)
+                    result.Add((x, y));
             }
         }
 
@@ -229,9 +211,9 @@ public struct Line
     /// <param name="solidPack">The hitbox to calculate the intersection points with.</param>
     /// <returns> An array of all points of intersection between this line and the specified hitbox.
     /// </returns>
-    public Point[] CrossPoints(SolidPack solidPack)
+    public VecF[] CrossPoints(SolidPack solidPack)
     {
-        var result = new List<(float, float, uint)>();
+        var result = new List<VecF>();
         for (var i = 0; i < solidPack.Count; i++)
             result.AddRange(CrossPoints(solidPack[i]));
 
@@ -244,7 +226,7 @@ public struct Line
     ///     An array of all points of intersection between this line and the specified
     ///     rectangle.
     /// </returns>
-    public Point[] CrossPoints(Solid solid)
+    public VecF[] CrossPoints(Solid solid)
     {
         var (x, y) = solid.Position;
         var (w, h) = solid.Size;
@@ -257,8 +239,8 @@ public struct Line
         var right = new Line(tr, br);
         var down = new Line(br, bl);
         var left = new Line(bl, tl);
-        var result = new List<(float x, float y, uint)>();
-        var points = new List<(float x, float y, uint)>
+        var result = new List<VecF>();
+        var points = new List<VecF>
             { CrossPoint(up), CrossPoint(right), CrossPoint(down), CrossPoint(left) };
 
         for (var i = 0; i < points.Count; i++)
@@ -275,21 +257,15 @@ public struct Line
     ///     line, or (<see cref="float.NaN" />, <see cref="float.NaN" />) if
     ///     the two lines do not intersect.
     /// </returns>
-    public Point CrossPoint(Line line)
+    public VecF CrossPoint(Line line)
     {
         var (ax1, ay1) = A;
         var (bx1, by1) = B;
         var (ax2, ay2) = line.A;
         var (bx2, by2) = line.B;
-        return LinesCrossPoint(line.Color, ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
+        return LinesCrossPoint(ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
     }
 
-    public Point ClosestPoint(Point point)
-    {
-        var result = ClosestPoint((point.x, point.y));
-        result.color = point.color;
-        return result;
-    }
     /// <param name="point">
     ///     The point to find the closest point on the line to.
     /// </param>
@@ -297,7 +273,7 @@ public struct Line
     ///     The point on the line that is closest to the given
     ///     line.
     /// </returns>
-    public Point ClosestPoint(VecF point)
+    public VecF ClosestPoint(VecF point)
     {
         var (ax, ay) = A;
         var (bx, by) = B;
@@ -306,9 +282,9 @@ public struct Line
         var magnitude = abx * abx + aby * aby;
         var dot = apx * abx + apy * aby;
         var distance = dot / magnitude;
-        var result = (ax + abx * distance, ay + aby * distance, uint.MaxValue);
-        result = distance < 0 ? (ax, ay, uint.MaxValue) : result;
-        result = distance > 1 ? (bx, ay, uint.MaxValue) : result;
+        var result = (ax + abx * distance, ay + aby * distance);
+        result = distance < 0 ? (ax, ay) : result;
+        result = distance > 1 ? (bx, ay) : result;
 
         return result;
     }
@@ -318,18 +294,10 @@ public struct Line
         var (px, py) = point;
         return (B.x - A.x) * (py - A.y) - (B.y - A.y) * (px - A.x) < 0;
     }
-    public bool IsLeftOf(Point point)
-    {
-        return IsLeftOf((point.x, point.y));
-    }
 
-    public Line NormalizeToPoint(Point point)
-    {
-        return NormalizeToPoint((point.x, point.y));
-    }
     public Line NormalizeToPoint(VecF point)
     {
-        return IsLeftOf(point) ? this : new(B, A, Color);
+        return IsLeftOf(point) ? this : new(B, A);
     }
 
     /// <summary>
@@ -339,7 +307,7 @@ public struct Line
     /// <returns>A new line instance.</returns>
     public static implicit operator Line(LineBundle bundle)
     {
-        return new((bundle.ax, bundle.ay), (bundle.bx, bundle.by), bundle.color);
+        return new((bundle.ax, bundle.ay), (bundle.bx, bundle.by));
     }
     /// <summary>
     /// Implicitly converts a line into a tuple bundle of two points and a color.
@@ -348,7 +316,7 @@ public struct Line
     /// <returns>A tuple bundle containing the two points and the color of the line.</returns>
     public static implicit operator LineBundle(Line line)
     {
-        return (line.A.x, line.A.y, line.B.x, line.B.y, line.Color);
+        return (line.A.x, line.A.y, line.B.x, line.B.y);
     }
 
 #region Backend
@@ -375,10 +343,10 @@ public struct Line
     // these two ugly methods are made with speed in mind, avoiding line constructors
     private static bool LinesAreCrossing(float ax1, float ay1, float bx1, float by1, float ax2, float ay2, float bx2, float by2)
     {
-        var (x, y, _) = LinesCrossPoint(0, ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
+        var (x, y) = LinesCrossPoint(ax1, ay1, bx1, by1, ax2, ay2, bx2, by2);
         return float.IsNaN(x) == false && float.IsNaN(y) == false;
     }
-    private static Point LinesCrossPoint(uint color, float ax1, float ay1, float bx1, float by1, float ax2, float ay2, float bx2, float by2)
+    private static VecF LinesCrossPoint(float ax1, float ay1, float bx1, float by1, float ax2, float ay2, float bx2, float by2)
     {
         var dx1 = bx1 - ax1;
         var dy1 = by1 - ay1;
@@ -387,17 +355,17 @@ public struct Line
         var det = dx1 * dy2 - dy1 * dx2;
 
         if (det is > -0.001f and < 0.001f)
-            return (float.NaN, float.NaN, uint.MaxValue);
+            return (float.NaN, float.NaN);
 
         var s = ((ay1 - ay2) * dx2 - (ax1 - ax2) * dy2) / det;
         var t = ((ay1 - ay2) * dx1 - (ax1 - ax2) * dy1) / det;
 
         if (s is < 0 or > 1 || t is < 0 or > 1)
-            return (float.NaN, float.NaN, uint.MaxValue);
+            return (float.NaN, float.NaN);
 
         var intersectionX = ax1 + s * dx1;
         var intersectionY = ay1 + s * dy1;
-        return (intersectionX, intersectionY, color);
+        return (intersectionX, intersectionY);
     }
 #endregion
 }

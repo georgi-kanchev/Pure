@@ -59,7 +59,7 @@ public static class Collections
                 collection[i] = tmp[i];
         }
     }
-    public static void Shift<T>(this IList<T> collection, int offset, params int[]? affectedIndexes)
+    public static void Shift<T>(this IList<T> collection, int offset, int[]? affectedIndexes)
     {
         if (affectedIndexes == null || affectedIndexes.Length == 0 || offset == 0)
             return;
@@ -106,7 +106,7 @@ public static class Collections
         for (var i = 0; i < tempList.Count; i++)
             collection[i] = tempList[i];
     }
-    public static void Shift<T>(this IList<T> collection, int offset, params T[]? affectedItems)
+    public static void Shift<T>(this IList<T> collection, int offset, T[]? affectedItems)
     {
         if (affectedItems == null || affectedItems.Length == 0 || offset == 0)
             return;
@@ -274,7 +274,7 @@ public static class Collections
         return sum / collection.Count;
     }
 
-    public static T[] Join<T>(this T[] array, params T[][] otherArrays)
+    public static T[] Join<T>(this T[] array, T[][]? otherArrays)
     {
         var result = array.ToList();
 
@@ -283,7 +283,7 @@ public static class Collections
 
         return result.ToArray();
     }
-    public static List<T> Join<T>(this List<T> list, params List<T>[] otherLists)
+    public static List<T> Join<T>(this List<T> list, List<T>[]? otherLists)
     {
         var result = new List<T>(list);
 
@@ -339,7 +339,7 @@ public static class Collections
         return collection.Select(function).ToArray();
     }
 
-    public static void BringToFront<T>(this IList<T> collection, params T[]? blocks)
+    public static void BringToFront<T>(this IList<T> collection, T[]? blocks)
     {
         if (blocks == null || blocks.Length == 0)
             return;
@@ -397,11 +397,11 @@ public static class Collections
         return list;
     }
 
-    public static bool IsOneOf<T>(this T value, params T[] values)
+    public static bool IsOneOf<T>(this T value, T[] values)
     {
         return value.IsAnyOf(values);
     }
-    public static bool IsAnyOf<T>(this T value, params T[] values)
+    public static bool IsAnyOf<T>(this T value, T[] values)
     {
         for (var i = 0; i < values?.Length; i++)
             if (EqualityComparer<T>.Default.Equals(value, values[i]))
@@ -409,11 +409,11 @@ public static class Collections
 
         return false;
     }
-    public static bool IsNoneOf<T>(this T value, params T[] values)
+    public static bool IsNoneOf<T>(this T value, T[] values)
     {
         return value.IsAnyOf(values) == false;
     }
-    public static bool IsAllOf<T>(this T value, params T[] values)
+    public static bool IsAllOf<T>(this T value, T[] values)
     {
         for (var i = 0; i < values?.Length; i++)
             if (EqualityComparer<T>.Default.Equals(value, values[i]) == false)

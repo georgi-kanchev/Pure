@@ -57,8 +57,8 @@ public class LayerTiles
     }
     public uint BackgroundColor { get; set; }
 
-    public PointF PixelOffset { get; set; }
-    public PointF Position
+    public VecF PixelOffset { get; set; }
+    public VecF Position
     {
         get
         {
@@ -104,11 +104,11 @@ public class LayerTiles
     {
         get => IsOverlapping(PositionFromPixel(Mouse.CursorPosition));
     }
-    public PointF MouseCursorPosition
+    public VecF MouseCursorPosition
     {
         get => PositionFromPixel(Mouse.CursorPosition);
     }
-    public PointI MouseCursorCell
+    public VecI MouseCursorCell
     {
         get => ((int)MouseCursorPosition.x, (int)MouseCursorPosition.y);
     }
@@ -150,7 +150,7 @@ public class LayerTiles
         AtlasTileIdFull = 10;
     }
 
-    public void Align(PointF alignment)
+    public void Align(VecF alignment)
     {
         Window.TryCreate();
 
@@ -214,49 +214,48 @@ public class LayerTiles
         var (x, y) = PositionFromPixel(Mouse.CursorPosition);
         DrawTiles((x - offX, y - offY), tile);
     }
-    public void DrawPoints(params PointColored[]? points)
+    public void DrawPoints(VecF[]? points, uint color = uint.MaxValue)
     {
         for (var i = 0; i < points?.Length; i++)
         {
             var p = points[i];
-            QueueRectangle((p.x, p.y), (1f / AtlasTileSize, 1f / AtlasTileSize), p.color);
+            QueueRectangle((p.x, p.y), (1f / AtlasTileSize, 1f / AtlasTileSize), color);
         }
     }
-    public void DrawRectangles(params AreaColored[]? rectangles)
+    public void DrawRectangles(AreaF[]? rectangles, uint color = uint.MaxValue)
     {
         for (var i = 0; i < rectangles?.Length; i++)
         {
-            var (x, y, width, height, color) = rectangles[i];
+            var (x, y, width, height) = rectangles[i];
             QueueRectangle((x, y), (width, height), color);
         }
     }
-    public void DrawLine(params PointColored[]? points)
+    public void DrawLine(VecF[]? points, uint color = uint.MaxValue)
     {
         if (points == null || points.Length == 0)
             return;
 
         if (points.Length == 1)
         {
-            DrawPoints(points[0]);
+            DrawPoints([points[0]], color);
             return;
         }
 
         for (var i = 1; i < points.Length; i++)
         {
-            var a = points[i - 1];
-            var b = points[i];
-            QueueLine((a.x, a.y), (b.x, b.y), a.color);
+            var (a, b) = (points[i - 1], points[i]);
+            QueueLine((a.x, a.y), (b.x, b.y), color);
         }
     }
-    public void DrawLines(params Line[]? lines)
+    public void DrawLines(Line[]? lines, uint color = uint.MaxValue)
     {
         if (lines == null || lines.Length == 0)
             return;
 
         foreach (var line in lines)
-            QueueLine((line.ax, line.ay), (line.bx, line.by), line.color);
+            QueueLine((line.ax, line.ay), (line.bx, line.by), color);
     }
-    public void DrawTiles(PointF position, Tile tile, float scale = 1f, SizeI groupSize = default, bool sameTile = default)
+    public void DrawTiles(VecF position, Tile tile, float scale = 1f, SizeI groupSize = default, bool sameTile = default)
     {
         if (verts == null)
             return;
@@ -410,13 +409,13 @@ public class LayerTiles
         }
     }
 
-    public bool IsOverlapping(PointF position)
+    public bool IsOverlapping(VecF position)
     {
         return position is { x: >= 0, y: >= 0 } &&
                position.x <= Size.width &&
                position.y <= Size.height;
     }
-    public PointF PositionFromPixel(PointI pixel)
+    public VecF PositionFromPixel(VecI pixel)
     {
         Window.TryCreate();
 
@@ -450,7 +449,7 @@ public class LayerTiles
 
         return (x, y);
     }
-    public PointI PositionToPixel(PointF position)
+    public VecI PositionToPixel(VecF position)
     {
         Window.TryCreate();
 
@@ -484,16 +483,16 @@ public class LayerTiles
 
         return ((int)px, (int)py);
     }
-    public PointF PositionToLayer(PointF position, LayerTiles layerTiles)
+    public VecF PositionToLayer(VecF position, LayerTiles layerTiles)
     {
         return layerTiles.PositionFromPixel(PositionToPixel(position));
     }
-    public PointF PositionToLayer(PointF position, LayerSprites layerSprites)
+    public VecF PositionToLayer(VecF position, LayerSprites layerSprites)
     {
         return layerSprites.PositionFromPixel(PositionToPixel(position));
     }
 
-    public uint AtlasColorAt(PointI pixel)
+    public uint AtlasColorAt(VecI pixel)
     {
         if (pixel.x < 0 ||
             pixel.y < 0 ||
@@ -551,7 +550,7 @@ public class LayerTiles
     [DoNotSave]
     private static readonly Dictionary<string, Image> images = new();
     [DoNotSave]
-    private static readonly List<PointF> cursorOffsets =
+    private static readonly List<VecF> cursorOffsets =
     [
         (0.0f, 0.0f), (0.0f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.3f, 0.0f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f),
         (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f), (0.4f, 0.4f)
@@ -572,7 +571,7 @@ public class LayerTiles
         tilesetPixelSize = new(208, 208);
     }
 
-    private float GetTextOffset(PointI cell, Tile[,] tileMap)
+    private float GetTextOffset(VecI cell, Tile[,] tileMap)
     {
         var totalWidth = 0f;
         for (var i = cell.x; i < tileMap.GetLength(0); i++)
@@ -586,10 +585,9 @@ public class LayerTiles
 
         return tileMap.GetLength(0) - cell.x - totalWidth;
     }
-    private void QueueLine(PointF a, PointF b, uint tint)
+    private void QueueLine(VecF a, VecF b, uint tint)
     {
-        if (verts == null ||
-            (IsOverlapping(a) == false && IsOverlapping(b) == false)) // fully outside?
+        if (verts == null)
             return;
 
         a.x *= AtlasTileSize;
@@ -609,7 +607,7 @@ public class LayerTiles
         var (texTl, texTr, texBr, texBl) = GetTexCoords(AtlasTileIdFull, (1, 1));
 
         var m = Matrix3x2.Identity;
-        m *= Matrix3x2.CreateRotation((float)Math.Atan2(dir.Y, dir.X));
+        m *= Matrix3x2.CreateRotation(MathF.Atan2(dir.Y, dir.X));
         m *= Matrix3x2.CreateTranslation(center);
 
         tl = Vector2.Transform(tl, m);
@@ -622,19 +620,12 @@ public class LayerTiles
         verts.Append(new(new(br.X, br.Y), color, texBr));
         verts.Append(new(new(bl.X, bl.Y), color, texBl));
     }
-    private void QueueRectangle(PointF position, (float w, float h) sz, uint tint)
+    private void QueueRectangle(VecF position, (float w, float h) sz, uint tint)
     {
         if (verts == null)
             return;
 
         var (w, h) = sz;
-
-        if (IsOverlapping(position) == false &&
-            IsOverlapping((position.x + w, position.y)) == false &&
-            IsOverlapping((position.x + w, position.y + h)) == false &&
-            IsOverlapping((position.x, position.y + h)) == false)
-            return;
-
         var (x, y) = (position.x * AtlasTileSize, position.y * AtlasTileSize);
         var color = new Color(tint);
         var (texTl, texTr, texBr, texBl) = GetTexCoords(AtlasTileIdFull, (1, 1));
@@ -715,7 +706,7 @@ public class LayerTiles
         var bl = tl + new Vector2f(0, tsz * h);
         return (tl, tr, br, bl);
     }
-    private PointI IndexToCoords(int index)
+    private VecI IndexToCoords(int index)
     {
         var (tw, th) = AtlasTileCount;
         index = index < 0 ? 0 : index;

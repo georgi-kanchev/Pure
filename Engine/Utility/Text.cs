@@ -327,8 +327,6 @@ public static class Text
     }
     public static string Shorten(this string text, int maxLength, string indicator = "…", char tintBrush = '#')
     {
-        // BUG does not account for tintBrush
-
         if (maxLength == 0)
             return string.Empty;
 
@@ -341,9 +339,9 @@ public static class Text
             text = indicator + text[^index..];
         return text;
     }
-    public static bool StartsWith(this string text, params string[] values)
+    public static bool StartsWith(this string text, string[]? values)
     {
-        for (var i = 0; i < values.Length; i++)
+        for (var i = 0; i < values?.Length; i++)
             if (text.StartsWith(values[i]))
                 return true;
 
@@ -370,7 +368,7 @@ public static class Text
         var (detectedNaming, detectedDivider) = input.GetNaming();
         var words = string.IsNullOrEmpty(detectedDivider) ? [input] : input.Split(detectedDivider);
 
-        if (words.Length == 1 && divider != "" && detectedNaming.IsOneOf(Naming.camelCase, Naming.PascalCase))
+        if (words.Length == 1 && divider != "" && detectedNaming.IsOneOf([Naming.camelCase, Naming.PascalCase]))
             words = AddDivCamelPascal(words[0], divider).Split(divider);
 
         for (var i = 0; i < words.Length; i++)

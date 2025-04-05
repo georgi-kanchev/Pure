@@ -355,9 +355,9 @@ vec4 compute_color_tint(vec2 coord, vec4 color) {
 	
 	vec4 tint = get_data(1, 0);
 	tint.rgb = mix(color.rgb, tint.rgb, tint.a);
-	tint.a = color.a;	
+	tint.a = color.a;
 
-	return color * tint;
+	return color + tint;
 }
 
 vec4 compute_color_replace(vec2 coord, vec4 color, vec2 indexes) {

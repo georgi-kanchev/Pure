@@ -76,13 +76,13 @@ public static class AutoTiling
             firstPass.Flush();
             secondPass.Flush();
 
-            original.SetArea((10, 10, 15, 10), Tile.FULL);
-            original.SetArea((18, 5, 10, 10), Tile.FULL);
-            original.SetLine((20, 7), (25, 9), Tile.SHADE_1);
-            original.SetCircle((13, 17), 1, true, Tile.SHADE_1);
+            original.SetArea((10, 10, 15, 10), [Tile.FULL]);
+            original.SetArea((18, 5, 10, 10), [Tile.FULL]);
+            original.SetLine((20, 7), (25, 9), [Tile.SHADE_1]);
+            original.SetCircle((13, 17), 1, true, [Tile.SHADE_1]);
             original.SetBox((30, 5, 12, 12), Tile.EMPTY, Tile.SHADE_9, Tile.SHADE_9);
-            original.SetLine((37, 5), (37, 15), Tile.SHADE_9);
-            original.SetLine((30, 8), (40, 8), Tile.SHADE_9);
+            original.SetLine((37, 5), (37, 15), [Tile.SHADE_9]);
+            original.SetLine((30, 8), (40, 8), [Tile.SHADE_9]);
             original.SetTile(layer.MouseCursorCell, Tile.SHADE_1);
 
             firstPass.SetTiles((0, 0), original);
@@ -94,7 +94,7 @@ public static class AutoTiling
 
             secondPass.SetTiles((0, 0), firstPass);
             boxRules.Apply(secondPass);
-            secondPass.Replace(Tile.FULL, Tile.EMPTY);
+            secondPass.Replace(Tile.FULL, [Tile.EMPTY]);
 
             layer.DrawTileMap(flag ? original : secondPass);
             layer.DrawMouseCursor();

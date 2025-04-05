@@ -34,8 +34,8 @@ public static class FlappyBird
         var collisionMap = new SolidMap();
         var layer = new LayerTiles(background.Size);
 
-        collisionMap.AddSolids(Tile.PIPE_SOLID_CORNER, new Solid(0, 0, 1, 1));
-        collisionMap.AddSolids(Tile.PIPE_SOLID_STRAIGHT, new Solid(0, 0, 1, 1));
+        collisionMap.AddSolids(Tile.PIPE_SOLID_CORNER, [new(0, 0, 1, 1)]);
+        collisionMap.AddSolids(Tile.PIPE_SOLID_STRAIGHT, [new(0, 0, 1, 1)]);
 
         InitializePipes();
 
@@ -60,7 +60,7 @@ public static class FlappyBird
         {
             Time.Update();
 
-            background.Fill(new Tile(Tile.FULL, Color.Blue.ToDark()));
+            background.Fill([new(Tile.FULL, Color.Blue.ToDark())]);
             foreground.Flush();
 
             UpdateBird();
@@ -102,15 +102,11 @@ public static class FlappyBird
                 pipes[i] = (pipeX, pipeY, holeSize); // update the pipe itself
 
                 var lowerPipeY = pipeY + PIPE_HEIGHT + holeSize;
-                background.SetArea(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT),
-                    new Tile(Tile.FULL, Color.Green.ToDark(0.8f)));
-                background.SetArea(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT),
-                    new Tile(Tile.FULL, Color.Green.ToDark(0.8f)));
-                foreground.SetBox(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), Tile.EMPTY,
-                    new(Tile.PIPE_SOLID_CORNER, Color.Green),
+                background.SetArea(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), [new(Tile.FULL, Color.Green.ToDark(0.8f))]);
+                background.SetArea(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT), [new(Tile.FULL, Color.Green.ToDark(0.8f))]);
+                foreground.SetBox(((int)pipeX, pipeY, PIPE_WIDTH, PIPE_HEIGHT), Tile.EMPTY, new(Tile.PIPE_SOLID_CORNER, Color.Green),
                     new(Tile.PIPE_SOLID_STRAIGHT, Color.Green));
-                foreground.SetBox(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT),
-                    Tile.EMPTY,
+                foreground.SetBox(((int)pipeX, lowerPipeY, PIPE_WIDTH, PIPE_HEIGHT), Tile.EMPTY,
                     new(Tile.PIPE_SOLID_CORNER, Color.Green),
                     new(Tile.PIPE_SOLID_STRAIGHT, Color.Green));
             }
@@ -135,7 +131,7 @@ public static class FlappyBird
 
         bool IsGameOver()
         {
-            var birdRect = new Solid(BIRD_X, birdY, 1, 1, Color.Red);
+            var birdRect = new Solid(BIRD_X, birdY, 1, 1);
             return birdY + 1 >= height || collisionMap.IsOverlapping(birdRect);
         }
 

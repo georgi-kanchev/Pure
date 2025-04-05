@@ -7,7 +7,7 @@ public class AudioPack
     public float TrackDelay { get; set; }
     public bool IsLooping { get; set; }
 
-    public AudioPack(float trackDelay = 0.5f, bool loop = false, params Audio[]? tracks)
+    public AudioPack(float trackDelay = 0.5f, bool loop = false, Audio[]? tracks = null)
     {
         TrackDelay = trackDelay;
         IsLooping = loop;
@@ -46,15 +46,15 @@ public class AudioPack
         StopCurrent();
     }
 
-    public void Tag(string? tag, params Audio[] tracks)
+    public void Tag(string? tag, Audio[]? tracks)
     {
-        if (tag == null)
+        if (tag == null || tracks == null)
             return;
 
         foreach (var track in tracks)
         {
             if (tags.ContainsKey(tag) == false)
-                tags[tag] = new();
+                tags[tag] = [];
 
             tags[tag].Add(track);
         }

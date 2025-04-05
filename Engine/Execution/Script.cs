@@ -33,7 +33,7 @@ public class Script
     /// <param name="functionName">The name of the function to call.</param>
     /// <param name="parameters">The parameters to pass to the function.</param>
     /// <returns>The return value of the function.</returns>
-    public object? Call(string functionName, params object[] parameters)
+    public object? Call(string functionName, object[] parameters)
     {
         var result = script.Call(script.Globals.Get(functionName), parameters);
         return GetPrimitive(result);

@@ -379,7 +379,7 @@ public class Commands
 
         return sb.ToString();
     }
-    public static float Random((float a, float b) range, float seed = float.NaN)
+    private static float Random((float a, float b) range, float seed = float.NaN)
     {
         var (a, b) = range;
         // ReSharper disable once CompareOfFloatsByEqualityOperator
@@ -396,7 +396,7 @@ public class Commands
         var normalized = (intSeed & 0x7FFFFFFF) / (float)2147483648;
         return a + normalized * r;
     }
-    public static bool IsOneOf<T>(T value, params T[] values)
+    private static bool IsOneOf<T>(T value, params T[] values)
     {
         for (var i = 0; i < values?.Length; i++)
             if (EqualityComparer<T>.Default.Equals(value, values[i]))

@@ -232,25 +232,31 @@ public static class Particles
         if (clustersData.TryGetValue(cluster.GetHashCode(), out var c) && clusters.Contains(cluster))
             c.shake = (force.x / 100f, force.y / 100f);
     }
-    public static void ApplyObstacles(this Particle[] cluster, params Area[] obstacles)
+    public static void ApplyObstacles(this Particle[] cluster, Area[]? obstacles)
     {
+        if (obstacles == null)
+            return;
+
         var hash = cluster.GetHashCode();
         clustersData[hash].obstacles.Clear();
 
         foreach (var obstacle in obstacles)
-            clustersData[hash].obstacles.Add(obstacle);
+            clustersData[hash].obstacles.Add([obstacle]);
     }
     public static void ApplyBounciness(this Particle[] cluster, float strength)
     {
         clustersData[cluster.GetHashCode()].bounceStrength = strength;
     }
-    public static void ApplyTriggers(this Particle[] cluster, params Area[] triggers)
+    public static void ApplyTriggers(this Particle[] cluster, Area[]? triggers)
     {
+        if (triggers == null)
+            return;
+
         var hash = cluster.GetHashCode();
         clustersData[hash].triggers.Clear();
 
         foreach (var trigger in triggers)
-            clustersData[hash].triggers.Add(trigger);
+            clustersData[hash].triggers.Add([trigger]);
     }
 
     public static void ApplyAge(this Particle[] cluster, float seconds)
@@ -351,10 +357,10 @@ public static class Particles
         var c = clustersData[hash];
         var color = new Color(targetColor);
         var v = c.varietyColor;
-        color.R = (byte)(color.R + (-v, v).Random(hash.ToSeed(index, 0))).Limit((0, 255));
-        color.G = (byte)(color.G + (-v, v).Random(hash.ToSeed(index, 1))).Limit((0, 255));
-        color.B = (byte)(color.B + (-v, v).Random(hash.ToSeed(index, 2))).Limit((0, 255));
-        color.A = (byte)(color.A + (-v, v).Random(hash.ToSeed(index, 3))).Limit((0, 255));
+        color.R = (byte)(color.R + (-v, v).Random(hash.ToSeed([index, 0]))).Limit((0, 255));
+        color.G = (byte)(color.G + (-v, v).Random(hash.ToSeed([index, 1]))).Limit((0, 255));
+        color.B = (byte)(color.B + (-v, v).Random(hash.ToSeed([index, 2]))).Limit((0, 255));
+        color.A = (byte)(color.A + (-v, v).Random(hash.ToSeed([index, 3]))).Limit((0, 255));
 
         if (affectedIndex > -1)
         {

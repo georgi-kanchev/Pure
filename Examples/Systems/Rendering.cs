@@ -1,5 +1,6 @@
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
+using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
 
@@ -11,19 +12,22 @@ public static class Rendering
         Window.PixelScale = 1f;
         Mouse.IsCursorVisible = true;
 
-        // var layer = new LayerSprites { TexturePath = "Characters.png" };
-        // var animation = new (int x, int y, int w, int h)[]
-        // {
-        //     (0, 0, 26, 38),
-        //     (26, 0, 26, 38),
-        //     (26 * 2, 0, 26, 38),
-        //     (26 * 3, 0, 26, 38)
-        // };
+        // LayerTiles.DefaultGraphicsToFile("default-graphics.png");
 
+        var (w, h) = Monitor.Current.Size;
+        var layer = new LayerSprites((w / 3, h / 3)) { Effect = new() /*TexturePath = "default-graphics.png"*/ };
+        layer.Effect.ColorOutline(Color.Red, Edge.AllEdgesAndCorners);
+        layer.Effect.Wave((127, 127), (255, 255));
+
+        var angle = 0f;
         while (Window.KeepOpen())
+        {
             Time.Update();
-        // layer.DragAndZoom();
-        // layer.DrawSprite(animation.Animate(2f), layer.MouseCursorPosition);
-        // layer.Render();
+            angle += Time.Delta * 10;
+
+            var (x, y) = layer.MouseCursorPosition;
+            layer.DrawRectangle((x, y, 600, 600), tint: Color.Red);
+            layer.Render();
+        }
     }
 }

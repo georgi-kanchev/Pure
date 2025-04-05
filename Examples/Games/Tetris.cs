@@ -17,7 +17,7 @@ public static class Tetris
         map = new((w * 3, h * 3));
         layer = new(map.Size);
         playArea = new(map.Size.width / 3, 0, map.Size.width / 3 - 1, map.Size.height - 1);
-        var (ax, ay, aw, ah, _) = playArea.ToBundle();
+        var (ax, ay, aw, ah) = playArea.ToBundle();
         map.SetBox((ax, ay, aw + 1, ah + 1), Tile.EMPTY, Tile.BOX_CORNER, Tile.FULL);
         piece = new((map.Size.width / 2, 0));
 

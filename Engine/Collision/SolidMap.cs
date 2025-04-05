@@ -28,7 +28,7 @@ public class SolidMap
         return arrayCache?.ToArray() ?? [];
     }
 
-    public void AddSolids(int tileId, params Solid[]? solids)
+    public void AddSolids(int tileId, Solid[]? solids)
     {
         if (solids == null || solids.Length == 0)
             return;
@@ -38,7 +38,7 @@ public class SolidMap
 
         cellRects[tileId].AddRange(solids);
     }
-    public void RemoveSolids(int tileId, params Solid[]? solids)
+    public void RemoveSolids(int tileId, Solid[]? solids)
     {
         if (solids == null || solids.Length == 0 || cellRects.ContainsKey(tileId) == false)
             return;
@@ -78,7 +78,7 @@ public class SolidMap
             cellRects.Remove(tileId);
     }
 
-    public void AddIgnoredCellsIn(params Solid[]? cellRegions)
+    public void AddIgnoredCellsIn(Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -103,7 +103,7 @@ public class SolidMap
                 }
         }
     }
-    public void RemoveIgnoredCellsIn(params Solid[]? cellRegions)
+    public void RemoveIgnoredCellsIn(Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return;
@@ -126,7 +126,7 @@ public class SolidMap
                 }
         }
     }
-    public VecI[] IgnoredCellsIn(params Solid[]? cellRegions)
+    public VecI[] IgnoredCellsIn(Solid[]? cellRegions)
     {
         if (cellRegions == null || cellRegions.Length == 0)
             return [];
@@ -245,10 +245,6 @@ public class SolidMap
 
         return false;
     }
-    public bool IsOverlapping(Point point)
-    {
-        return IsOverlapping((point.x, point.y));
-    }
 
     public bool IsContaining(LinePack linePack)
     {
@@ -272,7 +268,7 @@ public class SolidMap
     }
     public bool IsContaining(Solid solid)
     {
-        var (x, y, w, h, _) = solid.ToBundle();
+        var (x, y, w, h) = solid.ToBundle();
         return IsContaining((x, y)) && IsContaining((x + w, y + h));
     }
     public bool IsContaining(Line line)
@@ -282,10 +278,6 @@ public class SolidMap
     public bool IsContaining(VecF point)
     {
         return IsOverlapping(point);
-    }
-    public bool IsContaining(Point point)
-    {
-        return IsOverlapping((point.x, point.y));
     }
 
     public static implicit operator Solid[](SolidMap solidMap)

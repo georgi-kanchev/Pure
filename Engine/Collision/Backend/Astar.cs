@@ -76,7 +76,7 @@ internal class Astar
     {
         return IsInside(pos) && grid.TryGetValue(pos, out var value) ? value : null;
     }
-    public VecF[] FindPath(VecF a, VecF b, bool includeColors, out Point[] withColors, int maxZigzag, uint color)
+    public VecF[] FindPath(VecF a, VecF b, int maxZigzag)
     {
         a = ((int)a.x, (int)a.y);
         b = ((int)b.x, (int)b.y);
@@ -127,43 +127,27 @@ internal class Astar
         }
 
         if (closed.Exists(x => x.position == end.position) == false)
-        {
-            withColors = [];
             return [];
-        }
 
         var index = closed.IndexOf(current);
         if (index == -1)
-        {
-            withColors = [];
             return [];
-        }
 
         var temp = closed[index];
         var result = new List<VecF> { (start.position.x + 0.5f, start.position.y + 0.5f) };
-        var resultWithColors = new List<Point>
-        {
-            (start.position.x + 0.5f, start.position.y + 0.5f, color)
-        };
+
         for (var i = closed.Count - 1; i >= 0; i--)
         {
             if (temp == null || temp == start)
                 break;
 
             result.Insert(1, (temp.position.x + 0.5f, temp.position.y + 0.5f));
-
-            if (includeColors)
-                resultWithColors.Insert(1, (temp.position.x + 0.5f, temp.position.y + 0.5f, color));
-
             temp = temp.parent;
         }
 
-        SmoothZigzag(result, resultWithColors, maxZigzag);
-        RemoveRedundantPoints(result, resultWithColors);
+        SmoothZigzag(result, maxZigzag);
+        RemoveRedundantPoints(result);
 
-        withColors = includeColors ?
-            resultWithColors.ToArray() :
-            [];
         return result.ToArray();
     }
 
@@ -207,7 +191,7 @@ internal class Astar
         }
     }
 
-    private static void SmoothZigzag(List<VecF> points, List<Point> withColor, int maxZigzag)
+    private static void SmoothZigzag(List<VecF> points, int maxZigzag)
     {
         if (points.Count < 2)
             return;
@@ -221,11 +205,10 @@ internal class Astar
                 continue;
 
             points.RemoveAt(i);
-            withColor.RemoveAt(i);
             i--;
         }
     }
-    private static void RemoveRedundantPoints(List<VecF> points, List<Point> withColor)
+    private static void RemoveRedundantPoints(List<VecF> points)
     {
         if (points.Count < 3)
             return;
@@ -234,7 +217,6 @@ internal class Astar
             if (IsLine(points[i - 1], points[i], points[i + 1]))
             {
                 points.RemoveAt(i);
-                withColor.RemoveAt(i);
                 i--;
             }
     }

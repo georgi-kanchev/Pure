@@ -9,14 +9,11 @@ global using Count = (byte width, byte height);
 global using SizeU = (uint width, uint height);
 global using SizeI = (int width, int height);
 global using SizeF = (float width, float height);
-global using PointI = (int x, int y);
-global using PointF = (float x, float y);
-global using PointColored = (float x, float y, uint color);
-global using AreaColored = (float x, float y, float width, float height, uint color);
+global using VecI = (int x, int y);
+global using VecF = (float x, float y);
 global using AreaF = (float x, float y, float width, float height);
 global using AreaI = (int x, int y, int width, int height);
-global using AreaToColor = (float x, float y, float width, float height, uint targetColor);
-global using Line = (float ax, float ay, float bx, float by, uint color);
+global using Line = (float ax, float ay, float bx, float by);
 global using Tile = (ushort id, uint tint, byte pose);
 global using TileStatic = (int id, uint tint);
 global using CornersP = (SFML.System.Vector2f p1, SFML.System.Vector2f p2, SFML.System.Vector2f p3, SFML.System.Vector2f p4);
@@ -331,6 +328,8 @@ public static class Window
     private static Clock? retroTurnoffTime;
     [DoNotSave]
     internal static readonly Vertex[] verts = new Vertex[4];
+    [DoNotSave]
+    internal static Texture? white;
 
     private static bool isRetro, isClosing, hasClosed, isVerticallySynced = true, isRecreating, shouldGetClipboard;
     private static string title = "Game";
@@ -395,6 +394,13 @@ public static class Window
             prevSize = window.Size;
             window.Dispose();
             window = null;
+        }
+
+        if (white == null)
+        {
+            var image = new Image(new[,] { { Color.White } });
+            white = new(image) { Repeated = true };
+            image.Dispose();
         }
 
         var style = Styles.Default;

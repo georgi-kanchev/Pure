@@ -108,9 +108,9 @@ public static class Number
             default: return default;
         }
     }
-    public static PointF AnimateBezier(this float unit, params PointF[] curvePoints)
+    public static PointF AnimateBezier(this float unit, PointF[]? curvePoints)
     {
-        if (curvePoints.Length == 0)
+        if (curvePoints == null || curvePoints.Length == 0)
             return (float.NaN, float.NaN);
         if (curvePoints.Length == 1)
             return curvePoints[0];
@@ -133,9 +133,9 @@ public static class Number
 
         return (xPoints[0], yPoints[0]);
     }
-    public static PointF AnimateSpline(this float unit, params PointF[] curvePoints)
+    public static PointF AnimateSpline(this float unit, PointF[]? curvePoints)
     {
-        if (curvePoints.Length < 4)
+        if (curvePoints == null || curvePoints.Length < 4)
             return (float.NaN, float.NaN);
 
         var numSegments = curvePoints.Length - 3;
@@ -448,7 +448,7 @@ public static class Number
         return (int)Math.Round(Random(((float)range.a, range.b), seed));
     }
 
-    public static int ToSeed(this int number, params int[] parameters)
+    public static int ToSeed(this int number, int[] parameters)
     {
         var seed = 2654435769L;
         Seed(number);
@@ -503,7 +503,7 @@ public static class Number
         {
             for (var j = -1; j <= 1; j++)
             {
-                var s = (ix + i).ToSeed(iy + j, seed);
+                var s = (ix + i).ToSeed([iy + j, seed]);
                 var featurePoint = (ix + i + (0f, 1f).Random(s), iy + j + (0f, 1f).Random(s + 1));
                 var dist = new Point(x, y).Distance(featurePoint);
 

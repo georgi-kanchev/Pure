@@ -5,7 +5,7 @@ public class SolidPack : Pack<Solid>
     public SolidPack()
     {
     }
-    public SolidPack(params Solid[] solids) : base(solids)
+    public SolidPack(Solid[]? solids) : base(solids)
     {
     }
 
@@ -49,11 +49,11 @@ public class SolidPack : Pack<Solid>
             if (Is(a.Y, b.Y) &&
                 Is(a.Height, b.Height) &&
                 (Is(a.X + a.Width, b.X) || Is(b.X + b.Width, a.X)))
-                return (Math.Min(a.X, b.X), a.Y, a.Width + b.Width, a.Height, a.Color);
+                return (Math.Min(a.X, b.X), a.Y, a.Width + b.Width, a.Height);
             if (Is(a.X, b.X) &&
                 Is(a.Width, b.Width) &&
                 (Is(a.Y + a.Height, b.Y) || Is(b.Y + b.Height, a.Y)))
-                return (a.X, Math.Min(a.Y, b.Y), a.Width, a.Height + b.Height, a.Color);
+                return (a.X, Math.Min(a.Y, b.Y), a.Width, a.Height + b.Height);
 
             return null;
         }
@@ -103,10 +103,6 @@ public class SolidPack : Pack<Solid>
 
         return false;
     }
-    public bool IsOverlapping(Point point)
-    {
-        return IsOverlapping((point.x, point.y));
-    }
 
     public bool IsContaining(LinePack linePack)
     {
@@ -130,7 +126,7 @@ public class SolidPack : Pack<Solid>
     }
     public bool IsContaining(Solid solid)
     {
-        var (x, y, w, h, _) = solid.ToBundle();
+        var (x, y, w, h) = solid.ToBundle();
         return IsContaining((x, y)) && IsContaining((x + w, y + h));
     }
     public bool IsContaining(Line line)
@@ -140,10 +136,6 @@ public class SolidPack : Pack<Solid>
     public bool IsContaining(VecF point)
     {
         return IsOverlapping(point);
-    }
-    public bool IsContaining(Point point)
-    {
-        return IsOverlapping((point.x, point.y));
     }
 
     public static implicit operator SolidPack(Solid[] solids)

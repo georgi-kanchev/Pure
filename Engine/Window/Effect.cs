@@ -19,13 +19,6 @@ public class Effect
 
         if (Shader.IsAvailable)
             shader = Shader.FromString(codeVertex, null, codeFragment);
-
-        if (white != null)
-            return;
-
-        var image = new Image(new[,] { { Color.White } });
-        white = new(image) { Repeated = true };
-        image.Dispose();
     }
 
     public Light EffectLight
@@ -38,7 +31,7 @@ public class Effect
         }
     }
 
-    public void ColorChange(int id, uint oldColor, uint newColor, params AreaF[]? areas)
+    public void ColorChange(int id, uint oldColor, uint newColor, AreaF[]? areas = null)
     {
         if (id is < 0 or > 8 || oldColor == newColor)
             return;
@@ -46,7 +39,7 @@ public class Effect
         if (areas == null || areas.Length == 0)
             areas = [(0, 0, layerSize.width, layerSize.height)];
 
-        var indexes = new List<PointI[]>
+        var indexes = new List<VecI[]>
         {
             { [(0, 2), (1, 2), (2, 2)] }, { [(5, 0), (6, 0), (7, 0)] }, { [(5, 1), (6, 1), (7, 1)] },
             { [(5, 2), (6, 2), (7, 2)] }, { [(5, 3), (6, 3), (7, 3)] }, { [(5, 4), (6, 4), (7, 4)] },
@@ -60,10 +53,10 @@ public class Effect
             SetShaderData(areas[i], indexes[id][2], new(newColor), false);
         }
     }
-    public void ColorAdjust(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, params AreaToColor[]? areas)
+    public void ColorAdjust(sbyte gamma, sbyte saturation, sbyte contrast, sbyte brightness, AreaF[]? areas = null)
     {
         if (areas == null || areas.Length == 0)
-            areas = [(0, 0, layerSize.width, layerSize.height, 0)];
+            areas = [(0, 0, layerSize.width, layerSize.height)];
 
         var g = (byte)(gamma + 128);
         var s = (byte)(saturation + 128);
@@ -72,47 +65,48 @@ public class Effect
 
         for (var i = 0; i < areas.Length; i++)
         {
-            var (x, y, w, h, c) = areas[i];
+            var (x, y, w, h) = areas[i];
             SetShaderData((x, y, w, h), (0, 3), Color.Transparent, true);
             SetShaderData((x, y, w, h), (1, 3), new(g, s, ct, b), false);
-            SetShaderData((x, y, w, h), (2, 3), new(c), false);
+            // SetShaderData((x, y, w, h), (2, 3), new(targetColor), false);
         }
     }
-    public void ColorTint(uint tint, params AreaToColor[]? areas)
+    public void ColorTint(uint tint, AreaF[]? areas = null)
     {
         if (areas == null || areas.Length == 0)
-            areas = [(0, 0, layerSize.width, layerSize.height, 0)];
+            areas = [(0, 0, layerSize.width, layerSize.height)];
 
         for (var i = 0; i < areas.Length; i++)
         {
-            var (x, y, w, h, c) = areas[i];
+            var (x, y, w, h) = areas[i];
             SetShaderData((x, y, w, h), (0, 0), Color.Transparent, true);
             SetShaderData((x, y, w, h), (1, 0), new(tint), false);
-            SetShaderData((x, y, w, h), (2, 0), new(c), false);
+            // SetShaderData((x, y, w, h), (2, 0), new(targetColor), false);
         }
     }
-    public void ColorOutline(uint color, Edge edges, params AreaToColor[]? areas)
+    public void ColorOutline(uint color, Edge edges, uint? targetColor = null, AreaF[]? areas = null)
     {
         if (areas == null || areas.Length == 0)
-            areas = [(0, 0, layerSize.width, layerSize.height, 0)];
+            areas = [(0, 0, layerSize.width, layerSize.height)];
 
         for (var i = 0; i < areas.Length; i++)
         {
-            var (x, y, w, h, c) = areas[i];
+            var (x, y, w, h) = areas[i];
             SetShaderData((x, y, w, h), (0, 5), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 5), new(c), false);
+            if (targetColor != null)
+                SetShaderData((x, y, w, h), (1, 5), new(targetColor.Value), false);
             SetShaderData((x, y, w, h), (2, 5), new(color), false);
             SetShaderData((x, y, w, h), (3, 5), new((byte)edges, 0, 0, 0), false);
         }
     }
-    public void AddLight(float radius, (float width, float angle) cone, params PointColored[] points)
+    public void AddLight(VecF[]? points, float radius, (float width, float angle) cone, uint color = uint.MaxValue)
     {
         radius /= layerSize.height;
         var (w, ang) = cone;
 
         for (var i = 0; i < points?.Length; i++)
         {
-            var (x, y, color) = points[i];
+            var (x, y) = points[i];
             x /= layerSize.width;
             y /= layerSize.height;
 
@@ -124,7 +118,7 @@ public class Effect
             shader?.SetUniform($"lightColor[{lightCount - 1}]", new Color(color));
         }
     }
-    public void AddLightObstacles(params AreaF[] areas)
+    public void AddLightObstacles(AreaF[]? areas)
     {
         for (var i = 0; i < areas?.Length; i++)
         {
@@ -140,42 +134,36 @@ public class Effect
             shader?.SetUniform($"obstacleArea[{obstacleCount - 1}]", new Vec4(x, 1 - y, w, h));
         }
     }
-    public void AddLightObstacles(params AreaColored[] areas)
-    {
-        for (var i = 0; i < areas?.Length; i++)
-        {
-            var (x, y, w, h, _) = areas[i];
-            AddLightObstacles((x, y, w, h));
-        }
-    }
-    public void Blur((byte x, byte y) strength, params AreaToColor[]? areas)
+    public void Blur((byte x, byte y) strength, AreaF[]? areas = null)
     {
         if (areas == null || areas.Length == 0)
-            areas = [(0, 0, layerSize.width, layerSize.height, 0)];
+            areas = [(0, 0, layerSize.width, layerSize.height)];
 
         var (sx, sy) = strength;
         for (var i = 0; i < areas.Length; i++)
         {
-            var (x, y, w, h, c) = areas[i];
+            var (x, y, w, h) = areas[i];
             SetShaderData((x, y, w, h), (0, 1), Color.Transparent, true);
-            SetShaderData((x, y, w, h), (1, 1), new(c), false);
+            // SetShaderData((x, y, w, h), (1, 1), new(targetColor), false);
             SetShaderData((x, y, w, h), (2, 1), new(sx, sy, 0, 0), false);
         }
     }
-    public void Wave((sbyte x, sbyte y) speed, (byte x, byte y) frequency, params AreaToColor[]? areas)
+    public void Wave((sbyte x, sbyte y) speed, (byte x, byte y) frequency, uint? targetColor = null, AreaF[]? areas = null)
     {
         if (areas == null || areas.Length == 0)
-            areas = [(0, 0, layerSize.width, layerSize.height, 0)];
+            areas = [(0, 0, layerSize.width, layerSize.height)];
 
         var speedX = (byte)Window.Map(speed.x, sbyte.MinValue, sbyte.MaxValue, byte.MinValue, byte.MaxValue);
         var speedY = (byte)Window.Map(speed.y, sbyte.MinValue, sbyte.MaxValue, byte.MinValue, byte.MaxValue);
 
         for (var i = 0; i < areas.Length; i++)
         {
-            var (x, y, w, h, c) = areas[i];
+            var (x, y, w, h) = areas[i];
             SetShaderData((x, y, w, h), (0, 4), Color.Transparent, true);
             SetShaderData((x, y, w, h), (1, 4), new(speedX, speedY, frequency.x, frequency.y), false);
-            SetShaderData((x, y, w, h), (2, 4), new(c), false);
+
+            if (targetColor != null)
+                SetShaderData((x, y, w, h), (2, 4), new(targetColor.Value), false);
         }
     }
     public void ClearAll()
@@ -235,10 +223,7 @@ public class Effect
     [DoNotSave]
     internal RenderTexture? data;
 
-    [DoNotSave]
-    private static Texture? white;
-
-    private void SetShaderData(AreaF area, PointI tilePixel, Color dataInColor, bool includeArea)
+    private void SetShaderData(AreaF area, VecI tilePixel, Color dataInColor, bool includeArea)
     {
         drawShaderDataOnce = true;
 
@@ -288,7 +273,7 @@ public class Effect
         if (drawShaderDataOnce && data != null && shaderParams != null)
         {
             drawShaderDataOnce = false;
-            data.Draw(shaderParams, new(BlendMode.None, Transform.Identity, white, null));
+            data.Draw(shaderParams, new(BlendMode.None, Transform.Identity, Window.white, null));
             data.Display();
         }
 

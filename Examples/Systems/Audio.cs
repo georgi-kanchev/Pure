@@ -29,7 +29,7 @@ public static class Audio
 
         var track1 = new Notes(jingleBells) { Fade = (0.5f, 0.5f), Volume = 0.2f };
         var track2 = new Notes(titanic) { Fade = (1f, 1f), Wave = Wave.Sine, Volume = 0.7f, Pitch = 1.2f };
-        var playlist = new AudioPack(0.5f, true, track1, track2);
+        var playlist = new AudioPack(0.5f, true, [track1, track2]);
         playlist.Play();
         playlist.OnEnd(() => Console.WriteLine($"Playlist ended"));
         playlist.OnTrackEndAny(audio => Console.WriteLine($"Any Index {audio.index} ended"));

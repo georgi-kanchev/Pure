@@ -94,7 +94,7 @@ public class TileMap
 
     public TileMap UpdateView()
     {
-        var (vx, vy, vw, vh, _) = View.ToBundle();
+        var (vx, vy, vw, vh) = View.ToBundle();
         var result = new TileMap((View.Width, View.Height));
         var i = 0;
         for (var x = vx; x != vx + vw; x++)
@@ -171,7 +171,7 @@ public class TileMap
         var (x, y) = indices;
         var (w, h) = Size;
         mask ??= new(0, 0, Size.width, Size.height);
-        var (mx, my, mw, mh, _) = mask.Value.ToBundle();
+        var (mx, my, mw, mh) = mask.Value.ToBundle();
         var isInMask = x >= mx && y >= my && x < mx + mw && y < my + mh;
 
         return isInMask && x >= 0 && y >= 0 && x < w && y < h;

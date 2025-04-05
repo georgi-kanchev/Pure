@@ -36,7 +36,7 @@ public static class TileMapper
         masks[tileMap.GetHashCode()] = mask;
     }
 
-    public static void Fill(this TileMap tileMap, params Tile[]? tiles)
+    public static void Fill(this TileMap tileMap, Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
         {
@@ -52,7 +52,7 @@ public static class TileMapper
                 tileMap.SetTile((x, y), tile, mask);
             }
     }
-    public static void Flood(this TileMap tileMap, VecI cell, bool exactTile, params Tile[]? tiles)
+    public static void Flood(this TileMap tileMap, VecI cell, bool exactTile, Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -86,7 +86,7 @@ public static class TileMapper
                 stack.Push((x, y + 1));
         }
     }
-    public static void Replace(this TileMap tileMap, Area area, Tile targetTile, params Tile[] tiles)
+    public static void Replace(this TileMap tileMap, Area area, Tile targetTile, Tile[] tiles)
     {
         if (tiles.Length == 0)
             return;
@@ -104,7 +104,7 @@ public static class TileMapper
             tileMap.SetTile((x, y), tile, mask);
         }
     }
-    public static void Replace(this TileMap tileMap, Tile targetTile, params Tile[] tiles)
+    public static void Replace(this TileMap tileMap, Tile targetTile, Tile[] tiles)
     {
         tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), targetTile, tiles);
     }
@@ -119,7 +119,7 @@ public static class TileMapper
             for (var j = 0; j < tiles.GetLength(0); j++)
                 tileMap.SetTile((cell.x + j, cell.y + i), tiles[j, i], mask);
     }
-    public static void SetArea(this TileMap tileMap, Area area, params Tile[]? tiles)
+    public static void SetArea(this TileMap tileMap, Area area, Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -139,7 +139,7 @@ public static class TileMapper
                 i++;
             }
     }
-    public static void SetEllipse(this TileMap tileMap, VecI cell, SizeI radius, bool fill, params Tile[]? tiles)
+    public static void SetEllipse(this TileMap tileMap, VecI cell, SizeI radius, bool fill, Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -210,11 +210,11 @@ public static class TileMapper
             }
         }
     }
-    public static void SetCircle(this TileMap tileMap, VecI cell, int radius, bool fill, params Tile[]? tiles)
+    public static void SetCircle(this TileMap tileMap, VecI cell, int radius, bool fill, Tile[]? tiles)
     {
         SetEllipse(tileMap, cell, (radius, radius), fill, tiles);
     }
-    public static void SetLine(this TileMap tileMap, VecI cellA, VecI cellB, params Tile[]? tiles)
+    public static void SetLine(this TileMap tileMap, VecI cellA, VecI cellB, Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -251,7 +251,7 @@ public static class TileMapper
             }
         }
     }
-    public static void SetLineSquiggle(this TileMap tileMap, VecI cellA, VecI cellB, float squiggle, params Tile[]? tiles)
+    public static void SetLineSquiggle(this TileMap tileMap, VecI cellA, VecI cellB, float squiggle, Tile[]? tiles)
     {
         if (tiles == null || tiles.Length == 0)
             return;
@@ -299,32 +299,32 @@ public static class TileMapper
     }
     public static void SetBox(this TileMap tileMap, Area area, Tile fill, Tile corner, Tile edge)
     {
-        var (x, y, w, h, _) = area.ToBundle();
+        var (x, y, w, h) = area.ToBundle();
 
         if (w <= 0 || h <= 0)
             return;
 
         if (w == 1 || h == 1)
         {
-            tileMap.SetArea(area, fill);
+            tileMap.SetArea(area, [fill]);
             return;
         }
 
         var mask = GetMask(tileMap);
 
         tileMap.SetTile((x, y), new(corner.Id, corner.Tint), mask);
-        tileMap.SetArea((x + 1, y, w - 2, 1), new Tile(edge.Id, edge.Tint));
+        tileMap.SetArea((x + 1, y, w - 2, 1), [new(edge.Id, edge.Tint)]);
         tileMap.SetTile((x + w - 1, y), new(corner.Id, corner.Tint, Pose.Right), mask);
 
         if (h != 2)
         {
-            tileMap.SetArea((x, y + 1, 1, h - 2), new Tile(edge.Id, edge.Tint, Pose.Left));
-            tileMap.SetArea((x + 1, y + 1, w - 2, h - 2), fill);
-            tileMap.SetArea((x + w - 1, y + 1, 1, h - 2), new Tile(edge.Id, edge.Tint, Pose.Right));
+            tileMap.SetArea((x, y + 1, 1, h - 2), [new(edge.Id, edge.Tint, Pose.Left)]);
+            tileMap.SetArea((x + 1, y + 1, w - 2, h - 2), [fill]);
+            tileMap.SetArea((x + w - 1, y + 1, 1, h - 2), [new(edge.Id, edge.Tint, Pose.Right)]);
         }
 
         tileMap.SetTile((x, y + h - 1), new(corner.Id, corner.Tint, Pose.Left), mask);
-        tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), new Tile(edge.Id, edge.Tint, Pose.Down));
+        tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), [new(edge.Id, edge.Tint, Pose.Down)]);
         tileMap.SetTile((x + w - 1, y + h - 1), new(corner.Id, corner.Tint, Pose.Down), mask);
     }
     public static void SetPatch(this TileMap tileMap, Area area, Tile[,]? tiles3X3)
@@ -332,7 +332,7 @@ public static class TileMapper
         if (tiles3X3 == null || tiles3X3.GetLength(0) != 3 || tiles3X3.GetLength(1) != 3)
             return;
 
-        var (x, y, w, h, _) = area.ToBundle();
+        var (x, y, w, h) = area.ToBundle();
         var mask = GetMask(tileMap);
 
         if (w <= 0 || h <= 0)
@@ -349,7 +349,7 @@ public static class TileMapper
             tileMap.SetTile((x, y), tiles3X3[1, 0], mask);
 
             if (w > 2)
-                tileMap.SetArea((x + 1, y, w - 2, 1), tiles3X3[1, 1]);
+                tileMap.SetArea((x + 1, y, w - 2, 1), [tiles3X3[1, 1]]);
 
             tileMap.SetTile((x + w - 1, y), tiles3X3[1, 2], mask);
             return;
@@ -360,7 +360,7 @@ public static class TileMapper
             tileMap.SetTile((x, y), tiles3X3[0, 1], mask);
 
             if (h > 2)
-                tileMap.SetArea((x, y + 1, 1, h - 2), tiles3X3[1, 1]);
+                tileMap.SetArea((x, y + 1, 1, h - 2), [tiles3X3[1, 1]]);
 
             tileMap.SetTile((x, y + h - 1), tiles3X3[2, 1], mask);
             return;
@@ -368,31 +368,31 @@ public static class TileMapper
 
         if (w == 2)
         {
-            tileMap.SetArea((x, y, 1, h), tiles3X3[1, 0]);
-            tileMap.SetArea((x + 1, y, 1, h), tiles3X3[1, 2]);
+            tileMap.SetArea((x, y, 1, h), [tiles3X3[1, 0]]);
+            tileMap.SetArea((x + 1, y, 1, h), [tiles3X3[1, 2]]);
             return;
         }
 
         if (h == 2)
         {
-            tileMap.SetArea((x, y, w, 1), tiles3X3[0, 1]);
-            tileMap.SetArea((x, y + 1, w, 1), tiles3X3[2, 1]);
+            tileMap.SetArea((x, y, w, 1), [tiles3X3[0, 1]]);
+            tileMap.SetArea((x, y + 1, w, 1), [tiles3X3[2, 1]]);
             return;
         }
 
         tileMap.SetTile((x, y), tiles3X3[0, 0], mask);
-        tileMap.SetArea((x + 1, y, w - 2, 1), tiles3X3[0, 1]);
+        tileMap.SetArea((x + 1, y, w - 2, 1), [tiles3X3[0, 1]]);
         tileMap.SetTile((x + w - 1, y), tiles3X3[0, 2], mask);
 
-        tileMap.SetArea((x, y + 1, 1, h - 2), tiles3X3[1, 0]);
-        tileMap.SetArea((x + 1, y + 1, w - 2, h - 2), tiles3X3[1, 1]);
-        tileMap.SetArea((x + w - 1, y + 1, 1, h - 2), tiles3X3[1, 2]);
+        tileMap.SetArea((x, y + 1, 1, h - 2), [tiles3X3[1, 0]]);
+        tileMap.SetArea((x + 1, y + 1, w - 2, h - 2), [tiles3X3[1, 1]]);
+        tileMap.SetArea((x + w - 1, y + 1, 1, h - 2), [tiles3X3[1, 2]]);
 
         tileMap.SetTile((x, y + h - 1), tiles3X3[2, 0], mask);
-        tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), tiles3X3[2, 1]);
+        tileMap.SetArea((x + 1, y + h - 1, w - 2, 1), [tiles3X3[2, 1]]);
         tileMap.SetTile((x + w - 1, y + h - 1), tiles3X3[2, 2], mask);
     }
-    public static void SetBlob(this TileMap tileMap, VecI cell, int radius, int warp = 2, int sides = 20, params Tile[]? tiles)
+    public static void SetBlob(this TileMap tileMap, VecI cell, int radius, Tile[]? tiles, int warp = 2, int sides = 20)
     {
         var boundaryPoints = new List<VecI>();
         const float CIRCLE = MathF.PI * 2f;
@@ -429,7 +429,7 @@ public static class TileMapper
             }
 
             if (size != 2)
-                tileMap.SetArea((x, y + off, 1, size - 2), fill);
+                tileMap.SetArea((x, y + off, 1, size - 2), [fill]);
 
             return;
         }
@@ -441,7 +441,7 @@ public static class TileMapper
         }
 
         if (size != 2)
-            tileMap.SetArea((x + off, y, size - 2, 1), fill);
+            tileMap.SetArea((x + off, y, size - 2, 1), [fill]);
     }
     public static void SetText(this TileMap tileMap, VecI cell, string? text, uint tint = uint.MaxValue, char tintBrush = '#')
     {

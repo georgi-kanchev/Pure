@@ -158,7 +158,7 @@ public static class TileMapperUI
 
         ApplyMasks(maps, box.Mask);
         Clear(maps, inputBox, zOrder);
-        maps[zOrder].SetArea(box.Area, background);
+        maps[zOrder].SetArea(box.Area, [background]);
         maps[zOrder].SetText(box.Position, selection, selectColor);
         maps[zOrder + 1].SetText(box.Position, text, textTint);
 
@@ -166,10 +166,10 @@ public static class TileMapperUI
             maps[zOrder + 1].SetText(box.Position, placeholder, placeholderTint);
 
         if (scrollY > 0)
-            maps[zOrder + 0].SetArea((box.X, box.Y, w, 1), textAboveOrBelow);
+            maps[zOrder + 0].SetArea((box.X, box.Y, w, 1), [textAboveOrBelow]);
 
         if (scrollY < box.LineCount - box.Height)
-            maps[zOrder + 0].SetArea((box.X, box.Y + h - 1, w, 1), textAboveOrBelow);
+            maps[zOrder + 0].SetArea((box.X, box.Y + h - 1, w, 1), [textAboveOrBelow]);
 
         if (box.IsCursorVisible)
             maps[zOrder + 2].SetTile(cursorPos, cursor, box.Mask);
@@ -354,7 +354,7 @@ public static class TileMapperUI
 
         ApplyMasks(maps, prompt.Mask);
         Clear(maps, prompt, zOrder);
-        maps[zOrder].SetArea((0, 0, w, h), dim);
+        maps[zOrder].SetArea((0, 0, w, h), [dim]);
         maps[zOrder + 1].SetBox(prompt.Area, fill, corner, edge);
         maps[zOrder + 2].SetText((x, y + 1), text, textTint);
         RestoreMasks(maps);
@@ -407,8 +407,8 @@ public static class TileMapperUI
 
         ApplyMasks(maps, palette.Mask);
         Clear(maps, palette, zOrder);
-        maps[zOrder].SetArea(palette.Opacity.Area, halfShade);
-        maps[zOrder + 1].SetArea(palette.Opacity.Area, resultTile);
+        maps[zOrder].SetArea(palette.Opacity.Area, [halfShade]);
+        maps[zOrder + 1].SetArea(palette.Opacity.Area, [resultTile]);
         maps[zOrder + 2].SetTile(palette.Opacity.Handle.Position, handle, palette.Mask);
         maps[zOrder + 2].SetTile(palette.Brightness.Handle.Position, handle, palette.Mask);
 
@@ -637,7 +637,7 @@ public static class TileMapperUI
         ApplyMasks(maps, block.Mask);
         for (var i = zOrder; i < zOrder + 3; i++)
             if (i < maps.Count)
-                maps[i].SetArea((x, y, w, h), EMPTY);
+                maps[i].SetArea((x, y, w, h), [EMPTY]);
         RestoreMasks(maps);
     }
 #endregion

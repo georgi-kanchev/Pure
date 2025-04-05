@@ -38,7 +38,7 @@ internal class TerrainPanel : Panel
             {
                 foreach (var curY in ys)
                 {
-                    editor.MapsUi[MIDDLE].SetLine((X, Y + curY), (X + Width - 1, Y + curY), tileMid);
+                    editor.MapsUi[MIDDLE].SetLine((X, Y + curY), (X + Width - 1, Y + curY), [tileMid]);
                     editor.MapsUi[MIDDLE].SetTile((X, Y + curY), tileLeft);
                     editor.MapsUi[MIDDLE].SetTile((X + Width - 1, Y + curY), tileRight);
                 }
@@ -182,8 +182,8 @@ internal class TerrainPanel : Panel
             if (empty == false)
             {
                 var colorArea = (X + 7, Y + 8, 7, 1);
-                editor.MapsUi[MIDDLE].SetArea(colorArea, new Tile(SHADE_5, Gray));
-                editor.MapsUi[FRONT].SetArea(colorArea, new Tile(FULL, pickedTile.Tint));
+                editor.MapsUi[MIDDLE].SetArea(colorArea, [new(SHADE_5, Gray)]);
+                editor.MapsUi[FRONT].SetArea(colorArea, [new(FULL, pickedTile.Tint)]);
             }
 
             editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), FRONT);

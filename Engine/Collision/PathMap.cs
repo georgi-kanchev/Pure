@@ -13,7 +13,7 @@ public class PathMap
         Init();
     }
 
-    public void SetObstacle(float penalty, params VecI[]? cells)
+    public void SetObstacle(float penalty, VecI[]? cells)
     {
         if (cells == null || cells.Length == 0)
             return;
@@ -55,15 +55,7 @@ public class PathMap
         if (Size.width < 1 || Size.height < 1)
             return [];
 
-        return pathfind.FindPath(start, goal, false, out _, slopeFactor, uint.MaxValue);
-    }
-    public Point[] FindPath(VecF start, VecF goal, uint color, int slopeFactor = 1)
-    {
-        if (Size.width < 1 || Size.height < 1)
-            return [];
-
-        pathfind.FindPath(start, goal, true, out var withColors, slopeFactor, color);
-        return withColors;
+        return pathfind.FindPath(start, goal, slopeFactor);
     }
 
 #region Backend

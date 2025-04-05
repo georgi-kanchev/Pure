@@ -207,8 +207,6 @@ public class Editor
     }
     public void Log(string text)
     {
-        // TODO make editor log be hover info
-
         // var infoTextSplit = infoText.Replace("\r", "").Split("\n", StringSplitOptions.RemoveEmptyEntries);
         // if (infoTextSplit.Length > 0 && infoTextSplit[^1].Contains(text))
         // {
@@ -318,18 +316,18 @@ public class Editor
         var color = Color.Gray.ToDark(0.6f);
         var (x, y) = (0, 0);
 
-        MapGrid.Fill(new Tile(LayerTilesMap.AtlasTileIdFull, Color.Gray.ToDark(0.7f)));
+        MapGrid.Fill([new(LayerTilesMap.AtlasTileIdFull, Color.Gray.ToDark(0.7f))]);
 
         for (var i = 0; i < size.width + GRID_GAP; i += GRID_GAP)
         {
             var newX = x - (x + i) % GRID_GAP;
-            MapGrid.SetLine((newX + i, y), (newX + i, y + size.height), new Tile(LayerTilesMap.AtlasTileIdFull, color));
+            MapGrid.SetLine((newX + i, y), (newX + i, y + size.height), [new(LayerTilesMap.AtlasTileIdFull, color)]);
         }
 
         for (var i = 0; i < size.height + GRID_GAP; i += GRID_GAP)
         {
             var newY = y - (y + i) % GRID_GAP;
-            MapGrid.SetLine((x, newY + i), (x + size.width, newY + i), new Tile(LayerTilesMap.AtlasTileIdFull, color));
+            MapGrid.SetLine((x, newY + i), (x + size.width, newY + i), [new(LayerTilesMap.AtlasTileIdFull, color)]);
         }
 
         OnSetGrid?.Invoke();

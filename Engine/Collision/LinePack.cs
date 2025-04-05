@@ -9,10 +9,10 @@ public class LinePack : Pack<Line>
     public LinePack()
     {
     }
-    public LinePack(params Line[] lines) : base(lines)
+    public LinePack(Line[]? lines) : base(lines)
     {
     }
-    public LinePack(params Point[]? points)
+    public LinePack(VecF[]? points)
     {
         if (points == null || points.Length < 2)
             return;
@@ -22,7 +22,7 @@ public class LinePack : Pack<Line>
         {
             var a = points[i - 1];
             var b = points[i];
-            lines.Add(new((a.x, a.y), (b.x, b.y), a.color));
+            lines.Add(new((a.x, a.y), (b.x, b.y)));
         }
 
         data.AddRange(lines);
@@ -35,15 +35,15 @@ public class LinePack : Pack<Line>
             result[i] = this[i];
         return result;
     }
-    public Point[] ToBundlePoints()
+    public VecF[] ToBundlePoints()
     {
-        var result = new List<Point>();
+        var result = new List<VecF>();
         for (var i = 0; i < data.Count; i++)
         {
             var line = this[i];
             var (a, b) = (line.A, line.B);
-            var pointA = (a.x, a.y, line.Color);
-            var pointB = (b.x, b.y, line.Color);
+            var pointA = (a.x, a.y);
+            var pointB = (b.x, b.y);
 
             result.Add(pointA);
             result.Add(pointB);
@@ -69,11 +69,11 @@ public class LinePack : Pack<Line>
                 var distC = Vector2.Distance(new(ia.x, ia.y), new(jb.x, jb.y));
 
                 if (distA > MIN && distA < distance)
-                    data[j] = new(ia, jb, data[j].Color);
+                    data[j] = new(ia, jb);
                 else if (distB > MIN && distB < distance)
-                    data[j] = new(ja, ib, data[j].Color);
+                    data[j] = new(ja, ib);
                 else if (distC > MIN && distC < distance)
-                    data[j] = new(ja, ia, data[j].Color);
+                    data[j] = new(ja, ia);
             }
     }
 
@@ -121,10 +121,6 @@ public class LinePack : Pack<Line>
 
         return false;
     }
-    public bool IsOverlapping(Point point)
-    {
-        return IsOverlapping((point.x, point.y));
-    }
 
     public bool IsContaining(LinePack linePack)
     {
@@ -153,7 +149,7 @@ public class LinePack : Pack<Line>
     }
     public bool IsContaining(Solid solid)
     {
-        var (x, y, w, h, _) = solid.ToBundle();
+        var (x, y, w, h) = solid.ToBundle();
         return IsContaining((x, y)) &&
                IsContaining((x + w, y)) &&
                IsContaining((x + w, y + h)) &&
@@ -172,46 +168,42 @@ public class LinePack : Pack<Line>
         var line = new Line((point.x, point.y), (99999f, 99999f));
         return line.CrossPoints(this).Length % 2 == 1;
     }
-    public bool IsContaining(Point point)
-    {
-        return IsContaining((point.x, point.y));
-    }
 
-    public Point[] CrossPoints(LinePack linePack)
+    public VecF[] CrossPoints(LinePack linePack)
     {
-        var result = new List<Point>();
+        var result = new List<VecF>();
         for (var i = 0; i < data.Count; i++)
             result.AddRange(data[i].CrossPoints(linePack));
 
         return result.ToArray();
     }
-    public Point[] CrossPoints(SolidMap solidMap)
+    public VecF[] CrossPoints(SolidMap solidMap)
     {
-        var result = new List<Point>();
+        var result = new List<VecF>();
         for (var i = 0; i < data.Count; i++)
             result.AddRange(data[i].CrossPoints(solidMap));
 
         return result.ToArray();
     }
-    public Point[] CrossPoints(SolidPack solidPack)
+    public VecF[] CrossPoints(SolidPack solidPack)
     {
-        var result = new List<Point>();
+        var result = new List<VecF>();
         for (var i = 0; i < data.Count; i++)
             result.AddRange(data[i].CrossPoints(solidPack));
 
         return result.ToArray();
     }
-    public Point[] CrossPoints(Solid solid)
+    public VecF[] CrossPoints(Solid solid)
     {
-        var result = new List<Point>();
+        var result = new List<VecF>();
         for (var i = 0; i < data.Count; i++)
             result.AddRange(data[i].CrossPoints(solid));
 
         return result.ToArray();
     }
-    public Point[] CrossPoints(Line line)
+    public VecF[] CrossPoints(Line line)
     {
-        var result = new List<Point>();
+        var result = new List<VecF>();
         for (var i = 0; i < data.Count; i++)
         {
             var crossPoint = data[i].CrossPoint(line);
@@ -221,19 +213,13 @@ public class LinePack : Pack<Line>
         return result.ToArray();
     }
 
-    public Point ClosestPoint(Point point)
+    public VecF ClosestPoint(VecF point)
     {
-        var result = ClosestPoint((point.x, point.y));
-        result.color = point.color;
-        return result;
-    }
-    public Point ClosestPoint(VecF point)
-    {
-        var closestPoints = new List<Point>();
+        var closestPoints = new List<VecF>();
         for (var i = 0; i < data.Count; i++)
             closestPoints.Add(data[i].ClosestPoint(point));
 
-        var result = (float.NaN, float.NaN, 0u);
+        var result = (float.NaN, float.NaN);
         var closestDistance = float.MaxValue;
         foreach (var pt in closestPoints)
         {
@@ -249,10 +235,6 @@ public class LinePack : Pack<Line>
         return result;
     }
 
-    public void NormalizeToPoint(Point point)
-    {
-        NormalizeToPoint((point.x, point.y));
-    }
     public void NormalizeToPoint(VecF point)
     {
         for (var i = 0; i < Count; i++)
@@ -271,7 +253,7 @@ public class LinePack : Pack<Line>
     {
         return linePack.ToArray();
     }
-    public static implicit operator Point[](LinePack linePack)
+    public static implicit operator VecF[](LinePack linePack)
     {
         return linePack.ToBundlePoints();
     }
@@ -287,7 +269,7 @@ public class LinePack : Pack<Line>
 
         return new(result);
     }
-    public static implicit operator LinePack(Point[] points)
+    public static implicit operator LinePack(VecF[] points)
     {
         return new(points);
     }
@@ -303,7 +285,7 @@ public class LinePack : Pack<Line>
         m *= Matrix3x2.CreateTranslation(new(Position.x, Position.y));
         var ra = Vector2.Transform(new(ax, ay), m);
         var rb = Vector2.Transform(new(bx, by), m);
-        return (ra.X, ra.Y, rb.X, rb.Y, local.Color);
+        return (ra.X, ra.Y, rb.X, rb.Y);
     }
 #endregion
 }

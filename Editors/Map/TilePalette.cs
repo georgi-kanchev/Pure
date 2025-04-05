@@ -39,7 +39,7 @@ internal class TilePalette
                 return;
 
             var (szw, szh) = (end.x - start.x, end.y - start.y);
-            var rect = new Solid(start.x, start.y, szw, szh, Color.White);
+            var rect = new Solid(start.x, start.y, szw, szh);
             var tilemap = inspector?.GetSelectedTilemap();
 
             copyTiles = tilemap?.TilesIn(rect.ToBundle());
@@ -62,11 +62,11 @@ internal class TilePalette
                 return;
 
             var (szw, szh) = (end.x - start.x, end.y - start.y);
-            var rect = new Solid(start.x, start.y, szw, szh, Color.White);
+            var rect = new Solid(start.x, start.y, szw, szh);
             var tilemap = inspector?.GetSelectedTilemap();
 
             copyTiles = tilemap?.TilesIn(rect.ToBundle());
-            tilemap?.SetArea(rect.ToBundle(), Tile.EMPTY);
+            tilemap?.SetArea(rect.ToBundle(), [Tile.EMPTY]);
         });
         Keyboard.Key.Delete.OnPress(() =>
         {
@@ -75,9 +75,9 @@ internal class TilePalette
 
             var tilemap = inspector?.GetSelectedTilemap();
             var (szw, szh) = (end.x - start.x, end.y - start.y);
-            var rect = new Solid(start.x, start.y, szw, szh, Color.White);
+            var rect = new Solid(start.x, start.y, szw, szh);
 
-            tilemap?.SetArea(rect.ToBundle(), Tile.EMPTY);
+            tilemap?.SetArea(rect.ToBundle(), [Tile.EMPTY]);
         });
     }
     [MemberNotNull(nameof(map), nameof(layerTiles))]
@@ -136,7 +136,7 @@ internal class TilePalette
 
         UpdateSelected();
         var s = selected.ToBundle();
-        layerTiles.DrawRectangles((s.x, s.y, s.width, s.height, new Color(50, 255, 100, 150)));
+        layerTiles.DrawRectangles([(s.x, s.y, s.width, s.height)], new Color(50, 255, 100, 150));
 
         layerTiles.Render();
     }
@@ -147,7 +147,7 @@ internal class TilePalette
         var tool = inspector?.tools.Current ?? -1;
         var selectedColor = inspector?.paletteColor.SelectedColor ?? uint.MaxValue;
         var color = new Color(selectedColor) { A = 200 };
-        var seed = mx.ToSeed(my) + clickSeed;
+        var seed = mx.ToSeed([my]) + clickSeed;
         var tiles = GetSelectedTiles();
 
         for (var i = 0; i < tiles.GetLength(1); i++)
@@ -166,13 +166,15 @@ internal class TilePalette
         else if (tool is 2 or 7 or 8) // single random tile of tiles/replace/fill
             editor.LayerTilesMap.DrawTiles((mx, my), randomTile);
         else if (rectangleTools.Contains(tool)) // rectangle/ellipse of random tiles
-            editor.LayerTilesMap.DrawRectangles((start.x, start.y, szw, szh, color));
+            editor.LayerTilesMap.DrawRectangles([(start.x, start.y, szw, szh)], color);
         else if (tool == 4 && start != end) // line of random tiles
             editor.LayerTilesMap.DrawLines(
-                (start.x, start.y, end.x - 1, end.y - 1, color),
-                (start.x + 1, start.y, end.x, end.y - 1, color),
-                (start.x + 1, start.y + 1, end.x, end.y, color),
-                (start.x, start.y + 1, end.x - 1, end.y, color));
+            [
+                (start.x, start.y, end.x - 1, end.y - 1),
+                (start.x + 1, start.y, end.x, end.y - 1),
+                (start.x + 1, start.y + 1, end.x, end.y),
+                (start.x, start.y + 1, end.x - 1, end.y)
+            ], color);
 
         if (IsPaintAllowed() && Mouse.Button.Left.IsPressed())
             OnMouseHold(randomTile, tilemap);
@@ -259,7 +261,7 @@ internal class TilePalette
             isDraggingTiles = false;
 
             var (szw, szh) = (end.x - start.x, end.y - start.y);
-            var rect = new Solid(start.x, start.y, szw, szh, Color.White);
+            var rect = new Solid(start.x, start.y, szw, szh);
             var ctrl = Keyboard.Key.ControlLeft.IsPressed() || Keyboard.Key.ControlRight.IsPressed();
             if (rect.IsContaining(editor.MousePositionWorld))
             {
@@ -270,7 +272,7 @@ internal class TilePalette
 
                 isDraggingTiles = true;
                 draggingTiles = tilemap?.TilesIn(rect.ToBundle());
-                tilemap?.SetArea(rect.ToBundle(), Tile.EMPTY);
+                tilemap?.SetArea(rect.ToBundle(), [Tile.EMPTY]);
 
                 return;
             }

@@ -192,7 +192,7 @@ public struct Point : IEquatable<Point>
         return val.Equals(other.val) && Color == other.Color;
     }
 
-    public static Point? Average(params Point[]? points)
+    public static Point? Average(Point[]? points)
     {
         if (points == null || points.Length == 0)
             return null;

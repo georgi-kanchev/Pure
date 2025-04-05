@@ -1,6 +1,6 @@
 namespace Pure.Engine.Window;
 
-public class LayerSprites(SizeI size)
+public class LayerSprites
 {
     public string? TexturePath
     {
@@ -57,8 +57,8 @@ public class LayerSprites(SizeI size)
         }
     }
 
-    public PointF Position { get; set; }
-    public SizeI Size { get; set; } = size;
+    public VecF Position { get; set; }
+    public SizeI Size { get; set; }
     public float Zoom
     {
         get => zoom;
@@ -78,7 +78,7 @@ public class LayerSprites(SizeI size)
         }
     }
 
-    public PointF MouseCursorPosition
+    public VecF MouseCursorPosition
     {
         get => PositionFromPixel(Mouse.CursorPosition);
     }
@@ -93,6 +93,18 @@ public class LayerSprites(SizeI size)
         }
     }
 
+    public LayerSprites(SizeI size = default, bool fitWindow = true)
+    {
+        Size = size;
+        Zoom = 1f;
+
+        if (fitWindow == false)
+            return;
+
+        Zoom = ZoomWindowFit;
+        Position = (0, 0);
+    }
+
     public void DragAndZoom(Mouse.Button dragButton = Mouse.Button.Middle, float zoomDelta = 0.05f)
     {
         Window.TryCreate();
@@ -104,34 +116,56 @@ public class LayerSprites(SizeI size)
             Position = (Position.x + dx / Zoom, Position.y + dy / Zoom);
     }
 
-    public void DrawSprite(AreaI? textureArea = null, PointF position = default, float angle = 0f, SizeF? scale = null, PointF? origin = null, uint tint = uint.MaxValue)
+    public void DrawLine(VecF[]? points, float width = 2f, uint tint = uint.MaxValue)
+    {
+        if (points == null || points.Length == 0)
+            return;
+
+        if (points.Length == 1)
+        {
+            DrawRectangle((points[0].x, points[0].y, width, width), tint: tint);
+            return;
+        }
+
+        for (var i = 1; i < points.Length; i++)
+        {
+            var (a, b) = (points[i - 1], points[i]);
+            QueueLine((a.x, a.y), (b.x, b.y), tint, width);
+        }
+    }
+    public void DrawLines(Line[]? lines, float width = 2f, uint tint = uint.MaxValue)
+    {
+        if (lines == null || lines.Length == 0)
+            return;
+
+        foreach (var line in lines)
+            QueueLine((line.ax, line.ay), (line.bx, line.by), tint, width);
+    }
+    public void DrawRectangle(AreaF area, float angle = 0f, VecF? origin = null, uint tint = uint.MaxValue)
     {
         textures.TryGetValue(texturePath ?? "", out var texture);
 
         if (texture == null)
+        {
+            DrawSprite((0, 0, 1, 1), (area.x, area.y), angle, (area.width, area.height), origin, tint);
             return;
+        }
 
-        var color = new Color(tint);
-        var m = Matrix3x2.Identity;
-        var (x, y, w, h) = textureArea ?? (0, 0, (int)texture.Size.X, (int)texture.Size.Y);
-        var (sw, sh) = (w * (scale?.width ?? 1f), h * (scale?.height ?? 1f));
-        var (ox, oy) = origin ?? (0.5f, 0.5f);
-
-        m *= Matrix3x2.CreateRotation(MathF.PI / 180f * angle);
-        m *= Matrix3x2.CreateTranslation(position.x + Size.width / 2f, position.y + Size.height / 2f);
-
-        var tl = Vector2.Transform(new(-ox * sw, -oy * sh), m);
-        var tr = Vector2.Transform(new((-ox + 1) * sw, -oy * sh), m);
-        var br = Vector2.Transform(new((-ox + 1) * sw, (-oy + 1) * sh), m);
-        var bl = Vector2.Transform(new(-ox * sw, (-oy + 1) * sh), m);
-
-        verts.Append(new(new(tl.X, tl.Y), color, new(x, y)));
-        verts.Append(new(new(tr.X, tr.Y), color, new(x + w, y)));
-        verts.Append(new(new(br.X, br.Y), color, new(x + w, y + h)));
-        verts.Append(new(new(bl.X, bl.Y), color, new(x, y + h)));
+        var sz = texture.Size;
+        DrawSprite((0, 0, (int)sz.X, (int)sz.Y), (area.x, area.y), angle, (area.width / sz.X, area.height / sz.Y), origin, tint);
+    }
+    public void DrawSprite(AreaI? textureArea = null, VecF position = default, float angle = 0f, SizeF? scale = null, VecF? origin = null, uint tint = uint.MaxValue)
+    {
+        QueueRect(textureArea, position, angle, scale, origin, tint);
     }
 
-    public PointF PositionFromPixel(PointI pixel)
+    public bool IsOverlapping(VecF position)
+    {
+        return position is { x: >= 0, y: >= 0 } &&
+               position.x <= Size.width &&
+               position.y <= Size.height;
+    }
+    public VecF PositionFromPixel(VecI pixel)
     {
         Window.TryCreate();
 
@@ -153,7 +187,7 @@ public class LayerSprites(SizeI size)
 
         return (px, py);
     }
-    public PointI PositionToPixel(PointF position)
+    public VecI PositionToPixel(VecF position)
     {
         Window.TryCreate();
 
@@ -175,11 +209,11 @@ public class LayerSprites(SizeI size)
 
         return new((int)px, (int)py);
     }
-    public PointF PositionToLayer(PointF position, LayerTiles layerTiles)
+    public VecF PositionToLayer(VecF position, LayerTiles layerTiles)
     {
         return layerTiles.PositionFromPixel(PositionToPixel(position));
     }
-    public PointF PositionToLayer(PointF position, LayerSprites layerSprites)
+    public VecF PositionToLayer(VecF position, LayerSprites layerSprites)
     {
         return layerSprites.PositionFromPixel(PositionToPixel(position));
     }
@@ -196,6 +230,41 @@ public class LayerSprites(SizeI size)
     internal static readonly Dictionary<string, Texture> textures = [];
     [DoNotSave]
     internal readonly VertexArray verts = new(PrimitiveType.Quads);
+
+    private void QueueLine(VecF a, VecF b, uint tint, float width)
+    {
+        var dir = new Vector2(b.x - a.x, b.y - a.y);
+        var rad = MathF.Atan2(dir.Y, dir.X);
+        var ang = rad * (180f / MathF.PI) - 90f;
+        var length = Vector2.Distance(new(a.x, a.y), new(b.x, b.y));
+        DrawRectangle((a.x, a.y, width, length), ang, (0.5f, 0f), tint);
+    }
+    public void QueueRect(AreaI? textureArea, VecF position, float angle, SizeF? scale, VecF? origin, uint tint)
+    {
+        textures.TryGetValue(texturePath ?? "", out var texture);
+        texture ??= Window.white;
+
+        if (texture == null)
+            return;
+
+        var m = Matrix3x2.Identity;
+        var (x, y, w, h) = textureArea ?? (0, 0, (int)texture.Size.X, (int)texture.Size.Y);
+        var (sw, sh) = (w * (scale?.width ?? 1f), h * (scale?.height ?? 1f));
+        var (ox, oy) = origin ?? (0.5f, 0.5f);
+
+        m *= Matrix3x2.CreateRotation(MathF.PI / 180f * angle);
+        m *= Matrix3x2.CreateTranslation(position.x + Size.width / 2f, position.y + Size.height / 2f);
+
+        var tl = Vector2.Transform(new(-ox * sw, -oy * sh), m);
+        var tr = Vector2.Transform(new((-ox + 1) * sw, -oy * sh), m);
+        var br = Vector2.Transform(new((-ox + 1) * sw, (-oy + 1) * sh), m);
+        var bl = Vector2.Transform(new(-ox * sw, (-oy + 1) * sh), m);
+
+        verts.Append(new(new(tl.X, tl.Y), new(tint), new(x, y)));
+        verts.Append(new(new(tr.X, tr.Y), new(tint), new(x + w, y)));
+        verts.Append(new(new(br.X, br.Y), new(tint), new(x + w, y + h)));
+        verts.Append(new(new(bl.X, bl.Y), new(tint), new(x, y + h)));
+    }
 
     internal void DrawQueue()
     {
@@ -215,9 +284,7 @@ public class LayerSprites(SizeI size)
             result.SetView(view);
         }
 
-        if (textures.TryGetValue(TexturePath ?? "", out var texture) == false)
-            return;
-
+        var texture = textures!.GetValueOrDefault(TexturePath ?? "", Window.white);
         var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
         var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, Effect?.shader);
 
@@ -235,8 +302,6 @@ public class LayerSprites(SizeI size)
         result?.Clear(new(Color.Transparent));
         result?.Draw(Window.verts, PrimitiveType.Quads, r);
         result?.Display();
-
-        result?.Texture.CopyToImage().SaveToFile($"render-{GetHashCode()}.png");
 
         verts.Clear();
 

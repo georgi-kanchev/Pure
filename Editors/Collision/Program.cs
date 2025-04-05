@@ -56,13 +56,13 @@ public static class Program
                 solid.Size = (solid.Size.width, solid.Size.height - sy);
 
             if (CanDrawLayer)
-                layerTiles.DrawRectangles(solid);
+                layerTiles.DrawRectangles([solid], palette.SelectedColor);
             else if (CanEditGlobal)
-                editor.LayerTilesMap.DrawRectangles(solid);
+                editor.LayerTilesMap.DrawRectangles([solid], palette.SelectedColor);
             else if (CanEditLines)
             {
-                var line = new Line(Snap(clickPos), Snap(pos), solid.Color);
-                editor.LayerTilesMap.DrawLines(line);
+                var line = new Line(Snap(clickPos), Snap(pos));
+                editor.LayerTilesMap.DrawLines([line], palette.SelectedColor);
             }
         };
         editor.OnUpdateLate += () =>
@@ -202,7 +202,6 @@ public static class Program
                 isDragging = true;
                 clickPos = MousePos;
                 solid.Position = MousePos;
-                solid.Color = palette.SelectedColor;
                 return;
             }
 
@@ -210,7 +209,6 @@ public static class Program
             {
                 isDragging = true;
                 solid.Position = MousePosPrompt;
-                solid.Color = palette.SelectedColor;
                 return;
             }
 
@@ -279,19 +277,19 @@ public static class Program
             {
                 curSolid.Position = (curSolid.Position.x + vx, curSolid.Position.y + vy);
                 if (curSolid.Size is { width: > 0, height: > 0 })
-                    solidPack.Add(curSolid);
+                    solidPack.Add([curSolid]);
             }
             else if (CanDrawLayer && layerTiles.IsHovered)
             {
                 curSolid.Position = (solid.Position.x - 1, solid.Position.y - 1);
                 if (curSolid.Size is { width: > 0, height: > 0 })
-                    solidMap.AddSolids(currentTile, curSolid);
+                    solidMap.AddSolids(currentTile, [curSolid]);
             }
             else if (CanEditLines)
             {
                 var a = Snap((clickPos.x + vx, clickPos.y + vy));
                 var b = Snap((mx + vx, my + vy));
-                linePack.Add(new Line(a, b, solid.Color));
+                linePack.Add([new(a, b)]);
             }
         });
         Mouse.Button.Right.OnPress(() =>
@@ -305,7 +303,7 @@ public static class Program
                     if (closestPoint.Distance(MousePos) > 1)
                         continue;
 
-                    linePack.RemoveAt(i);
+                    linePack.RemoveAt([i]);
                     i--;
                 }
 
@@ -317,7 +315,7 @@ public static class Program
                 for (var i = 0; i < solidPack.Count; i++)
                     if (solidPack[i].IsOverlapping(MousePos))
                     {
-                        solidPack.RemoveAt(i);
+                        solidPack.RemoveAt([i]);
                         i--;
                     }
 
@@ -336,7 +334,7 @@ public static class Program
                 if (rect.IsOverlapping(MousePosPrompt) == false)
                     continue;
 
-                solidMap.RemoveSolids(currentTile, r);
+                solidMap.RemoveSolids(currentTile, [r]);
             }
         });
     }

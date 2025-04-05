@@ -18,18 +18,18 @@ public static class Collision
         var maps = new List<TileMap> { new((w, h)), new((w, h)) };
 
         var collisionMap = new SolidMap();
-        collisionMap.AddSolids(Tile.ICON_WAVE, new Solid(0, 0, 1f, 1f, Yellow)); // lake
-        collisionMap.AddSolids(Tile.ICON_WAVES, new Solid(0, 0, 1f, 1f, Yellow)); // lake
-        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE, new Solid(0, 0, 1, 1)); // house roof
-        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE_RIGHT, new Solid(0, 0, 1, 1)); // house wall
-        collisionMap.AddSolids(Tile.UPPERCASE_I, new Solid(0, 0, 1, 1)); // tree trunk
-        collisionMap.AddSolids(Tile.PATTERN_33, new Solid(0, 0, 1, 1)); // tree top
+        collisionMap.AddSolids(Tile.ICON_WAVE, [new(0, 0, 1f, 1f)]); // lake
+        collisionMap.AddSolids(Tile.ICON_WAVES, [new(0, 0, 1f, 1f)]); // lake
+        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE, [new(0, 0, 1, 1)]); // house roof
+        collisionMap.AddSolids(Tile.GEOMETRY_ANGLE_RIGHT, [new(0, 0, 1, 1)]); // house wall
+        collisionMap.AddSolids(Tile.UPPERCASE_I, [new(0, 0, 1, 1)]); // tree trunk
+        collisionMap.AddSolids(Tile.PATTERN_33, [new(0, 0, 1, 1)]); // tree top
 
         // icon tiles are 7x7, not 8x8, cut one row & column,
         // hitbox and tile on screen might mismatch since the tile is pixel perfect
         // and the hitbox is not
         const float SCALE = 1f - 1f / 8f;
-        var hitbox = new SolidPack(new Solid(0, 0, 1, 1)) { Scale = (SCALE, SCALE) };
+        var hitbox = new SolidPack([new(0, 0, 1, 1)]) { Scale = (SCALE, SCALE) };
         var layer = new LayerTiles((w, h));
 
         maps[1].FillWithRandomGrass();
@@ -48,9 +48,9 @@ public static class Collision
         var collisionPack = collisionMap.ToArray();
 
         var waves = new SolidMap();
-        waves.AddSolids(Tile.ICON_WAVE, new Solid(0, 0, 1, 1, Blue.ToDark()));
-        waves.AddSolids(Tile.ICON_WAVES, new Solid(0, 0, 1, 1, Blue.ToDark()));
-        waves.AddSolids(Tile.PATTERN_33, new Solid(0, 0, 1, 1, Green.ToDark(0.7f).ToDark()));
+        waves.AddSolids(Tile.ICON_WAVE, [new(0, 0, 1, 1)]);
+        waves.AddSolids(Tile.ICON_WAVES, [new(0, 0, 1, 1)]);
+        waves.AddSolids(Tile.PATTERN_33, [new(0, 0, 1, 1)]);
         waves.Update(maps[1]);
 
         while (Window.KeepOpen())
@@ -62,17 +62,16 @@ public static class Collision
             var id = isOverlapping ? Tile.FACE_SAD : Tile.FACE_SMILING;
             var tint = isOverlapping ? Red : Green;
             var tile = new Tile(id, tint);
-            var line = new Line((mousePosition.x - 1, mousePosition.y), (15, 15), Red);
+            var line = new Line((mousePosition.x - 1, mousePosition.y), (15, 15));
             var crossPoints = line.CrossPoints(collisionPack);
 
             hitbox.Position = mousePosition;
-            line.Color = crossPoints.Length > 0 ? Red : Green;
 
             layer.DrawTileMap(maps[0]);
             layer.DrawTileMap(maps[1]);
 
             //layer.DrawRectangles(collisionMap);
-            layer.DrawLines(line);
+            layer.DrawLines([line], crossPoints.Length > 0 ? Red : Green);
             layer.DrawPoints(crossPoints);
             layer.DrawTiles(mousePosition, tile);
 
@@ -94,18 +93,18 @@ public static class Collision
         foreach (var t in positions)
         {
             var (x, y) = t;
-            tileMap.SetEllipse((x, y - 1), (1, 1), true, new Tile(Tile.PATTERN_33, Green.ToDark(0.7f)));
+            tileMap.SetEllipse((x, y - 1), (1, 1), true, [new(Tile.PATTERN_33, Green.ToDark(0.7f))]);
             tileMap.SetTile((x, y), new(Tile.UPPERCASE_I, Brown.ToDark(0.4f)));
         }
     }
     private static void SetBridge(this TileMap tileMap, (int x, int y) pointA, (int x, int y) pointB)
     {
-        tileMap.SetLine(pointA, pointB, new Tile(Tile.BAR_STRIP_STRAIGHT, Brown.ToDark()));
+        tileMap.SetLine(pointA, pointB, [new(Tile.BAR_STRIP_STRAIGHT, Brown.ToDark())]);
     }
     private static void SetRoad(this TileMap tileMap, (int x, int y) pointA, (int x, int y) pointB)
     {
         var pose = pointA.x == pointB.x ? Pose.Right : Pose.Default;
-        tileMap.SetLine(pointA, pointB, new Tile(Tile.BAR_SQUARE_STRAIGHT, Brown, pose));
+        tileMap.SetLine(pointA, pointB, [new(Tile.BAR_SQUARE_STRAIGHT, Brown, pose)]);
     }
     private static void SetHouses(this TileMap tileMap, params (int x, int y)[] positions)
     {
@@ -126,24 +125,28 @@ public static class Collision
     }
     private static void SetLake(this TileMap tileMap, (int x, int y) position, (int width, int height) radius)
     {
-        tileMap.SetEllipse(position, radius, true, Tile.MATH_APPROXIMATE);
+        tileMap.SetEllipse(position, radius, true, [Tile.MATH_APPROXIMATE]);
         tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), Tile.MATH_APPROXIMATE,
-            new Tile(Tile.ICON_WAVE, Blue),
-            new Tile(Tile.ICON_WAVE, Blue, Pose.Down),
-            new Tile(Tile.ICON_WAVES, Blue),
-            new Tile(Tile.ICON_WAVES, Blue, Pose.Down));
+        [
+            new(Tile.ICON_WAVE, Blue),
+            new(Tile.ICON_WAVE, Blue, Pose.Down),
+            new(Tile.ICON_WAVES, Blue),
+            new(Tile.ICON_WAVES, Blue, Pose.Down)
+        ]);
     }
     private static void FillWithRandomGrass(this TileMap tileMap)
     {
         var color = Green.ToDark(0.4f);
         tileMap.Replace((0, 0, tileMap.Size.width, tileMap.Size.height), 0,
-            new Tile(Tile.SHADE_1, color),
-            new Tile(Tile.SHADE_1, color, Pose.Right),
-            new Tile(Tile.SHADE_1, color, Pose.Down),
-            new Tile(Tile.SHADE_1, color, Pose.Left),
-            new Tile(Tile.SHADE_2, color),
-            new Tile(Tile.SHADE_2, color, Pose.Right),
-            new Tile(Tile.SHADE_2, color, Pose.Down),
-            new Tile(Tile.SHADE_2, color, Pose.Left));
+        [
+            new(Tile.SHADE_1, color),
+            new(Tile.SHADE_1, color, Pose.Right),
+            new(Tile.SHADE_1, color, Pose.Down),
+            new(Tile.SHADE_1, color, Pose.Left),
+            new(Tile.SHADE_2, color),
+            new(Tile.SHADE_2, color, Pose.Right),
+            new(Tile.SHADE_2, color, Pose.Down),
+            new(Tile.SHADE_2, color, Pose.Left)
+        ]);
     }
 }
