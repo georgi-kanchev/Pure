@@ -116,14 +116,14 @@ public class LayerSprites
             Position = (Position.x + dx / Zoom, Position.y + dy / Zoom);
     }
 
-    public void DrawLine(VecF[]? points, float width = 2f, uint tint = uint.MaxValue)
+    public void DrawLine(VecF[]? points, float width = 4f, uint tint = uint.MaxValue, AreaI? textureArea = null)
     {
         if (points == null || points.Length == 0)
             return;
 
         if (points.Length == 1)
         {
-            DrawRectangle((points[0].x, points[0].y, width, width), tint: tint);
+            DrawRectangle((points[0].x, points[0].y, width, width), 0f, default, tint, textureArea);
             return;
         }
 
@@ -133,26 +133,26 @@ public class LayerSprites
             QueueLine((a.x, a.y), (b.x, b.y), tint, width);
         }
     }
-    public void DrawLines(Line[]? lines, float width = 2f, uint tint = uint.MaxValue)
+    public void DrawLines(Line[]? lines, float width = 4f, uint tint = uint.MaxValue, AreaI? textureArea = null)
     {
         if (lines == null || lines.Length == 0)
             return;
 
         foreach (var line in lines)
-            QueueLine((line.ax, line.ay), (line.bx, line.by), tint, width);
+            QueueLine((line.ax, line.ay), (line.bx, line.by), tint, width, textureArea);
     }
-    public void DrawRectangle(AreaF area, float angle = 0f, VecF? origin = null, uint tint = uint.MaxValue)
+    public void DrawRectangle(AreaF area, float angle = 0f, VecF? origin = null, uint tint = uint.MaxValue, AreaI? textureArea = null)
     {
         textures.TryGetValue(texturePath ?? "", out var texture);
 
         if (texture == null)
         {
-            DrawSprite((0, 0, 1, 1), (area.x, area.y), angle, (area.width, area.height), origin, tint);
+            DrawSprite(textureArea, (area.x, area.y), angle, (area.width, area.height), origin, tint);
             return;
         }
 
-        var sz = texture.Size;
-        DrawSprite((0, 0, (int)sz.X, (int)sz.Y), (area.x, area.y), angle, (area.width / sz.X, area.height / sz.Y), origin, tint);
+        var (_, _, w, h) = textureArea ??= (0, 0, 1, 1);
+        DrawSprite(textureArea, (area.x, area.y), angle, (area.width / w, area.height / h), origin, tint);
     }
     public void DrawSprite(AreaI? textureArea = null, VecF position = default, float angle = 0f, SizeF? scale = null, VecF? origin = null, uint tint = uint.MaxValue)
     {
@@ -231,13 +231,13 @@ public class LayerSprites
     [DoNotSave]
     internal readonly VertexArray verts = new(PrimitiveType.Quads);
 
-    private void QueueLine(VecF a, VecF b, uint tint, float width)
+    private void QueueLine(VecF a, VecF b, uint tint, float width, AreaI? textureArea = null)
     {
         var dir = new Vector2(b.x - a.x, b.y - a.y);
         var rad = MathF.Atan2(dir.Y, dir.X);
         var ang = rad * (180f / MathF.PI) - 90f;
         var length = Vector2.Distance(new(a.x, a.y), new(b.x, b.y));
-        DrawRectangle((a.x, a.y, width, length), ang, (0.5f, 0f), tint);
+        DrawRectangle((a.x, a.y, width / 2f, length), ang, (0.5f, 0f), tint, textureArea);
     }
     public void QueueRect(AreaI? textureArea, VecF position, float angle, SizeF? scale, VecF? origin, uint tint)
     {
