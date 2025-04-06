@@ -22,7 +22,7 @@ public static class Rendering
             Time.Update();
 
             var (x, y) = layer.MouseCursorPosition;
-            layer.DrawRectangle((x, y, 400, 400), textureArea: (8 * 10, 0, 8, 8));
+            layer.DrawLine([(x, y), (0, 0)], 1);
             layer.Render();
         }
     }

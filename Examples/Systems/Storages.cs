@@ -1,4 +1,3 @@
-using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 
 namespace Pure.Examples.Systems;
@@ -20,30 +19,17 @@ public static class Storages
         public static string Something { get; set; } = "heeeelloooo";
         public float D { get; set; } = 33.6f;
 
-        // public Dictionary<string, int[]> dict = new()
-        // {
-        //     { "hello", [35, 4] },
-        //     { "test", [12, 7] },
-        //     { "fast", [1, 88] }
-        // };
+        public Dictionary<string, int[]> dict = new()
+        {
+            { "hello", [35, 4] },
+            { "test", [12, 7] },
+            { "fast", [1, 88] }
+        };
         public int[][] arr2D =
         {
             [0, 3, 5, 12],
             [125, 5, 612, 3]
         };
-
-        // public (float chance, string[] tiles)[] PlainRegionClustersChanceTiles { get; private set; } = [];
-        //
-        // public Test()
-        // {
-        //     PlainRegionClustersChanceTiles =
-        //     [
-        //         (0.2f, [
-        //             "*RegionBush1", "*RegionBush2", "*RegionBush3",
-        //             "*RegionBush4", "*RegionBush5", "*RegionBush6"
-        //         ])
-        //     ];
-        // }
     }
 
     public struct SomeStruct
@@ -78,7 +64,46 @@ public static class Storages
             { "fast", [1, 88] }
         };
 
-        var a = new Test().ToTSV();
+        var a = new Test().ToPipes();
         var b = a.ToObject<Test>();
+        File.WriteAllText("data.tsv", a);
     }
 }
+
+// c
+//  |test
+//
+// a
+//  |m|3
+//  |j|true
+//  |k|0.3
+//
+// someEnum
+//  |ValueNumber3 SecondValue
+//
+// Something
+//  |heeeelloooo
+//
+// D
+//  |33.6
+//
+// dict
+//  |hello
+//  | |0|35
+//  | |1|4
+//  |test
+//  | |0|12
+//  | |1|7
+//  |fast
+//  | |0|1
+//  | |1|88
+//
+// arr2D
+//  |0|0|0
+//  | |1|3
+//  | |2|5
+//  | |3|12
+//  |1|0|125
+//  | |1|5
+//  | |2|612
+//  | |3|3

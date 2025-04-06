@@ -123,14 +123,14 @@ public class LayerSprites
 
         if (points.Length == 1)
         {
-            DrawRectangle((points[0].x, points[0].y, width, width), 0f, default, tint, textureArea);
+            DrawSprite(textureArea, (points[0].x, points[0].y), 0f, (width, width), tint: tint);
             return;
         }
 
         for (var i = 1; i < points.Length; i++)
         {
             var (a, b) = (points[i - 1], points[i]);
-            QueueLine((a.x, a.y), (b.x, b.y), tint, width);
+            QueueLine((a.x, a.y), (b.x, b.y), tint, width, textureArea);
         }
     }
     public void DrawLines(Line[]? lines, float width = 4f, uint tint = uint.MaxValue, AreaI? textureArea = null)
@@ -140,19 +140,6 @@ public class LayerSprites
 
         foreach (var line in lines)
             QueueLine((line.ax, line.ay), (line.bx, line.by), tint, width, textureArea);
-    }
-    public void DrawRectangle(AreaF area, float angle = 0f, VecF? origin = null, uint tint = uint.MaxValue, AreaI? textureArea = null)
-    {
-        textures.TryGetValue(texturePath ?? "", out var texture);
-
-        if (texture == null)
-        {
-            DrawSprite(textureArea, (area.x, area.y), angle, (area.width, area.height), origin, tint);
-            return;
-        }
-
-        var (_, _, w, h) = textureArea ??= (0, 0, 1, 1);
-        DrawSprite(textureArea, (area.x, area.y), angle, (area.width / w, area.height / h), origin, tint);
     }
     public void DrawSprite(AreaI? textureArea = null, VecF position = default, float angle = 0f, SizeF? scale = null, VecF? origin = null, uint tint = uint.MaxValue)
     {
@@ -237,7 +224,10 @@ public class LayerSprites
         var rad = MathF.Atan2(dir.Y, dir.X);
         var ang = rad * (180f / MathF.PI) - 90f;
         var length = Vector2.Distance(new(a.x, a.y), new(b.x, b.y));
-        DrawRectangle((a.x, a.y, width / 2f, length), ang, (0.5f, 0f), tint, textureArea);
+
+        textures.TryGetValue(TexturePath ?? "", out var texture);
+        var h = textureArea == null ? texture?.Size.Y ?? 1 : 1;
+        DrawSprite(textureArea, (a.x, a.y), ang, (width / 2f, length / h), (0.5f, 0f), tint);
     }
     public void QueueRect(AreaI? textureArea, VecF position, float angle, SizeF? scale, VecF? origin, uint tint)
     {

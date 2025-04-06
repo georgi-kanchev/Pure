@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -411,6 +412,104 @@ public static class Storage
         return TableToTSV(InstanceToTable(null, staticClass));
     }
 
+    public static string ToPipes(this object? value)
+    {
+        if (value == null)
+            return "";
+
+        var type = value.GetType();
+        if (type.IsPrimitive || type == typeof(string))
+            return $" |{value}";
+        if (type.IsEnum)
+        {
+            var enumType = Enum.GetUnderlyingType(type);
+            var obj = ToObject(value.ToBytes(), enumType, out _);
+            var result = Enum.ToObject(type, obj ?? 0).ToString()?.Replace(",", "") ?? "";
+            return $" |{result}";
+            // works with both flags & regular enums
+        }
+
+        if (IsTuple(type))
+            return GetTuplePipes(value, null);
+
+        if (IsList(type))
+        {
+            var jaggedArrayType = NestedListToJaggedArrayType(type);
+            return ToPipes(ToObject(value.ToBytes(), jaggedArrayType, out _));
+        }
+
+        if (type.IsArray)
+        {
+            var array = (Array)value;
+            var result = "";
+
+            if (array.Rank == 1)
+            {
+                for (var i = 0; i < array.Length; i++)
+                    result += $"|{i}{ToPipes(array.GetValue(i))}\n";
+
+                return result;
+            }
+
+            if (array.Rank == 2)
+            {
+                for (var i = 0; i < array.GetLength(0); i++)
+                    for (var j = 0; j < array.GetLength(1); j++)
+                        result += $"{ToPipes(array.GetValue(j, i))}\n";
+
+                return result;
+            }
+
+            if (array.Rank > 3)
+                return "";
+
+            for (var i = 0; i < array.GetLength(0); i++)
+                for (var j = 0; j < array.GetLength(1); j++)
+                    for (var k = 0; k < array.GetLength(2); k++)
+                        result += $"{ToPipes(array.GetValue(k, j, i))}\n";
+
+            return result;
+        }
+        else if (IsDictionary(type))
+        {
+            var dict = (IDictionary)value;
+            var result = "";
+            foreach (DictionaryEntry kvp in dict)
+            {
+                result += $"{ToPipes(kvp.Key)}\n";
+                result += $" |{ToPipes(kvp.Value)}";
+            }
+
+            return result;
+        }
+        else if ((IsStruct(type) || type.IsClass) && IsDelegate(type) == false)
+        {
+            var sorted = GetFieldsInOrder(type);
+            var result = "";
+
+            foreach (var (_, fields) in sorted)
+                foreach (var (field, space, comment) in fields)
+                {
+                    var fieldName = $"{field.Name.Replace("<", "").Replace(GENERATED_FIELD, "")}";
+                    var fieldValue = field.GetValue(value);
+
+                    result += $"{fieldName}\n";
+
+                    if (IsTuple(field.FieldType))
+                    {
+                        result += $"{GetTuplePipes(fieldValue, field)}\n";
+                        continue;
+                    }
+
+                    result += $"{ToPipes(fieldValue)}\n\n";
+                }
+
+            return result;
+        }
+
+        return $" |{value}";
+    }
+
     public static T? ToPrimitive<T>(this string primitiveAsText) where T : struct, IComparable, IConvertible
     {
         var value = TextToPrimitive(typeof(T), primitiveAsText);
@@ -788,9 +887,9 @@ public static class Storage
         return typeof(Delegate).IsAssignableFrom(type) && type != typeof(Delegate);
     }
 
-    private static List<object?> GetTupleItems(object tuple)
+    private static List<object?> GetTupleItems(object? tuple)
     {
-        return GetTupleFields(tuple.GetType()).Select(f => f.GetValue(tuple)).ToList();
+        return tuple == null ? [] : GetTupleFields(tuple.GetType()).Select(f => f.GetValue(tuple)).ToList();
     }
     private static List<FieldInfo> GetTupleFields(Type tupleType)
     {
@@ -1256,6 +1355,27 @@ public static class Storage
         emptyConstructor?.Invoke([]);
 
         return instance;
+    }
+
+    private static string GetTuplePipes(object? value, FieldInfo? field)
+    {
+        var result = "";
+        var items = GetTupleItems(value);
+        var att = field?.GetCustomAttribute<TupleElementNamesAttribute>();
+
+        if (att == null && value != null)
+        {
+            var fields = GetTupleFields(value.GetType());
+            for (var i = 0; i < fields.Count; i++)
+                result += $" |{fields[i].Name}{ToPipes(items[i])}\n";
+
+            return result;
+        }
+
+        for (var i = 0; i < att?.TransformNames.Count; i++)
+            result += $" |{att.TransformNames[i]}{ToPipes(items[i])}\n";
+
+        return result;
     }
 
     private static SortedDictionary<uint, List<(FieldInfo field, uint space, string comment)>> GetFieldsInOrder(Type type)
