@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml.XPath;
 using static System.Reflection.BindingFlags;
 using static System.Convert;
 
@@ -81,7 +82,7 @@ public static class Storage
         }
     }
 
-    public static byte[] ToBytes(this object? value)
+    public static byte[] ToData(this object? value)
     {
         // first 4 bytes indicates how many bytes the data is (max 2.15 GB)
         // then the amount of bytes of actual data
@@ -133,13 +134,13 @@ public static class Storage
         }
 
         if (type.IsEnum)
-            return ToBytes(ChangeType(value, Enum.GetUnderlyingType(type)));
+            return ToData(ChangeType(value, Enum.GetUnderlyingType(type)));
         if (IsTuple(type))
         {
             var result = new List<byte>();
             var tuple = GetTupleItems(value);
             foreach (var item in tuple)
-                result.AddRange(ToBytes(item));
+                result.AddRange(ToData(item));
 
             return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
@@ -149,7 +150,7 @@ public static class Storage
             var result = new List<byte>();
             var array = ToJagged((Array)value);
             for (var i = 0; i < array.Length; i++)
-                result.AddRange(ToBytes(array.GetValue(i)));
+                result.AddRange(ToData(array.GetValue(i)));
 
             return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
@@ -159,7 +160,7 @@ public static class Storage
             var result = new List<byte>();
             var list = (IList)value;
             foreach (var item in list)
-                result.AddRange(ToBytes(item));
+                result.AddRange(ToData(item));
 
             return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
@@ -171,8 +172,8 @@ public static class Storage
             foreach (var obj in dict)
             {
                 var kvp = (DictionaryEntry)obj;
-                result.AddRange(ToBytes(kvp.Key));
-                result.AddRange(ToBytes(kvp.Value));
+                result.AddRange(ToData(kvp.Key));
+                result.AddRange(ToData(kvp.Value));
             }
 
             var size = BitConverter.GetBytes(result.Count);
@@ -189,7 +190,7 @@ public static class Storage
             var result = new List<byte>();
             foreach (var (_, fields) in sorted)
                 foreach (var (field, space, comment) in fields)
-                    result.AddRange(ToBytes(field.GetValue(value)));
+                    result.AddRange(ToData(field.GetValue(value)));
 
             return BitConverter.GetBytes(result.Count).Concat(result).ToArray();
         }
@@ -228,7 +229,7 @@ public static class Storage
     {
         var placeholders = new List<string>();
         var removedDoubleQuotes = tsvText.Replace("\"\"", QUOTE_PLACEHOLDER);
-        var escaped = AddPlaceholders(removedDoubleQuotes, placeholders);
+        var escaped = AddPlaceholders(removedDoubleQuotes, placeholders, "\"\"");
 
         var rows = escaped.Replace("\r", "").Split("\n").ToList();
         var numCols = 1;
@@ -317,7 +318,7 @@ public static class Storage
         if (type.IsEnum)
         {
             var enumType = Enum.GetUnderlyingType(type);
-            var obj = ToObject(value.ToBytes(), enumType, out _);
+            var obj = ToObject(value.ToData(), enumType, out _);
             return Enum.ToObject(type, obj ?? 0).ToString()?.Replace(",", "") ?? "";
             // works with both flags & regular enums
         }
@@ -325,7 +326,7 @@ public static class Storage
         if (IsList(type))
         {
             var jaggedArrayType = NestedListToJaggedArrayType(type);
-            return ToTSV(ToObject(value.ToBytes(), jaggedArrayType, out _));
+            return ToTSV(ToObject(value.ToData(), jaggedArrayType, out _));
         }
 
         if (type.IsArray)
@@ -363,7 +364,7 @@ public static class Storage
             if (itemType != null && IsList(itemType) && rank == 1)
             {
                 var jaggedArrayType = NestedListToJaggedArrayType(itemType);
-                return ToTSV(ToObject(value.ToBytes(), jaggedArrayType.MakeArrayType(), out _));
+                return ToTSV(ToObject(value.ToData(), jaggedArrayType.MakeArrayType(), out _));
             }
 
             if (rank == 1)
@@ -412,13 +413,13 @@ public static class Storage
         return TableToTSV(InstanceToTable(null, staticClass));
     }
 
-    public static string ToPipes(this object? value)
+    public static string ToDataAsText(this object? value, string divider = "|", string escape = "`")
     {
-        return AddPipes("", value);
+        return ToData("", value, divider, escape);
     }
-    public static T? ToObj<T>(this string pipes)
+    public static T? ToObj<T>(this string data, string divider = "|", string escape = "`")
     {
-        var obj = ToObj(pipes, typeof(T));
+        var obj = ToObj(data, typeof(T), divider, escape);
         return obj == default ? default : (T?)obj;
     }
 
@@ -430,7 +431,6 @@ public static class Storage
 
 #region Backend
     private const string STRING_PLACEHOLDER = "—", QUOTE_PLACEHOLDER = "❝", GENERATED_FIELD = ">k__BackingField";
-    private const string SEP = "|";
 
     private static object? ToObject(byte[]? data, Type? expectedType, out byte[]? remaining)
     {
@@ -1272,7 +1272,7 @@ public static class Storage
         return instance;
     }
 
-    private static string AddPipes(string front, object? value)
+    private static string ToData(string front, object? value, string divider, string escape)
     {
         if (value == null)
             return "";
@@ -1281,24 +1281,40 @@ public static class Storage
         var type = value.GetType();
 
         if (type.IsPrimitive || type == typeof(string))
-            return $"{front}{value}";
+        {
+            var v = $"{value}";
+            var esc = type == typeof(string) ? escape : "";
+
+            v = v.Replace("\r", "");
+
+            if (v.Contains('\n') == false)
+                return $"{front}{esc}{v}{esc}";
+
+            var split = v.Split("\n");
+            var textLines = $"{front}{escape}{split[0]}{escape}";
+
+            foreach (var line in split.Skip(1))
+                textLines += $"\n{escape}{line}{escape}";
+
+            return textLines;
+        }
 
         if (type.IsEnum)
         {
             var enumType = Enum.GetUnderlyingType(type);
-            var obj = ToObject(value.ToBytes(), enumType, out _);
+            var obj = ToObject(value.ToData(), enumType, out _);
             result = Enum.ToObject(type, obj ?? 0).ToString()?.Replace(",", "") ?? "";
             return $"{front}{result}";
             // works with both flags & regular enums
         }
 
         if (IsTuple(type))
-            return GetTuplePipes(value, null, front);
+            return GetTuplePipes(front, value, null, divider, escape);
 
         if (IsList(type))
         {
             var jaggedArrayType = NestedListToJaggedArrayType(type);
-            return AddPipes("", ToObject(value.ToBytes(), jaggedArrayType, out _));
+            return ToData("", ToObject(value.ToData(), jaggedArrayType, out _), divider, escape);
         }
 
         if (type.IsArray)
@@ -1311,8 +1327,8 @@ public static class Storage
             for (var i = 0; i < array.Length; i++)
             {
                 var nl = i < array.Length - 1 ? "\n" : "";
-                front = $"{prevFront}{i}{SEP}";
-                result += $"{AddPipes(front, array.GetValue(i))}{nl}";
+                front = $"{prevFront}{i}{divider}";
+                result += $"{ToData(front, array.GetValue(i), divider, escape)}{nl}";
             }
 
             return result;
@@ -1320,11 +1336,14 @@ public static class Storage
         else if (IsDictionary(type))
         {
             var dict = (IDictionary)value;
+            var i = 0;
 
             foreach (DictionaryEntry kvp in dict)
             {
-                result += $"{AddPipes(front, kvp.Key)}\n";
-                result += $"{AddPipes($" {SEP}{front}", kvp.Value)}\n";
+                var nl = i < dict.Count - 1 ? "\n" : "";
+                result += $"{ToData(front, kvp.Key, divider, escape)}\n";
+                result += $"{ToData($" {divider}{front}", kvp.Value, divider, escape)}{nl}";
+                i++;
             }
 
             return result;
@@ -1333,32 +1352,34 @@ public static class Storage
         {
             var sorted = GetFieldsInOrder(type);
 
-            front += " " + SEP;
+            front += " " + divider;
 
-            foreach (var (_, fields) in sorted)
+            foreach (var (depth, fields) in sorted)
                 foreach (var (field, space, comment) in fields)
                 {
                     var fieldName = $"{field.Name.Replace("<", "").Replace(GENERATED_FIELD, "")}";
                     var fieldValue = field.GetValue(value);
 
-                    result += $"{fieldName}\n";
+                    result += $"{divider}{fieldName}\n";
 
                     // necessary to not lose the field info names when passed recursively by value only
                     if (IsTuple(field.FieldType))
                     {
-                        result += $"{GetTuplePipes(fieldValue, field, front)}\n\n";
+                        result += $"{GetTuplePipes(front, fieldValue, field, divider, escape)}\n\n";
                         continue;
                     }
 
-                    result += $"{AddPipes(front, fieldValue)}\n\n";
+                    result += $"{ToData(front, fieldValue, divider, escape)}\n\n";
                 }
+
+            result = result[..^2]; // removing the \n\n at the end
 
             return result;
         }
 
         return $"{value}";
     }
-    private static string GetTuplePipes(object? value, FieldInfo? field, string front)
+    private static string GetTuplePipes(string front, object? value, FieldInfo? field, string divider, string escape)
     {
         var result = "";
         var items = GetTupleItems(value);
@@ -1370,7 +1391,7 @@ public static class Storage
             for (var i = 0; i < fields.Count; i++)
             {
                 var nl = i < fields.Count - 1 ? "\n" : "";
-                result += $"{AddPipes($"{front}{fields[i].Name}{SEP}", items[i])}{nl}";
+                result += $"{ToData($"{front}{fields[i].Name}{divider}", items[i], divider, escape)}{nl}";
             }
 
             return result;
@@ -1379,34 +1400,55 @@ public static class Storage
         for (var i = 0; i < att?.TransformNames.Count; i++)
         {
             var nl = i < att.TransformNames.Count - 1 ? "\n" : "";
-            result += $"{AddPipes($"{front}{att.TransformNames[i]}{SEP}", items[i])}{nl}";
+            result += $"{ToData($"{front}{att.TransformNames[i]}{divider}", items[i], divider, escape)}{nl}";
         }
 
         return result;
     }
-    private static object? ToObj(string? pipes, Type? expectedType)
+    private static object? ToObj(string? data, Type? expectedType, string divider, string escape)
     {
-        if (expectedType == null || pipes == null)
+        if (expectedType == null || data == null)
             return default;
 
-        pipes = pipes.Replace("\r", "");
+        data = data.Replace("\r", "");
 
         var nullable = Nullable.GetUnderlyingType(expectedType);
         if (nullable != null)
             expectedType = nullable;
 
-        if (expectedType.IsPrimitive || expectedType == typeof(string))
-            return TextToPrimitive(expectedType, pipes);
+        var isStr = expectedType == typeof(string);
+        if (expectedType.IsPrimitive || isStr)
+        {
+            if (isStr == false)
+                return $"{data}";
+
+            var split = data.Split("\n");
+            var res = split[0];
+
+            if (res.StartsWith(escape) && res.EndsWith(escape))
+                res = res[1..^1];
+
+            for (var i = 1; i < split.Length; i++)
+            {
+                var line = split[i];
+                if (line.StartsWith(escape) && line.EndsWith(escape))
+                    line = line[1..^1];
+
+                res += $"\n{TextToPrimitive(expectedType, line)}";
+            }
+
+            return res;
+        }
 
         if (expectedType.IsEnum)
         {
             var enumType = Enum.GetUnderlyingType(expectedType);
-            var value = TextToPrimitive(enumType, pipes);
+            var value = TextToPrimitive(enumType, data);
 
             if (value == null)
                 return default;
 
-            if (pipes.IsNumber())
+            if (data.IsNumber())
                 return Enum.ToObject(expectedType, value);
 
             var names = Enum.GetNames(expectedType).ToList();
@@ -1420,7 +1462,7 @@ public static class Storage
                 {
                     var hasValue = false;
                     var flag = (ulong)0;
-                    var split = pipes.Split();
+                    var split = data.Split();
 
                     foreach (var s in split)
                         if (s.Trim() == name)
@@ -1447,118 +1489,66 @@ public static class Storage
             }
 
             // perhaps the enum value is a name, not value (eg Month.January, not 0 or 1)
-            var index = names.IndexOf(pipes);
+            var index = names.IndexOf(data);
             return index == -1 ? value : values.GetValue(index);
         }
 
-        var lines = pipes.Split("\n");
+        var strings = new List<string>();
+        data = AddPlaceholders(data, strings, escape);
 
-        // if (IsTuple(expectedType))
-        // {
-        //     var fields = GetTupleFields(expectedType);
-        //     var instance = Activator.CreateInstance(expectedType);
-        //     var i = 0;
-        //     foreach (var field in fields)
-        //     {
-        //         field.SetValue(instance, ToObject(table[0, i], field.FieldType));
-        //         i++;
-        //     }
-        //
-        //     return instance;
-        // }
-        //
-        // if (expectedType.IsArray)
-        // {
-        //     if (table.Length == 1 && table[0, 0] == "")
-        //         return Array.CreateInstance(expectedType.GetElementType()!, 0);
-        //
-        //     var isJagged = GetJaggedArrayDimensionCount(expectedType) > 1;
-        //     if (isJagged)
-        //         expectedType = JaggedToRegularArrayType(expectedType);
-        //
-        //     var ranks = expectedType.GetArrayRank();
-        //
-        //     var itemType = expectedType.GetElementType();
-        //     if (itemType == null)
-        //         return default;
-        //
-        //     if (ranks == 1)
-        //     {
-        //         var result = Array.CreateInstance(itemType, table.Length);
-        //         for (var i = 0; i < table.Length; i++)
-        //             result.SetValue(ToObject(table[0, i], itemType), i);
-        //
-        //         return result;
-        //     }
-        //
-        //     if (ranks == 2)
-        //     {
-        //         var result = Array.CreateInstance(itemType, table.GetLength(0), table.GetLength(1));
-        //         for (var i = 0; i < table.GetLength(0); i++)
-        //             for (var j = 0; j < table.GetLength(1); j++)
-        //                 result.SetValue(ToObject(table[i, j], itemType), i, j);
-        //
-        //         return isJagged ? ToJagged(result) : result;
-        //     }
-        //     // no more than 2 dimensions are supported
-        //
-        //     return default;
-        // }
-        //
-        // if (IsList(expectedType))
-        // {
-        //     // keep it straightforward, parse as an array & make it a list
-        //     // that supports List<List<>> too
-        //     var jaggedType = NestedListToJaggedArrayType(expectedType);
-        //     var itemType = GetJaggedArrayElementType(jaggedType);
-        //     var result = ToObject(pipes, jaggedType) as Array;
-        //     var list = Activator.CreateInstance(expectedType) as IList;
-        //
-        //     if (result == null || list == null)
-        //         return list;
-        //
-        //     foreach (var item in result)
-        //     {
-        //         var elementType = list.GetType().GetGenericArguments()[0];
-        //         if (item is Array arr && IsList(elementType))
-        //         {
-        //             var dim = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType!)) as IList;
-        //             for (var i = 0; i < arr.Length; i++)
-        //                 dim?.Add(arr.GetValue(i));
-        //             list.Add(dim);
-        //             continue;
-        //         }
-        //
-        //         if (elementType.IsArray && elementType.GetArrayRank() > 1)
-        //             continue;
-        //
-        //         list.Add(item);
-        //     }
-        //
-        //     return list;
-        // }
-        //
-        // if (IsDictionary(expectedType))
-        // {
-        //     var dict = (Activator.CreateInstance(expectedType) as IDictionary)!;
-        //     var keyType = expectedType.GetGenericArguments()[0];
-        //     var valueType = expectedType.GetGenericArguments()[1];
-        //
-        //     for (var i = 0; i < table.GetLength(0); i++)
-        //     {
-        //         var key = ToObject(table[i, 0], keyType)!;
-        //         dict[key] = ToObject(table[i, 1], valueType);
-        //     }
-        //
-        //     return dict;
-        // }
-        //
+        var lines = data.Split("\n");
+
         if ((IsStruct(expectedType) || expectedType.IsClass) && IsDelegate(expectedType) == false)
-            // foreach (var item in collection)
-            // {
-            //     
-            // }
-            return default;
+        {
+            var sorted = GetFieldsInOrder(expectedType);
+            var isStatic = expectedType is { IsAbstract: true, IsSealed: true };
+            var instance = isStatic ? null : CreateInstance(expectedType);
+
+            foreach (var (_, fields) in sorted)
+                foreach (var (field, space, comment) in fields)
+                {
+                    var index = -1;
+                    for (var i = 0; i < lines.Length; i++)
+                        if (lines[i] == $"{divider}{field.Name.Replace("<", "").Replace(GENERATED_FIELD, "")}")
+                        {
+                            index = i + 1;
+                            break;
+                        }
+
+                    if (index == -1)
+                        continue;
+
+                    var type = field.FieldType;
+                    var isArray = type.IsArray && type.GetArrayRank() == 1;
+                    var isList = IsList(type);
+                    var isDict = IsDictionary(type);
+
+                    if (type.IsPrimitive || type == typeof(string) || type.IsEnum)
+                    {
+                        var line = lines[index].Split(divider)[^1];
+                        line = FilterPlaceholders(line, strings);
+                        field.SetValue(instance, ToObj(line, field.FieldType, divider, escape));
+                        continue;
+                    }
+
+                    if (IsTuple(type))
+                    {
+                        var tupleFields = GetTupleFields(type);
+                        var newTuple = Activator.CreateInstance(type);
+                        foreach (var tupleField in tupleFields)
+                        {
+                            var line = lines[index++].Split(divider)[^1];
+                            line = FilterPlaceholders(line, strings);
+                            tupleField.SetValue(newTuple, ToObject(line, tupleField.FieldType));
+                        }
+
+                        field.SetValue(instance, newTuple);
+                        continue;
+                    }
+                }
+
+            return instance;
+        }
 
         return default;
     }
@@ -1626,9 +1616,9 @@ public static class Storage
         return (T)ChangeType(wrappedValue, typeof(T));
     }
 
-    private static string FilterPlaceholders(string dataAsText, List<string> strings)
+    private static string FilterPlaceholders(string data, List<string> strings)
     {
-        return Regex.Replace(dataAsText, STRING_PLACEHOLDER + "(\\d+)", match =>
+        return Regex.Replace(data, STRING_PLACEHOLDER + "(\\d+)", match =>
         {
             var index = int.Parse(match.Groups[1].Value);
             return index >= 0 && index < strings.Count ?
@@ -1636,9 +1626,11 @@ public static class Storage
                 match.Value;
         });
     }
-    private static string AddPlaceholders(string dataAsText, List<string> strings)
+    private static string AddPlaceholders(string dataAsText, List<string> strings, string escape)
     {
-        return Regex.Replace(dataAsText, "\"([^\"]+)\"", match =>
+        var pattern = $"{Regex.Escape(escape)}(.+?){Regex.Escape(escape)}";
+
+        return Regex.Replace(dataAsText, pattern, match =>
         {
             var replacedValue = STRING_PLACEHOLDER + strings.Count;
             var value = match.Groups[1].Value;

@@ -14,15 +14,15 @@ public static class Storages
     {
         public readonly string c = "test";
         // public List<(string, uint)> arr = [("m", 123), ("hmmm", 56), ("he", 12), ("she", 47), ("ai", 31)];
-        public (int j, bool k, float l) a = (3, true, 0.3f);
+        public (int j, bool k, float l, string m) a = (3, true, 0.3f, "str");
         public SomeEnum someEnum = SomeEnum.ValueNumber3 | SomeEnum.SecondValue;
-        public static string Something { get; set; } = "heeeelloooo";
+        public static string Something { get; set; } = "something|something";
         public float D { get; set; } = 33.6f;
 
         public Dictionary<string, int[][]> dict = new()
         {
             { "hello", [[35, 4], [11, 2]] },
-            { "test", [[6, 9], [69, 3]] },
+            { "test testing\nthis\nnewline", [[6, 9], [69, 3]] },
             { "fast", [[19, 77], [8, 1]] }
         };
         public int[][] jag2D =
@@ -64,9 +64,9 @@ public static class Storages
             { "fast", [1, 88] }
         };
 
-        var a = new Test().ToPipes();
+        var a = new Test().ToDataAsText();
         var b = a.ToObj<Test>();
-        File.WriteAllText("data.tsv", a);
+        File.WriteAllText("data.txt", a);
     }
 }
 

@@ -440,11 +440,11 @@ public static class Program
             var data = Array.Empty<byte>();
 
             if (selection == 0)
-                data = solidPack.ToBytes();
+                data = solidPack.ToData();
             else if (selection == 1)
-                data = solidMap.ToBytes();
+                data = solidMap.ToData();
             else if (selection == 2)
-                data = linePack.ToBytes();
+                data = linePack.ToData();
 
             solidPack.Position = prevSolidOffset;
             solidMap.Offset = prevMapOffset;
