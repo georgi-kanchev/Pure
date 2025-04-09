@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml.XPath;
 using static System.Reflection.BindingFlags;
 using static System.Convert;
 
@@ -413,13 +412,13 @@ public static class Storage
         return TableToTSV(InstanceToTable(null, staticClass));
     }
 
-    public static string ToDataAsText(this object? value, string divider = "|", string escape = "`")
+    public static string ToDataAsText(this object? value, string divider = "|", string escape = "`", string multiline = "+")
     {
-        return ToData("", value, divider, escape);
+        return ToData("", value, divider, escape, multiline);
     }
-    public static T? ToObj<T>(this string data, string divider = "|", string escape = "`")
+    public static T? ToObj<T>(this string data, string divider = "|", string escape = "`", string multiline = "+")
     {
-        var obj = ToObj(data, typeof(T), divider, escape);
+        var obj = ToObj(data, typeof(T), divider, escape, multiline);
         return obj == default ? default : (T?)obj;
     }
 
@@ -1272,7 +1271,7 @@ public static class Storage
         return instance;
     }
 
-    private static string ToData(string front, object? value, string divider, string escape)
+    private static string ToData(string front, object? value, string divider, string escape, string multiline)
     {
         if (value == null)
             return "";
@@ -1293,8 +1292,11 @@ public static class Storage
             var split = v.Split("\n");
             var textLines = $"{front}{escape}{split[0]}{escape}";
 
+            if (front.EndsWith(divider))
+                front = $"{front[..^1]}{multiline}";
+
             foreach (var line in split.Skip(1))
-                textLines += $"\n{escape}{line}{escape}";
+                textLines += $"\n{front}{escape}{line}{escape}";
 
             return textLines;
         }
@@ -1309,12 +1311,12 @@ public static class Storage
         }
 
         if (IsTuple(type))
-            return GetTuplePipes(front, value, null, divider, escape);
+            return GetTupleData(front, value, null, divider, escape, multiline);
 
         if (IsList(type))
         {
             var jaggedArrayType = NestedListToJaggedArrayType(type);
-            return ToData("", ToObject(value.ToData(), jaggedArrayType, out _), divider, escape);
+            return ToData("", ToObject(value.ToData(), jaggedArrayType, out _), divider, escape, multiline);
         }
 
         if (type.IsArray)
@@ -1328,7 +1330,7 @@ public static class Storage
             {
                 var nl = i < array.Length - 1 ? "\n" : "";
                 front = $"{prevFront}{i}{divider}";
-                result += $"{ToData(front, array.GetValue(i), divider, escape)}{nl}";
+                result += $"{ToData(front, array.GetValue(i), divider, escape, multiline)}{nl}";
             }
 
             return result;
@@ -1341,8 +1343,8 @@ public static class Storage
             foreach (DictionaryEntry kvp in dict)
             {
                 var nl = i < dict.Count - 1 ? "\n" : "";
-                result += $"{ToData(front, kvp.Key, divider, escape)}\n";
-                result += $"{ToData($" {divider}{front}", kvp.Value, divider, escape)}{nl}";
+                result += $"{ToData(front, kvp.Key, divider, escape, multiline)}\n";
+                result += $"{ToData($" {divider}{front}", kvp.Value, divider, escape, multiline)}{nl}";
                 i++;
             }
 
@@ -1365,11 +1367,11 @@ public static class Storage
                     // necessary to not lose the field info names when passed recursively by value only
                     if (IsTuple(field.FieldType))
                     {
-                        result += $"{GetTuplePipes(front, fieldValue, field, divider, escape)}\n\n";
+                        result += $"{GetTupleData(front, fieldValue, field, divider, escape, multiline)}\n\n";
                         continue;
                     }
 
-                    result += $"{ToData(front, fieldValue, divider, escape)}\n\n";
+                    result += $"{ToData(front, fieldValue, divider, escape, multiline)}\n\n";
                 }
 
             result = result[..^2]; // removing the \n\n at the end
@@ -1379,7 +1381,7 @@ public static class Storage
 
         return $"{value}";
     }
-    private static string GetTuplePipes(string front, object? value, FieldInfo? field, string divider, string escape)
+    private static string GetTupleData(string front, object? value, FieldInfo? field, string divider, string escape, string multiline)
     {
         var result = "";
         var items = GetTupleItems(value);
@@ -1391,7 +1393,7 @@ public static class Storage
             for (var i = 0; i < fields.Count; i++)
             {
                 var nl = i < fields.Count - 1 ? "\n" : "";
-                result += $"{ToData($"{front}{fields[i].Name}{divider}", items[i], divider, escape)}{nl}";
+                result += $"{ToData($"{front}{fields[i].Name}{divider}", items[i], divider, escape, multiline)}{nl}";
             }
 
             return result;
@@ -1400,12 +1402,12 @@ public static class Storage
         for (var i = 0; i < att?.TransformNames.Count; i++)
         {
             var nl = i < att.TransformNames.Count - 1 ? "\n" : "";
-            result += $"{ToData($"{front}{att.TransformNames[i]}{divider}", items[i], divider, escape)}{nl}";
+            result += $"{ToData($"{front}{att.TransformNames[i]}{divider}", items[i], divider, escape, multiline)}{nl}";
         }
 
         return result;
     }
-    private static object? ToObj(string? data, Type? expectedType, string divider, string escape)
+    private static object? ToObj(string? data, Type? expectedType, string divider, string escape, string multiline)
     {
         if (expectedType == null || data == null)
             return default;
@@ -1420,13 +1422,15 @@ public static class Storage
         if (expectedType.IsPrimitive || isStr)
         {
             if (isStr == false)
-                return $"{data}";
+                return TextToPrimitive(expectedType, data);
 
             var split = data.Split("\n");
             var res = split[0];
 
-            if (res.StartsWith(escape) && res.EndsWith(escape))
-                res = res[1..^1];
+            if (res.StartsWith(escape) == false || res.EndsWith(escape) == false)
+                return nullable;
+
+            res = res[1..^1];
 
             for (var i = 1; i < split.Length; i++)
             {
@@ -1434,7 +1438,7 @@ public static class Storage
                 if (line.StartsWith(escape) && line.EndsWith(escape))
                     line = line[1..^1];
 
-                res += $"\n{TextToPrimitive(expectedType, line)}";
+                res += $"\n{line}";
             }
 
             return res;
@@ -1498,6 +1502,87 @@ public static class Storage
 
         var lines = data.Split("\n");
 
+        if (expectedType.IsArray)
+        {
+            if (data == "")
+                return Array.CreateInstance(expectedType.GetElementType()!, 0);
+
+            var isJagged = GetJaggedArrayDimensionCount(expectedType) > 1;
+            if (isJagged)
+                expectedType = JaggedToRegularArrayType(expectedType);
+
+            var ranks = expectedType.GetArrayRank();
+
+            var itemType = expectedType.GetElementType();
+            var isString = itemType == typeof(string);
+
+            if (itemType == null)
+                return default;
+
+            var dimensions = GetDimensions(lines, divider);
+            var lineIndex = 0;
+
+            if (ranks == 1)
+            {
+                var result = Array.CreateInstance(itemType, dimensions[0]);
+                for (var i = 0; i < result.Length; i++)
+                {
+                    var v = GetValue(lineIndex, isString, out var off);
+                    result.SetValue(ToObj(v, itemType, divider, escape, multiline), i);
+                    lineIndex += off + 1;
+                }
+
+                return result;
+            }
+
+            if (ranks == 2)
+            {
+                var result = Array.CreateInstance(itemType, dimensions[0], dimensions[1]);
+                for (var i = 0; i < result.GetLength(0); i++)
+                    for (var j = 0; j < result.GetLength(1); j++)
+                    {
+                        var off = 0;
+                        if (lineIndex < lines.Length)
+                        {
+                            var v = GetValue(lineIndex, isString, out off);
+                            result.SetValue(ToObj(v, itemType, divider, escape, multiline), i, j);
+                        }
+
+                        lineIndex += off + 1;
+                    }
+
+                return isJagged ? ToJagged(result) : result;
+            }
+
+            if (ranks == 3)
+            {
+            }
+
+            return default;
+        }
+
+        if (IsList(expectedType))
+        {
+            var jaggedType = NestedListToJaggedArrayType(expectedType);
+            var itemType = GetJaggedArrayElementType(jaggedType);
+            var list = Activator.CreateInstance(expectedType) as IList;
+        }
+
+        if (IsDictionary(expectedType))
+        {
+            var dict = (Activator.CreateInstance(expectedType) as IDictionary)!;
+            var keyType = expectedType.GetGenericArguments()[0];
+            var valueType = expectedType.GetGenericArguments()[1];
+
+            for (var i = 0; i < lines.Length; i++)
+            {
+                var key = ToObj(GetValue(i, keyType == typeof(string), out _), keyType, divider, escape, multiline)!;
+                dict[key] = ToObj(GetValue(i, valueType == typeof(string), out _), valueType, divider, escape, multiline);
+            }
+
+            return dict;
+        }
+
         if ((IsStruct(expectedType) || expectedType.IsClass) && IsDelegate(expectedType) == false)
         {
             var sorted = GetFieldsInOrder(expectedType);
@@ -1519,15 +1604,12 @@ public static class Storage
                         continue;
 
                     var type = field.FieldType;
-                    var isArray = type.IsArray && type.GetArrayRank() == 1;
-                    var isList = IsList(type);
-                    var isDict = IsDictionary(type);
+                    var isString = type == typeof(string);
 
-                    if (type.IsPrimitive || type == typeof(string) || type.IsEnum)
+                    if (type.IsPrimitive || isString || type.IsEnum)
                     {
-                        var line = lines[index].Split(divider)[^1];
-                        line = FilterPlaceholders(line, strings);
-                        field.SetValue(instance, ToObj(line, field.FieldType, divider, escape));
+                        var str = GetValue(index, isString, out _);
+                        field.SetValue(instance, ToObj(str, field.FieldType, divider, escape, multiline));
                         continue;
                     }
 
@@ -1535,11 +1617,12 @@ public static class Storage
                     {
                         var tupleFields = GetTupleFields(type);
                         var newTuple = Activator.CreateInstance(type);
-                        foreach (var tupleField in tupleFields)
+                        for (var i = 0; i < tupleFields.Count; i++)
                         {
-                            var line = lines[index++].Split(divider)[^1];
-                            line = FilterPlaceholders(line, strings);
-                            tupleField.SetValue(newTuple, ToObject(line, tupleField.FieldType));
+                            var tupleField = tupleFields[i];
+                            var t = tupleField.FieldType;
+                            var str = GetValue(index + i, t == typeof(string), out _);
+                            tupleField.SetValue(newTuple, ToObj(str, t, divider, escape, multiline));
                         }
 
                         field.SetValue(instance, newTuple);
@@ -1551,6 +1634,70 @@ public static class Storage
         }
 
         return default;
+
+        string GetValue(int lineIndex, bool isString, out int indexOffset)
+        {
+            var line = lines[lineIndex].Split(divider)[^1];
+            indexOffset = 0;
+
+            if (isString)
+                line = $"{escape}{line}{escape}";
+            else
+                return line;
+
+            indexOffset = -1;
+            for (var i = 0; i < lines.Length; i++) // not while for better safety
+            {
+                lineIndex++;
+                indexOffset++;
+
+                var l = lineIndex <= lines.Length - 1 ? lines[lineIndex] : "";
+                if (l.Contains(multiline) == false)
+                {
+                    line = FilterPlaceholders(line, strings);
+                    break;
+                }
+
+                l = l.Split(multiline)[^1];
+                var newLine = line == "" ? "" : "\n";
+                line += $"{newLine}{escape}{l}{escape}";
+            }
+
+            return line;
+        }
+    }
+    private static int[] GetDimensions(string[] lines, string divider)
+    {
+        var (maxI, maxJ, maxK) = (0, 0, 0);
+
+        foreach (var line in lines)
+        {
+            var parts = line.Split(divider);
+
+            if (parts.Length == 2)
+            {
+                var i = ToObj<int>(parts[0]);
+                maxI = maxI < i ? i : maxI;
+            }
+            else if (parts.Length == 3)
+            {
+                var i = ToObj<int>(parts[0]);
+                var j = ToObj<int>(parts[1]);
+                maxI = maxI < i ? i : maxI;
+                maxJ = maxJ < j ? j : maxJ;
+            }
+            else if (parts.Length == 4)
+            {
+                var i = ToObj<int>(parts[0]);
+                var j = ToObj<int>(parts[1]);
+                var k = ToObj<int>(parts[2]);
+                maxI = maxI < i ? i : maxI;
+                maxJ = maxJ < j ? j : maxJ;
+                maxK = maxK < k ? k : maxK;
+            }
+        }
+
+        return [maxI + 1, maxJ + 1, maxK + 1];
     }
 
     private static SortedDictionary<uint, List<(FieldInfo field, uint space, string comment)>> GetFieldsInOrder(Type type)

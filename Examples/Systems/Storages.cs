@@ -14,7 +14,7 @@ public static class Storages
     {
         public readonly string c = "test";
         // public List<(string, uint)> arr = [("m", 123), ("hmmm", 56), ("he", 12), ("she", 47), ("ai", 31)];
-        public (int j, bool k, float l, string m) a = (3, true, 0.3f, "str");
+        public (int j, bool k, float l, string m) a = (3, true, 0.3f, "str\nso|me\nnew\nlines");
         public SomeEnum someEnum = SomeEnum.ValueNumber3 | SomeEnum.SecondValue;
         public static string Something { get; set; } = "something|something";
         public float D { get; set; } = 33.6f;
@@ -54,18 +54,18 @@ public static class Storages
             [0, 3, 5, 12],
             [25, 5, 61]
         };
-        var arr = new[] { 6, 7, 12, 4 };
+        var arr = new[] { "f", "c", "d\nh", "y" };
 
         var list = new List<int> { 5, 12, 687, 123 };
         var dict = new Dictionary<string, int[]>
         {
             { "hello", [35, 4] },
-            { "test", [12, 7] },
+            { "test\noh\nno", [12, 7] },
             { "fast", [1, 88] }
         };
 
-        var a = new Test().ToDataAsText();
-        var b = a.ToObj<Test>();
+        var a = jaggedArray.ToDataAsText();
+        var b = a.ToObj<int[][]>();
         File.WriteAllText("data.txt", a);
     }
 }
