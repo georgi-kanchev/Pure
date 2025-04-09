@@ -1343,8 +1343,8 @@ public static class Storage
             foreach (DictionaryEntry kvp in dict)
             {
                 var nl = i < dict.Count - 1 ? "\n" : "";
-                result += $"{ToData(front, kvp.Key, divider, escape, multiline)}\n";
-                result += $"{ToData($" {divider}{front}", kvp.Value, divider, escape, multiline)}{nl}";
+                result += $"{ToData($"{front} {divider}", kvp.Key, divider, escape, multiline)}\n";
+                result += $"{ToData($"{front} {divider} {divider}", kvp.Value, divider, escape, multiline)}{nl}";
                 i++;
             }
 
@@ -1505,67 +1505,105 @@ public static class Storage
         if (expectedType.IsArray)
         {
             if (data == "")
-                return Array.CreateInstance(expectedType.GetElementType()!, 0);
-
-            var isJagged = GetJaggedArrayDimensionCount(expectedType) > 1;
-            if (isJagged)
-                expectedType = JaggedToRegularArrayType(expectedType);
-
-            var ranks = expectedType.GetArrayRank();
-
-            var itemType = expectedType.GetElementType();
-            var isString = itemType == typeof(string);
-
-            if (itemType == null)
                 return default;
 
+            var isJagged = GetJaggedArrayDimensionCount(expectedType) > 1;
+            var itemType = (isJagged ? GetJaggedArrayElementType(expectedType) : expectedType.GetElementType())!;
             var dimensions = GetDimensions(lines, divider);
+            var dim = isJagged ? GetJaggedArrayDimensionCount(expectedType) : expectedType.GetArrayRank();
             var lineIndex = 0;
 
-            if (ranks == 1)
+            if (dim > 3)
+                return default;
+
+            if (dim == 1)
             {
-                var result = Array.CreateInstance(itemType, dimensions[0]);
+                var list1D = Get1D(dimensions[0], itemType, ref lineIndex);
+                var result = Array.CreateInstance(itemType, list1D.Count);
+                for (var i = 0; i < list1D.Count; i++)
+                    result.SetValue(list1D[i], i);
+
+                return isJagged ? result : ToArray(result);
+            }
+
+            if (dim == 2)
+            {
+                var list2D = new List<List<object>>();
+                for (var i = 0; i < dimensions[0]; i++)
+                    list2D.Add(Get1D(dimensions[1], itemType, ref lineIndex));
+
+                var result = Array.CreateInstance(CreateJaggedArrayType(itemType, 1), list2D.Count);
                 for (var i = 0; i < result.Length; i++)
                 {
-                    var v = GetValue(lineIndex, isString, out var off);
-                    result.SetValue(ToObj(v, itemType, divider, escape, multiline), i);
-                    lineIndex += off + 1;
+                    result.SetValue(Array.CreateInstance(itemType, list2D[i].Count), i);
+                    for (var j = 0; j < list2D[i].Count; j++)
+                    {
+                        var arr = (Array)result.GetValue(i)!;
+                        arr.SetValue(list2D[i][j], j);
+                    }
                 }
 
-                return result;
+                return isJagged ? result : ToArray(result);
             }
 
-            if (ranks == 2)
+            var list3D = new List<List<List<object>>>();
+            for (var i = 0; i < dimensions[0]; i++)
             {
-                var result = Array.CreateInstance(itemType, dimensions[0], dimensions[1]);
-                for (var i = 0; i < result.GetLength(0); i++)
-                    for (var j = 0; j < result.GetLength(1); j++)
+                list3D.Add([]);
+                for (var j = 0; j < dimensions[1]; j++)
+                    list3D[i].Add(Get1D(dimensions[2], itemType, ref lineIndex));
+            }
+
+            var res = Array.CreateInstance(CreateJaggedArrayType(itemType, 2), list3D.Count);
+            for (var i = 0; i < res.Length; i++)
+            {
+                res.SetValue(Array.CreateInstance(CreateJaggedArrayType(itemType, 1), list3D[i].Count), i);
+                for (var j = 0; j < list3D[i].Count; j++)
+                {
+                    var arrTop = (Array)res.GetValue(i)!;
+                    arrTop.SetValue(Array.CreateInstance(itemType, list3D[i][j].Count), j);
+                    for (var k = 0; k < list3D[i][j].Count; k++)
                     {
-                        var off = 0;
-                        if (lineIndex < lines.Length)
-                        {
-                            var v = GetValue(lineIndex, isString, out off);
-                            result.SetValue(ToObj(v, itemType, divider, escape, multiline), i, j);
-                        }
-
-                        lineIndex += off + 1;
+                        var arrMid = (Array)arrTop.GetValue(j)!;
+                        arrMid.SetValue(list3D[i][j][k], k);
                     }
-
-                return isJagged ? ToJagged(result) : result;
+                }
             }
 
-            if (ranks == 3)
-            {
-            }
-
-            return default;
+            return isJagged ? res : ToArray(res);
         }
 
         if (IsList(expectedType))
         {
+            data = FilterPlaceholders(data, strings);
+            // keep it straightforward, parse as an array & make it a list, works with nesting
             var jaggedType = NestedListToJaggedArrayType(expectedType);
             var itemType = GetJaggedArrayElementType(jaggedType);
+            var result = ToObj(data, jaggedType, divider, escape, multiline) as Array;
             var list = Activator.CreateInstance(expectedType) as IList;
+
+            if (result == null || list == null)
+                return list;
+
+            foreach (var item in result)
+            {
+                var elementType = list.GetType().GetGenericArguments()[0];
+                if (item is Array arr && IsList(elementType))
+                {
+                    var dim = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType!)) as IList;
+                    for (var i = 0; i < arr.Length; i++)
+                        dim?.Add(arr.GetValue(i));
+                    list.Add(dim);
+                    continue;
+                }
+
+                if (elementType.IsArray && elementType.GetArrayRank() > 1)
+                    continue;
+
+                list.Add(item);
+            }
+
+            return list;
         }
 
         if (IsDictionary(expectedType))
@@ -1573,11 +1611,32 @@ public static class Storage
             var dict = (Activator.CreateInstance(expectedType) as IDictionary)!;
             var keyType = expectedType.GetGenericArguments()[0];
             var valueType = expectedType.GetGenericArguments()[1];
+            object? lastKey = null;
+            var keyX = int.MaxValue;
 
             for (var i = 0; i < lines.Length; i++)
             {
-                var key = ToObj(GetValue(i, keyType == typeof(string), out _), keyType, divider, escape, multiline)!;
-                dict[key] = ToObj(GetValue(i, valueType == typeof(string), out _), valueType, divider, escape, multiline);
+                lines[i] = FilterPlaceholders(lines[i], strings);
+                var rawValue = lines[i].Split(divider)[^1];
+                var atIndex = lines[i].IndexOf(rawValue, StringComparison.Ordinal);
+
+                keyX = keyX < atIndex ? keyX : atIndex;
+                var isKey = atIndex == keyX;
+
+                var v = GetValue(i, (isKey ? keyType : valueType) == typeof(string), out _);
+                var obj = ToObj(v, isKey ? keyType : valueType, divider, escape, multiline);
+
+                if (isKey && lastKey == null)
+                {
+                    lastKey = obj;
+                    continue;
+                }
+
+                if (lastKey == null)
+                    continue;
+
+                dict[lastKey] = obj;
+                lastKey = null;
             }
 
             return dict;
@@ -1664,6 +1723,24 @@ public static class Storage
             }
 
             return line;
+        }
+        List<object> Get1D(int dims, Type itemType, ref int lineIndex)
+        {
+            var list1D = new List<object>();
+            for (var i = 0; i < dims; i++)
+            {
+                if (lineIndex > lines.Length - 1)
+                    break;
+
+                var v = GetValue(lineIndex, itemType == typeof(string), out var off);
+                var obj = ToObj(v, itemType, divider, escape, multiline);
+                if (obj != null)
+                    list1D.Add(obj);
+
+                lineIndex += off + 1;
+            }
+
+            return list1D;
         }
     }
     private static int[] GetDimensions(string[] lines, string divider)

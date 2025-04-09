@@ -55,17 +55,27 @@ public static class Storages
             [25, 5, 61]
         };
         var arr = new[] { "f", "c", "d\nh", "y" };
-
-        var list = new List<int> { 5, 12, 687, 123 };
-        var dict = new Dictionary<string, int[]>
+        var arr3D = new[,,]
         {
-            { "hello", [35, 4] },
-            { "test\noh\nno", [12, 7] },
-            { "fast", [1, 88] }
+            {
+                { 1, 2 },
+                { 3, 4 }
+            },
+            {
+                { 5, 6 },
+                { 7, 8 }
+            }
+        };
+        var list = new List<int> { 5, 12, 687, 123 };
+        var dict = new Dictionary<string, int>
+        {
+            { "hello", 3 },
+            { "test\noh\nno", 1 },
+            { "fast", 5 }
         };
 
-        var a = jaggedArray.ToDataAsText();
-        var b = a.ToObj<int[][]>();
+        var a = dict.ToDataAsText();
+        var b = a.ToObj<Dictionary<string, int>>();
         File.WriteAllText("data.txt", a);
     }
 }
@@ -88,13 +98,13 @@ public static class Storages
 //  |33.6
 //
 // dict
-//  |hello
+//  |`hello`
 //  | |0|35
 //  | |1|4
-//  |test
+//  |`test`
 //  | |0|12
 //  | |1|7
-//  |fast
+//  |`fast`
 //  | |0|1
 //  | |1|88
 //
