@@ -442,7 +442,7 @@ public class Editor
         ChangeMapSize((w, h));
 
         var (vw, vh) = MapsEditor[0].View.Size;
-        var packCopy = MapsEditor.ToData().ToObject<List<TileMap>>();
+        var packCopy = MapsEditor.ToDataAsBytes().ToObject<List<TileMap>>();
         if (packCopy == null)
             return;
 

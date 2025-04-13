@@ -13,7 +13,7 @@ public static class Storages
     public class Test
     {
         public readonly string c = "test";
-        // public List<(string, uint)> arr = [("m", 123), ("hmmm", 56), ("he", 12), ("she", 47), ("ai", 31)];
+        public List<(string txt, uint id)> arr = [("m", 123), ("hmmm", 56), ("he", 12), ("she", 47), ("ai", 31)];
         public (int j, bool k, float l, string m) a = (3, true, 0.3f, "str\nso|me\nnew\nlines");
         public SomeEnum someEnum = SomeEnum.ValueNumber3 | SomeEnum.SecondValue;
         public static string Something { get; set; } = "something|something";
@@ -28,13 +28,18 @@ public static class Storages
         public int[][] jag2D =
         [
             [0, 3, 5, 12],
-            [125, 5, 612, 3]
+            [125, 5, 612]
         ];
         public int[,] arr2D =
         {
             { 21, 4, 87, 9 },
             { 6, 17, 41, 31 }
         };
+    }
+
+    public class Empty
+    {
+        public (int, string, float) tuple = (3, "hi\nhello", 0.3f);
     }
 
     public struct SomeStruct
@@ -74,46 +79,47 @@ public static class Storages
             { "fast", 5 }
         };
 
-        var a = dict.ToDataAsText();
-        var b = a.ToObj<Dictionary<string, int>>();
+        var a = (3, (true, "test\noh\nno"), 0.3f).ToDataAsText();
+        var b = a.ToObj<(int, (bool, string), float)>();
         File.WriteAllText("data.txt", a);
     }
 }
 
-// c
-//  |test
-//
-// a
-//  |m|3
-//  |j|true
-//  |k|0.3
-//
-// someEnum
-//  |ValueNumber3 SecondValue
-//
-// Something
-//  |heeeelloooo
-//
-// D
-//  |33.6
-//
-// dict
-//  |`hello`
-//  | |0|35
-//  | |1|4
-//  |`test`
-//  | |0|12
-//  | |1|7
-//  |`fast`
-//  | |0|1
-//  | |1|88
-//
-// arr2D
-//  |0|0|0
-//  |0|1|3
-//  |0|2|5
-//  |0|3|12
-//  |1|0|125
-//  |1|1|5
-//  |1|2|612
-//  |1|3|3
+// c: `test`
+// a:
+//  m: 3
+// 	j: true
+// 	k: 0.3
+// tuple:
+//  3
+//  true
+//  0.3
+// someEnum: ValueNumber3, SecondValue
+// Something: `Hello, World!`
+// D: 33.6
+// dict:
+// 	key:
+// 		`test testing`
+// 		`this`
+// 		`newline`
+// 	value:
+// 		0: 35
+// 		1: 4
+// 	key: `hello`
+// 	value:
+// 		0: 12
+// 		1: 7
+// 	key: `fast`
+// 	value:
+// 		0: 12
+// 		1: 7
+// arr2D:
+// 	0:
+// 		0: 0
+// 		1: 3
+// 		2: 5
+// 		3: 12
+// 	1:
+// 		0: 125
+// 		1: 5
+// 		2: 612

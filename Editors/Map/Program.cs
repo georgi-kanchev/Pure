@@ -130,17 +130,17 @@ public static class Program
             // which should be ignored and discarded by the decompression
             // in case we have bytes.Decompress().ToObject<TilemapPack>()
 
-            var bytes = editor.MapsEditor.ToData().Compress().ToList();
+            var bytes = editor.MapsEditor.ToDataAsBytes().Compress().ToList();
             var layers = inspector.layers.Items;
             var layerNames = new List<string>();
 
             foreach (var layer in layers)
                 layerNames.Add(layer.Text);
 
-            var layersBytes = layerNames.ToArray().ToData();
+            var layersBytes = layerNames.ToArray().ToDataAsBytes();
             bytes.AddRange(layersBytes);
 
-            var generatorBytes = terrainPanel.generator.ToData();
+            var generatorBytes = terrainPanel.generator.ToDataAsBytes();
             bytes.AddRange(generatorBytes);
 
             bytes.AddRange(BitConverter.GetBytes(layersBytes.Length));
