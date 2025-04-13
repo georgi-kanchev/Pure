@@ -211,11 +211,15 @@ public class Effect
     // blka: light block area =   [x, y, w, h]
 
     private Light effectLight;
-    private bool drawShaderDataOnce;
-    private int lightCount, obstacleCount;
-    private SizeI layerSize;
-    private SizeI atlasTileSize;
 
+    [DoNotSave]
+    private bool drawShaderDataOnce;
+    [DoNotSave]
+    private int lightCount, obstacleCount;
+    [DoNotSave]
+    private SizeI layerSize;
+    [DoNotSave]
+    private SizeI atlasTileSize;
     [DoNotSave]
     internal readonly Shader? shader;
     [DoNotSave]

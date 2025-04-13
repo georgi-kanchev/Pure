@@ -1,4 +1,6 @@
+using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
+using Pure.Engine.Window;
 
 namespace Pure.Examples.Systems;
 
@@ -17,6 +19,7 @@ public static class Storages
         public (int j, bool k, float l, string m) a = (3, true, 0.3f, "str\nso|me\nnew\nlines");
         public SomeEnum someEnum = SomeEnum.ValueNumber3 | SomeEnum.SecondValue;
         public static string Something { get; set; } = "something|something";
+        [Space]
         public float D { get; set; } = 33.6f;
 
         public Dictionary<string, int[][]> dict = new()
@@ -39,7 +42,7 @@ public static class Storages
 
     public class Empty
     {
-        public (int, string, float) tuple = (3, "hi\nhello", 0.3f);
+        public (int x, string y, float z) tuple = (3, "hi\nhello", 0.3f);
     }
 
     public struct SomeStruct
@@ -79,9 +82,16 @@ public static class Storages
             { "fast", 5 }
         };
 
-        var a = (3, (true, "test\noh\nno"), 0.3f).ToDataAsText();
-        var b = a.ToObj<(int, (bool, string), float)>();
-        File.WriteAllText("data.txt", a);
+        var layer = new LayerTiles((40, 40)) { Effect = new() };
+        // var map = new TileMap(layer.Size);
+        //
+        // map.SetBlob((20, 20), 5, [Tile.FULL]);
+
+        var a = layer.ToDataAsText();
+        var newLayer = a.ToObj<LayerTiles>();
+        // File.WriteAllText("data.txt", a);
+
+        // var map = File.ReadAllText("data.txt").ToObj<TileMap>();
     }
 }
 

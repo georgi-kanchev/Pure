@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using System.IO.Compression;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
@@ -247,10 +248,6 @@ public static class Storage
 
         return result;
     }
-    public static void ToStatic(this string tsvText, Type staticClass)
-    {
-        TableToInstance(ToTable(tsvText), staticClass);
-    }
 
     public static string? ToBase64(this string? value)
     {
@@ -406,6 +403,14 @@ public static class Storage
     {
         var obj = ToObj(data, typeof(T));
         return obj == default ? default : (T?)obj;
+    }
+    public static void ToStatic<T>(this string data)
+    {
+        ToObj(data, typeof(T), true);
+    }
+    public static void ToStatic(this string data, Type staticClass)
+    {
+        ToObj(data, staticClass, true);
     }
 
     public static T? ToPrimitive<T>(this string primitiveAsText) where T : struct, IComparable, IConvertible
@@ -1302,7 +1307,7 @@ public static class Storage
         {
             var obj = ToObject(value.ToDataAsBytes(), Enum.GetUnderlyingType(type), out _);
             var names = Enum.ToObject(type, obj ?? 0).ToString()?.Replace(", ", ENUM_FLAG) ?? "";
-            result = $"{Tab(depth)}{names}";
+            result = names;
         }
         else if (IsTuple(type))
         {
@@ -1354,7 +1359,7 @@ public static class Storage
 
         return result;
     }
-    private static object? ToObj(string? data, Type? expectedType)
+    private static object? ToObj(string? data, Type? expectedType, bool isStatic = false)
     {
         if (expectedType == null || data == null)
             return default;
@@ -1365,14 +1370,18 @@ public static class Storage
         if (nullable != null)
             expectedType = nullable;
 
-        var lines = data.Split("\n");
-
         if (expectedType.IsPrimitive)
             return TextToPrimitive(expectedType, data);
-        else if (expectedType == typeof(string))
+        else if (expectedType.IsEnum)
+            return ParseEnum(data, expectedType);
+
+        var lines = data.Split("\n").ToList();
+        var values = ReadValues(lines, expectedType);
+
+        if (expectedType == typeof(string))
         {
             var result = "";
-            for (var i = 0; i < lines.Length; i++)
+            for (var i = 0; i < lines.Count; i++)
             {
                 var line = lines[i].Trim();
                 line = line.StartsWith(ESCAPE) && line.EndsWith(ESCAPE) ? line[1..^1] : line;
@@ -1381,39 +1390,89 @@ public static class Storage
 
             return result;
         }
-        else if (expectedType.IsEnum)
-            return ParseEnum(data, expectedType);
         else if (IsTuple(expectedType))
         {
             var fields = GetTupleFields(expectedType);
             var instance = Activator.CreateInstance(expectedType);
-            var i = 0;
-            foreach (var field in fields)
-            {
-                field.SetValue(instance, ToObj(GetValue(i, lines, out var off), field.FieldType));
-                i += off;
-            }
+
+            for (var i = 0; i < fields.Count; i++)
+                if (values.TryGetValue(fields[i].Name, out var value))
+                    fields[i].SetValue(instance, ToObj(value, fields[i].FieldType));
 
             return instance;
         }
         else if (expectedType.IsArray)
         {
+            var isJagged = GetJaggedArrayDimensionCount(expectedType) > 1;
+            if (isJagged == false)
+                expectedType = RegularToJaggedArrayType(expectedType);
+
+            var itemType = expectedType.GetElementType()!;
+            var array = Array.CreateInstance(itemType, values.Count);
+            for (var i = 0; i < values.Count; i++)
+                if (values.TryGetValue(i.ToString(), out var value))
+                    array.SetValue(ToObj(value, itemType), i);
+
+            return isJagged ? array : ToArray(array);
         }
         else if (IsList(expectedType))
         {
+            // keep it straightforward, parse as an array & make it a list
+            // that supports List<List<>> too
+            var jaggedType = NestedListToJaggedArrayType(expectedType);
+            var itemType = GetJaggedArrayElementType(jaggedType);
+            var result = ToObj(data, jaggedType) as Array;
+            var list = Activator.CreateInstance(expectedType) as IList;
+
+            if (result == null || list == null)
+                return list;
+
+            foreach (var item in result)
+            {
+                var elementType = list.GetType().GetGenericArguments()[0];
+                if (item is Array arr && IsList(elementType))
+                {
+                    var dim = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType!)) as IList;
+                    for (var i = 0; i < arr.Length; i++)
+                        dim?.Add(arr.GetValue(i));
+                    list.Add(dim);
+                    continue;
+                }
+
+                if (elementType.IsArray && elementType.GetArrayRank() > 1)
+                    continue;
+
+                list.Add(item);
+            }
+
+            return list;
         }
         else if (IsDictionary(expectedType))
         {
+            var dict = (Activator.CreateInstance(expectedType) as IDictionary)!;
+            var keyType = expectedType.GetGenericArguments()[0];
+            var valueType = expectedType.GetGenericArguments()[1];
+            var key = "";
+
+            foreach (var (name, value) in values)
+                if (name.StartsWith("key"))
+                    key = value;
+                else if (name.StartsWith("value"))
+                    dict[ToObj(key, keyType)!] = ToObj(value, valueType);
+
+            return dict;
         }
         else if ((IsStruct(expectedType) || expectedType.IsClass) && IsDelegate(expectedType) == false)
         {
-            var sorted = GetFieldsInOrder(expectedType, false);
-            var isStatic = expectedType is { IsAbstract: true, IsSealed: true };
+            var sorted = GetFieldsInOrder(expectedType, isStatic);
             var instance = isStatic ? null : CreateInstance(expectedType);
 
             foreach (var (_, fields) in sorted)
                 foreach (var (field, space, comment) in fields)
                 {
+                    var name = field.Name.Replace("<", "").Replace(GENERATED_FIELD, "");
+                    if (values.TryGetValue(name, out var value))
+                        field.SetValue(instance, ToObj(value, field.FieldType));
                 }
 
             return instance;
@@ -1512,33 +1571,51 @@ public static class Storage
         var index = names.IndexOf(data);
         return index == -1 ? value : values.GetValue(index);
     }
-    private static string GetValue(int i, string[] lines, out int offset)
+    private static Dictionary<string, string> ReadValues(List<string> lines, Type expectedType)
     {
-        var index = lines[i].IndexOf(DIV, StringComparison.Ordinal) + 1;
-        var result = index >= lines[i].Length ? "" : lines[i][index..].Trim();
-        offset = 0;
-
-        if (result != "")
+        var lns = lines.ToList();
+        var result = new Dictionary<string, string>();
+        while (lns.Count > 0)
         {
-            offset++;
-            return result;
+            var index = lns[0].IndexOf(DIV, StringComparison.Ordinal) + 1;
+            var name = index == 0 ? "" : lns[0][..(index - 1)].Trim();
+            var value = index >= lns[0].Length ? "" : lns[0][index..].Trim();
+
+            if (value.StartsWith(COMMENT) || string.IsNullOrWhiteSpace(name))
+            {
+                lns.RemoveAt(0);
+                continue;
+            }
+
+            // custom tuple names are a clusterfuck to follow since they don't live in the type itself
+            // but rather in its parent declaration, that may be a class field, a local variable,
+            // an array element etc
+            // so they are discarded upon parsing for simplicity - they don't follow names but rather the order
+            if (IsTuple(expectedType))
+                name = $"Item{lines.Count - lns.Count + 1}";
+
+            if (IsDictionary(expectedType))
+                name += $"{lines.Count - lns.Count + 1}";
+
+            if (value == "")
+            {
+                lns.RemoveAt(0);
+                var initialIndent = GetIndentation(lns[0]);
+                while (lns.Count > 0 && GetIndentation(lns[0]) >= initialIndent)
+                {
+                    value += $"\n{lns[0]}";
+                    lns.RemoveAt(0);
+                }
+
+                result[name] = value[1..];
+                continue;
+            }
+
+            result[name] = value;
+            lns.RemoveAt(0);
         }
 
-        var initialIndent = i < lines.Length - 1 ? GetIndentation(lines[i + 1]) : 0;
-        i++;
-        offset++;
-
-        while (true)
-        {
-            result += $"\n{lines[i]}";
-            i++;
-            offset++;
-
-            if (i >= lines.Length || GetIndentation(lines[i]) < initialIndent)
-                break;
-        }
-
-        return result[1..];
+        return result;
     }
     private static int GetIndentation(string text)
     {
