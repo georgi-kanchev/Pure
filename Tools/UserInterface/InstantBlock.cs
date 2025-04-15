@@ -4,9 +4,9 @@ using Pure.Engine.Window;
 using Pure.Tools.Tiles;
 using static Pure.Engine.UserInterface.SymbolGroup;
 
-namespace Pure.Tools.ImmediateGraphicalUserInterface;
+namespace Pure.Tools.UserInterface;
 
-public static class GUI
+public static class InstantBlock
 {
     public static List<TileMap> TileMaps { get; } = [];
     public static Tile Cursor { get; set; } = new(546, 3789677055);

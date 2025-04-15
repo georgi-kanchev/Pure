@@ -1,13 +1,13 @@
-using Pure.Engine.Execution;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
-using Pure.Tools.ImmediateGraphicalUserInterface;
+using Pure.Tools.UserInterface;
 using Monitor = Pure.Engine.Window.Monitor;
+using static Pure.Tools.UserInterface.InstantBlock;
 
 namespace Pure.Examples.Systems;
 
-public static class ImmediateGui
+public static class ImmediateGUI
 {
     public static void Run()
     {
@@ -28,14 +28,14 @@ public static class ImmediateGui
 
         while (Window.KeepOpen())
         {
-            if (GUI.Button((0, 1, 8, 3), "Button"))
+            if (Button((0, 1, 8, 3), "Button"))
                 log = "button:\nclicked";
 
-            var checkbox = GUI.Checkbox((0, 5), "Checkbox");
+            var checkbox = Checkbox((0, 5), "Checkbox");
             if (checkbox != null)
                 log = $"checkbox:\n{checkbox}";
 
-            var sliderHor = GUI.Slider((0, 7), 9);
+            var sliderHor = Slider((0, 7), 9);
             percent.Text((9, 7), 2);
             if (float.IsNaN(sliderHor) == false)
             {
@@ -43,58 +43,58 @@ public static class ImmediateGui
                 log = $"horizontal slider:\n{percent}";
             }
 
-            var input = GUI.InputBox((0, 9, 10, 1), "Inputbox");
+            var input = InputBox((0, 9, 10, 1), "Inputbox");
             if (input != null)
                 log = $"inputbox:\n{input}";
 
-            var scrollHer = GUI.Scroll((0, 11), 11);
+            var scrollHer = Scroll((0, 11), 11);
             if (float.IsNaN(scrollHer) == false)
                 log = $"horizontal scroll:\n{scrollHer:F1}";
 
-            GUI.Tooltip = (tooltip, Side.Left, 0.5f);
-            var stepper = GUI.Stepper((0, 13), "Stepper", 0f, 1f, 999f, -999f);
+            InstantBlock.Tooltip = (tooltip, Side.Left, 0.5f);
+            var stepper = Stepper((0, 13), "Stepper", 0f, 1f, 999f, -999f);
             if (float.IsNaN(stepper) == false)
                 log = $"stepper:\n{stepper:F1}";
-            GUI.Tooltip = default;
+            InstantBlock.Tooltip = default;
 
-            var dropdown = GUI.List((0, 16, 6, 5), animals, true);
+            var dropdown = List((0, 16, 6, 5), animals, true);
             if (dropdown != null)
                 log = $"dropdown list:\n{dropdown.ToString(", ")}";
 
-            var palette = GUI.Palette((20, 20));
+            var palette = Palette((20, 20));
             if (palette != null)
                 log = $"palette:\n{new Color(palette ?? 0).ToBrush()}color";
 
-            var fileViewer = GUI.FileViewer((15, 4, 30, 10));
+            var fileViewer = FileViewer((15, 4, 30, 10));
             if (fileViewer != null)
                 log = $"fileViewer:\n{fileViewer.ToString(", ")}";
 
-            var sliderVer = GUI.Slider((9, 14), 9, vertical: true);
+            var sliderVer = Slider((9, 14), 9, vertical: true);
             if (float.IsNaN(sliderVer) == false)
                 log = $"vertical slider:\n{sliderVer:F1}";
 
-            GUI.Tooltip = (tooltip, Side.Left, 0.5f);
-            var scrollVer = GUI.Scroll((11, 14), 9, vertical: true);
+            InstantBlock.Tooltip = (tooltip, Side.Left, 0.5f);
+            var scrollVer = Scroll((11, 14), 9, vertical: true);
             if (float.IsNaN(scrollVer) == false)
                 log = $"vertical scroll:\n{scrollVer:F1}";
-            GUI.Tooltip = default;
+            InstantBlock.Tooltip = default;
 
-            var pages = GUI.Pages((2, 24));
+            var pages = Pages((2, 24));
             if (float.IsNaN(pages) == false)
                 log = $"pages: \n{pages:F1}";
 
-            var list = GUI.List((40, 20, 6, 5), items);
+            var list = List((40, 20, 6, 5), items);
             if (list != null)
                 log = $"regular list:\n{list.ToString(", ")}";
 
             // prompts should be last
 
             if (Keyboard.Key.ControlLeft.IsJustPressed())
-                GUI.Prompt(nameof(PromptChoice));
+                Prompt(nameof(PromptChoice));
             if (Keyboard.Key.ShiftLeft.IsJustPressed())
-                GUI.Prompt(nameof(PromptInput));
+                Prompt(nameof(PromptInput));
             if (Keyboard.Key.AltLeft.IsJustPressed())
-                GUI.Prompt(nameof(PromptInfo));
+                Prompt(nameof(PromptInfo));
 
             PromptChoice();
             PromptInput();
@@ -110,7 +110,7 @@ public static class ImmediateGui
 
         void PromptInfo()
         {
-            var choice = GUI.PromptChoice(nameof(PromptInfo),
+            var choice = InstantBlock.PromptChoice(nameof(PromptInfo),
                 "This is some useful info!\n" +
                 " And some more useful info. ", 1);
             if (float.IsNaN(choice) == false)
@@ -119,7 +119,7 @@ public static class ImmediateGui
 
         void PromptChoice()
         {
-            var choice = GUI.PromptChoice(nameof(PromptChoice),
+            var choice = InstantBlock.PromptChoice(nameof(PromptChoice),
                 "Are you ready to pick a\n" +
                 "choice from all the choices?", 3);
             if (float.IsNaN(choice) == false)
@@ -128,11 +128,11 @@ public static class ImmediateGui
 
         void PromptInput()
         {
-            GUI.Tooltip = (tooltip, Side.Bottom, 0.5f);
-            var prompt = GUI.PromptInput(nameof(PromptInput), "Type in stuff:");
+            InstantBlock.Tooltip = (tooltip, Side.Bottom, 0.5f);
+            var prompt = InstantBlock.PromptInput(nameof(PromptInput), "Type in stuff:");
             if (prompt != null)
                 log = $"prompt input:\n{prompt}";
-            GUI.Tooltip = default;
+            InstantBlock.Tooltip = default;
         }
     }
 }

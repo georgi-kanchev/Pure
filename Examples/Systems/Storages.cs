@@ -1,6 +1,4 @@
-using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
-using Pure.Engine.Window;
 
 namespace Pure.Examples.Systems;
 
@@ -14,12 +12,12 @@ public static class Storages
 
     public class Test
     {
+        [DoNotSave]
         public readonly string c = "test";
         public List<(string txt, uint id)> arr = [("m", 123), ("hmmm", 56), ("he", 12), ("she", 47), ("ai", 31)];
         public (int j, bool k, float l, string m) a = (3, true, 0.3f, "str\nso|me\nnew\nlines");
         public SomeEnum someEnum = SomeEnum.ValueNumber3 | SomeEnum.SecondValue;
         public static string Something { get; set; } = "something|something";
-        [Space]
         public float D { get; set; } = 33.6f;
 
         public Dictionary<string, int[][]> dict = new()
@@ -40,7 +38,7 @@ public static class Storages
         };
     }
 
-    public class Empty
+    public class Empty : Test
     {
         public (int x, string y, float z) tuple = (3, "hi\nhello", 0.3f);
     }
@@ -50,9 +48,9 @@ public static class Storages
         public static int MyInt { get; set; } = 12;
     }
 
-    public static class StaticClass
+    public class OtherClass : Test
     {
-        public static float MyNumber { get; set; } = 87.1f;
+        public float MyNumber { get; set; } = 87.1f;
     }
 
     public static void Run()
@@ -82,54 +80,7 @@ public static class Storages
             { "fast", 5 }
         };
 
-        var layer = new LayerTiles((40, 40)) { Effect = new() };
-        // var map = new TileMap(layer.Size);
-        //
-        // map.SetBlob((20, 20), 5, [Tile.FULL]);
-
-        var a = layer.ToDataAsText();
-        var newLayer = a.ToObj<LayerTiles>();
-        // File.WriteAllText("data.txt", a);
-
-        // var map = File.ReadAllText("data.txt").ToObj<TileMap>();
+        var a = new OtherClass().ToDataAsText();
+        var b = a.ToRaw();
     }
 }
-
-// c: `test`
-// a:
-//  m: 3
-// 	j: true
-// 	k: 0.3
-// tuple:
-//  3
-//  true
-//  0.3
-// someEnum: ValueNumber3, SecondValue
-// Something: `Hello, World!`
-// D: 33.6
-// dict:
-// 	key:
-// 		`test testing`
-// 		`this`
-// 		`newline`
-// 	value:
-// 		0: 35
-// 		1: 4
-// 	key: `hello`
-// 	value:
-// 		0: 12
-// 		1: 7
-// 	key: `fast`
-// 	value:
-// 		0: 12
-// 		1: 7
-// arr2D:
-// 	0:
-// 		0: 0
-// 		1: 3
-// 		2: 5
-// 		3: 12
-// 	1:
-// 		0: 125
-// 		1: 5
-// 		2: 612

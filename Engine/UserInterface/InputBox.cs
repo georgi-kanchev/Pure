@@ -8,29 +8,17 @@ namespace Pure.Engine.UserInterface;
 public enum SymbolGroup
 {
     None = 1 << 0,
-    /// <summary>
-    /// abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
-    /// </summary>
+    /// <summary> abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ </summary>
     Letters = 1 << 1,
-    /// <summary>
-    /// 0123456789.,
-    /// </summary>
+    /// <summary> 0123456789., </summary>
     Decimals = 1 << 2,
-    /// <summary>
-    /// 0123456789
-    /// </summary>
+    /// <summary> 0123456789 </summary>
     Integers = 1 << 3,
-    /// <summary>
-    /// ,.;:!?-()[]{}\"'
-    /// </summary>
+    /// <summary> ,.;:!?-()[]{}\"' </summary>
     Punctuation = 1 << 4,
-    /// <summary>
-    /// +-*/=ᐸᐳ%(),^
-    /// </summary>
+    /// <summary> +-*/=ᐸᐳ%(),^ </summary>
     Math = 1 << 5,
-    /// <summary>
-    /// @#＆_|\\/^
-    /// </summary>
+    /// <summary> @#＆_|\\/^ </summary>
     Special = 1 << 6,
     Space = 1 << 7,
     Other = 1 << 8,

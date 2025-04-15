@@ -60,7 +60,7 @@ public static class Program
         ]);
         systems.AlignInside((0.1f, 0.9f));
         OnTrigger(systems, DefaultGraphics.Run, Rendering.Run, Collision.Run, LineOfSightAndLights.Run, Pathfinding.Run,
-            Audio.Run, TerrainGeneration.Run, ImmediateGui.Run, Animations.Run, ParticleSystems.Run, AutoTiling.Run);
+            Audio.Run, TerrainGeneration.Run, ImmediateGUI.Run, Animations.Run, ParticleSystems.Run, AutoTiling.Run);
         OnDisplay(systems);
 
         ui.AddRange([editors, apps, uis, systems]);
