@@ -35,7 +35,6 @@ public class FileViewer : Block
 
             dir = value;
             watcher.Path = value;
-
             Refresh();
         }
     }
@@ -48,12 +47,13 @@ public class FileViewer : Block
                 return;
 
             isSelectingFolders = value;
-
             Refresh();
         }
     }
 
+    [DoNotSave]
     public int CountFiles { get; private set; }
+    [DoNotSave]
     public int CountFolders { get; private set; }
 
     public string[] SelectedPaths

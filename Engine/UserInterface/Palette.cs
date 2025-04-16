@@ -83,15 +83,16 @@ public class Palette : Block
         0x_FF_00_FF_FF, // Magenta
         0x_FF_00_7F_FF // Red Magenta
     ];
+    [DoNotSave]
     private bool isPicking;
     private uint selectedColor = uint.MaxValue;
 
     internal void OnRefresh()
     {
-        sizeMinimum = (13, 3);
-        sizeMaximum = sizeMinimum;
-        LimitSizeMin(sizeMinimum);
-        LimitSizeMax(sizeMinimum);
+        sizeMin = (13, 3);
+        sizeMax = sizeMin;
+        LimitSizeMin(sizeMin);
+        LimitSizeMax(sizeMin);
     }
     protected override void OnInput()
     {

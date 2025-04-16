@@ -1,3 +1,4 @@
+using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
 
 namespace Pure.Examples.Systems;
@@ -80,7 +81,7 @@ public static class Storages
             { "fast", 5 }
         };
 
-        var a = new OtherClass().ToDataAsText();
-        var b = a.ToRaw();
+        var a = "MinValue".ToDataAsText();
+        var b = a.ToObject<int>();
     }
 }

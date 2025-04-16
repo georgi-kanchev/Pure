@@ -96,7 +96,7 @@ public class Block
     /// </summary>
     public Size SizeMinimum
     {
-        get => sizeMinimum;
+        get => sizeMin;
         set
         {
             if (hasParent)
@@ -110,7 +110,7 @@ public class Block
             if (value.height > SizeMaximum.height)
                 value.height = SizeMaximum.height;
 
-            sizeMinimum = value;
+            sizeMin = value;
             Size = size;
         }
     }
@@ -119,7 +119,7 @@ public class Block
     /// </summary>
     public Size SizeMaximum
     {
-        get => sizeMaximum;
+        get => sizeMax;
         set
         {
             if (hasParent)
@@ -133,7 +133,7 @@ public class Block
             if (value.height < SizeMinimum.height)
                 value.height = SizeMinimum.height;
 
-            sizeMaximum = value;
+            sizeMax = value;
             Size = size;
         }
     }
@@ -171,11 +171,13 @@ public class Block
     /// Gets a value indicating whether the input position is currently hovering 
     /// over the user interface block.
     /// </summary>
+    [DoNotSave]
     public bool IsHovered { get; private set; }
     /// <summary>
     /// Gets a value indicating whether the user interface block is currently held by the input,
     /// regardless of being hovered or not.
     /// </summary>
+    [DoNotSave]
     public bool IsPressedAndHeld { get; private set; }
     /// <summary>
     /// Gets a value indicating whether this block belongs to another user interface block.
@@ -362,7 +364,6 @@ public class Block
 
         return (x + w <= rx || x >= rx + rw || y + h <= ry || y >= ry + rh) == false;
     }
-
     public bool IsJustInteracted(Interaction interaction)
     {
         return justInteracted.Contains(interaction);
@@ -377,34 +378,32 @@ public class Block
         var (w, h) = Size;
         var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
         var (cx, cy) = (x + w / 2, y + h / 2);
-        var ex = exceedEdge;
-        var a = alignment;
-        var notNan = float.IsNaN(a) == false;
+        var notNan = float.IsNaN(alignment) == false;
 
         offset -= 1;
 
         if (notNan && edge is Side.Top or Side.Bottom && targetEdge is Side.Top or Side.Bottom)
-            x = (int)MathF.Round(Map(a, (0, 1), ex ? (rx - w - offset, rx + rw + offset) : (rx, rx + rw - w)));
+            x = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (rx - w - offset, rx + rw + offset) : (rx, rx + rw - w)));
         else if (notNan && edge is Side.Left or Side.Right && targetEdge is Side.Left or Side.Right)
-            y = (int)MathF.Round(Map(a, (0, 1), ex ? (ry - h - offset, ry + rh + offset) : (ry, ry + rh - h)));
+            y = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (ry - h - offset, ry + rh + offset) : (ry, ry + rh - h)));
 
         if (edge == Side.Left && targetEdge is Side.Left or Side.Right)
             x = targetEdge == Side.Left ? rx + offset + 1 : rx + rw + offset;
         else if (edge == Side.Left)
-            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx, rx + rw + offset)));
+            x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx, rx + rw + offset)));
 
         if (edge == Side.Right && targetEdge is Side.Left or Side.Right)
             x = targetEdge == Side.Left ? rx - w - offset : rx + rw + offset;
         else if (edge == Side.Right)
-            x = notNan ? rcx - cx : (int)MathF.Round(Map(a, (0, 1), (rx - w - offset, rx + rw - w)));
+            x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx - w - offset, rx + rw - w)));
 
         if (edge == Side.Top && targetEdge is Side.Left or Side.Right)
-            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry, ry + rh + offset)));
+            y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry, ry + rh + offset)));
         else if (edge == Side.Top)
             y = targetEdge == Side.Top ? ry : ry + rh + offset;
 
         if (edge == Side.Bottom && targetEdge is Side.Left or Side.Right)
-            y = notNan ? rcy - cy : (int)MathF.Round(Map(a, (0, 1), (ry - h - offset, ry + rh - h)));
+            y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry - h - offset, ry + rh - h)));
         else if (edge == Side.Bottom)
             y = targetEdge == Side.Top ? ry - h - offset : ry + rh - h + offset + 1;
 
@@ -499,17 +498,22 @@ public class Block
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
     internal class DoNotSave : Attribute;
 
-    internal (int, int) position, size, listSizeTrimOffset, sizeMinimum = (1, 1),
-        sizeMaximum = (int.MaxValue, int.MaxValue);
-    internal bool hasParent, isTextReadonly, wasMaskSet;
-    private bool isReadyForDoubleClick;
+    internal PointI position;
+    internal Size size, sizeMin = (1, 1), sizeMax = (int.MaxValue, int.MaxValue);
+    internal bool hasParent, isTextReadonly;
+    internal string text = string.Empty;
+    internal Area mask;
 
+    [DoNotSave]
+    internal (int, int) listSizeTrimOffset;
+    [DoNotSave]
+    internal bool wasMaskSet;
+    [DoNotSave]
+    private bool isReadyForDoubleClick;
+    [DoNotSave]
     private readonly List<Interaction> justInteracted = [];
     [DoNotSave]
     private readonly Dictionary<Interaction, Action> interactions = new();
-
-    internal string text = string.Empty;
-    internal Area mask;
 
     internal void LimitSizeMin(Size minimumSize)
     {

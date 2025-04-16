@@ -187,6 +187,10 @@ public static class Storage
         return IsInstance(staticClass) ? InstanceToData(null, staticClass, 0) : "";
     }
 
+    public static object? ToObject(this string? data)
+    {
+        return data == null ? default : ToDictionary(data);
+    }
     public static T? ToObject<T>(this byte[]? data)
     {
         try
@@ -218,14 +222,6 @@ public static class Storage
         {
             return default;
         }
-    }
-    public static Dictionary<string, object> ToRaw(this string? data)
-    {
-        if (data == null)
-            return [];
-
-        data = data.Replace("\r", "");
-        return ToUnknown(data) as Dictionary<string, object> ?? [];
     }
     public static void ToStatic<T>(this byte[]? data)
     {
@@ -291,16 +287,16 @@ public static class Storage
         return dataBase64 == null || dataBase64.Length == 0 ? null : Encoding.UTF8.GetString(dataBase64);
     }
 
-    public static T? ToPrimitive<T>(this string primitiveAsText) where T : struct, IComparable, IConvertible
+    public static T? ToPrimitive<T>(this string data) where T : struct, IComparable, IConvertible
     {
-        var value = TextToPrimitive(typeof(T), primitiveAsText);
+        var value = TextToPrimitive(typeof(T), data);
         return value == null ? null : (T)value;
     }
 
 #region Backend
     private const char ESCAPE = '"', TAB = '\t';
     private const string GENERATED_FIELD = ">k__BackingField", DIV = ": ", COMMENT = "//", ENUM_FLAG = " | ",
-        NEW_LINE = "\n", TUPLE_ITEM = "Item", DICT_KEY = "key", DICT_VALUE = "value";
+        NEW_LINE = "\n", TUPLE_ITEM = "Item", DICT_KEY = "key", DICT_VALUE = "value", INFINITY = "Infinity";
 
     private static object? ToObject(byte[]? data, Type? expectedType, out byte[]? remaining, bool isStatic = false)
     {
@@ -459,10 +455,8 @@ public static class Storage
     }
     private static object? ToObject(string? data, Type? expectedType, bool isStatic = false)
     {
-        if (expectedType == null || data == null)
+        if (expectedType == null || string.IsNullOrWhiteSpace(data))
             return default;
-
-        data = data.Replace("\r", "");
 
         var nullable = Nullable.GetUnderlyingType(expectedType);
         if (nullable != null)
@@ -473,13 +467,13 @@ public static class Storage
         else if (expectedType.IsEnum)
             return ParseEnum(data, expectedType);
 
-        var lines = data.Split(NEW_LINE).ToList();
-        var values = ReadValues(lines, expectedType);
+        var values = ReadValues(data, expectedType);
 
         if (expectedType == typeof(string))
         {
             var result = "";
-            for (var i = 0; i < lines.Count; i++)
+            var lines = data.Replace("\r", "").Split(NEW_LINE);
+            for (var i = 0; i < lines.Length; i++)
             {
                 var line = lines[i].Trim();
                 line = line.StartsWith(ESCAPE) && line.EndsWith(ESCAPE) ? line[1..^1] : line;
@@ -587,7 +581,7 @@ public static class Storage
         var result = "";
 
         if (type.IsPrimitive)
-            return $"{value}";
+            return $"{value}".Replace("∞", "Infinity");
         else if (value is string str)
         {
             var lines = str.Replace("\r", "").Split(NEW_LINE);
@@ -699,47 +693,147 @@ public static class Storage
     }
     private static object? TextToPrimitive(Type type, string? text)
     {
-        if (type == typeof(string))
-            return text;
-
-        if (type.IsPrimitive == false || string.IsNullOrWhiteSpace(text))
-            return null;
-
-        if (type == typeof(bool) && bool.TryParse(text, out var b))
-            return b;
+        if (type == typeof(string)) return text;
+        if (type.IsPrimitive == false || string.IsNullOrWhiteSpace(text)) return null;
+        if (type == typeof(bool) && bool.TryParse(text, out var b)) return b;
 
         var cultDecPoint = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-        text = text.Replace(cultDecPoint, ".");
-        decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
+        text = text.Replace(cultDecPoint, ".").ToLower();
+        var valid = decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
+        var isPosInf = text.Contains(INFINITY);
+        var isNegInf = text.Contains("-" + INFINITY);
+        var isNaN = text.Contains(nameof(float.NaN).ToLower()) || valid == false;
+        var isPi = text.Contains(nameof(float.Pi).ToLower());
+        var isMin = text.Contains("min");
+        var isMax = text.Contains("max");
+        var isTau = text.Contains(nameof(float.Tau).ToLower());
+        var isE = text.Contains(nameof(float.E).ToLower());
+        var isEpsilon = text.Contains(nameof(float.Epsilon).ToLower());
 
-        if (type == typeof(sbyte)) return Wrap(number, sbyte.MinValue, sbyte.MaxValue);
-        if (type == typeof(byte)) return Wrap(number, byte.MinValue, byte.MaxValue);
-        if (type == typeof(short)) return Wrap(number, short.MinValue, short.MaxValue);
-        if (type == typeof(ushort)) return Wrap(number, ushort.MinValue, ushort.MaxValue);
-        if (type == typeof(int)) return Wrap(number, int.MinValue, int.MaxValue);
-        if (type == typeof(uint)) return Wrap(number, uint.MinValue, uint.MaxValue);
-        if (type == typeof(long)) return Wrap(number, long.MinValue, long.MaxValue);
-        if (type == typeof(ulong)) return Wrap(number, ulong.MinValue, ulong.MaxValue);
-        if (type == typeof(float)) return Wrap(number, float.MinValue, float.MaxValue);
-        if (type == typeof(double)) return Wrap(number, double.MinValue, double.MaxValue);
-        if (type == typeof(decimal)) return number;
+        if (type == typeof(sbyte))
+        {
+            if (isMin) return sbyte.MinValue;
+            else if (isMax) return sbyte.MaxValue;
+            return Wrap(number, sbyte.MinValue, sbyte.MaxValue);
+        }
 
-        if (type == typeof(char) && char.TryParse(text, out var c))
-            return c;
+        if (type == typeof(byte))
+        {
+            if (isMin) return byte.MinValue;
+            else if (isMax) return byte.MaxValue;
+            return Wrap(number, byte.MinValue, byte.MaxValue);
+        }
 
-        return null;
+        if (type == typeof(short))
+        {
+            if (isMin) return short.MinValue;
+            else if (isMax) return short.MaxValue;
+            return Wrap(number, short.MinValue, short.MaxValue);
+        }
+
+        if (type == typeof(ushort))
+        {
+            if (isMin) return ushort.MinValue;
+            else if (isMax) return ushort.MaxValue;
+            return Wrap(number, ushort.MinValue, ushort.MaxValue);
+        }
+
+        if (type == typeof(int))
+        {
+            if (isMin) return int.MinValue;
+            else if (isMax) return int.MaxValue;
+            return Wrap(number, int.MinValue, int.MaxValue);
+        }
+
+        if (type == typeof(uint))
+        {
+            if (isMin) return uint.MinValue;
+            else if (isMax) return uint.MaxValue;
+            return Wrap(number, uint.MinValue, uint.MaxValue);
+        }
+
+        if (type == typeof(long))
+        {
+            if (isMin) return long.MinValue;
+            else if (isMax) return long.MaxValue;
+            return Wrap(number, long.MinValue, long.MaxValue);
+        }
+
+        if (type == typeof(ulong))
+        {
+            if (isMin) return ulong.MinValue;
+            else if (isMax) return ulong.MaxValue;
+            return Wrap(number, ulong.MinValue, ulong.MaxValue);
+        }
+
+        if (type == typeof(float))
+        {
+            if (isPosInf) return float.PositiveInfinity;
+            else if (isNegInf) return float.NegativeInfinity;
+            else if (isMax) return float.MaxValue;
+            else if (isMin) return float.MinValue;
+            else if (isPi) return float.Pi;
+            else if (isEpsilon) return float.Epsilon;
+            else if (isTau) return float.Tau;
+            else if (isE) return float.E;
+            else if (isNaN) return float.NaN;
+            return Wrap(number, float.MinValue, float.MaxValue);
+        }
+
+        if (type == typeof(double))
+        {
+            if (isPosInf) return double.PositiveInfinity;
+            else if (isNegInf) return double.NegativeInfinity;
+            else if (isMax) return double.MaxValue;
+            else if (isMin) return double.MinValue;
+            else if (isPi) return double.Pi;
+            else if (isEpsilon) return double.Epsilon;
+            else if (isTau) return double.Tau;
+            else if (isE) return double.E;
+            else if (isNaN) return double.NaN;
+            return Wrap(number, double.MinValue, double.MaxValue);
+        }
+
+        if (type == typeof(decimal))
+        {
+            if (isMin) return decimal.MinValue;
+            else if (isMax) return decimal.MaxValue;
+            return number;
+        }
+
+        if (type != typeof(char) || !char.TryParse(text, out var c))
+            return null;
+
+        if (isMin) return char.MinValue;
+        else if (isMax) return char.MaxValue;
+        return c;
+
+        T Wrap<T>(decimal value, T minValue, T maxValue) where T : struct, IComparable, IConvertible
+        {
+            if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
+                throw default!;
+
+            var range = ToDouble(maxValue) - ToDouble(minValue);
+            var wrappedValue = ToDouble(value);
+
+            while (wrappedValue < ToDouble(minValue))
+                wrappedValue += range;
+
+            while (wrappedValue > ToDouble(maxValue))
+                wrappedValue -= range;
+
+            return (T)ChangeType(wrappedValue, typeof(T));
+        }
     }
-    private static object ToUnknown(string data)
+    private static object ToDictionary(string data)
     {
-        var lines = data.Split(NEW_LINE).ToList();
-        var values = ReadValues(lines, null);
-
+        var values = ReadValues(data, null);
         if (values.Count == 0)
-            return ToObject<string>(lines.Count == 1 ? lines[0] : data) ?? "";
+            return ToObject<string>(values.Count == 1 ? values.First().Value : data) ?? "";
 
         var result = new Dictionary<string, object?>();
         foreach (var (key, value) in values)
-            result[key] = ToUnknown(value);
+            result[key] = ToDictionary(value);
 
         return result;
     }
@@ -867,8 +961,10 @@ public static class Storage
         var index = names.IndexOf(data);
         return index == -1 ? value : values.GetValue(index);
     }
-    private static Dictionary<string, string> ReadValues(List<string> lines, Type? expectedType)
+    private static Dictionary<string, string> ReadValues(string data, Type? expectedType)
     {
+        data = data.Replace("\r", "");
+        var lines = data.Split(NEW_LINE).ToList();
         var lns = lines.ToList();
         var result = new Dictionary<string, string>();
         while (lns.Count > 0)
@@ -947,10 +1043,28 @@ public static class Storage
             return [];
 
         var result = new SortedDictionary<uint, List<(FieldInfo field, uint space, string comment)>>();
-        var props = type.GetProperties(NonPublic | Public | (isStatic ? Static : Instance));
-        var fields = type.GetFields(NonPublic | Public | (isStatic ? Static : Instance));
+        var flags = NonPublic | Public | (isStatic ? Static : Instance);
+        var props = type.GetProperties(flags).ToList();
+        var fields = type.GetFields(flags).ToList();
+        var currOrder = (uint)1;
+        var handledTypes = new List<Type> { type };
 
-        var i = (uint)1;
+        // all properties on the parent type have their generated fields living in that parent type
+        // so when getting the child properties, they don't have them, this below adds them
+        for (var i = 0; i < props.Count; i++)
+        {
+            var parentType = props[i].DeclaringType;
+            if (parentType == null || parentType == type || handledTypes.Contains(parentType))
+                continue;
+
+            var fds = parentType.GetFields(flags);
+            foreach (var field in fds)
+                if (field.Name.Contains(GENERATED_FIELD))
+                    fields.Add(field);
+
+            handledTypes.Add(parentType);
+        }
+
         foreach (var field in fields)
         {
             var isConst = field is { IsLiteral: true, IsStatic: true };
@@ -958,7 +1072,7 @@ public static class Storage
                 continue;
 
             var doNotSave = HasFlagDoNotSave(field);
-            var order = field.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? i;
+            var order = field.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? currOrder;
             var space = field.GetCustomAttribute<Space>(false)?.NewLineAmount ?? 0;
             var comment = field.GetCustomAttribute<Comment>(false)?.Text ?? "";
 
@@ -971,7 +1085,7 @@ public static class Storage
                     if (prop.Name == name)
                     {
                         doNotSave = HasFlagDoNotSave(prop);
-                        order = prop.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? i;
+                        order = prop.GetCustomAttribute<SaveAtOrder>(false)?.Value ?? currOrder;
                         space = prop.GetCustomAttribute<Space>(false)?.NewLineAmount ?? 0;
                         comment = prop.GetCustomAttribute<Comment>(false)?.Text ?? "";
                     }
@@ -982,7 +1096,7 @@ public static class Storage
 
             result.TryAdd(order, []);
             result[order].Add((field, space, comment));
-            i++;
+            currOrder++;
         }
 
         return result;
@@ -1157,23 +1271,6 @@ public static class Storage
         while (elementType is { IsArray: true })
             elementType = elementType.GetElementType();
         return elementType;
-    }
-
-    private static T Wrap<T>(decimal value, T minValue, T maxValue) where T : struct, IComparable, IConvertible
-    {
-        if (typeof(T).IsPrimitive == false || typeof(T) == typeof(bool))
-            throw default!;
-
-        var range = ToDouble(maxValue) - ToDouble(minValue);
-        var wrappedValue = ToDouble(value);
-
-        while (wrappedValue < ToDouble(minValue))
-            wrappedValue += range;
-
-        while (wrappedValue > ToDouble(maxValue))
-            wrappedValue -= range;
-
-        return (T)ChangeType(wrappedValue, typeof(T));
     }
 #endregion
 }

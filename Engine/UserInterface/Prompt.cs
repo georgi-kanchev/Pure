@@ -1,8 +1,8 @@
 namespace Pure.Engine.UserInterface;
 
+[DoNotSave]
 public class Prompt : Block
 {
-    [DoNotSave]
     public Action<Button>? OnItemDisplay { get; set; }
 
     public int LastChoiceIndex { get; private set; }
@@ -67,11 +67,8 @@ public class Prompt : Block
     }
 
 #region Backend
-    [DoNotSave]
     private readonly List<Button> buttons = [];
-    [DoNotSave]
     private Block? currentBlock;
-    [DoNotSave]
     private readonly Panel panel = new((0, 0))
     {
         IsResizable = false,

@@ -406,14 +406,16 @@ public class InputBox : Block
 
     private const char SELECTION = '█', SPACE = ' ';
     private const float HOLD = 0.06f, HOLD_DELAY = 0.5f, CURSOR_BLINK = 1f;
-    private static readonly Stopwatch holdDelay = new(), hold = new(), clickDelay = new(),
-        cursorBlink = new(), scrollHold = new();
-    private int cx, cy, sx, sy, clicks, scrX, scrY, cxDesired;
-    private (int, int) lastClickIndices = (-1, -1), prevSize;
-    private string value = string.Empty;
+    private static readonly Stopwatch holdDelay = new(), hold = new(), clickDelay = new(), cursorBlink = new(), scrollHold = new();
 
+    private string value = string.Empty;
     private SymbolGroup symbolGroup;
     private string? symbolMask;
+
+    [DoNotSave]
+    private (int, int) lastClickIndices = (-1, -1), prevSize;
+    [DoNotSave]
+    private int cx, cy, sx, sy, clicks, scrX, scrY, cxDesired;
 
     static InputBox()
     {

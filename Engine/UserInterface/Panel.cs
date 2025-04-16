@@ -36,7 +36,9 @@ public class Panel : Block
     }
 
 #region Backend
+    [DoNotSave]
     private bool isMoving, isResizingL, isResizingR, isResizingU, isResizingD;
+    [DoNotSave]
     private PointI startBotR;
 
     private void OnRefresh()

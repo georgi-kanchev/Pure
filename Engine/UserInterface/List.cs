@@ -85,7 +85,7 @@ public class List : Block
     /// <param name="position">The position of the top-left corner of the list.</param>
     /// <param name="itemCount">The initial number of buttons in the list.</param>
     /// <param name="span">The type of the list.</param>
-    public List(PointI position, int itemCount = 10, Span span = Span.Vertical) : base(position)
+    public List(PointI position, int itemCount = 3, Span span = Span.Vertical) : base(position)
     {
         Scroll = new((int.MaxValue, int.MaxValue)) { hasParent = true, wasMaskSet = true };
         OnUpdate += OnRefresh;
@@ -203,13 +203,17 @@ public class List : Block
     }
 
 #region Backend
-    private int originalHeight;
-    private bool isSingleSelecting, isCollapsed, veryFirstUpdate = true;
-    private readonly bool isInitialized;
+    private bool isSingleSelecting;
     private int itemGap;
     internal Size itemSize = (5, 1);
     internal bool isReadOnly;
 
+    [DoNotSave]
+    private bool isCollapsed, veryFirstUpdate = true;
+    [DoNotSave]
+    private readonly bool isInitialized;
+    [DoNotSave]
+    private int originalHeight;
     [DoNotSave]
     private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
 

@@ -80,7 +80,7 @@ public class Pages : Block
     public Pages() : this((0, 0))
     {
     }
-    public Pages(PointI position, int count = 10) : base(position)
+    public Pages(PointI position, int count = 3) : base(position)
     {
         ItemWidth = 1;
         ItemGap = 1;
@@ -124,8 +124,9 @@ public class Pages : Block
     }
 
 #region Backend
-    private (int, int) prevSize;
     private int count, current = 1, scrollIndex = 1;
+    [DoNotSave]
+    private (int, int) prevSize;
     [DoNotSave]
     private readonly List<Button> visiblePages = [];
 
