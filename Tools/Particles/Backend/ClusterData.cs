@@ -5,9 +5,8 @@ namespace Pure.Tools.Particles;
 internal class ClusterData(float timeLeft)
 {
     public (float x, float y) gravity, orbitPoint, shake, teleportPoint, teleportForce;
-    public float friction, orbitRadius, size, timeLeft = timeLeft, bounceStrength = 0.5f, timeScale = 1f,
-        varietyColor, varietyPushPullForce, varietyPushPullAngle, varietyTeleportAngle, varietyTeleportForce,
-        teleportInterval;
+    public float friction, orbitRadius, size, timeLeft = timeLeft, bounceStrength = 0.5f, timeScale = 1f, varietyColor,
+        varietyPushPullForce, varietyPushPullAngle, varietyTeleportAngle, varietyTeleportForce, teleportInterval;
     public int teleportIndex, teleportStep;
 
     public Action? teleportTick;
