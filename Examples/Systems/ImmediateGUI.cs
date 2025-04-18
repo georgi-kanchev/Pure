@@ -51,7 +51,7 @@ public static class ImmediateGUI
             if (float.IsNaN(scrollHer) == false)
                 log = $"horizontal scroll:\n{scrollHer:F1}";
 
-            InstantBlock.Tooltip = (tooltip, Side.Left, 0.5f);
+            InstantBlock.Tooltip = (tooltip, Pivot.Left, 0.5f);
             var stepper = Stepper((0, 13), "Stepper", 0f, 1f, 999f, -999f);
             if (float.IsNaN(stepper) == false)
                 log = $"stepper:\n{stepper:F1}";
@@ -73,7 +73,7 @@ public static class ImmediateGUI
             if (float.IsNaN(sliderVer) == false)
                 log = $"vertical slider:\n{sliderVer:F1}";
 
-            InstantBlock.Tooltip = (tooltip, Side.Left, 0.5f);
+            InstantBlock.Tooltip = (tooltip, Pivot.Left, 0.5f);
             var scrollVer = Scroll((11, 14), 9, vertical: true);
             if (float.IsNaN(scrollVer) == false)
                 log = $"vertical scroll:\n{scrollVer:F1}";
@@ -128,7 +128,7 @@ public static class ImmediateGUI
 
         void PromptInput()
         {
-            InstantBlock.Tooltip = (tooltip, Side.Bottom, 0.5f);
+            InstantBlock.Tooltip = (tooltip, Pivot.Bottom, 0.5f);
             var prompt = InstantBlock.PromptInput(nameof(PromptInput), "Type in stuff:");
             if (prompt != null)
                 log = $"prompt input:\n{prompt}";

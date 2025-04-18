@@ -6,7 +6,7 @@ global using Range = (float a, float b);
 
 namespace Pure.Engine.UserInterface;
 
-public enum Side { Left, Right, Top, Bottom }
+public enum Pivot { TopLeft, Top, TopRight, Left, Center, Right, BottomLeft, Bottom, BottomRight }
 
 /// <summary>
 /// Represents a user interface block that the user can interact with and receive some
@@ -345,9 +345,9 @@ public class Block
     {
         // Check if the point is outside the tilemap boundaries
         if (point.x < 0 ||
-            point.x >= Input.TilemapSize.width ||
+            point.x >= Input.TileMapSize.width ||
             point.y < 0 ||
-            point.y >= Input.TilemapSize.height)
+            point.y >= Input.TileMapSize.height)
             return false;
 
         // Check if the point is inside the bounding box
@@ -369,11 +369,23 @@ public class Block
         return justInteracted.Contains(interaction);
     }
 
-    public void AlignEdges(Side edge, Side targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    public void AlignInside(Area? withArea = null, Pivot pivot = Pivot.Center, PointI offset = default)
+    {
+        var (ax, ay, aw, ah) = withArea ?? (0, 0, Input.TileMapSize.width, Input.TileMapSize.height);
+        var (w, h) = Size;
+        var (x, y) = (0, 0);
+
+        if (pivot == Pivot.TopLeft) (x, y) = (ax, ay);
+        else if (pivot == Pivot.Top) (x, y) = (ax + aw / 2 - w / 2, ay);
+        else if (pivot == Pivot.TopRight) (x, y) = (ax + aw - w, ay);
+
+        Position = (x + offset.x, y + offset.y);
+    }
+    public void AlignEdges(Pivot edge, Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.TilemapSize.width;
-        var rh = targetArea?.height ?? Input.TilemapSize.height;
+        var rw = targetArea?.width ?? Input.TileMapSize.width;
+        var rh = targetArea?.height ?? Input.TileMapSize.height;
         var (x, y) = Position;
         var (w, h) = Size;
         var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
@@ -382,38 +394,38 @@ public class Block
 
         offset -= 1;
 
-        if (notNan && edge is Side.Top or Side.Bottom && targetEdge is Side.Top or Side.Bottom)
+        if (notNan && edge is Pivot.Top or Pivot.Bottom && targetEdge is Pivot.Top or Pivot.Bottom)
             x = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (rx - w - offset, rx + rw + offset) : (rx, rx + rw - w)));
-        else if (notNan && edge is Side.Left or Side.Right && targetEdge is Side.Left or Side.Right)
+        else if (notNan && edge is Pivot.Left or Pivot.Right && targetEdge is Pivot.Left or Pivot.Right)
             y = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (ry - h - offset, ry + rh + offset) : (ry, ry + rh - h)));
 
-        if (edge == Side.Left && targetEdge is Side.Left or Side.Right)
-            x = targetEdge == Side.Left ? rx + offset + 1 : rx + rw + offset;
-        else if (edge == Side.Left)
+        if (edge == Pivot.Left && targetEdge is Pivot.Left or Pivot.Right)
+            x = targetEdge == Pivot.Left ? rx + offset + 1 : rx + rw + offset;
+        else if (edge == Pivot.Left)
             x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx, rx + rw + offset)));
 
-        if (edge == Side.Right && targetEdge is Side.Left or Side.Right)
-            x = targetEdge == Side.Left ? rx - w - offset : rx + rw + offset;
-        else if (edge == Side.Right)
+        if (edge == Pivot.Right && targetEdge is Pivot.Left or Pivot.Right)
+            x = targetEdge == Pivot.Left ? rx - w - offset : rx + rw + offset;
+        else if (edge == Pivot.Right)
             x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx - w - offset, rx + rw - w)));
 
-        if (edge == Side.Top && targetEdge is Side.Left or Side.Right)
+        if (edge == Pivot.Top && targetEdge is Pivot.Left or Pivot.Right)
             y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry, ry + rh + offset)));
-        else if (edge == Side.Top)
-            y = targetEdge == Side.Top ? ry : ry + rh + offset;
+        else if (edge == Pivot.Top)
+            y = targetEdge == Pivot.Top ? ry : ry + rh + offset;
 
-        if (edge == Side.Bottom && targetEdge is Side.Left or Side.Right)
+        if (edge == Pivot.Bottom && targetEdge is Pivot.Left or Pivot.Right)
             y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry - h - offset, ry + rh - h)));
-        else if (edge == Side.Bottom)
-            y = targetEdge == Side.Top ? ry - h - offset : ry + rh - h + offset + 1;
+        else if (edge == Pivot.Bottom)
+            y = targetEdge == Pivot.Top ? ry - h - offset : ry + rh - h + offset + 1;
 
         Position = (x, y);
     }
     public void AlignInside(PointF alignment, Area? targetArea = null)
     {
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.TilemapSize.width;
-        var rh = targetArea?.height ?? Input.TilemapSize.height;
+        var rw = targetArea?.width ?? Input.TileMapSize.width;
+        var rh = targetArea?.height ?? Input.TileMapSize.height;
         var (x, y) = Position;
         var (w, h) = Size;
 
@@ -423,9 +435,9 @@ public class Block
             float.IsNaN(alignment.x) ? x : (int)newX,
             float.IsNaN(alignment.y) ? y : (int)newY);
     }
-    public void AlignOutside(Side targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    public void AlignOutside(Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
-        var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
+        var opposites = new[] { Pivot.Right, Pivot.Left, Pivot.Bottom, Pivot.Top };
         AlignEdges(opposites[(int)targetEdge], targetEdge, targetArea, alignment, offset + 1,
             exceedEdge);
     }
@@ -433,8 +445,8 @@ public class Block
     {
         var (w, h) = Size;
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.TilemapSize.width;
-        var rh = targetArea?.height ?? Input.TilemapSize.height;
+        var rw = targetArea?.width ?? Input.TileMapSize.width;
+        var rh = targetArea?.height ?? Input.TileMapSize.height;
         var newX = rw - w < rx ? rx : Math.Clamp(Position.x, rx, rw - w);
         var newY = rh - h < ry ? ry : Math.Clamp(Position.y, ry, rh - h);
         var hasOverflown = false;

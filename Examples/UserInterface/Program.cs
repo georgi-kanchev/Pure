@@ -22,7 +22,7 @@ public static class Program
         var sz = (width * 3, height * 3);
         var maps = new List<TileMap>();
         var blocks = new List<Block>();
-        Input.TilemapSize = sz;
+        Input.TileMapSize = sz;
 
         for (var i = 0; i < 7; i++)
             maps.Add(new(sz));

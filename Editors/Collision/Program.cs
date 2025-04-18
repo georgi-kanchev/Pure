@@ -345,7 +345,7 @@ public static class Program
         menu = new(editor,
             "Graphics… ",
             " Load",
-            "Tilemap… ",
+            "TileMap… ",
             " Load",
             " Paste",
             "Collisions… ",

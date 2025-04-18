@@ -37,7 +37,7 @@ internal enum Key
 }
 
 /// <summary>
-/// Represents user input for received by the user interface.
+/// Represents user input received by the user interface.
 /// </summary>
 public static class Input
 {
@@ -53,10 +53,10 @@ public static class Input
     /// <summary>
     /// The size of the tilemap being used by the user interface.
     /// </summary>
-    public static Size TilemapSize
+    public static Size TileMapSize
     {
-        get => tilemapSize;
-        set => tilemapSize = (Math.Abs(value.width), Math.Abs(value.height));
+        get => tileMapSize;
+        set => tileMapSize = (Math.Abs(value.width), Math.Abs(value.height));
     }
     /// <summary>
     /// Gets the current position of the input.
@@ -129,7 +129,7 @@ public static class Input
     internal static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private static readonly List<Key> pressedKeys = [], prevPressedKeys = [];
     internal static readonly List<MouseButton> pressedBtns = [], prevPressedBtns = [];
-    private static Size tilemapSize;
+    private static Size tileMapSize;
     internal static Action? onTextCopy;
     internal static Block? FocusedPrevious { get; set; }
 
@@ -140,7 +140,7 @@ public static class Input
     internal static int ScrollDelta { get; private set; }
     internal static Area Mask
     {
-        get => (0, 0, TilemapSize.width, TilemapSize.height);
+        get => (0, 0, TileMapSize.width, TileMapSize.height);
     }
 
     static Input()

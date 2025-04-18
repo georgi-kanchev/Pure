@@ -21,7 +21,7 @@ public static class Program
         var editors = new List((0, 0), 2) { Size = (14, 2), ItemSize = (14, 1), Text = "Editors:" };
         var apps = new List((0, 0), 8) { Size = (15, 8), ItemSize = (15, 1), Text = "Example Games:" };
         var uis = new List((0, 0), 10) { Size = (20, 10), ItemSize = (20, 1), Text = "Example UIs:" };
-        var systems = new List((0, 0), 11) { Size = (22, 11), ItemSize = (22, 1), Text = "Example Systems:" };
+        var systems = new List((0, 0), 12) { Size = (22, 12), ItemSize = (22, 1), Text = "Example Systems:" };
 
         editors.Edit(["Collision", "Map"]);
         editors.AlignInside((0.75f, 0.25f));
@@ -56,11 +56,12 @@ public static class Program
 
         systems.Edit([
             "Default Graphics", "Rendering", "Collision", "Line of Sight & Lights", "Pathfinding", "Audio",
-            "Terrain Generation", "Immediate GUI", "Animations", "Particles", "Auto Tiling"
+            "Terrain Generation", "Immediate GUI", "Layout GUI", "Animations", "Particles", "Auto Tiling"
         ]);
-        systems.AlignInside((0.1f, 0.9f));
+        systems.AlignInside((0.1f, 0.95f));
         OnTrigger(systems, DefaultGraphics.Run, Rendering.Run, Collision.Run, LineOfSightAndLights.Run, Pathfinding.Run,
-            Audio.Run, TerrainGeneration.Run, ImmediateGUI.Run, Animations.Run, ParticleSystems.Run, AutoTiling.Run);
+            Audio.Run, TerrainGeneration.Run, ImmediateGUI.Run, LayoutGUI.Run, Animations.Run, ParticleSystems.Run,
+            AutoTiling.Run);
         OnDisplay(systems);
 
         ui.AddRange([editors, apps, uis, systems]);

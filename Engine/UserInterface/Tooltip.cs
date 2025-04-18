@@ -2,7 +2,7 @@
 
 public class Tooltip : Block
 {
-    public Side Side { get; set; } = Side.Top;
+    public Pivot Pivot { get; set; } = Pivot.Top;
     public float Alignment { get; set; } = 0.5f;
 
     public Tooltip()
@@ -17,15 +17,15 @@ public class Tooltip : Block
             if (line.Length > width)
                 width = line.Length;
 
-        var opposites = new[] { Side.Right, Side.Left, Side.Bottom, Side.Top };
+        var opposites = new[] { Pivot.Right, Pivot.Left, Pivot.Bottom, Pivot.Top };
         Size = (width + 2, lines.Length);
-        AlignOutside(Side, aroundArea, Alignment, 1);
+        AlignOutside(Pivot, aroundArea, Alignment, 1);
         Fit();
 
         if (IsOverlapping(aroundArea) == false)
             return;
 
-        AlignOutside(opposites[(int)Side], aroundArea, Alignment, 1);
+        AlignOutside(opposites[(int)Pivot], aroundArea, Alignment, 1);
         Fit();
     }
 }

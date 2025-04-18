@@ -31,7 +31,7 @@ public class Panel : Block
     /// <param name="position">The position of the panel.</param>
     public Panel(PointI position) : base(position)
     {
-        Size = (12, 8);
+        Size = (13, 8);
         OnUpdate += OnRefresh;
     }
 
@@ -69,36 +69,25 @@ public class Panel : Block
         var isHovL = Math.Abs(inputX - x) < E && IsBetween(inputY, y, y + h - 1);
         var isHovR = Math.Abs(inputX - (x + w - 1)) < E && IsBetween(inputY, y, y + h - 1);
         var isHovB = IsBetween(inputX, x, x + w - 1) && Math.Abs(inputY - (y + h - 1)) < E;
-        var isHovInside = IsHovered &&
-                          isHovT == false &&
-                          isHovL == false &&
-                          isHovR == false &&
-                          isHovB == false;
-        var isHoveringSides = isHovInside ||
-                              isHovT ||
-                              ((isHovL || isHovR || isHovB) &&
-                               IsResizable == false);
+        var isHovInside = IsHovered && isHovT == false && isHovL == false && isHovR == false && isHovB == false;
+        var isHoveringSides = isHovInside || isHovT || ((isHovL || isHovR || isHovB) && IsResizable == false);
 
-        TrySetCursorAndCache(isHoveringSides, isHovL, isHovR, isHovB, isHovCornersT, isHovT);
+        TrySetCursorAndCache(isHoveringSides, isHovL, isHovR, isHovB, isHovT, isHovCornersT);
 
-        if (IsFocused == false ||
-            Input.IsButtonPressed() == false ||
-            Input.Position == Input.PositionPrevious)
-            return;
-
-        TryMoveAndResize(inputX, inputY, prevX, prevY);
+        if (IsFocused && Input.IsButtonPressed() && Input.Position != Input.PositionPrevious)
+            TryMoveAndResize(inputX, inputY, prevX, prevY);
     }
 
-    private void TrySetCursorAndCache(
-        bool isHoveringSides,
-        bool isHoveringLeft,
-        bool isHoveringRight,
-        bool isHoveringBottom,
-        bool isHoveringTopCorners,
-        bool isHoveringTop)
+    private void TrySetCursorAndCache(bool hoverSides, bool hoverL, bool hoverR, bool hoverD, bool hoverU, bool hoverUpCorners)
     {
         if (IsDisabled == false && IsHovered)
             Input.CursorResult = MouseCursor.Arrow;
+
+        hoverL |= isResizingL;
+        hoverR |= isResizingR;
+        hoverU |= isResizingU;
+        hoverD |= isResizingD;
+        hoverSides |= isMoving;
 
         if (Input.IsButtonJustReleased())
         {
@@ -109,28 +98,22 @@ public class Panel : Block
             isResizingD = false;
         }
 
-        if (IsMovable && isHoveringSides)
+        if (IsMovable && hoverSides && !isResizingU && !isResizingD && !isResizingL && !isResizingR)
             Process(ref isMoving, MouseCursor.Move);
-        else if (IsResizable)
+        else if (IsResizable && isMoving == false)
         {
-            if (isHoveringLeft)
-                Process(ref isResizingL, MouseCursor.ResizeHorizontal);
-            if (isHoveringRight)
-                Process(ref isResizingR, MouseCursor.ResizeHorizontal);
-            if (isHoveringBottom)
-                Process(ref isResizingD, MouseCursor.ResizeVertical);
-            if (isHoveringTopCorners || (IsMovable == false && isHoveringTop))
-                Process(ref isResizingU, MouseCursor.ResizeVertical);
+            if (hoverL) Process(ref isResizingL, MouseCursor.ResizeHorizontal);
+            if (hoverR) Process(ref isResizingR, MouseCursor.ResizeHorizontal);
+            if (hoverD) Process(ref isResizingD, MouseCursor.ResizeVertical);
+            if (hoverUpCorners || hoverU) Process(ref isResizingU, MouseCursor.ResizeVertical);
 
-            var tl = isHoveringLeft && isHoveringTopCorners;
-            var tr = isHoveringRight && isHoveringTopCorners;
-            var br = isHoveringBottom && isHoveringRight;
-            var bl = isHoveringBottom && isHoveringLeft;
+            var tl = (hoverL && hoverUpCorners) || (isResizingL && isResizingU);
+            var tr = (hoverR && hoverUpCorners) || (isResizingR && isResizingU);
+            var br = hoverD && hoverR;
+            var bl = hoverD && hoverL;
 
-            if (IsDisabled == false && (tl || br))
-                Input.CursorResult = MouseCursor.ResizeDiagonal1;
-            if (IsDisabled == false && (tr || bl))
-                Input.CursorResult = MouseCursor.ResizeDiagonal2;
+            if (IsDisabled == false && (tl || br)) Input.CursorResult = MouseCursor.ResizeDiagonal1;
+            if (IsDisabled == false && (tr || bl)) Input.CursorResult = MouseCursor.ResizeDiagonal2;
         }
 
         void Process(ref bool condition, MouseCursor cursor)
@@ -198,8 +181,8 @@ public class Panel : Block
         }
 
         var isOutsideScreen =
-            newX + newW > Input.TilemapSize.width ||
-            newY + newH > Input.TilemapSize.height ||
+            newX + newW > Input.TileMapSize.width ||
+            newY + newH > Input.TileMapSize.height ||
             newX < 0 ||
             newY < 0;
         var isBelowMinimumSize = newW < Math.Abs(minX) || newH < Math.Abs(minY);

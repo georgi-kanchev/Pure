@@ -695,10 +695,17 @@ public static class Storage
     {
         if (type == typeof(string)) return text;
         if (type.IsPrimitive == false || string.IsNullOrWhiteSpace(text)) return null;
-        if (type == typeof(bool) && bool.TryParse(text, out var b)) return b;
 
         var cultDecPoint = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
         text = text.Replace(cultDecPoint, ".").ToLower();
+
+        if (type == typeof(bool))
+        {
+            if (text.Contains('+') || text.Contains('y') || text.Contains('v') || text.Contains('1')) return true;
+            if (text.Contains('-') || text.Contains('n') || text.Contains('x') || text.Contains('0')) return false;
+            if (bool.TryParse(text, out var b)) return b;
+        }
+
         var valid = decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var number);
         var isPosInf = text.Contains(INFINITY);
         var isNegInf = text.Contains("-" + INFINITY);
@@ -886,17 +893,10 @@ public static class Storage
 
     private static object CreateInstance(Type type)
     {
-        // creating an instance without needing a parameterless constructor such as with
-        // var instance = Activator.CreateInstance(expectedType);
+        var instance = type.GetConstructor(Instance | Public | NonPublic, null, Type.EmptyTypes, null)?.Invoke([]);
 #pragma warning disable SYSLIB0050
-        var instance = FormatterServices.GetUninitializedObject(type);
-#pragma warning restore SYSLIB0050
-        var emptyConstructor = type.GetConstructor(Instance | Public | NonPublic, null, Type.EmptyTypes, null);
-
-        // in case there is a parameterless constructor, call it manually
-        emptyConstructor?.Invoke([]);
-
-        return instance;
+        return instance ?? FormatterServices.GetUninitializedObject(type);
+#pragma warning restore SYSLIB0050;
     }
     private static string Tab(int count)
     {

@@ -13,8 +13,7 @@ public static class Storages
 
     public class Test
     {
-        [DoNotSave]
-        public readonly string c = "test";
+        public string c = "test";
         public List<(string txt, uint id)> arr = [("m", 123), ("hmmm", 56), ("he", 12), ("she", 47), ("ai", 31)];
         public (int j, bool k, float l, string m) a = (3, true, 0.3f, "str\nso|me\nnew\nlines");
         public SomeEnum someEnum = SomeEnum.ValueNumber3 | SomeEnum.SecondValue;
@@ -37,21 +36,15 @@ public static class Storages
             { 21, 4, 87, 9 },
             { 6, 17, 41, 31 }
         };
-    }
 
-    public class Empty : Test
-    {
-        public (int x, string y, float z) tuple = (3, "hi\nhello", 0.3f);
+        public Test(string c)
+        {
+        }
     }
 
     public struct SomeStruct
     {
         public static int MyInt { get; set; } = 12;
-    }
-
-    public class OtherClass : Test
-    {
-        public float MyNumber { get; set; } = 87.1f;
     }
 
     public static void Run()
@@ -81,7 +74,8 @@ public static class Storages
             { "fast", 5 }
         };
 
-        var a = "MinValue".ToDataAsText();
-        var b = a.ToObject<int>();
+        var t = new Test("") { c = "hmm" };
+        var a = t.ToDataAsText();
+        var b = a.ToObject<Test>();
     }
 }

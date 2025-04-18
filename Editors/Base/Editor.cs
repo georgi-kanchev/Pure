@@ -78,7 +78,7 @@ public class Editor
         LayerTiles = new(MapGrid.Size);
         LayerTilesMap = new(MapsEditor[0].Size);
         LayerTilesUi = new(MapsUi[0].Size);
-        Input.TilemapSize = MapsUi[0].View.Size;
+        Input.TileMapSize = MapsUi[0].View.Size;
 
         for (var i = 0; i < 5; i++)
             CreateViewButton((byte)i);
@@ -149,7 +149,7 @@ public class Editor
             MousePositionWorld = (x + vw, y + vy);
             Input.PositionPrevious = prevWorld;
             Input.Position = MousePositionWorld;
-            Input.TilemapSize = MapsEditor[0].View.Size;
+            Input.TileMapSize = MapsEditor[0].View.Size;
 
             if (IsDisabledViewInteraction == false && Prompt.IsHidden)
                 LayerTilesMap.DragAndZoom();
@@ -172,7 +172,7 @@ public class Editor
             MousePositionUi = LayerTilesUi.PositionFromPixel(Mouse.CursorPosition);
             Input.Position = MousePositionUi;
             Input.PositionPrevious = prevUi;
-            Input.TilemapSize = MapsUi[0].View.Size;
+            Input.TileMapSize = MapsUi[0].View.Size;
 
             UpdateHud();
             Ui.ForEach(block => block.Update());

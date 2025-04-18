@@ -349,7 +349,7 @@ public static class TileMapperUI
         var (corner, edge, fill, dim, textTint) = ThemePrompt;
         var newLines = prompt.Text.Count("\n") + 1;
         var text = prompt.Text.Constrain((prompt.Width, newLines), alignment: Alignment.Center);
-        var (w, h) = Input.TilemapSize;
+        var (w, h) = Input.TileMapSize;
         var (x, y) = prompt.Position;
 
         ApplyMasks(maps, prompt.Mask);

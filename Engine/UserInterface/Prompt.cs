@@ -103,7 +103,7 @@ public class Prompt : Block
         if (IsHidden)
             return;
 
-        var sz = Input.TilemapSize;
+        var sz = Input.TileMapSize;
         var lines = Text.Replace("\r", "").Split("\n");
         var (w, h) = (sz.width / 2, 0);
         var (x, y) = (sz.width / 4, sz.height / 2 + lines.Length / 2);

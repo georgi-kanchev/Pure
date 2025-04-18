@@ -12,7 +12,7 @@ public static class InstantBlock
     public static Tile Cursor { get; set; } = new(546, 3789677055);
     public static string? CurrentPrompt { get; private set; }
 
-    public static (string? text, Side side, float alignment) Tooltip { get; set; } = ("", Side.Top, 0.5f);
+    public static (string? text, Pivot side, float alignment) Tooltip { get; set; } = ("", Pivot.Top, 0.5f);
 
     public static void Text(this string? text, (int x, int y) cell = default, int zOrder = 0, uint tint = uint.MaxValue, char tintBrush = '#')
     {
@@ -249,7 +249,7 @@ public static class InstantBlock
 
         Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-        Input.TilemapSize = layerTiles.Size;
+        Input.TileMapSize = layerTiles.Size;
         Input.PositionPrevious = Input.Position;
         Input.Position = layerTiles.PositionFromPixel(Mouse.CursorPosition);
         Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta, Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
@@ -369,7 +369,7 @@ public static class InstantBlock
             return (T)cache.block;
 
         var tooltip = TryCache<Tooltip>(Tooltip.text ?? "", (0, 0, 1, 1), out _);
-        tooltip.Side = Tooltip.side;
+        tooltip.Pivot = Tooltip.side;
         tooltip.Alignment = Tooltip.alignment;
         tooltip.Show(cache.block.Area);
         TileMaps.SetTooltip(tooltip);
