@@ -88,7 +88,7 @@ internal class Inspector : Panel
             var tile = item.IsSelected ?
                 new Tile(ICON_EYE_OPENED, White) :
                 new(ICON_EYE_CLOSED, Gray);
-            editor.MapsUi.SetButtonIcon(item, tile, 1);
+            editor.MapsUi.SetButtonTile(item, tile, 1);
         };
         layersVisibility.Select(layersVisibility.Items[0]);
         layersVisibility.OnItemInteraction(Interaction.Trigger, item =>
@@ -118,13 +118,13 @@ internal class Inspector : Panel
 
         var create = new Button((x, rename.Y + rename.Height)) { Size = (1, 1) };
         create.OnInteraction(Interaction.Trigger, LayerCreate);
-        create.OnDisplay += () => editor.MapsUi.SetButtonIcon(create, new(CURSOR_CROSSHAIR, Gray), 1);
+        create.OnDisplay += () => editor.MapsUi.SetButtonTile(create, new(CURSOR_CROSSHAIR, Gray), 1);
 
         var remove = new Button((x + 13, create.Y)) { Size = (1, 1) };
         const string REMOVE = "Remove selected layers?";
         remove.OnInteraction(Interaction.Trigger, () => editor.PromptYesNo(REMOVE, LayersRemove));
         remove.OnUpdate += () => ShowIfMoreThan1LayerSelected(remove);
-        remove.OnDisplay += () => editor.MapsUi.SetButtonIcon(remove, new(ICON_DELETE, Gray), 1);
+        remove.OnDisplay += () => editor.MapsUi.SetButtonTile(remove, new(ICON_DELETE, Gray), 1);
 
         var flush = new Button((x + 11, create.Y)) { Size = (1, 1) };
         const string FLUSH = "Flush selected layers?";
@@ -134,17 +134,17 @@ internal class Inspector : Panel
                 editor.MapsEditor[i].Flush();
         }));
         flush.OnUpdate += () => ShowIfLayerSelected(flush);
-        flush.OnDisplay += () => editor.MapsUi.SetButtonIcon(flush, new(SHAPE_SQUARE_BIG_HOLLOW, Gray), 1);
+        flush.OnDisplay += () => editor.MapsUi.SetButtonTile(flush, new(SHAPE_SQUARE_BIG_HOLLOW, Gray), 1);
 
         var up = new Button((create.X + 2, create.Y)) { Size = (1, 1) };
         up.OnInteraction(Interaction.Trigger, () => LayersMove(-1));
         up.OnUpdate += () => ShowIfMoreThan1LayerSelected(up);
-        up.OnDisplay += () => editor.MapsUi.SetButtonIcon(up, new(ARROW, Gray, Pose.Left), 1);
+        up.OnDisplay += () => editor.MapsUi.SetButtonTile(up, new(ARROW, Gray, Pose.Left), 1);
 
         var down = new Button((up.X + 1, create.Y)) { Size = (1, 1) };
         down.OnInteraction(Interaction.Trigger, () => LayersMove(1));
         down.OnUpdate += () => ShowIfMoreThan1LayerSelected(down);
-        down.OnDisplay += () => editor.MapsUi.SetButtonIcon(down, new(ARROW, Gray, Pose.Right), 1);
+        down.OnDisplay += () => editor.MapsUi.SetButtonTile(down, new(ARROW, Gray, Pose.Right), 1);
 
         return [create, remove, flush, rename, up, down];
 
@@ -240,7 +240,7 @@ internal class Inspector : Panel
             var id = graphics[index];
             var (itemX, itemY) = item.Position;
             item.Hotkey = ((int)hotkey[index], false);
-            editor.MapsUi.SetButtonIcon(item, new(id, item.IsSelected ? Green : Gray), 1);
+            editor.MapsUi.SetButtonTile(item, new(id, item.IsSelected ? Green : Gray), 1);
             editor.MapsUi[MIDDLE].SetText((itemX, itemY + 1), $"{hotkey[index]}", Gray.ToDark(0.4f));
         };
         tools.OnItemInteraction(Interaction.Trigger, item =>
@@ -287,7 +287,7 @@ internal class Inspector : Panel
         paletteScrollH.OnDisplay += () => editor.MapsUi.SetScroll(paletteScrollH, 1);
         paletteScrollV.OnDisplay += () => editor.MapsUi.SetScroll(paletteScrollV, 1);
         var paletteScroll = new Button((paletteScrollH.X, paletteScrollV.Y + 1)) { Size = (13, 13) };
-        paletteScroll.OnInteraction(Interaction.Scroll, () => paletteScrollV.Slider.Move(Mouse.ScrollDelta));
+        paletteScroll.OnInteraction(Interaction.Scroll, () => paletteScrollV.Slider.MoveHandle(Mouse.ScrollDelta));
         return [paletteScroll];
     }
     [MemberNotNull(nameof(pose))]

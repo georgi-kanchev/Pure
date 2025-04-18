@@ -17,8 +17,7 @@ public static class Panels
             var text = ($"- Useful for containing other elements\n\n" +
                         $"- Title\n\n" +
                         $"- Can be optionally moved and/or resized\n\n" +
-                        $"- Cannot be resized or moved outside the window\n\n" +
-                        $"- Minimum sizes").Constrain((w - 2, h - 2));
+                        $"- Can be optionally restricted to the Layer size").Constrain((w - 2, h - 2));
             maps[1].SetText((x + 1, y + 1), text, Color.Green);
         };
 
@@ -35,7 +34,7 @@ public static class Panels
             maps.SetPanel(panelButton, 2);
             button.Position = (x + 1, y + 1);
             button.Size = (w - 2, h - 2);
-            maps.SetButton(button, 2);
+            maps.SetButton(button, 3);
         };
 
         return [panelText, panelButton, button];

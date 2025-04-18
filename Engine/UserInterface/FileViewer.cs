@@ -272,6 +272,14 @@ public class FileViewer : Block
         var (w, h) = Size;
         var hds = HardDrives.Items.Count;
 
+        if (IsDisabled)
+        {
+            HardDrives.IsDisabled = true;
+            User.IsDisabled = true;
+            Back.IsDisabled = true;
+            FilesAndFolders.IsDisabled = true;
+        }
+
         HardDrives.size = (w, hds);
         HardDrives.position = (x, y);
         HardDrives.itemSize = (w, 1);

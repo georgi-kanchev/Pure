@@ -49,12 +49,12 @@ public class Slider : Block
         OnInteraction(Interaction.Trigger, () =>
         {
             var (x, y) = Input.Position;
-            MoveTo(((int)x, (int)y));
+            MoveHandleTo(((int)x, (int)y));
         });
         OnDrag += _ =>
         {
             var (x, y) = Input.Position;
-            MoveTo(((int)x, (int)y));
+            MoveHandleTo(((int)x, (int)y));
         };
 
         Handle = new((int.MaxValue, int.MaxValue))
@@ -62,7 +62,7 @@ public class Slider : Block
         Handle.OnDrag += _ =>
         {
             var (x, y) = Input.Position;
-            MoveTo(((int)x, (int)y));
+            MoveHandleTo(((int)x, (int)y));
         };
         Handle.OnInteraction(Interaction.Scroll, ApplyScroll);
     }
@@ -71,7 +71,7 @@ public class Slider : Block
     /// Moves the handle of the slider by the specified amount.
     /// </summary>
     /// <param name="delta">The amount to move the handle.</param>
-    public void Move(int delta)
+    public void MoveHandle(int delta)
     {
         var sz = IsVertical ? Size.height : Size.width;
         index -= delta;
@@ -83,7 +83,7 @@ public class Slider : Block
     /// position on the slider if not successful.
     /// </summary>
     /// <param name="point">The position to try move the handle to.</param>
-    public void MoveTo(PointI point)
+    public void MoveHandleTo(PointI point)
     {
         var sz = IsVertical ? Size.height : Size.width;
         var (x, y) = Position;
@@ -100,7 +100,7 @@ public class Slider : Block
 
     internal override void ApplyScroll()
     {
-        Move(Input.ScrollDelta);
+        MoveHandle(Input.ScrollDelta);
     }
     internal override void OnChildrenUpdate()
     {
@@ -109,6 +109,9 @@ public class Slider : Block
         var curSz = IsVertical ? Size.height : Size.width;
         var sz = Math.Max(0, curSz - 1);
         index = (int)Map(progress, 0, 1, 0, sz);
+
+        if (IsDisabled)
+            Handle.IsDisabled = true;
 
         if (IsVertical)
         {

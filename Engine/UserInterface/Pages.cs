@@ -193,8 +193,16 @@ public class Pages : Block
         var (x, y) = Position;
         var visibleWidth = VisibleWidth;
         var hasNav = HasNavigation;
-
         var m = HasNavigation ? mask : Input.Mask;
+
+        if (IsDisabled)
+        {
+            First.IsDisabled = true;
+            Previous.IsDisabled = true;
+            Next.IsDisabled = true;
+            Last.IsDisabled = true;
+        }
+
         First.mask = m;
         Previous.mask = m;
         Next.mask = m;
@@ -202,15 +210,15 @@ public class Pages : Block
 
         if (hasNav)
         {
-            First.position = (x, y);
-            Previous.position = (x + 1, y);
-            Next.position = (Previous.Position.x + visibleWidth + 1, y);
-            Last.position = (Next.Position.x + 1, y);
+            First.position = (x, y + Height / 2);
+            Previous.position = (x + 1, y + Height / 2);
+            Next.position = (Previous.Position.x + visibleWidth + 1, y + Height / 2);
+            Last.position = (Next.Position.x + 1, y + Height / 2);
 
-            First.size = (1, Size.height);
-            Previous.size = (1, Size.height);
-            Next.size = (1, Size.height);
-            Last.size = (1, Size.height);
+            First.size = (1, 1);
+            Previous.size = (1, 1);
+            Next.size = (1, 1);
+            Last.size = (1, 1);
 
             First.Update();
             Previous.Update();
@@ -219,7 +227,7 @@ public class Pages : Block
         }
 
         var hasFreeSpace = HasFreeSpace;
-        var range = hasFreeSpace ? (Position.x + 2, Position.x + Size.width - 2) : (0, 0);
+        var range = hasFreeSpace ? (X + 2, X + Width - 2) : (0, 0);
         var xs = Distribute(hasFreeSpace ? visiblePages.Count : 0, range);
         var navOff = hasNav ? 2 : 0;
 
@@ -230,6 +238,9 @@ public class Pages : Block
 
             if (hasFreeSpace && hasNav)
                 pos = ((int)xs[i], y);
+
+            if (IsDisabled)
+                page.IsDisabled = true;
 
             page.position = pos;
             page.mask = mask;

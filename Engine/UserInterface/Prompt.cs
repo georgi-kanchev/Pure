@@ -113,6 +113,9 @@ public class Prompt : Block
 
         if (currentBlock != null)
         {
+            if (IsDisabled)
+                currentBlock.IsDisabled = true;
+
             currentBlock.Update();
 
             // nasty hacks ahead, proceed with caution
@@ -155,6 +158,10 @@ public class Prompt : Block
         for (var i = 0; i < buttons.Count; i++)
         {
             var btn = buttons[i];
+
+            if (IsDisabled)
+                btn.IsDisabled = true;
+
             btn.position = ((int)btnXs[i], y + h);
             btn.Update();
         }

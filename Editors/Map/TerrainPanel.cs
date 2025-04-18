@@ -186,8 +186,8 @@ internal class TerrainPanel : Panel
                 editor.MapsUi[FRONT].SetArea(colorArea, [new(FULL, pickedTile.Tint)]);
             }
 
-            editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), FRONT);
-            editor.MapsUi.SetButtonIcon(remove, new(ICON_TRASH, Gray), FRONT);
+            editor.MapsUi.SetButtonTile(add, new(CURSOR_CROSSHAIR, Gray), FRONT);
+            editor.MapsUi.SetButtonTile(remove, new(ICON_TRASH, Gray), FRONT);
             editor.MapsUi.SetButton(apply, FRONT);
             editor.MapsUi.SetPages(pages, 1);
 
@@ -369,9 +369,9 @@ internal class TerrainPanel : Panel
                                                               $"pick\n" +
                                                               $"tool", Gray);
 
-            editor.MapsUi.SetButtonIcon(add, new(CURSOR_CROSSHAIR, Gray), MIDDLE);
-            editor.MapsUi.SetButtonIcon(edit, new(ICON_PEN, Gray), MIDDLE);
-            editor.MapsUi.SetButtonIcon(remove, new(ICON_TRASH, Gray), MIDDLE);
+            editor.MapsUi.SetButtonTile(add, new(CURSOR_CROSSHAIR, Gray), MIDDLE);
+            editor.MapsUi.SetButtonTile(edit, new(ICON_PEN, Gray), MIDDLE);
+            editor.MapsUi.SetButtonTile(remove, new(ICON_TRASH, Gray), MIDDLE);
 
             editor.MapsUi[FRONT].SetText((X + 1, Y + 16), "Noise Type", White);
             editor.MapsUi.SetList(noiseType);

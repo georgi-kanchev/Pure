@@ -365,7 +365,7 @@ public static class Collections
         return false;
     }
 
-    public static T Animate<T>(this IList<T> collection, float speed, bool loop = true)
+    public static T Animate<T>(this IList<T> collection, float speed = 1f, bool loop = true)
     {
         var hash = collection.GetHashCode();
         var duration = collection.Count / speed;

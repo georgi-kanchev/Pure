@@ -60,7 +60,7 @@ public static class InstantBlock
         TileMaps.SetInputBox(block);
 
         if (block.Height == 1)
-            return block.IsJustInteracted(Interaction.Select) ? block.Value : null;
+            return block.IsJustValueChanged ? block.Value : null;
 
         return block.Value;
     }

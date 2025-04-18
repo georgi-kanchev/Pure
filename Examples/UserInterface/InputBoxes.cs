@@ -51,6 +51,18 @@ public static class InputBoxes
 
         // ==========================
 
+        var disabled = new InputBox
+        {
+            Size = (10, 4),
+            Value = "",
+            Placeholder = "Disabled Input Box…",
+            IsDisabled = true
+        };
+        disabled.AlignInside((0.5f, 0.3f));
+        disabled.OnDisplay += () => maps.SetInputBox(disabled);
+
+        // ==========================
+
         var pass = "<Enter> to submit";
         var password = new InputBox
         {
@@ -87,6 +99,6 @@ public static class InputBoxes
             maps.SetInputBox(equation);
         };
 
-        return [multiLine, password, chat, scroll, equation];
+        return [multiLine, disabled, password, chat, scroll, equation];
     }
 }

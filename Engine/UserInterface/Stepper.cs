@@ -113,6 +113,16 @@ public class Stepper : Block
     {
         var (x, y) = Position;
         var (w, h) = Size;
+
+        if (IsDisabled)
+        {
+            Increase.IsDisabled = true;
+            Decrease.IsDisabled = true;
+            Minimum.IsDisabled = true;
+            Middle.IsDisabled = true;
+            Maximum.IsDisabled = true;
+        }
+
         Increase.position = Position;
         Decrease.position = (x, y + h - 1);
         Minimum.position = (x + w - 3, y + h - 1);

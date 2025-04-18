@@ -16,18 +16,18 @@ public static class LayoutGUI
         var layer = new LayerTiles((w * 3, h * 3));
         var maps = new TileMap[] { new(layer.Size), new(layer.Size), new(layer.Size) };
 
-        var panel = new Panel();
+        var panel = new Panel() { IsDisabled = true };
         panel.OnDisplay += () => maps.SetPanel(panel);
 
         while (Window.KeepOpen())
         {
-            Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
-
             Input.TileMapSize = layer.Size;
             Input.PositionPrevious = Input.Position;
             Input.Position = layer.PositionFromPixel(Mouse.CursorPosition);
             Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta, Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
             panel.Update();
+
+            Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
             foreach (var map in maps)
             {

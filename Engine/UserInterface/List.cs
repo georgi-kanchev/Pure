@@ -316,10 +316,12 @@ public class List : Block
     {
         var (x, y) = Position;
         var (w, h) = Size;
-
         var m = IsScrollAvailable ? Mask : default;
-        Scroll.mask = m;
 
+        if (IsDisabled)
+            Scroll.IsDisabled = true;
+
+        Scroll.mask = m;
         Scroll.position = (x + w - 1, y);
         Scroll.size = (1, h);
 
@@ -381,6 +383,9 @@ public class List : Block
                 iy + ih <= y ||
                 iy >= y + h - botEdgeTrim)
                 item.mask = default;
+
+            if (IsDisabled)
+                item.IsDisabled = true;
 
             TryTrimItem(item);
             item.Update();

@@ -6,36 +6,33 @@ public static class Pagination
     {
         Window.Title = "Pure - Pages Example";
 
-        var icons = new Pages { Size = (9, 1), ItemGap = 0 };
-        icons.AlignInside((0.05f, 0.5f));
-        icons.OnDisplay += () => maps.SetPages(icons);
-        icons.OnItemDisplay += item => maps.SetButtonIcon(item, Tile.ICON_HOME);
-
-        //================
-
-        var pages = new Pages { Size = (15, 1), Count = 150 };
+        var pages = new Pages { Size = (19, 1), Count = 150 };
+        pages.Current = pages.Count / 2;
         pages.ItemWidth = $"{pages.Count}".Length;
-        pages.AlignInside((0.95f, 0.5f));
+        pages.AlignInside((0.5f, 0.1f));
         pages.OnDisplay += () => maps.SetPages(pages);
         pages.OnItemDisplay += item => maps.SetPagesItem(pages, item);
 
-        //================
+        //====================================================
 
-        var buttons = new Pages { Size = (21, 1), Count = 150 };
-        buttons.Current = buttons.Count / 2;
-        buttons.ItemWidth = $"{buttons.Count}".Length;
-        buttons.AlignInside((0.5f, 0.1f));
+        var icons = new Tile[]
+        {
+            Tile.ICON_HOME, Tile.ICON_BOOK, Tile.ICON_BELL, Tile.ICON_INFO, Tile.ICON_LIGHTNING, Tile.ICON_STAR,
+            Tile.ICON_CAMERA_MOVIE
+        };
+        var tiles = new Pages((0, 0), icons.Length) { Size = (9, 1), ItemGap = 1 };
+        tiles.AlignInside((0.5f, 0.5f));
+        tiles.OnDisplay += () => maps.SetPages(tiles);
+        tiles.OnItemDisplay += item => maps.SetPagesItemTile(tiles, item, icons);
+
+        //====================================================
+
+        var buttons = new Pages { Size = (21, 3), Count = 100 };
+        buttons.ItemWidth = $"{buttons.Count}".Length + 2;
+        buttons.AlignInside((0.5f, 0.95f));
         buttons.OnDisplay += () => maps.SetPages(buttons);
-        buttons.OnItemDisplay += item => maps.SetPagesItem(buttons, item, 1);
+        buttons.OnItemDisplay += item => maps.SetButton(item);
 
-        //================
-
-        var buttonsBig = new Pages { Size = (21, 3), Count = 100 };
-        buttonsBig.ItemWidth = $"{buttonsBig.Count}".Length + 2;
-        buttonsBig.AlignInside((0.5f, 0.9f));
-        buttonsBig.OnDisplay += () => maps.SetPages(buttonsBig);
-        buttonsBig.OnItemDisplay += item => maps.SetButton(item, 1);
-
-        return [icons, pages, buttons, buttonsBig];
+        return [tiles, pages, buttons];
     }
 }

@@ -31,7 +31,9 @@ public enum SymbolGroup
 public class InputBox : Block
 {
     [DoNotSave]
-    public Action<string>? OnType { get; set; }
+    public Action? OnValueChange { get; set; }
+    [DoNotSave]
+    public bool IsJustValueChanged { get; private set; }
 
     /// <summary>
     /// The text that should be displayed in the input box when it is empty.
@@ -44,11 +46,10 @@ public class InputBox : Block
         set
         {
             value ??= "";
-
-            var prev = this.value;
             value = value[..Math.Min(value.Length, SymbolLimit)];
+
             this.value = value;
-            var split = value.Replace("\r", "").Split("\n");
+            var split = this.value.Replace("\r", "").Split("\n");
 
             lines.Clear();
             foreach (var line in split)
@@ -61,8 +62,11 @@ public class InputBox : Block
             SelectionIndices = (sx, sy);
             CursorIndices = (cx, cy);
 
-            if (prev != this.value)
-                Interact(Interaction.Select);
+            if (this.value == value)
+                return;
+
+            IsJustValueChanged = true;
+            OnValueChange?.Invoke();
         }
     }
     public string? SymbolMask
@@ -257,7 +261,6 @@ public class InputBox : Block
         lines[0] = Text;
         Value = Text;
         SymbolLimit = int.MaxValue;
-
         SymbolGroup = SymbolGroup.All;
     }
 
@@ -428,15 +431,14 @@ public class InputBox : Block
     {
         var isMultiLine = Height > 1;
 
-        // older method for submitting text, now it happens when Value changes
-        // if (IsReadOnly == false && IsFocused && isMultiLine == false && JustPressed(Key.Enter))
-        //     Interact(Interaction.Select);
+        if (IsReadOnly == false && IsFocused && isMultiLine == false && JustPressed(Key.Enter))
+            Interact(Interaction.Select);
 
         var isBellowElement = IsFocused == false || Input.FocusedPrevious != this;
         if (isBellowElement || TrySelectAll() || JustPressed(Key.Tab))
             return;
 
-        var isJustTyped = JustTyped();
+        var isJustTyped = InputJustTyped();
 
         TryResetHoldTimers(out var isHolding, isJustTyped);
 
@@ -468,6 +470,8 @@ public class InputBox : Block
 
         TrySetMouseCursor();
         TryResetCursorBlinkTimer();
+
+        IsJustValueChanged = false;
     }
     internal override void ApplyScroll()
     {
@@ -542,7 +546,7 @@ public class InputBox : Block
     {
         return Input.IsKeyPressed(key);
     }
-    private static bool JustTyped()
+    private static bool InputJustTyped()
     {
         var typed = Input.Typed ?? string.Empty;
         var prev = Input.TypedPrevious ?? string.Empty;
@@ -756,8 +760,6 @@ public class InputBox : Block
         UpdateTextAndValue();
         CursorMove((1, 0));
         SelectionIndices = CursorIndices;
-
-        OnType?.Invoke(str);
     }
     private void TryBackspaceDeleteEnter(bool isHolding, bool justDeletedSelection)
     {

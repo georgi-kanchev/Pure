@@ -26,13 +26,10 @@ public static class ButtonsAndCheckboxes
 
         // ==============
 
-        var buttonDisabled = new Button { IsDisabled = true, Text = "Disabled Button" };
-        buttonDisabled.Size = (buttonDisabled.Text.Length, 1);
+        var buttonDisabled = new Button { Text = "Disabled Button", IsDisabled = true };
+        buttonDisabled.Size = (buttonDisabled.Text.Length + 2, 3);
         buttonDisabled.AlignInside((0.5f, 0.8f));
-        buttonDisabled.OnDisplay += () =>
-        {
-            maps[0].SetText(buttonDisabled.Position, buttonDisabled.Text, Color.Gray.ToDark(0.7f));
-        };
+        buttonDisabled.OnDisplay += () => maps.SetButton(buttonDisabled);
 
         return [button, checkbox, buttonDisabled];
     }

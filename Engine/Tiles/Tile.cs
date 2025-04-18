@@ -758,6 +758,11 @@ public struct Tile(ushort id, uint tint = uint.MaxValue, Pose pose = Pose.Defaul
         TIME_CLOCK_10_11 = 579,
 #endregion
 
+#region Disabled
+        DISABLED_1 = 581,
+        DISABLED_2 = 582,
+#endregion
+
 #region Cursors
         CURSOR_ARROW = 546,
         CURSOR_ARROW_WAIT = 547,

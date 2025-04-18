@@ -112,6 +112,14 @@ public class Palette : Block
         var (x, y) = Position;
         var (w, h) = Size;
 
+        if (IsDisabled)
+        {
+            Opacity.IsDisabled = true;
+            Pick.IsDisabled = true;
+            Brightness.IsDisabled = true;
+            Samples.IsDisabled = true;
+        }
+
         Opacity.position = (x, y);
         Opacity.size = (w - (Pick.IsHidden ? 0 : 1), h - 2);
         Opacity.mask = mask;

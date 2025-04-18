@@ -88,6 +88,13 @@ public class Scroll : Block
         var (x, y) = Position;
         var (w, h) = Size;
 
+        if (IsDisabled)
+        {
+            Increase.IsDisabled = true;
+            Decrease.IsDisabled = true;
+            Slider.IsDisabled = true;
+        }
+
         if (IsVertical)
         {
             Increase.position = (x, y + h - 1);
