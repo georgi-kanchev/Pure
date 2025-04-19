@@ -25,7 +25,7 @@ public static class Lists
 
         var listHorizontal = new List((0, 0), span: Span.Horizontal)
         {
-            ItemSize = (6, 3),
+            ItemSize = (7, 3),
             ItemGap = 1,
             Size = (11, 4)
         };
@@ -36,7 +36,7 @@ public static class Lists
             maps[0].SetText((x, y - 1), "Multi select");
             maps.SetList(listHorizontal);
         };
-        listHorizontal.OnItemDisplay += item => maps.SetListItem(listHorizontal, item);
+        listHorizontal.OnItemDisplay += item => maps.SetButton(item);
 
         //==============
 

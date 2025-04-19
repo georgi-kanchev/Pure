@@ -25,7 +25,7 @@ public static class Program
         var blocks = new List<Block>();
         Input.TileMapSize = sz;
 
-        for (var i = 0; i < 7; i++)
+        for (var i = 0; i < 8; i++)
             maps.Add(new(sz));
 
         return (maps, blocks);

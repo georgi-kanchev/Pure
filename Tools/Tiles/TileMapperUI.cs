@@ -1,4 +1,5 @@
-﻿using Pure.Engine.Window;
+﻿using System.Runtime.CompilerServices;
+using Pure.Engine.Window;
 using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
@@ -11,23 +12,25 @@ namespace Pure.Tools.Tiles;
 public static class TileMapperUI
 {
     public static float InteractionShade { get; set; }
-    public static Tile DisableOverlay { get; set; }
-    public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemeButtonBox { get; set; }
-    public static (Tile[,] tiles3X3, uint tintText) ThemeButtonPatch { get; set; }
-    public static (Tile left, Tile fill, Tile right, uint tintText) ThemeButtonBar { get; set; }
-    public static (Tile background, Tile cursor, uint tintText, uint selectionTint) ThemeInputBox { get; set; }
+    public static Tile DisablingOverlay { get; set; }
+    public static Color TintSelection { get; set; }
+    public static Color TintText { get; set; }
+
+    public static (Tile corner, Tile edge, Tile fill) ThemeButtonBox { get; set; }
+    public static Tile[,] ThemeButtonPatch { get; set; }
+    public static (Tile left, Tile fill, Tile right) ThemeButtonBar { get; set; }
+    public static (Tile background, Tile cursor) ThemeInputBox { get; set; }
     public static (Tile on, Tile off) ThemeCheckbox { get; set; }
-    public static (Tile arrow, uint tintOn, uint tintOff) ThemeSwitch { get; set; }
+    public static (Tile arrow, Color tintOn, Color tintOff) ThemeSwitch { get; set; }
     public static (Tile edge1, Tile fill, Tile edge2, Tile handle) ThemeSlider { get; set; }
     public static Tile ThemeScrollArrow { get; set; }
-    public static (Tile corner, Tile fill, Tile arrow, Tile min, Tile mid, Tile max, uint tintText, uint valueTint) ThemeStepper { get; set; }
-    public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemeTooltip { get; set; }
+    public static (Tile corner, Tile fill, Tile arrow, Tile min, Tile mid, Tile max) ThemeStepper { get; set; }
+    public static (Tile corner, Tile edge, Tile fill) ThemeTooltip { get; set; }
     public static (Tile first, Tile previous, Tile next, Tile last) ThemePages { get; set; }
-    public static (Tile corner, Tile edge, Tile fill, Tile dim, uint tintText) ThemePrompt { get; set; }
+    public static (Tile corner, Tile edge, Tile fill, Tile dim) ThemePrompt { get; set; }
     public static Tile[]? ThemePromptItems { get; set; }
     public static (Tile full, Tile pick, Tile halfShade, Tile handle) ThemePalette { get; set; }
-    public static (Tile corner, Tile edge, Tile fill, uint tintText) ThemePanel { get; set; }
-    public static (uint tint, uint tintSelect) ThemeListText { get; set; }
+    public static (Tile corner, Tile edge, Tile fill) ThemePanel { get; set; }
     public static Tile[,] ThemeListPatch { get; set; }
     public static (Tile left, Tile fill, Tile right, Tile arrow) ThemeListBar { get; set; }
     public static (Tile img, Tile audio, Tile font, Tile txt, Tile zip, Tile vid, Tile cfg, Tile exe) ThemeFileViewer { get; set; }
@@ -37,13 +40,13 @@ public static class TileMapperUI
         if (maps.Count <= zOrder + 2 || tooltip.IsHidden)
             return;
 
-        var (corner, edge, fill, textTint) = ThemeTooltip;
+        var (corner, edge, fill) = ThemeTooltip;
         var (x, y) = tooltip.Position;
 
         ApplyMasks(maps, tooltip.Mask);
         Clear(maps, tooltip, zOrder);
         maps[zOrder].SetBox(tooltip.Area, fill, corner, edge);
-        maps[zOrder + 1].SetText((x + 1, y), tooltip.Text, textTint);
+        maps[zOrder + 1].SetText((x + 1, y), tooltip.Text, TintText);
         TryDisable(maps, tooltip, zOrder + 2);
         RestoreMasks(maps);
     }
@@ -104,29 +107,32 @@ public static class TileMapperUI
 
         var (w, h) = button.Size;
         var offsetW = w / 2 - Math.Min(button.Text.Length, h == 1 ? w : w - 2) / 2;
-        var (bCorner, bEdge, bFill, bTextTint) = ThemeButtonBox;
-        var (rLeft, rFill, rRight, rTextTint) = ThemeButtonBar;
+        var (boxCorner, boxEdge, boxFill) = ThemeButtonBox;
+        var (barLeft, barFill, barRight) = ThemeButtonBar;
         var text = button.Text.Shorten(h == 1 ? w : w - 2);
         var textPos = (button.X + offsetW, button.Y + h / 2);
         var isBar = button.Height == 1;
-
+        var sel = button.IsSelected;
+        var (rTextTint, bTextTint) = (TintText, TintText);
+        var selTint = TintSelection;
+        
         ApplyMasks(maps, button.Mask);
         Clear(maps, button, zOrder);
         if (isBar)
         {
-            rLeft.Tint = button.GetInteractionColor(rLeft.Tint, InteractionShade);
-            rFill.Tint = button.GetInteractionColor(rFill.Tint, InteractionShade);
-            rRight.Tint = button.GetInteractionColor(rRight.Tint, InteractionShade);
-            rTextTint = button.GetInteractionColor(rTextTint, InteractionShade);
-            maps[zOrder].SetBar(button.Position, rLeft, rFill, rRight, button.Width);
+            barLeft.Tint = button.GetInteractionColor(sel ? selTint : barLeft.Tint, InteractionShade);
+            barFill.Tint = button.GetInteractionColor(sel ? selTint : barFill.Tint, InteractionShade);
+            barRight.Tint = button.GetInteractionColor(sel ? selTint : barRight.Tint, InteractionShade);
+            rTextTint = button.GetInteractionColor(sel ? selTint : rTextTint, InteractionShade);
+            maps[zOrder].SetBar(button.Position, barLeft, barFill, barRight, button.Width);
         }
         else
         {
-            bCorner.Tint = button.GetInteractionColor(bCorner.Tint, InteractionShade);
-            bEdge.Tint = button.GetInteractionColor(bEdge.Tint, InteractionShade);
-            bFill.Tint = button.GetInteractionColor(bFill.Tint, InteractionShade);
-            bTextTint = button.GetInteractionColor(bTextTint, InteractionShade);
-            maps[zOrder].SetBox(button.Area, bFill, bCorner, bEdge);
+            boxCorner.Tint = button.GetInteractionColor(sel ? selTint : boxCorner.Tint, InteractionShade);
+            boxEdge.Tint = button.GetInteractionColor(sel ? selTint : boxEdge.Tint, InteractionShade);
+            boxFill.Tint = button.GetInteractionColor(sel ? selTint : boxFill.Tint, InteractionShade);
+            bTextTint = button.GetInteractionColor(sel ? selTint : bTextTint, InteractionShade);
+            maps[zOrder].SetBox(button.Area, boxFill, boxCorner, boxEdge);
         }
 
         maps[zOrder + 1].SetText(textPos, text, isBar ? rTextTint : bTextTint);
@@ -138,7 +144,7 @@ public static class TileMapperUI
         if (maps.Count <= zOrder + 1 || button.IsHidden)
             return;
 
-        tile.Tint = button.GetInteractionColor(tile.Tint, InteractionShade);
+        tile.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : tile.Tint, InteractionShade);
         Clear(maps, button, zOrder);
         TryDisable(maps, button, zOrder + 1);
         maps[zOrder].SetTile(button.Position, tile, button.Mask);
@@ -148,8 +154,8 @@ public static class TileMapperUI
         if (maps.Count <= zOrder + 3 || inputBox.IsHidden)
             return;
 
-        var (background, cursor, textTint, selectionTint) = ThemeInputBox;
-        var selectColor = inputBox.IsFocused ? new(selectionTint) : new Color(selectionTint).ToBright();
+        var (background, cursor) = ThemeInputBox;
+        var selectColor = inputBox.IsFocused ? TintSelection : TintSelection.ToBright();
         var selection = inputBox.Selection.Constrain(inputBox.Size, false);
         var text = inputBox.Text.Constrain(inputBox.Size, false);
         var placeholder = inputBox.Placeholder?.Constrain(inputBox.Size);
@@ -157,7 +163,7 @@ public static class TileMapperUI
         var textAboveOrBelow = new Tile(background.Id, new Color(background.Tint).ToDark(0.3f));
         var (w, h) = inputBox.Size;
         var cursorPos = inputBox.PositionFromIndices(inputBox.CursorIndices);
-        var placeholderTint = new Color(textTint).ToDark(0.4f);
+        var placeholderTint = TintText.ToDark();
 
         background.Tint = inputBox.GetInteractionColor(background.Tint, InteractionShade / 2f);
 
@@ -165,7 +171,7 @@ public static class TileMapperUI
         Clear(maps, inputBox, zOrder);
         maps[zOrder].SetArea(inputBox.Area, [background]);
         maps[zOrder].SetText(inputBox.Position, selection, selectColor);
-        maps[zOrder + 1].SetText(inputBox.Position, text, textTint);
+        maps[zOrder + 1].SetText(inputBox.Position, text, TintText);
 
         if (string.IsNullOrEmpty(inputBox.Value))
             maps[zOrder + 1].SetText(inputBox.Position, placeholder, placeholderTint);
@@ -187,11 +193,10 @@ public static class TileMapperUI
             return;
 
         var (img, audio, font, txt, zip, vid, cfg, exe) = ThemeFileViewer;
-        var (tint, select) = ThemeListText;
         var isFolder = fileViewer.IsFolder(item);
         var isHardDrive = fileViewer.HardDrives.Items.Contains(item);
         var isFileOrFolder = fileViewer.FilesAndFolders.Items.Contains(item);
-        var color = item.IsSelected && isFileOrFolder ? select : tint;
+        var color = item.IsSelected && isFileOrFolder ? TintSelection : TintText;
         var icon = new Tile(ICON_FOLDER, Yellow.ToDark(0.3f));
         var isRight = isHardDrive || item == fileViewer.Back || item == fileViewer.User;
         var text = item.Text.Shorten(isRight ? -fileViewer.Size.width + 1 : item.Size.width - 1);
@@ -320,7 +325,7 @@ public static class TileMapperUI
         if (maps.Count <= zOrder + 2 || stepper.IsHidden)
             return;
 
-        var (corner, fill, arrow, min, mid, max, textTint, valueTint) = ThemeStepper;
+        var (corner, fill, arrow, min, mid, max) = ThemeStepper;
         var (x, y) = stepper.Position;
         var stepPrecision = MathF.Round(stepper.Step, 2).Precision();
         var value = stepPrecision == 0 ? $"{stepper.Value}" : $"{stepper.Value:F2}";
@@ -344,8 +349,8 @@ public static class TileMapperUI
         maps[zOrder].SetBox(stepper.Area, fill, corner, fill);
         maps[zOrder + 1].SetTile(upPos, new(arrow.Id, upTint, Pose.Left), mask);
         maps[zOrder + 1].SetTile(downPos, new(arrow.Id, downTint, Pose.Right), mask);
-        maps[zOrder + 1].SetText((x + 1, y), text, textTint);
-        maps[zOrder + 1].SetText((x + 1, y + 1), value, valueTint);
+        maps[zOrder + 1].SetText((x + 1, y), text, TintText.ToDark());
+        maps[zOrder + 1].SetText((x + 1, y + 1), value, TintText);
         maps[zOrder + 1].SetTile(stepper.Minimum.Position, min, mask);
         maps[zOrder + 1].SetTile(stepper.Middle.Position, mid, mask);
         maps[zOrder + 1].SetTile(stepper.Maximum.Position, max, mask);
@@ -357,7 +362,7 @@ public static class TileMapperUI
         if (maps.Count <= zOrder + 3 || prompt.IsHidden)
             return;
 
-        var (corner, edge, fill, dim, textTint) = ThemePrompt;
+        var (corner, edge, fill, dim) = ThemePrompt;
         var newLines = prompt.Text.Count("\n") + 1;
         var text = prompt.Text.Constrain((prompt.Width, newLines), alignment: Alignment.Center);
         var (w, h) = Input.TileMapSize;
@@ -367,7 +372,7 @@ public static class TileMapperUI
         Clear(maps, prompt, zOrder);
         maps[zOrder].SetArea((0, 0, w, h), [dim]);
         maps[zOrder + 1].SetBox(prompt.Area, fill, corner, edge);
-        maps[zOrder + 2].SetText((x, y + 1), text, textTint);
+        maps[zOrder + 2].SetText((x, y + 1), text, TintText);
         TryDisable(maps, prompt, zOrder + 3);
         RestoreMasks(maps);
     }
@@ -395,7 +400,7 @@ public static class TileMapperUI
         if (maps.Count <= zOrder + 2 || panel.IsHidden)
             return;
 
-        var (corner, edge, fill, textTint) = ThemePanel;
+        var (corner, edge, fill) = ThemePanel;
         var (tx, ty) = (panel.X + panel.Width / 2 - panel.Text.Length / 2, panel.Y);
         var text = panel.Text.Shorten(Math.Min(panel.Width, panel.Text.Length));
 
@@ -404,7 +409,7 @@ public static class TileMapperUI
         ApplyMasks(maps, panel.Mask);
         Clear(maps, panel, zOrder);
         maps[zOrder].SetBox(panel.Area, fill, corner, edge);
-        maps[zOrder + 1].SetText((tx, ty), text, textTint);
+        maps[zOrder + 1].SetText((tx, ty), text, TintText);
         TryDisable(maps, panel, zOrder + 2);
         RestoreMasks(maps);
     }
@@ -541,8 +546,7 @@ public static class TileMapperUI
         if (maps.Count <= zOrder + 1 || item.IsHidden)
             return;
 
-        var (tint, select) = ThemeListText;
-        var color = item.IsSelected && showSelected ? select : tint;
+        var color = item.IsSelected && showSelected ? TintSelection : TintText;
         var isLeftCrop = list.Span == Span.Horizontal &&
                          item.Width < list.ItemSize.width &&
                          item.Position == list.Position;
@@ -588,21 +592,23 @@ public static class TileMapperUI
         const ushort STRAIGHT = PIPE_HOLLOW_STRAIGHT!;
 
         InteractionShade = 0.15f;
-        DisableOverlay = new(DISABLED_2, Black.ToTransparent());
+        DisablingOverlay = new(DISABLED_2, Black.ToTransparent());
+        TintSelection = Azure;
+        TintText = g.ToBright();
+
         ThemeScrollArrow = arrow;
-        ThemeButtonBox = (new(BOX_SHADOW_CORNER, g), new(BOX_SHADOW_EDGE, g), new(FULL, g), g.ToBright());
-        ThemeButtonBar = (line, line, line, g);
-        ThemeInputBox = (new(FULL, dg), new(SHAPE_LINE, White, Pose.Down), g.ToBright(), selectionTint: Blue);
+        ThemeButtonBox = (new(BOX_SHADOW_CORNER, g), new(BOX_SHADOW_EDGE, g), new(FULL, g));
+        ThemeButtonBar = (line, line, line);
+        ThemeInputBox = (new(FULL, ddg.ToDark(0.3f)), new(SHAPE_LINE, White, Pose.Down));
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
         ThemeSwitch = (new(ARROW_TAILLESS_ROUND, White), Green, dg);
         ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(BAR_BIG_EDGE, g, Pose.Down), new(SHAPE_CIRCLE_BIG, g.ToBright()));
-        ThemeTooltip = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), tintText: White);
+        ThemeTooltip = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg));
         ThemePages = (new(MATH_MUCH_LESS, g), new(MATH_LESS, g), new(MATH_GREATER, g), new(MATH_MUCH_GREATER, g));
-        ThemePrompt = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg), new(FULL, dim), tintText: White);
+        ThemePrompt = (new(BOX_CORNER, ddg), new(BOX_EDGE, ddg), new(FULL, dg), new(FULL, dim));
         ThemePromptItems = [new(ICON_YES, Green), new(ICON_NO, Red)];
         ThemePalette = (FULL, new(ICON_PICK, g), new(SHADE_5, dg), new(SHAPE_CIRCLE_SMALL, g));
-        ThemePanel = (new(BOX_CORNER, ddg), new(BOX_EDGE, ddg), new(FULL, dg), tintText: White);
-        ThemeListText = (g.ToBright(0.3f), Green);
+        ThemePanel = (new(BOX_CORNER, ddg), new(BOX_EDGE, ddg), new(FULL, dg));
         ThemeListBar = (new(FULL, dark), new(FULL, dark), new(FULL, dark), new(MATH_GREATER, g, Pose.Right));
         ThemeListPatch = new Tile[,]
         {
@@ -610,17 +616,17 @@ public static class TileMapperUI
             { new(FULL, dark), new(FULL, dark), new(FULL, dark) },
             { new(FULL, dark), new(FULL, dark), new(FULL, dark) }
         };
-        ThemeButtonPatch = (new[,]
+        ThemeButtonPatch = new[,]
         {
             { new(CORNER, g), new(STRAIGHT, g), new Tile(CORNER, g).Rotate(1) },
             { new Tile(STRAIGHT, g).Rotate(1), new(), new Tile(STRAIGHT, g).Rotate(1) },
             { new Tile(CORNER, g).Rotate(3), new Tile(STRAIGHT, g).Rotate(2), new Tile(CORNER, g).Rotate(2) }
-        }, g.ToBright());
+        };
 
         var min = new Tile(MATH_MUCH_LESS, g);
         var mid = new Tile(PUNCTUATION_PIPE, g);
         var max = new Tile(MATH_MUCH_GREATER, g);
-        ThemeStepper = (new(BOX_BIG_CORNER, dg), new(BOX_BIG_EDGE, dg), arrow, min, mid, max, g, White);
+        ThemeStepper = (new(BOX_BIG_CORNER, dg), new(FULL, dg), arrow, min, mid, max);
 
         var img = new Tile(ICON_PICTURE, Cyan);
         var audio = new Tile(AUDIO_NOTES_BEAMED_EIGHT, Purple.ToBright(0.35f));
@@ -661,7 +667,7 @@ public static class TileMapperUI
     private static void TryDisable(IList<TileMap> maps, Block block, int zOrder)
     {
         if (block.IsDisabled)
-            maps[zOrder].SetArea(block.Area, [DisableOverlay]);
+            maps[zOrder].SetArea(block.Area, [DisablingOverlay]);
     }
 #endregion
 }
