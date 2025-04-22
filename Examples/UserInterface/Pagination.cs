@@ -31,7 +31,7 @@ public static class Pagination
         buttons.ItemWidth = $"{buttons.Count}".Length + 2;
         buttons.AlignInside((0.5f, 0.95f));
         buttons.OnDisplay += () => maps.SetPages(buttons);
-        buttons.OnItemDisplay += item => maps.SetButton(item);
+        buttons.OnItemDisplay += item => maps.SetButton(item, 1, true);
 
         return [tiles, pages, buttons];
     }

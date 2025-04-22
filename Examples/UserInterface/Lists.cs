@@ -36,7 +36,7 @@ public static class Lists
             maps[0].SetText((x, y - 1), "Multi select");
             maps.SetList(listHorizontal);
         };
-        listHorizontal.OnItemDisplay += item => maps.SetButton(item);
+        listHorizontal.OnItemDisplay += item => maps.SetButton(item, 1, true);
 
         //==============
 

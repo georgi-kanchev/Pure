@@ -555,7 +555,7 @@ public class Block
     private void TryTrigger()
     {
         var isAllowed = Input.DOUBLE_CLICK_DELAY > Input.doubleClick.Elapsed.TotalSeconds;
-        if (isAllowed == false && isReadyForDoubleClick)
+        if ((isAllowed == false && isReadyForDoubleClick) || IsHovered == false)
             isReadyForDoubleClick = false;
 
         if (IsFocused == false || IsDisabled)

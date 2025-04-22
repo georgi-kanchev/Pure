@@ -6,8 +6,8 @@ public static class SlidersAndScrolls
     {
         Window.Title = "Pure - Sliders & Scrolls Example";
 
-        var sliderH = new Slider((0, 0), false) { Size = (10, 10) };
-        var sliderV = new Slider((0, 0), true) { Size = (10, 10) };
+        var sliderH = new Slider((0, 0), false);
+        var sliderV = new Slider((0, 0), true);
         var scrollH = new Scroll((0, 0), false);
         var scrollV = new Scroll((0, 0), true);
 

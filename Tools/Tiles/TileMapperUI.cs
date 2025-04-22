@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Pure.Engine.Window;
+﻿using Pure.Engine.Window;
 using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
@@ -100,7 +99,7 @@ public static class TileMapperUI
         TryDisable(maps, button, zOrder + 1);
         RestoreMasks(maps);
     }
-    public static void SetButton(this IList<TileMap> maps, Button button, int zOrder = 1)
+    public static void SetButton(this IList<TileMap> maps, Button button, int zOrder = 1, bool selectable = false)
     {
         if (maps.Count <= zOrder + 2 || button.IsHidden)
             return;
@@ -112,10 +111,10 @@ public static class TileMapperUI
         var text = button.Text.Shorten(h == 1 ? w : w - 2);
         var textPos = (button.X + offsetW, button.Y + h / 2);
         var isBar = button.Height == 1;
-        var sel = button.IsSelected;
+        var sel = button.IsSelected && selectable;
         var (rTextTint, bTextTint) = (TintText, TintText);
         var selTint = TintSelection;
-        
+
         ApplyMasks(maps, button.Mask);
         Clear(maps, button, zOrder);
         if (isBar)
@@ -123,7 +122,7 @@ public static class TileMapperUI
             barLeft.Tint = button.GetInteractionColor(sel ? selTint : barLeft.Tint, InteractionShade);
             barFill.Tint = button.GetInteractionColor(sel ? selTint : barFill.Tint, InteractionShade);
             barRight.Tint = button.GetInteractionColor(sel ? selTint : barRight.Tint, InteractionShade);
-            rTextTint = button.GetInteractionColor(sel ? selTint : rTextTint, InteractionShade);
+            rTextTint = button.GetInteractionColor(sel ? selTint.ToBright() : rTextTint, InteractionShade);
             maps[zOrder].SetBar(button.Position, barLeft, barFill, barRight, button.Width);
         }
         else
@@ -131,7 +130,7 @@ public static class TileMapperUI
             boxCorner.Tint = button.GetInteractionColor(sel ? selTint : boxCorner.Tint, InteractionShade);
             boxEdge.Tint = button.GetInteractionColor(sel ? selTint : boxEdge.Tint, InteractionShade);
             boxFill.Tint = button.GetInteractionColor(sel ? selTint : boxFill.Tint, InteractionShade);
-            bTextTint = button.GetInteractionColor(sel ? selTint : bTextTint, InteractionShade);
+            bTextTint = button.GetInteractionColor(sel ? selTint.ToBright() : bTextTint, InteractionShade);
             maps[zOrder].SetBox(button.Area, boxFill, boxCorner, boxEdge);
         }
 
@@ -139,12 +138,12 @@ public static class TileMapperUI
         TryDisable(maps, button, zOrder + 2);
         RestoreMasks(maps);
     }
-    public static void SetButtonTile(this IList<TileMap> maps, Button button, Tile tile, int zOrder = 0)
+    public static void SetButtonTile(this IList<TileMap> maps, Button button, Tile tile, int zOrder = 0, bool selectable = false)
     {
         if (maps.Count <= zOrder + 1 || button.IsHidden)
             return;
 
-        tile.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : tile.Tint, InteractionShade);
+        tile.Tint = button.GetInteractionColor(button.IsSelected && selectable ? TintSelection : tile.Tint, InteractionShade);
         Clear(maps, button, zOrder);
         TryDisable(maps, button, zOrder + 1);
         maps[zOrder].SetTile(button.Position, tile, button.Mask);
@@ -486,7 +485,7 @@ public static class TileMapperUI
         if (maps.Count <= zOrder + 1)
             return;
 
-        var color = GetInteractionColor(item, item.IsSelected ? Green : Gray.ToBright(0.2f), InteractionShade);
+        var color = GetInteractionColor(item, item.IsSelected ? TintSelection : TintText, InteractionShade);
         var text = item.Text.ToNumber().PadZeros(-pages.ItemWidth);
         text = text.Constrain(item.Size, alignment: Alignment.Center);
 
@@ -502,7 +501,7 @@ public static class TileMapperUI
             return;
 
         var index = Math.Clamp(pages.IndexOf(item), 0, tiles.Length - 1);
-        SetButtonTile(maps, item, tiles[index], zOrder);
+        SetButtonTile(maps, item, tiles[index], zOrder, true);
     }
     public static void SetList(this IList<TileMap> maps, List list, int zOrder = 0)
     {
@@ -541,12 +540,12 @@ public static class TileMapperUI
         TryDisable(maps, list, zOrder + 3);
         RestoreMasks(maps);
     }
-    public static void SetListItem(this IList<TileMap> maps, List list, Button item, int zOrder = 1, bool showSelected = true)
+    public static void SetListItem(this IList<TileMap> maps, List list, Button item, int zOrder = 1, bool selectable = true)
     {
         if (maps.Count <= zOrder + 1 || item.IsHidden)
             return;
 
-        var color = item.IsSelected && showSelected ? TintSelection : TintText;
+        var color = item.IsSelected && selectable ? TintSelection : TintText;
         var isLeftCrop = list.Span == Span.Horizontal &&
                          item.Width < list.ItemSize.width &&
                          item.Position == list.Position;
