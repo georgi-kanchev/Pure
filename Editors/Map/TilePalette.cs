@@ -84,7 +84,7 @@ internal class TilePalette
     public void Create((int width, int height) size)
     {
         map = new(size) { View = (0, 0, 10, 10) };
-        layerTiles = new(map.View.Size, false) { Zoom = 7.6f, PixelOffset = (198, 88) };
+        layerTiles = new(map.View.Size) { Zoom = 7.6f, PixelOffset = (198, 88) };
     }
 
     public void Update(Inspector inspector, TerrainPanel terrainPanel)

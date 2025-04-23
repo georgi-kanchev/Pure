@@ -1,9 +1,10 @@
-namespace Pure.Examples.Games;
+using Pure.Engine.Collision;
+using Pure.Engine.Tiles;
+using Pure.Engine.Utility;
+using Pure.Engine.Window;
+using Monitor = Pure.Engine.Window.Monitor;
 
-using Engine.Collision;
-using Engine.Tiles;
-using Engine.Utility;
-using Engine.Window;
+namespace Pure.Examples.Games;
 
 public static class FlappyBird
 {
@@ -14,15 +15,10 @@ public static class FlappyBird
         Window.BackgroundColor = Window.IsRetro ? Color.Black : Color.Blue.ToDark();
 
         const int SCROLL_SPEED = 4, BIRD_X = 10, PIPE_WIDTH = 2, PIPE_HEIGHT = 20;
-        var score = 0;
-        var isGameOver = false;
-        var ratio = Monitor.Current.AspectRatio;
-        var background = new TileMap((ratio.width * 3, ratio.height * 3));
-        var foreground = new TileMap(background.Size);
-        var (width, height) = background.Size;
-
-        var birdY = 5f;
-        var birdVelocity = 0f;
+        var (w, h) = Monitor.Current.AspectRatio;
+        var layer = new LayerTiles((w * 3, h * 3));
+        var (background, foreground) = (new TileMap(layer.Size), new TileMap(layer.Size));
+        var (birdY, birdVelocity, score, isGameOver) = (5f, 0f, 0, false);
         var birdAnimation = new[]
         {
             new Tile(Tile.ARROW_DIAGONAL, Color.Yellow),
@@ -30,60 +26,59 @@ public static class FlappyBird
             new Tile(Tile.ARROW, Color.Yellow),
             new Tile(Tile.ARROW_DIAGONAL, Color.Yellow, Pose.Right) // rotated 1 time (90 degrees clockwise)
         };
-        var pipes = new List<(float, int, int)>();
+        var defaultPipes = new List<(float x, int y, int holeSize)>
+        {
+            (layer.Size.width + 00, (-15, -3).Random(), (3, 10).Random()),
+            (layer.Size.width + 10, (-15, -3).Random(), (3, 10).Random()),
+            (layer.Size.width + 20, (-15, -3).Random(), (3, 10).Random()),
+            (layer.Size.width + 30, (-15, -3).Random(), (3, 10).Random()),
+            (layer.Size.width + 40, (-15, -3).Random(), (3, 10).Random())
+        };
+        var pipes = defaultPipes.ToList();
         var collisionMap = new SolidMap();
-        var layer = new LayerTiles(background.Size);
 
         collisionMap.AddSolids(Tile.PIPE_SOLID_CORNER, [new(0, 0, 1, 1)]);
         collisionMap.AddSolids(Tile.PIPE_SOLID_STRAIGHT, [new(0, 0, 1, 1)]);
 
-        InitializePipes();
-
-        layer.BackgroundColor = Color.Black;
-
+        // flapping ====================================================
         Keyboard.Key.Space.OnPress(() =>
         {
             birdVelocity = -8f;
-            birdAnimation = birdAnimation.ToArray(); // reset the animation
+            birdAnimation = birdAnimation.ToArray(); // resets the animation
 
             if (isGameOver == false)
-                return;
+                return; // disabled during game over screen
 
             birdY = 5f;
             birdVelocity = 0f;
             isGameOver = false;
             score = 0;
-            InitializePipes();
+            pipes = defaultPipes.ToList();
         });
 
         while (Window.KeepOpen())
         {
             Time.Update();
 
+            // bird ====================================================
+            isGameOver = birdY + 1 >= layer.Size.height || collisionMap.IsOverlapping(new Solid(BIRD_X, birdY, 1, 1));
+
+            if (isGameOver == false)
+            {
+                birdVelocity += Time.Delta * 10f; //    apply gravity
+                birdY += birdVelocity * Time.Delta; //  apply velocity
+
+                if (birdY <= 0) // prevent jumping "over" pipes and going offscreen on the top
+                {
+                    birdY = 0;
+                    birdVelocity = 0;
+                }
+            }
+
+            // pipes ====================================================
             background.Fill([new(Tile.FULL, Color.Blue.ToDark())]);
             foreground.Flush();
 
-            UpdateBird();
-            UpdatePipes();
-            collisionMap.Update(foreground);
-            isGameOver = IsGameOver();
-            Draw();
-        }
-
-        void InitializePipes()
-        {
-            pipes =
-            [
-                (width + 00, (-15, -3).Random(), (3, 10).Random()),
-                (width + 10, (-15, -3).Random(), (3, 10).Random()),
-                (width + 20, (-15, -3).Random(), (3, 10).Random()),
-                (width + 30, (-15, -3).Random(), (3, 10).Random()),
-                (width + 40, (-15, -3).Random(), (3, 10).Random())
-            ];
-        }
-
-        void UpdatePipes()
-        {
             for (var i = 0; i < pipes?.Count; i++)
             {
                 var (pipeX, pipeY, holeSize) = pipes[i];
@@ -93,7 +88,7 @@ public static class FlappyBird
 
                 if (pipeX < -2) // "wrap" pipes around and reuse them
                 {
-                    pipeX = width + 2;
+                    pipeX = layer.Size.width + 2;
                     pipeY = (-15, -1).Random();
                     holeSize = (3, 10).Random();
                     score++;
@@ -110,47 +105,19 @@ public static class FlappyBird
                     new(Tile.PIPE_SOLID_CORNER, Color.Green),
                     new(Tile.PIPE_SOLID_STRAIGHT, Color.Green));
             }
-        }
 
-        void UpdateBird()
-        {
+            collisionMap.Update(foreground);
+
+            // rendering ====================================================
             if (isGameOver)
-                return;
-
-            // apply gravity
-            birdVelocity += Time.Delta * 10f;
-            birdY += birdVelocity * Time.Delta;
-
-            // prevent jumping "over" pipes and going offscreen
-            if (birdY > 0)
-                return;
-
-            birdY = 0;
-            birdVelocity = 0;
-        }
-
-        bool IsGameOver()
-        {
-            var birdRect = new Solid(BIRD_X, birdY, 1, 1);
-            return birdY + 1 >= height || collisionMap.IsOverlapping(birdRect);
-        }
-
-        void Draw()
-        {
-            var birdTile = birdAnimation.Animate(3f, false);
+                foreground.SetText((0, 0), "Game Over!\n\n" +
+                                           "<Space> to play again".Constrain(layer.Size, alignment: Alignment.Center));
 
             var scoreText = $"Score: {score}";
-            foreground.SetText((width / 2 - scoreText.Length / 2, 1), scoreText);
-
-            var text = $"Game Over!\n\n<Space> to play again"
-                .Constrain((width, height), alignment: Alignment.Center);
-            if (isGameOver)
-                foreground.SetText((0, 0), text);
-
+            foreground.SetText((layer.Size.width / 2 - scoreText.Length / 2, 1), scoreText);
             layer.DrawTileMap(background.ToBundle());
             layer.DrawTileMap(foreground.ToBundle());
-            var tile = isGameOver ? new(Tile.UPPERCASE_X) : birdTile;
-            layer.DrawTiles((BIRD_X, birdY), tile);
+            layer.DrawTiles((BIRD_X, birdY), isGameOver ? new(Tile.UPPERCASE_X) : birdAnimation.Animate(3f, false));
             layer.DrawMouseCursor();
             layer.Render();
         }

@@ -86,19 +86,6 @@ public class LayerTiles
         get => zoom;
         set => zoom = Math.Clamp(value, 0f, 1000f);
     }
-    public float ZoomWindowFit
-    {
-        get
-        {
-            Window.TryCreate();
-
-            var (mw, mh) = Monitor.Current.Size;
-            var (ww, wh) = Window.Size;
-            var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
-            var (rw, rh) = ((float)mw / ww, (float)mh / wh);
-            return Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
-        }
-    }
 
     public bool IsHovered
     {
@@ -123,7 +110,7 @@ public class LayerTiles
         }
     }
 
-    public LayerTiles(SizeI size = default, bool fitWindow = true)
+    public LayerTiles(SizeI size = default)
     {
         Init();
 
@@ -133,11 +120,7 @@ public class LayerTiles
         Size = size;
         Zoom = 1f;
 
-        if (fitWindow == false)
-            return;
-
-        Zoom = ZoomWindowFit;
-        PixelOffset = (0, 0);
+        Fit();
     }
 
     public void ToDefault()
@@ -150,6 +133,32 @@ public class LayerTiles
         AtlasTileIdFull = 10;
     }
 
+    public void Fit()
+    {
+        Window.TryCreate();
+
+        var (mw, mh) = Monitor.Current.Size;
+        var (ww, wh) = Window.Size;
+        var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
+        var (rw, rh) = ((float)mw / ww, (float)mh / wh);
+        var zoomFit = Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+
+        Zoom = zoomFit;
+        PixelOffset = default;
+    }
+    public void Fill()
+    {
+        Window.TryCreate();
+
+        var (mw, mh) = Monitor.Current.Size;
+        var (ww, wh) = Window.Size;
+        var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
+        var (rw, rh) = ((float)mw / ww, (float)mh / wh);
+        var zoomFit = Math.Max((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+
+        Zoom = zoomFit;
+        PixelOffset = default;
+    }
     public void Align(VecF alignment)
     {
         Window.TryCreate();
@@ -167,17 +176,21 @@ public class LayerTiles
     {
         Window.TryCreate();
 
+        var (_, _, rew, reh) = Window.GetRenderArea();
+        var (mw, mh) = Monitor.Current.Size;
+        var (rw, rh) = (mw / rew, mh / reh);
+        var (dx, dy) = (Mouse.CursorDelta.x / Window.PixelScale * rw, Mouse.CursorDelta.y / Window.PixelScale * rh);
+        var (w, h) = ((float)TilemapPixelSize.width, (float)TilemapPixelSize.height);
+
         if (Mouse.ScrollDelta != 0)
             Zoom *= Mouse.ScrollDelta > 0 ? 1f + zoomDelta : 1f - zoomDelta;
         if (dragButton.IsPressed())
-            PixelOffset = (PixelOffset.x + Mouse.CursorDelta.x / Zoom, PixelOffset.y + Mouse.CursorDelta.y / Zoom);
+            PixelOffset = (PixelOffset.x + dx / Zoom, PixelOffset.y + dy / Zoom);
 
         if (limit == false)
             return;
 
-        var (w, h) = ((float)TilemapPixelSize.width, (float)TilemapPixelSize.height);
-        var (x, y) = PixelOffset;
-        PixelOffset = (Math.Clamp(x, -w / 2, w / 2), Math.Clamp(y, -h / 2, h / 2));
+        PixelOffset = (Math.Clamp(PixelOffset.x, -w / 2, w / 2), Math.Clamp(PixelOffset.y, -h / 2, h / 2));
     }
 
     public void TextTileCrop(ushort symbolTileId, float newSymbolWidth)
@@ -424,19 +437,19 @@ public class LayerTiles
         var (cw, ch) = Size;
         var (ox, oy) = PixelOffset;
         var (mw, mh) = (cw * AtlasTileSize, ch * AtlasTileSize);
-        var (ww, wh, ow, oh) = Window.GetRenderOffset();
+        var (rx, ry, rw, rh) = Window.GetRenderArea();
 
-        px -= ow;
-        py -= oh;
+        px -= rx;
+        py -= ry;
 
         ox /= mw;
         oy /= mh;
 
-        px -= ww / 2f;
-        py -= wh / 2f;
+        px -= rw / 2f;
+        py -= rh / 2f;
 
-        var x = Window.Map(px, 0, ww, 0, cw);
-        var y = Window.Map(py, 0, wh, 0, ch);
+        var x = Window.Map(px, 0, rw, 0, cw);
+        var y = Window.Map(py, 0, rh, 0, ch);
 
         x *= vw / Zoom / mw;
         y *= vh / Zoom / mh;
@@ -458,7 +471,7 @@ public class LayerTiles
         var (cw, ch) = Size;
         var (ox, oy) = PixelOffset;
         var (mw, mh) = (cw * AtlasTileSize, ch * AtlasTileSize);
-        var (ww, wh, ow, oh) = Window.GetRenderOffset();
+        var (rx, ry, rw, rh) = Window.GetRenderArea();
 
         ox /= mw;
         oy /= mh;
@@ -472,14 +485,14 @@ public class LayerTiles
         posX /= vw / Zoom / mw;
         posY /= vh / Zoom / mh;
 
-        var px = Window.Map(posX, 0, cw, 0, ww);
-        var py = Window.Map(posY, 0, ch, 0, wh);
+        var px = Window.Map(posX, 0, cw, 0, rw);
+        var py = Window.Map(posY, 0, ch, 0, rh);
 
-        px += ww / 2f;
-        py += wh / 2f;
+        px += rw / 2f;
+        py += rh / 2f;
 
-        px += ow;
-        py += oh;
+        px += rx;
+        py += ry;
 
         return ((int)px, (int)py);
     }

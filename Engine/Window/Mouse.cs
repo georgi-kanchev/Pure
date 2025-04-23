@@ -198,10 +198,10 @@ public static class Mouse
         get
         {
             var (ww, wh) = Window.Size;
-            var (_, _, ow, oh) = Window.GetRenderOffset();
+            var (rx, ry, _, _) = Window.GetRenderArea();
             var (x, y) = CursorPosition;
 
-            return x > ow && x < ww - ow && y > oh && y < wh - oh;
+            return x > rx && x < ww - rx && y > ry && y < wh - ry;
         }
     }
 

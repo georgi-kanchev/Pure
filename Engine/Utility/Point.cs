@@ -1,7 +1,6 @@
 ﻿using PointF = (float x, float y);
 using Direction = (float x, float y);
 using PointI = (int x, int y);
-using Bundle = (float x, float y, uint color);
 
 namespace Pure.Engine.Utility;
 
@@ -11,21 +10,10 @@ public struct Point : IEquatable<Point>
     {
         get => new(float.NaN);
     }
-
-    /// <summary>
-    /// X = 0<br></br>
-    /// Y = 0<br></br>
-    /// Color = White
-    /// </summary>
     public static Point Zero
     {
         get => default;
     }
-    /// <summary>
-    /// X = 1<br></br>
-    /// Y = 1<br></br>
-    /// Color = White
-    /// </summary>
     public static Point One
     {
         get => new(1);
@@ -46,62 +34,32 @@ public struct Point : IEquatable<Point>
         get => val.y;
         set => val = (val.x, value);
     }
-    public uint Color { get; set; }
 
     public bool IsNaN
     {
         get => float.IsNaN(X) || float.IsNaN(Y);
     }
 
-    public Point(float x, float y, uint color = uint.MaxValue)
+    public Point(float x, float y)
     {
         val = (x, y);
-        Color = color;
         X = x;
         Y = y;
     }
-    public Point(float xy, uint color = uint.MaxValue) : this(xy, xy, color)
+    public Point(float xy) : this(xy, xy)
     {
     }
-    public Point(Bundle bundle) : this(bundle.x, bundle.y, bundle.color)
-    {
-    }
-    public Point(PointF position, uint color = uint.MaxValue) : this(position.x, position.y, color)
-    {
-    }
-    public Point(byte[] bytes)
-    {
-        var offset = 0;
-
-        val = (BitConverter.ToSingle(GetBytesFrom(bytes, 4, ref offset)),
-            BitConverter.ToSingle(GetBytesFrom(bytes, 4, ref offset)));
-        Color = BitConverter.ToUInt32(GetBytesFrom(bytes, 4, ref offset));
-    }
-    public Point(string base64) : this(Convert.FromBase64String(base64))
+    public Point(PointF position) : this(position.x, position.y)
     {
     }
 
-    public string ToBase64()
-    {
-        return Convert.ToBase64String(ToBytes());
-    }
-    public byte[] ToBytes()
-    {
-        var result = new List<byte>();
-
-        result.AddRange(BitConverter.GetBytes(X));
-        result.AddRange(BitConverter.GetBytes(Y));
-        result.AddRange(BitConverter.GetBytes(Color));
-
-        return result.ToArray();
-    }
-    public Bundle ToBundle()
-    {
-        return (X, Y, Color);
-    }
     public override string ToString()
     {
         return val.ToString();
+    }
+    public PointF ToBundle()
+    {
+        return XY;
     }
 
     public Point ToGrid(Point gridSize)
@@ -189,7 +147,7 @@ public struct Point : IEquatable<Point>
     }
     public bool Equals(Point other)
     {
-        return val.Equals(other.val) && Color == other.Color;
+        return val.Equals(other.val);
     }
 
     public static Point? Average(Point[]? points)
@@ -224,22 +182,6 @@ public struct Point : IEquatable<Point>
     public static implicit operator PointF(Point point)
     {
         return point.val;
-    }
-    public static implicit operator Point(Bundle bundle)
-    {
-        return new(bundle);
-    }
-    public static implicit operator Bundle(Point point)
-    {
-        return point.ToBundle();
-    }
-    public static implicit operator byte[](Point point)
-    {
-        return point.ToBytes();
-    }
-    public static implicit operator Point(byte[] bytes)
-    {
-        return new(bytes);
     }
 
     public static Point operator +(Point a, Point b)
@@ -298,13 +240,6 @@ public struct Point : IEquatable<Point>
     {
         var value = (number - a1) / (a2 - a1) * (b2 - b1) + b1;
         return float.IsNaN(value) || float.IsInfinity(value) ? b1 : value;
-    }
-
-    private static byte[] GetBytesFrom(byte[] fromBytes, int amount, ref int offset)
-    {
-        var result = fromBytes[offset..(offset + amount)];
-        offset += amount;
-        return result;
     }
 #endregion
 }

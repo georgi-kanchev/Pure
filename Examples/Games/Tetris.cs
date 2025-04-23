@@ -1,11 +1,11 @@
 using Pure.Engine.Execution;
+using Pure.Engine.Window;
+using Pure.Engine.Utility;
+using Pure.Engine.Tiles;
+using Pure.Engine.Collision;
+using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Games;
-
-using Engine.Window;
-using Engine.Utility;
-using Engine.Tiles;
-using Engine.Collision;
 
 public static class Tetris
 {
@@ -14,109 +14,84 @@ public static class Tetris
         Window.Title = "Pure - Tetris Example";
 
         var (w, h) = Monitor.Current.AspectRatio;
-        map = new((w * 3, h * 3));
-        layer = new(map.Size);
-        playArea = new(map.Size.width / 3, 0, map.Size.width / 3 - 1, map.Size.height - 1);
+        var fallen = new SortedDictionary<(int y, int x), Box>();
+        var map = new TileMap((w * 3, h * 3));
+        var layer = new LayerTiles(map.Size);
+        var playArea = new Area(map.Size.width / 3, 0, map.Size.width / 3 - 1, map.Size.height - 1);
         var (ax, ay, aw, ah) = playArea.ToBundle();
         map.SetBox((ax, ay, aw + 1, ah + 1), Tile.EMPTY, Tile.BOX_CORNER, Tile.FULL);
-        piece = new((map.Size.width / 2, 0));
+        var piece = new Piece((map.Size.width / 2, 0), fallen, playArea);
 
+        // game flow ====================================================
         Flow.CallEvery(0.5f, () =>
         {
-            if (piece.TryMoveAt(Angle.Down) == false)
-                Collide();
+            if (piece.TryMoveAt(Angle.Down)) // falling & colliding
+                return;
+
+            // clearing line ====================================================
+            var ys = piece.GetBoxYs();
+            ys.Sort();
+
+            foreach (var y in ys)
+            {
+                var count = 0;
+                for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
+                    if (fallen.ContainsKey(((int)y, x)))
+                        count++;
+                    else
+                        break;
+
+                if (count != playArea.Width - 1) // is line full?
+                    continue;
+
+                for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
+                    fallen.Remove(((int)y, x)); // remove line
+
+                var boxesToDrop = new List<Box>();
+                foreach (var kvp in fallen.Reverse())
+                    if (kvp.Value.Position.Y < y) // gather all boxes above line
+                        boxesToDrop.Add(kvp.Value);
+
+                foreach (var box in boxesToDrop)
+                {
+                    fallen.Remove(((int)box.Position.Y, (int)box.Position.X));
+                    box.Position = box.Position.MoveAt(Angle.Down, 1); // drop all boxes gathered & update fallen
+                    fallen[((int)box.Position.Y, (int)box.Position.X)] = box;
+                }
+            }
+
+            piece = new((map.Size.width / 2, 0), fallen, playArea);
         });
 
-        HandleInput();
+        Keyboard.Key.ArrowLeft.OnPressAndHold(() => piece.TryMoveAt(Angle.Left));
+        Keyboard.Key.ArrowRight.OnPressAndHold(() => piece.TryMoveAt(Angle.Right));
+        Keyboard.Key.ArrowDown.OnPressAndHold(() => piece.TryMoveAt(Angle.Down));
+        Keyboard.Key.Space.OnPress(() => piece.Rotate());
 
         while (Window.KeepOpen())
         {
             Time.Update();
             Flow.Update(Time.Delta);
-            Draw();
-        }
 
-        void HandleInput()
-        {
-            Keyboard.Key.ArrowLeft.OnPressAndHold(() => piece?.TryMoveAt(Angle.Left));
-            Keyboard.Key.ArrowRight.OnPressAndHold(() => piece?.TryMoveAt(Angle.Right));
-            Keyboard.Key.ArrowDown.OnPressAndHold(() => piece?.TryMoveAt(Angle.Down));
-            Keyboard.Key.Space.OnPress(() => piece?.Rotate());
-        }
+            // rendering ====================================================
+            foreach (var (_, box) in fallen)
+                layer.DrawTiles(box.Position, box.Tile);
 
-        void Draw()
-        {
-            piece?.Draw();
-
-            foreach (var kvp in fallen)
-                kvp.Value.Draw();
-
-            if (map != null)
-                layer?.DrawTileMap(map);
-
-            layer?.DrawMouseCursor();
-            layer?.Render();
-        }
-
-        void Collide()
-        {
-            var ys = piece?.GetBoxYs() ?? [];
-            ys.Sort();
-
-            foreach (var y in ys)
-                if (IsLineFull(y))
-                    ClearLine(y);
-
-            piece = new((map?.Size.width / 2 ?? 0, 0));
-        }
-
-        bool IsLineFull(float y)
-        {
-            var count = 0;
-            for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
-                if (fallen.ContainsKey(((int)y, x)))
-                    count++;
-                else
-                    break;
-
-            return count == playArea.Width - 1;
-        }
-
-        void ClearLine(float y)
-        {
-            for (var x = playArea.X + 1; x < playArea.X + playArea.Width; x++)
-                fallen.Remove(((int)y, x));
-
-            var boxesToDrop = new List<Box>();
-            foreach (var kvp in fallen.Reverse())
-                if (kvp.Value.Position.Y < y)
-                    boxesToDrop.Add(kvp.Value);
-
-            foreach (var box in boxesToDrop)
-            {
-                fallen.Remove(((int)box.Position.Y, (int)box.Position.X));
-                box.MoveAt(Angle.Down);
-                fallen[((int)box.Position.Y, (int)box.Position.X)] = box;
-            }
+            piece.Draw(layer);
+            layer.DrawTileMap(map);
+            layer.DrawMouseCursor();
+            layer.Render();
         }
     }
 
 #region Backend
-    private static readonly SortedDictionary<(int y, int x), Box> fallen = new();
-    private static Area playArea;
-    private static LayerTiles? layer;
-    private static TileMap? map;
-    private static Piece? piece;
-
     private class Piece
     {
-        public Piece(Point atPosition)
+        public Piece(Point atPosition, SortedDictionary<(int y, int x), Box> fallen, Area playArea)
         {
+            this.fallen = fallen;
             var (x, y) = atPosition.XY;
-            var colors = new[]
-            {
-                Color.Cyan, Color.Yellow, Color.Purple, Color.Blue, Color.Orange, Color.Green, Color.Red
-            };
+            var colors = new[] { Color.Cyan, Color.Yellow, Color.Purple, Color.Blue, Color.Orange, Color.Green, Color.Red };
             var positions = new[]
             {
                 [(x - 1, y + 0), (x + 0, y + 0), (x + 1, y + 0), (x + 2, y + 0)], // I
@@ -129,8 +104,9 @@ public static class Tetris
             };
             var randomType = (0, positions.Length - 1).Random();
             var structure = new Box[4];
+
             for (var i = 0; i < structure.Length; i++)
-                structure[i] = new(new(Tile.SHAPE_SQUARE, colors[randomType]), positions[randomType][i]);
+                structure[i] = new(new(Tile.SHAPE_SQUARE, colors[randomType]), positions[randomType][i], fallen, playArea);
 
             boxes = structure;
         }
@@ -151,8 +127,8 @@ public static class Tetris
             foreach (var box in boxes)
             {
                 var newPos = new Point(box.Position.Y - cy + cx, -(box.Position.X - cx) + cy);
-                if (Box.IsColliding(newPos))
-                    return;
+                if (box.IsColliding(newPos))
+                    return; // prevent rotation when the new piece orientation is colliding
 
                 newPositions.Add(newPos);
             }
@@ -168,12 +144,12 @@ public static class Tetris
             foreach (var box in boxes)
             {
                 var newPos = box.Position.MoveIn(angle, 1);
-                var hasCollided = Box.IsColliding(newPos);
+                var hasCollided = box.IsColliding(newPos);
                 var hasFrozen = hasCollided && angle == Angle.Down;
 
                 if (hasFrozen)
                 {
-                    isFrozen = true;
+                    isFrozen = true; // cannot fall anymore - freeze
                     foreach (var b in boxes)
                         fallen[((int)b.Position.Y, (int)b.Position.X)] = b;
 
@@ -184,38 +160,28 @@ public static class Tetris
                     return true;
             }
 
-            foreach (var box in boxes)
-                box.MoveAt(angle);
+            foreach (var box in boxes) // this piece is able to fall because it passed the previous freeze check
+                box.Position = box.Position.MoveAt(angle, 1);
 
             return true;
         }
-        public void Draw()
+        public void Draw(LayerTiles layer)
         {
             foreach (var box in boxes)
-                box.Draw();
+                layer.DrawTiles(box.Position, box.Tile);
         }
 
-#region Backend
         private bool isFrozen;
         private readonly Box[] boxes;
-#endregion
+        private readonly SortedDictionary<(int y, int x), Box> fallen;
     }
 
-    private class Box
+    private class Box(Tile tile, Point position, SortedDictionary<(int y, int x), Box> fallen, Area playArea)
     {
-        public Point Position { get; set; }
+        public Tile Tile { get; } = tile;
+        public Point Position { get; set; } = position;
 
-        public Box(Tile tile, Point position)
-        {
-            this.tile = tile;
-            Position = position;
-        }
-
-        public void MoveAt(Angle angle)
-        {
-            Position = Position.MoveAt(angle, 1);
-        }
-        public static bool IsColliding(Point position)
+        public bool IsColliding(Point position)
         {
             var solid = new Solid(playArea.Position, playArea.Size);
             var isAtEdge = position.Y > 1 && solid.IsOverlapping(position.XY) == false;
@@ -223,14 +189,8 @@ public static class Tetris
 
             return isAtEdge || isAtFallen;
         }
-        public void Draw()
-        {
-            layer?.DrawTiles(Position, tile);
-        }
 
-#region Backend
-        private readonly Tile tile;
-#endregion
+        private readonly Area playArea = playArea;
     }
 #endregion
 }

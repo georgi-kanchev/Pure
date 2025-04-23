@@ -11,13 +11,14 @@ public static class TerrainGeneration
     public static void Run()
     {
         Window.Title = "Pure - Terrain Generation Example";
-        Window.PixelScale = 3f;
+        Window.PixelScale = 10f;
+        Window.RenderArea = RenderArea.Fill;
 
-        var aspectRatio = Monitor.Current.AspectRatio;
-        var layer = new LayerTiles((aspectRatio.width * 5, aspectRatio.height * 5));
+        var layer = new LayerTiles((160, 160));
         var terrain = new TileMap(layer.Size);
         var generator = new MapGenerator();
 
+        layer.Fill();
         RegenerateMap();
 
         Keyboard.Key.ArrowLeft.OnPressAndHold(() => Scroll(-3, 0));
@@ -27,6 +28,7 @@ public static class TerrainGeneration
 
         while (Window.KeepOpen())
         {
+            layer.DragAndZoom();
             layer.DrawTileMap(terrain);
             layer.DrawMouseCursor();
             layer.Render();

@@ -30,6 +30,8 @@ internal class DoNotSave : Attribute;
 /// </summary>
 public enum Mode { Windowed, Borderless, Fullscreen }
 
+public enum RenderArea { Fit, Fill }
+
 /// <summary>
 /// Provides access to an OS window and its properties.
 /// </summary>
@@ -165,6 +167,15 @@ public static class Window
 
             clipboardCache = value;
             SFML.Window.Clipboard.Contents = value;
+        }
+    }
+    public static RenderArea RenderArea
+    {
+        get => renderArea;
+        set
+        {
+            TryCreate();
+            renderArea = value;
         }
     }
 
@@ -332,11 +343,11 @@ public static class Window
     internal static Texture? white;
 
     private static bool isRetro, isClosing, hasClosed, isVerticallySynced = true, isRecreating, shouldGetClipboard;
-    private static string title = "Game";
-    private static string clipboardCache = "";
+    private static string title = "Game", clipboardCache = "";
     private static uint backgroundColor, monitor, maximumFrameRate = 60;
     private static Mode mode;
     private static float pixelScale = 5f;
+    private static RenderArea renderArea;
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int XInitThreadsDelegate();
@@ -498,22 +509,22 @@ public static class Window
         TryCreate();
         renderResult.Display();
 
-        var (ww, wh, ow, oh) = GetRenderOffset();
+        var (rx, ry, rw, rh) = GetRenderArea();
         var (tw, th) = (renderResult.Size.X, renderResult.Size.Y);
         var shader = IsRetro ? retroShader : null;
         var rend = new RenderStates(BlendMode.Alpha, Transform.Identity, renderResult.Texture, shader);
-        verts[0] = new(new(ow, oh), Color.White, new(0, 0));
-        verts[1] = new(new(ww + ow, oh), Color.White, new(tw, 0));
-        verts[2] = new(new(ww + ow, wh + oh), Color.White, new(tw, th));
-        verts[3] = new(new(ow, wh + oh), Color.White, new(0, th));
+        verts[0] = new(new(rx, ry), Color.White, new(0, 0));
+        verts[1] = new(new(rw + rx, ry), Color.White, new(tw, 0));
+        verts[2] = new(new(rw + rx, rh + ry), Color.White, new(tw, th));
+        verts[3] = new(new(rx, rh + ry), Color.White, new(0, th));
 
         if (IsRetro)
         {
             var randVec = new Vector2f(retroRand.Next(0, 10) / 10f, retroRand.Next(0, 10) / 10f);
             shader?.SetUniform("time", time.ElapsedTime.AsSeconds());
             shader?.SetUniform("randomVec", randVec);
-            shader?.SetUniform("viewSize", new Vector2f(ww, wh));
-            shader?.SetUniform("offScreen", new Vector2f(ow, oh));
+            shader?.SetUniform("viewSize", new Vector2f(rw, rh));
+            shader?.SetUniform("offScreen", new Vector2f(rx, ry));
 
             if (isClosing && retroTurnoffTime != null)
             {
@@ -534,20 +545,28 @@ public static class Window
         return (index % tw, index / tw);
     }
 
-    internal static (float winW, float winH, float offW, float offH) GetRenderOffset()
+    internal static AreaF GetRenderArea()
     {
         TryCreate();
 
-        var (rw, rh) = Engine.Window.Monitor.Current.AspectRatio;
-        var ratio = rw / (float)rh;
+        var (aw, ah) = Engine.Window.Monitor.Current.AspectRatio;
         var (ww, wh) = (window.Size.X, window.Size.Y);
+        var ratio = aw / (float)ah;
 
-        if (ww / (float)wh < ratio)
-            wh = (uint)(ww / ratio);
-        else
-            ww = (uint)(wh * ratio);
+        if (RenderArea == RenderArea.Fit)
+        {
+            wh = ww / (float)wh < ratio ? (uint)(ww / ratio) : wh;
+            ww = ww / (float)wh < ratio ? ww : (uint)(wh * ratio);
+        }
+        else if (RenderArea == RenderArea.Fill)
+        {
+            var rw = (uint)(ww / ratio);
+            var rh = (uint)(wh * ratio);
+            wh = rw >= wh ? rw : wh;
+            ww = rw >= wh ? ww : rh;
+        }
 
-        return (ww, wh, (window.Size.X - ww) / 2f, (window.Size.Y - wh) / 2f);
+        return (((float)window.Size.X - ww) / 2f, ((float)window.Size.Y - wh) / 2f, ww, wh);
     }
     internal static float Map(float number, float a1, float a2, float b1, float b2)
     {

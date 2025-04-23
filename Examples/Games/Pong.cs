@@ -1,106 +1,64 @@
-namespace Pure.Examples.Games;
+using Pure.Engine.Tiles;
+using Pure.Engine.Utility;
+using Pure.Engine.Window;
+using Pure.Engine.Collision;
+using Monitor = Pure.Engine.Window.Monitor;
 
-using Engine.Tiles;
-using Engine.Utility;
-using Engine.Window;
-using Engine.Collision;
+namespace Pure.Examples.Games;
 
 public static class Pong
 {
-    private const float BALL_SPEED = 20f;
-    private const float PADDLE_SPEED = 10f;
-    private const int PADDLE_HEIGHT = 4;
-
     public static void Run()
     {
         Window.Title = "Pure - Pong Example";
 
-        var tilemap = new TileMap((48, 27));
-        var center = new Point(tilemap.Size.width / 2f, tilemap.Size.height / 2f);
-        var ballAngle = new Angle(45f);
-        var ballPosition = center;
-        var paddleLeftPosition = new Point(0, y: 0);
-        var paddleRightPosition = new Point(tilemap.Size.width - 1, y: 0);
-        var layer = new LayerTiles(tilemap.Size);
+        const float BALL_SPEED = 20f, PADDLE_SPEED = 10f, PADDLE_HEIGHT = 4f;
+        var (w, h) = Monitor.Current.AspectRatio;
+        var layer = new LayerTiles((w * 3, h * 3));
+        var tilemap = new TileMap(layer.Size);
+        var center = new Point(layer.Size.width / 2f, layer.Size.height / 2f);
+        var (ballAngle, ballPos) = (new Angle(45f), center);
+        var (paddleLeft, paddleRight) = (new Point(0, 0), new Point(layer.Size.width - 1, 0));
 
         while (Window.KeepOpen())
         {
             Time.Update();
 
-            ballPosition = ballPosition.MoveAt(ballAngle, BALL_SPEED, Time.Delta);
+            // player controls ====================================================
+            paddleLeft = paddleLeft.MoveAt(270, Keyboard.Key.ArrowUp.IsPressed() ? PADDLE_SPEED : 0, Time.Delta);
+            paddleLeft = paddleLeft.MoveAt(90, Keyboard.Key.ArrowDown.IsPressed() ? PADDLE_SPEED : 0, Time.Delta);
+            paddleLeft = (paddleLeft.X, Math.Clamp(paddleLeft.Y, 0, tilemap.Size.height - PADDLE_HEIGHT));
 
-            TryScore();
+            // AI controls ====================================================
+            var aiAim = ballPos.Y < paddleRight.Y + PADDLE_HEIGHT / 2f ? 270 : 90;
+            paddleRight = paddleRight.MoveAt(aiAim, PADDLE_SPEED, Time.Delta);
+            paddleRight = (paddleRight.X, paddleRight.Y.Limit((0, tilemap.Size.height - PADDLE_HEIGHT)));
 
-            ControlPaddle(ref paddleLeftPosition);
-            FollowBall(ref paddleRightPosition);
-            LimitPaddle(ref paddleLeftPosition);
-            LimitPaddle(ref paddleRightPosition);
+            // ball ====================================================
+            var (x, y) = ballPos.XY;
+            var ball = new Solid(ballPos, (1, 1));
+            ballPos = ballPos.MoveAt(ballAngle, BALL_SPEED, Time.Delta);
 
-            TryBallBounceWindow();
-            TryBallBouncePaddle(ref paddleLeftPosition);
-            TryBallBouncePaddle(ref paddleRightPosition);
+            if (x.IsBetween((0, tilemap.Size.width)) == false) // restart play when outside
+                (ballAngle, ballPos) = ((0f, 360f).Random(), center);
 
-            Draw();
-        }
-
-        void TryBallBounceWindow()
-        {
-            if (ballPosition.Y < 0)
+            if (y < 0 || y > layer.Size.height - 1) // bounce from top/bottom of the layer
             {
-                ballAngle = ballAngle.Reflect(90);
-                ballPosition = ballPosition.MoveAt(90, 0.5f);
+                ballPos = ballPos.MoveAt(ballAngle > 180 ? 90 : 270, 1f);
+                ballAngle = ballAngle.Reflect(ballAngle > 180 ? 90 : 270);
             }
-            else if (ballPosition.Y > tilemap.Size.height - 1)
+
+            if (new Solid(paddleLeft, (1, PADDLE_HEIGHT)).IsOverlapping(ball) ||
+                new Solid(paddleRight, (1, PADDLE_HEIGHT)).IsOverlapping(ball))
             {
-                ballAngle = ballAngle.Reflect(270);
-                ballPosition = ballPosition.MoveAt(270, 0.5f);
+                var bounceAngle = ball.X < layer.Size.width / 2f ? 0 : 180; // bounce from paddles
+                (ballAngle, ballPos) = (ballAngle.Reflect(bounceAngle), ballPos.MoveAt(bounceAngle, 1f));
             }
-        }
-        void TryBallBouncePaddle(ref Point paddlePosition)
-        {
-            var paddle = new Solid(paddlePosition, (1, PADDLE_HEIGHT));
-            var ball = new Solid(ballPosition, (1, 1));
 
-            if (paddle.IsOverlapping(ball) == false)
-                return;
-
-            var angle = paddlePosition.X < ballPosition.Y ? 0 : 180;
-            ballAngle = ballAngle.Reflect(angle);
-            ballPosition = ballPosition.MoveAt(angle, 1f);
-        }
-        void FollowBall(ref Point paddlePosition)
-        {
-            var ballIsAbove = ballPosition.Y < paddlePosition.Y + PADDLE_HEIGHT / 2f;
-            var angle = ballIsAbove ? 270 : 90;
-            paddlePosition = paddlePosition.MoveAt(angle, PADDLE_SPEED, Time.Delta);
-        }
-        void ControlPaddle(ref Point paddlePosition)
-        {
-            if (Keyboard.Key.ArrowUp.IsPressed())
-                paddlePosition = paddlePosition.MoveAt(270, PADDLE_SPEED, Time.Delta);
-            if (Keyboard.Key.ArrowDown.IsPressed())
-                paddlePosition = paddlePosition.MoveAt(90, PADDLE_SPEED, Time.Delta);
-        }
-        void LimitPaddle(ref Point paddlePosition)
-        {
-            paddlePosition = (
-                x: paddlePosition.X,
-                y: Math.Clamp(paddlePosition.Y, 0, tilemap.Size.height - PADDLE_HEIGHT));
-        }
-        void TryScore()
-        {
-            if (ballPosition.X < 0 == false &&
-                ballPosition.X > tilemap.Size.width == false)
-                return;
-
-            ballPosition = center;
-            ballAngle = (0f, 360f).Random();
-        }
-        void Draw()
-        {
-            layer.DrawTiles(paddleLeftPosition, new Tile(Tile.SHADE_4), 1f, (1, PADDLE_HEIGHT), true);
-            layer.DrawTiles(paddleRightPosition, new Tile(Tile.SHADE_4), 1f, (1, PADDLE_HEIGHT), true);
-            layer.DrawTiles(ballPosition, new Tile(Tile.SHAPE_CIRCLE), 1f, (1, 1), true);
+            // rendering ====================================================
+            layer.DrawTiles(paddleLeft, new Tile(Tile.SHADE_4), 1f, (1, (int)PADDLE_HEIGHT), true);
+            layer.DrawTiles(paddleRight, new Tile(Tile.SHADE_4), 1f, (1, (int)PADDLE_HEIGHT), true);
+            layer.DrawTiles(ballPos, new Tile(Tile.SHAPE_CIRCLE), 1f, (1, 1), true);
             layer.DrawMouseCursor();
             layer.Render();
         }

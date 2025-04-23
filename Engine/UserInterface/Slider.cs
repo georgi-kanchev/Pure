@@ -34,7 +34,7 @@ public class Slider : Block
             var prev = progress;
             progress = Math.Clamp(value, 0, 1);
 
-            if (Math.Abs(progress - prev) > 0.001f)
+            if (Math.Abs(progress - prev) > 0.0001f)
                 Interact(Interaction.Select);
         }
     }

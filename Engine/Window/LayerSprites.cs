@@ -105,11 +105,54 @@ public class LayerSprites
         Position = (0, 0);
     }
 
+    public void Fit()
+    {
+        Window.TryCreate();
+
+        var (mw, mh) = Monitor.Current.Size;
+        var (ww, wh) = Window.Size;
+        var (w, h) = Size;
+        var (rw, rh) = ((float)mw / ww, (float)mh / wh);
+        var zoomFit = Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+
+        Zoom = zoomFit;
+        Position = default;
+    }
+    public void Fill()
+    {
+        Window.TryCreate();
+
+        var (mw, mh) = Monitor.Current.Size;
+        var (ww, wh) = Window.Size;
+        var (w, h) = Size;
+        var (rw, rh) = ((float)mw / ww, (float)mh / wh);
+        var zoomFit = Math.Max((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+
+        Zoom = zoomFit;
+        Position = default;
+    }
+    public void Align(VecF alignment)
+    {
+        Window.TryCreate();
+
+        var (w, h) = Size;
+        var halfW = w / 2f;
+        var halfH = h / 2f;
+        var rendW = Window.rendTexViewSz.w / 2f / Zoom;
+        var rendH = Window.rendTexViewSz.h / 2f / Zoom;
+        var x = Window.Map(alignment.x, 0, 1, -rendW + halfW, rendW - halfW);
+        var y = Window.Map(alignment.y, 0, 1, -rendH + halfH, rendH - halfH);
+        Position = (x, y);
+    }
     public void DragAndZoom(Mouse.Button dragButton = Mouse.Button.Middle, float zoomDelta = 0.05f)
     {
         Window.TryCreate();
 
-        var (dx, dy) = (Mouse.CursorDelta.x / Window.PixelScale, Mouse.CursorDelta.y / Window.PixelScale);
+        var (_, _, rew, reh) = Window.GetRenderArea();
+        var (mw, mh) = Monitor.Current.Size;
+        var (rw, rh) = (mw / rew, mh / reh);
+        var (dx, dy) = (Mouse.CursorDelta.x / Window.PixelScale * rw, Mouse.CursorDelta.y / Window.PixelScale * rh);
+
         if (Mouse.ScrollDelta != 0)
             Zoom *= Mouse.ScrollDelta > 0 ? 1f + zoomDelta : 1f - zoomDelta;
         if (dragButton.IsPressed())
@@ -158,10 +201,10 @@ public class LayerSprites
 
         var (px, py) = ((float)pixel.x, (float)pixel.y);
         var (vw, vh) = Window.rendTexViewSz;
-        var (ww, wh, ow, oh) = Window.GetRenderOffset();
+        var (rx, ry, _, _) = Window.GetRenderArea();
 
-        px = Window.Map(px, ow, Window.Size.width - ow, 0, vw);
-        py = Window.Map(py, oh, Window.Size.height - oh, 0, vh);
+        px = Window.Map(px, rx, Window.Size.width - rx, 0, vw);
+        py = Window.Map(py, ry, Window.Size.height - ry, 0, vh);
 
         px -= vw / 2f;
         py -= vh / 2f;
@@ -180,7 +223,7 @@ public class LayerSprites
 
         var (px, py) = (position.x, position.y);
         var (vw, vh) = Window.rendTexViewSz;
-        var (ww, wh, ow, oh) = Window.GetRenderOffset();
+        var (rx, ry, _, _) = Window.GetRenderArea();
 
         px += Position.x;
         py += Position.y;
@@ -191,8 +234,8 @@ public class LayerSprites
         px += vw / 2f;
         py += vh / 2f;
 
-        px = Window.Map(px, 0, vw, ow, Window.Size.width - ow);
-        py = Window.Map(py, 0, vh, oh, Window.Size.height - oh);
+        px = Window.Map(px, 0, vw, rx, Window.Size.width - rx);
+        py = Window.Map(py, 0, vh, ry, Window.Size.height - ry);
 
         return new((int)px, (int)py);
     }
