@@ -249,10 +249,8 @@ public static class InstantBlock
 
         Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-        Input.TileMapSize = layerTiles.Size;
-        Input.PositionPrevious = Input.Position;
-        Input.Position = layerTiles.PositionFromPixel(Mouse.CursorPosition);
-        Input.Update(Mouse.ButtonIdsPressed, Mouse.ScrollDelta, Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
+        Input.ApplyMouse(layerTiles.Size, layerTiles.MousePosition, Mouse.ButtonIdsPressed, Mouse.ScrollDelta);
+        Input.ApplyKeyboard(Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
 
         var toRemove = new List<string>();
         foreach (var (key, value) in imGuiCache)

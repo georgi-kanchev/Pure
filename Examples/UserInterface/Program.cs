@@ -23,7 +23,9 @@ public static class Program
         var sz = (width * 3, height * 3);
         var maps = new List<TileMap>();
         var blocks = new List<Block>();
-        Input.TileMapSize = sz;
+
+        Input.ApplyMouse(sz, default, ButtonIdsPressed, ScrollDelta);
+        Input.ApplyKeyboard(KeyIdsPressed, KeyTyped, Window.Clipboard);
 
         for (var i = 0; i < 8; i++)
             maps.Add(new(sz));
@@ -40,9 +42,8 @@ public static class Program
 
             maps.ForEach(map => map.Flush());
 
-            Input.PositionPrevious = Input.Position;
-            Input.Position = Layer.MouseCursorPosition;
-            Input.Update(ButtonIdsPressed, ScrollDelta, KeyIdsPressed, KeyTyped, Window.Clipboard);
+            Input.ApplyMouse(Layer.Size, Layer.MousePosition, ButtonIdsPressed, ScrollDelta);
+            Input.ApplyKeyboard(KeyIdsPressed, KeyTyped, Window.Clipboard);
 
             blocks.ForEach(block => block.Update());
 

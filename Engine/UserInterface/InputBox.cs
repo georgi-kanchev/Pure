@@ -30,8 +30,8 @@ public enum SymbolGroup
 /// </summary>
 public class InputBox : Block
 {
-    [DoNotSave]
     public Action? OnValueChange { get; set; }
+
     [DoNotSave]
     public bool IsJustValueChanged { get; private set; }
 
@@ -942,7 +942,7 @@ public class InputBox : Block
         if (ctrl && Input.Typed == "c" && Input.TypedPrevious != "c")
         {
             Input.Clipboard = SelectedText;
-            Input.onTextCopy?.Invoke();
+            Input.OnTextCopy?.Invoke();
             return true;
         }
 
@@ -951,7 +951,7 @@ public class InputBox : Block
         else if (hasSelection && ctrl && Input.Typed == "x")
         {
             Input.Clipboard = SelectedText;
-            Input.onTextCopy?.Invoke();
+            Input.OnTextCopy?.Invoke();
             shouldDelete = true;
             TryDeleteSelected(ref justDeletedSelection, shouldDelete);
             return true;

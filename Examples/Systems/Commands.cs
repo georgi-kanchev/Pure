@@ -12,7 +12,7 @@ public static class Commands
             var intArray = cmd.GetNextValue<int[]>();
             var boolArray = cmd.GetNextValue<bool[]>();
 
-            Console.WriteLine(text);
+            // Console.WriteLine(text);
             return "result";
         });
         var results = cmd.Execute("Log-Message `hello, |;world!` 1|2|3|4 true|false|true ; log~MessagE `second command`");

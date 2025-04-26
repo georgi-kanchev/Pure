@@ -91,13 +91,13 @@ public class LayerTiles
     {
         get => IsOverlapping(PositionFromPixel(Mouse.CursorPosition));
     }
-    public VecF MouseCursorPosition
+    public VecF MousePosition
     {
         get => PositionFromPixel(Mouse.CursorPosition);
     }
-    public VecI MouseCursorCell
+    public VecI MouseCell
     {
-        get => ((int)MouseCursorPosition.x, (int)MouseCursorPosition.y);
+        get => ((int)MousePosition.x, (int)MousePosition.y);
     }
 
     public Effect? Effect
@@ -507,35 +507,28 @@ public class LayerTiles
 
     public uint AtlasColorAt(VecI pixel)
     {
-        if (pixel.x < 0 ||
-            pixel.y < 0 ||
-            pixel.x >= LayerSprites.textures[atlasPath].Size.X ||
-            pixel.y >= LayerSprites.textures[atlasPath].Size.Y)
+        var texture = LayerSprites.textures[atlasPath];
+        if (pixel.x < 0 || pixel.y < 0 || pixel.x >= texture.Size.X || pixel.y >= texture.Size.Y)
             return default;
 
-        images.TryAdd(atlasPath, LayerSprites.textures[atlasPath].CopyToImage());
-        var img = images[atlasPath];
-        var color = img.GetPixel((uint)pixel.x, (uint)pixel.y).ToInteger();
-        return color;
+        LayerSprites.images.TryAdd(atlasPath, LayerSprites.textures[atlasPath].CopyToImage());
+        return LayerSprites.images[atlasPath].GetPixel((uint)pixel.x, (uint)pixel.y).ToInteger();
+    }
+
+    public void ReloadAtlas()
+    {
+        LayerSprites.textures[AtlasPath].Dispose();
+        LayerSprites.textures[AtlasPath] = null!;
+        LayerSprites.textures[AtlasPath] = new(AtlasPath) { Repeated = true };
     }
 
     public static void DefaultGraphicsToFile(string filePath)
     {
-        LayerSprites.textures["default"].CopyToImage().SaveToFile(filePath);
+        LayerSprites.textures[DEFAULT_GRAPHICS].CopyToImage().SaveToFile(filePath);
     }
-    public static void ReloadGraphics()
+    public static void ReloadAllGraphics()
     {
-        var paths = LayerSprites.textures.Keys.ToArray();
-
-        foreach (var path in paths)
-        {
-            if (path == DEFAULT_GRAPHICS)
-                continue;
-
-            LayerSprites.textures[path].Dispose();
-            LayerSprites.textures[path] = null!;
-            LayerSprites.textures[path] = new(path) { Repeated = true };
-        }
+        LayerSprites.ReloadAllGraphics();
     }
 
 #region Backend
@@ -560,8 +553,6 @@ public class LayerTiles
     private readonly Dictionary<ushort, float> textTileWidths = [];
     private readonly Dictionary<(int x, int y, int w, int h), TextAlign> textAligns = [];
 
-    [DoNotSave]
-    private static readonly Dictionary<string, Image> images = new();
     [DoNotSave]
     private static readonly List<VecF> cursorOffsets =
     [

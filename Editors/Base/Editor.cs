@@ -78,7 +78,8 @@ public class Editor
         LayerTiles = new(MapGrid.Size);
         LayerTilesMap = new(MapsEditor[0].Size);
         LayerTilesUi = new(MapsUi[0].Size);
-        Input.TileMapSize = MapsUi[0].View.Size;
+
+        Input.Bounds = MapsUi[0].View.Size;
 
         for (var i = 0; i < 5; i++)
             CreateViewButton((byte)i);
@@ -113,7 +114,7 @@ public class Editor
     {
         SetGrid();
 
-        Input.OnTextCopy(() => Window.Clipboard = Input.Clipboard ?? "");
+        Input.OnTextCopy += () => Window.Clipboard = Input.Clipboard ?? "";
         while (Window.KeepOpen())
         {
             Time.Update();
@@ -124,12 +125,8 @@ public class Editor
             LayerTilesMap.Size = MapsEditor[0].View.Size;
             LayerTilesUi.Size = MapsUi[0].View.Size;
 
-            Input.Update(
-                Mouse.ButtonIdsPressed,
-                Mouse.ScrollDelta,
-                Keyboard.KeyIdsPressed,
-                Keyboard.KeyTyped,
-                Window.Clipboard);
+            Input.ApplyMouse(LayerTilesUi.Size, LayerTilesUi.MousePosition, Mouse.ButtonIdsPressed, Mouse.ScrollDelta);
+            Input.ApplyKeyboard(Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
 
             MousePositionRaw = Mouse.CursorPosition;
 
@@ -143,13 +140,14 @@ public class Editor
 
             //========
 
-            var (x, y) = LayerTilesMap.PositionFromPixel(Mouse.CursorPosition);
+            var (x, y) = LayerTilesMap.MousePosition;
             var (vw, vy) = MapsEditor[0].View.Position;
             prevWorld = MousePositionWorld;
             MousePositionWorld = (x + vw, y + vy);
+
             Input.PositionPrevious = prevWorld;
             Input.Position = MousePositionWorld;
-            Input.TileMapSize = MapsEditor[0].View.Size;
+            Input.Bounds = MapsEditor[0].View.Size;
 
             if (IsDisabledViewInteraction == false && Prompt.IsHidden)
                 LayerTilesMap.DragAndZoom();
@@ -170,9 +168,10 @@ public class Editor
 
             prevUi = MousePositionUi;
             MousePositionUi = LayerTilesUi.PositionFromPixel(Mouse.CursorPosition);
+
             Input.Position = MousePositionUi;
             Input.PositionPrevious = prevUi;
-            Input.TileMapSize = MapsUi[0].View.Size;
+            Input.Bounds = MapsUi[0].View.Size;
 
             UpdateHud();
             Ui.ForEach(block => block.Update());

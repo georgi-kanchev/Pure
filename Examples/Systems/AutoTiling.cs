@@ -83,7 +83,7 @@ public static class AutoTiling
             original.SetBox((30, 5, 12, 12), Tile.EMPTY, Tile.SHADE_9, Tile.SHADE_9);
             original.SetLine((37, 5), (37, 15), [Tile.SHADE_9]);
             original.SetLine((30, 8), (40, 8), [Tile.SHADE_9]);
-            original.SetTile(layer.MouseCursorCell, Tile.SHADE_1);
+            original.SetTile(layer.MouseCell, Tile.SHADE_1);
 
             firstPass.SetTiles((0, 0), original);
             firstPass.SetText((0, 0), "<LMB> to remove rules");

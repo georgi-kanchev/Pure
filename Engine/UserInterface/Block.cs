@@ -14,11 +14,8 @@ public enum Pivot { TopLeft, Top, TopRight, Left, Center, Right, BottomLeft, Bot
 /// </summary>
 public class Block
 {
-    [DoNotSave]
     public Action? OnDisplay { get; set; }
-    [DoNotSave]
     public Action? OnUpdate { get; set; }
-    [DoNotSave]
     public Action<(int deltaX, int deltaY)>? OnDrag { get; set; }
 
     public Area Area
@@ -345,9 +342,9 @@ public class Block
     {
         // Check if the point is outside the tilemap boundaries
         if (point.x < 0 ||
-            point.x >= Input.TileMapSize.width ||
+            point.x >= Input.Bounds.width ||
             point.y < 0 ||
-            point.y >= Input.TileMapSize.height)
+            point.y >= Input.Bounds.height)
             return false;
 
         // Check if the point is inside the bounding box
@@ -369,23 +366,29 @@ public class Block
         return justInteracted.Contains(interaction);
     }
 
-    public void AlignInside(Area? withArea = null, Pivot pivot = Pivot.Center, PointI offset = default)
+    public void AlignInside(Area? area = null, Pivot pivot = Pivot.Center, PointI offset = default)
     {
-        var (ax, ay, aw, ah) = withArea ?? (0, 0, Input.TileMapSize.width, Input.TileMapSize.height);
+        var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
         var (w, h) = Size;
         var (x, y) = (0, 0);
 
         if (pivot == Pivot.TopLeft) (x, y) = (ax, ay);
         else if (pivot == Pivot.Top) (x, y) = (ax + aw / 2 - w / 2, ay);
         else if (pivot == Pivot.TopRight) (x, y) = (ax + aw - w, ay);
+        else if (pivot == Pivot.Left) (x, y) = (ax, ay + ah / 2 - h / 2);
+        else if (pivot == Pivot.Center) (x, y) = (ax + aw / 2 - w / 2, ay + ah / 2 - h / 2);
+        else if (pivot == Pivot.Right) (x, y) = (ax + aw - w, ay + ah / 2 - h / 2);
+        else if (pivot == Pivot.BottomLeft) (x, y) = (ax, ay + ah - h);
+        else if (pivot == Pivot.Bottom) (x, y) = (ax + aw / 2 - w / 2, ay + ah - h);
+        else if (pivot == Pivot.BottomRight) (x, y) = (ax + aw - w, ay + ah - h);
 
         Position = (x + offset.x, y + offset.y);
     }
     public void AlignEdges(Pivot edge, Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.TileMapSize.width;
-        var rh = targetArea?.height ?? Input.TileMapSize.height;
+        var rw = targetArea?.width ?? Input.Bounds.width;
+        var rh = targetArea?.height ?? Input.Bounds.height;
         var (x, y) = Position;
         var (w, h) = Size;
         var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
@@ -424,8 +427,8 @@ public class Block
     public void AlignInside(PointF alignment, Area? targetArea = null)
     {
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.TileMapSize.width;
-        var rh = targetArea?.height ?? Input.TileMapSize.height;
+        var rw = targetArea?.width ?? Input.Bounds.width;
+        var rh = targetArea?.height ?? Input.Bounds.height;
         var (x, y) = Position;
         var (w, h) = Size;
 
@@ -445,8 +448,8 @@ public class Block
     {
         var (w, h) = Size;
         var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.TileMapSize.width;
-        var rh = targetArea?.height ?? Input.TileMapSize.height;
+        var rw = targetArea?.width ?? Input.Bounds.width;
+        var rh = targetArea?.height ?? Input.Bounds.height;
         var newX = rw - w < rx ? rx : Math.Clamp(Position.x, rx, rw - w);
         var newY = rh - h < ry ? ry : Math.Clamp(Position.y, ry, rh - h);
         var hasOverflown = false;

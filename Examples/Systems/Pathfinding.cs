@@ -36,7 +36,7 @@ public static class Pathfinding
 
             tilemap2.ApplySeed(0);
             tilemap2.Flush();
-            tilemap2.SetLineSquiggle((10, 10), layer.MouseCursorCell, 3f, [new(Tile.FULL, Color.Red)]);
+            tilemap2.SetLineSquiggle((10, 10), layer.MouseCell, 3f, [new(Tile.FULL, Color.Red)]);
 
             layer.DrawTileMap(tilemap);
             layer.DrawLine(lines);

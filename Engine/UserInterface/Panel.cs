@@ -181,8 +181,8 @@ public class Panel : Block
         }
 
         var isOutsideScreen =
-            newX + newW > Input.TileMapSize.width ||
-            newY + newH > Input.TileMapSize.height ||
+            newX + newW > Input.Bounds.width ||
+            newY + newH > Input.Bounds.height ||
             newX < 0 ||
             newY < 0;
         var isBelowMinimumSize = newW < Math.Abs(minX) || newH < Math.Abs(minY);

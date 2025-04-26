@@ -41,6 +41,8 @@ internal enum Key
 /// </summary>
 public static class Input
 {
+    public static Action? OnTextCopy { get; set; }
+
     /// <summary>
     /// Gets or sets the cursor graphics result. Usually set by each user interface block
     /// when the user interacts with that specific block.
@@ -50,35 +52,23 @@ public static class Input
     /// The currently focused user interface block.
     /// </summary>
     public static Block? Focused { get; set; }
-    /// <summary>
-    /// The size of the tilemap being used by the user interface.
-    /// </summary>
-    public static Size TileMapSize
-    {
-        get => tileMapSize;
-        set => tileMapSize = (Math.Abs(value.width), Math.Abs(value.height));
-    }
-    /// <summary>
-    /// Gets the current position of the input.
-    /// </summary>
-    public static PointF Position { get; set; }
-    /// <summary>
-    /// Gets the previous position of the input.
-    /// </summary>
-    public static PointF PositionPrevious { get; set; }
-    public static string? Clipboard { get; set; }
     public static bool IsTyping { get; internal set; }
+    public static string? Clipboard { get; internal set; }
+    public static Size Bounds
+    {
+        get => bounds;
+        set => bounds = (Math.Abs(value.width), Math.Abs(value.height));
+    }
+    public static PointF Position { get; set; }
+    public static PointF PositionPrevious { get; set; }
 
-    public static void Update(int[]? buttonsPressed = default, int scrollDelta = default, int[]? keysPressed = default, string? keysTyped = default, string? clipboard = default)
+    public static void ApplyKeyboard(int[]? keysPressed = default, string? keysTyped = default, string? clipboard = default)
     {
         Clipboard = clipboard;
-
-        CursorResult = MouseCursor.Arrow;
         TypedPrevious = Typed;
+
         prevPressedKeys.Clear();
         prevPressedKeys.AddRange(pressedKeys);
-        prevPressedBtns.Clear();
-        prevPressedBtns.AddRange(pressedBtns);
 
         if (keysPressed != null)
         {
@@ -89,6 +79,18 @@ public static class Input
             PressedKeys = keys;
         }
 
+        Typed = keysTyped?.Replace("\n", "").Replace("\t", "").Replace("\r", "");
+    }
+    public static void ApplyMouse(Size bounds, PointF cursorPosition = default, int[]? buttonsPressed = default, int scrollDelta = default)
+    {
+        Bounds = bounds;
+        PositionPrevious = Position;
+        Position = cursorPosition;
+        CursorResult = MouseCursor.Arrow;
+
+        prevPressedBtns.Clear();
+        prevPressedBtns.AddRange(pressedBtns);
+
         if (buttonsPressed != null)
         {
             var buttons = new MouseButton[buttonsPressed.Length];
@@ -97,9 +99,6 @@ public static class Input
 
             PressedButtons = buttons;
         }
-
-        var mt = string.Empty;
-        Typed = keysTyped?.Replace("\n", mt).Replace("\t", mt).Replace("\r", mt);
 
         ScrollDelta = scrollDelta;
 
@@ -118,10 +117,6 @@ public static class Input
         if (IsButtonJustPressed())
             Focused = default;
     }
-    public static void OnTextCopy(Action method)
-    {
-        onTextCopy += method;
-    }
 
 #region Backend
     internal const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
@@ -129,8 +124,7 @@ public static class Input
     internal static readonly Stopwatch hold = new(), holdTrigger = new(), doubleClick = new();
     private static readonly List<Key> pressedKeys = [], prevPressedKeys = [];
     internal static readonly List<MouseButton> pressedBtns = [], prevPressedBtns = [];
-    private static Size tileMapSize;
-    internal static Action? onTextCopy;
+    private static Size bounds;
     internal static Block? FocusedPrevious { get; set; }
 
     internal static bool IsJustHeld { get; private set; }
@@ -140,7 +134,7 @@ public static class Input
     internal static int ScrollDelta { get; private set; }
     internal static Area Mask
     {
-        get => (0, 0, TileMapSize.width, TileMapSize.height);
+        get => (0, 0, Bounds.width, Bounds.height);
     }
 
     static Input()

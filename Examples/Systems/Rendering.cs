@@ -21,7 +21,7 @@ public static class Rendering
         {
             Time.Update();
 
-            var (x, y) = layer.MouseCursorPosition;
+            var (x, y) = layer.MousePosition;
             layer.DrawLine([(x, y), (0, 0)], 1);
             layer.Render();
         }

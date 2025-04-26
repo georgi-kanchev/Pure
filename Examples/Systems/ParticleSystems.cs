@@ -35,13 +35,13 @@ public static class ParticleSystems
                 return;
 
             var p = particles[indices.particleIndex];
-            (p.x, p.y) = layer.MouseCursorPosition;
+            (p.x, p.y) = layer.MousePosition;
             particles[indices.particleIndex] = (p.x, p.y, p.color);
             particles.ForceSet((0f, 0f), indices.particleIndex);
             particles.ForcePushAtAngle(0f, 10f, indices.particleIndex);
         });
 
-        Mouse.Button.Left.OnPress(() => particles.ForcePushFromPoint(layer.MouseCursorPosition, 10f, 10f));
+        Mouse.Button.Left.OnPress(() => particles.ForcePushFromPoint(layer.MousePosition, 10f, 10f));
         Mouse.Button.Right.OnPress(() => particles.MakeCircle((10f, 10f), 4f, distribution: Distribution.FillEvenly));
         Mouse.Button.Middle.OnPress(() => particles.FadeToColor(Color.Blue));
 

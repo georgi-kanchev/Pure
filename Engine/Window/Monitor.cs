@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Pure.Engine.Window;
 
 [DoNotSave]
-public class Monitor
+public sealed class Monitor
 {
     public static Monitor[] Monitors
     {

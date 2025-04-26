@@ -78,7 +78,7 @@ public class LayerSprites
         }
     }
 
-    public VecF MouseCursorPosition
+    public VecF MousePosition
     {
         get => PositionFromPixel(Mouse.CursorPosition);
     }
@@ -157,6 +157,16 @@ public class LayerSprites
             Zoom *= Mouse.ScrollDelta > 0 ? 1f + zoomDelta : 1f - zoomDelta;
         if (dragButton.IsPressed())
             Position = (Position.x + dx / Zoom, Position.y + dy / Zoom);
+    }
+
+    public uint AtlasColorAt(VecI pixel)
+    {
+        textures.TryGetValue(TexturePath ?? "", out var texture);
+        if (texture == null || pixel.x < 0 || pixel.y < 0 || pixel.x >= texture.Size.X || pixel.y >= texture.Size.Y)
+            return default;
+
+        images.TryAdd(TexturePath!, texture.CopyToImage());
+        return images[TexturePath!].GetPixel((uint)pixel.x, (uint)pixel.y).ToInteger();
     }
 
     public void DrawLine(VecF[]? points, float width = 4f, uint tint = uint.MaxValue, AreaI? textureArea = null)
@@ -248,6 +258,28 @@ public class LayerSprites
         return layerSprites.PositionFromPixel(PositionToPixel(position));
     }
 
+    public void ReloadTexture()
+    {
+        if (TexturePath == null || textures.ContainsKey(TexturePath) == false)
+            return;
+
+        textures[TexturePath].Dispose();
+        textures[TexturePath] = null!;
+        textures[TexturePath] = new(TexturePath) { Repeated = true };
+    }
+
+    public static void ReloadAllGraphics()
+    {
+        var paths = textures.Keys.ToArray();
+
+        foreach (var path in paths)
+        {
+            textures[path].Dispose();
+            textures[path] = null!;
+            textures[path] = new(path) { Repeated = true };
+        }
+    }
+
 #region Backend
     private string? texturePath;
     private float zoom = 1f;
@@ -257,9 +289,11 @@ public class LayerSprites
     [DoNotSave]
     internal RenderTexture? queue, result;
     [DoNotSave]
+    internal readonly VertexArray verts = new(PrimitiveType.Quads);
+    [DoNotSave]
     internal static readonly Dictionary<string, Texture> textures = [];
     [DoNotSave]
-    internal readonly VertexArray verts = new(PrimitiveType.Quads);
+    internal static readonly Dictionary<string, Image> images = new();
 
     private void QueueLine(VecF a, VecF b, uint tint, float width, AreaI? textureArea = null)
     {
