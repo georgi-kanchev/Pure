@@ -17,14 +17,21 @@ public static class LayoutGUI
         var layer = new LayerTiles((w * 3, h * 3));
         var maps = new TileMap[] { new(layer.Size), new(layer.Size), new(layer.Size), new(layer.Size) };
 
+        foreach (var map in maps)
+            map.ConfigureText(Tile.ICON_ZAP, "~");
+
         Input.ApplyMouse(layer.Size, layer.MousePosition, Mouse.ButtonIdsPressed, Mouse.ScrollDelta);
 
-        var button = new Button { Size = (10, 3) };
-        button.OnDisplay += () => maps.SetButton(button);
+        var steam = new Button { Size = (6, 1), Text = "~Steam" };
+        steam.OnDisplay += () => maps.SetButton(steam);
+
+        var view = new Button { Size = (4, 1), Text = "View" };
+        view.OnDisplay += () => maps.SetButton(view);
 
         var layoutUI = new Layout();
-        layoutUI.SetContainer("window", pivot: Pivot.TopRight);
-        layoutUI.SetBlock("window", nameof(button), button);
+        layoutUI.SetContainer("top", pivot: Pivot.TopLeft);
+        layoutUI.SetBlock("top", "steam", steam);
+        layoutUI.SetBlock("top", "view", view);
 
         while (Window.KeepOpen())
         {

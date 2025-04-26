@@ -39,6 +39,15 @@ public class Layout
         containers[containerName].container.Blocks[name] = (block.GetType().Name, block);
         containers[containerName].container.Align();
     }
+    public T? GetBlock<T>(string name) where T : Block
+    {
+        foreach (var (_, container) in containers)
+            foreach (var (n, b) in container.container.Blocks)
+                if (n == name)
+                    return (T?)b.block;
+
+        return default;
+    }
 
     public void Update()
     {
@@ -47,8 +56,7 @@ public class Layout
             foreach (var (_, b) in container.container.Blocks)
                 b.block.Update();
 
-            if (container.container.IsAlwaysAligning)
-                container.container.Align();
+            container.container.Align();
         }
     }
 

@@ -1,54 +1,19 @@
 using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
-using Pure.Engine.Utility;
+using SizeI = (int width, int height);
 
 namespace Pure.Tools.UserInterface;
 
 internal class Container
 {
-    public Dictionary<string, (string type, Block block)> Blocks
-    {
-        get => blocks;
-        set
-        {
-            blocks = value;
-            Align();
-        }
-    }
-    public Area? Area
-    {
-        get => area;
-        set
-        {
-            area = value;
-            Align();
-        }
-    }
-    public Pivot Pivot
-    {
-        get => pivot;
-        set
-        {
-            pivot = value;
-            Align();
-        }
-    }
-    public bool IsAlwaysAligning { get; set; }
-
-    public Container()
-    {
-        Align();
-    }
+    public Dictionary<string, (string type, Block block)> Blocks { get; set; } = [];
+    public Area? Area { get; set; }
+    public Pivot Pivot { get; set; }
+    public SizeI Gap { get; set; } = (1, 1);
 
     public void Align()
     {
-        foreach (var (_, b) in blocks)
-            b.block.AlignInside(Area ?? (0, 0, Input.Bounds.width, Input.Bounds.height), pivot);
+        foreach (var (_, b) in Blocks)
+            b.block.AlignInside(Area ?? (0, 0, Input.Bounds.width, Input.Bounds.height), Pivot);
     }
-
-#region Backend
-    private Pivot pivot;
-    private Area? area;
-    private Dictionary<string, (string type, Block block)> blocks = [];
-#endregion
 }
