@@ -17,7 +17,6 @@ public class Tooltip : Block
             if (line.Length > width)
                 width = line.Length;
 
-        var opposites = new[] { Pivot.Right, Pivot.Left, Pivot.Bottom, Pivot.Top };
         Size = (width + 2, lines.Length);
         AlignOutside(Pivot, aroundArea, Alignment, 1);
         Fit();
@@ -25,7 +24,7 @@ public class Tooltip : Block
         if (IsOverlapping(aroundArea) == false)
             return;
 
-        AlignOutside(opposites[(int)Pivot], aroundArea, Alignment, 1);
+        AlignOutside((Pivot)(8 - (int)Pivot), aroundArea, Alignment, 1);
         Fit();
     }
 }

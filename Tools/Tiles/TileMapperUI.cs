@@ -24,7 +24,8 @@ public static class TileMapperUI
     public static (Tile edge1, Tile fill, Tile edge2, Tile handle) ThemeSlider { get; set; }
     public static Tile ThemeScrollArrow { get; set; }
     public static (Tile corner, Tile fill, Tile arrow, Tile min, Tile mid, Tile max) ThemeStepper { get; set; }
-    public static (Tile corner, Tile edge, Tile fill) ThemeTooltip { get; set; }
+    public static (Tile corner, Tile edge, Tile fill) ThemeTooltipBox { get; set; }
+    public static (Tile left, Tile fill, Tile right) ThemeTooltipBar { get; set; }
     public static (Tile first, Tile previous, Tile next, Tile last) ThemePages { get; set; }
     public static (Tile corner, Tile edge, Tile fill, Tile dim) ThemePrompt { get; set; }
     public static Tile[]? ThemePromptItems { get; set; }
@@ -34,17 +35,23 @@ public static class TileMapperUI
     public static (Tile left, Tile fill, Tile right, Tile arrow) ThemeListBar { get; set; }
     public static (Tile img, Tile audio, Tile font, Tile txt, Tile zip, Tile vid, Tile cfg, Tile exe) ThemeFileViewer { get; set; }
 
-    public static void SetTooltip(this IList<TileMap> maps, Tooltip tooltip, int zOrder = 1)
+    public static void SetTooltip(this IList<TileMap> maps, Tooltip tooltip, int zOrder = 4)
     {
         if (maps.Count <= zOrder + 2 || tooltip.IsHidden)
             return;
 
-        var (corner, edge, fill) = ThemeTooltip;
-        var (x, y) = tooltip.Position;
+        var (boxCorner, boxEdge, boxFill) = ThemeTooltipBox;
+        var (barLeft, barFill, barRight) = ThemeTooltipBar;
+        var (x, y, w, _) = tooltip.Area;
 
         ApplyMasks(maps, tooltip.Mask);
-        Clear(maps, tooltip, zOrder);
-        maps[zOrder].SetBox(tooltip.Area, fill, corner, edge);
+        Clear(maps, tooltip, zOrder, 3);
+
+        if (tooltip.Height == 1)
+            maps[zOrder].SetBar((x, y), barLeft, barFill, barRight, w);
+        else
+            maps[zOrder].SetBox(tooltip.Area, boxFill, boxCorner, boxEdge);
+
         maps[zOrder + 1].SetText((x + 1, y), tooltip.Text, TintText);
         TryDisable(maps, tooltip, zOrder + 2);
         RestoreMasks(maps);
@@ -61,7 +68,7 @@ public static class TileMapperUI
         tile.Tint = button.GetInteractionColor(tile.Tint, InteractionShade);
 
         ApplyMasks(maps, button.Mask);
-        Clear(maps, button, zOrder);
+        Clear(maps, button, zOrder, 2);
         maps[zOrder].SetTile(button.Position, tile, button.Mask);
         maps[zOrder].SetText(textPos, button.Text, tile.Tint);
         TryDisable(maps, button, zOrder + 1);
@@ -90,7 +97,7 @@ public static class TileMapperUI
             maps[zOrder].SetText((x, y), button.Text, on);
         else
         {
-            Clear(maps, button, zOrder);
+            Clear(maps, button, zOrder, 2);
             maps[zOrder].SetTile(arrowPos, arrow, button.Mask);
             maps[zOrder].SetText((x, y), split[0], on);
             maps[zOrder].SetText((x + split[0].Length + 1, y), split[1], off);
@@ -116,7 +123,7 @@ public static class TileMapperUI
         var selTint = TintSelection;
 
         ApplyMasks(maps, button.Mask);
-        Clear(maps, button, zOrder);
+        Clear(maps, button, zOrder, 3);
         if (isBar)
         {
             barLeft.Tint = button.GetInteractionColor(sel ? selTint : barLeft.Tint, InteractionShade);
@@ -144,13 +151,13 @@ public static class TileMapperUI
             return;
 
         tile.Tint = button.GetInteractionColor(button.IsSelected && selectable ? TintSelection : tile.Tint, InteractionShade);
-        Clear(maps, button, zOrder);
+        Clear(maps, button, zOrder, 2);
         TryDisable(maps, button, zOrder + 1);
         maps[zOrder].SetTile(button.Position, tile, button.Mask);
     }
     public static void SetInputBox(this IList<TileMap> maps, InputBox inputBox, int zOrder = 0)
     {
-        if (maps.Count <= zOrder + 3 || inputBox.IsHidden)
+        if (maps.Count <= zOrder + 2 || inputBox.IsHidden)
             return;
 
         var (background, cursor) = ThemeInputBox;
@@ -167,7 +174,7 @@ public static class TileMapperUI
         background.Tint = inputBox.GetInteractionColor(background.Tint, InteractionShade / 2f);
 
         ApplyMasks(maps, inputBox.Mask);
-        Clear(maps, inputBox, zOrder);
+        Clear(maps, inputBox, zOrder, 3);
         maps[zOrder].SetArea(inputBox.Area, [background]);
         maps[zOrder].SetText(inputBox.Position, selection, selectColor);
         maps[zOrder + 1].SetText(inputBox.Position, text, TintText);
@@ -183,7 +190,7 @@ public static class TileMapperUI
 
         if (inputBox.IsCursorVisible)
             maps[zOrder + 2].SetTile(cursorPos, cursor, inputBox.Mask);
-        TryDisable(maps, inputBox, zOrder + 3);
+        TryDisable(maps, inputBox, zOrder + 2);
         RestoreMasks(maps);
     }
     public static void SetFileViewerItem(this IList<TileMap> maps, FileViewer fileViewer, Button item, int zOrder = 1)
@@ -244,6 +251,7 @@ public static class TileMapperUI
         icon.Tint = item.GetInteractionColor(icon.Tint, InteractionShade);
 
         ApplyMasks(maps, item.Mask);
+        Clear(maps, item, zOrder, 2);
         maps[zOrder].SetTile(item.Position, icon, item.Mask);
         maps[zOrder].SetText((item.X + 1, item.Y), text, color);
         TryDisable(maps, item, zOrder + 1);
@@ -264,6 +272,7 @@ public static class TileMapperUI
             return;
 
         ApplyMasks(maps, fileViewer.Mask);
+        Clear(maps, fileViewer, zOrder, 3);
         maps.SetList(fileViewer.FilesAndFolders, zOrder);
         maps.SetFileViewerItem(fileViewer, fileViewer.User, zOrder + 1);
         maps.SetFileViewerItem(fileViewer, fileViewer.Back, zOrder + 1);
@@ -291,7 +300,7 @@ public static class TileMapperUI
         }
 
         ApplyMasks(maps, slider.Mask);
-        Clear(maps, slider, zOrder);
+        Clear(maps, slider, zOrder, 3);
         maps[zOrder].SetBar(slider.Position, edge1, fill, edge2, size, slider.IsVertical);
         maps[zOrder + 1].SetTile(slider.Handle.Position, handle, slider.Mask);
         TryDisable(maps, slider, zOrder + 2);
@@ -312,7 +321,7 @@ public static class TileMapperUI
         var downTint = scroll.Decrease.GetInteractionColor(arrow.Tint, InteractionShade);
 
         ApplyMasks(maps, scroll.Mask);
-        Clear(maps, scroll, zOrder);
+        Clear(maps, scroll, zOrder, 3);
         maps.SetSlider(scroll.Slider, zOrder);
         maps[zOrder + 1].SetTile(up, new(arrow.Id, upTint, scrollUpAngle), scroll.Mask);
         maps[zOrder + 1].SetTile(down, new(arrow.Id, downTint, scrollDownAngle), scroll.Mask);
@@ -344,7 +353,7 @@ public static class TileMapperUI
         max.Tint = stepper.Maximum.GetInteractionColor(max.Tint, InteractionShade);
 
         ApplyMasks(maps, mask);
-        Clear(maps, stepper, zOrder);
+        Clear(maps, stepper, zOrder, 3);
         maps[zOrder].SetBox(stepper.Area, fill, corner, fill);
         maps[zOrder + 1].SetTile(upPos, new(arrow.Id, upTint, Pose.Left), mask);
         maps[zOrder + 1].SetTile(downPos, new(arrow.Id, downTint, Pose.Right), mask);
@@ -368,7 +377,7 @@ public static class TileMapperUI
         var (x, y) = prompt.Position;
 
         ApplyMasks(maps, prompt.Mask);
-        Clear(maps, prompt, zOrder);
+        Clear(maps, prompt, zOrder, 4);
         maps[zOrder].SetArea((0, 0, w, h), [dim]);
         maps[zOrder + 1].SetBox(prompt.Area, fill, corner, edge);
         maps[zOrder + 2].SetText((x, y + 1), text, TintText);
@@ -389,7 +398,7 @@ public static class TileMapperUI
             tile = theme[index];
 
         ApplyMasks(maps, item.Mask);
-        Clear(maps, item, zOrder);
+        Clear(maps, item, zOrder, 2);
         maps.SetButtonTile(item, tile, zOrder);
         TryDisable(maps, item, zOrder + 1);
         RestoreMasks(maps);
@@ -406,7 +415,7 @@ public static class TileMapperUI
         tx = Math.Clamp(tx, panel.X, panel.X + panel.Width);
 
         ApplyMasks(maps, panel.Mask);
-        Clear(maps, panel, zOrder);
+        Clear(maps, panel, zOrder, 3);
         maps[zOrder].SetBox(panel.Area, fill, corner, edge);
         maps[zOrder + 1].SetText((tx, ty), text, TintText);
         TryDisable(maps, panel, zOrder + 2);
@@ -429,7 +438,7 @@ public static class TileMapperUI
         pick.Tint = palette.Pick.GetInteractionColor(pick.Tint, InteractionShade);
 
         ApplyMasks(maps, palette.Mask);
-        Clear(maps, palette, zOrder);
+        Clear(maps, palette, zOrder, 4);
         maps[zOrder].SetArea(palette.Opacity.Area, [halfShade]);
         maps[zOrder + 1].SetArea(palette.Opacity.Area, [resultTile]);
         maps[zOrder + 2].SetTile(palette.Opacity.Handle.Position, handle, palette.Mask);
@@ -466,7 +475,7 @@ public static class TileMapperUI
         last.Tint = pages.Last.GetInteractionColor(last.Tint, InteractionShade);
 
         ApplyMasks(maps, pages.Mask);
-        Clear(maps, pages, zOrder);
+        Clear(maps, pages, zOrder, 2);
 
         if (pages.First.IsHidden == false)
             maps[zOrder].SetTile(pages.First.Position, first, pages.Mask);
@@ -490,7 +499,7 @@ public static class TileMapperUI
         text = text.Constrain(item.Size, alignment: Alignment.Center);
 
         ApplyMasks(maps, item.Mask);
-        Clear(maps, item, zOrder);
+        Clear(maps, item, zOrder, 2);
         maps[zOrder].SetText(item.Position, text, color);
         TryDisable(maps, item, zOrder + 1);
         RestoreMasks(maps);
@@ -505,7 +514,7 @@ public static class TileMapperUI
     }
     public static void SetList(this IList<TileMap> maps, List list, int zOrder = 0)
     {
-        if (maps.Count <= zOrder + 3 || list.IsHidden)
+        if (maps.Count <= zOrder + 2 || list.IsHidden)
             return;
 
         var (left, fill, right, arrow) = ThemeListBar;
@@ -519,7 +528,7 @@ public static class TileMapperUI
         right.Tint = obj.GetInteractionColor(right.Tint, InteractionShade);
 
         ApplyMasks(maps, list.Mask);
-        Clear(maps, list, zOrder);
+        Clear(maps, list, zOrder, 3);
 
         if (list.IsScrollAvailable)
             SetScroll(maps, list.Scroll, zOrder + 1);
@@ -527,7 +536,7 @@ public static class TileMapperUI
         if (list.IsCollapsed)
         {
             maps[zOrder].SetBar(list.Position, left, fill, right, list.Width);
-            maps[zOrder + 2].SetTile(arrowPos, arrow, list.Mask);
+            maps[zOrder + 1].SetTile(arrowPos, arrow, list.Mask);
         }
         else
         {
@@ -537,7 +546,7 @@ public static class TileMapperUI
                 maps[zOrder].SetPatch(list.Area, ThemeListPatch);
         }
 
-        TryDisable(maps, list, zOrder + 3);
+        TryDisable(maps, list, zOrder + 2);
         RestoreMasks(maps);
     }
     public static void SetListItem(this IList<TileMap> maps, List list, Button item, int zOrder = 1, bool selectable = true)
@@ -555,7 +564,7 @@ public static class TileMapperUI
         color = item.GetInteractionColor(color, InteractionShade);
 
         ApplyMasks(maps, item.Mask);
-        Clear(maps, item, zOrder);
+        Clear(maps, item, zOrder, 2);
         maps[zOrder].SetText(pos, text, color);
         TryDisable(maps, item, zOrder + 1);
         RestoreMasks(maps);
@@ -602,7 +611,8 @@ public static class TileMapperUI
         ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
         ThemeSwitch = (new(ARROW_TAILLESS_ROUND, White), Green, dg);
         ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(BAR_BIG_EDGE, g, Pose.Down), new(SHAPE_CIRCLE_BIG, g.ToBright()));
-        ThemeTooltip = (new(BOX_CORNER, dg), new(FULL, dg), new(FULL, dg));
+        ThemeTooltipBox = (new(BOX_BIG_CORNER, dg), new(FULL, dg), new(FULL, dg));
+        ThemeTooltipBar = (new(BAR_BIG_EDGE, dg), new(FULL, dg), new(BAR_BIG_EDGE, dg, Pose.Down));
         ThemePages = (new(MATH_MUCH_LESS, g), new(MATH_LESS, g), new(MATH_GREATER, g), new(MATH_MUCH_GREATER, g));
         ThemePrompt = (new(BOX_CORNER, ddg), new(BOX_EDGE, ddg), new(FULL, dg), new(FULL, dim));
         ThemePromptItems = [new(ICON_YES, Green), new(ICON_NO, Red)];
@@ -653,13 +663,13 @@ public static class TileMapperUI
             maps[i].ApplyMask(masks[i]);
     }
 
-    private static void Clear(IList<TileMap> maps, Block block, int zOrder)
+    private static void Clear(IList<TileMap> maps, Block block, int zOrder, int depth)
     {
         var (x, y) = block.Position;
         var (w, h) = block.Size;
 
         ApplyMasks(maps, block.Mask);
-        for (var i = zOrder; i < maps.Count; i++)
+        for (var i = zOrder; i < Math.Min(zOrder + depth + 1, maps.Count); i++)
             maps[i].SetArea((x, y, w, h), [EMPTY]);
         RestoreMasks(maps);
     }

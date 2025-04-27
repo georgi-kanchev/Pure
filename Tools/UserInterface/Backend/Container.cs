@@ -6,10 +6,14 @@ namespace Pure.Tools.UserInterface;
 
 internal class Container
 {
-    public Dictionary<string, (string type, Block block)> Blocks { get; set; } = [];
-    public Area? Area { get; set; }
-    public Pivot Pivot { get; set; }
+    public string Name { get; set; } = "";
+    public string? Parent { get; set; } = null;
+
+    public Area? Area { get; set; } = null;
+    public Pivot Pivot { get; set; } = Pivot.Center;
     public SizeI Gap { get; set; } = (1, 1);
+    public Wrap Wrap { get; set; } = Wrap.SingleRow;
+    public Dictionary<string, (string type, Block block)> Blocks { get; set; } = [];
 
     public void Align()
     {

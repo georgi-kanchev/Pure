@@ -243,7 +243,7 @@ public static class InstantBlock
         if (TileMaps.Count == 0 || layerTiles.Size != TileMaps[0].Size)
         {
             TileMaps.Clear();
-            for (var i = 0; i < 6; i++)
+            for (var i = 0; i < 7; i++)
                 TileMaps.Add(new(layerTiles.Size));
         }
 

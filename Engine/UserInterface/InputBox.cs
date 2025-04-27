@@ -48,6 +48,7 @@ public class InputBox : Block
             value ??= "";
             value = value[..Math.Min(value.Length, SymbolLimit)];
 
+            var prev = this.value;
             this.value = value;
             var split = this.value.Replace("\r", "").Split("\n");
 
@@ -62,7 +63,7 @@ public class InputBox : Block
             SelectionIndices = (sx, sy);
             CursorIndices = (cx, cy);
 
-            if (this.value == value)
+            if (prev == value)
                 return;
 
             IsJustValueChanged = true;

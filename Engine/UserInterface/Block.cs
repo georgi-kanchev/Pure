@@ -67,11 +67,7 @@ public class Block
     public PointI Position
     {
         get => position;
-        set
-        {
-            if (hasParent == false)
-                position = value;
-        }
+        set => position = value;
     }
     /// <summary>
     /// Gets or sets the size of the user interface block.
@@ -79,14 +75,7 @@ public class Block
     public Size Size
     {
         get => size;
-        set
-        {
-            value.width = Math.Clamp(value.width, SizeMinimum.width, SizeMaximum.width);
-            value.height = Math.Clamp(value.height, SizeMinimum.height, SizeMaximum.height);
-
-            if (hasParent == false)
-                size = value;
-        }
+        set => size = value;
     }
     /// <summary>
     /// Gets or sets the minimum size that this block can have.
@@ -99,16 +88,11 @@ public class Block
             if (hasParent)
                 return;
 
-            value.width = Math.Max(value.width, 1);
-            value.height = Math.Max(value.height, 1);
-
-            if (value.width > SizeMaximum.width)
-                value.width = SizeMaximum.width;
-            if (value.height > SizeMaximum.height)
-                value.height = SizeMaximum.height;
+            value.width = Math.Clamp(value.width, 1, SizeMaximum.width);
+            value.height = Math.Clamp(value.height, 1, SizeMaximum.height);
 
             sizeMin = value;
-            Size = size;
+            Size = size; // reclamp
         }
     }
     /// <summary>
@@ -125,13 +109,11 @@ public class Block
             value.width = Math.Max(value.width, 1);
             value.height = Math.Max(value.height, 1);
 
-            if (value.width < SizeMinimum.width)
-                value.width = SizeMinimum.width;
-            if (value.height < SizeMinimum.height)
-                value.height = SizeMinimum.height;
+            value.width = value.width < SizeMinimum.width ? SizeMinimum.width : value.width;
+            value.height = value.height < SizeMinimum.height ? SizeMinimum.height : value.height;
 
             sizeMax = value;
-            Size = size;
+            Size = size; // reclamp
         }
     }
     /// <summary>
@@ -440,9 +422,7 @@ public class Block
     }
     public void AlignOutside(Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
     {
-        var opposites = new[] { Pivot.Right, Pivot.Left, Pivot.Bottom, Pivot.Top };
-        AlignEdges(opposites[(int)targetEdge], targetEdge, targetArea, alignment, offset + 1,
-            exceedEdge);
+        AlignEdges((Pivot)(8 - (int)targetEdge), targetEdge, targetArea, alignment, offset + 1, exceedEdge);
     }
     public void Fit(Area? targetArea = null)
     {

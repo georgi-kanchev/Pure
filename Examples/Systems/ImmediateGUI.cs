@@ -128,7 +128,7 @@ public static class ImmediateGUI
 
         void PromptInput()
         {
-            InstantBlock.Tooltip = (tooltip, Pivot.Bottom, 0.5f);
+            InstantBlock.Tooltip = ("That's an input box!", Pivot.Bottom, 0.5f);
             var prompt = InstantBlock.PromptInput(nameof(PromptInput), "Type in stuff:");
             if (prompt != null)
                 log = $"prompt input:\n{prompt}";

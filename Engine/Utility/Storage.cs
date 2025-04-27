@@ -694,6 +694,7 @@ public static class Storage
     private static object? TextToPrimitive(Type type, string? text)
     {
         if (type == typeof(string)) return text;
+        if (type.IsEnum) return ParseEnum(text ?? "", type);
         if (type.IsPrimitive == false || string.IsNullOrWhiteSpace(text)) return null;
 
         var cultDecPoint = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
@@ -911,6 +912,8 @@ public static class Storage
     }
     private static object? ParseEnum(string data, Type expectedType)
     {
+        data = data.Replace(", ", ENUM_FLAG);
+
         var enumType = Enum.GetUnderlyingType(expectedType);
         var value = TextToPrimitive(enumType, data);
 
