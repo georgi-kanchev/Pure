@@ -3,7 +3,6 @@
 public class Tooltip : Block
 {
     public Pivot Pivot { get; set; } = Pivot.Top;
-    public float Alignment { get; set; } = 0.5f;
 
     public Tooltip()
     {
@@ -18,13 +17,24 @@ public class Tooltip : Block
                 width = line.Length;
 
         Size = (width + 2, lines.Length);
-        AlignOutside(Pivot, aroundArea, Alignment, 1);
+        AlignOutside(aroundArea, Pivot, offsets[Pivot]);
         Fit();
 
         if (IsOverlapping(aroundArea) == false)
             return;
 
-        AlignOutside((Pivot)(8 - (int)Pivot), aroundArea, Alignment, 1);
+        var opposite = (Pivot)(8 - (int)Pivot);
+        AlignOutside(aroundArea, opposite, offsets[opposite]);
         Fit();
     }
+
+#region Backend
+    [DoNotSave]
+    private static readonly Dictionary<Pivot, PointI> offsets = new()
+    {
+        { Pivot.TopLeft, (-1, -1) }, { Pivot.Top, (0, -1) }, { Pivot.TopRight, (1, -1) },
+        { Pivot.Left, (-1, 0) }, { Pivot.Center, (0, 0) }, { Pivot.Right, (1, 0) },
+        { Pivot.BottomLeft, (-1, 1) }, { Pivot.Bottom, (0, 1) }, { Pivot.BottomRight, (1, 1) }
+    };
+#endregion
 }

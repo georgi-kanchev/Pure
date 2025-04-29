@@ -1,8 +1,6 @@
+using Pure.Engine.Execution;
 using Pure.Engine.Tiles;
-using Pure.Engine.UserInterface;
-using Pure.Engine.Utility;
 using Pure.Engine.Window;
-using Pure.Tools.Tiles;
 using Pure.Tools.UserInterface;
 using Monitor = Pure.Engine.Window.Monitor;
 
@@ -18,15 +16,16 @@ public static class LayoutGUI
         var layer = new LayerTiles((w * 3, h * 3));
 
         var layoutGUI = new Layout(
-            "Container: top\tPivot: TopLeft\n" +
+            "Container: top\tPivot: Top\tArea: left, top, width / 2, 1\n" +
             "\tButton: steam\t\tText: ~Steam\tSize: 6, 1\n" +
             "\tButton: view\t\tText: View\tSize: 4, 1");
 
-        foreach (var map in layoutGUI.TileMaps)
-            map.ConfigureText(Tile.ICON_ZAP, "~");
-
         while (Window.KeepOpen())
         {
+            if ((layoutGUI.TileMaps.Count > 0).Once("text-config"))
+                foreach (var map in layoutGUI.TileMaps)
+                    map.ConfigureText("~", Tile.ICON_ZAP);
+
             layoutGUI.DrawGUI(layer);
             layer.Render();
         }

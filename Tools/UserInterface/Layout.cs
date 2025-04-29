@@ -31,7 +31,7 @@ public class Layout
 
                 var key = keyValue[0].Trim();
                 var value = keyValue[1].Trim();
-                var subValues = value.Split(",");
+                var subVals = value.Split(",");
 
                 if (key == nameof(Container))
                 {
@@ -45,17 +45,11 @@ public class Layout
                 if (key == nameof(Container.Parent)) container.Parent = value;
                 else if (key == nameof(Container.Pivot)) container.Pivot = value.ToPrimitive<Pivot>() ?? Pivot.Center;
                 else if (key == nameof(Container.Wrap)) container.Wrap = value.ToPrimitive<Wrap>() ?? Wrap.SingleRow;
-                else if (key == nameof(Container.Area) && subValues.Length == 4)
+                else if (key == nameof(Container.Area) && subVals.Length == 4)
+                    container.Area = (ToInt(subVals[0]), ToInt(subVals[1]), ToInt(subVals[2]), ToInt(subVals[3]));
+                else if (key == nameof(Container.Gap) && subVals.Length == 2)
                 {
-                    var (x, y) = (subValues[0].Trim().ToPrimitive<int>(), subValues[1].Trim().ToPrimitive<int>());
-                    var (w, h) = (subValues[2].Trim().ToPrimitive<int>(), subValues[3].Trim().ToPrimitive<int>());
-
-                    if (x != null && y != null && w != null && h != null)
-                        container.Area = (x ?? 0, y ?? 0, w ?? 0, h ?? 0);
-                }
-                else if (key == nameof(Container.Gap) && subValues.Length == 2)
-                {
-                    var (x, y) = (subValues[0].Trim().ToPrimitive<int>(), subValues[1].Trim().ToPrimitive<int>());
+                    var (x, y) = (subVals[0].Trim().ToPrimitive<int>(), subVals[1].Trim().ToPrimitive<int>());
                     if (x != null && y != null)
                         container.Gap = (x ?? 0, y ?? 0);
                 }
@@ -76,7 +70,7 @@ public class Layout
                 else if (key == nameof(Block.Text)) block.Text = value;
                 else if (key == nameof(Block.Size))
                 {
-                    var (x, y) = (subValues[0].Trim().ToPrimitive<int>(), subValues[1].Trim().ToPrimitive<int>());
+                    var (x, y) = (subVals[0].Trim().ToPrimitive<int>(), subVals[1].Trim().ToPrimitive<int>());
                     if (x != null && y != null)
                         block.Size = (x ?? 0, y ?? 0);
                 }
@@ -124,5 +118,19 @@ public class Layout
 
 #region Backend
     private readonly List<Container> containers = [];
+
+    private int ToInt(string value)
+    {
+        var result = value.Trim()
+            .Replace("left", "0")
+            .Replace("top", "0")
+            .Replace("right", Input.Bounds.width.ToString())
+            .Replace("bottom", Input.Bounds.height.ToString())
+            .Replace("width", Input.Bounds.width.ToString())
+            .Replace("height", Input.Bounds.height.ToString())
+            .Calculate();
+
+        return (int)result;
+    }
 #endregion
 }

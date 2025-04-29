@@ -12,7 +12,7 @@ public static class InstantBlock
     public static Tile Cursor { get; set; } = new(546, 3789677055);
     public static string? CurrentPrompt { get; private set; }
 
-    public static (string? text, Pivot side, float alignment) Tooltip { get; set; } = ("", Pivot.Top, 0.5f);
+    public static (string? text, Pivot side) Tooltip { get; set; } = ("", Pivot.Top);
 
     public static void Text(this string? text, (int x, int y) cell = default, int zOrder = 0, uint tint = uint.MaxValue, char tintBrush = '#')
     {
@@ -272,15 +272,6 @@ public static class InstantBlock
         TileMaps.ForEach(map => map.Flush());
     }
 
-    public static void ConfigureText(ushort lowercase = Tile.LOWERCASE_A, ushort uppercase = Tile.UPPERCASE_A, ushort numbers = Tile.NUMBER_0)
-    {
-        TileMaps.ForEach(map => map.ConfigureText(lowercase, uppercase, numbers));
-    }
-    public static void ConfigureText(ushort firstTileId, string symbols)
-    {
-        TileMaps.ForEach(map => map.ConfigureText(firstTileId, symbols));
-    }
-
 #region Backend
     private static float lastChoice = float.NaN;
     private static readonly Dictionary<string, (int framesLeft, Block block)> imGuiCache = [];
@@ -368,7 +359,6 @@ public static class InstantBlock
 
         var tooltip = TryCache<Tooltip>(Tooltip.text ?? "", (0, 0, 1, 1), out _);
         tooltip.Pivot = Tooltip.side;
-        tooltip.Alignment = Tooltip.alignment;
         tooltip.Show(cache.block.Area);
         TileMaps.SetTooltip(tooltip);
 

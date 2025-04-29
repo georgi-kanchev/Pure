@@ -509,11 +509,11 @@ public static class TileMapper
 
     public static void ConfigureText(this TileMap tileMap, ushort lowercase = LOWERCASE_A, ushort uppercase = UPPERCASE_A, ushort numbers = NUMBER_0)
     {
-        ConfigureText(tileMap, lowercase, "abcdefghijklmnopqrstuvwxyz");
-        ConfigureText(tileMap, uppercase, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        ConfigureText(tileMap, numbers, "0123456789");
+        ConfigureText(tileMap, "abcdefghijklmnopqrstuvwxyz", lowercase);
+        ConfigureText(tileMap, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", uppercase);
+        ConfigureText(tileMap, "0123456789", numbers);
     }
-    public static void ConfigureText(this TileMap tileMap, ushort firstTileId, string symbols)
+    public static void ConfigureText(this TileMap tileMap, string symbols, ushort firstTileId)
     {
         TryInitText(tileMap);
 

@@ -36,7 +36,8 @@ public static class InputBoxes
             maps.SetInputBox(chat);
         };
         scroll.OnDisplay += () => maps.SetScroll(scroll);
-        scroll.AlignEdges(Pivot.Left, Pivot.Right, chat, 1f, 2);
+        scroll.AlignX((Pivot.Left, Pivot.Right), chat);
+        scroll.AlignY((Pivot.Bottom, Pivot.Bottom), chat);
 
         // ==========================
 

@@ -351,8 +351,7 @@ public class Block
     public void AlignInside(Area? area = null, Pivot pivot = Pivot.Center, PointI offset = default)
     {
         var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
-        var (w, h) = Size;
-        var (x, y) = (0, 0);
+        var (x, y, w, h) = Area;
 
         if (pivot == Pivot.TopLeft) (x, y) = (ax, ay);
         else if (pivot == Pivot.Top) (x, y) = (ax + aw / 2 - w / 2, ay);
@@ -366,89 +365,136 @@ public class Block
 
         Position = (x + offset.x, y + offset.y);
     }
-    public void AlignEdges(Pivot edge, Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    public void AlignOutside(Area? area, Pivot pivot = Pivot.Center, PointI offset = default)
     {
-        var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.Bounds.width;
-        var rh = targetArea?.height ?? Input.Bounds.height;
-        var (x, y) = Position;
-        var (w, h) = Size;
-        var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
-        var (cx, cy) = (x + w / 2, y + h / 2);
-        var notNan = float.IsNaN(alignment) == false;
+        var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
+        var (x, y, w, h) = Area;
+        var (cx, cy) = (ax + aw / 2 - w / 2, ay + ah / 2 - h / 2);
 
-        offset -= 1;
+        if (pivot == Pivot.TopLeft) (x, y) = (ax - w, ay - h);
+        else if (pivot == Pivot.Top) (x, y) = (cx, ay - h);
+        else if (pivot == Pivot.TopRight) (x, y) = (ax + aw, ay - h);
+        else if (pivot == Pivot.Left) (x, y) = (ax - w, cy);
+        else if (pivot == Pivot.Center)
+        {
+            // if axis is inside, align on the closest edge
+            if (x > ax && x < ax + aw)
+                x = x < cx ? ax - w : ax + aw;
+            if (y > ay && y < ay + ah)
+                y = y < cy ? ay - h : ay + ah;
+        }
+        else if (pivot == Pivot.Right) (x, y) = (ax + aw, cy);
+        else if (pivot == Pivot.BottomLeft) (x, y) = (ax - w, ay + ah);
+        else if (pivot == Pivot.Bottom) (x, y) = (cx, ay + ah);
+        else if (pivot == Pivot.BottomRight) (x, y) = (ax + aw, ay + ah);
 
-        if (notNan && edge is Pivot.Top or Pivot.Bottom && targetEdge is Pivot.Top or Pivot.Bottom)
-            x = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (rx - w - offset, rx + rw + offset) : (rx, rx + rw - w)));
-        else if (notNan && edge is Pivot.Left or Pivot.Right && targetEdge is Pivot.Left or Pivot.Right)
-            y = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (ry - h - offset, ry + rh + offset) : (ry, ry + rh - h)));
-
-        if (edge == Pivot.Left && targetEdge is Pivot.Left or Pivot.Right)
-            x = targetEdge == Pivot.Left ? rx + offset + 1 : rx + rw + offset;
-        else if (edge == Pivot.Left)
-            x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx, rx + rw + offset)));
-
-        if (edge == Pivot.Right && targetEdge is Pivot.Left or Pivot.Right)
-            x = targetEdge == Pivot.Left ? rx - w - offset : rx + rw + offset;
-        else if (edge == Pivot.Right)
-            x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx - w - offset, rx + rw - w)));
-
-        if (edge == Pivot.Top && targetEdge is Pivot.Left or Pivot.Right)
-            y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry, ry + rh + offset)));
-        else if (edge == Pivot.Top)
-            y = targetEdge == Pivot.Top ? ry : ry + rh + offset;
-
-        if (edge == Pivot.Bottom && targetEdge is Pivot.Left or Pivot.Right)
-            y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry - h - offset, ry + rh - h)));
-        else if (edge == Pivot.Bottom)
-            y = targetEdge == Pivot.Top ? ry - h - offset : ry + rh - h + offset + 1;
-
-        Position = (x, y);
+        Position = (x + offset.x, y + offset.y);
     }
-    public void AlignInside(PointF alignment, Area? targetArea = null)
+    public void AlignX((Pivot self, Pivot target) pivots, Area? area = null, int offset = default)
     {
-        var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.Bounds.width;
-        var rh = targetArea?.height ?? Input.Bounds.height;
-        var (x, y) = Position;
-        var (w, h) = Size;
+        var (ax, _, aw, _) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
+        var (x, w) = (X, Width);
 
-        var newX = Map(alignment.x, (0, 1), (rx, rw - w));
-        var newY = Map(alignment.y, (0, 1), (ry, rh - h));
-        Position = (
-            float.IsNaN(alignment.x) ? x : (int)newX,
-            float.IsNaN(alignment.y) ? y : (int)newY);
+        if (pivots.target is Pivot.TopLeft or Pivot.Left or Pivot.BottomLeft) x = ax;
+        if (pivots.target is Pivot.Top or Pivot.Center or Pivot.Bottom) x = ax + aw / 2;
+        if (pivots.target is Pivot.TopRight or Pivot.Right or Pivot.BottomRight) x = ax + aw;
+
+        // if (pivots.self is Pivot.TopLeft or Pivot.Left or Pivot.BottomLeft) x -= 0;
+        if (pivots.self is Pivot.Top or Pivot.Center or Pivot.Bottom) x -= w / 2;
+        if (pivots.self is Pivot.TopRight or Pivot.Right or Pivot.BottomRight) x -= w;
+
+        X = x + offset;
     }
-    public void AlignOutside(Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    public void AlignY((Pivot self, Pivot target) pivots, Area? area = null, int offset = default)
     {
-        AlignEdges((Pivot)(8 - (int)targetEdge), targetEdge, targetArea, alignment, offset + 1, exceedEdge);
+        var (_, ay, _, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
+        var (y, h) = (Y, Height);
+
+        if (pivots.target is Pivot.TopLeft or Pivot.Top or Pivot.TopRight) y = ay;
+        if (pivots.target is Pivot.Left or Pivot.Center or Pivot.Right) y = ay + ah / 2;
+        if (pivots.target is Pivot.BottomLeft or Pivot.Bottom or Pivot.BottomRight) y = ay + ah;
+
+        // if (pivots.self is Pivot.TopLeft or Pivot.Top or Pivot.TopRight) y -= 0;
+        if (pivots.self is Pivot.Left or Pivot.Center or Pivot.Right) y -= h / 2;
+        if (pivots.self is Pivot.BottomLeft or Pivot.Bottom or Pivot.BottomRight) y -= h;
+
+        Y = y + offset;
     }
-    public void Fit(Area? targetArea = null)
+    public void AlignInside(PointF alignment, Area? area = null)
+    {
+        var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
+        var (x, y, w, h) = Area;
+        var newX = Map(alignment.x, (0, 1), (ax, aw - w));
+        var newY = Map(alignment.y, (0, 1), (ay, ah - h));
+
+        Position = (float.IsNaN(alignment.x) ? x : (int)newX, float.IsNaN(alignment.y) ? y : (int)newY);
+    }
+    public void Fit(Area? area = null)
     {
         var (w, h) = Size;
-        var (rx, ry) = (targetArea?.x ?? 0, targetArea?.y ?? 0);
-        var rw = targetArea?.width ?? Input.Bounds.width;
-        var rh = targetArea?.height ?? Input.Bounds.height;
-        var newX = rw - w < rx ? rx : Math.Clamp(Position.x, rx, rw - w);
-        var newY = rh - h < ry ? ry : Math.Clamp(Position.y, ry, rh - h);
+        var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
+        var newX = aw - w < ax ? ax : Math.Clamp(Position.x, ax, aw - w);
+        var newY = ah - h < ay ? ay : Math.Clamp(Position.y, ay, ah - h);
         var hasOverflown = false;
 
-        if (rw - w < 0)
+        if (aw - w < 0)
         {
-            AlignInside((0.5f, float.NaN));
+            AlignInside((0.5f, float.NaN), area);
             hasOverflown = true;
         }
 
-        if (rw - h < 0)
+        if (ah - h < 0)
         {
-            AlignInside((float.NaN, 0.5f));
+            AlignInside((float.NaN, 0.5f), area);
             hasOverflown = true;
         }
 
         if (hasOverflown == false)
             Position = (newX, newY);
     }
+
+    // public void AlignEdges(Pivot myEdge, Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    // {
+    //     var (rx, ry, rw, rh) = targetArea ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
+    //     var (x, y, w, h) = Area;
+    //     var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
+    //     var (cx, cy) = (x + w / 2, y + h / 2);
+    //     var notNan = float.IsNaN(alignment) == false;
+    //
+    //     offset -= 1;
+    //
+    //     if (notNan && myEdge is Pivot.Top or Pivot.Bottom && targetEdge is Pivot.Top or Pivot.Bottom)
+    //         x = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (rx - w - offset, rx + rw + offset) : (rx, rx + rw - w)));
+    //     else if (notNan && myEdge is Pivot.Left or Pivot.Right && targetEdge is Pivot.Left or Pivot.Right)
+    //         y = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (ry - h - offset, ry + rh + offset) : (ry, ry + rh - h)));
+    //
+    //     if (myEdge == Pivot.Left && targetEdge is Pivot.Left or Pivot.Right)
+    //         x = targetEdge == Pivot.Left ? rx + offset + 1 : rx + rw + offset;
+    //     else if (myEdge == Pivot.Left)
+    //         x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx, rx + rw + offset)));
+    //
+    //     if (myEdge == Pivot.Right && targetEdge is Pivot.Left or Pivot.Right)
+    //         x = targetEdge == Pivot.Left ? rx - w - offset : rx + rw + offset;
+    //     else if (myEdge == Pivot.Right)
+    //         x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx - w - offset, rx + rw - w)));
+    //
+    //     if (myEdge == Pivot.Top && targetEdge is Pivot.Left or Pivot.Right)
+    //         y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry, ry + rh + offset)));
+    //     else if (myEdge == Pivot.Top)
+    //         y = targetEdge == Pivot.Top ? ry : ry + rh + offset;
+    //
+    //     if (myEdge == Pivot.Bottom && targetEdge is Pivot.Left or Pivot.Right)
+    //         y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry - h - offset, ry + rh - h)));
+    //     else if (myEdge == Pivot.Bottom)
+    //         y = targetEdge == Pivot.Top ? ry - h - offset : ry + rh - h + offset + 1;
+    //
+    //     Position = (x, y);
+    // }
+    // public void AlignOutside(Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
+    // {
+    //     AlignEdges((Pivot)(8 - (int)targetEdge), targetEdge, targetArea, alignment, offset + 1, exceedEdge);
+    // }
+
     /// <summary>
     /// Interacts with the block based on the specified interaction.
     /// </summary>

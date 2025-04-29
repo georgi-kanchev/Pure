@@ -117,31 +117,28 @@ public static class TileMapperUI
         var (barLeft, barFill, barRight) = ThemeButtonBar;
         var text = button.Text.Shorten(h == 1 ? w : w - 2);
         var textPos = (button.X + offsetW, button.Y + h / 2);
-        var isBar = button.Height == 1;
         var sel = button.IsSelected && selectable;
-        var (rTextTint, bTextTint) = (TintText, TintText);
-        var selTint = TintSelection;
 
         ApplyMasks(maps, button.Mask);
         Clear(maps, button, zOrder, 3);
-        if (isBar)
+        if (button.Height == 1)
         {
-            barLeft.Tint = button.GetInteractionColor(sel ? selTint : barLeft.Tint, InteractionShade);
-            barFill.Tint = button.GetInteractionColor(sel ? selTint : barFill.Tint, InteractionShade);
-            barRight.Tint = button.GetInteractionColor(sel ? selTint : barRight.Tint, InteractionShade);
-            rTextTint = button.GetInteractionColor(sel ? selTint.ToBright() : rTextTint, InteractionShade);
+            barLeft.Tint = button.GetInteractionColor(sel ? TintSelection : barLeft.Tint, InteractionShade);
+            barFill.Tint = button.GetInteractionColor(sel ? TintSelection : barFill.Tint, InteractionShade);
+            barRight.Tint = button.GetInteractionColor(sel ? TintSelection : barRight.Tint, InteractionShade);
+            TintText = button.GetInteractionColor(sel ? TintSelection.ToBright() : TintText, InteractionShade);
             maps[zOrder].SetBar(button.Position, barLeft, barFill, barRight, button.Width);
         }
         else
         {
-            boxCorner.Tint = button.GetInteractionColor(sel ? selTint : boxCorner.Tint, InteractionShade);
-            boxEdge.Tint = button.GetInteractionColor(sel ? selTint : boxEdge.Tint, InteractionShade);
-            boxFill.Tint = button.GetInteractionColor(sel ? selTint : boxFill.Tint, InteractionShade);
-            bTextTint = button.GetInteractionColor(sel ? selTint.ToBright() : bTextTint, InteractionShade);
+            boxCorner.Tint = button.GetInteractionColor(sel ? TintSelection : boxCorner.Tint, InteractionShade);
+            boxEdge.Tint = button.GetInteractionColor(sel ? TintSelection : boxEdge.Tint, InteractionShade);
+            boxFill.Tint = button.GetInteractionColor(sel ? TintSelection : boxFill.Tint, InteractionShade);
+            TintText = button.GetInteractionColor(sel ? TintSelection.ToBright() : TintText, InteractionShade);
             maps[zOrder].SetBox(button.Area, boxFill, boxCorner, boxEdge);
         }
 
-        maps[zOrder + 1].SetText(textPos, text, isBar ? rTextTint : bTextTint);
+        maps[zOrder + 1].SetText(textPos, text, TintText);
         TryDisable(maps, button, zOrder + 2);
         RestoreMasks(maps);
     }
