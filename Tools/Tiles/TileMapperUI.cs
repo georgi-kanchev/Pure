@@ -118,6 +118,7 @@ public static class TileMapperUI
         var text = button.Text.Shorten(h == 1 ? w : w - 2);
         var textPos = (button.X + offsetW, button.Y + h / 2);
         var sel = button.IsSelected && selectable;
+        var tintText = sel ? TintSelection.ToBright() : TintText;
 
         ApplyMasks(maps, button.Mask);
         Clear(maps, button, zOrder, 3);
@@ -126,7 +127,7 @@ public static class TileMapperUI
             barLeft.Tint = button.GetInteractionColor(sel ? TintSelection : barLeft.Tint, InteractionShade);
             barFill.Tint = button.GetInteractionColor(sel ? TintSelection : barFill.Tint, InteractionShade);
             barRight.Tint = button.GetInteractionColor(sel ? TintSelection : barRight.Tint, InteractionShade);
-            TintText = button.GetInteractionColor(sel ? TintSelection.ToBright() : TintText, InteractionShade);
+            tintText = button.GetInteractionColor(tintText, InteractionShade);
             maps[zOrder].SetBar(button.Position, barLeft, barFill, barRight, button.Width);
         }
         else
@@ -134,11 +135,11 @@ public static class TileMapperUI
             boxCorner.Tint = button.GetInteractionColor(sel ? TintSelection : boxCorner.Tint, InteractionShade);
             boxEdge.Tint = button.GetInteractionColor(sel ? TintSelection : boxEdge.Tint, InteractionShade);
             boxFill.Tint = button.GetInteractionColor(sel ? TintSelection : boxFill.Tint, InteractionShade);
-            TintText = button.GetInteractionColor(sel ? TintSelection.ToBright() : TintText, InteractionShade);
+            tintText = button.GetInteractionColor(tintText, InteractionShade);
             maps[zOrder].SetBox(button.Area, boxFill, boxCorner, boxEdge);
         }
 
-        maps[zOrder + 1].SetText(textPos, text, TintText);
+        maps[zOrder + 1].SetText(textPos, text, tintText);
         TryDisable(maps, button, zOrder + 2);
         RestoreMasks(maps);
     }
