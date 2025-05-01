@@ -8,6 +8,7 @@ namespace Pure.Tools.UserInterface;
 
 public enum Wrap { SingleRow, SingleColumn, MultipleRows, MultipleColumns }
 
+[DoNotSave]
 public class Layout
 {
 	public List<TileMap> TileMaps { get; } = [];
@@ -17,22 +18,21 @@ public class Layout
 	{
 		var lines = data.Replace("\r", "").Split("\n", StringSplitOptions.RemoveEmptyEntries);
 		var container = default(Container);
-		var block = default(Block);
 
 		containers.Clear();
 
 		foreach (var line in lines)
 		{
 			var props = line.Trim().Split("\t", StringSplitOptions.RemoveEmptyEntries);
+			var block = default(Block);
+			var toggle = line.Contains("Toggle");
+			var selected = line.Contains(nameof(Button.IsSelected));
 
 			foreach (var prop in props)
 			{
 				var keyValue = prop.Trim().Split(": ");
-				if (keyValue.Length != 2)
-					continue;
-
 				var key = keyValue[0].Trim();
-				var value = keyValue[1].Trim();
+				var value = keyValue.Length > 1 ? keyValue[1].Trim() : "";
 				var subVals = value.Split(",");
 
 				for (var i = 0; i < subVals.Length; i++)
@@ -54,17 +54,27 @@ public class Layout
 					container.AreaDynamic = (subVals[0], subVals[1], subVals[2], subVals[3]);
 				else if (key == nameof(Container.Gap) && subVals.Length == 2)
 					container.Gap = ((int)subVals[0].Calculate(), (int)subVals[1].Calculate());
+				else if (key == nameof(Container.Color) && subVals.Length == 4)
+				{
+					var r = (byte)Math.Clamp(ToInt(subVals[0]), byte.MinValue, byte.MaxValue);
+					var g = (byte)Math.Clamp(ToInt(subVals[1]), byte.MinValue, byte.MaxValue);
+					var b = (byte)Math.Clamp(ToInt(subVals[2]), byte.MinValue, byte.MaxValue);
+					var a = (byte)Math.Clamp(ToInt(subVals[3]), byte.MinValue, byte.MaxValue);
+					container.Color = new Color(r, g, b, a);
+				}
+				else if (key == nameof(Container.Tile)) container.Tile = (ushort)ToInt(value);
 				//====================================================
 				else if (key == nameof(Button))
 				{
-					var button = new Button();
-					button.OnDisplay += () => TileMaps.SetButton(button);
+					var button = new Button { Text = "", IsSelected = selected };
+					if (line.Contains("Icon: ") == false)
+						button.OnDisplay += () => TileMaps.SetButton(button, 1, toggle || selected);
 					container.Blocks.Add(value, button);
 					block = button;
 				}
 				else if (key == nameof(Span.Dropdown))
 				{
-					var dropdown = new List(default, 0, Span.Dropdown);
+					var dropdown = new List(default, 0, Span.Dropdown) { Text = "" };
 					dropdown.OnDisplay += () => TileMaps.SetList(dropdown);
 					dropdown.OnItemDisplay += item => TileMaps.SetListItem(dropdown, item);
 					container.Blocks.Add(value, dropdown);
@@ -74,7 +84,7 @@ public class Layout
 				if (block == null)
 					continue;
 
-				if (key == nameof(Block.Text)) block.Text = value;
+				if (key == nameof(Block.Text)) block.Text = keyValue[1]; // no trim
 				else if (key == nameof(Block.Size))
 				{
 					int? items = block is List list ? list.Items.Count : null;
@@ -83,6 +93,8 @@ public class Layout
 						ToInt(subVals[0], block.Text, container.Area, items),
 						ToInt(subVals[1], block.Text, container.Area, items));
 				}
+				else if (key == nameof(Block.IsDisabled)) block.IsDisabled = true;
+				else if (key == nameof(Block.IsHidden)) block.IsHidden = true;
 				//====================================================
 				else if (block is List list)
 				{
@@ -100,6 +112,9 @@ public class Layout
 					else if (key == nameof(List.ItemGap))
 						list.ItemGap = (int)value.Calculate();
 				}
+				//====================================================
+				else if (block is Button btn && key == "Icon")
+					btn.OnDisplay += () => TileMaps.SetButtonIcon(btn, (ushort)ToInt(value), 1, toggle || selected);
 			}
 		}
 	}
@@ -121,8 +136,16 @@ public class Layout
 
 	public void DrawGUI(LayerTiles layerTiles)
 	{
+		if (TileMaps.Count == 0 || layerTiles.Size != TileMaps[0].Size)
+		{
+			TileMaps.Clear();
+			for (var i = 0; i < 7; i++)
+				TileMaps.Add(new(layerTiles.Size));
+		}
+
 		var screen = (0, 0, Input.Bounds.width, Input.Bounds.height);
 		foreach (var container in containers)
+		{
 			foreach (var (_, block) in container.Blocks)
 			{
 				if (block.IsOverlapping(screen) == false)
@@ -131,11 +154,7 @@ public class Layout
 				block.Update();
 			}
 
-		if (TileMaps.Count == 0 || layerTiles.Size != TileMaps[0].Size)
-		{
-			TileMaps.Clear();
-			for (var i = 0; i < 7; i++)
-				TileMaps.Add(new(layerTiles.Size));
+			TileMaps[0].SetArea(container.Area, [new(container.Tile, container.Color)]);
 		}
 
 		Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;

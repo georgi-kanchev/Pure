@@ -26,6 +26,8 @@ internal class Container(Layout owner)
 	public Pivot Pivot { get; set; } = Center;
 	public SizeI Gap { get; set; } = (1, 1);
 	public Wrap Wrap { get; set; } = Wrap.SingleRow;
+	public uint Color { get; set; } = Engine.Utility.Color.Gray.ToDark(0.7f);
+	public ushort Tile { get; set; } = 10;
 	public Dictionary<string, Block> Blocks { get; set; } = [];
 
 	public void Align()
@@ -51,8 +53,6 @@ internal class Container(Layout owner)
 	}
 
 #region Backend
-	private Area? area;
-
 	private Area GetBoundingBox()
 	{
 		if (Blocks.Count == 0)

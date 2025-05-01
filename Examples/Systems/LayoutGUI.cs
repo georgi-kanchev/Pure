@@ -15,36 +15,37 @@ public static class LayoutGUI
 		Window.PixelScale = 1;
 
 		var (w, h) = Monitor.Current.AspectRatio;
-		var layer = new LayerTiles((w * 4, h * 4));
+		var layer = new LayerTiles((w * 6, h * 6));
 		var layoutGUI = new Layout(@"
-Container: top			Area: left, top, width, 1						Pivot: Left
-	Button: steam		Text: ~Steam	Size: text, 1
-	Button: view		Text: View		Size: text, 1
-	Button: friends		Text: Friends	Size: text, 1
-	Button: games		Text: Games		Size: text, 1
-	Button: help		Text: Help		Size: text, 1
-Container: top-right	Parent: top		Area: left, top, width, 1		Pivot: Right
-	Button: speaker		Text: >			Size: 1, 1
-	Button: bell		Text: *			Size: 1, 1
+Container: top			Area: left, top, width, 1		Pivot: Left
+	Button: steam		Icon: 391			Text:  Steam		Size: text, 1
+	Button: view		Text: View			Size: text, 1
+	Button: friends		Text: Friends		Size: text, 1
+	Button: games		Text: Games			Size: text, 1
+	Button: help		Text: Help			Size: text, 1
+Container: top-right	Pivot: Right		Area: left, top, width, 1	Color: 60, 60, 60, 255
+	Button: speaker		Icon: 427			Size: 1, 1
+	Button: bell		Icon: 353			Size: 1, 1
 	Dropdown: profile	Items: @nickname438, Profile, Account, Preferences, Wallet, Change Account, Sign Out		Size: 14, items		ItemSize: width, 1
-	Button: screen		Text: #			Size: 1, 1");
+	Button: screen		Icon: 395			Size: 1, 1
+Container: top-second	Area: left, top + 1, width, 3	Pivot: Left		Gap: 0, 0
+	Button: back		Text: <				Size: 3, 3
+	Button: forward		Text: >				Size: 3, 3
+	Button: space1		Text: .				Size: text + 2, 3	IsHidden	IsDisabled
+	Button: store		Text: STORE			Size: text + 2, 3	Toggle
+	Button: library		Text: LIBRARY		Size: text + 2, 3	IsSelected
+	Button: community	Text: COMMUNITY		Size: text + 2, 3	Toggle
+	Button: nickname	Text: NICKNAME438	Size: text + 2, 3	Toggle
+Container: left-games	Area: left, top + 5, 20, height - 6		Pivot: TopLeft	Gap: 0, 0
+	Button: home		Text: Home			Size: width - 3, 3	IsSelected
+	Button: collections	Icon: 369			Size: 3, 3			Toggle");
 
 		var profile = layoutGUI.GetBlock<List>("profile");
 
 		while (Window.KeepOpen())
 		{
-			if ((layoutGUI.TileMaps.Count > 0).Once("text-config"))
-				foreach (var map in layoutGUI.TileMaps)
-				{
-					map.ConfigureText("~", Tile.ICON_ZAP);
-					map.ConfigureText(">", Tile.AUDIO_VOLUME_HIGH);
-					map.ConfigureText("*", Tile.ICON_BELL);
-					map.ConfigureText("@", Tile.ICON_PERSON);
-					map.ConfigureText("#", Tile.ICON_SCREEN);
-					map.ConfigureText("_", Tile.PUNCTUATION_UNDERSCORE);
-					map.ConfigureText("+", Tile.SHAPE_SQUARE_HOLLOW);
-					map.ConfigureText("-", Tile.ICON_X);
-				}
+			foreach (var map in layoutGUI.TileMaps)
+				map.ConfigureText("@", Tile.ICON_PERSON);
 
 			if (profile!.IsCollapsed.Once("fff"))
 				profile.Select(profile.Items[0]);
