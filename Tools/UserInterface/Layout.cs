@@ -18,14 +18,16 @@ public class Layout
 	{
 		var lines = data.Replace("\r", "").Split("\n", StringSplitOptions.RemoveEmptyEntries);
 		var container = default(Container);
+		var lastContainerLine = 0;
 
 		containers.Clear();
 
-		foreach (var line in lines)
+		for (var i = 0; i < lines.Length; i++)
 		{
+			var line = lines[i];
 			var props = line.Trim().Split("\t", StringSplitOptions.RemoveEmptyEntries);
 			var block = default(Block);
-			var toggle = line.Contains("Toggle");
+			var toggle = line.Contains("IsToggle");
 			var selected = line.Contains(nameof(Button.IsSelected));
 
 			foreach (var prop in props)
@@ -33,54 +35,54 @@ public class Layout
 				var keyValue = prop.Trim().Split(": ");
 				var key = keyValue[0].Trim();
 				var value = keyValue.Length > 1 ? keyValue[1].Trim() : "";
-				var subVals = value.Split(",");
+				var values = value.Split(",");
 
-				for (var i = 0; i < subVals.Length; i++)
-					subVals[i] = subVals[i].Trim();
+				for (var j = 0; j < values.Length; j++)
+					values[j] = values[j].Trim();
 
 				if (key == nameof(Container))
 				{
 					container = new(this) { Name = value };
 					containers.Add(container);
+					lastContainerLine = i;
+					continue;
 				}
 
 				if (container == null)
 					continue;
 
-				if (key == nameof(Container.Parent)) container.Parent = value;
-				else if (key == nameof(Container.Pivot)) container.Pivot = value.ToPrimitive<Pivot>() ?? Pivot.Center;
-				else if (key == nameof(Container.Wrap)) container.Wrap = value.ToPrimitive<Wrap>() ?? Wrap.SingleRow;
-				else if (key == nameof(Container.Area) && subVals.Length == 4)
-					container.AreaDynamic = (subVals[0], subVals[1], subVals[2], subVals[3]);
-				else if (key == nameof(Container.Gap) && subVals.Length == 2)
-					container.Gap = ((int)subVals[0].Calculate(), (int)subVals[1].Calculate());
-				else if (key == nameof(Container.Color) && subVals.Length == 4)
+				if (lastContainerLine == i)
 				{
-					var r = (byte)Math.Clamp(ToInt(subVals[0]), byte.MinValue, byte.MaxValue);
-					var g = (byte)Math.Clamp(ToInt(subVals[1]), byte.MinValue, byte.MaxValue);
-					var b = (byte)Math.Clamp(ToInt(subVals[2]), byte.MinValue, byte.MaxValue);
-					var a = (byte)Math.Clamp(ToInt(subVals[3]), byte.MinValue, byte.MaxValue);
-					container.Color = new Color(r, g, b, a);
+					SetPropertyContainer(container, key, values);
+					continue;
 				}
-				else if (key == nameof(Container.Tile)) container.Tile = (ushort)ToInt(value);
-				//====================================================
-				else if (key == nameof(Button))
+
+				// create ====================================================
+				if (key == nameof(Button))
 				{
 					var button = new Button { Text = "", IsSelected = selected };
 					if (line.Contains("Icon: ") == false)
 						button.OnDisplay += () => TileMaps.SetButton(button, 1, toggle || selected);
 					container.Blocks.Add(value, button);
 					block = button;
+					continue;
 				}
-				else if (key == nameof(Span.Dropdown))
+				else if (key is nameof(Span.Column) or nameof(Span.Row) or nameof(Span.Dropdown) or nameof(Span.Menu))
 				{
-					var dropdown = new List(default, 0, Span.Dropdown) { Text = "" };
-					dropdown.OnDisplay += () => TileMaps.SetList(dropdown);
-					dropdown.OnItemDisplay += item => TileMaps.SetListItem(dropdown, item);
-					container.Blocks.Add(value, dropdown);
-					block = dropdown;
+					var span = Span.Column;
+					span = key == nameof(Span.Row) ? Span.Row : span;
+					span = key == nameof(Span.Dropdown) ? Span.Dropdown : span;
+					span = key == nameof(Span.Menu) ? Span.Menu : span;
+
+					var list = new List(default, 0, span) { Text = "" };
+					list.OnDisplay += () => TileMaps.SetList(list);
+					list.OnItemDisplay += item => TileMaps.SetListItem(list, item);
+					container.Blocks.Add(value, list);
+					block = list;
+					continue;
 				}
 
+				// block props ====================================================
 				if (block == null)
 					continue;
 
@@ -90,31 +92,36 @@ public class Layout
 					int? items = block is List list ? list.Items.Count : null;
 
 					block.Size = (
-						ToInt(subVals[0], block.Text, container.Area, items),
-						ToInt(subVals[1], block.Text, container.Area, items));
+						ToInt(values[0], block.Text, container.Area, items),
+						ToInt(values[1], block.Text, container.Area, items));
 				}
 				else if (key == nameof(Block.IsDisabled)) block.IsDisabled = true;
 				else if (key == nameof(Block.IsHidden)) block.IsHidden = true;
-				//====================================================
+				// list props====================================================
 				else if (block is List list)
 				{
 					if (key == nameof(List.Items))
 					{
-						for (var i = 0; i < subVals.Length; i++)
+						foreach (var _ in values)
 							list.Items.Add(new());
 
-						list.Edit(subVals);
+						list.Edit(values);
 					}
 					else if (key == nameof(List.ItemSize))
 						list.ItemSize = (
-							ToInt(subVals[0], block.Text, block.Area),
-							ToInt(subVals[1], block.Text, block.Area));
-					else if (key == nameof(List.ItemGap))
-						list.ItemGap = (int)value.Calculate();
+							ToInt(values[0], block.Text, block.Area),
+							ToInt(values[1], block.Text, block.Area));
+					else if (key == nameof(List.ItemGap)) list.ItemGap = (int)value.Calculate();
+					else if (key == nameof(List.IsSingleSelecting)) list.IsSingleSelecting = true;
 				}
-				//====================================================
-				else if (block is Button btn && key == "Icon")
-					btn.OnDisplay += () => TileMaps.SetButtonIcon(btn, (ushort)ToInt(value), 1, toggle || selected);
+				// button props====================================================
+				else if (block is Button btn)
+				{
+					if (key == "Icon")
+						btn.OnDisplay += () => TileMaps.SetButtonIcon(btn, (ushort)ToInt(value), 1, toggle || selected);
+					else if (key == nameof(string.PadLeft)) btn.Text = btn.Text.PadLeft(ToInt(value, btn.Text, btn.Area));
+					else if (key == nameof(string.PadRight)) btn.Text = btn.Text.PadRight(ToInt(value, btn.Text, btn.Area));
+				}
 			}
 		}
 	}
@@ -185,6 +192,30 @@ public class Layout
 				return container;
 
 		return null;
+	}
+
+	private static void SetPropertyContainer(Container container, string key, string[] values)
+	{
+		if (key == nameof(Container.Parent))
+			container.Parent = values[0];
+		else if (key == nameof(Container.Pivot))
+			container.Pivot = values[0].ToPrimitive<Pivot>() ?? Pivot.Center;
+		else if (key == nameof(Container.Wrap))
+			container.Wrap = values[0].ToPrimitive<Wrap>() ?? Wrap.SingleRow;
+		else if (key == nameof(Container.Area) && values.Length == 4)
+			container.AreaDynamic = (values[0], values[1], values[2], values[3]);
+		else if (key == nameof(Container.Gap) && values.Length == 2)
+			container.Gap = ((int)values[0].Calculate(), (int)values[1].Calculate());
+		else if (key == nameof(Container.Color) && values.Length == 4)
+		{
+			var r = (byte)Math.Clamp(ToInt(values[0]), byte.MinValue, byte.MaxValue);
+			var g = (byte)Math.Clamp(ToInt(values[1]), byte.MinValue, byte.MaxValue);
+			var b = (byte)Math.Clamp(ToInt(values[2]), byte.MinValue, byte.MaxValue);
+			var a = (byte)Math.Clamp(ToInt(values[3]), byte.MinValue, byte.MaxValue);
+			container.Color = new Color(r, g, b, a);
+		}
+		else if (key == nameof(Container.Tile))
+			container.Tile = (ushort)ToInt(values[0]);
 	}
 
 	internal static int ToInt(string value, string text = "", Area? area = null, int? items = null)

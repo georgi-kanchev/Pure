@@ -70,7 +70,7 @@ public static class TileMapperUI
 		ApplyMasks(maps, button.Mask);
 		Clear(maps, button, zOrder, 2);
 		maps[zOrder].SetTile(button.Position, tile, button.Mask);
-		maps[zOrder].SetText(textPos, button.Text, tile.Tint);
+		maps[zOrder].SetText(textPos, button.Text.Shorten(button.Width - 2), tile.Tint);
 		TryDisable(maps, button, zOrder + 1);
 		RestoreMasks(maps);
 	}
@@ -529,7 +529,7 @@ public static class TileMapperUI
 		var (left, fill, right, arrow) = ThemeListBar;
 		var arrowPos = (list.X + list.Width - 1, list.Y);
 		var sel = list.SelectedItems;
-		Block obj = list.IsCollapsed && sel.Count > 0 && sel[0].IsHovered ? sel[0] : list;
+		Block obj = list.IsFolded && sel.Count > 0 && sel[0].IsHovered ? sel[0] : list;
 
 		arrow.Tint = obj.GetInteractionColor(arrow.Tint, InteractionShade);
 		left.Tint = obj.GetInteractionColor(left.Tint, InteractionShade);
@@ -542,7 +542,7 @@ public static class TileMapperUI
 		if (list.IsScrollAvailable)
 			SetScroll(maps, list.Scroll, zOrder + 1);
 
-		if (list.IsCollapsed)
+		if (list.IsFolded)
 		{
 			maps[zOrder].SetBar(list.Position, left, fill, right, list.Width);
 			maps[zOrder + 1].SetTile(arrowPos, arrow, list.Mask);
@@ -552,7 +552,19 @@ public static class TileMapperUI
 			if (list.Height == 1)
 				maps[zOrder].SetBar(list.Position, left, fill, right, list.Width);
 			else
+			{
 				maps[zOrder].SetPatch(list.Area, ThemeListPatch);
+
+				if (list.Span == Span.Menu)
+					maps[zOrder].SetBar(list.Position, left, fill, right, list.Width);
+			}
+		}
+
+		if (list.Span == Span.Menu)
+		{
+			var text = list.Text.Shorten(list.Width - (list.IsFolded ? 1 : 0));
+			var color = list.GetInteractionColor(TintText, InteractionShade);
+			maps[zOrder + 1].SetText(list.Position, text, color);
 		}
 
 		TryDisable(maps, list, zOrder + 2);
@@ -564,12 +576,24 @@ public static class TileMapperUI
 			return;
 
 		var color = item.IsSelected && toggle ? TintSelection : TintText;
-		var isLeftCrop = list.Span == Span.Horizontal &&
+		var isLeftCrop = list.Span == Span.Row &&
 		                 item.Width < list.ItemSize.width &&
 		                 item.Position == list.Position;
-		var text = item.Text.Shorten(item.Size.width * (isLeftCrop ? -1 : 1));
+		var text = item.Text;
 		var pos = (item.X, item.Y + item.Height / 2);
 
+		if (list is { Span: Span.Dropdown, IsSingleSelecting: false, IsFolded: true })
+		{
+			var result = "";
+			for (var i = 0; i < list.SelectedItems.Count; i++)
+				result += $"{(i == 0 ? "" : ", ")}{list.Items[list.Items.IndexOf(list.SelectedItems[i])].Text}";
+
+			text = result;
+			text = list.SelectedItems.Count == 0 ? "None" : text;
+			text = list.SelectedItems.Count == list.Items.Count ? "All" : text;
+		}
+
+		text = text.Shorten(item.Size.width * (isLeftCrop ? -1 : 1));
 		color = item.GetInteractionColor(color, InteractionShade);
 
 		ApplyMasks(maps, item.Mask);
