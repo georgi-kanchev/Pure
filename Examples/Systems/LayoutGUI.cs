@@ -50,7 +50,7 @@ Container: left-games	Area: left, top + 5, 20, height - 6		Pivot: TopLeft	Gap: 0
 			if (profile!.IsFolded.Once("fff"))
 				profile.Deselect();
 
-			layoutGUI.DrawGUI(layer);
+			layoutGUI.UpdateAndDraw(layer);
 			layer.Render();
 		}
 	}

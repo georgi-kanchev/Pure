@@ -2,7 +2,6 @@
 global using SFML.System;
 global using SFML.Window;
 global using System.Diagnostics.CodeAnalysis;
-global using System.Diagnostics;
 global using SFML.Graphics.Glsl;
 global using System.Numerics;
 global using Count = (byte width, byte height);
@@ -35,15 +34,15 @@ public enum RenderArea { Fit, Fill }
 /// <summary>
 /// Provides access to an OS window and its properties.
 /// </summary>
-public static class Window
+public class Window
 {
-	public static Action? OnClose { get; set; }
-	public static Action? OnRecreate { get; set; }
+	public Action? OnClose { get; set; }
+	public Action? OnRecreate { get; set; }
 
 	/// <summary>
 	/// Gets the mode that the window was created with.
 	/// </summary>
-	public static Mode Mode
+	public Mode Mode
 	{
 		get => mode;
 		set
@@ -52,16 +51,13 @@ public static class Window
 				isRecreating = true;
 
 			mode = value;
-			if (mode == Mode.Fullscreen)
-				monitor = 0;
-
 			TryCreate();
 		}
 	}
 	/// <summary>
 	/// Gets or sets the title of the window.
 	/// </summary>
-	public static string Title
+	public string Title
 	{
 		get => title;
 		set
@@ -77,21 +73,21 @@ public static class Window
 	/// <summary>
 	/// Gets the size of the window.
 	/// </summary>
-	public static SizeU Size
+	public SizeU Size
 	{
 		get => window != null ? (window.Size.X, window.Size.Y) : (0, 0);
 	}
 	/// <summary>
 	/// Gets a value indicating whether the window is focused.
 	/// </summary>
-	public static bool IsFocused
+	public bool IsFocused
 	{
 		get => window != null && window.HasFocus();
 	}
 	/// <summary>
 	/// Gets or sets a value indicating whether the window should use retro TV graphics.
 	/// </summary>
-	public static bool IsRetro
+	public bool IsRetro
 	{
 		get => isRetro && retroShader != null && Shader.IsAvailable;
 		set
@@ -103,7 +99,7 @@ public static class Window
 			TryCreate();
 		}
 	}
-	public static uint BackgroundColor
+	public uint BackgroundColor
 	{
 		get => backgroundColor;
 		set
@@ -112,22 +108,7 @@ public static class Window
 			TryCreate();
 		}
 	}
-	public static uint Monitor
-	{
-		get => monitor;
-		set
-		{
-			if (mode == Mode.Fullscreen)
-				return;
-
-			monitor = (uint)Math.Min(value, Engine.Window.Monitor.Monitors.Length - 1);
-			RecreateRenderTextures();
-			TryCreate();
-			Scale(0.5f);
-			Center();
-		}
-	}
-	public static float PixelScale
+	public float PixelScale
 	{
 		get => pixelScale;
 		set
@@ -137,7 +118,7 @@ public static class Window
 			RecreateRenderTextures();
 		}
 	}
-	public static bool IsVerticallySynced
+	public bool IsVerticallySynced
 	{
 		get => isVerticallySynced;
 		set
@@ -147,7 +128,7 @@ public static class Window
 			window.SetVerticalSyncEnabled(value);
 		}
 	}
-	public static uint MaximumFrameRate
+	public uint MaximumFrameRate
 	{
 		get => maximumFrameRate;
 		set
@@ -157,7 +138,7 @@ public static class Window
 			window.SetFramerateLimit(value);
 		}
 	}
-	public static string Clipboard
+	public string Clipboard
 	{
 		get => clipboardCache;
 		set
@@ -169,7 +150,7 @@ public static class Window
 			SFML.Window.Clipboard.Contents = value;
 		}
 	}
-	public static RenderArea RenderArea
+	public RenderArea RenderArea
 	{
 		get => renderArea;
 		set
@@ -178,16 +159,27 @@ public static class Window
 			renderArea = value;
 		}
 	}
+	public IntPtr Handle
+	{
+		get
+		{
+			TryCreate();
+			return window.SystemHandle;
+		}
+	}
 
-	public static bool KeepOpen()
+	public Window()
+	{
+		TryCreate();
+		FixWeirdLinuxClipboardIssue();
+	}
+
+	public bool KeepOpen()
 	{
 		if (isRecreating)
 			Recreate();
 
 		TryCreate();
-
-		Keyboard.Update();
-		Mouse.Update();
 		FinishDraw();
 
 		if (hasClosed)
@@ -201,17 +193,7 @@ public static class Window
 		renderResult?.Clear(new(BackgroundColor));
 		return window.IsOpen;
 	}
-	public static void Render(this LayerTiles layerTiles)
-	{
-		TryCreate();
-		layerTiles.DrawQueue();
-	}
-	public static void Render(this LayerSprites layerSprites)
-	{
-		TryCreate();
-		layerSprites.DrawQueue();
-	}
-	public static void Close()
+	public void Close()
 	{
 		if (window == null || renderResult == null)
 			return;
@@ -229,21 +211,26 @@ public static class Window
 		window.Close();
 	}
 
-	public static void Scale(float scale)
+	public void ToMonitor(AreaI monitorDesktopArea)
+	{
+		monitorArea = monitorDesktopArea;
+		RecreateRenderTextures();
+		TryCreate();
+		Scale(0.5f);
+		Center();
+	}
+	public void Scale(float scale)
 	{
 		scale = Math.Max(scale, 0.05f);
 
 		TryCreate();
-		var (mw, mh) = Engine.Window.Monitor.Current.Size;
-		window.Size = new((uint)(mw * scale), (uint)(mh * scale));
+		window.Size = new((uint)(monitorArea.width * scale), (uint)(monitorArea.height * scale));
 	}
-	public static void Center()
+	public void Center()
 	{
 		TryCreate();
 
-		var current = Engine.Window.Monitor.Current;
-		var (x, y) = current.position;
-		var (w, h) = current.Size;
+		var (x, y, w, h) = monitorArea;
 		var (ww, wh) = Size;
 
 		x += w / 2 - (int)ww / 2;
@@ -252,7 +239,7 @@ public static class Window
 		window.Position = new(x, y);
 	}
 
-	public static void SetIconFromTile(LayerTiles layerTiles, TileStatic tile, TileStatic tileBack = default, bool saveAsFile = false)
+	public void SetIconFromTile(LayerTiles layerTiles, TileStatic tile, TileStatic tileBack = default, bool saveAsFile = false)
 	{
 		TryCreate();
 
@@ -286,7 +273,7 @@ public static class Window
 		rend.Dispose();
 		image.Dispose();
 	}
-	public static void SetIconFromTextureArea(LayerSprites layerSprites, AreaI? area = default, bool saveAsFile = false)
+	public void SetIconFromTextureArea(LayerSprites layerSprites, AreaI? area = default, bool saveAsFile = false)
 	{
 		TryCreate();
 
@@ -321,41 +308,40 @@ public static class Window
 	private const float RETRO_TURNOFF_TIME = 0.5f;
 
 	[DoNotSave]
-	internal static RenderWindow? window;
+	internal RenderWindow? window;
 	[DoNotSave]
-	internal static RenderTexture? renderResult;
+	internal RenderTexture? renderResult;
 	[DoNotSave]
-	internal static (int w, int h) rendTexViewSz;
+	internal (int w, int h) rendTexViewSz;
 
 	[DoNotSave]
-	private static Shader? retroShader;
+	private Shader? retroShader;
 	[DoNotSave]
-	private static readonly Random retroRand = new();
+	private readonly Random retroRand = new();
 	[DoNotSave]
-	internal static readonly Clock time = new();
+	internal readonly Clock time = new();
 	[DoNotSave]
-	private static System.Timers.Timer? retroTurnoff;
+	private System.Timers.Timer? retroTurnoff;
 	[DoNotSave]
-	private static Clock? retroTurnoffTime;
+	private Clock? retroTurnoffTime;
 	[DoNotSave]
 	internal static readonly Vertex[] verts = new Vertex[4];
-	[DoNotSave]
-	internal static Texture? white;
 
-	private static bool isRetro, isClosing, hasClosed, isVerticallySynced = true, isRecreating, shouldGetClipboard;
-	private static string title = "Game", clipboardCache = "";
-	private static uint backgroundColor, monitor, maximumFrameRate = 60;
-	private static Mode mode;
-	private static float pixelScale = 5f;
-	private static RenderArea renderArea;
+	private bool isRetro, isClosing, hasClosed, isVerticallySynced = true, isRecreating, shouldGetClipboard;
+	private string title = "Game", clipboardCache = "";
+	private uint backgroundColor, maximumFrameRate = 60;
+	private Mode mode;
+	private float pixelScale = 5f;
+	private RenderArea renderArea;
+	internal AreaI monitorArea;
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	private delegate int XInitThreadsDelegate();
 
-	// this below and here ^^^ is a weird issue related to how SFML waits to get the clipboard from X11 on linux
+	// this below and above is a weird issue related to how SFML waits to get the clipboard from X11 on linux
 	// so we spin a thread to not freeze the main one
 	// this issue only happens if something that is non-text occuppies the clipboard (image for example)
-	static Window()
+	private void FixWeirdLinuxClipboardIssue()
 	{
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && NativeLibrary.TryLoad("libX11.so.6", out var libX11))
 		{
@@ -381,7 +367,7 @@ public static class Window
 	}
 
 	[MemberNotNull(nameof(window))]
-	internal static void TryCreate()
+	internal void TryCreate()
 	{
 		if (window != null)
 			return;
@@ -392,7 +378,7 @@ public static class Window
 		Recreate();
 	}
 	[MemberNotNull(nameof(window))]
-	private static void Recreate()
+	private void Recreate()
 	{
 		var wasRecreating = isRecreating;
 		isRecreating = false;
@@ -405,13 +391,6 @@ public static class Window
 			prevSize = window.Size;
 			window.Dispose();
 			window = null;
-		}
-
-		if (white == null)
-		{
-			var image = new Image(new[,] { { Color.White } });
-			white = new(image) { Repeated = true };
-			image.Dispose();
 		}
 
 		var style = Styles.Default;
@@ -427,25 +406,9 @@ public static class Window
 			view.Center = new(e.Width / 2f, e.Height / 2f);
 			view.Size = new(e.Width, e.Height);
 			window.SetView(view);
+		};
 
-			var mousePos = SFML.Window.Mouse.GetPosition(window);
-			Mouse.OnMove(null, new(new() { X = mousePos.X, Y = mousePos.Y }));
-		};
-		window.KeyPressed += Keyboard.OnPress;
-		window.KeyReleased += Keyboard.OnRelease;
-		window.TextEntered += Keyboard.OnType;
-		window.MouseButtonPressed += Mouse.OnButtonPressed;
-		window.MouseButtonReleased += Mouse.OnButtonReleased;
-		window.MouseWheelScrolled += Mouse.OnWheelScrolled;
-		window.MouseMoved += Mouse.OnMove;
-		window.MouseEntered += Mouse.OnEnter;
-		window.MouseLeft += Mouse.OnLeft;
 		window.GainedFocus += (_, _) => shouldGetClipboard = true;
-		window.LostFocus += (_, _) =>
-		{
-			Mouse.CancelInput();
-			Keyboard.CancelInput();
-		};
 
 		window.DispatchEvents();
 		window.Clear();
@@ -461,11 +424,6 @@ public static class Window
 
 		Clipboard = SFML.Window.Clipboard.Contents;
 
-		Mouse.CursorCurrent = Mouse.CursorCurrent;
-		Mouse.IsCursorBounded = Mouse.IsCursorBounded;
-		Mouse.IsCursorVisible = Mouse.IsCursorVisible;
-		Mouse.TryUpdateSystemCursor();
-
 		if (Mode == Mode.Windowed)
 			Scale(0.5f);
 
@@ -475,13 +433,12 @@ public static class Window
 		OnRecreate?.Invoke();
 	}
 	[MemberNotNull(nameof(renderResult))]
-	private static void RecreateRenderTextures()
+	private void RecreateRenderTextures()
 	{
 		renderResult?.Dispose();
 		renderResult = null;
 
-		var currentMonitor = Engine.Window.Monitor.Monitors[Monitor];
-		var (w, h) = currentMonitor.Size;
+		var (_, _, w, h) = monitorArea;
 		renderResult = new((uint)(w / pixelScale), (uint)(h / pixelScale));
 		var view = renderResult.GetView();
 		view.Center = new();
@@ -489,7 +446,7 @@ public static class Window
 		renderResult.SetView(view);
 	}
 
-	private static void StartRetroAnimation()
+	private void StartRetroAnimation()
 	{
 		retroTurnoffTime = new();
 		retroTurnoff = new(RETRO_TURNOFF_TIME * 1000);
@@ -501,7 +458,7 @@ public static class Window
 			window?.Close();
 		};
 	}
-	private static void FinishDraw()
+	private void FinishDraw()
 	{
 		if (renderResult == null || hasClosed)
 			return;
@@ -536,20 +493,11 @@ public static class Window
 		window.Draw(verts, PrimitiveType.Quads, rend);
 	}
 
-	private static (int, int) IndexToCoords(int index, LayerTiles layerTiles)
-	{
-		var (tw, th) = layerTiles.AtlasTileCount;
-		index = index < 0 ? 0 : index;
-		index = index > tw * th - 1 ? tw * th - 1 : index;
-
-		return (index % tw, index / tw);
-	}
-
-	internal static AreaF GetRenderArea()
+	internal AreaF GetRenderArea()
 	{
 		TryCreate();
 
-		var (aw, ah) = Engine.Window.Monitor.Current.AspectRatio;
+		var (aw, ah) = GetAspectRatio(monitorArea.width, monitorArea.height);
 		var (ww, wh) = (window.Size.X, window.Size.Y);
 		var ratio = aw / (float)ah;
 
@@ -567,6 +515,32 @@ public static class Window
 		}
 
 		return (((float)window.Size.X - ww) / 2f, ((float)window.Size.Y - wh) / 2f, ww, wh);
+	}
+
+	private static SizeI GetAspectRatio(int width, int height)
+	{
+		var gcd = height == 0 ? width : GetGreatestCommonDivisor(height, width % height);
+		return (width / gcd, height / gcd);
+
+		int GetGreatestCommonDivisor(int a, int b)
+		{
+			while (true)
+			{
+				if (b == 0)
+					return a;
+				var a1 = a;
+				a = b;
+				b = a1 % b;
+			}
+		}
+	}
+	private static (int, int) IndexToCoords(int index, LayerTiles layerTiles)
+	{
+		var (tw, th) = layerTiles.AtlasTileCount;
+		index = index < 0 ? 0 : index;
+		index = index > tw * th - 1 ? tw * th - 1 : index;
+
+		return (index % tw, index / tw);
 	}
 	internal static float Map(float number, float a1, float a2, float b1, float b2)
 	{

@@ -55,8 +55,6 @@ public class LayerTiles
 		get => size;
 		set => size = (Math.Clamp(value.width, 1, 1000), Math.Clamp(value.height, 1, 1000));
 	}
-	public uint BackgroundColor { get; set; }
-
 	public VecF PixelOffset { get; set; }
 	public VecF Position
 	{
@@ -87,19 +85,7 @@ public class LayerTiles
 		set => zoom = Math.Clamp(value, 0f, 1000f);
 	}
 
-	public bool IsHovered
-	{
-		get => IsOverlapping(PositionFromPixel(Mouse.CursorPosition));
-	}
-	public VecF MousePosition
-	{
-		get => PositionFromPixel(Mouse.CursorPosition);
-	}
-	public VecI MouseCell
-	{
-		get => ((int)MousePosition.x, (int)MousePosition.y);
-	}
-
+	public uint BackgroundColor { get; set; }
 	public Effect? Effect
 	{
 		get => effect;
@@ -119,72 +105,52 @@ public class LayerTiles
 
 		Size = size;
 		Zoom = 1f;
-
-		Fit();
 	}
 
-	public void ToDefault()
+	public void Fit(Window window)
 	{
-		Init();
-		Zoom = 1f;
-		AtlasTileGap = 0;
-		atlasPath = string.Empty;
-		AtlasPath = string.Empty;
-		AtlasTileIdFull = 10;
-	}
-
-	public void Fit()
-	{
-		Window.TryCreate();
-
-		var (mw, mh) = Monitor.Current.Size;
-		var (ww, wh) = Window.Size;
+		var (_, _, mw, mh) = window.monitorArea;
+		var (ww, wh) = window.Size;
 		var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
 		var (rw, rh) = ((float)mw / ww, (float)mh / wh);
-		var zoomFit = Math.Min((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+		var zoomFit = Math.Min((float)ww / w * rw, (float)wh / h * rh) / window.PixelScale;
 
 		Zoom = zoomFit;
 		PixelOffset = default;
 	}
-	public void Fill()
+	public void Fill(Window window)
 	{
-		Window.TryCreate();
-
-		var (mw, mh) = Monitor.Current.Size;
-		var (ww, wh) = Window.Size;
+		var (_, _, mw, mh) = window.monitorArea;
+		var (ww, wh) = window.Size;
 		var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
 		var (rw, rh) = ((float)mw / ww, (float)mh / wh);
-		var zoomFit = Math.Max((float)ww / w * rw, (float)wh / h * rh) / Window.PixelScale;
+		var zoomFit = Math.Max((float)ww / w * rw, (float)wh / h * rh) / window.PixelScale;
 
 		Zoom = zoomFit;
 		PixelOffset = default;
 	}
-	public void Align(VecF alignment)
+	public void Align(Window window, VecF alignment)
 	{
-		Window.TryCreate();
-
 		var (w, h) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
 		var halfW = w / 2f;
 		var halfH = h / 2f;
-		var rendW = Window.rendTexViewSz.w / 2f / Zoom;
-		var rendH = Window.rendTexViewSz.h / 2f / Zoom;
+		var rendW = window.rendTexViewSz.w / 2f / Zoom;
+		var rendH = window.rendTexViewSz.h / 2f / Zoom;
 		var x = Window.Map(alignment.x, 0, 1, -rendW + halfW, rendW - halfW);
 		var y = Window.Map(alignment.y, 0, 1, -rendH + halfH, rendH - halfH);
 		PixelOffset = (x, y);
 	}
-	public void DragAndZoom(Mouse.Button dragButton = Mouse.Button.Middle, float zoomDelta = 0.05f, bool limit = true)
+	public void DragAndZoom(Window window, VecI dragDelta, float zoomDelta, bool limit = true)
 	{
-		Window.TryCreate();
-
-		var (_, _, rew, reh) = Window.GetRenderArea();
-		var (mw, mh) = Monitor.Current.Size;
+		var (_, _, rew, reh) = window.GetRenderArea();
+		var (_, _, mw, mh) = window.monitorArea;
 		var (rw, rh) = (mw / rew, mh / reh);
-		var (dx, dy) = (Mouse.CursorDelta.x / Window.PixelScale * rw, Mouse.CursorDelta.y / Window.PixelScale * rh);
+		var (dx, dy) = (dragDelta.x / window.PixelScale * rw, dragDelta.y / window.PixelScale * rh);
 		var (w, h) = ((float)TilemapPixelSize.width, (float)TilemapPixelSize.height);
 
-		if (Mouse.ScrollDelta != 0)
-			Zoom *= Mouse.ScrollDelta > 0 ? 1f + zoomDelta : 1f - zoomDelta;
-		if (dragButton.IsPressed())
+		if (zoomDelta != 0)
+			Zoom *= zoomDelta > 0 ? 1f + zoomDelta : 1f - zoomDelta;
+		if (dragDelta != default)
 			PixelOffset = (PixelOffset.x + dx / Zoom, PixelOffset.y + dy / Zoom);
 
 		if (limit == false)
@@ -202,29 +168,31 @@ public class LayerTiles
 		textAligns[area] = textAlign;
 	}
 
-	public void DrawMouseCursor(ushort tileId = 546, uint tint = 3789677055)
+	public void DrawMouseCursor(Window window, VecI position, int cursor, ushort tileId = 546, uint tint = 3789677055)
 	{
-		if (Mouse.IsCursorInWindow == false)
+		var (x, y) = PositionFromPixel(window, position);
+
+		if (IsOverlapping((x, y)) == false)
 			return;
 
-		var (offX, offY) = cursorOffsets[(int)Mouse.CursorCurrent];
+		var (offX, offY) = cursorOffsets[cursor];
 		var pose = default(byte);
 
-		if (Mouse.CursorCurrent is Mouse.Cursor.ResizeVertical or Mouse.Cursor.ResizeTopLeftBottomRight)
+		// ResizeVertical = 6, ResizeTopLeftBottomRight = 7, ResizeBottomLeftTopRight = 8
+		if (cursor is 6 or 7)
 		{
 			tileId--;
 			pose = 1;
 		}
-		else if ((int)Mouse.CursorCurrent >= (int)Mouse.Cursor.ResizeBottomLeftTopRight)
+		else if (cursor >= 8)
 			tileId -= 2;
 
 		Tile tile = default;
-		var cursor = (ushort)Mouse.CursorCurrent;
-		tile.id = (ushort)(tileId + cursor);
+		var cur = (ushort)cursor;
+		tile.id = (ushort)(tileId + cur);
 		tile.tint = tint;
 		tile.pose = pose;
 
-		var (x, y) = PositionFromPixel(Mouse.CursorPosition);
 		DrawTiles((x - offX, y - offY), tile);
 	}
 	public void DrawPoints(VecF[]? points, uint color = uint.MaxValue)
@@ -421,23 +389,71 @@ public class LayerTiles
 			}
 		}
 	}
+	public void Render(Window window)
+	{
+		var (lw, lh) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
+		if (queue == null || queue.Size != new Vector2u((uint)lw, (uint)lh))
+		{
+			queue?.Dispose();
+			result?.Dispose();
+			queue = null;
+			result = null;
+
+			var (rw, rh) = ((uint)Size.width * AtlasTileSize, (uint)Size.height * AtlasTileSize);
+			queue = new(rw, rh);
+			result = new(rw, rh);
+		}
+
+		var texture = LayerSprites.textures[AtlasPath];
+		var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
+		var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, Effect?.shader);
+
+		Effect?.UpdateShader(Size, (AtlasTileSize, AtlasTileSize));
+
+		queue?.Clear(new(BackgroundColor));
+		queue?.Draw(verts, new(texture));
+		queue?.Display();
+
+		Window.verts[0] = new(new(0, 0), Color.White, new(0, 0));
+		Window.verts[1] = new(new(w, 0), Color.White, new(w, 0));
+		Window.verts[2] = new(new(w, h), Color.White, new(w, h));
+		Window.verts[3] = new(new(0, h), Color.White, new(0, h));
+
+		result?.Clear(new(Color.Transparent));
+		result?.Draw(Window.verts, PrimitiveType.Quads, r);
+		result?.Display();
+
+		verts?.Clear();
+
+		var tr = Transform.Identity;
+		tr.Translate(PixelOffset.x, PixelOffset.y);
+		tr.Scale(Zoom, Zoom, -PixelOffset.x, -PixelOffset.y);
+
+		var (resW, resH) = (result?.Texture.Size.X ?? 0, result?.Texture.Size.Y ?? 0);
+		Window.verts[0] = new(new(-resW / 2f, -resH / 2f), Color.White, new(0, 0));
+		Window.verts[1] = new(new(resW / 2f, -resH / 2f), Color.White, new(resW, 0));
+		Window.verts[2] = new(new(resW / 2f, resH / 2f), Color.White, new(resW, resH));
+		Window.verts[3] = new(new(-resW / 2f, resH / 2f), Color.White, new(0, resH));
+
+		window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, result?.Texture, null));
+		// Window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, data?.Texture, null));
+	}
 
 	public bool IsOverlapping(VecF position)
 	{
-		return position is { x: >= 0, y: >= 0 } &&
-		       position.x <= Size.width &&
-		       position.y <= Size.height;
+		return position.x >= Position.x &&
+		       position.y >= Position.y &&
+		       position.x <= Position.x + Size.width &&
+		       position.y <= Position.y + Size.height;
 	}
-	public VecF PositionFromPixel(VecI pixel)
+	public VecF PositionFromPixel(Window window, VecI pixel)
 	{
-		Window.TryCreate();
-
 		var (px, py) = ((float)pixel.x, (float)pixel.y);
-		var (vw, vh) = Window.rendTexViewSz;
+		var (vw, vh) = window.rendTexViewSz;
 		var (cw, ch) = Size;
 		var (ox, oy) = PixelOffset;
 		var (mw, mh) = (cw * AtlasTileSize, ch * AtlasTileSize);
-		var (rx, ry, rw, rh) = Window.GetRenderArea();
+		var (rx, ry, rw, rh) = window.GetRenderArea();
 
 		px -= rx;
 		py -= ry;
@@ -462,16 +478,14 @@ public class LayerTiles
 
 		return (x, y);
 	}
-	public VecI PositionToPixel(VecF position)
+	public VecI PositionToPixel(Window window, VecF position)
 	{
-		Window.TryCreate();
-
 		var (posX, posY) = position;
-		var (vw, vh) = Window.rendTexViewSz;
+		var (vw, vh) = window.rendTexViewSz;
 		var (cw, ch) = Size;
 		var (ox, oy) = PixelOffset;
 		var (mw, mh) = (cw * AtlasTileSize, ch * AtlasTileSize);
-		var (rx, ry, rw, rh) = Window.GetRenderArea();
+		var (rx, ry, rw, rh) = window.GetRenderArea();
 
 		ox /= mw;
 		oy /= mh;
@@ -495,14 +509,6 @@ public class LayerTiles
 		py += ry;
 
 		return ((int)px, (int)py);
-	}
-	public VecF PositionToLayer(VecF position, LayerTiles layerTiles)
-	{
-		return layerTiles.PositionFromPixel(PositionToPixel(position));
-	}
-	public VecF PositionToLayer(VecF position, LayerSprites layerSprites)
-	{
-		return layerSprites.PositionFromPixel(PositionToPixel(position));
 	}
 
 	public uint AtlasColorAt(VecI pixel)
@@ -647,56 +653,6 @@ public class LayerTiles
 	private static (bool mirrorH, sbyte angle) GetOrientation(byte pose)
 	{
 		return (pose > 3, (sbyte)(pose % 4));
-	}
-
-	internal void DrawQueue()
-	{
-		var (lw, lh) = (Size.width * AtlasTileSize, Size.height * AtlasTileSize);
-		if (queue == null || queue.Size != new Vector2u((uint)lw, (uint)lh))
-		{
-			queue?.Dispose();
-			result?.Dispose();
-			queue = null;
-			result = null;
-
-			var (rw, rh) = ((uint)Size.width * AtlasTileSize, (uint)Size.height * AtlasTileSize);
-			queue = new(rw, rh);
-			result = new(rw, rh);
-		}
-
-		var texture = LayerSprites.textures[AtlasPath];
-		var (w, h) = (queue?.Texture.Size.X ?? 0, queue?.Texture.Size.Y ?? 0);
-		var r = new RenderStates(BlendMode.Alpha, Transform.Identity, queue?.Texture, Effect?.shader);
-
-		Effect?.UpdateShader(Size, (AtlasTileSize, AtlasTileSize));
-
-		queue?.Clear(new(BackgroundColor));
-		queue?.Draw(verts, new(texture));
-		queue?.Display();
-
-		Window.verts[0] = new(new(0, 0), Color.White, new(0, 0));
-		Window.verts[1] = new(new(w, 0), Color.White, new(w, 0));
-		Window.verts[2] = new(new(w, h), Color.White, new(w, h));
-		Window.verts[3] = new(new(0, h), Color.White, new(0, h));
-
-		result?.Clear(new(Color.Transparent));
-		result?.Draw(Window.verts, PrimitiveType.Quads, r);
-		result?.Display();
-
-		verts?.Clear();
-
-		var tr = Transform.Identity;
-		tr.Translate(PixelOffset.x, PixelOffset.y);
-		tr.Scale(Zoom, Zoom, -PixelOffset.x, -PixelOffset.y);
-
-		var (resW, resH) = (result?.Texture.Size.X ?? 0, result?.Texture.Size.Y ?? 0);
-		Window.verts[0] = new(new(-resW / 2f, -resH / 2f), Color.White, new(0, 0));
-		Window.verts[1] = new(new(resW / 2f, -resH / 2f), Color.White, new(resW, 0));
-		Window.verts[2] = new(new(resW / 2f, resH / 2f), Color.White, new(resW, resH));
-		Window.verts[3] = new(new(-resW / 2f, resH / 2f), Color.White, new(0, resH));
-
-		Window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, result?.Texture, null));
-		// Window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, data?.Texture, null));
 	}
 
 	private CornersS GetTexCoords(int tileId, SizeI sz)

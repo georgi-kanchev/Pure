@@ -11,6 +11,7 @@
         <ProjectReference Include="..\..\Editors\Storage\Pure.Editors.Storage.csproj"/>
         <ProjectReference Include="..\..\Engine\Collision\Pure.Engine.Collision.csproj"/>
         <ProjectReference Include="..\..\Engine\Execution\Pure.Engine.Execution.csproj"/>
+        <ProjectReference Include="..\..\Engine\Hardware\Pure.Engine.Hardware.csproj"/>
         <ProjectReference Include="..\..\Engine\LocalAreaNetwork\Pure.Engine.LocalAreaNetwork.csproj"/>
         <ProjectReference Include="..\..\Engine\Tiles\Pure.Engine.Tiles.csproj"/>
         <ProjectReference Include="..\..\Engine\UserInterface\Pure.Engine.UserInterface.csproj"/>

@@ -1,3 +1,4 @@
+using Pure.Engine.Hardware;
 using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
@@ -141,13 +142,13 @@ public class Layout
 		return default;
 	}
 
-	public void DrawGUI(LayerTiles layerTiles)
+	public void UpdateAndDraw(Window window, Hardware hardware, LayerTiles layer)
 	{
-		if (TileMaps.Count == 0 || layerTiles.Size != TileMaps[0].Size)
+		if (TileMaps.Count == 0 || layer.Size != TileMaps[0].Size)
 		{
 			TileMaps.Clear();
 			for (var i = 0; i < 7; i++)
-				TileMaps.Add(new(layerTiles.Size));
+				TileMaps.Add(new(layer.Size));
 		}
 
 		var screen = (0, 0, Input.Bounds.width, Input.Bounds.height);
@@ -164,14 +165,14 @@ public class Layout
 			TileMaps[0].SetArea(container.Area, [new(container.Tile, container.Color)]);
 		}
 
-		Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
+		hardware.Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-		Input.ApplyMouse(layerTiles.Size, layerTiles.MousePosition, Mouse.ButtonIdsPressed, Mouse.ScrollDelta);
-		Input.ApplyKeyboard(Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
+		Input.ApplyMouse(layer.Size, layer.PositionFromPixel(window, hardware.Mouse.CursorPosition), hardware.Mouse.ButtonIdsPressed, hardware.Mouse.ScrollDelta);
+		Input.ApplyKeyboard(hardware.Keyboard.KeyIdsPressed, hardware.Keyboard.KeyTyped, window.Clipboard);
 
-		TileMaps.ForEach(map => layerTiles.DrawTileMap(map));
-		layerTiles.DrawMouseCursor(Cursor.Id, Cursor.Tint);
-		layerTiles.Render();
+		TileMaps.ForEach(map => layer.DrawTileMap(map));
+		layer.DrawMouseCursor(window, hardware.Mouse.CursorPosition, (int)hardware.Mouse.CursorCurrent, Cursor.Id, Cursor.Tint);
+		layer.Render(window);
 		TileMaps.ForEach(map => map.Flush());
 
 		if (loadedWithSize == Input.Bounds)
