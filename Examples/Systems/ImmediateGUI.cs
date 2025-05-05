@@ -1,8 +1,8 @@
+using Pure.Engine.Hardware;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
 using Pure.Tools.UserInterface;
-using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
 
@@ -10,9 +10,9 @@ public static class ImmediateGUI
 {
 	public static void Run()
 	{
-		Window.Title = "Pure - Immediate Graphical User Interface Example";
-
-		var (w, h) = Monitor.Current.AspectRatio;
+		var window = new Window { Title = "Pure - Immediate Graphical User Interface Example" };
+		var hardware = new Hardware(window.Handle);
+		var (w, h) = hardware.Monitors[0].AspectRatio;
 		var layer = new LayerTiles((w * 3, h * 3));
 
 		var items = new[] { "Stick", "Rock", "Leaf", "Bush", "Flower" };
@@ -25,7 +25,7 @@ public static class ImmediateGUI
 		               "Oh my!\n" +
 		               "It keeps going!").Constrain((16, 5), false, Alignment.Center);
 
-		while (Window.KeepOpen())
+		while (window.KeepOpen())
 		{
 			if (InstantBlock.Button((0, 1, 8, 3), "Button"))
 				log = "button:\nclicked";
@@ -88,11 +88,11 @@ public static class ImmediateGUI
 
 			// prompts should be last
 
-			if (Keyboard.Key.ControlLeft.IsJustPressed())
+			if (hardware.Keyboard.IsJustPressed(Keyboard.Key.ControlLeft))
 				InstantBlock.Prompt(nameof(PromptChoice));
-			if (Keyboard.Key.ShiftLeft.IsJustPressed())
+			if (hardware.Keyboard.IsJustPressed(Keyboard.Key.ShiftLeft))
 				InstantBlock.Prompt(nameof(PromptInput));
-			if (Keyboard.Key.AltLeft.IsJustPressed())
+			if (hardware.Keyboard.IsJustPressed(Keyboard.Key.AltLeft))
 				InstantBlock.Prompt(nameof(PromptInfo));
 
 			PromptChoice();
@@ -104,7 +104,7 @@ public static class ImmediateGUI
 			 "Left Alt = Info Popup").Text((20, 0));
 			log.Constrain(layer.Size, false, Alignment.Bottom).Text((0, -1));
 
-			InstantBlock.UpdateAndDraw(layer);
+			InstantBlock.UpdateAndDraw(window, hardware, layer);
 		}
 
 		void PromptInfo()

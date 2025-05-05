@@ -2,9 +2,9 @@ namespace Pure.Examples.UserInterface;
 
 public static class Lists
 {
-	public static Block[] Create(List<TileMap> maps)
+	public static Block[] Create(Window window, List<TileMap> maps)
 	{
-		Window.Title = "Pure - Lists Example";
+		window.Title = "Pure - Lists Example";
 
 		var row = new List(default, 8)
 		{

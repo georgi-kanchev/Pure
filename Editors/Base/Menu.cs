@@ -1,3 +1,6 @@
+using Pure.Engine.Hardware;
+using static Pure.Editors.Base.Editor;
+
 namespace Pure.Editors.Base;
 
 public class Menu : List
@@ -24,17 +27,17 @@ public class Menu : List
 			Fit();
 		};
 
-		Mouse.OnWheelScroll(() =>
+		AppMouse.OnWheelScroll(() =>
 		{
 			if (IsHidingOnClick)
 				IsHidden = true;
 		});
-		Mouse.Button.Middle.OnPress(() =>
+		AppMouse.OnPress(Mouse.Button.Middle, () =>
 		{
 			if (IsHidingOnClick)
 				IsHidden = true;
 		});
-		Mouse.Button.Left.OnRelease(() =>
+		AppMouse.OnRelease(Mouse.Button.Left, () =>
 		{
 			if (IsHidingOnClick && IsHovered == false)
 				IsHidden = true;

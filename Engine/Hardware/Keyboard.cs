@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using SFML.Graphics;
 using SFML.Window;
 
 namespace Pure.Engine.Hardware;
@@ -213,7 +214,7 @@ public class Keyboard
 #region Backend
 	private readonly List<Key> simulatedPresses = [], prevSimulatedPressed = [];
 
-	private readonly Window window;
+	private readonly RenderWindow window;
 	private Action<Key>? onPressAny, onReleaseAny, onHoldAny;
 	private readonly Dictionary<Key, Action> onPress = new(), onRelease = new(), onHold = new();
 	private readonly List<Key> pressed = [], prevPressed = [];

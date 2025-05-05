@@ -18,8 +18,8 @@ public static class Program
 		var maps = new List<TileMap>();
 		var blocks = new List<Block>();
 
-		// Input.ApplyMouse(sz, default, ButtonIdsPressed, ScrollDelta);
-		// Input.ApplyKeyboard(KeyIdsPressed, KeyTyped, Window.Clipboard);
+		Input.ApplyMouse(sz, default, hardware.Mouse.ButtonIdsPressed, hardware.Mouse.ScrollDelta);
+		Input.ApplyKeyboard(hardware.Keyboard.KeyIdsPressed, hardware.Keyboard.KeyTyped);
 
 		for (var i = 0; i < 8; i++)
 			maps.Add(new(sz));
@@ -28,8 +28,10 @@ public static class Program
 	}
 	public static void Run(Window window, Hardware hardware, List<TileMap> maps, List<Block> blocks)
 	{
+		window.ToMonitor(hardware.Monitors[0].DesktopArea);
 		Layer = new(maps[0].Size);
-
+		Layer.Fit(window);
+		
 		window.MaximumFrameRate = 60;
 		while (window.KeepOpen())
 		{
@@ -37,8 +39,9 @@ public static class Program
 
 			maps.ForEach(map => map.Flush());
 
-			// Input.ApplyMouse(Layer.Size, Layer.MousePosition, ButtonIdsPressed, ScrollDelta);
-			// Input.ApplyKeyboard(KeyIdsPressed, KeyTyped, Window.Clipboard);
+			var mousePos = Layer.PositionFromPixel(window, hardware.Mouse.CursorPosition);
+			Input.ApplyMouse(Layer.Size, mousePos, hardware.Mouse.ButtonIdsPressed, hardware.Mouse.ScrollDelta);
+			Input.ApplyKeyboard(hardware.Keyboard.KeyIdsPressed, hardware.Keyboard.KeyTyped, window.Clipboard);
 
 			blocks.ForEach(block => block.Update());
 
