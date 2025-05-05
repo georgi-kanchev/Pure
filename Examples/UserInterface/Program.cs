@@ -5,7 +5,6 @@ global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
 global using Key = Pure.Engine.Window.Keyboard.Key;
 global using Monitor = Pure.Engine.Window.Monitor;
-using Pure.Tools.Tiles;
 using static Pure.Engine.Window.Keyboard;
 using static Pure.Engine.Window.Mouse;
 
