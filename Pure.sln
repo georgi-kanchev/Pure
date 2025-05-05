@@ -47,8 +47,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Tools.UserInterface", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Tools.Particles", "Tools\Particles\Pure.Tools.Particles.csproj", "{C7ADF9A5-A6AC-48A3-9C59-D25DA3344D57}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pure.Engine.Hardware", "Engine\Hardware\Pure.Engine.Hardware.csproj", "{EF34A536-A4A8-4366-B784-A09B146B73A3}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,10 +125,6 @@ Global
 		{C7ADF9A5-A6AC-48A3-9C59-D25DA3344D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7ADF9A5-A6AC-48A3-9C59-D25DA3344D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7ADF9A5-A6AC-48A3-9C59-D25DA3344D57}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EF34A536-A4A8-4366-B784-A09B146B73A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EF34A536-A4A8-4366-B784-A09B146B73A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EF34A536-A4A8-4366-B784-A09B146B73A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EF34A536-A4A8-4366-B784-A09B146B73A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -156,6 +150,5 @@ Global
 		{7015866F-5374-4B0A-8B73-F48CE149F070} = {A8122EE6-919B-43EB-842D-D157ACF49736}
 		{8C676633-E7C7-4E1E-90E8-A7F8462ADF0B} = {4AC51807-EF05-4EBE-8687-02D7E795F9DF}
 		{C7ADF9A5-A6AC-48A3-9C59-D25DA3344D57} = {4AC51807-EF05-4EBE-8687-02D7E795F9DF}
-		{EF34A536-A4A8-4366-B784-A09B146B73A3} = {A8122EE6-919B-43EB-842D-D157ACF49736}
 	EndGlobalSection
 EndGlobal

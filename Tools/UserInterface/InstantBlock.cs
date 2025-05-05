@@ -1,5 +1,4 @@
-﻿using Pure.Engine.Hardware;
-using Pure.Engine.Tiles;
+﻿using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
 using Pure.Tools.Tiles;
@@ -220,8 +219,8 @@ public static class InstantBlock
 
 		var prompt = TryCache<Prompt>(text, (-3, 0, 1, 1), out _);
 
-		if (choiceAmount == 1 && escapeJustPressed)
-			prompt.TriggerButton(0);
+		if (choiceAmount == 1)
+			Keyboard.Key.Escape.OnPress(() => prompt.TriggerButton(0));
 
 		if (prompt.IsHidden)
 			prompt.Open(null, true, choiceAmount, 0, 1, index => lastChoice = index);
@@ -239,20 +238,19 @@ public static class InstantBlock
 		CurrentPrompt = key;
 	}
 
-	public static void UpdateAndDraw(Window window, Hardware hardware, LayerTiles layer)
+	public static void DrawGUI(this LayerTiles layerTiles)
 	{
-		if (TileMaps.Count == 0 || layer.Size != TileMaps[0].Size)
+		if (TileMaps.Count == 0 || layerTiles.Size != TileMaps[0].Size)
 		{
 			TileMaps.Clear();
 			for (var i = 0; i < 7; i++)
-				TileMaps.Add(new(layer.Size));
+				TileMaps.Add(new(layerTiles.Size));
 		}
 
-		hardware.Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
-		escapeJustPressed = hardware.Keyboard.IsJustPressed(Keyboard.Key.Escape);
+		Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
-		Input.ApplyMouse(layer.Size, layer.PositionFromPixel(window, hardware.Mouse.CursorPosition), hardware.Mouse.ButtonIdsPressed, hardware.Mouse.ScrollDelta);
-		Input.ApplyKeyboard(hardware.Keyboard.KeyIdsPressed, hardware.Keyboard.KeyTyped, window.Clipboard);
+		Input.ApplyMouse(layerTiles.Size, layerTiles.MousePosition, Mouse.ButtonIdsPressed, Mouse.ScrollDelta);
+		Input.ApplyKeyboard(Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
 
 		var toRemove = new List<string>();
 		foreach (var (key, value) in imGuiCache)
@@ -268,15 +266,13 @@ public static class InstantBlock
 		foreach (var cacheKey in toRemove)
 			imGuiCache.Remove(cacheKey);
 
-		TileMaps.ForEach(map => layer.DrawTileMap(map));
-		layer.DrawMouseCursor(window, hardware.Mouse.CursorPosition, (int)hardware.Mouse.CursorCurrent, Cursor.Id, Cursor.Tint);
-		layer.Render(window);
+		TileMaps.ForEach(map => layerTiles.DrawTileMap(map));
+		layerTiles.DrawMouseCursor(Cursor.Id, Cursor.Tint);
+		layerTiles.Render();
 		TileMaps.ForEach(map => map.Flush());
 	}
 
 #region Backend
-	private static bool escapeJustPressed;
-
 	private static float lastChoice = float.NaN;
 	private static readonly Dictionary<string, (int framesLeft, Block block)> imGuiCache = [];
 

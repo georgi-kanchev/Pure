@@ -3,50 +3,55 @@ global using Pure.Engine.UserInterface;
 global using Pure.Engine.Tiles;
 global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
-using Pure.Engine.Hardware;
+global using Key = Pure.Engine.Window.Keyboard.Key;
+global using Monitor = Pure.Engine.Window.Monitor;
+using Pure.Tools.Tiles;
+using static Pure.Engine.Window.Keyboard;
+using static Pure.Engine.Window.Mouse;
 
 namespace Pure.Examples.UserInterface;
 
 public static class Program
 {
-	public static LayerTiles? Layer { get; private set; }
+    public static LayerTiles? Layer { get; private set; }
 
-	public static (List<TileMap>, List<Block>) Initialize(Hardware hardware)
-	{
-		var (width, height) = hardware.Monitors[0].AspectRatio;
-		var sz = (width * 3, height * 3);
-		var maps = new List<TileMap>();
-		var blocks = new List<Block>();
+    public static (List<TileMap>, List<Block>) Initialize()
+    {
+        Window.MaximumFrameRate = 60;
 
-		// Input.ApplyMouse(sz, default, ButtonIdsPressed, ScrollDelta);
-		// Input.ApplyKeyboard(KeyIdsPressed, KeyTyped, Window.Clipboard);
+        var (width, height) = Monitor.Current.AspectRatio;
+        var sz = (width * 3, height * 3);
+        var maps = new List<TileMap>();
+        var blocks = new List<Block>();
 
-		for (var i = 0; i < 8; i++)
-			maps.Add(new(sz));
+        Input.ApplyMouse(sz, default, ButtonIdsPressed, ScrollDelta);
+        Input.ApplyKeyboard(KeyIdsPressed, KeyTyped, Window.Clipboard);
 
-		return (maps, blocks);
-	}
-	public static void Run(Window window, Hardware hardware, List<TileMap> maps, List<Block> blocks)
-	{
-		Layer = new(maps[0].Size);
+        for (var i = 0; i < 8; i++)
+            maps.Add(new(sz));
 
-		window.MaximumFrameRate = 60;
-		while (window.KeepOpen())
-		{
-			Time.Update();
+        return (maps, blocks);
+    }
+    public static void Run(List<TileMap> maps, List<Block> blocks)
+    {
+        Layer = new(maps[0].Size);
 
-			maps.ForEach(map => map.Flush());
+        while (Window.KeepOpen())
+        {
+            Time.Update();
 
-			// Input.ApplyMouse(Layer.Size, Layer.MousePosition, ButtonIdsPressed, ScrollDelta);
-			// Input.ApplyKeyboard(KeyIdsPressed, KeyTyped, Window.Clipboard);
+            maps.ForEach(map => map.Flush());
 
-			blocks.ForEach(block => block.Update());
+            Input.ApplyMouse(Layer.Size, Layer.MousePosition, ButtonIdsPressed, ScrollDelta);
+            Input.ApplyKeyboard(KeyIdsPressed, KeyTyped, Window.Clipboard);
 
-			hardware.Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
+            blocks.ForEach(block => block.Update());
 
-			maps.ForEach(map => Layer.DrawTileMap(map));
-			Layer.DrawMouseCursor(window, hardware.Mouse.CursorPosition, (int)hardware.Mouse.CursorCurrent);
-			Layer.Render(window);
-		}
-	}
+            CursorCurrent = (Cursor)Input.CursorResult;
+
+            maps.ForEach(map => Layer.DrawTileMap(map));
+            Layer.DrawMouseCursor();
+            Layer.Render();
+        }
+    }
 }

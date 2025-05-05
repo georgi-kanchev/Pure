@@ -1,68 +1,69 @@
-using Pure.Engine.Hardware;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
 using Pure.Tools.UserInterface;
+using Monitor = Pure.Engine.Window.Monitor;
+using static Pure.Tools.UserInterface.InstantBlock;
 
 namespace Pure.Examples.Games;
 
 public static class NumberGuess
 {
-	public static void Run()
-	{
-		var window = new Window { Title = "Pure - Number Guess Example" };
-		var hardware = new Hardware(window.Handle);
-		var (w, h) = hardware.Monitors[0].AspectRatio;
-		var layer = new LayerTiles((w * 3, h * 3));
-		var log = "";
-		var tries = 0;
-		var randomNumber = GenerateRandomNumber();
+    public static void Run()
+    {
+        Window.Title = "Pure - Number Guess Example";
 
-		while (window.KeepOpen())
-		{
-			var input = InstantBlock.InputBox((20, 20, 5, 1), symbolGroup: SymbolGroup.Integers, symbolLimit: 4);
-			if (input is { Length: 4 })
-			{
-				log = tries == 0 ? "" : log;
-				tries++;
+        var (w, h) = Monitor.Current.AspectRatio;
+        var layer = new LayerTiles((w * 3, h * 3));
+        var log = "";
+        var tries = 0;
+        var randomNumber = GenerateRandomNumber();
 
-				var bulls = 0;
-				var cows = 0;
-				for (var i = 0; i < randomNumber.Length; i++)
-					if (input[i] == randomNumber[i])
-						bulls++;
-					else if (randomNumber.Contains(input[i]))
-						cows++;
-				var bullsAndCows = $"{new('●', bulls)}{new('○', cows)}";
+        while (Window.KeepOpen())
+        {
+            var input = InputBox((20, 20, 5, 1), symbolGroup: SymbolGroup.Integers, symbolLimit: 4);
+            if (input is { Length: 4 })
+            {
+                log = tries == 0 ? "" : log;
+                tries++;
 
-				var result = input == randomNumber ? $"✓✓✓✓ ({tries} tries)" : bullsAndCows;
-				log = $"{log}\n{input} {result}";
+                var bulls = 0;
+                var cows = 0;
+                for (var i = 0; i < randomNumber.Length; i++)
+                    if (input[i] == randomNumber[i])
+                        bulls++;
+                    else if (randomNumber.Contains(input[i]))
+                        cows++;
+                var bullsAndCows = $"{new('●', bulls)}{new('○', cows)}";
 
-				if (input == randomNumber)
-				{
-					tries = 0;
-					randomNumber = GenerateRandomNumber();
-				}
-			}
+                var result = input == randomNumber ? $"✓✓✓✓ ({tries} tries)" : bullsAndCows;
+                log = $"{log}\n{input} {result}";
 
-			log.Text((20, 19 - log.Count("\n")));
+                if (input == randomNumber)
+                {
+                    tries = 0;
+                    randomNumber = GenerateRandomNumber();
+                }
+            }
 
-			InstantBlock.UpdateAndDraw(layer);
-		}
+            log.Text((20, 19 - log.Count("\n")));
 
-		string GenerateRandomNumber()
-		{
-			var numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-			var randomNumberStr = "";
+            layer.DrawGUI();
+        }
 
-			for (var i = 0; i < 4; i++)
-			{
-				var n = numbers.ChooseOne();
-				numbers.Remove(n);
-				randomNumberStr += $"{n}";
-			}
+        string GenerateRandomNumber()
+        {
+            var numbers = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            var randomNumberStr = "";
 
-			return randomNumberStr;
-		}
-	}
+            for (var i = 0; i < 4; i++)
+            {
+                var n = numbers.ChooseOne();
+                numbers.Remove(n);
+                randomNumberStr += $"{n}";
+            }
+
+            return randomNumberStr;
+        }
+    }
 }

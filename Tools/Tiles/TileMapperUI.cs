@@ -1,8 +1,10 @@
-﻿using Pure.Engine.Tiles;
+﻿using Pure.Engine.Window;
+using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
 using static Pure.Engine.Tiles.Tile;
 using static Pure.Engine.Utility.Color;
+using static Pure.Engine.Window.Keyboard;
 
 namespace Pure.Tools.Tiles;
 
@@ -604,8 +606,8 @@ public static class TileMapperUI
 	public static Color GetInteractionColor(this Block block, Color baseColor, float amount = 0.15f)
 	{
 		var hotkeyIsPressed = block is Button btn &&
-		                      Input.IsKeyPressed(btn.Hotkey.id) &&
-		                      Input.KeysPressed?.Length == 1 &&
+		                      ((Key)btn.Hotkey.id).IsPressed() &&
+		                      KeysPressed.Length == 1 &&
 		                      Input.IsTyping == false;
 
 		if (block.IsDisabled) return baseColor.ToDark();
