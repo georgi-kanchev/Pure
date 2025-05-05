@@ -1,68 +1,70 @@
-using Pure.Engine.Hardware;
 using Pure.Engine.Tiles;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
 using Pure.Tools.Tiles;
+using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
 
 public static class TerrainGeneration
 {
-	public static void Run()
-	{
-		var window = new Window { Title = "Pure - Terrain Generation Example", PixelScale = 10f, RenderArea = RenderArea.Fill };
-		var hardware = new Hardware(window.Handle);
-		var layer = new LayerTiles((160, 160));
-		var terrain = new TileMap(layer.Size);
-		var generator = new MapGenerator();
+    public static void Run()
+    {
+        Window.Title = "Pure - Terrain Generation Example";
+        Window.PixelScale = 10f;
+        Window.RenderArea = RenderArea.Fill;
 
-		layer.Fill(window);
-		RegenerateMap();
+        var layer = new LayerTiles((160, 160));
+        var terrain = new TileMap(layer.Size);
+        var generator = new MapGenerator();
 
-		hardware.Keyboard.OnPressAndHold(Keyboard.Key.ArrowLeft, () => Scroll(-3, 0));
-		hardware.Keyboard.OnPressAndHold(Keyboard.Key.ArrowRight, () => Scroll(3, 0));
-		hardware.Keyboard.OnPressAndHold(Keyboard.Key.ArrowUp, () => Scroll(0, -3));
-		hardware.Keyboard.OnPressAndHold(Keyboard.Key.ArrowDown, () => Scroll(0, 3));
+        layer.Fill();
+        RegenerateMap();
 
-		while (window.KeepOpen())
-		{
-			layer.DragAndZoom(window, hardware.Mouse.IsPressed(Mouse.Button.Left) ? hardware.Mouse.CursorDelta : (0, 0), hardware.Mouse.ScrollDelta);
-			layer.DrawTileMap(terrain);
-			layer.DrawMouseCursor(window, hardware.Mouse.CursorPosition, (int)hardware.Mouse.CursorCurrent);
-			layer.Render(window);
-		}
+        Keyboard.Key.ArrowLeft.OnPressAndHold(() => Scroll(-3, 0));
+        Keyboard.Key.ArrowRight.OnPressAndHold(() => Scroll(3, 0));
+        Keyboard.Key.ArrowUp.OnPressAndHold(() => Scroll(0, -3));
+        Keyboard.Key.ArrowDown.OnPressAndHold(() => Scroll(0, 3));
 
-		void RegenerateMap()
-		{
-			terrain.Flush();
-			generator.Elevations.Clear();
-			generator.Elevations[40] = new(Tile.ICON_WAVES, Color.Blue.ToDark()); // deep water
-			generator.Elevations[50] = new(Tile.ICON_WAVES, Color.Blue); // shallow water
-			generator.Elevations[65] = new(Tile.SHADE_2, Color.Yellow.ToDark()); // beaches/dirt patches
-			generator.Elevations[125] = new(Tile.SHADE_1, Color.Green.ToDark()); // grass
-			generator.Elevations[140] = new(Tile.BRACKET_ROUND_RIGHT, Color.Green.ToDark(), Pose.Left); // hills
-			generator.Elevations[200] = new(Tile.NATURE_MOUNTAIN, Color.Gray); // rocky mountains
-			generator.Elevations[255] = new(Tile.NATURE_MOUNTAIN, Color.White); // snowy mountains
-			generator.TargetTileId = Tile.EMPTY;
-			generator.Seed = 333;
-			generator.Noise = Noise.OpenSimplex2S;
-			generator.Scale = 20f;
-			generator.Apply(terrain);
+        while (Window.KeepOpen())
+        {
+            layer.DragAndZoom();
+            layer.DrawTileMap(terrain);
+            layer.DrawMouseCursor();
+            layer.Render();
+        }
 
-			generator.Elevations.Clear();
-			generator.Elevations[100] = new(Tile.NATURE_TREE_DECIDUOUS, Color.Green.ToDark(0.65f));
-			generator.Elevations[125] = new(Tile.NATURE_TREE_CONIFEROUS, Color.Green.ToDark(0.7f));
-			generator.TargetTileId = Tile.SHADE_1; // some trees on the grass
-			generator.Seed = 444;
-			generator.Noise = Noise.OpenSimplex2S;
-			generator.Scale = 20f;
-			generator.Apply(terrain);
-		}
+        void RegenerateMap()
+        {
+            terrain.Flush();
+            generator.Elevations.Clear();
+            generator.Elevations[40] = new(Tile.ICON_WAVES, Color.Blue.ToDark()); // deep water
+            generator.Elevations[50] = new(Tile.ICON_WAVES, Color.Blue); // shallow water
+            generator.Elevations[65] = new(Tile.SHADE_2, Color.Yellow.ToDark()); // beaches/dirt patches
+            generator.Elevations[125] = new(Tile.SHADE_1, Color.Green.ToDark()); // grass
+            generator.Elevations[140] = new(Tile.BRACKET_ROUND_RIGHT, Color.Green.ToDark(), Pose.Left); // hills
+            generator.Elevations[200] = new(Tile.NATURE_MOUNTAIN, Color.Gray); // rocky mountains
+            generator.Elevations[255] = new(Tile.NATURE_MOUNTAIN, Color.White); // snowy mountains
+            generator.TargetTileId = Tile.EMPTY;
+            generator.Seed = 333;
+            generator.Noise = Noise.OpenSimplex2S;
+            generator.Scale = 20f;
+            generator.Apply(terrain);
 
-		void Scroll(int deltaX, int deltaY)
-		{
-			generator.Offset = (generator.Offset.x + deltaX, generator.Offset.y + deltaY);
-			RegenerateMap();
-		}
-	}
+            generator.Elevations.Clear();
+            generator.Elevations[100] = new(Tile.NATURE_TREE_DECIDUOUS, Color.Green.ToDark(0.65f));
+            generator.Elevations[125] = new(Tile.NATURE_TREE_CONIFEROUS, Color.Green.ToDark(0.7f));
+            generator.TargetTileId = Tile.SHADE_1; // some trees on the grass
+            generator.Seed = 444;
+            generator.Noise = Noise.OpenSimplex2S;
+            generator.Scale = 20f;
+            generator.Apply(terrain);
+        }
+
+        void Scroll(int deltaX, int deltaY)
+        {
+            generator.Offset = (generator.Offset.x + deltaX, generator.Offset.y + deltaY);
+            RegenerateMap();
+        }
+    }
 }

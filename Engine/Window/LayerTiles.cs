@@ -168,9 +168,9 @@ public class LayerTiles
 		textAligns[area] = textAlign;
 	}
 
-	public void DrawMouseCursor(Window window, VecI pixel, int cursor, ushort tileId = 546, uint tint = 3789677055)
+	public void DrawMouseCursor(Window window, VecI position, int cursor, ushort tileId = 546, uint tint = 3789677055)
 	{
-		var (x, y) = PositionFromPixel(window, pixel);
+		var (x, y) = PositionFromPixel(window, position);
 
 		if (IsOverlapping((x, y)) == false)
 			return;
@@ -439,10 +439,6 @@ public class LayerTiles
 		// Window.renderResult?.Draw(Window.verts, PrimitiveType.Quads, new(BlendMode.Alpha, tr, data?.Texture, null));
 	}
 
-	public bool IsHovered(Window window, VecI mousePixelPosition)
-	{
-		return IsOverlapping(PositionFromPixel(window, mousePixelPosition));
-	}
 	public bool IsOverlapping(VecF position)
 	{
 		return position.x >= Position.x &&

@@ -47,7 +47,7 @@ public static class NumberGuess
 
 			log.Text((20, 19 - log.Count("\n")));
 
-			InstantBlock.UpdateAndDraw(window, hardware, layer);
+			InstantBlock.UpdateAndDraw(layer);
 		}
 
 		string GenerateRandomNumber()

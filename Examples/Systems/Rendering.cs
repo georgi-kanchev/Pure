@@ -1,28 +1,29 @@
-using Pure.Engine.Hardware;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
+using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
 
 public static class Rendering
 {
-	public static void Run()
-	{
-		var window = new Window { Title = "Pure - Rendering Example", PixelScale = 1f };
-		var hardware = new Hardware(window.Handle) { Mouse = { IsCursorVisible = true } };
+    public static void Run()
+    {
+        Window.Title = "Pure - Rendering Example";
+        Window.PixelScale = 1f;
+        Mouse.IsCursorVisible = true;
 
-		LayerTiles.DefaultGraphicsToFile("default-graphics.png");
+        LayerTiles.DefaultGraphicsToFile("default-graphics.png");
 
-		var (_, _, w, h) = hardware.Monitors[0].DesktopArea;
-		var layer = new LayerSprites((w / 3, h / 3)) { Effect = new(), TexturePath = "default-graphics.png" };
+        var (w, h) = Monitor.Current.Size;
+        var layer = new LayerSprites((w / 3, h / 3)) { Effect = new(), TexturePath = "default-graphics.png" };
 
-		while (window.KeepOpen())
-		{
-			Time.Update();
+        while (Window.KeepOpen())
+        {
+            Time.Update();
 
-			var (x, y) = layer.PositionFromPixel(window, hardware.Mouse.CursorPosition);
-			layer.DrawLine([(x, y), (0, 0)], 1);
-			layer.Render(window);
-		}
-	}
+            var (x, y) = layer.MousePosition;
+            layer.DrawLine([(x, y), (0, 0)], 1);
+            layer.Render();
+        }
+    }
 }

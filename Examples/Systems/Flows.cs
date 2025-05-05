@@ -1,6 +1,5 @@
 using System.Collections;
 using Pure.Engine.Execution;
-using Pure.Engine.Hardware;
 using Pure.Engine.Utility;
 using Pure.Engine.Window;
 
@@ -10,16 +9,14 @@ public static class Flows
 {
 	public static void Run()
 	{
-		var window = new Window { Title = "Pure - Flows Example" };
-		var hardware = new Hardware(window.Handle);
-		while (window.KeepOpen())
+		while (Window.KeepOpen())
 		{
 			Time.Update();
 			Flow.Update(Time.Delta);
 
 			if (Flow.TrueEvery(1f))
 				Console.WriteLine(Time.RuntimeClock);
-			if (hardware.Keyboard.IsJustPressed(Keyboard.Key.A))
+			if (Keyboard.Key.A.IsJustPressed())
 			{
 				Flow.Start(A());
 				Flow.Start(B());

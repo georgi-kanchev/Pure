@@ -51,11 +51,11 @@ public static class Program
 		]);
 		uis.AlignInside((0.95f, 0.8f));
 		OnTrigger(uis,
-			() => RunUI(ButtonsAndCheckboxes.Create(Window, maps)), () => RunUI(SlidersAndScrolls.Create(Window, maps)),
-			() => RunUI(InputBoxes.Create(Window, maps)), () => RunUI(Steppers.Create(Window, maps)),
-			() => RunUI(Panels.Create(Window, maps)), () => RunUI(Pagination.Create(Window, maps)),
-			() => RunUI(Lists.Create(Window, maps)), () => RunUI(Prompts.Create(Window, Hardware, maps)),
-			() => RunUI(FileViewers.Create(Window, maps)), () => RunUI(Palettes.Create(Window, maps)));
+			() => RunUI(ButtonsAndCheckboxes.Create(maps)), () => RunUI(SlidersAndScrolls.Create(maps)),
+			() => RunUI(InputBoxes.Create(maps)), () => RunUI(Steppers.Create(maps)),
+			() => RunUI(Panels.Create(maps)), () => RunUI(Pagination.Create(maps)),
+			() => RunUI(Lists.Create(maps)), () => RunUI(Prompts.Create(maps)),
+			() => RunUI(FileViewers.Create(maps)), () => RunUI(Palettes.Create(maps)));
 		OnDisplay(uis);
 
 		systems.Edit([

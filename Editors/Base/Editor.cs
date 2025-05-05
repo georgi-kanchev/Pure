@@ -5,27 +5,11 @@ global using Pure.Engine.Utility;
 global using Pure.Engine.Window;
 global using Pure.Tools.Tiles;
 global using Color = Pure.Engine.Utility.Color;
-using Pure.Engine.Hardware;
-using Monitor = Pure.Engine.Hardware.Monitor;
 
 namespace Pure.Editors.Base;
 
 public class Editor
 {
-	public static Window AppWindow { get; } = new();
-	public static Monitor AppMonitor
-	{
-		get => hardware.Monitors[0];
-	}
-	public static Mouse AppMouse
-	{
-		get => hardware.Mouse;
-	}
-	public static Keyboard AppKeyboard
-	{
-		get => hardware.Keyboard;
-	}
-
 	public enum LayerMapsEditor { Back, Middle, Front, Count }
 
 	public enum LayerMapsUi { Back, Middle, Front, PromptFade, PromptBack, PromptMiddle, PromptFront, Count }
@@ -62,11 +46,11 @@ public class Editor
 
 	public Editor(string title)
 	{
-		AppWindow.PixelScale = PIXEL_SCALE;
-		AppWindow.Title = title;
-		AppMouse.IsCursorVisible = false;
+		Window.PixelScale = PIXEL_SCALE;
+		Window.Title = title;
+		Mouse.IsCursorVisible = false;
 
-		var (width, height) = AppMonitor.AspectRatio;
+		var (width, height) = Monitor.Current.AspectRatio;
 		ChangeMapSize((50, 50));
 		MapsEditorVisible = [true, true, true];
 		MapsEditor.ForEach(map => map.View = new(MapsEditor[0].View.Position, (50, 50)));
@@ -129,8 +113,8 @@ public class Editor
 	{
 		SetGrid();
 
-		Input.OnTextCopy += () => AppWindow.Clipboard = Input.Clipboard ?? "";
-		while (AppWindow.KeepOpen())
+		Input.OnTextCopy += () => Window.Clipboard = Input.Clipboard ?? "";
+		while (Window.KeepOpen())
 		{
 			Time.Update();
 
@@ -140,11 +124,10 @@ public class Editor
 			LayerTilesMap.Size = MapsEditor[0].View.Size;
 			LayerTilesUi.Size = MapsUi[0].View.Size;
 
-			var mousePos = LayerTilesUi.PositionFromPixel(AppWindow, AppMouse.CursorPosition);
-			Input.ApplyMouse(LayerTilesUi.Size, mousePos, AppMouse.ButtonIdsPressed, AppMouse.ScrollDelta);
-			Input.ApplyKeyboard(AppKeyboard.KeyIdsPressed, AppKeyboard.KeyTyped, AppWindow.Clipboard);
+			Input.ApplyMouse(LayerTilesUi.Size, LayerTilesUi.MousePosition, Mouse.ButtonIdsPressed, Mouse.ScrollDelta);
+			Input.ApplyKeyboard(Keyboard.KeyIdsPressed, Keyboard.KeyTyped, Window.Clipboard);
 
-			MousePositionRaw = AppMouse.CursorPosition;
+			MousePositionRaw = Mouse.CursorPosition;
 
 			//========
 
@@ -156,7 +139,7 @@ public class Editor
 
 			//========
 
-			var (x, y) = LayerTilesMap.PositionFromPixel(AppWindow, AppMouse.CursorPosition);
+			var (x, y) = LayerTilesMap.MousePosition;
 			var (vw, vy) = MapsEditor[0].View.Position;
 			prevWorld = MousePositionWorld;
 			MousePositionWorld = (x + vw, y + vy);
@@ -166,7 +149,7 @@ public class Editor
 			Input.Bounds = MapsEditor[0].View.Size;
 
 			if (IsDisabledViewInteraction == false && Prompt.IsHidden)
-				LayerTilesMap.DragAndZoom(AppWindow, AppMouse.IsPressed(Mouse.Button.Middle) ? AppMouse.CursorDelta : (0, 0), AppMouse.ScrollDelta);
+				LayerTilesMap.DragAndZoom();
 
 			OnUpdateEditor?.Invoke();
 
@@ -183,7 +166,7 @@ public class Editor
 			//========
 
 			prevUi = MousePositionUi;
-			MousePositionUi = LayerTilesUi.PositionFromPixel(AppWindow, AppMouse.CursorPosition);
+			MousePositionUi = LayerTilesUi.PositionFromPixel(Mouse.CursorPosition);
 
 			Input.Position = MousePositionUi;
 			Input.PositionPrevious = prevUi;
@@ -196,16 +179,16 @@ public class Editor
 			if (Prompt.IsHidden == false)
 				Prompt.Update();
 
-			AppMouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
+			Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
 			MapsUi.ForEach(map => LayerTilesUi.DrawTileMap(map));
-			LayerTilesUi.DrawMouseCursor(AppWindow, AppMouse.CursorPosition, (int)AppMouse.CursorCurrent);
+			LayerTilesUi.DrawMouseCursor();
 
 			//========
 
-			LayerTiles.Render(AppWindow);
-			LayerTilesMap.Render(AppWindow);
-			LayerTilesUi.Render(AppWindow);
+			LayerTiles.Render();
+			LayerTilesMap.Render();
+			LayerTilesUi.Render();
 
 			OnUpdateLate?.Invoke();
 		}
@@ -414,7 +397,6 @@ public class Editor
 	private const int GRID_GAP = 10;
 	private readonly InputBox promptSize;
 	private readonly TilesetPrompt tilesetPrompt;
-	private static readonly Hardware hardware = new(AppWindow.Handle);
 
 	private string infoText = string.Empty;
 	private float infoTextTimer;

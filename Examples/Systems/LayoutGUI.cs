@@ -1,9 +1,9 @@
 using Pure.Engine.Execution;
-using Pure.Engine.Hardware;
 using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Window;
 using Pure.Tools.UserInterface;
+using Monitor = Pure.Engine.Window.Monitor;
 
 namespace Pure.Examples.Systems;
 
@@ -11,9 +11,10 @@ public static class LayoutGUI
 {
 	public static void Run()
 	{
-		var window = new Window { Title = "Pure - Layout Graphical User Interface Example", PixelScale = 1 };
-		var hardware = new Hardware(window.Handle);
-		var (w, h) = hardware.Monitors[0].AspectRatio;
+		Window.Title = "Pure - Layout Graphical User Interface Example";
+		Window.PixelScale = 1;
+
+		var (w, h) = Monitor.Current.AspectRatio;
 		var layer = new LayerTiles((w * 6, h * 6));
 		var layoutGUI = new Layout(@"
 Container: top			Area: left, top, width, 1		Pivot: Left
@@ -41,7 +42,7 @@ Container: left-games	Area: left, top + 5, 20, height - 6		Pivot: TopLeft	Gap: 0
 
 		var profile = layoutGUI.GetBlock<List>("profile");
 
-		while (window.KeepOpen())
+		while (Window.KeepOpen())
 		{
 			foreach (var map in layoutGUI.TileMaps)
 				map.ConfigureText("@", Tile.ICON_PERSON);
@@ -49,8 +50,8 @@ Container: left-games	Area: left, top + 5, 20, height - 6		Pivot: TopLeft	Gap: 0
 			if (profile!.IsFolded.Once("fff"))
 				profile.Deselect();
 
-			layoutGUI.UpdateAndDraw(window, hardware, layer);
-			layer.Render(window);
+			layoutGUI.UpdateAndDraw(layer);
+			layer.Render();
 		}
 	}
 }

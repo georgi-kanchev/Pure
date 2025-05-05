@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using SFML.Graphics;
 using SFML.Window;
 
 namespace Pure.Engine.Hardware;
@@ -259,7 +258,7 @@ public class Mouse
 #region Backend
 	private const float HOLD_DELAY = 0.5f, HOLD_INTERVAL = 0.1f;
 
-	private readonly RenderWindow window;
+	private readonly Window window;
 	private readonly List<Button> simulatedPresses = [], prevSimulatedPressed = [];
 	private Action<Button>? onPressAny, onReleaseAny, onHoldAny;
 	private readonly Dictionary<Button, Action> onPress = new(), onRelease = new(), onHold = new();

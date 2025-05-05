@@ -333,7 +333,7 @@ public class Window
 	private Mode mode;
 	private float pixelScale = 5f;
 	private RenderArea renderArea;
-	internal AreaI monitorArea = (0, 0, 960, 540);
+	internal AreaI monitorArea;
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	private delegate int XInitThreadsDelegate();
