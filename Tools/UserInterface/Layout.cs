@@ -29,6 +29,7 @@ public class Layout
 			var block = default(Block);
 			var toggle = line.Contains("IsToggle");
 			var selected = line.Contains(nameof(Button.IsSelected));
+			var blockName = "";
 
 			foreach (var prop in props)
 			{
@@ -63,8 +64,9 @@ public class Layout
 					var button = new Button { Text = "", IsSelected = selected };
 					if (line.Contains("Icon: ") == false)
 						button.OnDisplay += () => TileMaps.SetButton(button, 1, toggle || selected);
-					container.Blocks.Add(value, button);
+					container.Blocks[value] = button;
 					block = button;
+					blockName = value;
 					continue;
 				}
 				else if (key is nameof(Span.Column) or nameof(Span.Row) or nameof(Span.Dropdown) or nameof(Span.Menu))
@@ -77,8 +79,9 @@ public class Layout
 					var list = new List(default, 0, span) { Text = "" };
 					list.OnDisplay += () => TileMaps.SetList(list);
 					list.OnItemDisplay += item => TileMaps.SetListItem(list, item);
-					container.Blocks.Add(value, list);
+					container.Blocks[value] = list;
 					block = list;
+					blockName = value;
 					continue;
 				}
 
@@ -87,14 +90,8 @@ public class Layout
 					continue;
 
 				if (key == nameof(Block.Text)) block.Text = keyValue[1]; // no trim
-				else if (key == nameof(Block.Size))
-				{
-					int? items = block is List list ? list.Items.Count : null;
-
-					block.Size = (
-						ToInt(values[0], block.Text, container.Area, items),
-						ToInt(values[1], block.Text, container.Area, items));
-				}
+				else if (key == nameof(Block.Size) && values.Length == 2)
+					container.BlockDynamicSizes[blockName] = (values[0], values[1]);
 				else if (key == nameof(Block.IsDisabled)) block.IsDisabled = true;
 				else if (key == nameof(Block.IsHidden)) block.IsHidden = true;
 				// list props====================================================
@@ -108,9 +105,7 @@ public class Layout
 						list.Edit(values);
 					}
 					else if (key == nameof(List.ItemSize))
-						list.ItemSize = (
-							ToInt(values[0], block.Text, block.Area),
-							ToInt(values[1], block.Text, block.Area));
+						list.ItemSize = (ToInt(values[0], block.Text, block.Area), ToInt(values[1], block.Text, block.Area));
 					else if (key == nameof(List.ItemGap)) list.ItemGap = (int)value.Calculate();
 					else if (key == nameof(List.IsSingleSelecting)) list.IsSingleSelecting = true;
 				}
@@ -119,8 +114,8 @@ public class Layout
 				{
 					if (key == "Icon")
 						btn.OnDisplay += () => TileMaps.SetButtonIcon(btn, (ushort)ToInt(value), 1, toggle || selected);
-					else if (key == nameof(string.PadLeft)) btn.Text = btn.Text.PadLeft(ToInt(value, btn.Text, btn.Area));
-					else if (key == nameof(string.PadRight)) btn.Text = btn.Text.PadRight(ToInt(value, btn.Text, btn.Area));
+					else if (key == "Pad" && values.Length == 2)
+						container.BlockDynamicPads[blockName] = (values[0], values[1]);
 				}
 			}
 		}
