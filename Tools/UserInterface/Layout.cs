@@ -20,16 +20,10 @@ public class Layout
 		var container = default(Container);
 		var lastContainerLine = 0;
 
-		containers.Clear();
-
 		for (var i = 0; i < lines.Length; i++)
 		{
 			var line = lines[i];
 			var props = line.Trim().Split("\t", StringSplitOptions.RemoveEmptyEntries);
-			var block = default(Block);
-			var toggle = line.Contains("IsToggle");
-			var selected = line.Contains(nameof(Button.IsSelected));
-			var blockName = "";
 
 			foreach (var prop in props)
 			{
@@ -58,73 +52,18 @@ public class Layout
 					continue;
 				}
 
-				// create ====================================================
-				if (key == nameof(Button))
-				{
-					var button = new Button { Text = "", IsSelected = selected };
-					if (line.Contains("Icon: ") == false)
-						button.OnDisplay += () => TileMaps.SetButton(button, 1, toggle || selected);
-					container.Blocks[value] = button;
-					block = button;
-					blockName = value;
-					continue;
-				}
-				else if (key is nameof(Span.Column) or nameof(Span.Row) or nameof(Span.Dropdown) or nameof(Span.Menu))
-				{
-					var span = Span.Column;
-					span = key == nameof(Span.Row) ? Span.Row : span;
-					span = key == nameof(Span.Dropdown) ? Span.Dropdown : span;
-					span = key == nameof(Span.Menu) ? Span.Menu : span;
-
-					var list = new List(default, 0, span) { Text = "" };
-					list.OnDisplay += () => TileMaps.SetList(list);
-					list.OnItemDisplay += item => TileMaps.SetListItem(list, item);
-					container.Blocks[value] = list;
-					block = list;
-					blockName = value;
-					continue;
-				}
-
-				// block props ====================================================
-				if (block == null)
-					continue;
-
-				if (key == nameof(Block.Text)) block.Text = keyValue[1]; // no trim
-				else if (key == nameof(Block.Size) && values.Length == 2)
-					container.BlockDynamicSizes[blockName] = (values[0], values[1]);
-				else if (key == nameof(Block.IsDisabled)) block.IsDisabled = true;
-				else if (key == nameof(Block.IsHidden)) block.IsHidden = true;
-				// list props====================================================
-				else if (block is List list)
-				{
-					if (key == nameof(List.Items))
-					{
-						foreach (var _ in values)
-							list.Items.Add(new());
-
-						list.Edit(values);
-					}
-					else if (key == nameof(List.ItemSize))
-						list.ItemSize = (ToInt(values[0], block.Text, block.Area), ToInt(values[1], block.Text, block.Area));
-					else if (key == nameof(List.ItemGap)) list.ItemGap = (int)value.Calculate();
-					else if (key == nameof(List.IsSingleSelecting)) list.IsSingleSelecting = true;
-				}
-				// button props====================================================
-				else if (block is Button btn)
-				{
-					if (key == "Icon")
-						btn.OnDisplay += () => TileMaps.SetButtonIcon(btn, (ushort)ToInt(value), 1, toggle || selected);
-					else if (key == "Pad" && values.Length == 2)
-						container.BlockDynamicPads[blockName] = (values[0], values[1]);
-				}
+				if (CreateBlock(line, key, value, container, props))
+					break;
 			}
 		}
+
+		Recalculate();
 	}
 
-	public void Resize()
+	public void Recalculate()
 	{
 		foreach (var c in containers)
-			c.Align();
+			c.Calculate();
 	}
 	public T? GetBlock<T>(string name) where T : Block
 	{
@@ -156,7 +95,8 @@ public class Layout
 				block.Update();
 			}
 
-			TileMaps[0].SetArea(container.Area, [new(container.Tile, container.Color)]);
+			if (container.Background.tile != 0)
+				TileMaps[0].SetArea(container.Area, [new(container.Background.tile, container.Background.color)]);
 		}
 
 		Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
@@ -172,7 +112,7 @@ public class Layout
 		if (loadedWithSize == Input.Bounds)
 			return;
 
-		Resize();
+		Recalculate();
 		loadedWithSize = Input.Bounds;
 	}
 
@@ -201,16 +141,45 @@ public class Layout
 			container.AreaDynamic = (values[0], values[1], values[2], values[3]);
 		else if (key == nameof(Container.Gap) && values.Length == 2)
 			container.Gap = ((int)values[0].Calculate(), (int)values[1].Calculate());
-		else if (key == nameof(Container.Color) && values.Length == 4)
+		else if (key == nameof(Color) && values.Length == 4)
 		{
-			var r = (byte)Math.Clamp(ToInt(values[0]), byte.MinValue, byte.MaxValue);
-			var g = (byte)Math.Clamp(ToInt(values[1]), byte.MinValue, byte.MaxValue);
-			var b = (byte)Math.Clamp(ToInt(values[2]), byte.MinValue, byte.MaxValue);
-			var a = (byte)Math.Clamp(ToInt(values[3]), byte.MinValue, byte.MaxValue);
-			container.Color = new Color(r, g, b, a);
+			var r = (byte)Math.Clamp(values[0].Calculate(), byte.MinValue, byte.MaxValue);
+			var g = (byte)Math.Clamp(values[1].Calculate(), byte.MinValue, byte.MaxValue);
+			var b = (byte)Math.Clamp(values[2].Calculate(), byte.MinValue, byte.MaxValue);
+			var a = (byte)Math.Clamp(values[3].Calculate(), byte.MinValue, byte.MaxValue);
+			container.Background = (container.Background.tile, new Color(r, g, b, a));
 		}
-		else if (key == nameof(Container.Tile))
-			container.Tile = (ushort)ToInt(values[0]);
+		else if (key == nameof(Tile))
+			container.Background = ((ushort)values[0].Calculate(), container.Background.color);
+	}
+	private bool CreateBlock(string line, string key, string value, Container container, string[] props)
+	{
+		if (key == nameof(Button))
+		{
+			var button = new Button { Text = "" };
+			if (line.Contains("Icon: ") == false)
+				button.OnDisplay += () => TileMaps.SetButton(button);
+
+			container.Blocks[value] = button;
+			container.BlocksData[value] = props[1..];
+			return true;
+		}
+		else if (key is nameof(Span.Column) or nameof(Span.Row) or nameof(Span.Dropdown) or nameof(Span.Menu))
+		{
+			var span = Span.Column;
+			span = key == nameof(Span.Row) ? Span.Row : span;
+			span = key == nameof(Span.Dropdown) ? Span.Dropdown : span;
+			span = key == nameof(Span.Menu) ? Span.Menu : span;
+
+			var list = new List(default, 0, span) { Text = "" };
+			list.OnDisplay += () => TileMaps.SetList(list);
+			list.OnItemDisplay += item => TileMaps.SetListItem(list, item);
+			container.Blocks[value] = list;
+			container.BlocksData[value] = props[1..];
+			return true;
+		}
+
+		return false;
 	}
 
 	internal static int ToInt(string value, string text = "", Area? area = null, int? items = null)

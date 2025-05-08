@@ -11,6 +11,8 @@ public class List : Block
 {
 	[DoNotSave]
 	public Action<Button>? OnItemDisplay { get; set; }
+	[DoNotSave]
+	public Action? OnFoldChange { get; set; }
 
 	public List<Button> Items { get; } = [];
 	[DoNotSave]
@@ -25,8 +27,16 @@ public class List : Block
 		get => isFolded;
 		set
 		{
-			if (Span is Span.Dropdown or Span.Menu)
-				isFolded = value;
+			if (Span is not (Span.Dropdown or Span.Menu) || isFolded == value)
+				return;
+
+			// sometimes items remain hovered after folding
+			foreach (var item in Items)
+				item.IsHovered = false;
+
+			isFolded = value;
+			justFold = true;
+			OnFoldChange?.Invoke();
 		}
 	}
 	public bool IsReadOnly
@@ -97,6 +107,11 @@ public class List : Block
 
 		if (Items.Count > 0 && IsSingleSelecting)
 			Select(Items[0]);
+	}
+
+	public override string ToString()
+	{
+		return $"{nameof(List)} {Span} \"{Text}\"";
 	}
 
 	public void Edit(string[]? items)
@@ -173,6 +188,11 @@ public class List : Block
 		UpdateSelectedItems();
 	}
 
+	public bool IsJustFoldChanged()
+	{
+		return justFold;
+	}
+
 	protected override void OnInput()
 	{
 		if (IsJustInteracted(Interaction.Trigger))
@@ -195,7 +215,7 @@ public class List : Block
 #region Backend
 	private int itemGap;
 	internal Size itemSize = (5, 1);
-	internal bool isReadOnly;
+	internal bool isReadOnly, justFold;
 
 	[DoNotSave]
 	private bool isFolded, veryFirstUpdate = true;
@@ -211,8 +231,9 @@ public class List : Block
 		get
 		{
 			var (maxW, maxH) = ItemSize;
+			var menuOffset = Span == Span.Menu ? 1 : 0;
 			var totalW = Items.Count * (maxW + ItemGap) - ItemGap;
-			var totalH = Items.Count * (maxH + ItemGap) - ItemGap;
+			var totalH = Items.Count * (maxH + ItemGap) - ItemGap + menuOffset;
 
 			return (totalW > Size.width, totalH > Size.height);
 		}
@@ -223,6 +244,7 @@ public class List : Block
 		item.size = (Span == Span.Row ? text.Length : Size.width, 1);
 		item.hasParent = true;
 		item.wasMaskSet = true;
+		item.isToggle = true;
 		item.OnInteraction(Interaction.Trigger, () => OnInternalItemTrigger(item));
 		item.OnInteraction(Interaction.Scroll, ApplyScroll);
 
@@ -242,6 +264,8 @@ public class List : Block
 
 	internal void OnRefresh()
 	{
+		justFold = false;
+
 		// this is to give time to dropdown to accept size when not collapsed
 		if (veryFirstUpdate)
 		{
@@ -276,7 +300,8 @@ public class List : Block
 		var totalWidth = Items.Count * (ItemSize.width + ItemGap);
 		var totalHeight = Items.Count * (ItemSize.height + ItemGap);
 		var totalSize = Span == Span.Row ? totalWidth : totalHeight;
-		Scroll.step = 1f / totalSize;
+		var menuOffset = Span == Span.Menu ? 1 : 0;
+		Scroll.step = 1f / (totalSize - menuOffset);
 		Scroll.isVertical = Span != Span.Row;
 
 		if (Span != Span.Dropdown && Span != Span.Menu)
@@ -307,6 +332,7 @@ public class List : Block
 		var (x, y) = Position;
 		var (w, h) = Size;
 		var m = IsScrollAvailable ? Mask : default;
+		var menuOffset = Span == Span.Menu ? 1 : 0;
 
 		if (IsDisabled)
 			Scroll.IsDisabled = true;
@@ -354,11 +380,11 @@ public class List : Block
 			}
 			else
 			{
-				var totalHeight = Items.Count * (ItemSize.height + ItemGap);
+				var totalHeight = Items.Count * (ItemSize.height + ItemGap) + menuOffset;
 				var p = Map(Scroll.Slider.Progress, 0, 1, 0, totalHeight - h - ItemGap);
 				var offsetY = (int)MathF.Round(p);
 				offsetY = Math.Max(offsetY, 0);
-				item.position = (x, y - offsetY + i * (ItemSize.height + ItemGap));
+				item.position = (x, y - offsetY + i * (ItemSize.height + ItemGap) + menuOffset);
 			}
 
 			var (ix, iy) = item.position;
@@ -366,7 +392,6 @@ public class List : Block
 			var botEdgeTrim = Span == Span.Row && HasScroll.horizontal ? 1 : 0;
 			//var rightEdgeTrim = Type == Types.Horizontal == false && HasScroll().vertical ? 1 : 0;
 			var (iw, ih) = (item.Size.width + offW, item.Size.height + offH);
-			var menuOffset = Span == Span.Menu ? 1 : 0;
 
 			if (ix + iw <= x || ix >= x + w || iy + ih <= y + menuOffset || iy >= y + h - botEdgeTrim)
 				item.mask = default;

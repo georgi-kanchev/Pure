@@ -106,7 +106,7 @@ public static class TileMapperUI
 		TryDisable(maps, button, zOrder + 1);
 		RestoreMasks(maps);
 	}
-	public static void SetButton(this IList<TileMap> maps, Button button, int zOrder = 1, bool toggle = false)
+	public static void SetButton(this IList<TileMap> maps, Button button, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 2 || button.IsHidden)
 			return;
@@ -117,24 +117,23 @@ public static class TileMapperUI
 		var (barLeft, barFill, barRight) = ThemeButtonBar;
 		var text = button.Text.Shorten(h == 1 ? w : w - 2);
 		var textPos = (button.X + offsetW, button.Y + h / 2);
-		var sel = button.IsSelected && toggle;
-		var tintText = sel ? TintSelection.ToBright() : TintText;
+		var tintText = button.IsSelected ? TintSelection.ToBright() : TintText;
 
 		ApplyMasks(maps, button.Mask);
 		Clear(maps, button, zOrder, 3);
 		if (button.Height == 1)
 		{
-			barLeft.Tint = button.GetInteractionColor(sel ? TintSelection : barLeft.Tint, InteractionShade);
-			barFill.Tint = button.GetInteractionColor(sel ? TintSelection : barFill.Tint, InteractionShade);
-			barRight.Tint = button.GetInteractionColor(sel ? TintSelection : barRight.Tint, InteractionShade);
+			barLeft.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : barLeft.Tint, InteractionShade);
+			barFill.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : barFill.Tint, InteractionShade);
+			barRight.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : barRight.Tint, InteractionShade);
 			tintText = button.GetInteractionColor(tintText, InteractionShade);
 			maps[zOrder].SetBar(button.Position, barLeft, barFill, barRight, button.Width);
 		}
 		else
 		{
-			boxCorner.Tint = button.GetInteractionColor(sel ? TintSelection : boxCorner.Tint, InteractionShade);
-			boxEdge.Tint = button.GetInteractionColor(sel ? TintSelection : boxEdge.Tint, InteractionShade);
-			boxFill.Tint = button.GetInteractionColor(sel ? TintSelection : boxFill.Tint, InteractionShade);
+			boxCorner.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : boxCorner.Tint, InteractionShade);
+			boxEdge.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : boxEdge.Tint, InteractionShade);
+			boxFill.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : boxFill.Tint, InteractionShade);
 			tintText = button.GetInteractionColor(tintText, InteractionShade);
 			maps[zOrder].SetBox(button.Area, boxFill, boxCorner, boxEdge);
 		}
@@ -143,7 +142,7 @@ public static class TileMapperUI
 		TryDisable(maps, button, zOrder + 2);
 		RestoreMasks(maps);
 	}
-	public static void SetButtonIcon(this IList<TileMap> maps, Button button, Tile tile, int zOrder = 1, bool toggle = false)
+	public static void SetButtonIcon(this IList<TileMap> maps, Button button, Tile tile, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 1 || button.IsHidden)
 			return;
@@ -151,15 +150,15 @@ public static class TileMapperUI
 		var x = button.X + button.Width / 2 - button.Text.Length / 2;
 		var y = button.Y + button.Height / 2;
 		var color = button.GetInteractionColor(TintText, InteractionShade);
-		maps.SetButton(button, zOrder, toggle);
+		maps.SetButton(button, zOrder);
 		maps[zOrder + 1].SetTile((x, y), new(tile, color));
 	}
-	public static void SetButtonTile(this IList<TileMap> maps, Button button, Tile tile, int zOrder = 1, bool toggle = false)
+	public static void SetButtonTile(this IList<TileMap> maps, Button button, Tile tile, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 1 || button.IsHidden)
 			return;
 
-		tile.Tint = button.GetInteractionColor(button.IsSelected && toggle ? TintSelection : tile.Tint, InteractionShade);
+		tile.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : tile.Tint, InteractionShade);
 		Clear(maps, button, zOrder, 2);
 		TryDisable(maps, button, zOrder + 1);
 		maps[zOrder].SetTile(button.Position, tile, button.Mask);
@@ -519,7 +518,7 @@ public static class TileMapperUI
 			return;
 
 		var index = Math.Clamp(pages.IndexOf(item), 0, tiles.Length - 1);
-		SetButtonTile(maps, item, tiles[index], zOrder, true);
+		SetButtonTile(maps, item, tiles[index], zOrder);
 	}
 	public static void SetList(this IList<TileMap> maps, List list, int zOrder = 0)
 	{

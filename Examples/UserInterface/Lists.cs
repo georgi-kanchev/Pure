@@ -34,7 +34,7 @@ public static class Lists
 			maps[0].SetText((column.Position.x, column.Position.y - 1), "Row Multi");
 			maps.SetList(column);
 		};
-		column.OnItemDisplay += item => maps.SetButton(item, 1, true);
+		column.OnItemDisplay += item => maps.SetButton(item);
 
 		//====================================================
 

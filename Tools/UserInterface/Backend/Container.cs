@@ -1,5 +1,7 @@
 using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
+using Pure.Engine.Utility;
+using Pure.Tools.Tiles;
 using SizeI = (int width, int height);
 using static Pure.Engine.UserInterface.Pivot;
 
@@ -26,87 +28,78 @@ internal class Container(Layout owner)
 	public Pivot Pivot { get; set; } = Center;
 	public SizeI Gap { get; set; } = (1, 1);
 	public Wrap Wrap { get; set; } = Wrap.SingleRow;
-	public uint Color { get; set; } = Engine.Utility.Color.Gray.ToDark(0.7f);
-	public ushort Tile { get; set; } = 10;
+	public (ushort tile, uint color) Background { get; set; } = (0, Color.Gray.ToDark(0.7f));
 	public Dictionary<string, Block> Blocks { get; set; } = [];
-	public Dictionary<string, (string w, string h)> BlockDynamicSizes { get; set; } = [];
-	public Dictionary<string, (string l, string r)> BlockDynamicPads { get; set; } = [];
+	public Dictionary<string, string[]> BlocksData { get; set; } = [];
 
-	public void Align()
+	public void Calculate()
 	{
 		if (Blocks.Count == 0)
 			return;
 
-		//size ====================================================
-		foreach (var (name, _) in Blocks)
+		foreach (var (name, block) in Blocks)
 		{
-			SetDynamicSize(name);
-			SetDynamicPad(name);
-		}
-
-		// position ====================================================
-		var first = Blocks.First();
-		var targetArea = first.Value.Area;
-		var pivot = TopLeft;
-
-		pivot = Pivot is Left or Center or Right ? Left : pivot;
-		pivot = Pivot is BottomLeft or Bottom or BottomRight ? BottomLeft : pivot;
-		first.Value.AlignInside(GetBoundingBox(), pivot);
-
-		foreach (var (_, block) in Blocks.Skip(1))
-			if (Wrap == Wrap.SingleRow)
+			foreach (var prop in BlocksData[name])
 			{
-				block.AlignX((Left, Right), targetArea, Gap.width);
-				block.AlignY((Left, Right), targetArea);
-				targetArea = block.Area;
+				var keyValue = prop.Trim().Split(": ");
+				var key = keyValue[0].Trim();
+				var value = keyValue.Length > 1 ? keyValue[1].Trim() : "";
+				var values = value.Split(",");
+				int? items = block is List l ? l.Items.Count : null;
+
+				for (var j = 0; j < values.Length; j++)
+					values[j] = values[j].Trim();
+
+				block.Mask = Area;
+
+				if (key == nameof(Block.Text)) block.Text = keyValue[1]; // no trim
+				else if (key == nameof(Block.Size) && values.Length == 2) block.Size = Int2(Area);
+				else if (key == nameof(Block.IsDisabled)) block.IsDisabled = true;
+				else if (key == nameof(Block.IsHidden)) block.IsHidden = true;
+				// list props====================================================
+				else if (block is List list)
+				{
+					if (key == nameof(List.Items))
+					{
+						list.Items.Clear();
+						foreach (var _ in values)
+							list.Items.Add(new());
+
+						list.Edit(values);
+					}
+					else if (key == nameof(List.ItemSize)) list.ItemSize = Int2(block.Area);
+					else if (key == nameof(List.ItemGap)) list.ItemGap = (int)value.Calculate();
+					else if (key == nameof(List.IsSingleSelecting)) list.IsSingleSelecting = true;
+				}
+				// button props====================================================
+				else if (block is Button btn)
+				{
+					if (key == "Icon") btn.OnDisplay += () => owner.TileMaps.SetButtonIcon(btn, (ushort)Layout.ToInt(value));
+					else if (key is nameof(Button.IsToggle) or nameof(Button.IsSelected))
+					{
+						btn.IsToggle = true;
+						btn.IsSelected = key == nameof(Button.IsSelected);
+					}
+					else if (key == "PadLeftRight" && values.Length == 2)
+					{
+						var pad = Int2(block.Area);
+						block.Text = block.Text.PadLeft(pad.x).PadRight(pad.y);
+
+						if (block is List list2)
+							foreach (var item in list2.Items)
+								item.Text = item.Text.PadLeft(pad.x).PadRight(pad.y);
+					}
+				}
+
+				(int x, int y) Int2(Area area)
+				{
+					return (Layout.ToInt(values[0], block.Text, area, items),
+						Layout.ToInt(values[1], block.Text, area, items));
+				}
 			}
-	}
-
-#region Backend
-	private Area GetBoundingBox()
-	{
-		if (Blocks.Count == 0)
-			return default;
-
-		var (rw, rh) = (0, int.MinValue);
-		var (x, y, w, h) = Area.ToBundle();
-
-		foreach (var (_, block) in Blocks)
-		{
-			rw += block.Width + Gap.width;
-			rh = block.Height > rh ? block.Height : rh;
 		}
 
-		rw -= Gap.width;
-
-		if (Pivot is Top or Center or Bottom) x = x + w / 2 - rw / 2;
-		else if (Pivot is TopRight or Right or BottomRight) x = x + w - rw;
-
-		return (x, y, rw, h);
+		if (Wrap is Wrap.SingleRow or Wrap.MultipleRows)
+			Block.SortRow(Blocks.Values.ToArray(), Area, Pivot, Gap, Wrap == Wrap.MultipleRows);
 	}
-
-	private void SetDynamicSize(string blockName)
-	{
-		var has = BlockDynamicSizes.TryGetValue(blockName, out var sz);
-		var block = Blocks[blockName];
-		int? items = block is List list ? list.Items.Count : null;
-		var w = Layout.ToInt(sz.w, block.Text, Area, items);
-		var h = Layout.ToInt(sz.h, block.Text, Area, items);
-
-		block.Size = has ? (w, h) : (1, 1);
-	}
-	private void SetDynamicPad(string blockName)
-	{
-		var has = BlockDynamicPads.TryGetValue(blockName, out var pad);
-		if (has == false)
-			return;
-
-		var block = Blocks[blockName];
-		int? items = block is List list ? list.Items.Count : null;
-		var l = Layout.ToInt(pad.l, block.Text, Area, items);
-		var r = Layout.ToInt(pad.r, block.Text, Area, items);
-
-		block.Text = block.Text.PadLeft(l).PadRight(r);
-	}
-#endregion
 }

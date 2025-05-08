@@ -151,7 +151,7 @@ public class Block
 	/// over the user interface block.
 	/// </summary>
 	[DoNotSave]
-	public bool IsHovered { get; private set; }
+	public bool IsHovered { get; internal set; }
 	/// <summary>
 	/// Gets a value indicating whether the user interface block is currently held by the input,
 	/// regardless of being hovered or not.
@@ -348,6 +348,15 @@ public class Block
 		return justInteracted.Contains(interaction);
 	}
 
+	public void AlignInside(PointF alignment, Area? area = null)
+	{
+		var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
+		var (x, y, w, h) = Area;
+		var newX = Map(alignment.x, (0, 1), (ax, aw - w));
+		var newY = Map(alignment.y, (0, 1), (ay, ah - h));
+
+		Position = (float.IsNaN(alignment.x) ? x : (int)newX, float.IsNaN(alignment.y) ? y : (int)newY);
+	}
 	public void AlignInside(Area? area = null, Pivot pivot = Pivot.Center, PointI offset = default)
 	{
 		var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
@@ -365,7 +374,7 @@ public class Block
 
 		Position = (x + offset.x, y + offset.y);
 	}
-	public void AlignOutside(Area? area, Pivot pivot = Pivot.Center, PointI offset = default)
+	public void AlignOutside(Area? area = null, Pivot pivot = Pivot.Center, PointI offset = default)
 	{
 		var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
 		var (x, y, w, h) = Area;
@@ -420,15 +429,6 @@ public class Block
 
 		Y = y + offset;
 	}
-	public void AlignInside(PointF alignment, Area? area = null)
-	{
-		var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
-		var (x, y, w, h) = Area;
-		var newX = Map(alignment.x, (0, 1), (ax, aw - w));
-		var newY = Map(alignment.y, (0, 1), (ay, ah - h));
-
-		Position = (float.IsNaN(alignment.x) ? x : (int)newX, float.IsNaN(alignment.y) ? y : (int)newY);
-	}
 	public void Fit(Area? area = null)
 	{
 		var (w, h) = Size;
@@ -452,48 +452,6 @@ public class Block
 		if (hasOverflown == false)
 			Position = (newX, newY);
 	}
-
-	// public void AlignEdges(Pivot myEdge, Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
-	// {
-	//     var (rx, ry, rw, rh) = targetArea ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
-	//     var (x, y, w, h) = Area;
-	//     var (rcx, rcy) = (rx + rw / 2, ry + rh / 2);
-	//     var (cx, cy) = (x + w / 2, y + h / 2);
-	//     var notNan = float.IsNaN(alignment) == false;
-	//
-	//     offset -= 1;
-	//
-	//     if (notNan && myEdge is Pivot.Top or Pivot.Bottom && targetEdge is Pivot.Top or Pivot.Bottom)
-	//         x = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (rx - w - offset, rx + rw + offset) : (rx, rx + rw - w)));
-	//     else if (notNan && myEdge is Pivot.Left or Pivot.Right && targetEdge is Pivot.Left or Pivot.Right)
-	//         y = (int)MathF.Round(Map(alignment, (0, 1), exceedEdge ? (ry - h - offset, ry + rh + offset) : (ry, ry + rh - h)));
-	//
-	//     if (myEdge == Pivot.Left && targetEdge is Pivot.Left or Pivot.Right)
-	//         x = targetEdge == Pivot.Left ? rx + offset + 1 : rx + rw + offset;
-	//     else if (myEdge == Pivot.Left)
-	//         x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx, rx + rw + offset)));
-	//
-	//     if (myEdge == Pivot.Right && targetEdge is Pivot.Left or Pivot.Right)
-	//         x = targetEdge == Pivot.Left ? rx - w - offset : rx + rw + offset;
-	//     else if (myEdge == Pivot.Right)
-	//         x = notNan ? rcx - cx : (int)MathF.Round(Map(alignment, (0, 1), (rx - w - offset, rx + rw - w)));
-	//
-	//     if (myEdge == Pivot.Top && targetEdge is Pivot.Left or Pivot.Right)
-	//         y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry, ry + rh + offset)));
-	//     else if (myEdge == Pivot.Top)
-	//         y = targetEdge == Pivot.Top ? ry : ry + rh + offset;
-	//
-	//     if (myEdge == Pivot.Bottom && targetEdge is Pivot.Left or Pivot.Right)
-	//         y = notNan ? rcy - cy : (int)MathF.Round(Map(alignment, (0, 1), (ry - h - offset, ry + rh - h)));
-	//     else if (myEdge == Pivot.Bottom)
-	//         y = targetEdge == Pivot.Top ? ry - h - offset : ry + rh - h + offset + 1;
-	//
-	//     Position = (x, y);
-	// }
-	// public void AlignOutside(Pivot targetEdge, Area? targetArea = null, float alignment = float.NaN, int offset = 0, bool exceedEdge = false)
-	// {
-	//     AlignEdges((Pivot)(8 - (int)targetEdge), targetEdge, targetArea, alignment, offset + 1, exceedEdge);
-	// }
 
 	/// <summary>
 	/// Interacts with the block based on the specified interaction.
@@ -534,6 +492,30 @@ public class Block
 	public static implicit operator Area(Block block)
 	{
 		return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
+	}
+
+	public static void SortRow(Block[]? blocks, Area? area = null, Pivot pivot = Pivot.Center, PointI gap = default, bool wrap = true, float scroll = 0f)
+	{
+		if (blocks == null || blocks.Length == 0)
+			return;
+
+		var (x, y, w, h) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
+		var totalWidth = 0;
+		var left = pivot is Pivot.TopLeft or Pivot.Left or Pivot.BottomLeft;
+		var center = pivot is Pivot.Top or Pivot.Center or Pivot.Bottom;
+		var right = pivot is Pivot.TopRight or Pivot.Right or Pivot.BottomRight;
+
+		for (var i = 0; i < blocks.Length; i++)
+			totalWidth += (i == 0 ? 0 : gap.x) + blocks[i].Width;
+
+		blocks[0].AlignInside(area, pivot);
+
+		for (var i = 1; i < blocks.Length; i++)
+		{
+			blocks[i].AlignInside(area, pivot);
+			// then offset: left = 0, center = blocks[i].w / 2, right = blocks[i].w
+			;
+		}
 	}
 
 #region Backend
