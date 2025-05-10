@@ -499,22 +499,42 @@ public class Block
 		if (blocks == null || blocks.Length == 0)
 			return;
 
-		var (x, y, w, h) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
-		var totalWidth = 0;
+		area ??= (0, 0, Input.Bounds.width, Input.Bounds.height);
+		var originalArea = area;
 		var left = pivot is Pivot.TopLeft or Pivot.Left or Pivot.BottomLeft;
 		var center = pivot is Pivot.Top or Pivot.Center or Pivot.Bottom;
 		var right = pivot is Pivot.TopRight or Pivot.Right or Pivot.BottomRight;
 
-		for (var i = 0; i < blocks.Length; i++)
-			totalWidth += (i == 0 ? 0 : gap.x) + blocks[i].Width;
-
 		blocks[0].AlignInside(area, pivot);
+		area = blocks[0].Area;
 
+		var totalWidth = blocks[0].Width;
+		var totalHeight = blocks[0].Height;
+		var tallest = totalHeight;
 		for (var i = 1; i < blocks.Length; i++)
 		{
-			blocks[i].AlignInside(area, pivot);
-			// then offset: left = 0, center = blocks[i].w / 2, right = blocks[i].w
-			;
+			if (totalWidth + blocks[i].Width > originalArea.Value.width)
+			{
+				blocks[i].AlignInside(originalArea, pivot);
+				totalWidth = blocks[i].Width;
+				blocks[i].Y += totalHeight + gap.y;
+				tallest = blocks[i].Height;
+				totalHeight += tallest;
+				area = blocks[i].Area;
+				continue;
+			}
+
+			blocks[i].AlignX((Pivot.Left, Pivot.Right), area, gap.x);
+			blocks[i].AlignY((Pivot.Left, Pivot.Right), area);
+			area = blocks[i].Area;
+			totalWidth += blocks[i].Width + gap.x;
+
+			if (tallest >= blocks[i].Height)
+				continue;
+
+			totalHeight -= tallest;
+			tallest = blocks[i].Height;
+			totalHeight += tallest;
 		}
 	}
 
