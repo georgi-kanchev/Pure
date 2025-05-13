@@ -501,40 +501,52 @@ public class Block
 
 		area ??= (0, 0, Input.Bounds.width, Input.Bounds.height);
 		var originalArea = area;
+		var lines = new List<(int width, int height, List<Block> blocks)> { (0, 0, []) };
 		var left = pivot is Pivot.TopLeft or Pivot.Left or Pivot.BottomLeft;
 		var center = pivot is Pivot.Top or Pivot.Center or Pivot.Bottom;
 		var right = pivot is Pivot.TopRight or Pivot.Right or Pivot.BottomRight;
+		var accumulatedWidth = 0;
+		var height = 0;
+		var totalHeight = 0;
 
-		blocks[0].AlignInside(area, pivot);
-		area = blocks[0].Area;
-
-		var totalWidth = blocks[0].Width;
-		var totalHeight = blocks[0].Height;
-		var tallest = totalHeight;
-		for (var i = 1; i < blocks.Length; i++)
+		for (var i = 0; i < blocks.Length; i++)
 		{
-			if (totalWidth + blocks[i].Width > originalArea.Value.width)
+			var h = blocks[i].Height + gap.y;
+			accumulatedWidth += (i == 0 ? 0 : gap.x) + blocks[i].Width;
+			height = height < h ? h : height;
+
+			if (accumulatedWidth > originalArea.Value.width)
 			{
-				blocks[i].AlignInside(originalArea, pivot);
-				totalWidth = blocks[i].Width;
-				blocks[i].Y += totalHeight + gap.y;
-				tallest = blocks[i].Height;
-				totalHeight += tallest;
-				area = blocks[i].Area;
-				continue;
+				accumulatedWidth = (i == 0 ? 0 : gap.x) + blocks[i].Width;
+				lines.Add((0, 0, []));
+				height = h;
 			}
 
-			blocks[i].AlignX((Pivot.Left, Pivot.Right), area, gap.x);
-			blocks[i].AlignY((Pivot.Left, Pivot.Right), area);
-			area = blocks[i].Area;
-			totalWidth += blocks[i].Width + gap.x;
+			lines[^1] = (accumulatedWidth, height, lines[^1].blocks);
+			lines[^1].blocks.Add(blocks[i]);
+		}
 
-			if (tallest >= blocks[i].Height)
-				continue;
+		foreach (var (_, h, _) in lines)
+			totalHeight += h;
 
-			totalHeight -= tallest;
-			tallest = blocks[i].Height;
-			totalHeight += tallest;
+		//====================================================
+
+		var y = originalArea.Value.y;
+		for (var i = 0; i < lines.Count; i++)
+		{
+			var (w, h, bs) = lines[i];
+
+			bs[0].Position = (originalArea.Value.x, y + (h - bs[0].Height) / 2);
+			area = bs[0].Area;
+
+			foreach (var b in bs.Skip(1))
+			{
+				b.AlignX((Pivot.Left, Pivot.Right), area, gap.x);
+				b.AlignY((Pivot.Left, Pivot.Right), area);
+				area = b.Area;
+			}
+
+			y += h;
 		}
 	}
 
