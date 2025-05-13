@@ -315,6 +315,11 @@ public class Block
 	{
 		return IsHovered && Input.IsButtonPressed(button);
 	}
+	public bool IsJustInteracted(Interaction interaction)
+	{
+		return justInteracted.Contains(interaction);
+	}
+
 	/// <summary>
 	/// Checks if the block is overlapping with a specified point.
 	/// </summary>
@@ -322,14 +327,9 @@ public class Block
 	/// <returns>True if the block is overlapping with the point, false otherwise.</returns>
 	public bool IsOverlapping(PointF point)
 	{
-		// Check if the point is outside the tilemap boundaries
-		if (point.x < 0 ||
-		    point.x >= Input.Bounds.width ||
-		    point.y < 0 ||
-		    point.y >= Input.Bounds.height)
+		if (point.x < 0 || point.x >= Input.Bounds.width || point.y < 0 || point.y >= Input.Bounds.height)
 			return false;
 
-		// Check if the point is inside the bounding box
 		return point.x >= Position.x &&
 		       point.x < Position.x + Size.width &&
 		       point.y >= Position.y &&
@@ -337,15 +337,25 @@ public class Block
 	}
 	public bool IsOverlapping(Area area)
 	{
-		var (x, y) = Position;
-		var (w, h) = Size;
+		var (x, y, w, h) = Area;
 		var (rx, ry, rw, rh) = area;
-
 		return (x + w <= rx || x >= rx + rw || y + h <= ry || y >= ry + rh) == false;
 	}
-	public bool IsJustInteracted(Interaction interaction)
+	public bool IsContaining(PointF point)
 	{
-		return justInteracted.Contains(interaction);
+		if (point.x < 0 || point.x >= Input.Bounds.width || point.y < 0 || point.y >= Input.Bounds.height)
+			return false;
+
+		return point.x >= Position.x &&
+		       point.x < Position.x + Size.width &&
+		       point.y >= Position.y &&
+		       point.y < Position.y + Size.height;
+	}
+	public bool IsContaining(Area area)
+	{
+		var (x, y, w, h) = Area;
+		var (rx, ry, rw, rh) = area;
+		return rx >= x && ry >= y && rx + rw <= x + w && ry + rh <= y + h;
 	}
 
 	public void AlignInside(PointF alignment, Area? area = null)
@@ -494,7 +504,7 @@ public class Block
 		return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
 	}
 
-	public static void SortRow(Block[]? blocks, Area? area = null, Pivot pivot = Pivot.Center, PointI gap = default, bool wrap = true, float scroll = 0f)
+	public static void SortRow(Block[]? blocks, Area? area = null, Pivot pivot = Pivot.Center, PointI gap = default, bool wrap = true)
 	{
 		if (blocks == null || blocks.Length == 0)
 			return;
@@ -502,9 +512,6 @@ public class Block
 		area ??= (0, 0, Input.Bounds.width, Input.Bounds.height);
 		var originalArea = area;
 		var lines = new List<(int width, int height, List<Block> blocks)> { (0, 0, []) };
-		var left = pivot is Pivot.TopLeft or Pivot.Left or Pivot.BottomLeft;
-		var center = pivot is Pivot.Top or Pivot.Center or Pivot.Bottom;
-		var right = pivot is Pivot.TopRight or Pivot.Right or Pivot.BottomRight;
 		var accumulatedWidth = 0;
 		var height = 0;
 		var totalHeight = 0;
@@ -515,7 +522,7 @@ public class Block
 			accumulatedWidth += (i == 0 ? 0 : gap.x) + blocks[i].Width;
 			height = height < h ? h : height;
 
-			if (accumulatedWidth > originalArea.Value.width)
+			if (wrap && accumulatedWidth > originalArea.Value.width)
 			{
 				accumulatedWidth = (i == 0 ? 0 : gap.x) + blocks[i].Width;
 				lines.Add((0, 0, []));
@@ -537,6 +544,17 @@ public class Block
 			var (w, h, bs) = lines[i];
 
 			bs[0].Position = (originalArea.Value.x, y + (h - bs[0].Height) / 2);
+
+			if (pivot is Pivot.Top or Pivot.Center or Pivot.Bottom)
+				bs[0].Position = (originalArea.Value.x + (originalArea.Value.width - w) / 2, bs[0].Position.y);
+			else if (pivot is Pivot.TopRight or Pivot.Right or Pivot.BottomRight)
+				bs[0].Position = (originalArea.Value.x + (originalArea.Value.width - w), bs[0].Position.y);
+
+			if (pivot is Pivot.Left or Pivot.Center or Pivot.Right)
+				bs[0].Position = (bs[0].Position.x, bs[0].Position.y + (originalArea.Value.height - totalHeight) / 2);
+			if (pivot is Pivot.BottomLeft or Pivot.Bottom or Pivot.BottomRight)
+				bs[0].Position = (bs[0].Position.x, bs[0].Position.y + (originalArea.Value.height - totalHeight));
+
 			area = bs[0].Area;
 
 			foreach (var b in bs.Skip(1))
@@ -548,6 +566,88 @@ public class Block
 
 			y += h;
 		}
+	}
+	public static void SortColumn(Block[]? blocks, Area? area = null, Pivot pivot = Pivot.Center, PointI gap = default, bool wrap = true)
+	{
+		if (blocks == null || blocks.Length == 0)
+			return;
+
+		area ??= (0, 0, Input.Bounds.width, Input.Bounds.height);
+		var originalArea = area;
+		var columns = new List<(int width, int height, List<Block> blocks)> { (0, 0, []) };
+		var accumulatedHeight = 0;
+		var width = 0;
+		var totalWidth = 0;
+
+		for (var i = 0; i < blocks.Length; i++)
+		{
+			var w = blocks[i].Width + gap.x;
+			accumulatedHeight += (i == 0 ? 0 : gap.y) + blocks[i].Height;
+			width = width < w ? w : width;
+
+			if (wrap && accumulatedHeight > originalArea.Value.height)
+			{
+				accumulatedHeight = (i == 0 ? 0 : gap.y) + blocks[i].Height;
+				columns.Add((0, 0, []));
+				width = w;
+			}
+
+			columns[^1] = (width, accumulatedHeight, columns[^1].blocks);
+			columns[^1].blocks.Add(blocks[i]);
+		}
+
+		foreach (var (w, _, _) in columns)
+			totalWidth += w;
+
+		//====================================================
+
+		var x = originalArea.Value.x;
+		for (var i = 0; i < columns.Count; i++)
+		{
+			var (w, h, bs) = columns[i];
+
+			bs[0].Position = (x + (w - bs[0].Width) / 2, originalArea.Value.y);
+
+			if (pivot is Pivot.Top or Pivot.Center or Pivot.Bottom)
+				bs[0].Position = (bs[0].Position.x, originalArea.Value.y + (originalArea.Value.height - h) / 2);
+			else if (pivot is Pivot.BottomLeft or Pivot.Bottom or Pivot.BottomRight)
+				bs[0].Position = (bs[0].Position.x, originalArea.Value.y + (originalArea.Value.height - h));
+
+			if (pivot is Pivot.Left or Pivot.Center or Pivot.Right)
+				bs[0].Position = (bs[0].Position.x + (originalArea.Value.width - totalWidth) / 2, bs[0].Position.y);
+			if (pivot is Pivot.TopRight or Pivot.Right or Pivot.BottomRight)
+				bs[0].Position = (bs[0].Position.x + (originalArea.Value.width - totalWidth), bs[0].Position.y);
+
+			area = bs[0].Area;
+
+			foreach (var b in bs.Skip(1))
+			{
+				b.AlignY((Pivot.Top, Pivot.Bottom), area, gap.y);
+				b.AlignX((Pivot.Top, Pivot.Bottom), area);
+				area = b.Area;
+			}
+
+			x += w;
+		}
+	}
+
+	public static Area GetBounds(Block[]? blocks)
+	{
+		if (blocks == null || blocks.Length == 0)
+			return default;
+
+		var (minX, minY) = (int.MaxValue, int.MaxValue);
+		var (maxX, maxY) = (int.MinValue, int.MinValue);
+		foreach (var block in blocks)
+		{
+			var (x, y, w, h) = block.Area;
+			minX = x < minX ? x : minX;
+			minY = y < minY ? y : minY;
+			maxX = x + w > maxX ? x + w : maxX;
+			maxY = y + h > maxY ? y + h : maxY;
+		}
+
+		return (minX, minY, maxX - minX, maxY - minY);
 	}
 
 #region Backend

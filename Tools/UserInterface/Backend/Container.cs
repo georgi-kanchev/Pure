@@ -31,6 +31,8 @@ internal class Container(Layout owner)
 	public (ushort tile, uint color) Background { get; set; } = (0, Color.Gray.ToDark(0.7f));
 	public Dictionary<string, Block> Blocks { get; set; } = [];
 	public Dictionary<string, string[]> BlocksData { get; set; } = [];
+	public Scroll ScrollH { get; } = new((0, 0), false);
+	public Scroll ScrollV { get; } = new();
 
 	public void Calculate()
 	{
@@ -99,7 +101,15 @@ internal class Container(Layout owner)
 			}
 		}
 
+		var area = Area;
+		var bounds = Block.GetBounds(Blocks.Values.ToArray());
+
+		area.Width -= ScrollV.IsHidden ? 0 : 1;
+		area.Height -= ScrollH.IsHidden ? 0 : 1;
+
 		if (Wrap is Wrap.SingleRow or Wrap.MultipleRows)
-			Block.SortRow(Blocks.Values.ToArray(), Area, Pivot, Gap, Wrap == Wrap.MultipleRows);
+			Block.SortRow(Blocks.Values.ToArray(), area, Pivot, Gap, Wrap == Wrap.MultipleRows);
+		else if (Wrap is Wrap.SingleColumn or Wrap.MultipleColumns)
+			Block.SortColumn(Blocks.Values.ToArray(), area, Pivot, Gap, Wrap == Wrap.MultipleColumns);
 	}
 }

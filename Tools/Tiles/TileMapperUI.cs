@@ -151,7 +151,10 @@ public static class TileMapperUI
 		var y = button.Y + button.Height / 2;
 		var color = button.GetInteractionColor(TintText, InteractionShade);
 		maps.SetButton(button, zOrder);
-		maps[zOrder + 1].SetTile((x, y), new(tile, color));
+
+		ApplyMasks(maps, button.Mask);
+		maps[zOrder + 1].SetTile((x, y), new(tile, color), button.Mask);
+		RestoreMasks(maps);
 	}
 	public static void SetButtonTile(this IList<TileMap> maps, Button button, Tile tile, int zOrder = 1)
 	{
@@ -161,7 +164,10 @@ public static class TileMapperUI
 		tile.Tint = button.GetInteractionColor(button.IsSelected ? TintSelection : tile.Tint, InteractionShade);
 		Clear(maps, button, zOrder, 2);
 		TryDisable(maps, button, zOrder + 1);
+
+		ApplyMasks(maps, button.Mask);
 		maps[zOrder].SetTile(button.Position, tile, button.Mask);
+		RestoreMasks(maps);
 	}
 	public static void SetInputBox(this IList<TileMap> maps, InputBox inputBox, int zOrder = 0)
 	{
@@ -287,7 +293,7 @@ public static class TileMapperUI
 		TryDisable(maps, fileViewer, zOrder + 2);
 		RestoreMasks(maps);
 	}
-	public static void SetSlider(this IList<TileMap> maps, Slider slider, int zOrder = 0)
+	public static void SetSlider(this IList<TileMap> maps, Slider slider, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 2 || slider.IsHidden)
 			return;
@@ -314,7 +320,7 @@ public static class TileMapperUI
 		TryDisable(maps, slider, zOrder + 2);
 		RestoreMasks(maps);
 	}
-	public static void SetScroll(this IList<TileMap> maps, Scroll scroll, int zOrder = 0)
+	public static void SetScroll(this IList<TileMap> maps, Scroll scroll, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 2 || scroll.IsHidden)
 			return;
@@ -336,7 +342,7 @@ public static class TileMapperUI
 		TryDisable(maps, scroll, zOrder + 2);
 		RestoreMasks(maps);
 	}
-	public static void SetStepper(this IList<TileMap> maps, Stepper stepper, int zOrder = 0)
+	public static void SetStepper(this IList<TileMap> maps, Stepper stepper, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 2 || stepper.IsHidden)
 			return;
@@ -429,7 +435,7 @@ public static class TileMapperUI
 		TryDisable(maps, panel, zOrder + 2);
 		RestoreMasks(maps);
 	}
-	public static void SetPalette(this IList<TileMap> maps, Palette palette, int zOrder = 0)
+	public static void SetPalette(this IList<TileMap> maps, Palette palette, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 3)
 			return;
@@ -470,7 +476,7 @@ public static class TileMapperUI
 		TryDisable(maps, palette, zOrder + 3);
 		RestoreMasks(maps);
 	}
-	public static void SetPages(this IList<TileMap> maps, Pages pages, int zOrder = 0)
+	public static void SetPages(this IList<TileMap> maps, Pages pages, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 1)
 			return;
