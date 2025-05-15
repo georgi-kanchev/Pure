@@ -735,8 +735,7 @@ public class Block
 
 	private static float Map(float number, Range range, Range targetRange)
 	{
-		var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) +
-		            targetRange.a;
+		var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) + targetRange.a;
 		return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
 	}
 #endregion

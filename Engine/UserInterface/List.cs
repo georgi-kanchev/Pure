@@ -301,7 +301,7 @@ public class List : Block
 		var totalHeight = Items.Count * (ItemSize.height + ItemGap);
 		var totalSize = Span == Span.Row ? totalWidth : totalHeight;
 		var menuOffset = Span == Span.Menu ? 1 : 0;
-		Scroll.step = 1f / (totalSize - menuOffset);
+		Scroll.ratio = (Span == Span.Row ? Width : Height) / ((float)totalSize - menuOffset);
 		Scroll.isVertical = Span != Span.Row;
 
 		if (Span != Span.Dropdown && Span != Span.Menu)
@@ -322,7 +322,7 @@ public class List : Block
 	internal override void ApplyScroll()
 	{
 		if (Scroll.IsHovered == false)
-			Scroll.Slider.Progress -= Input.ScrollDelta * Scroll.Step;
+			Scroll.Slider.ApplyScroll();
 	}
 	internal override void OnChildrenUpdate()
 	{

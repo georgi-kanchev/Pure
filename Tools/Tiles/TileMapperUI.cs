@@ -18,21 +18,29 @@ public static class TileMapperUI
 	public static (Tile corner, Tile edge, Tile fill) ThemeButtonBox { get; set; }
 	public static Tile[,] ThemeButtonPatch { get; set; }
 	public static (Tile left, Tile fill, Tile right) ThemeButtonBar { get; set; }
+
 	public static (Tile background, Tile cursor) ThemeInputBox { get; set; }
 	public static (Tile on, Tile off) ThemeCheckbox { get; set; }
 	public static (Tile arrow, Color tintOn, Color tintOff) ThemeSwitch { get; set; }
-	public static (Tile edge1, Tile fill, Tile edge2, Tile handle) ThemeSlider { get; set; }
+
+	public static (Tile edge1, Tile fill, Tile edge2) ThemeSliderBar { get; set; }
+	public static (Tile tile, Tile edge1, Tile edge, Tile edge2) ThemeSliderHandle { get; set; }
+
 	public static Tile ThemeScrollArrow { get; set; }
 	public static (Tile corner, Tile fill, Tile arrow, Tile min, Tile mid, Tile max) ThemeStepper { get; set; }
+
 	public static (Tile corner, Tile edge, Tile fill) ThemeTooltipBox { get; set; }
 	public static (Tile left, Tile fill, Tile right) ThemeTooltipBar { get; set; }
+
 	public static (Tile first, Tile previous, Tile next, Tile last) ThemePages { get; set; }
 	public static (Tile corner, Tile edge, Tile fill, Tile dim) ThemePrompt { get; set; }
 	public static Tile[]? ThemePromptItems { get; set; }
 	public static (Tile full, Tile pick, Tile halfShade, Tile handle) ThemePalette { get; set; }
 	public static (Tile corner, Tile edge, Tile fill) ThemePanel { get; set; }
+
 	public static Tile[,] ThemeListPatch { get; set; }
 	public static (Tile left, Tile fill, Tile right, Tile arrow) ThemeListBar { get; set; }
+
 	public static (Tile img, Tile audio, Tile font, Tile txt, Tile zip, Tile vid, Tile cfg, Tile exe) ThemeFileViewer { get; set; }
 
 	public static void SetTooltip(this IList<TileMap> maps, Tooltip tooltip, int zOrder = 4)
@@ -298,25 +306,39 @@ public static class TileMapperUI
 		if (maps.Count <= zOrder + 2 || slider.IsHidden)
 			return;
 
-		var (edge1, fill, edge2, handle) = ThemeSlider;
+		var (h, hEdge1, hFill, hEdge2) = ThemeSliderHandle;
+		var (edge1, fill, edge2) = ThemeSliderBar;
 		var size = slider.IsVertical ? slider.Height : slider.Width;
+		var hSize = slider.IsVertical ? slider.Handle.Height : slider.Handle.Width;
 
 		edge1.Tint = slider.GetInteractionColor(edge1.Tint, InteractionShade);
 		fill.Tint = slider.GetInteractionColor(fill.Tint, InteractionShade);
 		edge2.Tint = slider.GetInteractionColor(edge2.Tint, InteractionShade);
-		handle.Tint = slider.Handle.GetInteractionColor(handle.Tint, InteractionShade);
+
+		hEdge1.Tint = slider.Handle.GetInteractionColor(hEdge1.Tint, InteractionShade);
+		hFill.Tint = slider.Handle.GetInteractionColor(hFill.Tint, InteractionShade);
+		hEdge2.Tint = slider.Handle.GetInteractionColor(hEdge2.Tint, InteractionShade);
 
 		if (slider.IsVertical)
 		{
 			edge1 = edge1.Rotate(1);
 			fill = fill.Rotate(1);
 			edge2 = edge2.Rotate(1);
+
+			hEdge1 = hEdge1.Rotate(1);
+			hFill = hFill.Rotate(1);
+			hEdge2 = hEdge2.Rotate(1);
 		}
 
 		ApplyMasks(maps, slider.Mask);
 		Clear(maps, slider, zOrder, 3);
 		maps[zOrder].SetBar(slider.Position, edge1, fill, edge2, size, slider.IsVertical);
-		maps[zOrder + 1].SetTile(slider.Handle.Position, handle, slider.Mask);
+
+		if (slider.Handle.Size == (1, 1))
+			maps[zOrder + 1].SetTile(slider.Handle.Position, h, slider.Mask);
+		else if (slider.Handle is { Width: 1, Height: > 1 } or { Width: > 1, Height: 1 })
+			maps[zOrder + 1].SetBar(slider.Handle.Position, hEdge1, hFill, hEdge2, hSize, slider.IsVertical);
+
 		TryDisable(maps, slider, zOrder + 2);
 		RestoreMasks(maps);
 	}
@@ -628,6 +650,7 @@ public static class TileMapperUI
 	static TileMapperUI()
 	{
 		var g = Gray;
+		var bg = g.ToBright();
 		var dg = g.ToDark();
 		var ddg = Gray.ToDark(0.6f);
 		var dark = g.ToDark(0.7f);
@@ -640,7 +663,7 @@ public static class TileMapperUI
 		InteractionShade = 0.15f;
 		DisablingOverlay = new(DISABLED_2, Black.ToTransparent());
 		TintSelection = Azure;
-		TintText = g.ToBright();
+		TintText = bg;
 
 		ThemeScrollArrow = arrow;
 		ThemeButtonBox = (new(BOX_SHADOW_CORNER, g), new(BOX_SHADOW_EDGE, g), new(FULL, g));
@@ -648,7 +671,8 @@ public static class TileMapperUI
 		ThemeInputBox = (new(FULL, ddg.ToDark(0.3f)), new(SHAPE_LINE, White, Pose.Down));
 		ThemeCheckbox = (new(ICON_TICK, Green), new(ICON_X, Red));
 		ThemeSwitch = (new(ARROW_TAILLESS_ROUND, White), Green, dg);
-		ThemeSlider = (new(BAR_BIG_EDGE, g), new(BAR_BIG_STRAIGHT, g), new(BAR_BIG_EDGE, g, Pose.Down), new(SHAPE_CIRCLE_BIG, g.ToBright()));
+		ThemeSliderHandle = (new(SHAPE_CIRCLE_BIG, bg), new(BAR_BIG_EDGE, bg), new(BAR_BIG_STRAIGHT, bg), new(BAR_BIG_EDGE, bg, Pose.Down));
+		ThemeSliderBar = (new(BAR_EDGE, g), new(BAR_STRAIGHT, g), new(BAR_EDGE, g, Pose.Down));
 		ThemeTooltipBox = (new(BOX_BIG_CORNER, dg), new(FULL, dg), new(FULL, dg));
 		ThemeTooltipBar = (new(BAR_BIG_EDGE, dg), new(FULL, dg), new(BAR_BIG_EDGE, dg, Pose.Down));
 		ThemePages = (new(MATH_MUCH_LESS, g), new(MATH_LESS, g), new(MATH_GREATER, g), new(MATH_MUCH_GREATER, g));

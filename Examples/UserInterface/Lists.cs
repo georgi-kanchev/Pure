@@ -6,35 +6,35 @@ public static class Lists
 	{
 		Window.Title = "Pure - Lists Example";
 
-		var row = new List(default, 8)
+		var column = new List(default, 8)
 		{
 			ItemGap = 1,
 			Size = (6, 5),
 			IsSingleSelecting = true
 		};
-		row.AlignInside((0.05f, 0.2f));
-		row.OnDisplay += () =>
+		column.AlignInside((0.05f, 0.2f));
+		column.OnDisplay += () =>
 		{
-			maps[0].SetText((row.Position.x, row.Position.y - 1), "Column Single");
-			maps.SetList(row);
+			maps[0].SetText((column.Position.x, column.Position.y - 1), "Column Single");
+			maps.SetList(column);
 		};
-		row.OnItemDisplay += item => maps.SetListItem(row, item);
+		column.OnItemDisplay += item => maps.SetListItem(column, item);
 
 		//====================================================
 
-		var column = new List(default, span: Span.Row)
+		var row = new List(default, span: Span.Row)
 		{
 			ItemSize = (7, 3),
 			ItemGap = 1,
-			Size = (11, 4)
+			Size = (18, 4)
 		};
-		column.AlignInside((0.05f, 0.5f));
-		column.OnDisplay += () =>
+		row.AlignInside((0.05f, 0.5f));
+		row.OnDisplay += () =>
 		{
-			maps[0].SetText((column.Position.x, column.Position.y - 1), "Row Multi");
-			maps.SetList(column);
+			maps[0].SetText((row.Position.x, row.Position.y - 1), "Row Multi");
+			maps.SetList(row);
 		};
-		column.OnItemDisplay += item => maps.SetButton(item);
+		row.OnItemDisplay += item => maps.SetButton(item);
 
 		//====================================================
 
@@ -82,6 +82,6 @@ public static class Lists
 		menu.OnInteraction(Interaction.Hover, () => menu.IsFolded = false);
 		menu.OnInteraction(Interaction.Unhover, () => menu.IsFolded = true);
 
-		return [row, column, dropdown, dropdownSingle, checkboxes, menu];
+		return [row, dropdown, dropdownSingle, checkboxes, menu];
 	}
 }

@@ -57,14 +57,10 @@ public class Layout
 			}
 		}
 
-		Recalculate();
-	}
-
-	public void Recalculate()
-	{
 		foreach (var c in containers)
 			c.Calculate();
 	}
+
 	public T? GetBlock<T>(string name) where T : Block
 	{
 		foreach (var container in containers)
@@ -84,38 +80,8 @@ public class Layout
 				TileMaps.Add(new(layerTiles.Size));
 		}
 
-		var screen = (0, 0, Input.Bounds.width, Input.Bounds.height);
 		foreach (var container in containers)
-		{
-			foreach (var (_, block) in container.Blocks)
-			{
-				if (block.IsOverlapping(screen) == false)
-					block.Fit(screen);
-
-				block.Update();
-			}
-
-			if (container.Background.tile != 0)
-				TileMaps[0].SetArea(container.Area, [new(container.Background.tile, container.Background.color)]);
-
-			//====================================================
-
-			if (container.ScrollH.IsHidden == false)
-			{
-				container.ScrollH.Size = (container.Area.Width - 1, 1);
-				container.ScrollH.Position = (container.Area.X, container.Area.Y + container.Area.Height - 1);
-				container.ScrollH.Update();
-				TileMaps.SetScroll(container.ScrollH);
-			}
-
-			if (container.ScrollV.IsHidden)
-				continue;
-
-			container.ScrollV.Size = (1, container.Area.Height);
-			container.ScrollV.Position = (container.Area.X + container.Area.Width - 1, container.Area.Y);
-			container.ScrollV.Update();
-			TileMaps.SetScroll(container.ScrollV);
-		}
+			container.Update();
 
 		Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 
@@ -130,8 +96,9 @@ public class Layout
 		if (loadedWithSize == Input.Bounds)
 			return;
 
-		Recalculate();
 		loadedWithSize = Input.Bounds;
+		foreach (var c in containers)
+			c.Calculate();
 	}
 
 #region Backend

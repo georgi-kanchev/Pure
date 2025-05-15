@@ -102,14 +102,77 @@ internal class Container(Layout owner)
 		}
 
 		var area = Area;
-		var bounds = Block.GetBounds(Blocks.Values.ToArray());
-
 		area.Width -= ScrollV.IsHidden ? 0 : 1;
 		area.Height -= ScrollH.IsHidden ? 0 : 1;
+
+		var bounds = Block.GetBounds(Blocks.Values.ToArray());
+		ScrollH.IsHidden = bounds.width <= Area.Width;
+		ScrollV.IsHidden = bounds.height <= Area.Height;
 
 		if (Wrap is Wrap.SingleRow or Wrap.MultipleRows)
 			Block.SortRow(Blocks.Values.ToArray(), area, Pivot, Gap, Wrap == Wrap.MultipleRows);
 		else if (Wrap is Wrap.SingleColumn or Wrap.MultipleColumns)
 			Block.SortColumn(Blocks.Values.ToArray(), area, Pivot, Gap, Wrap == Wrap.MultipleColumns);
+
+		ScrollH.Slider.Progress = Pivot is Top or Center or Bottom ? 0.5f : ScrollH.Slider.Progress;
+		ScrollH.Slider.Progress = Pivot is TopRight or Right or BottomRight ? 1f : ScrollH.Slider.Progress;
+
+		localPositions.Clear();
+		foreach (var (_, block) in Blocks)
+			localPositions.Add((block.Position.x - Area.X, block.Position.y - Area.Y));
 	}
+
+	public void Update()
+	{
+		foreach (var (_, block) in Blocks)
+			block.Update();
+
+		if (Background.tile != 0)
+			owner.TileMaps[0].SetArea(Area, [new(Background.tile, Background.color)]);
+
+		var bounds = Block.GetBounds(Blocks.Values.ToArray());
+
+		ScrollH.Ratio = (float)Area.Width / bounds.width;
+		ScrollV.Ratio = (float)Area.Height / bounds.height;
+
+		if (ScrollH.IsHidden == false)
+		{
+			ScrollH.Size = (Area.Width - (ScrollV.IsHidden ? 0 : 1), 1);
+			ScrollH.Position = (Area.X, Area.Y + Area.Height - 1);
+			ScrollH.Update();
+			owner.TileMaps.SetScroll(ScrollH);
+		}
+
+		if (ScrollV.IsHidden == false)
+		{
+			ScrollV.Size = (1, Area.Height);
+			ScrollV.Position = (Area.X + Area.Width - 1, Area.Y);
+			ScrollV.Update();
+			owner.TileMaps.SetScroll(ScrollV);
+		}
+
+		//====================================================
+
+		var i = 0;
+		foreach (var (_, block) in Blocks)
+		{
+			var (lx, ly) = localPositions[i];
+
+			if (ScrollH.IsHidden == false)
+				block.X = (int)MathF.Round(Map(ScrollH.Slider.Progress, (0, 1), (lx, lx - bounds.width + Area.Width)));
+			if (ScrollV.IsHidden == false)
+				block.Y = (int)MathF.Round(Map(ScrollV.Slider.Progress, (0, 1), (ly, ly - bounds.height + Area.Height)));
+			i++;
+		}
+	}
+
+#region Backend
+	private readonly List<(int x, int y)> localPositions = [];
+
+	private static float Map(float number, (float a, float b) range, (float a, float b) targetRange)
+	{
+		var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) + targetRange.a;
+		return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
+	}
+#endregion
 }
