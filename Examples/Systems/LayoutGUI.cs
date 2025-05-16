@@ -35,14 +35,14 @@ public static class LayoutGUI
 //	Button: bell		Icon: 353			Size: 1, 1
 //	Menu: profile		Text: @nickname438	Items: Profile, Account, Preferences, Wallet, Change Account, Sign Out		Size: 14, items + 1		ItemSize: 14, 1		IsSingleSelecting
 //	Button: screen		Icon: 395			Size: 1, 1
-Container: left-games	Area: left, top + 5, width * 0.4, height - 6	Pivot: Right		Gap: 0, 0	Tile: 10	Wrap: SingleRow
-	Button: home		Text: Home			Size: 17, 7			IsSelected		PadLeftRight: 0, width - 2
+Container: left-games	Area: left + 5, top + 5, width * 0.4, height - 6	Pivot: TopLeft		Gap: 0, 0	Tile: 10	Wrap: SingleColumn
+	Button: home		Text: Home			Size: 17, 3			IsSelected		PadLeftRight: 0, width - 2
 	Button: collections	Icon: 369			Size: 3, 3			Toggle
 	Button: test		Text: Test			Size: text, 1
-	Button: long		Text: very much looooonger		Size: text + 2, 5
+	Button: long		Text: very much looooonger		Size: text + 2, 3
 	Button: smol		Text: smol						Size: text + 2, 3
 	Button: l			Text: testttttttt				Size: text, 1
-	Button: longer		Text: another looong button		Size: text + 2, 3");
+	Button: longer		Text: another looong button		Size: text + 20, 3");
 		// var profile = layoutGUI.GetBlock<List>("profile");
 		// profile!.OnFoldChange += () => profile.Deselect();
 

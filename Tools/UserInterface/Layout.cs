@@ -81,7 +81,7 @@ public class Layout
 		}
 
 		foreach (var container in containers)
-			container.Update();
+			container.Update(layerTiles);
 
 		Mouse.CursorCurrent = (Mouse.Cursor)Input.CursorResult;
 

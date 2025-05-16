@@ -511,10 +511,12 @@ public class Block
 
 		area ??= (0, 0, Input.Bounds.width, Input.Bounds.height);
 		var originalArea = area;
-		var lines = new List<(int width, int height, List<Block> blocks)> { (0, 0, []) };
 		var accumulatedWidth = 0;
 		var height = 0;
 		var totalHeight = 0;
+
+		lines.Clear();
+		lines.Add((0, 0, []));
 
 		for (var i = 0; i < blocks.Length; i++)
 		{
@@ -543,7 +545,7 @@ public class Block
 		{
 			var (w, h, bs) = lines[i];
 
-			bs[0].Position = (originalArea.Value.x, y + (h - bs[0].Height) / 2);
+			bs[0].Position = (originalArea.Value.x, y + (int)MathF.Ceiling((h - bs[0].Height) / 2f));
 
 			if (pivot is Pivot.Top or Pivot.Center or Pivot.Bottom)
 				bs[0].Position = (originalArea.Value.x + (originalArea.Value.width - w) / 2, bs[0].Position.y);
@@ -606,7 +608,7 @@ public class Block
 		{
 			var (w, h, bs) = columns[i];
 
-			bs[0].Position = (x + (w - bs[0].Width) / 2, originalArea.Value.y);
+			bs[0].Position = (x + (int)MathF.Ceiling((w - bs[0].Width) / 2f), originalArea.Value.y);
 
 			if (pivot is Pivot.Top or Pivot.Center or Pivot.Bottom)
 				bs[0].Position = (bs[0].Position.x, originalArea.Value.y + (originalArea.Value.height - h) / 2);
@@ -659,6 +661,9 @@ public class Block
 	internal bool hasParent, isTextReadonly;
 	internal string text = string.Empty;
 	internal Area mask;
+
+	[DoNotSave]
+	private static readonly List<(int width, int height, List<Block> blocks)> lines = [];
 
 	[DoNotSave]
 	internal (int, int) listSizeTrimOffset;

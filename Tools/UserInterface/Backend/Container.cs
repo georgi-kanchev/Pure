@@ -1,6 +1,7 @@
 using Pure.Engine.Tiles;
 using Pure.Engine.UserInterface;
 using Pure.Engine.Utility;
+using Pure.Engine.Window;
 using Pure.Tools.Tiles;
 using SizeI = (int width, int height);
 using static Pure.Engine.UserInterface.Pivot;
@@ -102,12 +103,11 @@ internal class Container(Layout owner)
 		}
 
 		var area = Area;
-		area.Width -= ScrollV.IsHidden ? 0 : 1;
-		area.Height -= ScrollH.IsHidden ? 0 : 1;
-
 		var bounds = Block.GetBounds(Blocks.Values.ToArray());
 		ScrollH.IsHidden = bounds.width <= Area.Width;
 		ScrollV.IsHidden = bounds.height <= Area.Height;
+		area.Width -= ScrollV.IsHidden ? 0 : 1;
+		area.Height -= ScrollH.IsHidden ? 0 : 1;
 
 		if (Wrap is Wrap.SingleRow or Wrap.MultipleRows)
 			Block.SortRow(Blocks.Values.ToArray(), area, Pivot, Gap, Wrap == Wrap.MultipleRows);
@@ -117,12 +117,15 @@ internal class Container(Layout owner)
 		ScrollH.Slider.Progress = Pivot is Top or Center or Bottom ? 0.5f : ScrollH.Slider.Progress;
 		ScrollH.Slider.Progress = Pivot is TopRight or Right or BottomRight ? 1f : ScrollH.Slider.Progress;
 
+		ScrollV.Slider.Progress = Pivot is Left or Center or Right ? 0.5f : ScrollV.Slider.Progress;
+		ScrollV.Slider.Progress = Pivot is BottomLeft or Bottom or BottomRight ? 1f : ScrollV.Slider.Progress;
+
 		localPositions.Clear();
 		foreach (var (_, block) in Blocks)
 			localPositions.Add((block.Position.x - Area.X, block.Position.y - Area.Y));
 	}
 
-	public void Update()
+	public void Update(LayerTiles layer)
 	{
 		foreach (var (_, block) in Blocks)
 			block.Update();
@@ -130,23 +133,30 @@ internal class Container(Layout owner)
 		if (Background.tile != 0)
 			owner.TileMaps[0].SetArea(Area, [new(Background.tile, Background.color)]);
 
-		var bounds = Block.GetBounds(Blocks.Values.ToArray());
+		if (ScrollH.IsHidden && ScrollV.IsHidden)
+			return;
 
-		ScrollH.Ratio = (float)Area.Width / bounds.width;
-		ScrollV.Ratio = (float)Area.Height / bounds.height;
+		var bounds = Block.GetBounds(Blocks.Values.ToArray());
+		var (ax, ay, aw, ah) = (Area.X, Area.Y, Area.Width, Area.Height);
+		var (v, h) = (ScrollV.IsHidden ? 0 : 1, ScrollH.IsHidden ? 0 : 1);
+
+		aw -= v;
+		ah -= h;
 
 		if (ScrollH.IsHidden == false)
 		{
-			ScrollH.Size = (Area.Width - (ScrollV.IsHidden ? 0 : 1), 1);
-			ScrollH.Position = (Area.X, Area.Y + Area.Height - 1);
+			ScrollH.Ratio = (float)aw / bounds.width;
+			ScrollH.Size = (aw, 1);
+			ScrollH.Position = (ax, ay + ah);
 			ScrollH.Update();
 			owner.TileMaps.SetScroll(ScrollH);
 		}
 
 		if (ScrollV.IsHidden == false)
 		{
-			ScrollV.Size = (1, Area.Height);
-			ScrollV.Position = (Area.X + Area.Width - 1, Area.Y);
+			ScrollV.Ratio = (float)ah / bounds.height;
+			ScrollV.Size = (1, ah);
+			ScrollV.Position = (ax + aw, ay);
 			ScrollV.Update();
 			owner.TileMaps.SetScroll(ScrollV);
 		}
@@ -159,11 +169,37 @@ internal class Container(Layout owner)
 			var (lx, ly) = localPositions[i];
 
 			if (ScrollH.IsHidden == false)
-				block.X = (int)MathF.Round(Map(ScrollH.Slider.Progress, (0, 1), (lx, lx - bounds.width + Area.Width)));
+			{
+				block.X = (int)MathF.Ceiling(Map(ScrollH.Slider.Progress, (0, 1), (lx, lx - bounds.width + aw))) + ax;
+				block.X += Pivot is TopRight or Right or BottomRight ? bounds.width - aw : 0;
+				block.X += Pivot is Top or Center or Bottom ? (bounds.width - aw) / 2 : 0;
+			}
+
 			if (ScrollV.IsHidden == false)
-				block.Y = (int)MathF.Round(Map(ScrollV.Slider.Progress, (0, 1), (ly, ly - bounds.height + Area.Height)));
+			{
+				block.Y = (int)MathF.Ceiling(Map(ScrollV.Slider.Progress, (0, 1), (ly, ly - bounds.height + ah))) + ay;
+				block.Y += Pivot is BottomLeft or Bottom or BottomRight ? bounds.height - ah : 0;
+				block.Y += Pivot is Left or Center or Right ? (bounds.height - ah) / 2 : 0;
+			}
+
 			i++;
 		}
+
+		//====================================================
+
+		var (mx, my) = layer.MouseCell;
+		var hover = mx >= ax && my >= ay && mx <= ax + aw && my <= ay + ah;
+		var scrollHover = ScrollH.IsHovered || ScrollV.IsHovered;
+
+		if (hover == false || Mouse.ScrollDelta == 0 || scrollHover)
+			return;
+
+		var shift = Keyboard.Key.ShiftLeft.IsPressed() || Keyboard.Key.ShiftRight.IsPressed();
+
+		if (shift && ScrollH.IsHidden == false)
+			ScrollH.Slider.MoveHandle(Mouse.ScrollDelta);
+		else if (ScrollV.IsHidden == false)
+			ScrollV.Slider.MoveHandle(Mouse.ScrollDelta);
 	}
 
 #region Backend

@@ -107,7 +107,7 @@ public class Slider : Block
 
 		var curSz = IsVertical ? h - (Handle.Height - 1) : w - (Handle.Width - 1);
 		var sz = Math.Max(0, curSz - 1);
-		index = (int)Map(progress, 0, 1, 0, sz);
+		index = (int)MathF.Round(Map(progress, 0, 1, 0, sz));
 
 		if (IsDisabled)
 			Handle.IsDisabled = true;
