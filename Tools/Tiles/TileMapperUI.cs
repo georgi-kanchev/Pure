@@ -548,7 +548,7 @@ public static class TileMapperUI
 		var index = Math.Clamp(pages.IndexOf(item), 0, tiles.Length - 1);
 		SetButtonTile(maps, item, tiles[index], zOrder);
 	}
-	public static void SetList(this IList<TileMap> maps, List list, int zOrder = 0)
+	public static void SetList(this IList<TileMap> maps, List list, int zOrder = 1)
 	{
 		if (maps.Count <= zOrder + 2 || list.IsHidden)
 			return;
@@ -597,7 +597,7 @@ public static class TileMapperUI
 		TryDisable(maps, list, zOrder + 2);
 		RestoreMasks(maps);
 	}
-	public static void SetListItem(this IList<TileMap> maps, List list, Button item, int zOrder = 1, bool toggle = true)
+	public static void SetListItem(this IList<TileMap> maps, List list, Button item, int zOrder = 2, bool toggle = true)
 	{
 		if (maps.Count <= zOrder + 1 || item.IsHidden)
 			return;

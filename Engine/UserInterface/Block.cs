@@ -3,6 +3,7 @@ global using PointI = (int x, int y);
 global using PointF = (float x, float y);
 global using Size = (int width, int height);
 global using Range = (float a, float b);
+using static Pure.Engine.UserInterface.Pivot;
 
 namespace Pure.Engine.UserInterface;
 
@@ -367,34 +368,34 @@ public class Block
 
 		Position = (float.IsNaN(alignment.x) ? x : (int)newX, float.IsNaN(alignment.y) ? y : (int)newY);
 	}
-	public void AlignInside(Area? area = null, Pivot pivot = Pivot.Center, PointI offset = default)
+	public void AlignInside(Area? area = null, Pivot pivot = Center, PointI offset = default)
 	{
 		var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
 		var (x, y, w, h) = Area;
 
-		if (pivot == Pivot.TopLeft) (x, y) = (ax, ay);
-		else if (pivot == Pivot.Top) (x, y) = (ax + aw / 2 - w / 2, ay);
-		else if (pivot == Pivot.TopRight) (x, y) = (ax + aw - w, ay);
-		else if (pivot == Pivot.Left) (x, y) = (ax, ay + ah / 2 - h / 2);
-		else if (pivot == Pivot.Center) (x, y) = (ax + aw / 2 - w / 2, ay + ah / 2 - h / 2);
-		else if (pivot == Pivot.Right) (x, y) = (ax + aw - w, ay + ah / 2 - h / 2);
-		else if (pivot == Pivot.BottomLeft) (x, y) = (ax, ay + ah - h);
-		else if (pivot == Pivot.Bottom) (x, y) = (ax + aw / 2 - w / 2, ay + ah - h);
-		else if (pivot == Pivot.BottomRight) (x, y) = (ax + aw - w, ay + ah - h);
+		if (pivot == TopLeft) (x, y) = (ax, ay);
+		else if (pivot == Top) (x, y) = (ax + aw / 2 - w / 2, ay);
+		else if (pivot == TopRight) (x, y) = (ax + aw - w, ay);
+		else if (pivot == Left) (x, y) = (ax, ay + ah / 2 - h / 2);
+		else if (pivot == Center) (x, y) = (ax + aw / 2 - w / 2, ay + ah / 2 - h / 2);
+		else if (pivot == Right) (x, y) = (ax + aw - w, ay + ah / 2 - h / 2);
+		else if (pivot == BottomLeft) (x, y) = (ax, ay + ah - h);
+		else if (pivot == Bottom) (x, y) = (ax + aw / 2 - w / 2, ay + ah - h);
+		else if (pivot == BottomRight) (x, y) = (ax + aw - w, ay + ah - h);
 
 		Position = (x + offset.x, y + offset.y);
 	}
-	public void AlignOutside(Area? area = null, Pivot pivot = Pivot.Center, PointI offset = default)
+	public void AlignOutside(Area? area = null, Pivot pivot = Center, PointI offset = default)
 	{
 		var (ax, ay, aw, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
 		var (x, y, w, h) = Area;
 		var (cx, cy) = (ax + aw / 2 - w / 2, ay + ah / 2 - h / 2);
 
-		if (pivot == Pivot.TopLeft) (x, y) = (ax - w, ay - h);
-		else if (pivot == Pivot.Top) (x, y) = (cx, ay - h);
-		else if (pivot == Pivot.TopRight) (x, y) = (ax + aw, ay - h);
-		else if (pivot == Pivot.Left) (x, y) = (ax - w, cy);
-		else if (pivot == Pivot.Center)
+		if (pivot == TopLeft) (x, y) = (ax - w, ay - h);
+		else if (pivot == Top) (x, y) = (cx, ay - h);
+		else if (pivot == TopRight) (x, y) = (ax + aw, ay - h);
+		else if (pivot == Left) (x, y) = (ax - w, cy);
+		else if (pivot == Center)
 		{
 			// if axis is inside, align on the closest edge
 			if (x > ax && x < ax + aw)
@@ -402,10 +403,10 @@ public class Block
 			if (y > ay && y < ay + ah)
 				y = y < cy ? ay - h : ay + ah;
 		}
-		else if (pivot == Pivot.Right) (x, y) = (ax + aw, cy);
-		else if (pivot == Pivot.BottomLeft) (x, y) = (ax - w, ay + ah);
-		else if (pivot == Pivot.Bottom) (x, y) = (cx, ay + ah);
-		else if (pivot == Pivot.BottomRight) (x, y) = (ax + aw, ay + ah);
+		else if (pivot == Right) (x, y) = (ax + aw, cy);
+		else if (pivot == BottomLeft) (x, y) = (ax - w, ay + ah);
+		else if (pivot == Bottom) (x, y) = (cx, ay + ah);
+		else if (pivot == BottomRight) (x, y) = (ax + aw, ay + ah);
 
 		Position = (x + offset.x, y + offset.y);
 	}
@@ -414,13 +415,13 @@ public class Block
 		var (ax, _, aw, _) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
 		var (x, w) = (X, Width);
 
-		if (pivots.target is Pivot.TopLeft or Pivot.Left or Pivot.BottomLeft) x = ax;
-		if (pivots.target is Pivot.Top or Pivot.Center or Pivot.Bottom) x = ax + aw / 2;
-		if (pivots.target is Pivot.TopRight or Pivot.Right or Pivot.BottomRight) x = ax + aw;
+		if (pivots.target is TopLeft or Left or BottomLeft) x = ax;
+		if (pivots.target is Top or Center or Bottom) x = ax + aw / 2;
+		if (pivots.target is TopRight or Right or BottomRight) x = ax + aw;
 
 		// if (pivots.self is Pivot.TopLeft or Pivot.Left or Pivot.BottomLeft) x -= 0;
-		if (pivots.self is Pivot.Top or Pivot.Center or Pivot.Bottom) x -= w / 2;
-		if (pivots.self is Pivot.TopRight or Pivot.Right or Pivot.BottomRight) x -= w;
+		if (pivots.self is Top or Center or Bottom) x -= w / 2;
+		if (pivots.self is TopRight or Right or BottomRight) x -= w;
 
 		X = x + offset;
 	}
@@ -429,13 +430,13 @@ public class Block
 		var (_, ay, _, ah) = area ?? (0, 0, Input.Bounds.width, Input.Bounds.height);
 		var (y, h) = (Y, Height);
 
-		if (pivots.target is Pivot.TopLeft or Pivot.Top or Pivot.TopRight) y = ay;
-		if (pivots.target is Pivot.Left or Pivot.Center or Pivot.Right) y = ay + ah / 2;
-		if (pivots.target is Pivot.BottomLeft or Pivot.Bottom or Pivot.BottomRight) y = ay + ah;
+		if (pivots.target is TopLeft or Top or TopRight) y = ay;
+		if (pivots.target is Left or Center or Right) y = ay + ah / 2;
+		if (pivots.target is BottomLeft or Bottom or BottomRight) y = ay + ah;
 
 		// if (pivots.self is Pivot.TopLeft or Pivot.Top or Pivot.TopRight) y -= 0;
-		if (pivots.self is Pivot.Left or Pivot.Center or Pivot.Right) y -= h / 2;
-		if (pivots.self is Pivot.BottomLeft or Pivot.Bottom or Pivot.BottomRight) y -= h;
+		if (pivots.self is Left or Center or Right) y -= h / 2;
+		if (pivots.self is BottomLeft or Bottom or BottomRight) y -= h;
 
 		Y = y + offset;
 	}
@@ -504,7 +505,7 @@ public class Block
 		return (block.Position.x, block.Position.y, block.Size.width, block.Size.height);
 	}
 
-	public static void SortRow(Block[]? blocks, Area? area = null, Pivot pivot = Pivot.Center, PointI gap = default, bool wrap = true)
+	public static void SortRow(Block[]? blocks, Area? area = null, Pivot pivot = Center, PointI gap = default, bool wrap = true)
 	{
 		if (blocks == null || blocks.Length == 0)
 			return;
@@ -545,31 +546,31 @@ public class Block
 		{
 			var (w, h, bs) = lines[i];
 
-			bs[0].Position = (originalArea.Value.x, y + (int)MathF.Ceiling((h - bs[0].Height) / 2f));
+			bs[0].Position = (originalArea.Value.x, y + (int)MathF.Round((h - bs[0].Height) / 2f));
 
-			if (pivot is Pivot.Top or Pivot.Center or Pivot.Bottom)
-				bs[0].Position = (originalArea.Value.x + (originalArea.Value.width - w) / 2, bs[0].Position.y);
-			else if (pivot is Pivot.TopRight or Pivot.Right or Pivot.BottomRight)
-				bs[0].Position = (originalArea.Value.x + (originalArea.Value.width - w), bs[0].Position.y);
+			if (pivot is Top or Center or Bottom)
+				bs[0].X += (originalArea.Value.width - w) / 2;
+			else if (pivot is TopRight or Right or BottomRight)
+				bs[0].X += originalArea.Value.width - w;
 
-			if (pivot is Pivot.Left or Pivot.Center or Pivot.Right)
-				bs[0].Position = (bs[0].Position.x, bs[0].Position.y + (originalArea.Value.height - totalHeight) / 2);
-			if (pivot is Pivot.BottomLeft or Pivot.Bottom or Pivot.BottomRight)
-				bs[0].Position = (bs[0].Position.x, bs[0].Position.y + (originalArea.Value.height - totalHeight));
+			if (pivot is Left or Center or Right)
+				bs[0].Y += (originalArea.Value.height - totalHeight) / 2;
+			else if (pivot is BottomLeft or Bottom or BottomRight)
+				bs[0].Y += originalArea.Value.height - totalHeight;
 
 			area = bs[0].Area;
 
 			foreach (var b in bs.Skip(1))
 			{
-				b.AlignX((Pivot.Left, Pivot.Right), area, gap.x);
-				b.AlignY((Pivot.Left, Pivot.Right), area);
+				b.AlignX((Left, Right), area, gap.x);
+				b.AlignY((Left, Right), area);
 				area = b.Area;
 			}
 
 			y += h;
 		}
 	}
-	public static void SortColumn(Block[]? blocks, Area? area = null, Pivot pivot = Pivot.Center, PointI gap = default, bool wrap = true)
+	public static void SortColumn(Block[]? blocks, Area? area = null, Pivot pivot = Center, PointI gap = default, bool wrap = true)
 	{
 		if (blocks == null || blocks.Length == 0)
 			return;
@@ -608,24 +609,24 @@ public class Block
 		{
 			var (w, h, bs) = columns[i];
 
-			bs[0].Position = (x + (int)MathF.Ceiling((w - bs[0].Width) / 2f), originalArea.Value.y);
+			bs[0].Position = (x + (int)MathF.Round((w - bs[0].Width) / 2f), originalArea.Value.y);
 
-			if (pivot is Pivot.Top or Pivot.Center or Pivot.Bottom)
-				bs[0].Position = (bs[0].Position.x, originalArea.Value.y + (originalArea.Value.height - h) / 2);
-			else if (pivot is Pivot.BottomLeft or Pivot.Bottom or Pivot.BottomRight)
-				bs[0].Position = (bs[0].Position.x, originalArea.Value.y + (originalArea.Value.height - h));
+			if (pivot is Top or Center or Bottom)
+				bs[0].X += (originalArea.Value.width - totalWidth) / 2;
+			else if (pivot is TopRight or Right or BottomRight)
+				bs[0].X += originalArea.Value.width - totalWidth;
 
-			if (pivot is Pivot.Left or Pivot.Center or Pivot.Right)
-				bs[0].Position = (bs[0].Position.x + (originalArea.Value.width - totalWidth) / 2, bs[0].Position.y);
-			if (pivot is Pivot.TopRight or Pivot.Right or Pivot.BottomRight)
-				bs[0].Position = (bs[0].Position.x + (originalArea.Value.width - totalWidth), bs[0].Position.y);
+			if (pivot is Left or Center or Right)
+				bs[0].Y += (originalArea.Value.height - h) / 2;
+			else if (pivot is BottomLeft or Bottom or BottomRight)
+				bs[0].Y += originalArea.Value.height - h;
 
 			area = bs[0].Area;
 
 			foreach (var b in bs.Skip(1))
 			{
-				b.AlignY((Pivot.Top, Pivot.Bottom), area, gap.y);
-				b.AlignX((Pivot.Top, Pivot.Bottom), area);
+				b.AlignX((Top, Bottom), area);
+				b.AlignY((Top, Bottom), area, gap.y);
 				area = b.Area;
 			}
 

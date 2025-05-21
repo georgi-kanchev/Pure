@@ -58,6 +58,8 @@ public class List : Block
 		get => (Span == Span.Row ? HasScroll.horizontal : HasScroll.vertical) && IsFolded == false;
 	}
 
+	public int HeightUnfolded { get; set; }
+
 	[DoNotSave]
 	public List<Button> SelectedItems { get; } = [];
 
@@ -107,6 +109,13 @@ public class List : Block
 
 		if (Items.Count > 0 && IsSingleSelecting)
 			Select(Items[0]);
+
+		if (span is not (Span.Menu or Span.Dropdown))
+			return;
+
+		Height = 1;
+		IsFolded = true;
+		HeightUnfolded = itemCount;
 	}
 
 	public override string ToString()
@@ -218,11 +227,9 @@ public class List : Block
 	internal bool isReadOnly, justFold;
 
 	[DoNotSave]
-	private bool isFolded, veryFirstUpdate = true;
+	private bool isFolded;
 	[DoNotSave]
 	private readonly bool isInitialized;
-	[DoNotSave]
-	private int originalHeight;
 	[DoNotSave]
 	private readonly Dictionary<Interaction, Action<Button>> itemInteractions = new();
 
@@ -266,14 +273,6 @@ public class List : Block
 	{
 		justFold = false;
 
-		// this is to give time to dropdown to accept size when not collapsed
-		if (veryFirstUpdate)
-		{
-			veryFirstUpdate = false;
-			originalHeight = Height;
-			IsFolded = true;
-		}
-
 		UpdateSelectedItems();
 
 		foreach (var btn in Items)
@@ -307,7 +306,9 @@ public class List : Block
 		if (Span != Span.Dropdown && Span != Span.Menu)
 			return;
 
-		Height = IsFolded ? 1 : originalHeight;
+		var menuOff = Span == Span.Menu ? 1 : 0;
+		HeightUnfolded = HeightUnfolded <= 0 ? Items.Count + menuOff : HeightUnfolded;
+		Height = IsFolded ? 1 : HeightUnfolded;
 
 		if (Span == Span.Dropdown && Items.Count > 0 && SelectedItems.Count == 0 && IsSingleSelecting)
 			Select(Items[0]);
@@ -426,10 +427,12 @@ public class List : Block
 
 	private void OnInternalItemTrigger(Button item)
 	{
+		var wasFolded = IsFolded;
+
 		// unfold when clicking an item or fold when clicking and single selecting & unfolded
 		IsFolded = IsSingleSelecting && IsFolded == false;
 
-		if (Span == Span.Dropdown && IsSingleSelecting == false && IsFolded)
+		if (Span == Span.Dropdown && IsSingleSelecting == false && wasFolded)
 		{
 			Select(item, item.IsSelected == false);
 			return; // don't unselect the already selected item that's displayed on the fold (revert selection)

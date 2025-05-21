@@ -25,6 +25,9 @@ public class Layout
 			var line = lines[i];
 			var props = line.Trim().Split("\t", StringSplitOptions.RemoveEmptyEntries);
 
+			if (line.StartsWith("//"))
+				continue;
+
 			foreach (var prop in props)
 			{
 				var keyValue = prop.Trim().Split(": ");
@@ -165,23 +168,6 @@ public class Layout
 		}
 
 		return false;
-	}
-
-	internal static int ToInt(string value, string text = "", Area? area = null, int? items = null)
-	{
-		area ??= (0, 0, Input.Bounds.width, Input.Bounds.height);
-
-		var result = value.Trim()
-			.Replace("left", $"{area.Value.X}")
-			.Replace("top", $"{area.Value.Y}")
-			.Replace("right", $"{area.Value.Width}")
-			.Replace("bottom", $"{area.Value.Height}")
-			.Replace("width", $"{area.Value.Width}")
-			.Replace("height", $"{area.Value.Height}")
-			.Replace("items", $"{items}")
-			.Replace("text", $"{text.Length}");
-
-		return (int)result.Calculate();
 	}
 #endregion
 }

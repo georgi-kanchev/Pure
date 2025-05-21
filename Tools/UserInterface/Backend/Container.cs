@@ -18,11 +18,11 @@ internal class Container(Layout owner)
 	{
 		get
 		{
-			var parent = owner.GetParent(this);
-			var x = Layout.ToInt(AreaDynamic.x, "", parent?.Area);
-			var y = Layout.ToInt(AreaDynamic.y, "", parent?.Area);
-			var w = Layout.ToInt(AreaDynamic.w, "", parent?.Area);
-			var h = Layout.ToInt(AreaDynamic.h, "", parent?.Area);
+			var parent = owner.GetParent(this)?.Area;
+			var x = ToInt(AreaDynamic.x, parent: parent);
+			var y = ToInt(AreaDynamic.y, parent: parent);
+			var w = ToInt(AreaDynamic.w, parent: parent);
+			var h = ToInt(AreaDynamic.h, parent: parent);
 			return (x, y, w, h);
 		}
 	}
@@ -40,6 +40,7 @@ internal class Container(Layout owner)
 		if (Blocks.Count == 0)
 			return;
 
+		var parent = owner.GetParent(this)?.Area;
 		foreach (var (name, block) in Blocks)
 		{
 			foreach (var prop in BlocksData[name])
@@ -53,10 +54,12 @@ internal class Container(Layout owner)
 				for (var j = 0; j < values.Length; j++)
 					values[j] = values[j].Trim();
 
-				block.Mask = Area;
-
 				if (key == nameof(Block.Text)) block.Text = keyValue[1]; // no trim
-				else if (key == nameof(Block.Size) && values.Length == 2) block.Size = Int2(Area);
+				else if (key == nameof(Block.Size) && values.Length == 2)
+				{
+					block.Size = Int2(block.Area);
+					block.Height = block is List { Span: Span.Dropdown or Span.Menu } ? 1 : block.Height; // handle folding
+				}
 				else if (key == nameof(Block.IsDisabled)) block.IsDisabled = true;
 				else if (key == nameof(Block.IsHidden)) block.IsHidden = true;
 				// list props====================================================
@@ -70,14 +73,23 @@ internal class Container(Layout owner)
 
 						list.Edit(values);
 					}
-					else if (key == nameof(List.ItemSize)) list.ItemSize = Int2(block.Area);
+					else if (key == nameof(List.ItemSize)) list.ItemSize = Int2(list.Area);
 					else if (key == nameof(List.ItemGap)) list.ItemGap = (int)value.Calculate();
 					else if (key == nameof(List.IsSingleSelecting)) list.IsSingleSelecting = true;
+					else if (key == nameof(List.SelectedItems))
+					{
+						list.Deselect();
+
+						foreach (var v in values)
+							foreach (var item in list.Items)
+								if (item.Text == v)
+									list.Select(item);
+					}
 				}
 				// button props====================================================
 				else if (block is Button btn)
 				{
-					if (key == "Icon") btn.OnDisplay += () => owner.TileMaps.SetButtonIcon(btn, (ushort)Layout.ToInt(value));
+					if (key == "Icon") btn.OnDisplay += () => owner.TileMaps.SetButtonIcon(btn, (ushort)ToInt(value));
 					else if (key is nameof(Button.IsToggle) or nameof(Button.IsSelected))
 					{
 						btn.IsToggle = true;
@@ -94,10 +106,10 @@ internal class Container(Layout owner)
 					}
 				}
 
-				(int x, int y) Int2(Area area)
+				(int x, int y) Int2(Area self)
 				{
-					return (Layout.ToInt(values[0], block.Text, area, items),
-						Layout.ToInt(values[1], block.Text, area, items));
+					return (ToInt(values[0], self, Area, parent, block.Text, items),
+						ToInt(values[1], self, Area, parent, block.Text, items));
 				}
 			}
 		}
@@ -128,7 +140,14 @@ internal class Container(Layout owner)
 	public void Update(LayerTiles layer)
 	{
 		foreach (var (_, block) in Blocks)
+		{
+			block.Mask = Area;
+
+			if (block is List { IsFolded: false })
+				block.Mask = (0, 0, Input.Bounds.width, Input.Bounds.height);
+
 			block.Update();
+		}
 
 		if (Background.tile != 0)
 			owner.TileMaps[0].SetArea(Area, [new(Background.tile, Background.color)]);
@@ -146,7 +165,7 @@ internal class Container(Layout owner)
 		if (ScrollH.IsHidden == false)
 		{
 			ScrollH.Ratio = (float)aw / bounds.width;
-			ScrollH.Size = (aw, 1);
+			ScrollH.Size = (Area.Width - 1, 1);
 			ScrollH.Position = (ax, ay + ah);
 			ScrollH.Update();
 			owner.TileMaps.SetScroll(ScrollH);
@@ -155,7 +174,7 @@ internal class Container(Layout owner)
 		if (ScrollV.IsHidden == false)
 		{
 			ScrollV.Ratio = (float)ah / bounds.height;
-			ScrollV.Size = (1, ah);
+			ScrollV.Size = (1, Area.Height - 1);
 			ScrollV.Position = (ax + aw, ay);
 			ScrollV.Update();
 			owner.TileMaps.SetScroll(ScrollV);
@@ -209,6 +228,49 @@ internal class Container(Layout owner)
 	{
 		var value = (number - range.a) / (range.b - range.a) * (targetRange.b - targetRange.a) + targetRange.a;
 		return float.IsNaN(value) || float.IsInfinity(value) ? targetRange.a : value;
+	}
+
+	private static int ToInt(string value, Area? self = null, Area? container = null, Area? parent = null, string text = "", int? items = null)
+	{
+		var result = value.Trim()
+			.Replace("ui_left", "0")
+			.Replace("ui_top", "0")
+			.Replace("ui_right", $"{Input.Bounds.width}")
+			.Replace("ui_bottom", $"{Input.Bounds.height}")
+			.Replace("ui_width", $"{Input.Bounds.width}")
+			.Replace("ui_height", $"{Input.Bounds.height}");
+
+		if (self != null)
+			result = result
+				.Replace("self_left", $"{self.Value.X}")
+				.Replace("self_top", $"{self.Value.Y}")
+				.Replace("self_right", $"{self.Value.X + self.Value.Width}")
+				.Replace("self_bottom", $"{self.Value.Y + self.Value.Height}")
+				.Replace("self_width", $"{self.Value.Width}")
+				.Replace("self_height", $"{self.Value.Height}")
+				.Replace("self_items", $"{items}")
+				.Replace("self_text", $"{text.Length}");
+
+		if (container != null)
+			result = result
+				.Replace("owner_left", $"{container.Value.X}")
+				.Replace("owner_top", $"{container.Value.Y}")
+				.Replace("owner_right", $"{container.Value.X + container.Value.Width}")
+				.Replace("owner_bottom", $"{container.Value.Y + container.Value.Height}")
+				.Replace("owner_width", $"{container.Value.Width}")
+				.Replace("owner_height", $"{container.Value.Height}");
+
+		if (parent != null)
+			result = result
+				.Replace("parent_left", $"{parent.Value.X}")
+				.Replace("parent_top", $"{parent.Value.Y}")
+				.Replace("parent_right", $"{parent.Value.X + parent.Value.Width}")
+				.Replace("parent_bottom", $"{parent.Value.Y + parent.Value.Height}")
+				.Replace("parent_width", $"{parent.Value.Width}")
+				.Replace("parent_height", $"{parent.Value.Height}");
+
+		var calculation = result.Calculate();
+		return (int)(float.IsNaN(calculation) ? 0 : calculation);
 	}
 #endregion
 }
